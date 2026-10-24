@@ -2615,6 +2615,13 @@ model ServiceWithdrawal {
 
 /// Page publique « Donner » d'une église (spec 065). Une ligne par église, créée au premier
 /// enregistrement : absente = page jamais configurée.
+/// Taille du nom de l'église sur la page de dons et la slide (spec 066). SMALL = rendu d'origine.
+enum GivingNameSize {
+  SMALL
+  MEDIUM
+  LARGE
+}
+
 model GivingPage {
   id                String   @id @default(cuid())
   churchId          String   @unique
@@ -2647,6 +2654,16 @@ model GivingPage {
   socialHandle      String?  @db.VarChar(80)
   /// Adresse courte optionnelle (https), affichée sur la slide et ciblée par son QR code.
   shortUrl          String?  @db.VarChar(255)
+  // Nom de l'église (spec 066) : un réglage pour la page publique, un pour la slide
+  pageChurchNameShown  Boolean        @default(true)
+  pageChurchNameSize   GivingNameSize @default(SMALL)
+  slideChurchNameShown Boolean        @default(true)
+  slideChurchNameSize  GivingNameSize @default(SMALL)
+  // Logo (spec 066) : une image pour fond sombre, écrite uniquement par le service du logo
+  /// Clé de stockage immuable `giving/<churchId>/logo-<uuid>.png` ; null = aucun logo.
+  logoKey              String?        @db.VarChar(255)
+  pageLogoShown        Boolean        @default(true)
+  slideLogoShown       Boolean        @default(true)
   updatedById       String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt

@@ -9,19 +9,21 @@ import { defineModule } from "@/core/module-registry";
  *   - Slide « Dîmes & Offrandes » avec QR code (téléchargement et plein écran)
  *   - Intégrité des coordonnées : journal des modifications et alerte de la comptabilité (ou des
  *     Admins de l'église) à chaque changement d'IBAN, de BIC, de bénéficiaire ou de lien de don
+ *   - Nom et logo de l'église sur la page et la slide (spec 066) : le logo est déposé par le
+ *     serveur, réencodé, et son dépôt alerte comme un changement de coordonnées
  *
- * Dépendances : core (obligatoire). Koinonia n'encaisse rien : la page renvoie vers le service
+ * Dépendances : core (obligatoire), storage (logo). Koinonia n'encaisse rien : la page renvoie vers le service
  * de don en ligne de l'église et affiche ses coordonnées bancaires.
  */
 export const givingModule = defineModule({
   name: "giving",
   version: "1.0.0",
-  dependsOn: ["core"],
+  dependsOn: ["core", "storage"],
 
   routes: {
     authenticated: [{ path: "/dons" }],
     api: [{ path: "/api/giving" }],
-    public: [{ path: "/donner" }],
+    public: [{ path: "/donner" }, { path: "/api/giving/public", method: "GET" }],
   },
 
   permissions: {

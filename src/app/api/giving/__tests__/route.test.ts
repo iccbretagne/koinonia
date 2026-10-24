@@ -109,3 +109,25 @@ describe("/api/giving (spec 065)", () => {
     expect(requireChurchPermission).toHaveBeenCalledWith("giving:manage", "church-1");
   });
 });
+
+describe("/api/giving — nom et logo (spec 066)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    updateGivingPage.mockImplementation(async (input) => input);
+    currentSession = sessionWithRole("ADMIN");
+  });
+
+  it("transmet les réglages du nom et du logo", async () => {
+    const res = await put({ ...validBody, pageChurchNameSize: "LARGE", slideChurchNameShown: false, slideLogoShown: false });
+    expect(res.status).toBe(200);
+    expect(updateGivingPage).toHaveBeenCalledWith(
+      expect.objectContaining({ pageChurchNameSize: "LARGE", slideChurchNameShown: false, slideLogoShown: false }),
+      expect.anything()
+    );
+  });
+
+  it("400 pour une taille inconnue", async () => {
+    expect((await put({ ...validBody, pageChurchNameSize: "XL" })).status).toBe(400);
+    expect(updateGivingPage).not.toHaveBeenCalled();
+  });
+});

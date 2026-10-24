@@ -5,13 +5,31 @@ import { Download, FileText, Landmark, Mail, Maximize, type LucideIcon } from "l
 import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { useSnapshotExport } from "@/components/useSnapshotExport";
-import { displayUrl, fitQrSize, fitUrlLines, fitVerse, QR_MAX, slideVerse } from "./slide-fit";
+import type { GivingNameSize } from "@/generated/prisma/enums";
+import {
+  displayUrl,
+  fitName,
+  fitQrSize,
+  fitUrlLines,
+  fitVerse,
+  QR_MAX,
+  SLIDE_IDENTITY_H,
+  SLIDE_LOGO_H,
+  SLIDE_LOGO_MAX_W,
+  SLIDE_NAME_PX,
+  SLIDE_TITLE_PX,
+  slideVerse,
+} from "./slide-fit";
 
 const SLIDE_W = 1920;
 const SLIDE_H = 1080;
 
 interface GivingSlideProps {
   readonly churchName: string;
+  /** Taille du nom de l'église, `null` s'il est masqué (spec 066). */
+  readonly churchNameSize: GivingNameSize | null;
+  /** Logo (adresse publique, même origine), `null` s'il est absent ou masqué. */
+  readonly logoSrc: string | null;
   /** Adresse visée par le QR code : l'adresse courte, à défaut la page publique Koinonia. */
   readonly target: string;
   /** Adresse courte, seule écrite sous le QR code. */
@@ -47,6 +65,59 @@ function Mean({
   );
 }
 
+/** Nom sur sa ligne : réduit jusqu'à 26 px, puis à la ligne (spec 066). */
+function fitNameElement(el: HTMLElement, start: number) {
+  const apply = (px: number) => {
+    el.style.fontSize = `${px}px`;
+    el.style.letterSpacing = px > SLIDE_NAME_PX.SMALL ? "0.12em" : "0.2em";
+  };
+  el.style.whiteSpace = "nowrap";
+  const { size, wrap } = fitName(start, (px) => {
+    apply(px);
+    return el.scrollWidth <= el.clientWidth;
+  });
+  apply(size);
+  el.style.whiteSpace = wrap ? "normal" : "nowrap";
+}
+
+/** Verset sur une ligne, police réduite, puis retour à la ligne. */
+function fitVerseElement(el: HTMLElement) {
+  if (!el.clientWidth) return;
+  el.style.whiteSpace = "nowrap";
+  const { size, wrap } = fitVerse((px) => {
+    el.style.fontSize = `${px}px`;
+    return el.scrollWidth <= el.clientWidth;
+  });
+  el.style.fontSize = `${size}px`;
+  el.style.whiteSpace = wrap ? "normal" : "nowrap";
+}
+
+/**
+ * Adresse sous le QR code : la plus grande taille qui tient en largeur **sans faire déborder la
+ * slide** ; à défaut, la plus grande qui tient en largeur (le QR code se réduira ensuite).
+ */
+function fitUrlElement(
+  shownUrl: string,
+  els: { url: HTMLElement; line1: HTMLElement; line2: HTMLElement },
+  overflows: () => boolean
+) {
+  const { url, line1, line2 } = els;
+  const apply = (lines: string[], px: number) => {
+    line1.textContent = lines[0];
+    line2.textContent = lines[1] ?? "";
+    line2.hidden = lines.length < 2;
+    url.style.fontSize = `${px}px`;
+  };
+  const fitsWidth = (lines: string[], px: number) => {
+    apply(lines, px);
+    return line1.scrollWidth <= url.clientWidth && line2.scrollWidth <= url.clientWidth;
+  };
+  const fitsAll = (lines: string[], px: number) => fitsWidth(lines, px) && !overflows();
+  let fit = fitUrlLines(shownUrl, fitsAll);
+  if (!fitsAll(fit.lines, fit.size)) fit = fitUrlLines(shownUrl, fitsWidth);
+  apply(fit.lines, fit.size);
+}
+
 /**
  * Slide « Dîmes & Offrandes » (spec 065) : scène 1920 × 1080 en thème sombre Koinonia, mise à
  * l'échelle de son conteneur. Les tailles (adresse, verset, QR code) sont ajustées sur le rendu
@@ -54,6 +125,8 @@ function Mean({
  */
 export default function GivingSlide({
   churchName,
+  churchNameSize,
+  logoSrc,
   target,
   shortUrl,
   qr,
@@ -72,6 +145,7 @@ export default function GivingSlide({
   const urlLine1 = useRef<HTMLSpanElement>(null);
   const urlLine2 = useRef<HTMLSpanElement>(null);
   const verseRef = useRef<HTMLParagraphElement>(null);
+  const nameRef = useRef<HTMLParagraphElement>(null);
 
   const shownUrl = shortUrl ? displayUrl(shortUrl) : null;
 
@@ -85,54 +159,35 @@ export default function GivingSlide({
   });
 
   const fitContent = useCallback(() => {
-    const url = urlRef.current;
-    const line1 = urlLine1.current;
-    const line2 = urlLine2.current;
-    if (shownUrl && url?.clientWidth && line1 && line2) {
-      const { lines, size } = fitUrlLines(shownUrl, (candidate, px) => {
-        line1.textContent = candidate[0];
-        line2.textContent = candidate[1] ?? "";
-        line2.hidden = candidate.length < 2;
-        url.style.fontSize = `${px}px`;
-        return line1.scrollWidth <= url.clientWidth && line2.scrollWidth <= url.clientWidth;
-      });
-      line1.textContent = lines[0];
-      line2.textContent = lines[1] ?? "";
-      line2.hidden = lines.length < 2;
-      url.style.fontSize = `${size}px`;
-    }
-
-    const verseEl = verseRef.current;
-    if (verseEl?.clientWidth) {
-      verseEl.style.whiteSpace = "nowrap";
-      const { size, wrap } = fitVerse((px) => {
-        verseEl.style.fontSize = `${px}px`;
-        return verseEl.scrollWidth <= verseEl.clientWidth;
-      });
-      verseEl.style.fontSize = `${size}px`;
-      verseEl.style.whiteSpace = wrap ? "normal" : "nowrap";
-    }
+    if (churchNameSize && nameRef.current) fitNameElement(nameRef.current, SLIDE_NAME_PX[churchNameSize]);
+    if (verseRef.current) fitVerseElement(verseRef.current);
 
     const slide = slideRef.current;
     const frame = frameRef.current;
     const card = cardRef.current;
     const body = bodyRef.current;
-    if (slide && frame && card && body) {
-      const setQr = (px: number) => {
-        frame.style.width = `${px}px`;
-        frame.style.height = `${px}px`;
-      };
-      const size = fitQrSize((px) => {
-        setQr(px);
-        return (
-          slide.scrollHeight > SLIDE_H ||
-          card.scrollHeight > card.clientHeight + 1 ||
-          body.scrollHeight > body.clientHeight + 1
-        );
-      });
-      setQr(size);
-    }
-  }, [shownUrl]);
+    if (!slide || !frame || !card || !body) return;
+    const setQr = (px: number) => {
+      frame.style.width = `${px}px`;
+      frame.style.height = `${px}px`;
+    };
+    const overflows = () =>
+      slide.scrollHeight > SLIDE_H ||
+      card.scrollHeight > card.clientHeight + 1 ||
+      body.scrollHeight > body.clientHeight + 1;
+
+    // L'adresse se réduit d'abord avec le QR code à pleine taille ; le QR code ne rétrécit qu'en
+    // dernier recours (spec 066). Le nom et le logo, sur leur ligne fixe, n'y touchent jamais.
+    setQr(QR_MAX);
+    const url = urlRef.current;
+    const line1 = urlLine1.current;
+    const line2 = urlLine2.current;
+    if (shownUrl && url?.clientWidth && line1 && line2) fitUrlElement(shownUrl, { url, line1, line2 }, overflows);
+    setQr(fitQrSize((px) => {
+      setQr(px);
+      return overflows();
+    }));
+  }, [shownUrl, churchNameSize]);
 
   const scaleToStage = useCallback(() => {
     const stage = stageRef.current;
@@ -226,8 +281,35 @@ export default function GivingSlide({
           style={{ width: SLIDE_W, height: SLIDE_H, transformOrigin: "0 0" }}
           className="absolute left-0 top-0 flex flex-col bg-bg px-24 pb-[60px] pt-[72px] font-sans text-ink"
         >
-          <p className="font-display text-[26px] font-bold uppercase tracking-[0.2em] text-ink-muted">{churchName}</p>
-          <p className="mt-[18px] font-display text-[120px] font-black uppercase leading-[0.95] tracking-[-0.015em] text-ink">
+          {(churchNameSize || logoSrc) && (
+            // Ligne de hauteur fixe : le nom et le logo ne prennent jamais la place du QR code (spec 066).
+            <div className="mb-[18px] flex shrink-0 items-center gap-6" style={{ minHeight: SLIDE_IDENTITY_H }}>
+              {logoSrc && (
+                // Logo servi par Koinonia (même origine) pour l'export PNG : pas de next/image.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={logoSrc}
+                  alt=""
+                  onLoad={fitContent}
+                  style={{ height: SLIDE_LOGO_H, maxWidth: SLIDE_LOGO_MAX_W }}
+                  className="w-auto shrink-0 object-contain"
+                />
+              )}
+              {churchNameSize && (
+                <p
+                  ref={nameRef}
+                  style={{ fontSize: SLIDE_NAME_PX[churchNameSize] }}
+                  className="min-w-0 flex-1 font-display font-bold uppercase leading-[1.2] tracking-[0.2em] text-ink-muted [overflow-wrap:anywhere]"
+                >
+                  {churchName}
+                </p>
+              )}
+            </div>
+          )}
+          <p
+            style={{ fontSize: SLIDE_TITLE_PX }}
+            className="font-display font-black uppercase leading-[0.95] tracking-[-0.015em] text-ink"
+          >
             Dîmes &amp; <span className="text-brand-text">Offrandes</span>
           </p>
 
@@ -253,20 +335,15 @@ export default function GivingSlide({
                 </svg>
               </div>
               {shownUrl ? (
-                <>
-                  <div
-                    ref={urlRef}
-                    className="w-full overflow-hidden whitespace-nowrap text-center font-display text-[60px] font-black leading-[1.08] text-accent"
-                  >
-                    <span ref={urlLine1} className="block">
-                      {shownUrl}
-                    </span>
-                    <span ref={urlLine2} className="block" hidden />
-                  </div>
-                  <p className="-mt-2.5 text-center text-[30px] font-semibold text-ink-muted">
-                    Scanne le code ou tape l&apos;adresse
-                  </p>
-                </>
+                <div
+                  ref={urlRef}
+                  className="w-full shrink-0 overflow-hidden whitespace-nowrap text-center font-display text-[60px] font-black leading-[1.08] text-accent"
+                >
+                  <span ref={urlLine1} className="block">
+                    {shownUrl}
+                  </span>
+                  <span ref={urlLine2} className="block" hidden />
+                </div>
               ) : (
                 <p className="text-center text-[36px] font-semibold text-ink">Scanne le code avec ton téléphone</p>
               )}

@@ -2,12 +2,13 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ExternalLink, Presentation } from "lucide-react";
+import { ExternalLink, Presentation, TriangleAlert } from "lucide-react";
 import type { GivingSettings } from "@/modules/giving";
 import {
   formatIban,
   givingPageSchema,
   ibanError,
+  missingForDisplay,
   normalizeIban,
   toPublicGivingPage,
   type GivingPageContent,
@@ -15,6 +16,10 @@ import {
 import { Alert, Button, Input, Textarea, useToast } from "@/components/ui";
 import { buttonClasses } from "@/components/ui/button-classes";
 import GivingPageView from "@/app/donner/_components/GivingPageView";
+import GivingPageHeader from "@/app/donner/_components/GivingPageHeader";
+import Switch from "./Switch";
+import ChurchIdentitySection, { settingsLogoSrc, type IdentitySettings } from "./ChurchIdentitySection";
+import type { GivingNameSize } from "@/generated/prisma/enums";
 
 type BoolKey = {
   [K in keyof GivingPageContent]: GivingPageContent[K] extends boolean ? K : never;
@@ -23,7 +28,10 @@ type TextKey = Exclude<keyof GivingPageContent, BoolKey>;
 type Draft = Record<BoolKey, boolean> & Record<TextKey, string>;
 type Errors = Partial<Record<keyof GivingPageContent, string>>;
 
-const BOOL_KEYS: ReadonlySet<string> = new Set<BoolKey>(["enabled", "onlineEnabled", "transferEnabled", "onsiteEnabled", "taxReceiptEnabled"]);
+const BOOL_KEYS: ReadonlySet<string> = new Set<BoolKey>([
+  "enabled", "onlineEnabled", "transferEnabled", "onsiteEnabled", "taxReceiptEnabled",
+  "pageChurchNameShown", "slideChurchNameShown", "pageLogoShown", "slideLogoShown",
+]);
 
 function toDraft(content: GivingPageContent): Draft {
   const draft = {} as Record<string, string | boolean>;
@@ -46,6 +54,23 @@ function toPreviewContent(draft: Draft): GivingPageContent {
   return content as unknown as GivingPageContent;
 }
 
+/** Réglages du nom et du logo d'un support, lus dans le brouillon (spec 066). */
+function identityOf(draft: Draft, support: "page" | "slide"): IdentitySettings {
+  return {
+    logoShown: draft[`${support}LogoShown`],
+    nameShown: draft[`${support}ChurchNameShown`],
+    nameSize: draft[`${support}ChurchNameSize`] as GivingNameSize,
+  };
+}
+
+function withIdentity(draft: Draft, support: "page" | "slide", patch: Partial<IdentitySettings>): Draft {
+  const next = { ...draft };
+  if (patch.logoShown !== undefined) next[`${support}LogoShown`] = patch.logoShown;
+  if (patch.nameShown !== undefined) next[`${support}ChurchNameShown`] = patch.nameShown;
+  if (patch.nameSize !== undefined) next[`${support}ChurchNameSize`] = patch.nameSize;
+  return next;
+}
+
 function issuesToErrors(issues: readonly { path: readonly (string | number)[]; message: string }[]): Errors {
   const errors: Errors = {};
   for (const issue of issues) {
@@ -55,42 +80,24 @@ function issuesToErrors(issues: readonly { path: readonly (string | number)[]; m
   return errors;
 }
 
-function Switch({
-  checked,
-  onChange,
-  label,
-}: {
-  readonly checked: boolean;
-  readonly onChange: (next: boolean) => void;
-  readonly label: string;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
-        checked ? "bg-brand" : "bg-control-line"
-      }`}
-    >
-      <span
-        className={`inline-block size-4 rounded-full bg-surface transition-transform ${checked ? "translate-x-6" : "translate-x-1"}`}
-      />
-    </button>
-  );
+/** « le bénéficiaire et l'IBAN sont vides » : explique une section activée absente de l'aperçu. */
+function missingNotice(labels: readonly string[] | undefined): string | undefined {
+  if (!labels?.length) return undefined;
+  const list = labels.length > 1 ? `${labels.slice(0, -1).join(", ")} et ${labels.at(-1)}` : labels[0];
+  return `Absente de la page publique tant que ${list} ${labels.length > 1 ? "sont vides" : "est vide"}.`;
 }
 
 function Section({
   title,
   description,
   toggle,
+  notice,
   children,
 }: {
   readonly title: string;
   readonly description?: string;
   readonly toggle?: { readonly checked: boolean; readonly onChange: (next: boolean) => void };
+  readonly notice?: string;
   readonly children?: ReactNode;
 }) {
   const open = toggle ? toggle.checked : true;
@@ -103,7 +110,17 @@ function Section({
         </div>
         {toggle && <Switch checked={toggle.checked} onChange={toggle.onChange} label={`Afficher : ${title}`} />}
       </div>
-      {open && children && <div className="mt-4 flex flex-col gap-4">{children}</div>}
+      {open && children && (
+        <div className="mt-4 flex flex-col gap-4">
+          {notice && (
+            <p className="flex items-start gap-2 rounded-control bg-warning-soft px-3 py-2 text-[13px] leading-[18px] text-ink">
+              <TriangleAlert aria-hidden="true" className="mt-px size-4 shrink-0 text-warning" />
+              {notice}
+            </p>
+          )}
+          {children}
+        </div>
+      )}
     </section>
   );
 }
@@ -112,15 +129,29 @@ function Section({
  * Paramétrage de la page de dons (spec 065) : une section par bloc, aperçu en direct (colonne à
  * droite sur grand écran, onglet sur mobile). La validation est la même que celle de l'API.
  */
-export default function GivingSettingsClient({ settings }: { readonly settings: GivingSettings }) {
+export default function GivingSettingsClient({
+  settings,
+  churchSettingsHref,
+}: {
+  readonly settings: GivingSettings;
+  /** Lien vers les paramètres de l'église, si l'utilisateur peut les modifier. */
+  readonly churchSettingsHref: string | null;
+}) {
   const toast = useToast();
   const [draft, setDraft] = useState<Draft>(() => toDraft(settings.content));
   const [savedEnabled, setSavedEnabled] = useState(settings.configured && settings.content.enabled);
   const [errors, setErrors] = useState<Errors>({});
   const [saving, setSaving] = useState(false);
   const [mobileView, setMobileView] = useState<"form" | "preview">("form");
+  const [logoVersion, setLogoVersion] = useState(settings.logoVersion);
 
-  const preview = useMemo(() => toPublicGivingPage(settings.churchName, toPreviewContent(draft)), [draft, settings.churchName]);
+  const logoSrc = settingsLogoSrc(settings.churchId, logoVersion);
+  const previewContent = useMemo(() => toPreviewContent(draft), [draft]);
+  const preview = useMemo(
+    () => toPublicGivingPage(settings.churchName, previewContent, logoSrc),
+    [previewContent, settings.churchName, logoSrc]
+  );
+  const missing = useMemo(() => missingForDisplay(previewContent), [previewContent]);
 
   function set<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((d) => ({ ...d, [key]: value }));
@@ -186,8 +217,18 @@ export default function GivingSettingsClient({ settings }: { readonly settings: 
     <div className="flex flex-col gap-4">
       {!settings.hasAccountingEmails && (
         <Alert tone="warning" title="Aucune adresse comptable configurée.">
-          Les alertes de changement de coordonnées iront aux Admins de l&apos;église. Ajoute l&apos;adresse de la
-          comptabilité dans les paramètres de l&apos;église.
+          Les alertes de changement de coordonnées iront aux Admins de l&apos;église.{" "}
+          {churchSettingsHref ? (
+            <>
+              Ajoute l&apos;adresse de la comptabilité dans les{" "}
+              <Link href={churchSettingsHref} className="font-semibold text-brand-text underline underline-offset-2">
+                paramètres de l&apos;église
+              </Link>
+              .
+            </>
+          ) : (
+            "Demande à un Admin de l'église d'ajouter l'adresse de la comptabilité dans ses paramètres."
+          )}
         </Alert>
       )}
 
@@ -202,10 +243,15 @@ export default function GivingSettingsClient({ settings }: { readonly settings: 
             Slide de projection
           </Link>
         ) : (
-          <span aria-disabled="true" title="Active et enregistre la page d'abord" className={buttonClasses("secondary")}>
-            <Presentation aria-hidden="true" className="size-4" />
-            Slide de projection
-          </span>
+          <>
+            <span aria-disabled="true" aria-describedby="slide-unavailable" className={buttonClasses("secondary")}>
+              <Presentation aria-hidden="true" className="size-4" />
+              Slide de projection
+            </span>
+            <p id="slide-unavailable" className="w-full text-[13px] leading-[18px] text-ink-muted">
+              Active et enregistre la page pour projeter la slide.
+            </p>
+          </>
         )}
       </div>
 
@@ -234,13 +280,13 @@ export default function GivingSettingsClient({ settings }: { readonly settings: 
             <Textarea label="Introduction" rows={3} {...text("intro")} />
           </Section>
 
-          <Section title="Don en ligne" toggle={{ checked: draft.onlineEnabled, onChange: (v) => set("onlineEnabled", v) }}>
+          <Section title="Don en ligne" notice={missingNotice(missing.online)} toggle={{ checked: draft.onlineEnabled, onChange: (v) => set("onlineEnabled", v) }}>
             <Input label="Lien de don en ligne" type="url" placeholder="https://" {...text("onlineUrl")} />
             <Textarea label="Explication" rows={2} {...text("onlineDescription")} />
             <Input label="Note sous le bouton" {...text("onlineNote")} />
           </Section>
 
-          <Section title="Virement bancaire" toggle={{ checked: draft.transferEnabled, onChange: (v) => set("transferEnabled", v) }}>
+          <Section title="Virement bancaire" notice={missingNotice(missing.transfer)} toggle={{ checked: draft.transferEnabled, onChange: (v) => set("transferEnabled", v) }}>
             <Input label="Bénéficiaire" {...text("beneficiary")} />
             <Input
               label="IBAN"
@@ -259,14 +305,24 @@ export default function GivingSettingsClient({ settings }: { readonly settings: 
             />
           </Section>
 
-          <Section title="Sur place, au culte" toggle={{ checked: draft.onsiteEnabled, onChange: (v) => set("onsiteEnabled", v) }}>
+          <Section title="Sur place, au culte" notice={missingNotice(missing.onsite)} toggle={{ checked: draft.onsiteEnabled, onChange: (v) => set("onsiteEnabled", v) }}>
             <Input label="Ordre des chèques" {...text("checkPayee")} />
             <Textarea label="Consigne" rows={2} {...text("onsiteText")} />
           </Section>
 
-          <Section title="Reçu fiscal" toggle={{ checked: draft.taxReceiptEnabled, onChange: (v) => set("taxReceiptEnabled", v) }}>
+          <Section title="Reçu fiscal" notice={missingNotice(missing.taxReceipt)} toggle={{ checked: draft.taxReceiptEnabled, onChange: (v) => set("taxReceiptEnabled", v) }}>
             <Textarea label="Texte" rows={4} {...text("taxReceiptText")} />
           </Section>
+
+          <ChurchIdentitySection
+            churchId={settings.churchId}
+            logoVersion={logoVersion}
+            onLogoChange={setLogoVersion}
+            page={identityOf(draft, "page")}
+            slide={identityOf(draft, "slide")}
+            onPageChange={(patch) => setDraft((d) => withIdentity(d, "page", patch))}
+            onSlideChange={(patch) => setDraft((d) => withIdentity(d, "slide", patch))}
+          />
 
           <Section title="Verset et pied de page" description="Le verset apparaît aussi en bas de la slide.">
             <Textarea label="Verset" rows={2} {...text("verseText")} />
@@ -286,7 +342,8 @@ export default function GivingSettingsClient({ settings }: { readonly settings: 
             />
           </Section>
 
-          <div className="sticky bottom-0 -mx-1 flex justify-end bg-bg/90 px-1 py-3">
+          {/* Au-dessus de la barre du bas sur mobile (64 px + bordure, comme BulkActionBar). */}
+          <div className="sticky bottom-[calc(65px+env(safe-area-inset-bottom))] -mx-1 flex justify-end border-t border-line bg-bg px-1 py-3 md:bottom-0">
             <Button type="submit" disabled={saving}>
               {saving ? "Enregistrement…" : "Enregistrer"}
             </Button>
@@ -302,8 +359,12 @@ export default function GivingSettingsClient({ settings }: { readonly settings: 
           </p>
           <div className="overflow-hidden rounded-card border border-line bg-surface-sunken">
             <div className="bg-brand px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-widest text-on-brand/70">{settings.churchName}</p>
-              <p className="font-display text-[22px] font-bold leading-7 text-on-brand">Donner</p>
+              <GivingPageHeader
+                churchName={preview.churchName}
+                nameSize={preview.churchNameSize}
+                logoSrc={preview.logo?.src ?? null}
+                compact
+              />
             </div>
             <div className="p-4">
               <GivingPageView page={preview} />

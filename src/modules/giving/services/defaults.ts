@@ -31,5 +31,11 @@ export function defaultGivingContent(churchName: string): GivingPageContent {
     address: null,
     socialHandle: null,
     shortUrl: null,
+    pageChurchNameShown: true,
+    pageChurchNameSize: "SMALL",
+    slideChurchNameShown: true,
+    slideChurchNameSize: "SMALL",
+    pageLogoShown: true,
+    slideLogoShown: true,
   };
 }

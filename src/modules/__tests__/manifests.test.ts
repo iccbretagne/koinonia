@@ -50,7 +50,7 @@ const EXPECTED_DEPENDENCIES: Record<string, string[]> = {
   care: ["core"],
   accounting: ["core", "planning"],
   jobs: ["core"],
-  giving: ["core"],
+  giving: ["core", "storage"],
 };
 
 /**

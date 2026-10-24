@@ -64,3 +64,25 @@ export function fitQrSize(overflows: (size: number) => boolean): number {
   while (size > QR_MIN && overflows(size)) size -= 10;
   return size;
 }
+
+/** Titre « Dîmes & Offrandes » (spec 066 : 120 → 100 px pour laisser la place au nom et au logo). */
+export const SLIDE_TITLE_PX = 100;
+
+/** Tailles du nom de l'église sur la slide (spec 066). SMALL = rendu d'origine. */
+export const SLIDE_NAME_PX = { SMALL: 26, MEDIUM: 40, LARGE: 56 } as const;
+/** Hauteur fixe de la ligne du nom et du logo : une ligne du nom en Grand (56 × 1,2). */
+export const SLIDE_IDENTITY_H = 68;
+export const SLIDE_LOGO_H = 64;
+export const SLIDE_LOGO_MAX_W = 480;
+
+/**
+ * Nom de l'église sur sa ligne : de la taille choisie jusqu'à 26 px par pas de 2 px ; s'il ne
+ * tient toujours pas, retour à la ligne à 26 px (jamais coupé). `fits(size)` dit si le nom tient
+ * sur une ligne à cette taille.
+ */
+export function fitName(start: number, fits: (size: number) => boolean): { size: number; wrap: boolean } {
+  for (let size = start; size >= SLIDE_NAME_PX.SMALL; size -= 2) {
+    if (fits(size)) return { size, wrap: false };
+  }
+  return { size: SLIDE_NAME_PX.SMALL, wrap: true };
+}
