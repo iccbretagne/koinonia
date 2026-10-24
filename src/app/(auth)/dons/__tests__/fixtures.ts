@@ -1,0 +1,33 @@
+import type { GivingPageContent } from "@/modules/giving/schemas";
+
+/** Contenu complet d'une page de dons enregistrée, pour les tests du paramétrage. */
+export const content: GivingPageContent = {
+  enabled: true,
+  intro: "Merci pour votre générosité.",
+  onlineEnabled: false,
+  onlineUrl: null,
+  onlineDescription: null,
+  onlineNote: null,
+  transferEnabled: true,
+  beneficiary: "ICC Rennes",
+  iban: "FR7630006000011234567890189",
+  bic: null,
+  transferReference: "Dîme Prénom Nom",
+  onsiteEnabled: true,
+  checkPayee: "ICC Rennes",
+  onsiteText: null,
+  taxReceiptEnabled: false,
+  taxReceiptText: null,
+  verseText: "Dieu aime celui qui donne avec joie.",
+  verseReference: "2 Corinthiens 9:7",
+  contactEmail: null,
+  address: null,
+  socialHandle: null,
+  shortUrl: null,
+  pageChurchNameShown: true,
+  pageChurchNameSize: "SMALL",
+  slideChurchNameShown: true,
+  slideChurchNameSize: "LARGE",
+  pageLogoShown: true,
+  slideLogoShown: true,
+};

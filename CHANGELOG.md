@@ -9,6 +9,7 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 ### Ajouté
 
 - Nom et logo de l'église sur la page « Donner » et sur la slide (spec 066). Le nom s'affiche ou se masque, en taille Petit (rendu actuel), Moyen ou Grand, réglé séparément pour la page et pour la slide. Un logo pour fond sombre (PNG, JPEG ou WebP, 2 Mo au plus) se dépose dans « Page de dons » et s'affiche sur chaque support selon son propre interrupteur ; le déposer, le remplacer ou le retirer est journalisé et prévient la comptabilité. Sur la slide, le titre est un peu plus petit et la ligne « Scanne le code ou tape l'adresse » disparaît : le QR code garde toute sa taille, même avec un logo, un grand nom et une adresse longue.
+- Paramétrage de la page de dons réorganisé (spec 067) : l'état de publication (« Publiée » / « Non publiée ») est visible en tête d'écran ; un onglet par support, « Page publique » et « Slide de projection », regroupe ses réglages et montre son aperçu — la slide se prévisualise en direct, telle qu'elle sera projetée. Les modifications non enregistrées sont signalées, et quitter l'écran sans les enregistrer demande confirmation.
 
 ### Corrigé
 
