@@ -41,7 +41,7 @@
     "jspdf": "^4.2.1",
     "lucide-react": "^1.52.0",
     "mariadb": "^3.5.4",
-    "next": "^16.4.0",
+    "next": "^16.4.3",
     "next-auth": "5.0.0-beta.32",
     "nodemailer": "^10.0.13",
     "pino": "^10.4.0",
@@ -54,10 +54,10 @@
     "sharp": "^0.35.5",
     "swagger-ui-react": "^5.33.1",
     "tailwindcss": "^4.0.0",
-    "zod": "^3.24.0"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@asteasolutions/zod-to-openapi": "^7.3.4",
+    "@asteasolutions/zod-to-openapi": "^9.1.0",
     "@faker-js/faker": "^10.6.0",
     "@types/archiver": "^7.0.0",
     "@types/node": "^25.9.9",
@@ -70,7 +70,7 @@
     "dependency-cruiser": "^17.4.3",
     "esbuild": "^0.28.2",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.4.0",
+    "eslint-config-next": "^16.4.3",
     "tsx": "^4.23.15",
     "typescript": "^5.7.0",
     "vitest": "^4.1.0"
