@@ -517,6 +517,12 @@ renommé spec 052) :
   affiché par support selon son interrupteur. Déposer, remplacer ou retirer le logo est journalisé
   et alerte la comptabilité comme un changement d'IBAN ; le logo est servi par Koinonia
   (`/api/giving/public/<slug>/logo`, page active uniquement)
+- Organisation de l'écran `/dons` (spec 067) : bloc « Publication » en tête (pastille sur la
+  version enregistrée, « Sera publiée / retirée à l'enregistrement » tant que le brouillon diffère),
+  onglets « Page publique » / « Slide de projection » (`?support=slide`) qui pilotent formulaire et
+  aperçu — l'aperçu de la slide réutilise la vraie scène via `toSlideProps`, seule traduction
+  contenu → slide. Modifications non enregistrées signalées dans la barre collante, garde à la
+  sortie (lien interne, fermeture, rechargement ; ni bouton « Précédent » ni palette ⌘K)
 
 **Spécificités du Comptable** (`ACCOUNTANT`) :
 - Seul rôle (hors Super Admin/Admin) avec `accounting:manage` : traite les demandes financières

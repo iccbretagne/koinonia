@@ -6,6 +6,7 @@ import { EmptyState, PageHeader } from "@/components/ui";
 import { buttonClasses } from "@/components/ui/button-classes";
 import GivingSlide from "./GivingSlide";
 import { qrPath } from "./qr";
+import { toSlideProps } from "./slide-props";
 
 export default async function GivingSlidePage() {
   const session = await requireAuth();
@@ -19,6 +20,7 @@ export default async function GivingSlidePage() {
   }
 
   const { churchName, content, publicUrl, publicLogoSrc } = await getGivingSettings(churchId);
+  const slide = toSlideProps(content, { churchName, publicUrl, logoSrc: publicLogoSrc });
 
   return (
     <div className="flex flex-col gap-6">
@@ -27,24 +29,13 @@ export default async function GivingSlidePage() {
         title="Slide de projection"
         description="À projeter pendant le temps des offrandes : le QR code mène à la page de dons."
         actions={
-          <Link href="/dons" className={buttonClasses("secondary")}>
+          <Link href="/dons?support=slide" className={buttonClasses("secondary")}>
             Paramétrage
           </Link>
         }
       />
       {content.enabled ? (
-        <GivingSlide
-          churchName={churchName}
-          churchNameSize={content.slideChurchNameShown ? content.slideChurchNameSize : null}
-          logoSrc={content.slideLogoShown ? publicLogoSrc : null}
-          target={content.shortUrl ?? publicUrl}
-          shortUrl={content.shortUrl}
-          qr={qrPath(content.shortUrl ?? publicUrl)}
-          transfer={content.transferEnabled}
-          onsite={content.onsiteEnabled}
-          checkPayee={content.onsiteEnabled ? content.checkPayee : null}
-          verse={content.verseText ? { text: content.verseText, reference: content.verseReference } : null}
-        />
+        <GivingSlide {...slide} qr={qrPath(slide.target)} />
       ) : (
         <EmptyState
           icon={Presentation}
