@@ -23,6 +23,7 @@ import SupportIdentity, { type IdentitySettings } from "./SupportIdentity";
 import PublicationBlock from "./PublicationBlock";
 import SlideSettings from "./SlideSettings";
 import SlidePreview from "./SlidePreview";
+import WhatsAppMessage from "./WhatsAppMessage";
 import { isDirty, toDraft, toPreviewContent, type Draft, type TextKey } from "./settings-state";
 import { useLeaveGuard } from "./use-leave-guard";
 
@@ -98,6 +99,7 @@ export default function GivingSettingsClient({
 
   const logoSrc = settingsLogoSrc(settings.churchId, logoVersion);
   const previewContent = useMemo(() => toPreviewContent(draft), [draft]);
+  const savedContent = useMemo(() => toPreviewContent(saved), [saved]);
   const preview = useMemo(
     () => toPublicGivingPage(settings.churchName, previewContent, logoSrc),
     [previewContent, settings.churchName, logoSrc]
@@ -207,6 +209,14 @@ export default function GivingSettingsClient({
         draftEnabled={draft.enabled}
         onToggle={(v) => set("enabled", v)}
         publicUrl={settings.publicUrl}
+        actions={
+          <WhatsAppMessage
+            churchId={settings.churchId}
+            content={savedContent}
+            publicUrl={savedEnabled ? settings.publicUrl : null}
+            dirty={dirty}
+          />
+        }
       />
 
       {!settings.hasAccountingEmails && (

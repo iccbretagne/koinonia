@@ -290,12 +290,13 @@ export default function GivingSlideStage({
             )}
             {checkPayee && (
               <Mean icon={FileText} iconClass="bg-success-soft text-success" title="Par chèque">
-                À l&apos;ordre de <b className="text-ink">{checkPayee}</b>
+                Dans l&apos;enveloppe remise par <b className="text-ink">l&apos;équipe d&apos;accueil</b>, à l&apos;ordre de{" "}
+                <b className="text-ink">{checkPayee}</b>
               </Mean>
             )}
             {onsite && (
               <Mean icon={Mail} iconClass="bg-warning-soft text-warning" title="En espèces">
-                Dans l&apos;enveloppe remise par <b className="text-ink">l&apos;accueil</b>
+                Dans l&apos;enveloppe remise par <b className="text-ink">l&apos;équipe d&apos;accueil</b>
               </Mean>
             )}
           </div>
