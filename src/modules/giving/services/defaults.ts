@@ -21,7 +21,7 @@ export function defaultGivingContent(churchName: string): GivingPageContent {
     onsiteEnabled: false,
     checkPayee: churchName,
     onsiteText:
-      "Chèques et espèces se déposent dans l'enveloppe remise par l'accueil. Indique ton nom dessus pour recevoir ton reçu fiscal.",
+      "Indique ton nom sur l'enveloppe pour recevoir ton reçu fiscal.",
     taxReceiptEnabled: false,
     taxReceiptText: null,
     verseText:

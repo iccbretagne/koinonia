@@ -8,11 +8,13 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ### Ajouté
 
+- Message WhatsApp « Dîmes / Offrandes » généré depuis la page de dons (« Page de dons » › « Message WhatsApp ») : coordonnées du virement, motif à préciser avec un exemple, lien de don en ligne, consigne pour les chèques et espèces, lien vers la page publique et signature. Il reprend la version enregistrée de la page, reste modifiable avant d'être copié ou ouvert dans WhatsApp, et la signature est retenue sur l'appareil.
 - Nom et logo de l'église sur la page « Donner » et sur la slide (spec 066). Le nom s'affiche ou se masque, en taille Petit (rendu actuel), Moyen ou Grand, réglé séparément pour la page et pour la slide. Un logo pour fond sombre (PNG, JPEG ou WebP, 2 Mo au plus) se dépose dans « Page de dons » et s'affiche sur chaque support selon son propre interrupteur ; le déposer, le remplacer ou le retirer est journalisé et prévient la comptabilité. Sur la slide, le titre est un peu plus petit et la ligne « Scanne le code ou tape l'adresse » disparaît : le QR code garde toute sa taille, même avec un logo, un grand nom et une adresse longue.
 - Paramétrage de la page de dons réorganisé (spec 067) : l'état de publication (« Publiée » / « Non publiée ») est visible en tête d'écran ; un onglet par support, « Page publique » et « Slide de projection », regroupe ses réglages et montre son aperçu — la slide se prévisualise en direct, telle qu'elle sera projetée. Les modifications non enregistrées sont signalées, et quitter l'écran sans les enregistrer demande confirmation.
 
 ### Corrigé
 
+- Page de dons et slide : chèques et espèces sont clairement à mettre dans l'enveloppe remise par l'équipe d'accueil, avec l'ordre des chèques. La consigne proposée par défaut ne répète plus cette mention.
 - Paramétrage de la page de dons : sur mobile, le bouton « Enregistrer » n'est plus caché par la barre du bas ; une section activée mais incomplète (sans lien, sans IBAN…) dit ce qui lui manque au lieu de disparaître de l'aperçu sans explication ; « Afficher le logo » apparaît éteint tant qu'aucun logo n'est déposé ; la slide indisponible explique pourquoi en clair, et l'alerte d'adresse comptable manquante mène aux paramètres de l'église (ou invite à s'adresser à un Admin).
 - Sur la slide de dons, une adresse longue pouvait être coupée sans que rien ne le signale : elle reste désormais toujours lisible entière, sur deux lignes au besoin, en réduisant sa taille avant celle du QR code.
 

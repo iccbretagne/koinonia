@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { Clock, ExternalLink, Presentation } from "lucide-react";
 import { StatusChip } from "@/components/ui";
@@ -16,11 +17,14 @@ export default function PublicationBlock({
   draftEnabled,
   onToggle,
   publicUrl,
+  actions,
 }: {
   readonly savedEnabled: boolean;
   readonly draftEnabled: boolean;
   readonly onToggle: (next: boolean) => void;
   readonly publicUrl: string;
+  /** Actions supplémentaires (message WhatsApp), à la suite des liens. */
+  readonly actions?: ReactNode;
 }) {
   const status = publicationStatus(savedEnabled, draftEnabled);
   return (
@@ -69,6 +73,7 @@ export default function PublicationBlock({
             </p>
           </>
         )}
+        {actions}
       </div>
     </section>
   );

@@ -105,7 +105,11 @@ export default function GivingPageView({ page }: { readonly page: PublicGivingPa
         <SectionCard icon={Mail} iconClass="bg-success-soft text-success" title="Sur place, au culte">
           <div className="flex flex-col gap-2 text-[15px] leading-[22px] text-ink">
             <p>
-              Chèque à l&apos;ordre de <strong className="font-semibold">{onsite.checkPayee}</strong>.
+              Chèques et espèces sont à mettre dans <strong className="font-semibold">l&apos;enveloppe remise par l&apos;équipe
+              d&apos;accueil</strong>.
+            </p>
+            <p>
+              Chèques à l&apos;ordre de <strong className="font-semibold">{onsite.checkPayee}</strong>.
             </p>
             {onsite.text && <p className="text-ink-muted">{onsite.text}</p>}
           </div>
