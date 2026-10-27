@@ -1,7 +1,7 @@
 # Plan technique — Messages système (annonces internes)
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-10-27
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
