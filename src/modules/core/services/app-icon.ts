@@ -124,6 +124,8 @@ let versionCache: { value: string; at: number } | null = null;
 /** Version du jeu en vigueur, `"default"` sans icône déposée. Cache mémoire de 60 s. */
 export async function getAppIconVersion(): Promise<string> {
   if (versionCache && Date.now() - versionCache.at < VERSION_TTL_MS) return versionCache.value;
+  // Pré-rendu au build : pas de base, l'icône livrée suffit (la page est servie à la demande).
+  if (process.env.NEXT_PHASE === "phase-production-build") return "default";
   let value: string;
   try {
     const prisma = await db();

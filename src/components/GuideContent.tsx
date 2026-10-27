@@ -462,8 +462,16 @@ const FEATURES: Feature[] = [
   },
 
   {
+    name: "Installer l'application",
+    description: "Installez Koinonia sur votre téléphone ou votre ordinateur : une icône sur l'écran d'accueil, l'application en plein écran et, sur iPhone, les notifications. « Installer l'application » (menu du compte, carte de l'Accueil ou adresse /installer) reconnaît votre appareil et n'affiche que vos étapes ; sur Android et sur ordinateur, un bouton installe en un appui. Le lien se partage sur WhatsApp, même à quelqu'un qui ne s'est pas encore connecté, et un QR code permet de passer de l'ordinateur au téléphone.",
+    category: "Profil",
+    screenshotTitle: "Installer l'application",
+    screenshotFile: "guide-install-app.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "edit" },
+  },
+  {
     name: "Notifications sur le téléphone",
-    description: "Recevez les notifications de Koinonia en bandeau sur votre téléphone ou votre ordinateur. Sur iPhone, installez d'abord Koinonia sur l'écran d'accueil (Safari › Partager › « Sur l'écran d'accueil ») ; sur Android, depuis le menu de Chrome (« Installer l'application »). Dans « Mes notifications », touchez « Activer les notifications sur cet appareil », puis choisissez domaine par domaine ce qui arrive par email et sur l'appareil.",
+    description: "Recevez les notifications de Koinonia en bandeau sur votre téléphone ou votre ordinateur. Sur iPhone, installez d'abord Koinonia sur l'écran d'accueil : la page « Installer l'application » (menu du compte) montre les étapes de votre appareil. Dans « Mes notifications », touchez « Activer les notifications sur cet appareil », puis choisissez domaine par domaine ce qui arrive par email et sur l'appareil.",
     category: "Profil",
     screenshotTitle: "Notifications sur l'appareil",
     screenshotFile: "guide-notifications-push.png",

@@ -43,7 +43,7 @@ export const coreModule = defineModule({
     ],
     // Icône de l'application et manifeste PWA (spec 069) : servis à tous, y compris avant la
     // connexion (onglet de la page de connexion, installation).
-    public: [{ path: "/api/app-icon", method: "GET" }],
+    public: [{ path: "/api/app-icon", method: "GET" }, { path: "/installer" }],
   },
 
   permissions: {

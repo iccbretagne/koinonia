@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { GivingPageContent } from "@/modules/giving/schemas";
 import GivingSlideStage from "./slide/GivingSlideStage";
-import { qrPath } from "./slide/qr";
+import { qrPath } from "@/lib/qr";
 import { toSlideProps } from "./slide/slide-props";
 
 /** Valeur qui ne suit la source qu'après `delay` ms sans changement. */

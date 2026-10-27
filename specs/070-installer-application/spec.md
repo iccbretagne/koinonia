@@ -1,7 +1,7 @@
 # Spec — Installer Koinonia sur son appareil
 
 - **Numéro** : 070
-- **Statut** : Brouillon
+- **Statut** : Implémentée
 - **Créée le** : 2026-10-27
 - **Branche suggérée** : `feat/installer-application`
 - **Prolonge** : [spec 068 — notifications natives](../068-notifications-push/spec.md), qui
@@ -133,32 +133,32 @@ La page d'installation est atteignable :
 
 ## Critères d'acceptation
 
-- [ ] La page d'installation s'ouvre à une adresse courte et stable, connecté ou non, sans
+- [x] La page d'installation s'ouvre à une adresse courte et stable, connecté ou non, sans
   montrer de donnée d'église ni de personne.
-- [ ] Sur iPhone ou iPad dans Safari, la page montre les 3 étapes illustrées et rappelle que
+- [x] Sur iPhone ou iPad dans Safari, la page montre les 3 étapes illustrées et rappelle que
   l'installation est nécessaire pour les notifications.
-- [ ] Sur iPhone ou iPad dans un autre navigateur ou dans une application (WhatsApp…), la page
+- [x] Sur iPhone ou iPad dans un autre navigateur ou dans une application (WhatsApp…), la page
   demande d'ouvrir le lien dans Safari et permet de copier le lien.
-- [ ] Un iPad que Safari présente comme un Mac reçoit les étapes iPad.
-- [ ] Sur Android et sur ordinateur, quand le navigateur le permet, un bouton « Installer
+- [x] Un iPad que Safari présente comme un Mac reçoit les étapes iPad.
+- [x] Sur Android et sur ordinateur, quand le navigateur le permet, un bouton « Installer
   Koinonia » ouvre la fenêtre d'installation du système ; sinon, les étapes manuelles s'affichent.
-- [ ] Sur Android dans le navigateur intégré d'une application, la page demande d'ouvrir le lien
+- [x] Sur Android dans le navigateur intégré d'une application, la page demande d'ouvrir le lien
   dans Chrome.
-- [ ] Sur un navigateur qui ne permet pas l'installation, la page le dit clairement et propose
+- [x] Sur un navigateur qui ne permet pas l'installation, la page le dit clairement et propose
   une alternative.
-- [ ] Ouverte depuis l'application installée, la page indique que Koinonia est déjà installée et
+- [x] Ouverte depuis l'application installée, la page indique que Koinonia est déjà installée et
   mène vers « Mes notifications ».
-- [ ] « Autre appareil ? » donne accès aux étapes de toutes les situations.
-- [ ] Sur ordinateur, un QR code mène à la page d'installation ; il n'est pas affiché sur
+- [x] « Autre appareil ? » donne accès aux étapes de toutes les situations.
+- [x] Sur ordinateur, un QR code mène à la page d'installation ; il n'est pas affiché sur
   téléphone.
-- [ ] « Partager ce lien » ouvre le partage du téléphone, ou copie le lien à défaut.
-- [ ] Sur l'Accueil, la carte d'invitation n'apparaît que si l'appareil permet l'installation et
+- [x] « Partager ce lien » ouvre le partage du téléphone, ou copie le lien à défaut.
+- [x] Sur l'Accueil, la carte d'invitation n'apparaît que si l'appareil permet l'installation et
   que Koinonia n'y est pas ouverte comme application installée.
-- [ ] « Plus tard » masque la carte sur cet appareil pendant 30 jours, sans la masquer sur les
+- [x] « Plus tard » masque la carte sur cet appareil pendant 30 jours, sans la masquer sur les
   autres appareils.
-- [ ] La page est atteignable depuis le menu du compte, le guide, « Mes notifications » (sur
+- [x] La page est atteignable depuis le menu du compte, le guide, « Mes notifications » (sur
   iPhone non installé) et la recherche.
-- [ ] Les illustrations montrent l'icône de l'application en vigueur.
+- [x] Les illustrations montrent l'icône de l'application en vigueur.
 
 ## Hors périmètre
 

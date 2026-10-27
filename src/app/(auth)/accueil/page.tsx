@@ -30,6 +30,7 @@ import { loadMyPlanning } from "../planning/my-planning-data";
 import { loadMyRequests } from "../requests/my-requests-data";
 import { REQUEST_TYPE_LABEL, requestStatus, requestTypeIcon } from "../requests/request-display";
 import { pickFirstName } from "./first-name";
+import InstallCard from "./InstallCard";
 import { countUnstaffedDepartments, getStaffingGapViewer } from "@/modules/planning";
 
 /**
@@ -466,6 +467,8 @@ export default async function TodayPage() {
           {name ? `Bonjour ${name}` : "Bonjour"}
         </h1>
       </header>
+
+      <InstallCard />
 
       <div className={`grid grid-cols-1 gap-6 ${hasAside ? "lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]" : ""}`}>
         <div className="flex min-w-0 flex-col gap-6">

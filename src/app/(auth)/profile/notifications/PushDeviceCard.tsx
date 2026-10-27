@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { BellRing, Smartphone } from "lucide-react";
 import { Alert, Button, StatusChip, useToast } from "@/components/ui";
 import type { StatusTone } from "@/components/ui";
@@ -180,10 +181,17 @@ export default function PushDeviceCard({
           </Alert>
         )}
         {state === "unavailable-ios-install" && (
-          <Alert tone="info" title="Installez Koinonia sur l'écran d'accueil.">
+          <Alert
+            tone="info"
+            title="Installez Koinonia sur l'écran d'accueil."
+            action={
+              <Link href="/installer" className="text-[15px] font-semibold text-brand-text underline">
+                Voir comment installer
+              </Link>
+            }
+          >
             Sur iPhone et iPad (iOS 16.4 ou plus récent), les notifications ne fonctionnent que dans
-            l&apos;application installée : dans Safari, touchez Partager, puis « Sur l&apos;écran d&apos;accueil ».
-            Ouvrez ensuite Koinonia depuis son icône et revenez sur cette page.
+            l&apos;application installée. Ouvrez ensuite Koinonia depuis son icône et revenez sur cette page.
           </Alert>
         )}
         {state === "unavailable-browser" && (

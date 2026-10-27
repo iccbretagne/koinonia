@@ -33,10 +33,8 @@ export function pushDeviceState(env: PushDeviceEnvironment): PushDeviceState {
   return env.subscribed && env.permission === "granted" ? "enabled" : "disabled";
 }
 
-/** Lecture de l'environnement du navigateur (côté client uniquement). */
-export function detectIos(userAgent: string, maxTouchPoints: number): boolean {
-  return /iPhone|iPad|iPod/.test(userAgent) || (/Macintosh/.test(userAgent) && maxTouchPoints > 1);
-}
+/** iPhone ou iPad : règle partagée avec l'aide à l'installation (spec 070). */
+export { detectIos } from "@/lib/install/detect";
 
 /** Clé publique VAPID (base64url) → tableau d'octets attendu par `pushManager.subscribe`. */
 export function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {

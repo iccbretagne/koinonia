@@ -5,7 +5,7 @@ import { getGivingSettings } from "@/modules/giving";
 import { EmptyState, PageHeader } from "@/components/ui";
 import { buttonClasses } from "@/components/ui/button-classes";
 import GivingSlide from "./GivingSlide";
-import { qrPath } from "./qr";
+import { qrPath } from "@/lib/qr";
 import { toSlideProps } from "./slide-props";
 
 export default async function GivingSlidePage() {

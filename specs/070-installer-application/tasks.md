@@ -1,21 +1,21 @@
 # Tâches — Installer Koinonia sur son appareil
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md`
-- **Statut** : À faire
+- **Statut** : Implémentée (recette sur appareils à faire)
 
 > Tâches **ordonnées** et **vérifiables**. Pas de migration ni d'API : l'ordre suit
 > logique cliente → page → points d'entrée → tests. Les tâches `[P]` sont parallélisables.
 
 ## Prérequis
 
-- [ ] Branche de travail contenant la spec 069 (icône versionnée, `getAppIconVersion`), donc la
+- [x] Branche de travail contenant la spec 069 (icône versionnée, `getAppIconVersion`), donc la
   PR #703 fusionnée ou cette même branche.
 
 ## Tâches
 
 ### 1. Logique cliente (`src/lib/install/`)
 
-- [ ] **T1** [P] — Détection pure :
+- [x] **T1** [P] — Détection pure :
   - `detectPlatform(userAgent, maxTouchPoints)` : `ios` (iPad présenté comme un Mac compris),
     `android` ou `desktop` ;
   - `detectBrowser(userAgent)` : `safari`, `chrome`, `edge`, `samsung`, `firefox`, `in-app`
@@ -29,10 +29,10 @@
     de votre iPhone », « En un appui sur ce téléphone », « Sur cet ordinateur »).
 
   *(fichier : `src/lib/install/detect.ts`)*
-- [ ] **T2** — Déplacer `detectIos` dans `detect.ts`. `push-device-state.ts` le réexporte,
+- [x] **T2** — Déplacer `detectIos` dans `detect.ts`. `push-device-state.ts` le réexporte,
   sans changer de comportement. *(fichiers : `src/lib/install/detect.ts`,
   `src/app/(auth)/profile/notifications/push-device-state.ts`)*
-- [ ] **T3** [P] — Magasin `beforeinstallprompt` :
+- [x] **T3** [P] — Magasin `beforeinstallprompt` :
   - `armInstallPrompt()`, idempotent : capture de l'événement avec `preventDefault`, et écoute
     de `appinstalled` ;
   - `subscribe` et `getSnapshot` pour `useSyncExternalStore`, qui donnent
@@ -41,22 +41,22 @@
   - hook `useInstallTarget()`, qui calcule la cible au montage et vaut `null` avant.
 
   *(fichiers : `src/lib/install/prompt-store.ts`, `src/lib/install/use-install-target.ts`)*
-- [ ] **T4** [P] — « Plus tard » : `isInstallCardDismissed(now)` et `dismissInstallCard(now)`.
+- [x] **T4** [P] — « Plus tard » : `isInstallCardDismissed(now)` et `dismissInstallCard(now)`.
   - Clé `koinonia-install-dismissed-until`, pour 30 jours.
   - `try/catch` autour du stockage.
 
   *(fichier : `src/lib/install/dismiss.ts`)*
-- [ ] **T5** — Armer le magasin depuis `ServiceWorkerRegistration`, qui est monté dans le root
+- [x] **T5** — Armer le magasin depuis `ServiceWorkerRegistration`, qui est monté dans le root
   layout. *(fichier : `src/components/ServiceWorkerRegistration.tsx`)*
-- [ ] **T6** [P] — Déplacer `qrPath` dans `src/lib/qr.ts`. La slide de dons l'importe depuis ce
+- [x] **T6** [P] — Déplacer `qrPath` dans `src/lib/qr.ts`. La slide de dons l'importe depuis ce
   nouvel emplacement. *(fichiers : `src/lib/qr.ts`, `src/app/(auth)/dons/slide/qr.ts` supprimé,
   et ses importateurs)*
 
 ### 2. Page publique `/installer`
 
-- [ ] **T7** — Déclarer `{ path: "/installer" }` dans `routes.public` du manifeste `core`.
+- [x] **T7** — Déclarer `{ path: "/installer" }` dans `routes.public` du manifeste `core`.
   *(fichier : `src/modules/core/manifest.ts`)*
-- [ ] **T8** — Composant client `InstallGuide` :
+- [x] **T8** — Composant client `InstallGuide` :
   - une section par situation, avec étapes numérotées et icônes `lucide-react` ;
   - bouton « Installer Koinonia » si `canPrompt` ; après un refus, les étapes manuelles
     restent affichées ;
@@ -69,7 +69,7 @@
   - tokens sémantiques uniquement.
 
   *(fichier : `src/components/install/InstallGuide.tsx`)*
-- [ ] **T9** — Page serveur `/installer`, hors `(auth)` :
+- [x] **T9** — Page serveur `/installer`, hors `(auth)` :
   - `metadata`, titre et description, pour l'aperçu de lien WhatsApp ;
   - `auth()` sans exigence : « Se connecter » ou « Retour à Koinonia » ;
   - `getAppIconVersion()` pour l'icône ;
@@ -80,7 +80,7 @@
 
 ### 3. Points d'entrée
 
-- [ ] **T10** — Carte d'Accueil `InstallCard` (client) :
+- [x] **T10** — Carte d'Accueil `InstallCard` (client) :
   - rien au premier rendu ;
   - affichée si `isInstallOffered` et si la carte n'est pas masquée ;
   - « Installer » (natif) ou « Voir comment » ;
@@ -88,7 +88,7 @@
   - insertion dans la page d'Accueil.
 
   *(fichiers : `src/app/(auth)/accueil/InstallCard.tsx`, `src/app/(auth)/accueil/page.tsx`)*
-- [ ] **T11** — Ligne contextuelle « Installer l'application » dans `AccountActions`, variantes
+- [x] **T11** — Ligne contextuelle « Installer l'application » dans `AccountActions`, variantes
   `menu` et `sheet` :
   - placée après les `ACCOUNT_PAGES` ;
   - icône `Download`, libellé et sous-titre `installHint` ;
@@ -97,12 +97,12 @@
     possible, sinon lien vers `/installer`.
 
   Ne modifier ni `MoreSheet.tsx` ni `NavPageList.tsx`. *(fichier : `src/components/AccountActions.tsx`)*
-- [ ] **T12** [P] — Recherche : constante `INSTALL_PAGE`, ajoutée à `searchablePages`
+- [x] **T12** [P] — Recherche : constante `INSTALL_PAGE`, ajoutée à `searchablePages`
   (contexte « Compte »). `ACCOUNT_PAGES` ne change pas. *(fichier : `src/lib/navigation.ts`)*
-- [ ] **T13** [P] — « Mes notifications » : dans l'`Alert` `unavailable-ios-install` de
+- [x] **T13** [P] — « Mes notifications » : dans l'`Alert` `unavailable-ios-install` de
   `PushDeviceCard`, une phrase et un lien « Voir comment installer » vers `/installer`.
   *(fichier : `src/app/(auth)/profile/notifications/PushDeviceCard.tsx`)*
-- [ ] **T14** [P] — Guide :
+- [x] **T14** [P] — Guide :
   - nouvelle entrée « Installer l'application » (catégorie « Profil », tous les rôles) ;
   - l'entrée « Notifications sur cet appareil » renvoie à la page.
 
@@ -110,7 +110,7 @@
 
 ### 4. Tests
 
-- [ ] **T15** [P] — `detect.test.ts` : corpus d'agents utilisateurs réels, une ligne par
+- [x] **T15** [P] — `detect.test.ts` : corpus d'agents utilisateurs réels, une ligne par
   situation :
   - iPhone Safari, CriOS et FxiOS ;
   - iPad présenté comme un Mac ;
@@ -120,7 +120,7 @@
   - `isInstallOffered`, `installHint`.
 
   *(fichier : `src/lib/install/__tests__/detect.test.ts`)*
-- [ ] **T16** [P] — `prompt-store.test.ts` :
+- [x] **T16** [P] — `prompt-store.test.ts` :
   - capture et `preventDefault` ;
   - `accepted` et `dismissed` ;
   - `appinstalled` ;
@@ -128,19 +128,19 @@
   - armement idempotent.
 
   *(fichier : `src/lib/install/__tests__/prompt-store.test.ts`)*
-- [ ] **T17** [P] — `dismiss.test.ts` :
+- [x] **T17** [P] — `dismiss.test.ts` :
   - masquée pendant 30 jours, puis visible ;
   - stockage indisponible sans erreur.
 
   *(fichier : `src/lib/install/__tests__/dismiss.test.ts`)*
-- [ ] **T18** — `AccountActions`, dans ses deux variantes :
+- [x] **T18** — `AccountActions`, dans ses deux variantes :
   - ligne présente si l'installation est proposée ;
   - ligne absente si l'application est installée ou si le navigateur n'est pas compatible ;
   - appui natif : `promptInstall` appelé ;
   - sinon, lien vers `/installer`.
 
   *(fichier : `src/components/__tests__/AccountActions.install.test.tsx`)*
-- [ ] **T19** — Routes et navigation :
+- [x] **T19** — Routes et navigation :
   - `/installer` publique en GET (table de routes) ;
   - `route-exhaustiveness.test.ts` vert ;
   - `searchablePages` contient « Installer l'application » ;
@@ -150,19 +150,19 @@
 
 ### 5. Documentation & livraison
 
-- [ ] **T20** [P] — `CLAUDE.md` : une ligne sur `/installer` (page publique du noyau `core`) et
+- [x] **T20** [P] — `CLAUDE.md` : une ligne sur `/installer` (page publique du noyau `core`) et
   sur la ligne contextuelle du menu du compte. Section « Design system », paragraphe
   Navigation.
-- [ ] **T21** [P] — CHANGELOG, section « Non publié », entrée « Ajouté ».
+- [x] **T21** [P] — CHANGELOG, section « Non publié », entrée « Ajouté ».
 
 ## Vérification finale
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `npm run lint:boundaries`
-- [ ] `npm run lint:prisma-boundary`, seuil inchangé
-- [ ] `npm run test`
-- [ ] `npm run build`
+- [x] `npm run typecheck`
+- [x] `npm run lint`
+- [x] `npm run lint:boundaries`
+- [x] `npm run lint:prisma-boundary`, seuil inchangé
+- [x] `npm run test`
+- [x] `npm run build`
 - [ ] Recette sur appareils réels :
   - iPhone Safari, et lien ouvert depuis WhatsApp ;
   - iPad ;
@@ -171,7 +171,7 @@
   - application déjà installée : ligne absente du panneau « Plus » ;
   - « Plus tard » ;
   - QR code depuis l'ordinateur.
-- [ ] Tous les critères d'acceptation de `spec.md` satisfaits (correspondance ci-dessous)
+- [x] Tous les critères d'acceptation de `spec.md` satisfaits (correspondance ci-dessous)
 - [ ] PR ouverte vers `main`
 
 ## Correspondance critères d'acceptation → tâches

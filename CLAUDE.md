@@ -354,6 +354,15 @@ déjà autorisées par `(auth)/layout.tsx` et partagée par la sidebar, la barre
 « Plus », le fil d'Ariane et la palette de recherche (`⌘K`/`Ctrl K`) — ce module ne décide d'aucun
 droit, il ne fait que regrouper ce que le layout a déjà autorisé.
 
+**Installer l'application** (spec 070) : page publique `/installer` (hors `(auth)`, déclarée dans
+`routes.public` du manifeste `core`), partageable avant la première connexion. La détection de
+l'appareil est cliente et pure (`src/lib/install/detect.ts`, `installTarget`) ;
+`beforeinstallprompt` est capté dès le root layout (`ServiceWorkerRegistration` →
+`prompt-store.ts`) pour proposer l'installation native. Le menu du compte (`AccountActions`,
+menu de l'avatar et panneau « Plus ») affiche une ligne **contextuelle** « Installer
+l'application », absente une fois installée ; la carte d'Accueil se masque 30 jours par appareil
+(`localStorage`).
+
 **Accueil** (`/accueil`, `TODAY_HREF` dans `navigation.ts`) : page d'accueil commune à tous les
 rôles (« Aujourd'hui »), qui rassemble prochains services, événements à venir, demandes en attente
 et raccourcis à partir des données et fonctions déjà existantes — aucune nouvelle route ni règle
