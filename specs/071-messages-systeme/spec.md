@@ -1,7 +1,7 @@
 # Spec — Messages système (annonces internes)
 
 - **Numéro** : 071
-- **Statut** : Brouillon
+- **Statut** : Validée
 - **Créée le** : 2026-10-27
 - **Branche suggérée** : `feat/messages-systeme`
 - **S'appuie sur** : [spec 053 — préférences de notification](../053-preferences-notifications-email/spec.md)
@@ -79,8 +79,8 @@ Un écran « Messages système » liste les messages : en cours, programmés et 
     « 1 sur 3 ».
 - **La notification** : au début de la période, une notification arrive dans la cloche. Elle part
   aussi :
-  - par email et sur l'appareil selon les préférences de la personne, pour un nouveau type de
-    message système réglable dans « Mes notifications » ;
+  - par email et sur l'appareil selon les préférences de la personne, pour un nouveau type « Messages
+    de l'administration », réglable dans « Mes notifications » ;
   - **toujours par email** pour un message Urgent, même si la personne a coupé ce type de
     message. L'appareil continue de suivre sa préférence.
 - **Le détail du message** s'ouvre depuis le bandeau ou la notification : titre, texte complet,
@@ -157,7 +157,7 @@ Aucune liste nominative n'est affichée : le suivi reste global.
 - [ ] Un message Information ou Important se ferme et ne revient pas pour cette personne, sur
   aucun de ses appareils. Un message Urgent ne se ferme pas.
 - [ ] Au début de la période, une notification arrive dans la cloche de chaque personne visée.
-- [ ] L'email et l'appareil suivent la préférence du type « Messages système ». Un message Urgent
+- [ ] L'email et l'appareil suivent la préférence du type « Messages de l'administration ». Un message Urgent
   part par email même si cette préférence est coupée.
 - [ ] Un message programmé n'est ni visible ni notifié avant son début ; il disparaît à sa fin.
 - [ ] La date de fin est obligatoire et postérieure au début ; un public vide est refusé.
@@ -183,14 +183,10 @@ Aucune liste nominative n'est affichée : le suivi reste global.
 
 ## Questions ouvertes
 
-- [À CLARIFIER: **ciblage par département** : vise-t-on les **membres** du département
-  (STAR dont la fiche est rattachée au département et liée à un compte), ses **responsables**,
-  ou les deux, au choix de l'auteur ? Proposition : les deux par défaut, avec une option
-  « Responsables seulement ».]
-- [À CLARIFIER: **nom du type de notification** : « Annonces » risque d'être confondu avec les
-  demandes d'annonce existantes (annonces du culte). Proposition : « Messages de
-  l'administration ».]
-- Décisions déjà prises avec l'utilisateur :
-  - la Secrétaire publie comme l'Admin ;
-  - un message Urgent passe outre la préférence email ;
-  - l'appareil suit toujours la préférence.
+- Aucune. Décisions prises avec l'utilisateur :
+  - **Ciblage par département** : le message vise à la fois les **membres** (STAR dont la fiche
+    est rattachée au département et liée à un compte) et les **responsables** du département.
+    L'option « Responsables seulement » permet de restreindre aux responsables.
+  - **Nom du type de notification** : « Messages de l'administration ».
+  - La Secrétaire publie comme l'Admin.
+  - Un message Urgent passe outre la préférence email ; l'appareil suit toujours la préférence.
