@@ -4,7 +4,7 @@
   "description": "Le back-office opérationnel de votre église, en une seule application.",
   "start_url": "/accueil",
   "display": "standalone",
-  "background_color": "#f6f5fa",
+  "background_color": "#0c022d",
   "theme_color": "#ffffff",
   "icons": [
     {
@@ -22,11 +22,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    },
-    {
-      "src": "/brand/koinonia-app-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
     }
   ]
 }

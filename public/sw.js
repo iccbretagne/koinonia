@@ -2,7 +2,7 @@ const CACHE_NAME = "koinonia-v4";
 const STATIC_ASSETS = [
   "/",
   "/accueil",
-  "/brand/koinonia-app-icon.svg",
+  "/brand/koinonia-icon-192.png",
   "/manifest.json",
 ];
 

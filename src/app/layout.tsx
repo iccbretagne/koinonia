@@ -88,7 +88,7 @@ export default async function RootLayout({
     <html lang="fr" suppressHydrationWarning className={`${montserrat.variable} ${sourceSans.variable}`}>
       <head>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
-        <link rel="icon" href="/brand/koinonia-app-icon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/brand/favicon-48.png" type="image/png" sizes="48x48" />
         <link rel="apple-touch-icon" sizes="180x180" href="/brand/apple-touch-icon-180.png" />
       </head>
       <body
