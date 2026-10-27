@@ -6,6 +6,8 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.33.0] - 2026-10-27
+
 ### Ajouté
 
 - Logo de l'église dans l'interface (spec 072). Dans « Paramètres de l'église », l'Admin dépose le logo de son église (PNG, JPEG ou WebP, 2 Mo au plus) : il remplace les plumes ICC dans la barre latérale et la barre du haut, pour tous ceux qui travaillent dans cette église. Une version pour fond sombre, facultative, s'affiche en thème sombre. Les aperçus montrent le rendu sur fond clair et sombre ; déposer, remplacer ou retirer un logo est inscrit dans l'historique de l'église, et « Retirer » remet les plumes ICC.
