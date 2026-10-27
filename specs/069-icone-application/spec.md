@@ -1,7 +1,7 @@
 # Spec — Changer l'icône de l'application depuis Koinonia
 
 - **Numéro** : 069
-- **Statut** : Brouillon
+- **Statut** : Validée
 - **Créée le** : 2026-10-27
 - **Branche suggérée** : `feat/icone-application`
 - **Prolonge** : [spec 068 — notifications natives](../068-notifications-push/spec.md) (icônes de
@@ -101,8 +101,10 @@ l'auteur et la date.
 - **Application installée sur Android** : l'icône se met à jour d'elle-même, en général sous
   quelques jours ; l'écran l'indique.
 - **Badge des notifications Android** : c'est une silhouette blanche, que l'on ne peut pas tirer
-  automatiquement de n'importe quelle image.
-  [À CLARIFIER: dépôt facultatif d'une silhouette dédiée, ou badge générique conservé ?]
+  automatiquement de n'importe quelle image. Le Super Admin peut déposer **en plus**, s'il le
+  souhaite, une silhouette dédiée (forme blanche sur fond transparent, PNG). Sans silhouette
+  déposée, un **badge générique** (une cloche) s'affiche ; le badge livré avec Koinonia reste
+  utilisé tant que l'icône par défaut est en vigueur.
 - **Échec de préparation** des tailles (image corrompue) : l'icône en vigueur est conservée, et
   un message dit que l'image n'a pas pu être utilisée.
 - **Deux Super Admin** déposent une icône presque en même temps : la dernière enregistrée
@@ -117,6 +119,8 @@ l'auteur et la date.
 - [ ] Une image PNG, JPEG ou WebP carrée d'au moins 512 px et d'au plus 5 Mo est acceptée ; un
   SVG, une image non carrée, trop petite, trop lourde, ou un fichier qui n'est pas une image est
   refusé avec un message explicite, et l'icône en vigueur ne change pas.
+- [ ] Une silhouette de badge peut être déposée en plus (PNG avec transparence) ; sans elle, le
+  badge des notifications est une cloche générique.
 - [ ] L'aperçu montre l'image en forme iPhone, Android ronde, onglet et notification avant
   l'enregistrement.
 - [ ] Les coins transparents ou clairs d'une image arrondie sont remplis d'une couleur de fond,
@@ -144,10 +148,11 @@ l'auteur et la date.
 - Programmer un changement d'icône à une date donnée.
 - Prévenir automatiquement les utilisateurs du changement.
 
+## Décisions
+
+- **Badge** : dépôt facultatif d'une silhouette dédiée ; à défaut, badge générique (cloche).
+- **Emplacement** : Administration › bloc « Plateforme », à côté de « Sauvegardes » et « API ».
+
 ## Questions ouvertes
 
-- [À CLARIFIER: **badge des notifications Android**. Proposition : un dépôt **facultatif**
-  d'une silhouette dédiée (forme blanche sur fond transparent). Sans silhouette, Koinonia garde
-  un badge générique (une cloche), plutôt qu'une silhouette mal découpée tirée de l'icône.]
-- [À CLARIFIER: **où placer l'écran**. Proposition : dans « Administration », bloc
-  « Plateforme », à côté de « Sauvegardes » et « API », déjà réservés au Super Admin.]
+- Aucune.
