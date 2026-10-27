@@ -4,7 +4,7 @@
 - **Statut** : Brouillon
 - **Créée le** : 2026-10-27
 - **Branche suggérée** : `feat/messages-systeme`
-- **S'appuie sur** : [spec 053 — préférences de notification](../053-preferences-notifications/spec.md)
+- **S'appuie sur** : [spec 053 — préférences de notification](../053-preferences-notifications-email/spec.md)
   et [spec 068 — notifications natives](../068-notifications-push/spec.md)
 
 > ⚠️ Cette spec décrit **QUOI** et **POURQUOI** — jamais **COMMENT**.
