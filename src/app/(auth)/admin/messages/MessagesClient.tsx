@@ -71,6 +71,14 @@ function WithdrawButton({
   );
 }
 
+/** Action de ligne : « Retirer », sauf pour un message passé ou en lecture seule. */
+function withdrawActions(status: MessageStatus, onWithdraw: (message: MessageListItem) => void) {
+  return function renderWithdraw(m: MessageListItem) {
+    if (status === "past" || m.readOnly) return null;
+    return <WithdrawButton message={m} onWithdraw={onWithdraw} />;
+  };
+}
+
 /** Liste des messages d'un état (spec 071), avec statistiques et retrait. */
 export default function MessagesClient({
   messages,
@@ -126,7 +134,7 @@ export default function MessagesClient({
             accessor: (m) => `${m.stats.recipients ?? "—"} · ${m.stats.seen} · ${m.stats.dismissed}`,
           },
         ]}
-        actions={(m) => (status === "past" || m.readOnly ? null : <WithdrawButton message={m} onWithdraw={setWithdrawing} />)}
+        actions={withdrawActions(status, setWithdrawing)}
       />
       <ConfirmModal
         open={withdrawing !== null}

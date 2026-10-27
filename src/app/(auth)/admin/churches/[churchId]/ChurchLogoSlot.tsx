@@ -59,6 +59,8 @@ export default function ChurchLogoSlot({
   const label = CHURCH_LOGO_LABEL[variant];
   const src = version ? churchLogoSrc(churchId, variant, version) : fallbackSrc;
   const endpoint = `/api/churches/${encodeURIComponent(churchId)}/logo`;
+  let uploadLabel = version ? "Remplacer" : "Déposer un logo";
+  if (busy) uploadLabel = "Envoi…";
 
   async function upload(file: File) {
     if (file.size > CHURCH_LOGO_MAX_BYTES) {
@@ -119,7 +121,7 @@ export default function ChurchLogoSlot({
       />
       <div className="flex flex-wrap gap-2">
         <Button type="button" variant="secondary" size="sm" disabled={busy} onClick={() => fileRef.current?.click()}>
-          {busy ? "Envoi…" : version ? "Remplacer" : "Déposer un logo"}
+          {uploadLabel}
         </Button>
         {version && (
           <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => setConfirmRemove(true)}>
