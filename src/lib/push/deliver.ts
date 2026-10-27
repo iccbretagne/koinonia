@@ -23,18 +23,15 @@ type PendingNotification = {
   link: string | null;
 };
 
+/** Prise de main atomique : l'appel immédiat et le rattrapage ne livrent jamais deux fois. */
 async function claim(notifications: PendingNotification[]): Promise<PendingNotification[]> {
   const now = new Date();
-  const claimed: PendingNotification[] = [];
-  for (const notification of notifications) {
-    // Prise de main atomique : l'appel immédiat et le rattrapage ne livrent jamais deux fois.
-    const { count } = await prisma.notification.updateMany({
-      where: { id: notification.id, pushedAt: null },
-      data: { pushedAt: now },
-    });
-    if (count === 1) claimed.push(notification);
-  }
-  return claimed;
+  const results = await Promise.all(
+    notifications.map((notification) =>
+      prisma.notification.updateMany({ where: { id: notification.id, pushedAt: null }, data: { pushedAt: now } })
+    )
+  );
+  return notifications.filter((_, i) => results[i].count === 1);
 }
 
 async function allowed(notifications: PendingNotification[]): Promise<PendingNotification[]> {
@@ -43,23 +40,23 @@ async function allowed(notifications: PendingNotification[]): Promise<PendingNot
     const key = n.domain ?? "";
     byDomain.set(key, [...(byDomain.get(key) ?? []), n]);
   }
-  const kept: PendingNotification[] = [];
-  for (const [domain, list] of byDomain) {
-    const prefs = await pushAllowedByUser([...new Set(list.map((n) => n.userId))], domain);
-    kept.push(...list.filter((n) => prefs.get(n.userId)));
-  }
-  return kept;
+  const perDomain = await Promise.all(
+    [...byDomain].map(async ([domain, list]) => {
+      const prefs = await pushAllowedByUser([...new Set(list.map((n) => n.userId))], domain);
+      return list.filter((n) => prefs.get(n.userId));
+    })
+  );
+  return perDomain.flat();
 }
 
+/** Au plus `CONCURRENCY` envois simultanés : les éléments sont répartis en files traitées en série. */
 async function runBounded<T>(items: T[], worker: (item: T) => Promise<void>): Promise<void> {
-  let index = 0;
-  const runners = Array.from({ length: Math.min(CONCURRENCY, items.length) }, async () => {
-    while (index < items.length) {
-      const item = items[index++];
-      await worker(item);
-    }
-  });
-  await Promise.all(runners);
+  const lanes = Array.from({ length: Math.min(CONCURRENCY, items.length) }, (_, lane) =>
+    items.filter((_, i) => i % CONCURRENCY === lane)
+  );
+  await Promise.all(
+    lanes.map((lane) => lane.reduce<Promise<void>>((previous, item) => previous.then(() => worker(item)), Promise.resolve()))
+  );
 }
 
 /**
@@ -68,10 +65,10 @@ async function runBounded<T>(items: T[], worker: (item: T) => Promise<void>): Pr
  * le rattrapage cron pour les autres. Ne fait jamais échouer l'appelant.
  */
 export async function deliverPendingPush(filter: PendingPushFilter): Promise<{ sent: number; removed: number }> {
-  const result = { sent: 0, removed: 0 };
   const webpush = getWebPush();
-  if (!webpush) return result;
-  if ("userIds" in filter && filter.userIds.length === 0) return result;
+  if (!webpush || ("userIds" in filter && filter.userIds.length === 0)) return { sent: 0, removed: 0 };
+  let sent = 0;
+  let removed = 0;
 
   try {
     const where =
@@ -84,10 +81,10 @@ export async function deliverPendingPush(filter: PendingPushFilter): Promise<{ s
       orderBy: { createdAt: "asc" },
       take: 500,
     });
-    if (pending.length === 0) return result;
+    if (pending.length === 0) return { sent, removed };
 
     const toSend = await allowed(await claim(pending));
-    if (toSend.length === 0) return result;
+    if (toSend.length === 0) return { sent, removed };
 
     const subscriptions = await prisma.pushSubscription.findMany({
       where: { userId: { in: [...new Set(toSend.map((n) => n.userId))] } },
@@ -104,14 +101,14 @@ export async function deliverPendingPush(filter: PendingPushFilter): Promise<{ s
           JSON.stringify(buildPushPayload(notification)),
           { TTL: TTL_SECONDS, timeout: TIMEOUT_MS }
         );
-        result.sent++;
+        sent++;
         await prisma.pushSubscription.updateMany({ where: { id: subscription.id }, data: { lastSuccessAt: new Date() } });
       } catch (error) {
         const status = (error as { statusCode?: number }).statusCode;
         if (status === 404 || status === 410) {
           // Appareil désabonné, désinstallé ou autorisation retirée : on cesse de le viser.
           await prisma.pushSubscription.deleteMany({ where: { id: subscription.id } });
-          result.removed++;
+          removed++;
         } else {
           logger.warn({ err: error, subscriptionId: subscription.id, status }, "Notification native non envoyée");
         }
@@ -120,7 +117,7 @@ export async function deliverPendingPush(filter: PendingPushFilter): Promise<{ s
   } catch (error) {
     logger.error({ err: error }, "Livraison des notifications natives interrompue");
   }
-  return result;
+  return { sent, removed };
 }
 
 /** Rattrapage cron (`push-delivery`, every-run) : notifications de la dernière heure non livrées. */

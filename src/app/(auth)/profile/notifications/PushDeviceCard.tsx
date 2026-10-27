@@ -57,9 +57,13 @@ export default function PushDeviceCard({
 
   useEffect(() => {
     let active = true;
-    readState().then((next) => {
-      if (active) setState(next);
-    });
+    readState()
+      .then((next) => {
+        if (active) setState(next);
+      })
+      .catch(() => {
+        // Environnement illisible (navigation privée stricte) : l'état reste non affiché.
+      });
     return () => {
       active = false;
     };
