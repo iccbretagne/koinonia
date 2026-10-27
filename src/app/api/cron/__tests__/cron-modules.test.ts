@@ -148,6 +148,30 @@ describe("POST /api/cron — conditionnement par module (spec 038)", () => {
     expect(mockPushCatchUp).toHaveBeenCalledOnce();
   });
 
+  it("les messages système (spec 071) sont dus à chaque passage quand le module est actif", async () => {
+    delete process.env.ENABLED_MODULES;
+    const dispatchDueMessages = vi.fn().mockResolvedValue({ notified: 1, recipients: 12 });
+    vi.doMock("@/modules/messages", () => ({ dispatchDueMessages }));
+    prismaMock.cronTaskRun.findMany.mockResolvedValue([{ key: "system-messages", lastStartedAt: new Date(Date.now() - 60_000) }]);
+    prismaMock.cronTaskRun.updateMany.mockResolvedValue({ count: 1 });
+
+    const body = await (await postCron()).json();
+
+    expect(body.tasks["system-messages"]).toBe("ran");
+    expect(dispatchDueMessages).toHaveBeenCalledOnce();
+  });
+
+  it("aucune tâche de messages système sans le module", async () => {
+    process.env.ENABLED_MODULES = "core,planning";
+    const dispatchDueMessages = vi.fn();
+    vi.doMock("@/modules/messages", () => ({ dispatchDueMessages }));
+
+    const body = await (await postCron()).json();
+
+    expect(body.tasks["system-messages"]).toBeUndefined();
+    expect(dispatchDueMessages).not.toHaveBeenCalled();
+  });
+
   it("la relance des services à remplacer (spec 061) est déclarée, horaire, et son résultat exposé", async () => {
     delete process.env.ENABLED_MODULES;
     mockWithdrawalRelances.mockResolvedValueOnce({ relanced: 2 });

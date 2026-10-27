@@ -67,6 +67,21 @@ export function appendPreferenceFooter(html: string, domainLabel: string): strin
 }
 
 /**
+ * Pied d'un email envoyé malgré la préférence de la personne : réservé aux messages système
+ * urgents (spec 071, ADR-0025), qui doivent atteindre tout le public concerné.
+ */
+export function appendUrgentFooter(html: string): string {
+  const appUrl = process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const footer = `
+    <p style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #9ca3af;">
+      Message urgent : envoyé à toutes les personnes concernées, quelles que soient leurs préférences.
+      <a href="${appUrl}/profile/notifications" style="color: #9ca3af;">Gérer mes notifications</a>
+    </p>
+  `;
+  return `${html}${footer}`;
+}
+
+/**
  * Gabarit générique (spec 053, lot 2) : construit le contenu email d'une notification qui n'a
  * pas de gabarit dédié — le titre et le message de la notification in-app suffisent. Utilisé par
  * `dispatchIfNoTx` (`@/lib/notifications`) quand l'appelant ne fournit pas de contenu email

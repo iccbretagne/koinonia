@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { sendEmail, appendPreferenceFooter, buildGenericNotificationEmail } from "@/lib/email";
+import { sendEmail, appendPreferenceFooter, appendUrgentFooter, buildGenericNotificationEmail } from "@/lib/email";
 import { notificationDomains } from "@/lib/registry";
 import { resolveEmailPreference, GLOBAL_DOMAIN } from "@/lib/notification-preferences";
 import type { Prisma } from "@/generated/prisma/client";
@@ -40,6 +40,13 @@ export interface NotificationOptions {
    * de la cloche, qui existe (spec 068).
    */
   email?: NotificationEmailContent | false;
+  /**
+   * `"always"` : l'email part même si la personne a coupé ce domaine ou tous les emails —
+   * seule l'absence d'adresse l'empêche. Réservé aux messages système urgents (spec 071,
+   * ADR-0025) : ne jamais l'utiliser pour contourner une préférence ailleurs. Défaut :
+   * `"preference"`. La notification native, elle, suit toujours la préférence.
+   */
+  emailPolicy?: "preference" | "always";
 }
 
 interface NotificationInput {
@@ -70,7 +77,9 @@ async function dispatchIfNoTx(
   if (options?.tx) return;
   if (options?.email !== false) {
     const email = options?.email ?? buildGenericNotificationEmail(notification);
-    await dispatchUserEmails(userIds, notification.domain, email);
+    await dispatchUserEmails(userIds, notification.domain, email, {
+      ignorePreference: options?.emailPolicy === "always",
+    });
   }
   await deliverPendingPush({
     userIds,
@@ -188,7 +197,9 @@ export async function deleteItemNotifications(
 export async function dispatchUserEmails(
   userIds: string[],
   domain: string,
-  content: NotificationEmailContent
+  content: NotificationEmailContent,
+  /** `ignorePreference` : voir `NotificationOptions.emailPolicy` (spec 071, ADR-0025). */
+  { ignorePreference = false }: { ignorePreference?: boolean } = {}
 ): Promise<{ sent: number; failed: number }> {
   if (userIds.length === 0) return { sent: 0, failed: 0 };
 
@@ -211,10 +222,11 @@ export async function dispatchUserEmails(
     preferencesByUser.set(row.userId, entry);
   }
 
-  const html = appendPreferenceFooter(content.html, domainLabel);
+  const html = ignorePreference ? appendUrgentFooter(content.html) : appendPreferenceFooter(content.html, domainLabel);
 
   const recipients = users.filter((user): user is { id: string; email: string } => {
     if (!user.email) return false;
+    if (ignorePreference) return true;
     const prefs = preferencesByUser.get(user.id) ?? {};
     return resolveEmailPreference({
       globalEnabled: prefs.global ?? true,

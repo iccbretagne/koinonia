@@ -65,6 +65,12 @@ async function runWithdrawalRelances() {
   return run();
 }
 
+/** Notifications des messages système dont la période commence (spec 071). */
+async function runSystemMessages() {
+  const { dispatchDueMessages } = await import("@/modules/messages");
+  return dispatchDueMessages();
+}
+
 function authorizeCron(request: Request) {
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
@@ -371,6 +377,8 @@ function cronTasks(appUrl: string): CronTask[] {
     { key: "service-withdrawal-relances", schedule: { kind: "interval", minutes: 60 }, run: runWithdrawalRelances },
     // Notifications natives créées en transaction ou interrompues (spec 068, ADR-0024).
     { key: "push-delivery", schedule: { kind: "every-run" }, run: () => runPushCatchUp() },
+    // Messages système programmés, et rattrapage d'un envoi immédiat interrompu (spec 071).
+    { key: "system-messages", module: "messages", schedule: { kind: "every-run" }, run: runSystemMessages },
   ];
   return tasks.filter((t) => !t.module || registry.has(t.module));
 }
