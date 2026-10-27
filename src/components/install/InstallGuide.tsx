@@ -23,14 +23,14 @@ const SHARE_TEXT = "Installe Koinonia sur ton téléphone en 1 minute :";
 
 interface Step {
   readonly icon?: LucideIcon;
-  readonly text: ReactNode;
+  readonly text: string;
 }
 
 function Steps({ steps }: { readonly steps: readonly Step[] }) {
   return (
     <ol className="flex flex-col gap-3">
       {steps.map((step, index) => (
-        <li key={index} className="flex items-start gap-3">
+        <li key={step.text} className="flex items-start gap-3">
           <span className="grid size-7 shrink-0 place-items-center rounded-full bg-brand-soft font-display text-[13px] font-bold text-brand-text">
             {index + 1}
           </span>
