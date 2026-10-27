@@ -68,7 +68,7 @@ describe("Parcours « aucun accès » sur modules désactivés (spec 038, CA10)"
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetCurrentChurchId.mockResolvedValue("church-1");
-    prismaMock.church.findUnique.mockResolvedValue({ name: "Test Church", primaryColor: "#5E17EB" } as never);
+    prismaMock.church.findUnique.mockResolvedValue({ name: "Test Church", primaryColor: "#5E17EB" , logos: [] } as never);
     prismaMock.department.findMany.mockResolvedValue([]);
     prismaMock.department.findFirst.mockResolvedValue(null);
     prismaMock.familyLeaderAssignment.count.mockResolvedValue(0);

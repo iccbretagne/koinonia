@@ -44,7 +44,7 @@ describe("Navigation STAR après spec 031/#462 (T29)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetCurrentChurchId.mockResolvedValue("church-1");
-    prismaMock.church.findUnique.mockResolvedValue({ name: "Test Church", primaryColor: "#5E17EB" } as never);
+    prismaMock.church.findUnique.mockResolvedValue({ name: "Test Church", primaryColor: "#5E17EB" , logos: [] } as never);
     prismaMock.department.findMany.mockResolvedValue([]);
     prismaMock.department.findFirst.mockResolvedValue(null);
     prismaMock.familyLeaderAssignment.count.mockResolvedValue(0);
@@ -113,7 +113,7 @@ describe("Lien « Demande RDV pastoral » après spec 043", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetCurrentChurchId.mockResolvedValue("church-1");
-    prismaMock.church.findUnique.mockResolvedValue({ name: "Test Church", primaryColor: "#5E17EB" } as never);
+    prismaMock.church.findUnique.mockResolvedValue({ name: "Test Church", primaryColor: "#5E17EB" , logos: [] } as never);
     prismaMock.department.findMany.mockResolvedValue([]);
     prismaMock.department.findFirst.mockResolvedValue(null);
     prismaMock.familyLeaderAssignment.count.mockResolvedValue(0);
@@ -145,7 +145,7 @@ describe("Espace « Communication & Production » après spec 043", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetCurrentChurchId.mockResolvedValue("church-1");
-    prismaMock.church.findUnique.mockResolvedValue({ name: "Test Church", primaryColor: "#5E17EB" } as never);
+    prismaMock.church.findUnique.mockResolvedValue({ name: "Test Church", primaryColor: "#5E17EB" , logos: [] } as never);
     prismaMock.department.findFirst.mockResolvedValue(null);
     prismaMock.familyLeaderAssignment.count.mockResolvedValue(0);
     prismaMock.pastoralProfile.findFirst.mockResolvedValue(null);

@@ -27,6 +27,7 @@ import {
 // Type importe plutot que recopie : les copies locales avaient derive et
 // omettaient PASTORAL_CARE_REFERENT, privant ce role des etapes de tour ciblees.
 import type { RoleKey } from "@/lib/tour-steps";
+import type { ChurchLogoSources } from "@/modules/core/schemas";
 
 interface AuthLayoutShellProps extends Omit<NavigationInput, "jobsUnseenCount" | "isPastoral"> {
   /** Vue pastorale active. */
@@ -38,6 +39,8 @@ interface AuthLayoutShellProps extends Omit<NavigationInput, "jobsUnseenCount" |
   readonly churchName: string;
   /** `Church.primaryColor` : filet sous la barre supérieure et pastille du sélecteur d'église. */
   readonly headerColor?: string;
+  /** Logo de l'église courante (spec 072), `null` : plumes ICC. */
+  readonly churchLogo?: ChurchLogoSources | null;
   readonly hasBothRoles?: boolean;
   readonly switchViewAction?: ServerAction;
   readonly signOutAction: ServerAction;
@@ -70,6 +73,7 @@ export default function AuthLayoutShell({
   currentChurchId,
   churchName,
   headerColor = "#5E17EB", // Church.primaryColor par défaut : donnée, style inline (exception de migration.md)
+  churchLogo = null,
   hasBothRoles = false,
   switchViewAction,
   signOutAction,
@@ -185,6 +189,7 @@ export default function AuthLayoutShell({
         currentChurchId={currentChurchId}
         churchName={churchName}
         churchColor={headerColor}
+        churchLogo={churchLogo}
         stickyClassName={STAGING_BUILD_VERSION ? STAGING_BANNER_SIDEBAR_CLASS : "top-0 h-dvh"}
       />
 
@@ -198,6 +203,7 @@ export default function AuthLayoutShell({
           currentChurchId={currentChurchId}
           churchName={churchName}
           churchColor={headerColor}
+          churchLogo={churchLogo}
           onOpenSearch={() => {
             setPaletteLoaded(true);
             setSearchOpen(true);

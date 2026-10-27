@@ -1443,6 +1443,21 @@ dans `public/brand/`. Le fichier déposé n'est pas conservé.
 | `updatedById` | String? | Ref vers `users` (set null) |
 | `updatedAt` | DateTime | Dernière modification |
 
+#### `church_logos` — logo de l'église dans l'interface (spec 072)
+
+Logo déposé par l'Admin de l'église (`church:settings`), une ligne par fond (clé
+`[churchId, variant]`, `light` principal, `dark` facultatif qui retombe sur `light`). Sans ligne
+`light`, la coquille affiche les plumes ICC. Le fichier déposé n'est pas conservé.
+
+| Champ | Type | Description |
+|---|---|---|
+| `churchId` | String, PK | Ref vers `churches` (cascade) |
+| `variant` | VarChar(10), PK | `light` ou `dark` |
+| `data` | MediumBlob | PNG préparé (600 × 200 au plus) |
+| `version` | VarChar(32) | Version (`?v=`), changée à chaque dépôt |
+| `updatedById` | String? | Ref vers `users` (set null) |
+| `updatedAt` | DateTime | Dernière modification |
+
 #### `cron_task_runs` — planificateur des tâches planifiées (ADR-0021)
 
 Une ligne par tâche déclarée dans `POST /api/cron`, créée à son premier passage. Donnée de

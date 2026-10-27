@@ -11,7 +11,9 @@ import ChurchSwitcher from "@/components/ChurchSwitcher";
 import NotificationBell from "@/components/NotificationBell";
 import AccountActions, { type AccountActionsProps } from "@/components/AccountActions";
 import { useShortcutLabel } from "@/components/shell-state";
+import ChurchMark from "@/components/ChurchMark";
 import { parentLink, type NavSpace } from "@/lib/navigation";
+import type { ChurchLogoSources } from "@/modules/core/schemas";
 
 export interface TopBarUser {
   readonly name: string | null;
@@ -27,6 +29,8 @@ interface TopBarProps extends AccountActionsProps {
   readonly churchName: string;
   /** `Church.primaryColor` : filet de 3px sous la barre (style inline, exception documentée). */
   readonly churchColor: string;
+  /** Logo de l'église courante (spec 072), `null` : plumes ICC. */
+  readonly churchLogo?: ChurchLogoSources | null;
   readonly onOpenSearch: () => void;
   /** Classe de position collante (`top-0`, ou sous le bandeau de recette). */
   readonly stickyClassName?: string;
@@ -136,6 +140,7 @@ export default function TopBar({
   currentChurchId,
   churchName,
   churchColor,
+  churchLogo = null,
   onOpenSearch,
   stickyClassName = "top-0",
   ...actions
@@ -163,8 +168,7 @@ export default function TopBar({
           </Link>
         ) : (
           <>
-            {/* eslint-disable-next-line @next/next/no-img-element -- SVG statique */}
-            <img src="/brand/icc-plumes.svg" alt="" width={28} height={28} className="h-7 w-auto shrink-0" />
+            <ChurchMark logo={churchLogo} className="h-7 max-w-24" />
             <ChurchSwitcher
               churches={churches}
               currentChurchId={currentChurchId}

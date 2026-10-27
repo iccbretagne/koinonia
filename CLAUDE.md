@@ -599,6 +599,11 @@ renommé spec 052) :
   secrétariat et de la comptabilité, couleur, responsable pastoral) et l'historique des
   modifications de l'église ; `access:admins` lui permet de nommer ou retirer un Admin ou un
   Secrétaire dans cette église
+- Dépose le **logo de son église** (spec 072) dans ces mêmes paramètres : une image pour fond
+  clair et une, facultative, pour fond sombre (table `church_logos`, service
+  `@/modules/core`, `/api/churches/[churchId]/logo`, lecture réservée aux membres de l'église).
+  Il remplace les plumes ICC dans la sidebar et la barre du haut (`ChurchMark`, variante `dark:`
+  pour le thème) ; la page de connexion garde les plumes
 - Reste réservé au Super Admin (`church:manage`, plateforme) : créer, onboarder ou supprimer
   une église, en changer le nom, l'adresse publique (slug) ou le superviseur, les sauvegardes,
   les ministères et départements « système », et le rôle Super Admin

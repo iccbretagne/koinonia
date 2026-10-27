@@ -126,6 +126,7 @@ model Church {
   serviceWithdrawals        ServiceWithdrawal[]
   // Page publique « Donner » (spec 065)
   givingPage                GivingPage?
+  logos                     ChurchLogo[]
   // Messages système (spec 071)
   systemMessages            SystemMessage[]
 
@@ -165,6 +166,7 @@ model User {
   notificationPushPreferences       NotificationPushPreference[]
   pushSubscriptions                 PushSubscription[]
   appIconsUpdated                   AppIconVariant[]             @relation("AppIconUpdatedBy")
+  churchLogosUpdated                ChurchLogo[]                 @relation("ChurchLogoUpdatedBy")
   systemMessagesCreated             SystemMessage[]              @relation("SystemMessageCreatedBy")
   systemMessagesUpdated             SystemMessage[]              @relation("SystemMessageUpdatedBy")
   systemMessageReceipts             SystemMessageReceipt[]
@@ -2793,4 +2795,23 @@ model SystemMessageReceipt {
   @@id([messageId, userId])
   @@index([userId])
   @@map("system_message_receipts")
+}
+
+/// Logo de l'église dans l'interface (spec 072) : une image par fond, écrite uniquement par le
+/// service du module core. Sans ligne `light`, les plumes ICC s'affichent.
+model ChurchLogo {
+  churchId    String
+  /// "light" (fond clair, principal) | "dark" (fond sombre, facultatif)
+  variant     String   @db.VarChar(10)
+  data        Bytes    @db.MediumBlob
+  /// Empreinte courte (cache-busting `?v=`), changée à chaque dépôt.
+  version     String   @db.VarChar(32)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+  church      Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  updatedBy   User?    @relation("ChurchLogoUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@id([churchId, variant])
+  @@index([updatedById])
+  @@map("church_logos")
 }

@@ -69,7 +69,7 @@ function world({
   ownProfile = false,
   memberLinked = false,
 } = {}) {
-  prismaMock.church.findUnique.mockResolvedValue({ name: "Rennes", primaryColor: "#123456" } as never);
+  prismaMock.church.findUnique.mockResolvedValue({ name: "Rennes", primaryColor: "#123456" , logos: [] } as never);
   prismaMock.church.findMany.mockResolvedValue([{ id: "church-P", name: "Pastorale" }] as never);
   prismaMock.department.findMany.mockImplementation((async (args: { where: { function?: unknown } }) => {
     if (args.where.function) return serviceDepts;

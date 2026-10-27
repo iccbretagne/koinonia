@@ -11,6 +11,7 @@ import SystemMessageBanner from "@/components/SystemMessageBanner";
 import type { RoleKey as TourRoleKey } from "@/lib/tour-steps";
 import { landingHref } from "@/lib/navigation";
 import { isPastoralView } from "@/lib/view-mode";
+import { churchLogoSources } from "@/modules/core/schemas";
 import type { Session } from "next-auth";
 
 // Liens de la section Configuration (paramétrage — pas les outils quotidiens)
@@ -201,14 +202,18 @@ async function serviceTeamLinks(
   return { requestLinks, mediaLinks, isProtocoleMember: isInTeam("PROTOCOLE") };
 }
 
-/** Nom et couleur de l'église courante, pour l'en-tête. */
+/** Nom, couleur et logo (spec 072, versions seulement) de l'église courante, pour l'en-tête. */
 async function churchDisplay(currentChurchId: string | null | undefined) {
   const currentChurchDb = currentChurchId
-    ? await prisma.church.findUnique({ where: { id: currentChurchId }, select: { name: true, primaryColor: true } })
+    ? await prisma.church.findUnique({
+        where: { id: currentChurchId },
+        select: { name: true, primaryColor: true, logos: { select: { variant: true, version: true } } },
+      })
     : null;
   return {
     churchName: currentChurchDb?.name ?? "Église",
     churchPrimaryColor: currentChurchDb?.primaryColor ?? "#5E17EB",
+    churchLogo: currentChurchId && currentChurchDb ? churchLogoSources(currentChurchId, currentChurchDb.logos) : null,
   };
 }
 
@@ -383,7 +388,7 @@ export default async function AuthLayout({
   // Double rôle dans l'église courante : profil pastoral + au moins un rôle classique
   const hasBothRoles = isPastoral && hasClassicRole;
 
-  const { churchName, churchPrimaryColor } = await churchDisplay(currentChurchId);
+  const { churchName, churchPrimaryColor, churchLogo } = await churchDisplay(currentChurchId);
 
   const churches = await switcherChurches(churchRoles, pastoralChurchIds);
   const allDepartments = await planningDepartments(churchRoles, currentChurchId);
@@ -549,6 +554,7 @@ export default async function AuthLayout({
       currentChurchId={currentChurchId ?? null}
       churchName={churchName}
       headerColor={churchPrimaryColor}
+      churchLogo={churchLogo}
       hasBothRoles={hasBothRoles}
       switchViewAction={isInPastoralMode ? switchToAdminMode : switchToPastoralMode}
       signOutAction={signOutAction}

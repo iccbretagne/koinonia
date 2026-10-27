@@ -5,10 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ExternalLink, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import ChurchMark from "@/components/ChurchMark";
 import ChurchSwitcher from "@/components/ChurchSwitcher";
 import SidebarPageTree from "@/components/SidebarPageTree";
 import { useSidebarPref, useViewport } from "@/components/shell-state";
 import { SECTION_LABELS, type ActiveNav, type NavSpace, type SpaceKey } from "@/lib/navigation";
+import type { ChurchLogoSources } from "@/modules/core/schemas";
 
 interface SidebarProps {
   readonly spaces: readonly NavSpace[];
@@ -17,6 +19,8 @@ interface SidebarProps {
   readonly currentChurchId: string | null;
   readonly churchName: string;
   readonly churchColor: string;
+  /** Logo de l'église courante (spec 072), `null` : plumes ICC. */
+  readonly churchLogo?: ChurchLogoSources | null;
   /** Classes de position collante (bandeau de recette). */
   readonly stickyClassName?: string;
 }
@@ -26,11 +30,10 @@ const overline = "font-display text-[11px] font-bold uppercase leading-4 trackin
 const itemBase = `flex min-h-10 min-w-0 items-center gap-3 rounded-control px-3 font-display text-sm font-semibold leading-5
   transition-colors duration-120 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus`;
 
-function Brand({ compact }: { readonly compact: boolean }) {
+function Brand({ compact, logo }: { readonly compact: boolean; readonly logo: ChurchLogoSources | null }) {
   return (
-    <div className={`flex items-center gap-2.5 ${compact ? "justify-center py-4" : "px-3 pb-3 pt-4"}`}>
-      {/* eslint-disable-next-line @next/next/no-img-element -- SVG statique, pas d'optimisation utile */}
-      <img src="/brand/icc-plumes.svg" alt="" width={36} height={36} className={compact ? "h-8 w-auto" : "h-9 w-auto"} />
+    <div className={`flex items-center gap-2.5 ${compact ? "justify-center px-2 py-4" : "px-3 pb-3 pt-4"}`}>
+      <ChurchMark logo={logo} className={compact ? "h-8 max-w-14" : "h-9"} />
       {!compact && <span className="font-display text-[19px] font-bold leading-6 tracking-[-0.01em] text-ink">Koinonia</span>}
       {compact && <span className="sr-only">Koinonia</span>}
     </div>
@@ -331,6 +334,7 @@ export default function Sidebar({
   currentChurchId,
   churchName,
   churchColor,
+  churchLogo = null,
   stickyClassName = "top-0 h-dvh",
 }: SidebarProps) {
   const [pref, setPref] = useSidebarPref();
@@ -351,7 +355,7 @@ export default function Sidebar({
     >
       {/* Présentation dépliée */}
       <div className={`${railForced ? "hidden" : "hidden lg:flex"} min-h-0 flex-1 flex-col`}>
-        <Brand compact={false} />
+        <Brand compact={false} logo={churchLogo} />
         <div className="px-3">
           <ChurchSwitcher {...switcher} variant="sidebar" />
         </div>
@@ -370,7 +374,7 @@ export default function Sidebar({
 
       {/* Rail */}
       <div className={`${railForced ? "flex" : "flex lg:hidden"} min-h-0 flex-1 flex-col items-center`}>
-        <Brand compact />
+        <Brand compact logo={churchLogo} />
         <ChurchSwitcher {...switcher} variant="rail" />
         <RailNav spaces={spaces} active={active} withTour={visible === "rail"} />
         {railForced && (

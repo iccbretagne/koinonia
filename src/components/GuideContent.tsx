@@ -294,7 +294,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Paramètres de l'église",
-    description: "Depuis « Paramètres de l'église », l'Admin règle les emails du secrétariat et de la comptabilité, la couleur de l'église et le responsable pastoral, et gère les profils pastoraux. Créer ou supprimer une église, en changer le nom, l'adresse publique ou le superviseur reste réservé au Super Admin.",
+    description: "Depuis « Paramètres de l'église », l'Admin règle les emails du secrétariat et de la comptabilité, la couleur et le logo de l'église (affiché à la place des plumes ICC, avec une version facultative pour le thème sombre) et le responsable pastoral, et gère les profils pastoraux. Créer ou supprimer une église, en changer le nom, l'adresse publique ou le superviseur reste réservé au Super Admin.",
     category: "Administration",
     screenshotTitle: "Paramètres de l'église",
     screenshotFile: "guide-admin-church.png",

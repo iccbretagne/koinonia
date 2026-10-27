@@ -15,3 +15,10 @@ export {
   type AppIconPreview,
   type AppIconState,
 } from "./services/app-icon";
+export {
+  getChurchLogo,
+  normalizeChurchLogo,
+  removeChurchLogo,
+  setChurchLogo,
+  type ChurchLogoActor,
+} from "./services/church-logo";

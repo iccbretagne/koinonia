@@ -6553,6 +6553,168 @@
         }
       }
     },
+    "/api/churches/{churchId}/logo": {
+      "get": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Logo de l'église dans l'interface",
+        "description": "**Accès** : toute personne connectée — membre de l'église `churchId`.\n\nPNG préparé (spec 072), servi aux membres de l'église (rôle ou profil pastoral) et au Super Admin, jamais à une autre église. Cache immuable : l'adresse change à chaque dépôt (`v`). 404 sans logo.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "light",
+                "dark"
+              ]
+            },
+            "required": true,
+            "name": "variant",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "v",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image PNG",
+            "content": {
+              "image/png": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Dépôt ou remplacement d'un logo de l'église",
+        "description": "**Accès** : permission `church:settings`.\n\nPNG, JPEG ou WebP, 2 Mo au plus. 411 sans Content-Length et 413 au-delà de 2,5 Mo, avant lecture du corps. Le format décodé fait foi (un SVG est refusé, 400) ; l'image est réduite à 600 × 200 au plus et réencodée en PNG, métadonnées retirées. Enregistré immédiatement et journalisé dans l'historique de l'église.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "church:settings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "description": "`variant` (`light` | `dark`), `file` (image)",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Version du logo enregistré (`version`)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Retrait d'un logo de l'église",
+        "description": "**Accès** : permission `church:settings`.\n\nJournalisé. Sans logo pour fond clair, les plumes ICC s'affichent.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "church:settings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "light",
+                "dark"
+              ]
+            },
+            "required": true,
+            "name": "variant",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`version: null`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
     "/api/churches/onboard": {
       "post": {
         "tags": [
