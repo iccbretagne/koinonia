@@ -1,7 +1,7 @@
 # Plan technique — Notifications natives sur le téléphone et l'ordinateur
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-10-27
 - **ADR** : [ADR-0024 — Notifications natives par Web Push, livrées depuis les notifications de l'application](../../docs/adr/0024-notifications-push-web-push.md) (à créer avec ce plan)
 
@@ -261,12 +261,8 @@ Nouveau dossier `src/lib/push/` :
   récent, après un geste de l'utilisateur.
   - L'état « indisponibles » et le guide couvrent le cas.
   - À vérifier sur un vrai iPhone en recette : sans SDK, aucun test automatique ne le couvre.
-- **Lien et église courante** : `Notification` n'a pas d'église, et le lien est le même que
-  celui de la cloche. Un utilisateur multi-église arrive sur l'écran avec son église courante,
-  exactement comme depuis la cloche.
-  - La spec dit « dans la bonne église » : le plan tient « comme la cloche ».
-  - Rattacher l'église aux notifications est hors de ce lot ; à confirmer en recette.
-    [Point à valider avec l'utilisateur au `/tasks`.]
+- **Lien et église courante** : `Notification` n'a pas d'église ; le lien est celui de la cloche,
+  ouvert dans l'église courante — comportement validé (spec, « comme la cloche »).
 - **Charge** : `notifyUsersWithRole` sur une grande église pousse vers des dizaines
   d'appareils. La concurrence bornée et l'appel `await` dans `dispatchIfNoTx` ajoutent la
   latence de l'envoi à l'action.

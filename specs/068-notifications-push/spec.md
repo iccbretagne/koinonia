@@ -116,8 +116,9 @@ se lit dans l'application, après connexion.
   notification reste dans la cloche, et l'email part selon le réglage email du domaine. La
   notification native n'est **jamais le seul** canal d'une information.
 - **Plusieurs églises** : l'utilisateur reçoit les notifications de toutes les églises où il a un
-  rôle, avec les mêmes choix par domaine ; ouvrir la notification l'amène sur l'écran concerné,
-  dans la bonne église.
+  rôle, avec les mêmes choix par domaine. Ouvrir la notification se comporte **exactement comme un
+  clic dans la cloche** : même écran, dans l'église courante de l'utilisateur. Rattacher chaque
+  notification à son église est hors périmètre.
 - **Domaine non visible** : un domaine que l'utilisateur ne voit pas dans « Mes notifications »
   ne lui envoie aucune notification native.
 - **Appareil activé avec un autre compte** : un même appareil n'envoie les notifications que du
@@ -165,6 +166,8 @@ se lit dans l'application, après connexion.
 - **Pastille de compteur** sur l'icône de l'application.
 - Applications publiées dans les stores (App Store, Play Store).
 - Changement du contenu ou des règles d'envoi des emails.
+- Rattacher une notification à son église pour basculer d'église à l'ouverture : la notification
+  native s'ouvre comme la cloche.
 
 ## Décisions
 
