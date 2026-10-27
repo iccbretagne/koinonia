@@ -77,12 +77,13 @@ function checkPeriod(
   }
 }
 
+/** Champs communs, sans valeur par défaut : une modification ne touche que ce qui est fourni. */
 const messageFields = z.object({
   title: titleSchema,
   body: bodySchema,
   linkUrl: linkUrlSchema.nullish().transform((v) => v || null),
   linkLabel: optionalText(60),
-  severity: z.enum(SystemMessageSeverity).default("INFO"),
+  severity: z.enum(SystemMessageSeverity),
   audience: audienceSchema,
   /** Absent : maintenant. */
   startsAt: z.coerce.date().nullish(),
@@ -90,7 +91,7 @@ const messageFields = z.object({
 });
 
 export const createSchema = z
-  .intersection(scopeSchema, messageFields)
+  .intersection(scopeSchema, messageFields.extend({ severity: z.enum(SystemMessageSeverity).default("INFO") }))
   .superRefine((value, ctx) => checkPeriod(value, ctx));
 export type CreateMessageInput = z.infer<typeof createSchema>;
 

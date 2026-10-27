@@ -19601,8 +19601,7 @@
                       "INFO",
                       "IMPORTANT",
                       "URGENT"
-                    ],
-                    "default": "INFO"
+                    ]
                   },
                   "audience": {
                     "type": "object",

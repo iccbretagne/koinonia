@@ -210,6 +210,7 @@ const CONFIG_BLOCKS: Record<string, string> = {
   "/admin/departments": "Organisation",
   "/admin/departments/functions": "Organisation",
   "/admin/rooms": "Organisation",
+  "/admin/messages": "Organisation",
   "/admin/users": "Accès",
   "/admin/access": "Accès",
   "/admin/pastoral-profiles": "Accès",

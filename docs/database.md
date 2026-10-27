@@ -1403,6 +1403,30 @@ préférence) ; `null` = encore à traiter. Mis à `createdAt` pour l'historique
 
 ### Plateforme
 
+#### `system_messages` — messages système (spec 071)
+
+Message de l'administration, affiché en bandeau pendant sa période et notifié à son début.
+`churchId` nul : message pour toute l'instance (Super Admin).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant |
+| `churchId` | String? | Ref vers `churches` (cascade delete) ; nul = instance |
+| `title` / `body` | VarChar(120) / Text | Titre et texte |
+| `linkUrl` / `linkLabel` | VarChar(500)? / VarChar(60)? | Lien facultatif (https ou chemin de Koinonia) |
+| `severity` | Enum `SystemMessageSeverity` | `INFO`, `IMPORTANT`, `URGENT` |
+| `audience` | Json | `{ roles, ministryIds, departmentIds, headsOnly }`, validé par Zod |
+| `startsAt` / `endsAt` | DateTime | Période |
+| `notifiedAt` | DateTime? | Pris de façon atomique au début de la période (un seul envoi) |
+| `recipientCount` | Int? | Comptes notifiés |
+| `withdrawnAt` | DateTime? | Retrait |
+| `createdById` / `updatedById` | String? | Ref vers `users` (set null) |
+
+#### `system_message_receipts` — vu / fermé (spec 071)
+
+Une ligne par compte et par message (clé `[messageId, userId]`) : `seenAt`, `dismissedAt`.
+Masque le bandeau sur tous les appareils et alimente les statistiques globales.
+
 #### `app_icon_variants` — icône de l'application (spec 069)
 
 Variantes préparées de l'icône déposée par un Super Admin, une ligne par variante (`icon-192`,

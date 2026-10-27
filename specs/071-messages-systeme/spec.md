@@ -1,7 +1,7 @@
 # Spec — Messages système (annonces internes)
 
 - **Numéro** : 071
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-10-27
 - **Branche suggérée** : `feat/messages-systeme`
 - **S'appuie sur** : [spec 053 — préférences de notification](../053-preferences-notifications-email/spec.md)
@@ -147,27 +147,27 @@ Aucune liste nominative n'est affichée : le suivi reste global.
 
 ## Critères d'acceptation
 
-- [ ] Un Super Admin publie un message pour toute l'instance ou pour une église ; un Admin ou une
+- [x] Un Super Admin publie un message pour toute l'instance ou pour une église ; un Admin ou une
   Secrétaire, seulement pour leur église. Tout autre rôle se voit refuser l'écran, même par
   adresse directe.
-- [ ] Le public se règle par église entière, par rôle et par ministère ou département, avec des
+- [x] Le public se règle par église entière, par rôle et par ministère ou département, avec des
   critères combinables. Le nombre de personnes visées s'affiche avant la publication.
-- [ ] Le bandeau s'affiche pendant la période, et seulement pour les personnes visées, en haut de
+- [x] Le bandeau s'affiche pendant la période, et seulement pour les personnes visées, en haut de
   toutes les pages, sur mobile et sur ordinateur.
-- [ ] Un message Information ou Important se ferme et ne revient pas pour cette personne, sur
+- [x] Un message Information ou Important se ferme et ne revient pas pour cette personne, sur
   aucun de ses appareils. Un message Urgent ne se ferme pas.
-- [ ] Au début de la période, une notification arrive dans la cloche de chaque personne visée.
-- [ ] L'email et l'appareil suivent la préférence du type « Messages de l'administration ». Un message Urgent
+- [x] Au début de la période, une notification arrive dans la cloche de chaque personne visée.
+- [x] L'email et l'appareil suivent la préférence du type « Messages de l'administration ». Un message Urgent
   part par email même si cette préférence est coupée.
-- [ ] Un message programmé n'est ni visible ni notifié avant son début ; il disparaît à sa fin.
-- [ ] La date de fin est obligatoire et postérieure au début ; un public vide est refusé.
-- [ ] Pour chaque message, l'auteur voit le nombre de personnes visées, de vues et de fermetures,
+- [x] Un message programmé n'est ni visible ni notifié avant son début ; il disparaît à sa fin.
+- [x] La date de fin est obligatoire et postérieure au début ; un public vide est refusé.
+- [x] Pour chaque message, l'auteur voit le nombre de personnes visées, de vues et de fermetures,
   sans liste nominative.
-- [ ] Un message en cours se corrige (titre, texte, fin) sans nouvelle notification et se retire
+- [x] Un message en cours se corrige (titre, texte, fin) sans nouvelle notification et se retire
   immédiatement. Un message programmé se modifie librement.
-- [ ] Publier, modifier et retirer un message apparaissent dans l'historique, avec l'auteur et la
+- [x] Publier, modifier et retirer un message apparaissent dans l'historique, avec l'auteur et la
   date.
-- [ ] Un message d'une église n'est jamais visible depuis une autre église.
+- [x] Un message d'une église n'est jamais visible depuis une autre église.
 
 ## Hors périmètre
 

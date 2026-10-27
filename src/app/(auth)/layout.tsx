@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { rolePermissions, registry } from "@/lib/registry";
 import { buildMediaSpaceCards, type MediaSpaceAccess } from "@/lib/media-space";
 import AuthLayoutShell from "@/components/AuthLayoutShell";
+import SystemMessageBanner from "@/components/SystemMessageBanner";
 import type { RoleKey as TourRoleKey } from "@/lib/tour-steps";
 import { landingHref } from "@/lib/navigation";
 import { isPastoralView } from "@/lib/view-mode";
@@ -20,6 +21,8 @@ const configLinksDef = [
   { href: "/admin/departments",           label: "Départements",      permissions: ["departments:manage"] },
   { href: "/admin/departments/functions", label: "Fonctions dép.",    permissions: ["events:manage"] },
   { href: "/admin/rooms",                 label: "Salles",            permissions: ["rooms:manage"] },
+  // Messages système (spec 071) : masqué si le module n'est pas actif, même pour un Super Admin
+  ...(registry.has("messages") ? [{ href: "/admin/messages", label: "Messages système", permissions: ["messages:publish"] }] : []),
   // Personnes
   { href: "/admin/users",                 label: "Utilisateurs",      permissions: ["users:manage"] },
   { href: "/admin/access",                label: "Accès & rôles",     permissions: ["access:manage"] },
@@ -506,6 +509,15 @@ export default async function AuthLayout({
     redirect("/no-access");
   }
 
+  // Messages système en cours (spec 071) : un échec de lecture ne doit jamais casser la page.
+  const bannerMessages = registry.has("messages")
+    ? await import("@/modules/messages")
+        .then(({ getActiveBannerMessages, messageViewerFromSession }) =>
+          getActiveBannerMessages(messageViewerFromSession(session))
+        )
+        .catch(() => [])
+    : [];
+
   return (
     <AuthLayoutShell
       departments={allDepartments}
@@ -541,6 +553,7 @@ export default async function AuthLayout({
       switchViewAction={isInPastoralMode ? switchToAdminMode : switchToPastoralMode}
       signOutAction={signOutAction}
       footer={footerContent}
+      banner={bannerMessages.length > 0 ? <SystemMessageBanner messages={bannerMessages} /> : undefined}
     >
       {children}
     </AuthLayoutShell>

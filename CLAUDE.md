@@ -328,6 +328,10 @@ cookie `koinonia-push-device`, supprimé sur `404`/`410`). Clés `VAPID_*` par e
 doit exister dans la cloche, et son texte ne doit rien contenir de plus que ce qu'un écran
 verrouillé peut montrer (pas de détail pastoral ni de coordonnée bancaire).
 
+**Seule exception à la préférence email** : `emailPolicy: "always"` des helpers, réservé aux
+messages système **Urgent** (spec 071, [ADR-0025](docs/adr/0025-email-urgent-hors-preference.md)).
+Tout autre usage exige un nouvel ADR.
+
 ## Design system (spec 055, ADR-0018)
 
 L'interface passe par des **tokens sémantiques** (rôle, pas teinte) déclarés en variables CSS dans
@@ -416,6 +420,7 @@ Compt = Comptable.
 | `accounting:manage` | x | x | | | | | | | | x |
 | `accounting:stats` | x | x | x | | | | | | | x |
 | `giving:manage` | x | x | x | | | | | | | x |
+| `messages:publish` | x | x | x | | | | | | | |
 | `agenda:view` | x | x | x | | | | | | | |
 | `agenda:manage` | x | x | x | | | | | | | |
 | `care:qualify` | x | x | | | | | | | x | |
@@ -546,6 +551,27 @@ renommé spec 052) :
   aperçu — l'aperçu de la slide réutilise la vraie scène via `toSlideProps`, seule traduction
   contenu → slide. Modifications non enregistrées signalées dans la barre collante, garde à la
   sortie (lien interne, fermeture, rechargement ; ni bouton « Précédent » ni palette ⌘K)
+
+**Spécificités du module messages** (spec 071) :
+- `messages:publish` (Super Admin, Admin, Secrétaire) ouvre `/admin/messages` : publier, programmer,
+  corriger et retirer un **message système** dans son église. Un message pour **toute l'instance**
+  (`churchId` nul) exige en plus le Super Admin (`requireMessageAuthorAccess`,
+  `@/modules/messages/auth`) ; pour un message existant, l'église qui fait foi est celle du message
+- Public décrit par critères (rôles, ministères, départements, « responsables seulement »), stocké
+  en JSON validé par Zod, **évalué à l'affichage** (bandeau, détail, reçus) et **résolu une fois**
+  au début de la période pour la notification (`resolveRecipients`, `isInAudience` : même règle).
+  Ministère ou département = ses responsables (`user_departments`, Ministre du ministère) et, sauf
+  « responsables seulement », ses membres (fiche STAR liée au compte)
+- Bandeau sous la barre supérieure (`SystemMessageBanner`, prop `banner` d'`AuthLayoutShell`) ;
+  « fermé » est un reçu en base (`system_message_receipts`) donc vaut sur tous les appareils ;
+  un message Urgent ne se ferme pas. Statistiques globales (visées, vues, fermées), jamais de
+  liste nominative
+- Notification au début de la période (envoi immédiat à la publication, tâche cron
+  `system-messages` pour les messages programmés et en rattrapage ; `notifiedAt` pris de façon
+  atomique) dans le domaine « Messages de l'administration » (`system-messages`). **Exception
+  Urgent** : `notifyUsers(…, { emailPolicy: "always" })` envoie l'email malgré la préférence
+  ([ADR-0025](docs/adr/0025-email-urgent-hors-preference.md)) — seul usage autorisé de cette
+  option ; la notification native suit toujours la préférence
 
 **Spécificités du Comptable** (`ACCOUNTANT`) :
 - Seul rôle (hors Super Admin/Admin) avec `accounting:manage` : traite les demandes financières

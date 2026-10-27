@@ -309,6 +309,14 @@ const FEATURES: Feature[] = [
     access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
+    name: "Messages système",
+    description: "Publiez un message dans un bandeau en haut de Koinonia pour toute l'église, certains rôles ou certains ministères et départements (membres et responsables, ou responsables seulement) : maintenance, nouveautés, consigne. Choisissez la sévérité (Information, Important, Urgent) et la période ; le message est notifié au début de la période selon les préférences de chacun — un message Urgent part par email même si la personne a coupé ces messages, et son bandeau ne se ferme pas. Suivez le nombre de personnes visées, de vues et de fermetures. Le Super Admin peut s'adresser à toute l'instance.",
+    category: "Administration",
+    screenshotTitle: "Messages système",
+    screenshotFile: "guide-admin-messages.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
     name: "Gestion des utilisateurs",
     description: "Consultez tous les comptes de l'église, pré-créez-en un avant sa première connexion, ou supprimez un compte préparé par erreur qui ne s'est jamais connecté (spec 054).",
     category: "Administration",
@@ -468,6 +476,14 @@ const FEATURES: Feature[] = [
     screenshotTitle: "Installer l'application",
     screenshotFile: "guide-install-app.png",
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "edit" },
+  },
+  {
+    name: "Messages de l'administration",
+    description: "Un bandeau en haut de Koinonia affiche les messages de votre église ou de Koinonia qui vous concernent (maintenance, consigne, nouveautés). « Lire » ouvre le message complet ; la croix le ferme sur tous vos appareils (un message urgent reste affiché jusqu'à la fin de sa période). Vous les recevez aussi dans la cloche, et par email ou sur votre appareil selon « Mes notifications ».",
+    category: "Profil",
+    screenshotTitle: "Messages de l'administration",
+    screenshotFile: "guide-system-messages.png",
+    access: { SUPER_ADMIN: "read", ADMIN: "read", SECRETARY: "read", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "read", STAR: "read", PASTORAL_CARE_REFERENT: "read", ACCOUNTANT: "read" },
   },
   {
     name: "Notifications sur le téléphone",

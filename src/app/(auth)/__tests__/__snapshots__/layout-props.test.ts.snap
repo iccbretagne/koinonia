@@ -16,6 +16,7 @@ exports[`AuthLayout — props de navigation > Admin aussi Admin d'une autre égl
       "label": "Suivi pastoral",
     },
   ],
+  "banner": undefined,
   "churchName": "Rennes",
   "churches": [
     {
@@ -47,6 +48,10 @@ exports[`AuthLayout — props de navigation > Admin aussi Admin d'une autre égl
     {
       "href": "/admin/rooms",
       "label": "Salles",
+    },
+    {
+      "href": "/admin/messages",
+      "label": "Messages système",
     },
     {
       "href": "/admin/users",
@@ -172,6 +177,7 @@ exports[`AuthLayout — props de navigation > Admin aussi pasteur, vue admin cho
       "label": "Suivi pastoral",
     },
   ],
+  "banner": undefined,
   "churchName": "Rennes",
   "churches": [
     {
@@ -203,6 +209,10 @@ exports[`AuthLayout — props de navigation > Admin aussi pasteur, vue admin cho
     {
       "href": "/admin/rooms",
       "label": "Salles",
+    },
+    {
+      "href": "/admin/messages",
+      "label": "Messages système",
     },
     {
       "href": "/admin/users",
@@ -328,6 +338,7 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
       "label": "Suivi pastoral",
     },
   ],
+  "banner": undefined,
   "churchName": "Rennes",
   "churches": [
     {
@@ -355,6 +366,10 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
     {
       "href": "/admin/rooms",
       "label": "Salles",
+    },
+    {
+      "href": "/admin/messages",
+      "label": "Messages système",
     },
     {
       "href": "/admin/users",
@@ -467,6 +482,7 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
 exports[`AuthLayout — props de navigation > Comptable 1`] = `
 {
   "agendaLinks": [],
+  "banner": undefined,
   "churchName": "Rennes",
   "churches": [
     {
@@ -521,6 +537,7 @@ exports[`AuthLayout — props de navigation > Comptable 1`] = `
 exports[`AuthLayout — props de navigation > Ministre 1`] = `
 {
   "agendaLinks": [],
+  "banner": undefined,
   "churchName": "Rennes",
   "churches": [
     {
@@ -602,6 +619,7 @@ exports[`AuthLayout — props de navigation > Pasteur seul (profil pastoral, vue
       "label": "Mon agenda",
     },
   ],
+  "banner": undefined,
   "churchName": "Rennes",
   "churches": [
     {
@@ -651,6 +669,7 @@ exports[`AuthLayout — props de navigation > Pasteur seul (profil pastoral, vue
 exports[`AuthLayout — props de navigation > Resp. département Communication, Photos repliées sur Production Média 1`] = `
 {
   "agendaLinks": [],
+  "banner": undefined,
   "churchName": "Rennes",
   "churches": [
     {
@@ -718,6 +737,7 @@ exports[`AuthLayout — props de navigation > Resp. département Communication, 
 exports[`AuthLayout — props de navigation > Resp. département Production Média et Intégration 1`] = `
 {
   "agendaLinks": [],
+  "banner": undefined,
   "churchName": "Rennes",
   "churches": [
     {
@@ -815,6 +835,7 @@ exports[`AuthLayout — props de navigation > Référent soins pastoraux 1`] = `
       "label": "Suivi pastoral",
     },
   ],
+  "banner": undefined,
   "churchName": "Rennes",
   "churches": [
     {
@@ -873,6 +894,7 @@ exports[`AuthLayout — props de navigation > STAR du Protocole 1`] = `
       "label": "Planification",
     },
   ],
+  "banner": undefined,
   "churchName": "Rennes",
   "churches": [
     {
@@ -927,6 +949,7 @@ exports[`AuthLayout — props de navigation > STAR du Protocole 1`] = `
 exports[`AuthLayout — props de navigation > STAR lié, berger de famille 1`] = `
 {
   "agendaLinks": [],
+  "banner": undefined,
   "churchName": "Rennes",
   "churches": [
     {
@@ -1003,6 +1026,7 @@ exports[`AuthLayout — props de navigation > Secrétaire avec profil pastoral p
       "label": "Suivi pastoral",
     },
   ],
+  "banner": undefined,
   "churchName": "Rennes",
   "churches": [
     {
@@ -1014,6 +1038,10 @@ exports[`AuthLayout — props de navigation > Secrétaire avec profil pastoral p
     {
       "href": "/admin/departments/functions",
       "label": "Fonctions dép.",
+    },
+    {
+      "href": "/admin/messages",
+      "label": "Messages système",
     },
     {
       "href": "/admin/access",
@@ -1127,6 +1155,7 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
       "label": "Suivi pastoral",
     },
   ],
+  "banner": undefined,
   "churchName": "Rennes",
   "churches": [
     {
@@ -1154,6 +1183,10 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
     {
       "href": "/admin/rooms",
       "label": "Salles",
+    },
+    {
+      "href": "/admin/messages",
+      "label": "Messages système",
     },
     {
       "href": "/admin/users",
@@ -1278,6 +1311,7 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
 exports[`AuthLayout — props de navigation > sans église courante, ni départements d'admin ni sections d'église 1`] = `
 {
   "agendaLinks": [],
+  "banner": undefined,
   "churchName": "Église",
   "churches": [
     {
@@ -1305,6 +1339,10 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
     {
       "href": "/admin/rooms",
       "label": "Salles",
+    },
+    {
+      "href": "/admin/messages",
+      "label": "Messages système",
     },
     {
       "href": "/admin/users",

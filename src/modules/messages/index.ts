@@ -4,6 +4,8 @@ export {
   getMessageChurchId,
   getMessageForAuthor,
   getMessageForViewer,
+  getAudienceOptions,
+  type AudienceOptions,
   listMessages,
   messageViewerFromSession,
   messageStatus,

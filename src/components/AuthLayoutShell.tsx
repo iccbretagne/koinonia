@@ -43,6 +43,8 @@ interface AuthLayoutShellProps extends Omit<NavigationInput, "jobsUnseenCount" |
   readonly signOutAction: ServerAction;
   readonly children: React.ReactNode;
   readonly footer: React.ReactNode;
+  /** Bandeau des messages système (spec 071), sous la barre supérieure. */
+  readonly banner?: React.ReactNode;
 }
 
 /** Largeur réservée à la sidebar, lue par le `Toast` (`--k-sidebar-width`) pour se placer à côté. */
@@ -73,6 +75,7 @@ export default function AuthLayoutShell({
   signOutAction,
   children,
   footer,
+  banner,
   ...navInput
 }: AuthLayoutShellProps) {
   const pathname = usePathname();
@@ -203,6 +206,7 @@ export default function AuthLayoutShell({
           {...accountActions}
         />
 
+        {banner}
         <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 pb-6 pt-4 md:px-6 md:pt-6">{children}</main>
 
         <div className="pb-[calc(64px+env(safe-area-inset-bottom))] md:pb-0">{footer}</div>

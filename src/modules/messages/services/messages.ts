@@ -330,3 +330,22 @@ export async function viewerInAudience(
   const facts = await loadViewerFacts(viewer.userId, churchIds);
   return isInAudience({ churchId: row.churchId, audience: parseAudience(row.audience) }, facts);
 }
+
+export interface AudienceOptions {
+  ministries: { id: string; name: string; departments: { id: string; name: string }[] }[];
+}
+
+/** Ministères et départements de l'église, pour choisir le public d'un message. */
+export async function getAudienceOptions(churchId: string): Promise<AudienceOptions> {
+  const prisma = await db();
+  const ministries = await prisma.ministry.findMany({
+    where: { churchId },
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
+      departments: { orderBy: { name: "asc" }, select: { id: true, name: true } },
+    },
+  });
+  return { ministries };
+}

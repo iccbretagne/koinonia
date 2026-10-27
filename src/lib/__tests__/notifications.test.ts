@@ -6,6 +6,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/email", () => ({
   sendEmail: (...args: unknown[]) => mockSendEmail(...args),
   appendPreferenceFooter: (html: string, label: string) => `${html}<!--footer:${label}-->`,
+  appendUrgentFooter: (html: string) => `${html}<!--urgent-->`,
   buildGenericNotificationEmail: (params: { title: string; message: string; link?: string }) => ({
     subject: params.title,
     html: `<p>${params.message}</p>`,
@@ -344,5 +345,40 @@ describe("notification native (spec 068, ADR-0024)", () => {
     await notifyUsers(["u1", "u2"], { domain: "jobs", type: "JOB_OFFER", title: "t", message: "m" }, { email: false });
     expect(mockSendEmail).not.toHaveBeenCalled();
     expect(mockDeliverPendingPush).toHaveBeenCalledWith(expect.objectContaining({ userIds: ["u1", "u2"], type: "JOB_OFFER" }));
+  });
+});
+
+describe("message urgent : email malgré la préférence (spec 071, ADR-0025)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSendEmail.mockResolvedValue(undefined);
+    prismaMock.notification.createMany.mockResolvedValue({ count: 2 });
+    prismaMock.user.findMany.mockResolvedValue([
+      { id: "u1", email: "a@example.com" },
+      { id: "u2", email: null },
+    ]);
+    // u1 a coupé tous les emails.
+    prismaMock.notificationEmailPreference.findMany.mockResolvedValue([{ userId: "u1", domain: "*", enabled: false }]);
+  });
+
+  const notification = { domain: "system-messages", type: "SYSTEM_MESSAGE", title: "Urgent", message: "Culte déplacé" };
+
+  it("emailPolicy « always » : l'email part malgré la préférence coupée, avec le pied « urgent »", async () => {
+    await notifyUsers(["u1", "u2"], notification, { emailPolicy: "always" });
+    expect(mockSendEmail).toHaveBeenCalledTimes(1);
+    expect(mockSendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "a@example.com", html: expect.stringContaining("<!--urgent-->") })
+    );
+  });
+
+  it("sans adresse : rien n'est envoyé, même en urgence", async () => {
+    prismaMock.user.findMany.mockResolvedValue([{ id: "u2", email: null }]);
+    await notifyUsers(["u2"], notification, { emailPolicy: "always" });
+    expect(mockSendEmail).not.toHaveBeenCalled();
+  });
+
+  it("par défaut, la préférence coupée est respectée", async () => {
+    await notifyUsers(["u1", "u2"], notification);
+    expect(mockSendEmail).not.toHaveBeenCalled();
   });
 });
