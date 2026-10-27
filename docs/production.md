@@ -54,7 +54,24 @@ SUPER_ADMIN_EMAILS=admin@votre-eglise.com
 ENABLED_MODULES=
 TURNSTILE_SITE_KEY=cle-publique-turnstile
 TURNSTILE_SECRET_KEY=cle-secrete-turnstile
+VAPID_PUBLIC_KEY=cle-publique-vapid
+VAPID_PRIVATE_KEY=cle-privee-vapid
+VAPID_SUBJECT=mailto:contact@votre-domaine.com
 ```
+
+`VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` activent les notifications natives
+sur les appareils (Web Push, spec 068, ADR-0024). Générer **une paire par environnement**, une
+seule fois :
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+La clé privée est un secret (même traitement que `AUTH_SECRET`). Les clés sont lues à
+l'exécution, pas au build. **Changer de paire invalide tous les abonnements** : chaque appareil
+devra réactiver les notifications dans « Mes notifications » (les anciens abonnements sont
+supprimés au premier refus du service push). Sans ces trois variables, le canal est simplement
+indisponible et « Mes notifications » l'indique.
 
 `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` (Cloudflare → Turnstile, widget déclarant le
 domaine de l'instance) protègent les formulaires publics `/agenda-public` et `/rejoindre`

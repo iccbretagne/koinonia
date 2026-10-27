@@ -1,6 +1,6 @@
 # ADR-0024 — Notifications natives par Web Push, livrées depuis les notifications de l'application
 
-- **Statut** : Proposé
+- **Statut** : Accepté
 - **Date** : 2026-10-27
 
 ## Contexte

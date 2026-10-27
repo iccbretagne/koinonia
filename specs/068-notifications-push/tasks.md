@@ -1,17 +1,17 @@
 # Tâches — Notifications natives sur le téléphone et l'ordinateur
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md` · **ADR** : `docs/adr/0024-notifications-push-web-push.md`
-- **Statut** : À faire
+- **Statut** : En cours
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
 
 ## Prérequis
 
-- [ ] Branche de travail à jour depuis `main`.
-- [ ] Ajout de `web-push` (MIT) et de `@types/web-push` (dev), lockfile régénéré par
+- [x] Branche de travail à jour depuis `main`.
+- [x] Ajout de `web-push` (MIT) et de `@types/web-push` (dev), lockfile régénéré par
   `npm install`. Vérifier ensuite `npm audit --omit=dev --audit-level=high`.
-- [ ] Paire de clés VAPID de développement générée (`npx web-push generate-vapid-keys`) et
+- [x] Paire de clés VAPID de développement générée (`npx web-push generate-vapid-keys`) et
   ajoutée à `.env.example`, **sans valeur réelle** : `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`,
   `VAPID_SUBJECT`.
 
@@ -19,13 +19,13 @@
 
 ### 1. Données & migration
 
-- [ ] **T1** — Schéma :
+- [x] **T1** — Schéma :
   - modèles `PushSubscription` et `NotificationPushPreference` ;
   - champ `Notification.pushedAt` avec l'index `[pushedAt, createdAt]` ;
   - relations inverses sur `User`.
 
   *(fichier : `prisma/schema.prisma`)*
-- [ ] **T2** — Migration `add_push_notifications` :
+- [x] **T2** — Migration `add_push_notifications` :
   - création des deux tables (clés étrangères `onDelete: Cascade`) ;
   - ajout de `pushed_at` et de l'index ;
   - `UPDATE notifications SET pushed_at = created_at` pour l'historique.
@@ -35,10 +35,10 @@
 
 ### 2. Logique métier (`src/lib/push/`)
 
-- [ ] **T3** [P] — `config.ts` : lecture de `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` et
+- [x] **T3** [P] — `config.ts` : lecture de `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` et
   `VAPID_SUBJECT`, `isPushConfigured()` et `getVapidPublicKey()`. Configuration de `web-push`
   faite une seule fois, au premier envoi. *(fichier : `src/lib/push/config.ts`)*
-- [ ] **T4** [P] — `payload.ts` : `buildPushPayload(notification)`, fonction pure.
+- [x] **T4** [P] — `payload.ts` : `buildPushPayload(notification)`, fonction pure.
   - Contenu : `{ title, body, url, tag }`.
   - Titre et message identiques à la notification, tronqués à 120 et 240 caractères.
   - `url` : le `link` relatif, ou `/accueil` à défaut ; un lien absolu ou externe est ramené à
@@ -46,14 +46,14 @@
   - `tag` : l'`id` de la notification.
 
   *(fichier : `src/lib/push/payload.ts`)*
-- [ ] **T5** [P] — `preferences.ts` :
+- [x] **T5** [P] — `preferences.ts` :
   - `resolvePushPreference({ globalEnabled, domainPreference })`, pure : défaut activé ;
   - `PUSH_GLOBAL_DOMAIN = "*"` ;
   - lecture des préférences de plusieurs utilisateurs pour un domaine ;
   - écriture en upsert, sur le modèle de `updatePreferences`.
 
   *(fichier : `src/lib/push/preferences.ts`)*
-- [ ] **T6** [P] — `subscriptions.ts` :
+- [x] **T6** [P] — `subscriptions.ts` :
   - `subscribeDevice(userId, { endpoint, keys }, userAgent)` : upsert par `endpointHash`
     (SHA-256), réattribution journalisée si l'endpoint appartient à un autre compte ;
   - `unsubscribeDevice(userId, { endpoint } | { id })` : supprime uniquement si l'abonnement
@@ -63,7 +63,7 @@
     « Windows · Edge »…).
 
   *(fichier : `src/lib/push/subscriptions.ts`)*
-- [ ] **T7** — `deliver.ts` : `deliverPendingPush(filter)`.
+- [x] **T7** — `deliver.ts` : `deliverPendingPush(filter)`.
   1. Sélectionne les notifications `pushedAt = null` du filtre, avec soit
      `{ userIds, type, createdAfter }`, soit `{ since }`.
   2. Prend chacune par
@@ -77,7 +77,7 @@
   - Sans configuration VAPID, rien n'est envoyé et aucune ligne n'est prise.
 
   *(fichier : `src/lib/push/deliver.ts`)*
-- [ ] **T8** — Branchement dans `dispatchIfNoTx` : après l'email, appeler
+- [x] **T8** — Branchement dans `dispatchIfNoTx` : après l'email, appeler
   `deliverPendingPush({ userIds, type, createdAfter: <instant de début de l'appel> })`.
   - L'instant de début est capturé dans `createNotification`, `notifyUsers`,
     `notifyUsersWithRole` et `notifyDeptMembers` avant l'écriture.
@@ -85,16 +85,16 @@
   - Mettre à jour le commentaire d'en-tête du fichier (canaux, ADR-0024).
 
   *(fichier : `src/lib/notifications.ts`)*
-- [ ] **T9** — Vue et écriture des préférences, étendues aux deux canaux :
+- [x] **T9** — Vue et écriture des préférences, étendues aux deux canaux :
   - `getPreferencesView` ajoute `pushEnabled`, `push` par domaine, `pushAvailable`,
     `vapidPublicKey` et `deviceCount` ;
   - `updatePreferences` accepte `pushEnabled` et `pushDomains`.
 
   *(fichier : `src/lib/notification-preferences.ts`)*
-- [ ] **T10** — Tâche cron `push-delivery` en `every-run`, qui appelle
+- [x] **T10** — Tâche cron `push-delivery` en `every-run`, qui appelle
   `deliverPendingPush({ since: now - 1 h })`, ajoutée à `cronTasks`. *(fichier :
   `src/app/api/cron/route.ts`)*
-- [ ] **T11** — Déconnexion :
+- [x] **T11** — Déconnexion :
   - la server action `signOut` lit le cookie `koinonia-push-device` ;
   - elle appelle `unsubscribeDevice(session.user.id, { id })`, puis efface le cookie, puis
     appelle `signOut`.
@@ -104,14 +104,14 @@
 
 ### 3. API
 
-- [ ] **T12** — Contrat de `push/subscriptions` (ADR-0023) :
+- [x] **T12** — Contrat de `push/subscriptions` (ADR-0023) :
   - `POST` : `subscribeSchema`, avec `endpoint` en URL https de 2048 caractères au plus et
     `keys.p256dh`/`keys.auth` en base64url de 255 caractères au plus ;
   - `DELETE` : `{ endpoint? }` ;
   - accès `session` ; règles de réattribution et de `204` neutre.
 
   *(fichier : `src/app/api/notifications/push/subscriptions/contract.ts`)*
-- [ ] **T13** — Route handler :
+- [x] **T13** — Route handler :
   - `POST` : Zod, puis `requireAuth`, puis `503` si non configuré, puis `subscribeDevice`.
     Cookie `koinonia-push-device` posé en `httpOnly`, `Secure` (sauf en dev), `SameSite=Lax`,
     `Path=/`, pour un an.
@@ -119,36 +119,36 @@
     effacé.
 
   *(fichier : `src/app/api/notifications/push/subscriptions/route.ts`)*
-- [ ] **T14** — Contrat et route des préférences :
+- [x] **T14** — Contrat et route des préférences :
   - `putSchema` accepte `pushEnabled` et `pushDomains` ;
   - un domaine push non visible est refusé en `400`, comme pour l'email ;
   - description du contrat mise à jour.
 
   *(fichiers : `src/app/api/notifications/preferences/contract.ts`, `route.ts`)*
-- [ ] **T15** — `npm run openapi` et commit de `docs/openapi.json`. Vérifier que
+- [x] **T15** — `npm run openapi` et commit de `docs/openapi.json`. Vérifier que
   `route-exhaustiveness.test.ts` passe (préfixe `/api/notifications` déjà déclaré) et que le
   seuil de `lint:prisma-boundary` est inchangé.
 
 ### 4. UI & PWA
 
-- [ ] **T16** [P] — Service worker :
+- [x] **T16** [P] — Service worker :
   - `push` : `showNotification(title, { body, icon, badge, tag, data: { url } })` ;
   - `notificationclick` : met au premier plan un client sur l'origine et y navigue, sinon
     `openWindow`. L'URL est forcée sur l'origine.
   - `CACHE_NAME` passe à `koinonia-v4`.
 
   *(fichier : `public/sw.js`)*
-- [ ] **T17** [P] — Icônes PNG générées depuis `koinonia-app-icon.svg` par un script `sharp` :
+- [x] **T17** [P] — Icônes PNG générées depuis `koinonia-app-icon.svg` par un script `sharp` :
   192, 512, maskable 512, `apple-touch-icon` 180 et badge monochrome 96. Le manifeste et
   l'`apple-touch-icon` du layout racine sont mis à jour. *(fichiers :
   `scripts/generate-app-icons.mjs`, `public/brand/*.png`, `public/manifest.json`,
   `src/app/layout.tsx`)*
-- [ ] **T18** [P] — Détection de l'état de l'appareil, en fonction pure testable :
+- [x] **T18** [P] — Détection de l'état de l'appareil, en fonction pure testable :
   `pushDeviceState({ hasServiceWorker, hasPushManager, isIos, isStandalone, permission,
   subscribed, configured })`, qui renvoie `unavailable-ios-install`, `unavailable-browser`,
   `blocked`, `enabled` ou `disabled`. *(fichier :
   `src/app/(auth)/profile/notifications/push-device-state.ts`)*
-- [ ] **T19** — Composant client `PushDeviceCard` : bloc « Notifications sur cet appareil ».
+- [x] **T19** — Composant client `PushDeviceCard` : bloc « Notifications sur cet appareil ».
   - `StatusChip` pour l'état et compteur d'appareils.
   - « Activer » : `Notification.requestPermission()` dans le gestionnaire du clic, puis
     `pushManager.subscribe({ userVisibleOnly: true, applicationServerKey })`, puis POST.
@@ -158,7 +158,7 @@
   - `useToast` pour les retours.
 
   *(fichier : `src/app/(auth)/profile/notifications/PushDeviceCard.tsx`)*
-- [ ] **T20** — Page « Mes notifications » :
+- [x] **T20** — Page « Mes notifications » :
   - `PushDeviceCard` en tête, puis l'interrupteur général « Recevoir les notifications sur mes
     appareils » à côté de celui de l'email ;
   - deux `Checkbox` par domaine (**Email**, **Sur l'appareil**), en tableau sur grand écran et
@@ -166,29 +166,29 @@
   - un enregistrement unique pour les deux canaux.
 
   *(fichiers : `NotificationPreferencesClient.tsx`, `page.tsx` du même dossier)*
-- [ ] **T21** — Relire les titres et messages existants du domaine `care` et des autres domaines
+- [x] **T21** — Relire les titres et messages existants du domaine `care` et des autres domaines
   sensibles : aucun ne doit contenir de détail d'entretien pastoral ni de coordonnée bancaire.
   Corriger le texte si besoin, et le consigner dans la PR. *(fichiers :
   `src/modules/care/services/*`, `src/modules/accounting/**`, `src/modules/giving/**`)*
 
 ### 5. Tests
 
-- [ ] **T22** [P] — `payload.test.ts` :
+- [x] **T22** [P] — `payload.test.ts` :
   - titre et message identiques à la notification, troncature ;
   - `url` par défaut et lien externe ramené à `/accueil`, `tag` égal à l'`id` ;
   - aucun champ supplémentaire.
 
   *(fichier : `src/lib/push/__tests__/payload.test.ts`)*
-- [ ] **T23** [P] — `preferences.test.ts` : `resolvePushPreference` (général désactivé,
+- [x] **T23** [P] — `preferences.test.ts` : `resolvePushPreference` (général désactivé,
   préférence explicite, défaut activé) et écriture en upsert. *(fichier :
   `src/lib/push/__tests__/preferences.test.ts`)*
-- [ ] **T24** [P] — `subscriptions.test.ts` :
+- [x] **T24** [P] — `subscriptions.test.ts` :
   - création et réattribution journalisée ;
   - `unsubscribeDevice` limité au propriétaire ;
   - `deviceLabel` sur plusieurs User-Agent.
 
   *(fichier : `src/lib/push/__tests__/subscriptions.test.ts`)*
-- [ ] **T25** — `deliver.test.ts`, avec `web-push` mocké :
+- [x] **T25** — `deliver.test.ts`, avec `web-push` mocké :
   - prise atomique (`count === 0` n'envoie rien) et pas de doublon entre l'appel immédiat et le
     rattrapage ;
   - préférence désactivée : `pushedAt` posé sans envoi ;
@@ -198,12 +198,12 @@
   - sans VAPID : aucune prise ni aucun envoi.
 
   *(fichier : `src/lib/push/__tests__/deliver.test.ts`)*
-- [ ] **T26** — `notifications.test.ts`, existant et étendu :
+- [x] **T26** — `notifications.test.ts`, existant et étendu :
   - sans `tx`, la livraison push est appelée ; avec `tx`, elle ne l'est pas ;
   - `email: false` n'empêche pas le push.
 
   *(fichier : `src/lib/__tests__/notifications.test.ts`)*
-- [ ] **T27** — Routes :
+- [x] **T27** — Routes :
   - `push/subscriptions` :
     - `401` sans session ;
     - `400` sur un endpoint non https ou des clés vides ;
@@ -214,40 +214,40 @@
 
   *(fichiers : `src/app/api/notifications/push/subscriptions/__tests__/route.test.ts`,
   `src/app/api/notifications/preferences/__tests__/*`)*
-- [ ] **T28** [P] — `push-device-state.test.ts` : les cinq états, en particulier un iPhone non
+- [x] **T28** [P] — `push-device-state.test.ts` : les cinq états, en particulier un iPhone non
   installé (« indisponible, installer ») et la permission refusée (« bloquées »). *(fichier :
   `src/app/(auth)/profile/notifications/__tests__/push-device-state.test.ts`)*
-- [ ] **T29** — Déconnexion : la server action supprime l'abonnement du cookie seulement s'il
+- [x] **T29** — Déconnexion : la server action supprime l'abonnement du cookie seulement s'il
   appartient à la session, puis efface le cookie. *(fichier : test de la server action, à
   extraire au besoin dans une fonction testable de `src/lib/push/subscriptions.ts`)*
-- [ ] **T30** — Cron : la tâche `push-delivery` est déclarée en `every-run` et appelle le
+- [x] **T30** — Cron : la tâche `push-delivery` est déclarée en `every-run` et appelle le
   rattrapage. *(fichier : `src/app/api/cron/__tests__/*`)*
 
 ### 6. Documentation & livraison
 
-- [ ] **T31** [P] — `CLAUDE.md` : section « Notifications et préférences » complétée par le
+- [x] **T31** [P] — `CLAUDE.md` : section « Notifications et préférences » complétée par le
   canal push (source = la cloche, livraison immédiate + rattrapage, préférences push, défaut
   activé). Y ajouter aussi le passage de l'ADR-0024 au statut « Accepté ». *(fichiers :
   `CLAUDE.md`, `docs/adr/0024-notifications-push-web-push.md`)*
-- [ ] **T32** [P] — Exploitation : génération et stockage des clés VAPID par environnement,
+- [x] **T32** [P] — Exploitation : génération et stockage des clés VAPID par environnement,
   conséquence d'une rotation, variables d'environnement. *(fichiers : `docs/production.md`,
   `docs/dev-onboarding.md`, `docs/staging.md`)*
-- [ ] **T33** [P] — Base de données : tables `push_subscriptions` et
+- [x] **T33** [P] — Base de données : tables `push_subscriptions` et
   `notification_push_preferences`, et colonne `notifications.pushed_at`. *(fichier :
   `docs/database.md`)*
-- [ ] **T34** [P] — Guide utilisateur : entrée « Notifications sur le téléphone » pour tous les
+- [x] **T34** [P] — Guide utilisateur : entrée « Notifications sur le téléphone » pour tous les
   rôles (installer sur iPhone et Android, activer, choisir par domaine). *(fichier :
   `src/components/GuideContent.tsx`)*
-- [ ] **T35** — CHANGELOG, section « Non publié », entrée « Ajouté ». *(fichier : `CHANGELOG.md`)*
+- [x] **T35** — CHANGELOG, section « Non publié », entrée « Ajouté ». *(fichier : `CHANGELOG.md`)*
 
 ## Vérification finale
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `npm run lint:boundaries`
-- [ ] `npm run lint:prisma-boundary`, seuil inchangé
-- [ ] `npm run test`
-- [ ] `npm run build`
+- [x] `npm run typecheck`
+- [x] `npm run lint`
+- [x] `npm run lint:boundaries`
+- [x] `npm run lint:prisma-boundary`, seuil inchangé
+- [x] `npm run test`
+- [x] `npm run build`
 - [ ] Migration rejouée sur base vierge (job CI `migrations`)
 - [ ] Clés VAPID configurées sur staging
 - [ ] Recette staging :
@@ -258,7 +258,7 @@
   - notification créée en transaction (absence déclarée), reçue en 5 minutes au plus ;
   - déconnexion, puis reconnexion avec un autre compte ;
   - autorisation retirée dans les réglages.
-- [ ] Tous les critères d'acceptation de `spec.md` satisfaits (correspondance ci-dessous)
+- [x] Tous les critères d'acceptation de `spec.md` satisfaits (correspondance ci-dessous)
 - [ ] PR ouverte vers `main`
 
 ## Correspondance critères d'acceptation → tâches

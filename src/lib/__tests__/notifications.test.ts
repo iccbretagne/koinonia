@@ -12,6 +12,11 @@ vi.mock("@/lib/email", () => ({
   }),
 }));
 
+const mockDeliverPendingPush = vi.fn();
+vi.mock("@/lib/push/deliver", () => ({
+  deliverPendingPush: (...args: unknown[]) => mockDeliverPendingPush(...args),
+}));
+
 const {
   createNotification,
   notifyUsers,
@@ -299,5 +304,45 @@ describe("un seul email par notification (audit notifications)", () => {
 
     expect(prismaMock.notification.create).toHaveBeenCalled();
     expect(mockSendEmail).not.toHaveBeenCalled();
+  });
+});
+
+describe("notification native (spec 068, ADR-0024)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSendEmail.mockResolvedValue(undefined);
+    mockDeliverPendingPush.mockResolvedValue({ sent: 0, removed: 0 });
+    prismaMock.notification.create.mockResolvedValue({});
+    prismaMock.notification.createMany.mockResolvedValue({ count: 1 });
+    prismaMock.user.findMany.mockResolvedValue([]);
+    prismaMock.notificationEmailPreference.findMany.mockResolvedValue([]);
+  });
+
+  const input = { userId: "u1", domain: "planning", type: "PLANNING_ADDED", title: "t", message: "m" };
+
+  it("sans tx : livraison immédiate filtrée sur les destinataires, le type et l'instant de l'appel", async () => {
+    const before = Date.now();
+    await createNotification(input);
+    expect(mockDeliverPendingPush).toHaveBeenCalledWith({
+      userIds: ["u1"],
+      type: "PLANNING_ADDED",
+      createdAfter: expect.any(Date),
+    });
+    const { createdAfter } = mockDeliverPendingPush.mock.calls[0][0] as { createdAfter: Date };
+    // Marge d'horloge : un peu avant le début de l'appel, jamais après.
+    expect(createdAfter.getTime()).toBeLessThanOrEqual(before);
+    expect(createdAfter.getTime()).toBeGreaterThan(before - 60_000);
+  });
+
+  it("avec tx : rien n'est poussé ici (rattrapage cron après validation)", async () => {
+    const tx = { notification: { create: vi.fn().mockResolvedValue({}) } } as never;
+    await createNotification(input, { tx });
+    expect(mockDeliverPendingPush).not.toHaveBeenCalled();
+  });
+
+  it("email: false ne coupe pas la notification native", async () => {
+    await notifyUsers(["u1", "u2"], { domain: "jobs", type: "JOB_OFFER", title: "t", message: "m" }, { email: false });
+    expect(mockSendEmail).not.toHaveBeenCalled();
+    expect(mockDeliverPendingPush).toHaveBeenCalledWith(expect.objectContaining({ userIds: ["u1", "u2"], type: "JOB_OFFER" }));
   });
 });

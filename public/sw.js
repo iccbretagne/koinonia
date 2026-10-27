@@ -1,4 +1,4 @@
-const CACHE_NAME = "koinonia-v3";
+const CACHE_NAME = "koinonia-v4";
 const STATIC_ASSETS = [
   "/",
   "/accueil",
@@ -60,5 +60,45 @@ self.addEventListener("fetch", (event) => {
           return cached || new Response("Offline", { status: 503 });
         });
       })
+  );
+});
+
+// ─── Notifications natives (spec 068, ADR-0024) ─────────────────────────────
+// Le contenu est celui de la cloche : titre, message, lien relatif à Koinonia.
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = {};
+  }
+  const title = payload.title || "Koinonia";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: payload.body || "",
+      icon: "/brand/koinonia-icon-192.png",
+      badge: "/brand/koinonia-badge-96.png",
+      tag: payload.tag,
+      data: { url: payload.url || "/accueil" },
+    })
+  );
+});
+
+// Ouvre l'écran de la notification, comme un clic dans la cloche. Toujours sur l'origine de
+// Koinonia : un lien externe ramène à l'accueil.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const raw = (event.notification.data && event.notification.data.url) || "/accueil";
+  const target = new URL(raw, self.location.origin);
+  const url = target.origin === self.location.origin ? target.href : new URL("/accueil", self.location.origin).href;
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+      const open = windows.find((client) => new URL(client.url).origin === self.location.origin);
+      if (open) {
+        return open.focus().then((client) => (client && "navigate" in client ? client.navigate(url) : client));
+      }
+      return self.clients.openWindow(url);
+    })
   );
 });

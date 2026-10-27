@@ -1,7 +1,7 @@
 # Spec — Notifications natives sur le téléphone et l'ordinateur
 
 - **Numéro** : 068
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-10-27
 - **Branche suggérée** : `feat/notifications-push`
 - **Prolonge** : [spec 053 — préférences de notification par email](../053-preferences-notifications-email/spec.md)

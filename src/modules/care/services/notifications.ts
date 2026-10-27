@@ -113,7 +113,7 @@ export async function notifyReferentsHandback(params: {
   personName: string;
   reason: string;
 }): Promise<void> {
-  const { churchId, kind, itemId, personName, reason } = params;
+  const { churchId, kind, itemId, personName } = params;
   const referents = await prisma.userChurchRole.findMany({
     where: {
       churchId,
@@ -127,7 +127,8 @@ export async function notifyReferentsHandback(params: {
     domain: DOMAIN,
     type: "CARE_HANDBACK",
     title: "Demande rendue pour réaffectation",
-    message: `${personName} — motif : ${reason}`,
+    // Motif en texte libre : lisible dans la demande, pas sur un écran verrouillé (spec 068).
+    message: `La demande de ${personName} a été rendue ; le motif figure dans la demande.`,
     link: itemLink(kind, itemId),
     ...itemEntity(kind, itemId),
   });

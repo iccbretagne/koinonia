@@ -89,7 +89,7 @@ export default async function RootLayout({
       <head>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <link rel="icon" href="/brand/koinonia-app-icon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/brand/koinonia-app-icon.svg" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/brand/apple-touch-icon-180.png" />
       </head>
       <body
         className={`font-sans antialiased bg-bg text-ink ${STAGING_BUILD_VERSION ? STAGING_BANNER_BODY_PADDING_CLASS : ""}`}

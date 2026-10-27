@@ -314,6 +314,20 @@ nouvelles offres) : les deux s'appliquent en cumul, sans fusion.
 Page utilisateur : `/profile/notifications` (interrupteur général + une ligne par domaine
 visible) ; API : `GET`/`PUT /api/notifications/preferences`.
 
+**Notifications natives (Web Push, spec 068, ADR-0024)** : troisième canal, sans rien changer
+aux sites d'appel. **La cloche est la source** : seule une ligne `Notification` existante part
+sur les appareils (même titre, message et lien), livrée par `deliverPendingPush`
+(`src/lib/push/deliver.ts`) — immédiatement après l'email dans `dispatchIfNoTx` (hors `tx` ;
+`email: false` ne coupe pas le push), et en rattrapage par la tâche cron `push-delivery`
+(`every-run`) pour les notifications créées en transaction. `Notification.pushedAt`, pris de
+façon atomique, garantit un seul envoi. Préférences par domaine dans
+`notification_push_preferences` (`*` = interrupteur général, domaine sans ligne = **activé**),
+appareils dans `push_subscriptions` (un appareil = un compte, oublié à la déconnexion via le
+cookie `koinonia-push-device`, supprimé sur `404`/`410`). Clés `VAPID_*` par environnement, lues
+à l'exécution ; sans elles le canal est indisponible. Conséquence : une information **à pousser**
+doit exister dans la cloche, et son texte ne doit rien contenir de plus que ce qu'un écran
+verrouillé peut montrer (pas de détail pastoral ni de coordonnée bancaire).
+
 ## Design system (spec 055, ADR-0018)
 
 L'interface passe par des **tokens sémantiques** (rôle, pas teinte) déclarés en variables CSS dans

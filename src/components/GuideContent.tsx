@@ -453,6 +453,15 @@ const FEATURES: Feature[] = [
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "edit" },
   },
 
+  {
+    name: "Notifications sur le téléphone",
+    description: "Recevez les notifications de Koinonia en bandeau sur votre téléphone ou votre ordinateur. Sur iPhone, installez d'abord Koinonia sur l'écran d'accueil (Safari › Partager › « Sur l'écran d'accueil ») ; sur Android, depuis le menu de Chrome (« Installer l'application »). Dans « Mes notifications », touchez « Activer les notifications sur cet appareil », puis choisissez domaine par domaine ce qui arrive par email et sur l'appareil.",
+    category: "Profil",
+    screenshotTitle: "Notifications sur l'appareil",
+    screenshotFile: "guide-notifications-push.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "edit" },
+  },
+
   // ── Emplois ──────────────────────────────────────────────────────────────
   {
     name: "Offres, recherches d'emploi & freelance",

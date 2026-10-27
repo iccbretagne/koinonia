@@ -72,7 +72,8 @@ export async function submitAppointmentRequest(
     domain: "care",
     type: "CARE_APPOINTMENT_PENDING",
     title: "Nouvelle demande de RDV",
-    message: `${data.firstName} ${data.lastName} a soumis une demande : « ${data.subject} ».`,
+    // Sans l'objet : il s'affiche aussi sur un écran verrouillé (notification native, spec 068).
+    message: `${data.firstName} ${data.lastName} a soumis une demande de rendez-vous pastoral.`,
     link: "/care",
     entityType: "AppointmentRequest",
     entityId: request.id,

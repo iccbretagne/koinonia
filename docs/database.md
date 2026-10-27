@@ -1364,6 +1364,43 @@ Préférence d'envoi d'email d'un utilisateur, par domaine de notification (spec
 
 Clé primaire : `[userId, domain]`
 
+#### `notification_push_preferences`
+
+Préférence de notification native d'un utilisateur, par domaine (spec 068, ADR-0024). Même forme
+que `notification_email_preferences` ; `domain = "*"` porte l'interrupteur général. Un domaine
+sans ligne est **activé**.
+
+| Champ | Type | Description |
+|---|---|---|
+| `userId` | String | Ref vers `users` (cascade delete) |
+| `domain` | String | Clé de domaine, ou `*` |
+| `enabled` | Boolean | Notifications natives activées pour ce domaine |
+| `updatedAt` | DateTime | Dernière modification |
+
+Clé primaire : `[userId, domain]`
+
+#### `push_subscriptions`
+
+Abonnement Web Push d'un appareil (spec 068). Un appareil n'appartient qu'à un compte : se
+réabonner depuis un autre compte le réattribue. Supprimé à la déconnexion (cookie
+`koinonia-push-device`) et quand le service push répond `404`/`410`.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant |
+| `userId` | String | Ref vers `users` (cascade delete) |
+| `endpoint` | Text | Adresse du service push fournie par le navigateur |
+| `endpointHash` | Char(64), unique | SHA-256 de `endpoint` (unicité) |
+| `p256dh` / `auth` | VarChar(255) | Clés de chiffrement de l'abonnement |
+| `label` | VarChar(120)? | Appareil lisible (« iPhone · Safari ») |
+| `createdAt` / `lastSuccessAt` | DateTime | Création, dernier envoi réussi |
+
+#### `notifications.pushedAt` (spec 068)
+
+Livraison native : posé quand un passage prend la notification en charge (envoyée ou écartée par
+préférence) ; `null` = encore à traiter. Mis à `createdAt` pour l'historique à la migration. Index
+`[pushedAt, createdAt]` pour le rattrapage cron.
+
 ### Plateforme
 
 #### `cron_task_runs` — planificateur des tâches planifiées (ADR-0021)
