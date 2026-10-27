@@ -1,7 +1,7 @@
 # Plan technique — Installer Koinonia sur son appareil
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-10-27
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
@@ -145,11 +145,27 @@ cliente et pure, dans `src/lib/install/` :
   - Elle propose « Installer » quand l'installation native est possible, sinon « Voir comment ».
   - « Plus tard » masque la carte pour 30 jours.
 - **Points d'entrée** :
-  - **Menu du compte** : entrée « Installer l'application » (icône `Download`). Elle est
-    ajoutée à la **variante `menu`** d'`AccountActions` (menu de l'avatar, ordinateur) et à la
-    **recherche** (`searchablePages`), au moyen d'une constante dédiée `INSTALL_PAGE`.
-    `ACCOUNT_PAGES` et la variante `sheet` (panneau « Plus » mobile) ne changent pas. Voir
-    *Décisions*.
+  - **Menu du compte**, sur ordinateur (menu de l'avatar) et sur mobile (panneau « Plus ») :
+    une ligne **« Installer l'application »** ajoutée à `AccountActions`, dans ses deux
+    variantes, juste après « Guide d'utilisation ». Le bloc de déconnexion ne change pas.
+    `MoreSheet.tsx` et `NavPageList.tsx` ne sont pas modifiés.
+    - **Contextuelle** : la ligne n'apparaît que si `isInstallOffered(target)` est vrai. Elle
+      disparaît dans l'application installée et sur un navigateur non compatible : la personne
+      qui a installé Koinonia retrouve son panneau « Plus » inchangé.
+    - **Deux lignes de texte**, avec le même gabarit de ligne que les autres :
+      - libellé « Installer l'application » ;
+      - sous-titre court en `ink-muted`, propre à l'appareil : « Sur l'écran d'accueil de votre
+        iPhone », « En un appui sur ce téléphone », « Sur cet ordinateur ».
+    - **Icône** `Download`, de la même couleur que les autres lignes : pas de pastille ni de
+      couleur d'accent, pour ne pas concurrencer les espaces.
+    - **Action** :
+      - quand l'installation native est possible (Android, Chrome ou Edge sur ordinateur),
+        l'appui ouvre **directement** la fenêtre d'installation du système, puis ferme le panneau ;
+      - sinon (iPhone, étapes manuelles), elle mène à `/installer`.
+    - Rendue côté client après la détection : rien ne s'affiche au premier rendu, donc aucun
+      saut de mise en page quand la ligne est absente.
+    - Une constante `INSTALL_PAGE` ajoute aussi la page à la **recherche** (`searchablePages`).
+      `ACCOUNT_PAGES`, qui alimente le fil d'Ariane, ne change pas.
   - **« Mes notifications »** : l'`Alert` « Installez Koinonia sur l'écran d'accueil » de
     `PushDeviceCard` (état `unavailable-ios-install`) garde une phrase et gagne un lien « Voir
     comment installer » vers `/installer`.
@@ -174,12 +190,15 @@ cliente et pure, dans `src/lib/install/` :
   - *Pourquoi* : la spec veut un lien à envoyer avant la première connexion.
   - **Écarté : page dans `(auth)` avec une exception dans le proxy**. *Raison* : la coquille
     authentifiée exige une session et une église.
-- **Choix** : l'entrée « Installer l'application » est ajoutée au menu de l'avatar et à la
-  recherche, **pas au panneau « Plus » mobile**.
-  - *Pourquoi* : la présentation du panneau « Plus » est figée. Sur mobile, la carte d'Accueil,
-    « Mes notifications », le guide et la recherche couvrent déjà le besoin.
-  - Cela s'écarte de la lettre du critère « depuis le menu du compte » sur mobile. Voir
-    *Questions*.
+- **Choix** : une ligne **contextuelle** « Installer l'application » dans le menu du compte,
+  y compris le panneau « Plus » mobile (décision de l'utilisateur).
+  - *Pourquoi* : sur mobile, c'est là qu'on cherche les réglages de son compte, et
+    l'installation y compte le plus. Masquée une fois l'application installée, la ligne
+    n'encombre pas le panneau de ceux qui n'en ont plus besoin.
+  - **Écarté : une ligne permanente**. *Raison* : elle serait inutile dans l'application
+    installée, où la plupart des utilisateurs mobiles finiront.
+  - **Écarté : une tuile ou un bandeau en tête du panneau « Plus »**. *Raison* : cela changerait
+    la présentation du panneau ; la carte de l'Accueil joue déjà ce rôle d'invitation.
 - **Choix** : illustrations en icônes et pastilles d'étape.
   - **Écarté : captures d'écran par version d'iOS ou d'Android**. *Raison* : exclues par la spec,
     elles vieillissent à chaque mise à jour du système.
@@ -233,7 +252,8 @@ Vitest :
   - `route-exhaustiveness.test.ts` couvre `/installer` (manifeste `core`) ;
   - un test de la table de routes vérifie que `/installer` est publique en GET.
 - **Navigation** :
-  - instantané `layout-props` inchangé pour le panneau « Plus » ;
+  - `AccountActions`, dans ses deux variantes : ligne affichée si l'installation est proposée, absente si l'application est installée ou si le navigateur n'est pas compatible ;
+  - appui avec installation native : la fenêtre du système s'ouvre ; sans elle : lien vers `/installer` ;
   - un test de `searchablePages` vérifie la présence de « Installer l'application ».
 - **QR code** : les tests existants de la slide de dons passent après le déplacement de `qrPath`.
 - **Hors Vitest** (recette sur appareils réels) :
@@ -246,7 +266,4 @@ Vitest :
 
 ## Questions
 
-- **Panneau « Plus » mobile** : faut-il y ajouter la ligne « Installer l'application » ? Ce
-  plan ne le fait pas, pour respecter la consigne de ne pas toucher à sa présentation. Sur
-  mobile, la page reste atteignable par la carte d'Accueil, « Mes notifications », le guide et
-  la recherche.
+- Aucune. Panneau « Plus » : ligne contextuelle validée par l'utilisateur.
