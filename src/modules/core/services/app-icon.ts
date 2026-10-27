@@ -124,7 +124,7 @@ let versionCache: { value: string; at: number } | null = null;
 /** Version du jeu en vigueur, `"default"` sans icône déposée. Cache mémoire de 60 s. */
 export async function getAppIconVersion(): Promise<string> {
   if (versionCache && Date.now() - versionCache.at < VERSION_TTL_MS) return versionCache.value;
-  let value = "default";
+  let value: string;
   try {
     const prisma = await db();
     const row = await prisma.appIconVariant.findUnique({ where: { variant: "icon-192" }, select: { version: true } });
