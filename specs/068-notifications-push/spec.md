@@ -1,7 +1,7 @@
 # Spec — Notifications natives sur le téléphone et l'ordinateur
 
 - **Numéro** : 068
-- **Statut** : Brouillon
+- **Statut** : Validée
 - **Créée le** : 2026-10-27
 - **Branche suggérée** : `feat/notifications-push`
 - **Prolonge** : [spec 053 — préférences de notification par email](../053-preferences-notifications-email/spec.md)
@@ -166,16 +166,16 @@ se lit dans l'application, après connexion.
 - Applications publiées dans les stores (App Store, Play Store).
 - Changement du contenu ou des règles d'envoi des emails.
 
+## Décisions
+
+- **Réglage par défaut** : à l'activation d'un premier appareil, **tous les domaines visibles**
+  sont activés « Sur l'appareil » — l'utilisateur vient de demander les notifications ; il en
+  retire ensuite. Ses choix email ne sont pas repris.
+- **Mise en service** : **tous les domaines d'un coup**.
+- **Domaine Emploi** : la notification native d'une alerte d'offre suit le choix « Sur
+  l'appareil » du domaine Emploi **et** le réglage détaillé existant « dans l'application » des
+  alertes d'offres, en cumul, sans nouveau réglage.
+
 ## Questions ouvertes
 
-- [À CLARIFIER: **réglage par défaut**. À l'activation d'un premier appareil, quels domaines
-  partent « Sur l'appareil » ? Proposition : **tous les domaines visibles activés**, puisque
-  l'utilisateur vient de demander les notifications ; il en retire ensuite. Alternative : reprendre
-  les choix email de chaque domaine.]
-- [À CLARIFIER: **périmètre de mise en service**. Proposition : **tous les domaines d'un coup**,
-  puisque toutes les notifications passent déjà par le même circuit que l'email. Alternative :
-  un premier lot (Planning et service, Demandes, Comptabilité), les autres ensuite.]
-- [À CLARIFIER: **domaine Emploi**. Ses alertes d'offres ont déjà leurs réglages détaillés
-  (spec 053 : en cumul avec le domaine). Proposition : la notification native d'une alerte
-  d'offre suit le choix « Sur l'appareil » du domaine Emploi **et** le réglage détaillé existant
-  « dans l'application », sans nouveau réglage.]
+- Aucune.
