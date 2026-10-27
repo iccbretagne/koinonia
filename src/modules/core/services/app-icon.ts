@@ -241,14 +241,16 @@ export async function setAppIcon(buffer: Buffer, background: string, actor: AppI
   const prisma = await db();
   const existed = await prisma.$transaction(async (tx) => {
     const previous = await tx.appIconVariant.findUnique({ where: { variant: "icon-192" }, select: { version: true } });
-    for (const variant of APP_ICON_IMAGE_VARIANTS) {
-      const data = Uint8Array.from(variants[variant]);
-      await tx.appIconVariant.upsert({
-        where: { variant },
-        create: { variant, data, version, background, updatedById: actor.id },
-        update: { data, version, background, updatedById: actor.id },
-      });
-    }
+    await Promise.all(
+      APP_ICON_IMAGE_VARIANTS.map((variant) => {
+        const data = Uint8Array.from(variants[variant]);
+        return tx.appIconVariant.upsert({
+          where: { variant },
+          create: { variant, data, version, background, updatedById: actor.id },
+          update: { data, version, background, updatedById: actor.id },
+        });
+      })
+    );
     await tx.appIconVariant.updateMany({ where: { variant: APP_ICON_BADGE_VARIANT }, data: { version } });
     return previous !== null;
   });

@@ -47,6 +47,45 @@ async function workingRaw(buffer: Buffer) {
     .toBuffer({ resolveWithObject: true });
 }
 
+type Raw = { data: Buffer; width: number; height: number };
+
+function isFillable(data: Buffer, i: number, threshold: number): boolean {
+  return data[i + 3] < 128 || (data[i] >= threshold && data[i + 1] >= threshold && data[i + 2] >= threshold);
+}
+
+function neighbours(p: number, width: number, height: number): number[] {
+  const x = p % width;
+  const out: number[] = [];
+  if (x > 0) out.push(p - 1);
+  if (x < width - 1) out.push(p + 1);
+  if (p >= width) out.push(p - width);
+  if (p + width < width * height) out.push(p + width);
+  return out;
+}
+
+/** Pixels transparents ou clairs reliés à l'un des quatre angles (diffusion). */
+function floodFromCorners({ data, width, height }: Raw): Uint8Array {
+  const filled = new Uint8Array(width * height);
+  const corners = [0, width - 1, (height - 1) * width, height * width - 1];
+  const stack = corners.filter((p) => isFillable(data, p * 4, LIGHT_THRESHOLD));
+  while (stack.length > 0) {
+    const p = stack.pop()!;
+    if (filled[p]) continue;
+    filled[p] = 1;
+    for (const q of neighbours(p, width, height)) {
+      if (!filled[q] && isFillable(data, q * 4, LIGHT_THRESHOLD)) stack.push(q);
+    }
+  }
+  return filled;
+}
+
+/** Remplacé par le fond : zone diffusée, ou liseré clair d'un pixel qui la borde. */
+function isReplaced(raw: Raw, filled: Uint8Array, p: number): boolean {
+  if (filled[p] === 1) return true;
+  if (!isFillable(raw.data, p * 4, EDGE_THRESHOLD)) return false;
+  return neighbours(p, raw.width, raw.height).some((q) => filled[q] === 1);
+}
+
 /**
  * Remplit avec `background` les coins transparents ou clairs d'une icône déjà arrondie : un
  * remplissage par diffusion part des quatre angles et ne traverse que des pixels transparents
@@ -55,57 +94,17 @@ async function workingRaw(buffer: Buffer) {
  */
 export async function fillCorners(buffer: Buffer, background: Rgb): Promise<Buffer> {
   const { data, info } = await workingRaw(buffer);
-  const { width, height } = info;
-  const at = (x: number, y: number) => (y * width + x) * 4;
-  const isFillable = (i: number, threshold: number) =>
-    data[i + 3] < 128 || (data[i] >= threshold && data[i + 1] >= threshold && data[i + 2] >= threshold);
-
-  const filled = new Uint8Array(width * height);
-  const stack: number[] = [];
-  for (const [x, y] of [
-    [0, 0],
-    [width - 1, 0],
-    [0, height - 1],
-    [width - 1, height - 1],
-  ]) {
-    if (isFillable(at(x, y), LIGHT_THRESHOLD)) stack.push(y * width + x);
-  }
-  while (stack.length > 0) {
-    const p = stack.pop()!;
-    if (filled[p]) continue;
-    filled[p] = 1;
-    const x = p % width;
-    const y = (p - x) / width;
-    for (const [nx, ny] of [
-      [x + 1, y],
-      [x - 1, y],
-      [x, y + 1],
-      [x, y - 1],
-    ]) {
-      if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
-      const q = ny * width + nx;
-      if (!filled[q] && isFillable(q * 4, LIGHT_THRESHOLD)) stack.push(q);
-    }
-  }
-
-  const out = Buffer.alloc(width * height * 3);
-  for (let p = 0; p < width * height; p++) {
+  const raw: Raw = { data, width: info.width, height: info.height };
+  const filled = floodFromCorners(raw);
+  const out = Buffer.alloc(raw.width * raw.height * 3);
+  for (let p = 0; p < raw.width * raw.height; p++) {
     const i = p * 4;
-    let replace = filled[p] === 1;
-    if (!replace && isFillable(i, EDGE_THRESHOLD)) {
-      const x = p % width;
-      replace =
-        (x > 0 && filled[p - 1] === 1) ||
-        (x < width - 1 && filled[p + 1] === 1) ||
-        (p >= width && filled[p - width] === 1) ||
-        (p + width < width * height && filled[p + width] === 1);
-    }
-    const alpha = replace ? 0 : data[i + 3] / 255;
+    const alpha = isReplaced(raw, filled, p) ? 0 : data[i + 3] / 255;
     out[p * 3] = Math.round(data[i] * alpha + background.r * (1 - alpha));
     out[p * 3 + 1] = Math.round(data[i + 1] * alpha + background.g * (1 - alpha));
     out[p * 3 + 2] = Math.round(data[i + 2] * alpha + background.b * (1 - alpha));
   }
-  return sharp(out, { raw: { width, height, channels: 3 } }).png().toBuffer();
+  return sharp(out, { raw: { width: raw.width, height: raw.height, channels: 3 } }).png().toBuffer();
 }
 
 /** Icône réduite au centre d'un fond plein (zone sûre des icônes masquables). */

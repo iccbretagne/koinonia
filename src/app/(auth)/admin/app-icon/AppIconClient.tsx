@@ -51,8 +51,7 @@ export default function AppIconClient({ initialState }: { readonly initialState:
       setPreview(null);
       return;
     }
-    const tooBig = [next.icon, next.badge].find((f) => f && f.size > APP_ICON_MAX_BYTES);
-    if (tooBig) {
+    if ([next.icon, next.badge].some((f) => f && f.size > APP_ICON_MAX_BYTES)) {
       setError("Le fichier dépasse 5 Mo.");
       return;
     }
@@ -111,7 +110,6 @@ export default function AppIconClient({ initialState }: { readonly initialState:
         return;
       }
       setState((await res.json()) as AppIconState);
-      setBackground(background);
       reset();
       toast.success("Nouvelle icône en place");
       router.refresh();
