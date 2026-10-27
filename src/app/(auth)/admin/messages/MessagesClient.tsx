@@ -38,6 +38,39 @@ export function summarizeAudience(audience: Audience, instance: boolean): string
   return `${instance ? "Instance · " : ""}${parts.join(" · ")}`;
 }
 
+function renderTitle(m: MessageListItem) {
+  return (
+    <span className="flex flex-col">
+      {m.readOnly ? (
+        <span className="font-semibold text-ink">{m.title}</span>
+      ) : (
+        <Link href={`/admin/messages/${m.id}`} className="font-semibold text-ink hover:underline">
+          {m.title}
+        </Link>
+      )}
+      {m.churchId === null && <span className="text-[13px] text-ink-muted">Koinonia · toute l&apos;instance</span>}
+    </span>
+  );
+}
+
+function renderSeverity(m: MessageListItem) {
+  return <StatusChip tone={SEVERITY_TONE[m.severity]}>{SEVERITY_LABEL[m.severity]}</StatusChip>;
+}
+
+function WithdrawButton({
+  message,
+  onWithdraw,
+}: {
+  readonly message: MessageListItem;
+  readonly onWithdraw: (message: MessageListItem) => void;
+}) {
+  return (
+    <Button size="sm" variant="ghost" onClick={() => onWithdraw(message)}>
+      Retirer
+    </Button>
+  );
+}
+
 /** Liste des messages d'un état (spec 071), avec statistiques et retrait. */
 export default function MessagesClient({
   messages,
@@ -79,22 +112,11 @@ export default function MessagesClient({
           {
             header: "Message",
             primary: true,
-            accessor: (m) => (
-              <span className="flex flex-col">
-                {m.readOnly ? (
-                  <span className="font-semibold text-ink">{m.title}</span>
-                ) : (
-                  <Link href={`/admin/messages/${m.id}`} className="font-semibold text-ink hover:underline">
-                    {m.title}
-                  </Link>
-                )}
-                {m.churchId === null && <span className="text-[13px] text-ink-muted">Koinonia · toute l&apos;instance</span>}
-              </span>
-            ),
+            accessor: renderTitle,
           },
           {
             header: "Sévérité",
-            accessor: (m) => <StatusChip tone={SEVERITY_TONE[m.severity]}>{SEVERITY_LABEL[m.severity]}</StatusChip>,
+            accessor: renderSeverity,
           },
           { header: "Public", accessor: (m) => summarizeAudience(m.audience, m.churchId === null), hideOnMobile: true },
           { header: "Période", accessor: (m) => `${formatDate(m.startsAt)} → ${formatDate(m.endsAt)}` },
@@ -104,13 +126,7 @@ export default function MessagesClient({
             accessor: (m) => `${m.stats.recipients ?? "—"} · ${m.stats.seen} · ${m.stats.dismissed}`,
           },
         ]}
-        actions={(m) =>
-          status !== "past" && !m.readOnly ? (
-            <Button size="sm" variant="ghost" onClick={() => setWithdrawing(m)}>
-              Retirer
-            </Button>
-          ) : null
-        }
+        actions={(m) => (status === "past" || m.readOnly ? null : <WithdrawButton message={m} onWithdraw={setWithdrawing} />)}
       />
       <ConfirmModal
         open={withdrawing !== null}

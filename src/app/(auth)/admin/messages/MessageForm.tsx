@@ -38,6 +38,13 @@ function toLocalInput(iso: string | null): string {
 
 const defaultEnd = () => toLocalInput(new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString());
 
+/** Libellé du bouton et du message de confirmation. */
+function submitLabel(editing: boolean, startNow: boolean): { button: string; toast: string } {
+  if (editing) return { button: "Enregistrer", toast: "Message mis à jour" };
+  if (startNow) return { button: "Publier", toast: "Message publié" };
+  return { button: "Programmer", toast: "Message programmé" };
+}
+
 async function errorMessage(res: Response): Promise<string> {
   const body = (await res.json().catch(() => null)) as { error?: string } | null;
   return body?.error ?? "Enregistrement impossible. Réessayez dans un instant.";
@@ -73,7 +80,7 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
   const [ministryIds, setMinistryIds] = useState<string[]>(message?.audience.ministryIds ?? []);
   const [departmentIds, setDepartmentIds] = useState<string[]>(message?.audience.departmentIds ?? []);
   const [headsOnly, setHeadsOnly] = useState(message?.audience.headsOnly ?? false);
-  const [startNow, setStartNow] = useState(!message || message.status !== "scheduled");
+  const [startNow, setStartNow] = useState(message?.status !== "scheduled");
   const [startsAt, setStartsAt] = useState(toLocalInput(message?.startsAt ?? null));
   const [endsAt, setEndsAt] = useState(message ? toLocalInput(message.endsAt) : defaultEnd());
   const [count, setCount] = useState<{ recipients: number; membersWithoutAccount: number } | null>(null);
@@ -129,11 +136,10 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
       endsAt: new Date(endsAt).toISOString(),
     };
     const content = { title, body, linkUrl: linkUrl || null, linkLabel: linkLabel || null };
-    const payload = locked
-      ? { ...content, endsAt: period.endsAt }
-      : editing
-        ? { ...content, severity, audience, ...period }
-        : { ...scope, ...content, severity, audience, ...period };
+    // En cours : seuls le contenu et la fin changent ; création : la portée s'ajoute.
+    let payload: Record<string, unknown> = { ...content, severity, audience, ...period };
+    if (locked) payload = { ...content, endsAt: period.endsAt };
+    else if (!editing) payload = { ...scope, ...payload };
     setBusy(true);
     try {
       const res = await fetch(editing ? `/api/system-messages/${message!.id}` : "/api/system-messages", {
@@ -145,7 +151,7 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
         setError(await errorMessage(res));
         return;
       }
-      toast.success(editing ? "Message mis à jour" : startNow ? "Message publié" : "Message programmé");
+      toast.success(editing ? "Message mis à jour" : submitLabel(false, startNow).toast);
       router.push(`/admin/messages?etat=${startNow || locked ? "en-cours" : "programmes"}`);
       router.refresh();
     } catch {
@@ -307,11 +313,11 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-2 text-[15px] text-ink">
               <input type="radio" name={`${id}-start`} checked={startNow} onChange={() => setStartNow(true)} />
-              Publier maintenant
+              <span>Publier maintenant</span>
             </label>
             <label className="flex items-center gap-2 text-[15px] text-ink">
               <input type="radio" name={`${id}-start`} checked={!startNow} onChange={() => setStartNow(false)} />
-              Programmer
+              <span>Programmer</span>
             </label>
             {!startNow && (
               <Input
@@ -337,7 +343,7 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
 
       <div className="flex flex-wrap gap-2">
         <Button onClick={submit} disabled={busy || !title.trim() || !body.trim()}>
-          {busy ? "Enregistrement…" : editing ? "Enregistrer" : startNow ? "Publier" : "Programmer"}
+          {busy ? "Enregistrement…" : submitLabel(editing, startNow).button}
         </Button>
         <Button variant="ghost" onClick={() => router.push("/admin/messages")} disabled={busy}>
           Annuler

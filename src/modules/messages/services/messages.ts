@@ -184,6 +184,43 @@ export async function getMessageChurchId(id: string): Promise<string | null> {
   return (await loadMessage(id)).churchId;
 }
 
+function assertEditable(status: MessageStatus, input: UpdateMessageInput) {
+  if (status === "past") throw new ApiError(400, "Ce message est terminé ou retiré.");
+  if (status !== "active") return;
+  const locked = (["audience", "severity", "startsAt"] as const).some((key) => input[key] !== undefined);
+  if (locked) throw new ApiError(400, "Un message en cours garde son public, sa sévérité et son début.");
+}
+
+/** Lien et libellé : un libellé sans lien est effacé. */
+function linkUpdate(input: UpdateMessageInput, current: MessageRow): Prisma.SystemMessageUpdateInput {
+  if (input.linkUrl !== undefined) {
+    return { linkUrl: input.linkUrl, linkLabel: input.linkUrl ? (input.linkLabel ?? current.linkLabel) : null };
+  }
+  if (input.linkLabel !== undefined) return { linkLabel: current.linkUrl ? input.linkLabel : null };
+  return {};
+}
+
+/** Champs à écrire : seulement ceux fournis. Un début passé devient « maintenant ». */
+function updateData(
+  input: UpdateMessageInput,
+  current: MessageRow,
+  actor: MessageActor,
+  now: Date
+): Prisma.SystemMessageUpdateInput {
+  const startsAt = input.startsAt && (input.startsAt.getTime() > now.getTime() ? input.startsAt : now);
+  const fields: Prisma.SystemMessageUpdateInput = {
+    title: input.title,
+    body: input.body,
+    severity: input.severity,
+    audience: input.audience,
+    startsAt: startsAt ?? undefined,
+    endsAt: input.endsAt,
+    ...linkUpdate(input, current),
+  };
+  const defined = Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined));
+  return { ...defined, updatedBy: { connect: { id: actor.id } } };
+}
+
 /**
  * Programmé : tout se modifie. En cours : titre, texte, lien et fin, sans nouvelle notification.
  * Passé ou retiré : rien.
@@ -195,37 +232,19 @@ export async function updateMessage(
 ): Promise<SystemMessageView> {
   const now = new Date();
   const current = await loadMessage(id);
-  const status = messageStatus(current, now);
-  if (status === "past") throw new ApiError(400, "Ce message est terminé ou retiré.");
-
-  if (status === "active") {
-    const locked = (["audience", "severity", "startsAt"] as const).filter((key) => input[key] !== undefined);
-    if (locked.length > 0) {
-      throw new ApiError(400, "Un message en cours garde son public, sa sévérité et son début.");
-    }
-  }
+  assertEditable(messageStatus(current, now), input);
   if (input.audience) await assertAudience(current.churchId, input.audience);
 
   const startsAt = input.startsAt ?? current.startsAt;
   const endsAt = input.endsAt ?? current.endsAt;
   if (endsAt.getTime() <= startsAt.getTime()) throw new ApiError(400, "La fin doit être après le début.");
 
-  const data: Prisma.SystemMessageUpdateInput = { updatedBy: { connect: { id: actor.id } } };
-  if (input.title !== undefined) data.title = input.title;
-  if (input.body !== undefined) data.body = input.body;
-  if (input.linkUrl !== undefined) {
-    data.linkUrl = input.linkUrl;
-    data.linkLabel = input.linkUrl ? (input.linkLabel ?? current.linkLabel) : null;
-  } else if (input.linkLabel !== undefined) {
-    data.linkLabel = current.linkUrl ? input.linkLabel : null;
-  }
-  if (input.severity !== undefined) data.severity = input.severity;
-  if (input.audience !== undefined) data.audience = input.audience;
-  if (input.startsAt) data.startsAt = input.startsAt.getTime() > now.getTime() ? input.startsAt : now;
-  if (input.endsAt) data.endsAt = input.endsAt;
-
   const prisma = await db();
-  const row = await prisma.systemMessage.update({ where: { id }, data, select: MESSAGE_SELECT });
+  const row = await prisma.systemMessage.update({
+    where: { id },
+    data: updateData(input, current, actor, now),
+    select: MESSAGE_SELECT,
+  });
   const changedFields = Object.keys(input).filter((key) => input[key as keyof UpdateMessageInput] !== undefined);
   await audit(actor, row.churchId, "UPDATE", id, { changedFields });
   if (row.startsAt.getTime() <= now.getTime() && !row.notifiedAt) triggerDispatch();

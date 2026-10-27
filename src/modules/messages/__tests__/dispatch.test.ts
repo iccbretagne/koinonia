@@ -81,6 +81,6 @@ describe("envoi des messages système (spec 071)", () => {
 
   it("extrait du texte pour la notification", () => {
     expect(excerpt("a\n\n  b")).toBe("a b");
-    expect(excerpt("x".repeat(200)).length).toBe(160);
+    expect(excerpt("x".repeat(200))).toHaveLength(160);
   });
 });
