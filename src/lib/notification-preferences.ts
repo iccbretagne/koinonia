@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { rolePermissions, notificationDomains } from "@/lib/registry";
 import type { NotificationDomainDescriptor } from "@/core/module-registry";
+import { PUSH_GLOBAL_DOMAIN, getPushPreferenceRows, resolvePushPreference, upsertPushPreferences } from "@/lib/push/preferences";
+import { getVapidPublicKey } from "@/lib/push/config";
+import { countDevices } from "@/lib/push/subscriptions";
 
 /** Clé de domaine réservée à l'interrupteur général « Recevoir des emails de Koinonia ». */
 export const GLOBAL_DOMAIN = "*";
@@ -32,13 +35,24 @@ export interface NotificationPreferenceDomainView {
   key: string;
   label: string;
   description: string;
+  /** Email (spec 053). */
   enabled: boolean;
+  /** Notification native sur les appareils (spec 068). */
+  push: boolean;
 }
 
 export interface NotificationPreferencesView {
   emailEnabled: boolean;
   /** Faux si le compte n'a pas d'adresse email — les réglages sont alors sans effet. */
   hasEmail: boolean;
+  /** Interrupteur général « Recevoir les notifications sur mes appareils » (spec 068). */
+  pushEnabled: boolean;
+  /** Faux si l'instance n'a pas de clés VAPID : notifications natives indisponibles. */
+  pushAvailable: boolean;
+  /** Clé publique VAPID, servie à l'exécution (ADR-0024), `null` si indisponible. */
+  vapidPublicKey: string | null;
+  /** Nombre d'appareils qui reçoivent les notifications natives de ce compte. */
+  deviceCount: number;
   domains: NotificationPreferenceDomainView[];
 }
 
@@ -100,15 +114,19 @@ export async function getVisibleDomainKeys(userId: string): Promise<Set<string>>
 
 /** Vue complète des préférences d'un utilisateur, pour `GET /api/notifications/preferences` et la page `/profile/notifications`. */
 export async function getPreferencesView(userId: string): Promise<NotificationPreferencesView> {
-  const [user, visibleDomains, preferenceRows] = await Promise.all([
+  const [user, visibleDomains, preferenceRows, pushRows, deviceCount] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { email: true } }),
     getVisibleDomains(userId),
     prisma.notificationEmailPreference.findMany({ where: { userId } }),
+    getPushPreferenceRows(userId),
+    countDevices(userId),
   ]);
 
   const preferenceByDomain = new Map(preferenceRows.map((row) => [row.domain, row.enabled]));
   // Défaut activé : absence de ligne "*" ne doit retirer aucun email (mise en service, spec 053).
   const globalEnabled = preferenceByDomain.get(GLOBAL_DOMAIN) ?? true;
+  const pushEnabled = pushRows.get(PUSH_GLOBAL_DOMAIN) ?? true;
+  const vapidPublicKey = getVapidPublicKey();
 
   const domains = visibleDomains.map((domain) => ({
     key: domain.key,
@@ -119,15 +137,28 @@ export async function getPreferencesView(userId: string): Promise<NotificationPr
       domainPreference: preferenceByDomain.get(domain.key),
       defaultEmail: domain.defaultEmail,
     }),
+    push: resolvePushPreference({ globalEnabled: pushEnabled, domainPreference: pushRows.get(domain.key) }),
   }));
 
-  return { emailEnabled: globalEnabled, hasEmail: !!user?.email, domains };
+  return {
+    emailEnabled: globalEnabled,
+    hasEmail: !!user?.email,
+    pushEnabled,
+    pushAvailable: vapidPublicKey !== null,
+    vapidPublicKey,
+    deviceCount,
+    domains,
+  };
 }
 
 export interface UpdatePreferencesInput {
   emailEnabled?: boolean;
   /** Clés déjà validées par l'appelant (visibles pour cet utilisateur) — voir la route API. */
   domains?: Record<string, boolean>;
+  /** Interrupteur général des notifications natives (spec 068). */
+  pushEnabled?: boolean;
+  /** Préférences push par domaine, clés déjà validées par l'appelant. */
+  pushDomains?: Record<string, boolean>;
 }
 
 /** Écrit les préférences d'un utilisateur. Les clés de `domains` ne sont pas revalidées ici. */
@@ -135,6 +166,11 @@ export async function updatePreferences(userId: string, input: UpdatePreferences
   const entries: Array<[string, boolean]> = [];
   if (input.emailEnabled !== undefined) entries.push([GLOBAL_DOMAIN, input.emailEnabled]);
   for (const [domain, enabled] of Object.entries(input.domains ?? {})) entries.push([domain, enabled]);
+
+  const pushEntries: Array<[string, boolean]> = [];
+  if (input.pushEnabled !== undefined) pushEntries.push([PUSH_GLOBAL_DOMAIN, input.pushEnabled]);
+  for (const [domain, enabled] of Object.entries(input.pushDomains ?? {})) pushEntries.push([domain, enabled]);
+  await upsertPushPreferences(userId, pushEntries);
 
   if (entries.length === 0) return;
 

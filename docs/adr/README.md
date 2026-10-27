@@ -50,6 +50,8 @@ Statuts possibles : `Proposé`, `Accepté`, `Rejeté`, `Déprécié`, `Remplacé
 | [0021](0021-planificateur-taches-cron.md) | Un seul déclencheur cron, chaque tâche à son propre rythme | Accepté |
 | [0022](0022-csp-nonce-report-only.md) | CSP stricte par nonce, déployée d'abord en Report-Only | Accepté |
 | [0023](0023-contrats-openapi-generes.md) | Référence d'API générée depuis des contrats colocalisés | Accepté |
+| [0024](0024-notifications-push-web-push.md) | Notifications natives par Web Push, livrées depuis les notifications de l'application | Accepté |
+| [0025](0025-email-urgent-hors-preference.md) | Email envoyé malgré la préférence pour un message système urgent | Accepté |
 
 ## Note sur les ADR 0001–0003
 

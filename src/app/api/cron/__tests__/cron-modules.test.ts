@@ -15,6 +15,10 @@ const mockWithdrawalRelances = vi.fn().mockResolvedValue({ relanced: 0 });
 vi.mock("@/modules/planning/services/withdrawals/relances", () => ({
   runWithdrawalRelances: (...args: unknown[]) => mockWithdrawalRelances(...args),
 }));
+const mockPushCatchUp = vi.fn().mockResolvedValue({ sent: 0, removed: 0 });
+vi.mock("@/lib/push/deliver", () => ({
+  runPushCatchUp: (...args: unknown[]) => mockPushCatchUp(...args),
+}));
 vi.mock("@/lib/email", () => ({
   sendEmail: vi.fn(),
   buildReminderEmail: vi.fn(),
@@ -131,6 +135,41 @@ describe("POST /api/cron — conditionnement par module (spec 038)", () => {
     expect(body.tasks["planning-change-notices"]).toBe("ran");
     expect(body.planningChangeNotices).toEqual({ notified: 3, members: 3 });
     expect(mockFlushPlanningNotices).toHaveBeenCalledOnce();
+  });
+
+  it("le rattrapage des notifications natives (spec 068) est dû à chaque passage", async () => {
+    delete process.env.ENABLED_MODULES;
+    prismaMock.cronTaskRun.findMany.mockResolvedValue([{ key: "push-delivery", lastStartedAt: new Date(Date.now() - 60_000) }]);
+    prismaMock.cronTaskRun.updateMany.mockResolvedValue({ count: 1 });
+
+    const body = await (await postCron()).json();
+
+    expect(body.tasks["push-delivery"]).toBe("ran");
+    expect(mockPushCatchUp).toHaveBeenCalledOnce();
+  });
+
+  it("les messages système (spec 071) sont dus à chaque passage quand le module est actif", async () => {
+    delete process.env.ENABLED_MODULES;
+    const dispatchDueMessages = vi.fn().mockResolvedValue({ notified: 1, recipients: 12 });
+    vi.doMock("@/modules/messages", () => ({ dispatchDueMessages }));
+    prismaMock.cronTaskRun.findMany.mockResolvedValue([{ key: "system-messages", lastStartedAt: new Date(Date.now() - 60_000) }]);
+    prismaMock.cronTaskRun.updateMany.mockResolvedValue({ count: 1 });
+
+    const body = await (await postCron()).json();
+
+    expect(body.tasks["system-messages"]).toBe("ran");
+    expect(dispatchDueMessages).toHaveBeenCalledOnce();
+  });
+
+  it("aucune tâche de messages système sans le module", async () => {
+    process.env.ENABLED_MODULES = "core,planning";
+    const dispatchDueMessages = vi.fn();
+    vi.doMock("@/modules/messages", () => ({ dispatchDueMessages }));
+
+    const body = await (await postCron()).json();
+
+    expect(body.tasks["system-messages"]).toBeUndefined();
+    expect(dispatchDueMessages).not.toHaveBeenCalled();
   });
 
   it("la relance des services à remplacer (spec 061) est déclarée, horaire, et son résultat exposé", async () => {

@@ -64,12 +64,16 @@ GOOGLE_CLIENT_SECRET=votre-google-client-secret
 SUPER_ADMIN_EMAILS=admin-test@votre-eglise.com
 TURNSTILE_SITE_KEY=cle-publique-turnstile
 TURNSTILE_SECRET_KEY=cle-secrete-turnstile
+VAPID_PUBLIC_KEY=cle-publique-vapid-recette
+VAPID_PRIVATE_KEY=cle-privee-vapid-recette
+VAPID_SUBJECT=mailto:contact@votre-domaine.com
 ```
 
 Points d'attention :
 
 - **Base de données dédiée** : `koinonia_staging`, avec un utilisateur MariaDB dédié (`CREATE DATABASE`/`CREATE USER` comme en production, voir section "Base de données" de production.md, en adaptant les noms)
 - **`AUTH_SECRET` distinct** de celui de production : `openssl rand -base64 32`
+- **Clés VAPID distinctes** de celles de production : `npx web-push generate-vapid-keys` (notifications natives, spec 068)
 - **`SUPER_ADMIN_EMAILS`** doit pointer vers des adresses de test, pas les vrais super admins de production
 
 ### Bucket S3 média séparé

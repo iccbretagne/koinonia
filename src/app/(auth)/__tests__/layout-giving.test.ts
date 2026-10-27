@@ -34,7 +34,7 @@ const AuthLayout = (await import("../layout")).default;
 
 describe("AuthLayout — module dons désactivé", () => {
   it("n'affiche pas « Page de dons », même à un Super Admin", async () => {
-    prismaMock.church.findUnique.mockResolvedValue({ name: "Rennes", primaryColor: null } as never);
+    prismaMock.church.findUnique.mockResolvedValue({ name: "Rennes", primaryColor: null , logos: [] } as never);
     prismaMock.church.findMany.mockResolvedValue([] as never);
     prismaMock.department.findMany.mockResolvedValue([] as never);
     prismaMock.department.count.mockResolvedValue(0);

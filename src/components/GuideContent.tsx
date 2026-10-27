@@ -294,11 +294,27 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Paramètres de l'église",
-    description: "Depuis « Paramètres de l'église », l'Admin règle les emails du secrétariat et de la comptabilité, la couleur de l'église et le responsable pastoral, et gère les profils pastoraux. Créer ou supprimer une église, en changer le nom, l'adresse publique ou le superviseur reste réservé au Super Admin.",
+    description: "Depuis « Paramètres de l'église », l'Admin règle les emails du secrétariat et de la comptabilité, la couleur et le logo de l'église (affiché à la place des plumes ICC, avec une version facultative pour le thème sombre) et le responsable pastoral, et gère les profils pastoraux. Créer ou supprimer une église, en changer le nom, l'adresse publique ou le superviseur reste réservé au Super Admin.",
     category: "Administration",
     screenshotTitle: "Paramètres de l'église",
     screenshotFile: "guide-admin-church.png",
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Icône de l'application",
+    description: "Le Super Admin dépose l'icône de Koinonia pour toute l'instance (écran d'accueil, onglet du navigateur, notifications) : image carrée PNG, JPEG ou WebP de 512 px au moins, avec un aperçu iPhone, Android, onglet et notification avant d'enregistrer. Une silhouette blanche pour les notifications Android se dépose en plus, sinon une cloche s'affiche. « Revenir à l'icône par défaut » rétablit l'icône livrée. Sur iPhone, une application déjà installée garde l'ancienne icône jusqu'à sa réinstallation.",
+    category: "Administration",
+    screenshotTitle: "Icône de l'application",
+    screenshotFile: "guide-admin-app-icon.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Messages système",
+    description: "Publiez un message dans un bandeau en haut de Koinonia pour toute l'église, certains rôles ou certains ministères et départements (membres et responsables, ou responsables seulement) : maintenance, nouveautés, consigne. Choisissez la sévérité (Information, Important, Urgent) et la période ; le message est notifié au début de la période selon les préférences de chacun — un message Urgent part par email même si la personne a coupé ces messages, et son bandeau ne se ferme pas. Suivez le nombre de personnes visées, de vues et de fermetures. Le Super Admin peut s'adresser à toute l'instance.",
+    category: "Administration",
+    screenshotTitle: "Messages système",
+    screenshotFile: "guide-admin-messages.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Gestion des utilisateurs",
@@ -451,6 +467,31 @@ const FEATURES: Feature[] = [
     screenshotTitle: "Page de dons",
     screenshotFile: "guide-page-dons.png",
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "edit" },
+  },
+
+  {
+    name: "Installer l'application",
+    description: "Installez Koinonia sur votre téléphone ou votre ordinateur : une icône sur l'écran d'accueil, l'application en plein écran et, sur iPhone, les notifications. « Installer l'application » (menu du compte, carte de l'Accueil ou adresse /installer) reconnaît votre appareil et n'affiche que vos étapes ; sur Android et sur ordinateur, un bouton installe en un appui. Le lien se partage sur WhatsApp, même à quelqu'un qui ne s'est pas encore connecté, et un QR code permet de passer de l'ordinateur au téléphone.",
+    category: "Profil",
+    screenshotTitle: "Installer l'application",
+    screenshotFile: "guide-install-app.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "edit" },
+  },
+  {
+    name: "Messages de l'administration",
+    description: "Un bandeau en haut de Koinonia affiche les messages de votre église ou de Koinonia qui vous concernent (maintenance, consigne, nouveautés). « Lire » ouvre le message complet ; la croix le ferme sur tous vos appareils (un message urgent reste affiché jusqu'à la fin de sa période). Vous les recevez aussi dans la cloche, et par email ou sur votre appareil selon « Mes notifications ».",
+    category: "Profil",
+    screenshotTitle: "Messages de l'administration",
+    screenshotFile: "guide-system-messages.png",
+    access: { SUPER_ADMIN: "read", ADMIN: "read", SECRETARY: "read", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "read", STAR: "read", PASTORAL_CARE_REFERENT: "read", ACCOUNTANT: "read" },
+  },
+  {
+    name: "Notifications sur le téléphone",
+    description: "Recevez les notifications de Koinonia en bandeau sur votre téléphone ou votre ordinateur. Sur iPhone, installez d'abord Koinonia sur l'écran d'accueil : la page « Installer l'application » (menu du compte) montre les étapes de votre appareil. Dans « Mes notifications », touchez « Activer les notifications sur cet appareil », puis choisissez domaine par domaine ce qui arrive par email et sur l'appareil.",
+    category: "Profil",
+    screenshotTitle: "Notifications sur l'appareil",
+    screenshotFile: "guide-notifications-push.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "edit" },
   },
 
   // ── Emplois ──────────────────────────────────────────────────────────────

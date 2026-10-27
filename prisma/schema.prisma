@@ -126,6 +126,9 @@ model Church {
   serviceWithdrawals        ServiceWithdrawal[]
   // Page publique « Donner » (spec 065)
   givingPage                GivingPage?
+  logos                     ChurchLogo[]
+  // Messages système (spec 071)
+  systemMessages            SystemMessage[]
 
   @@map("churches")
 }
@@ -160,6 +163,13 @@ model User {
   auditLogs                         AuditLog[]
   notifications                     Notification[]
   notificationEmailPreferences      NotificationEmailPreference[]
+  notificationPushPreferences       NotificationPushPreference[]
+  pushSubscriptions                 PushSubscription[]
+  appIconsUpdated                   AppIconVariant[]             @relation("AppIconUpdatedBy")
+  churchLogosUpdated                ChurchLogo[]                 @relation("ChurchLogoUpdatedBy")
+  systemMessagesCreated             SystemMessage[]              @relation("SystemMessageCreatedBy")
+  systemMessagesUpdated             SystemMessage[]              @relation("SystemMessageUpdatedBy")
+  systemMessageReceipts             SystemMessageReceipt[]
   submittedAnnouncements            Announcement[]               @relation("AnnouncementSubmittedBy")
   submittedRequests                 Request[]                    @relation("RequestSubmittedBy")
   reviewedRequests                  Request[]                    @relation("RequestReviewedBy")
@@ -733,11 +743,15 @@ model Notification {
   /// lui. Nullable : notifications antérieures et notifications sans objet précis.
   entityType String?  @db.VarChar(50)
   entityId   String?
+  /// Livraison push (spec 068, ADR-0024) : posé quand un passage prend la notification en
+  /// charge (envoyée ou écartée par préférence). Null = encore à traiter.
+  pushedAt   DateTime?
   user       User     @relation(fields: [userId], references: [id])
 
   @@index([userId, read, createdAt])
   @@index([userId, domain])
   @@index([entityType, entityId])
+  @@index([pushedAt, createdAt])
   @@map("notifications")
 }
 
@@ -745,6 +759,40 @@ model Notification {
 /// Absence de ligne = valeur par défaut du domaine (déclarée par son manifeste,
 /// `NotificationDomainDescriptor.defaultEmail`) : aucune donnée à migrer pour les comptes
 /// qui n'ont jamais ouvert la page de réglage.
+/// Abonnement Web Push d'un appareil (spec 068, ADR-0024). Un appareil n'appartient qu'à un
+/// compte : se réabonner depuis un autre compte le réattribue.
+model PushSubscription {
+  id            String    @id @default(cuid())
+  userId        String
+  endpoint      String    @db.Text
+  /// Empreinte SHA-256 de `endpoint` : unicité (un TEXT ne s'indexe pas en entier).
+  endpointHash  String    @unique @db.Char(64)
+  p256dh        String    @db.VarChar(255)
+  auth          String    @db.VarChar(255)
+  /// Libellé lisible (« iPhone · Safari ») dérivé de l'User-Agent.
+  label         String?   @db.VarChar(120)
+  createdAt     DateTime  @default(now())
+  lastSuccessAt DateTime?
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+/// Préférence push par domaine (spec 068) — même forme que `NotificationEmailPreference`.
+/// `domain = "*"` : interrupteur général « Recevoir les notifications sur mes appareils ».
+/// Domaine sans ligne : activé.
+model NotificationPushPreference {
+  userId    String
+  domain    String
+  enabled   Boolean
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, domain])
+  @@map("notification_push_preferences")
+}
+
 model NotificationEmailPreference {
   userId    String
   /// Clé de domaine déclarée par un manifeste (`planning`, `care`, …), ou `*` pour
@@ -2671,4 +2719,99 @@ model GivingPage {
   updatedBy         User?    @relation("GivingPageUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
 
   @@map("giving_pages")
+}
+
+/// Variante d'icône de l'application déposée par un Super Admin (spec 069). Absence de ligne :
+/// l'icône livrée dans `public/brand/` s'applique. Un jeu complet partage la même `version`.
+model AppIconVariant {
+  /// "icon-192" | "icon-512" | "icon-maskable-512" | "apple-touch-180" | "favicon-48" | "badge-96"
+  variant     String   @id @db.VarChar(40)
+  data        Bytes    @db.MediumBlob
+  /// Empreinte courte du jeu (cache-busting `?v=`), changée à chaque dépôt.
+  version     String   @db.VarChar(32)
+  /// Couleur de fond utilisée pour remplir les coins (#rrggbb), conservée pour l'écran.
+  background  String?  @db.Char(7)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+  updatedBy   User?    @relation("AppIconUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([updatedById])
+  @@map("app_icon_variants")
+}
+
+/// Sévérité d'un message système (spec 071).
+enum SystemMessageSeverity {
+  INFO
+  IMPORTANT
+  URGENT
+}
+
+/// Message système (spec 071). `churchId` nul : message pour toute l'instance (Super Admin).
+model SystemMessage {
+  id             String                @id @default(cuid())
+  churchId       String?
+  title          String                @db.VarChar(120)
+  body           String                @db.Text
+  linkUrl        String?               @db.VarChar(500)
+  linkLabel      String?               @db.VarChar(60)
+  severity       SystemMessageSeverity @default(INFO)
+  /// Public : { roles, ministryIds, departmentIds, headsOnly } (validé par Zod, voir le module messages).
+  audience       Json
+  startsAt       DateTime
+  endsAt         DateTime
+  /// Posé à la prise en charge de la notification (une seule fois).
+  notifiedAt     DateTime?
+  /// Nombre de comptes notifiés au début de la période.
+  recipientCount Int?
+  withdrawnAt    DateTime?
+  createdById    String?
+  updatedById    String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  church    Church?                @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  createdBy User?                  @relation("SystemMessageCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User?                  @relation("SystemMessageUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  receipts  SystemMessageReceipt[]
+
+  @@index([churchId, startsAt])
+  @@index([startsAt, endsAt])
+  @@index([notifiedAt, startsAt])
+  @@index([createdById])
+  @@index([updatedById])
+  @@map("system_messages")
+}
+
+/// Vu / fermé par une personne (spec 071) : une ligne par compte et par message.
+model SystemMessageReceipt {
+  messageId   String
+  userId      String
+  seenAt      DateTime  @default(now())
+  dismissedAt DateTime?
+
+  message SystemMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId])
+  @@index([userId])
+  @@map("system_message_receipts")
+}
+
+/// Logo de l'église dans l'interface (spec 072) : une image par fond, écrite uniquement par le
+/// service du module core. Sans ligne `light`, les plumes ICC s'affichent.
+model ChurchLogo {
+  churchId    String
+  /// "light" (fond clair, principal) | "dark" (fond sombre, facultatif)
+  variant     String   @db.VarChar(10)
+  data        Bytes    @db.MediumBlob
+  /// Empreinte courte (cache-busting `?v=`), changée à chaque dépôt.
+  version     String   @db.VarChar(32)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+  church      Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  updatedBy   User?    @relation("ChurchLogoUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@id([churchId, variant])
+  @@index([updatedById])
+  @@map("church_logos")
 }

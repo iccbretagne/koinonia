@@ -2,13 +2,16 @@ import pkg from "@/../package.json";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { auth, signOut, getCurrentChurchId } from "@/lib/auth";
+import { forgetPushDeviceOnSignOut } from "@/lib/push/sign-out";
 import { prisma } from "@/lib/prisma";
 import { rolePermissions, registry } from "@/lib/registry";
 import { buildMediaSpaceCards, type MediaSpaceAccess } from "@/lib/media-space";
 import AuthLayoutShell from "@/components/AuthLayoutShell";
+import SystemMessageBanner from "@/components/SystemMessageBanner";
 import type { RoleKey as TourRoleKey } from "@/lib/tour-steps";
 import { landingHref } from "@/lib/navigation";
 import { isPastoralView } from "@/lib/view-mode";
+import { churchLogoSources } from "@/modules/core/schemas";
 import type { Session } from "next-auth";
 
 // Liens de la section Configuration (paramétrage — pas les outils quotidiens)
@@ -19,6 +22,8 @@ const configLinksDef = [
   { href: "/admin/departments",           label: "Départements",      permissions: ["departments:manage"] },
   { href: "/admin/departments/functions", label: "Fonctions dép.",    permissions: ["events:manage"] },
   { href: "/admin/rooms",                 label: "Salles",            permissions: ["rooms:manage"] },
+  // Messages système (spec 071) : masqué si le module n'est pas actif, même pour un Super Admin
+  ...(registry.has("messages") ? [{ href: "/admin/messages", label: "Messages système", permissions: ["messages:publish"] }] : []),
   // Personnes
   { href: "/admin/users",                 label: "Utilisateurs",      permissions: ["users:manage"] },
   { href: "/admin/access",                label: "Accès & rôles",     permissions: ["access:manage"] },
@@ -29,6 +34,7 @@ const configLinksDef = [
   { href: "/admin/audit-logs",            label: "Historique",        permissions: ["church:settings"] },
   { href: "/admin/backups",               label: "Sauvegardes",       permissions: [], superAdminOnly: true },
   { href: "/admin/api",                   label: "API",               permissions: [], superAdminOnly: true },
+  { href: "/admin/app-icon",              label: "Icône de l'application", permissions: [], superAdminOnly: true },
 ];
 
 type NavLink = { href: string; label: string };
@@ -196,14 +202,18 @@ async function serviceTeamLinks(
   return { requestLinks, mediaLinks, isProtocoleMember: isInTeam("PROTOCOLE") };
 }
 
-/** Nom et couleur de l'église courante, pour l'en-tête. */
+/** Nom, couleur et logo (spec 072, versions seulement) de l'église courante, pour l'en-tête. */
 async function churchDisplay(currentChurchId: string | null | undefined) {
   const currentChurchDb = currentChurchId
-    ? await prisma.church.findUnique({ where: { id: currentChurchId }, select: { name: true, primaryColor: true } })
+    ? await prisma.church.findUnique({
+        where: { id: currentChurchId },
+        select: { name: true, primaryColor: true, logos: { select: { variant: true, version: true } } },
+      })
     : null;
   return {
     churchName: currentChurchDb?.name ?? "Église",
     churchPrimaryColor: currentChurchDb?.primaryColor ?? "#5E17EB",
+    churchLogo: currentChurchId && currentChurchDb ? churchLogoSources(currentChurchId, currentChurchDb.logos) : null,
   };
 }
 
@@ -339,6 +349,7 @@ async function hasAnnouncementSheetAccess(session: Session, churchId: string | n
 
 async function signOutAction() {
   "use server";
+  await forgetPushDeviceOnSignOut();
   await signOut({ redirectTo: "/" });
 }
 
@@ -377,7 +388,7 @@ export default async function AuthLayout({
   // Double rôle dans l'église courante : profil pastoral + au moins un rôle classique
   const hasBothRoles = isPastoral && hasClassicRole;
 
-  const { churchName, churchPrimaryColor } = await churchDisplay(currentChurchId);
+  const { churchName, churchPrimaryColor, churchLogo } = await churchDisplay(currentChurchId);
 
   const churches = await switcherChurches(churchRoles, pastoralChurchIds);
   const allDepartments = await planningDepartments(churchRoles, currentChurchId);
@@ -503,6 +514,15 @@ export default async function AuthLayout({
     redirect("/no-access");
   }
 
+  // Messages système en cours (spec 071) : un échec de lecture ne doit jamais casser la page.
+  const bannerMessages = registry.has("messages")
+    ? await import("@/modules/messages")
+        .then(({ getActiveBannerMessages, messageViewerFromSession }) =>
+          getActiveBannerMessages(messageViewerFromSession(session))
+        )
+        .catch(() => [])
+    : [];
+
   return (
     <AuthLayoutShell
       departments={allDepartments}
@@ -534,10 +554,12 @@ export default async function AuthLayout({
       currentChurchId={currentChurchId ?? null}
       churchName={churchName}
       headerColor={churchPrimaryColor}
+      churchLogo={churchLogo}
       hasBothRoles={hasBothRoles}
       switchViewAction={isInPastoralMode ? switchToAdminMode : switchToPastoralMode}
       signOutAction={signOutAction}
       footer={footerContent}
+      banner={bannerMessages.length > 0 ? <SystemMessageBanner messages={bannerMessages} /> : undefined}
     >
       {children}
     </AuthLayoutShell>

@@ -1364,7 +1364,99 @@ Préférence d'envoi d'email d'un utilisateur, par domaine de notification (spec
 
 Clé primaire : `[userId, domain]`
 
+#### `notification_push_preferences`
+
+Préférence de notification native d'un utilisateur, par domaine (spec 068, ADR-0024). Même forme
+que `notification_email_preferences` ; `domain = "*"` porte l'interrupteur général. Un domaine
+sans ligne est **activé**.
+
+| Champ | Type | Description |
+|---|---|---|
+| `userId` | String | Ref vers `users` (cascade delete) |
+| `domain` | String | Clé de domaine, ou `*` |
+| `enabled` | Boolean | Notifications natives activées pour ce domaine |
+| `updatedAt` | DateTime | Dernière modification |
+
+Clé primaire : `[userId, domain]`
+
+#### `push_subscriptions`
+
+Abonnement Web Push d'un appareil (spec 068). Un appareil n'appartient qu'à un compte : se
+réabonner depuis un autre compte le réattribue. Supprimé à la déconnexion (cookie
+`koinonia-push-device`) et quand le service push répond `404`/`410`.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant |
+| `userId` | String | Ref vers `users` (cascade delete) |
+| `endpoint` | Text | Adresse du service push fournie par le navigateur |
+| `endpointHash` | Char(64), unique | SHA-256 de `endpoint` (unicité) |
+| `p256dh` / `auth` | VarChar(255) | Clés de chiffrement de l'abonnement |
+| `label` | VarChar(120)? | Appareil lisible (« iPhone · Safari ») |
+| `createdAt` / `lastSuccessAt` | DateTime | Création, dernier envoi réussi |
+
+#### `notifications.pushedAt` (spec 068)
+
+Livraison native : posé quand un passage prend la notification en charge (envoyée ou écartée par
+préférence) ; `null` = encore à traiter. Mis à `createdAt` pour l'historique à la migration. Index
+`[pushedAt, createdAt]` pour le rattrapage cron.
+
 ### Plateforme
+
+#### `system_messages` — messages système (spec 071)
+
+Message de l'administration, affiché en bandeau pendant sa période et notifié à son début.
+`churchId` nul : message pour toute l'instance (Super Admin).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant |
+| `churchId` | String? | Ref vers `churches` (cascade delete) ; nul = instance |
+| `title` / `body` | VarChar(120) / Text | Titre et texte |
+| `linkUrl` / `linkLabel` | VarChar(500)? / VarChar(60)? | Lien facultatif (https ou chemin de Koinonia) |
+| `severity` | Enum `SystemMessageSeverity` | `INFO`, `IMPORTANT`, `URGENT` |
+| `audience` | Json | `{ roles, ministryIds, departmentIds, headsOnly }`, validé par Zod |
+| `startsAt` / `endsAt` | DateTime | Période |
+| `notifiedAt` | DateTime? | Pris de façon atomique au début de la période (un seul envoi) |
+| `recipientCount` | Int? | Comptes notifiés |
+| `withdrawnAt` | DateTime? | Retrait |
+| `createdById` / `updatedById` | String? | Ref vers `users` (set null) |
+
+#### `system_message_receipts` — vu / fermé (spec 071)
+
+Une ligne par compte et par message (clé `[messageId, userId]`) : `seenAt`, `dismissedAt`.
+Masque le bandeau sur tous les appareils et alimente les statistiques globales.
+
+#### `app_icon_variants` — icône de l'application (spec 069)
+
+Variantes préparées de l'icône déposée par un Super Admin, une ligne par variante (`icon-192`,
+`icon-512`, `icon-maskable-512`, `apple-touch-180`, `favicon-48`, `badge-96`). Donnée de
+plateforme, **sans `churchId`** : une icône pour toute l'instance. Aucune ligne = icône livrée
+dans `public/brand/`. Le fichier déposé n'est pas conservé.
+
+| Champ | Type | Description |
+|---|---|---|
+| `variant` | VarChar(40), PK | Nom de la variante |
+| `data` | MediumBlob | PNG préparé |
+| `version` | VarChar(32) | Version du jeu (`?v=`), partagée par toutes les lignes |
+| `background` | Char(7)? | Couleur de fond des coins (#rrggbb) |
+| `updatedById` | String? | Ref vers `users` (set null) |
+| `updatedAt` | DateTime | Dernière modification |
+
+#### `church_logos` — logo de l'église dans l'interface (spec 072)
+
+Logo déposé par l'Admin de l'église (`church:settings`), une ligne par fond (clé
+`[churchId, variant]`, `light` principal, `dark` facultatif qui retombe sur `light`). Sans ligne
+`light`, la coquille affiche les plumes ICC. Le fichier déposé n'est pas conservé.
+
+| Champ | Type | Description |
+|---|---|---|
+| `churchId` | String, PK | Ref vers `churches` (cascade) |
+| `variant` | VarChar(10), PK | `light` ou `dark` |
+| `data` | MediumBlob | PNG préparé (600 × 200 au plus) |
+| `version` | VarChar(32) | Version (`?v=`), changée à chaque dépôt |
+| `updatedById` | String? | Ref vers `users` (set null) |
+| `updatedAt` | DateTime | Dernière modification |
 
 #### `cron_task_runs` — planificateur des tâches planifiées (ADR-0021)
 

@@ -1503,6 +1503,172 @@
         }
       }
     },
+    "/api/admin/app-icon": {
+      "get": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Icône de l'application en vigueur",
+        "description": "**Accès** : Super Admin.\n\nRéglage de plateforme (spec 069), une icône pour toute l'instance. Indique si l'icône est celle livrée avec Koinonia ou une icône déposée, sa version, sa couleur de fond, la présence d'une silhouette de badge et les 20 derniers changements (journal `AppIcon`).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "responses": {
+          "200": {
+            "description": "`{ custom, version, background, hasBadge, updatedAt, updatedBy, history[] }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Dépôt ou remplacement de l'icône de l'application et/ou de sa silhouette de badge",
+        "description": "**Accès** : Super Admin.\n\nAu moins un fichier. Icône : PNG, JPEG ou WebP carré (2 % de tolérance), 512 px au moins, 5 Mo au plus ; le format décodé fait foi (SVG, GIF refusés). `background` (#rrggbb) remplit les coins clairs ou transparents, obligatoire avec une icône. Silhouette : PNG ou WebP avec transparence, rendue en blanc ; exige une icône déposée. Le fichier n'est jamais servi tel quel : seules les variantes préparées sont enregistrées, dans une transaction (l'icône en vigueur ne change pas en cas de refus). 411 sans Content-Length, 413 au-delà de 11 Mo. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "requestBody": {
+          "description": "`icon` (image, facultatif), `background` (#rrggbb, requis avec `icon`), `badge` (image, facultatif)",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "État à jour (comme GET)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Retour à l'icône par défaut, ou retrait de la seule silhouette",
+        "description": "**Accès** : Super Admin.\n\n`icon` : toutes les variantes déposées sont retirées, l'icône livrée avec Koinonia s'applique. `badge` : la cloche générique remplace la silhouette. Journalisé si quelque chose a été retiré.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "target": {
+                    "type": "string",
+                    "enum": [
+                      "icon",
+                      "badge"
+                    ]
+                  }
+                },
+                "required": [
+                  "target"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "État à jour (comme GET)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/admin/app-icon/preview": {
+      "post": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Aperçu d'une icône de l'application avant enregistrement",
+        "description": "**Accès** : Super Admin.\n\nMêmes contrôles que le dépôt (spec 069). Renvoie les variantes préparées en data URL et la couleur de fond proposée (bord de l'image, hors coins) si `background` est absent. Rien n'est enregistré.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "requestBody": {
+          "description": "`icon` (image, facultatif), `background` (#rrggbb, facultatif), `badge` (image, facultatif)",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ background, variants: { <variante>: data URL }, badge: data URL | null }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
     "/api/admin/backups": {
       "get": {
         "tags": [
@@ -3229,6 +3395,76 @@
           },
           "403": {
             "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/app-icon/{variant}": {
+      "get": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Icône de l'application, par variante",
+        "description": "**Accès** : public, sans session.\n\nVariantes : `icon-192`, `icon-512`, `icon-maskable-512`, `apple-touch-180`, `favicon-48`, `badge-96` (suffixe `.png` accepté) ; 404 sinon. Icône déposée (spec 069) : PNG servi depuis la base, cache immuable si `v` est la version en vigueur, 5 minutes sinon. Sans icône déposée : 302 vers le fichier livré avec Koinonia ; sous une icône déposée sans silhouette, le badge redirige vers la cloche générique.",
+        "security": [],
+        "x-access": "public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "variant",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "v",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image PNG, ou redirection vers l'icône livrée",
+            "content": {
+              "image/png": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/app-icon/manifest": {
+      "get": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Manifeste de l'application installable (PWA)",
+        "description": "**Accès** : public, sans session.\n\nNom, adresse de démarrage, couleurs et icônes de l'application (spec 069). Les icônes pointent vers `/api/app-icon/<variante>.png?v=<version>` : un changement d'icône change leur adresse. Cache de 5 minutes.",
+        "security": [],
+        "x-access": "public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "v",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Manifeste Web App",
+            "content": {
+              "application/manifest+json": {
+                "schema": {}
+              }
+            }
           }
         }
       }
@@ -6302,6 +6538,168 @@
         "responses": {
           "200": {
             "description": "Événements triés par date, départements inclus",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/churches/{churchId}/logo": {
+      "get": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Logo de l'église dans l'interface",
+        "description": "**Accès** : toute personne connectée — membre de l'église `churchId`.\n\nPNG préparé (spec 072), servi aux membres de l'église (rôle ou profil pastoral) et au Super Admin, jamais à une autre église. Cache immuable : l'adresse change à chaque dépôt (`v`). 404 sans logo.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "light",
+                "dark"
+              ]
+            },
+            "required": true,
+            "name": "variant",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "v",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image PNG",
+            "content": {
+              "image/png": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Dépôt ou remplacement d'un logo de l'église",
+        "description": "**Accès** : permission `church:settings`.\n\nPNG, JPEG ou WebP, 2 Mo au plus. 411 sans Content-Length et 413 au-delà de 2,5 Mo, avant lecture du corps. Le format décodé fait foi (un SVG est refusé, 400) ; l'image est réduite à 600 × 200 au plus et réencodée en PNG, métadonnées retirées. Enregistré immédiatement et journalisé dans l'historique de l'église.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "church:settings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "description": "`variant` (`light` | `dark`), `file` (image)",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Version du logo enregistré (`version`)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Retrait d'un logo de l'église",
+        "description": "**Accès** : permission `church:settings`.\n\nJournalisé. Sans logo pour fond clair, les plumes ICC s'affichent.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "church:settings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "light",
+                "dark"
+              ]
+            },
+            "required": true,
+            "name": "variant",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`version: null`",
             "content": {
               "application/json": {
                 "schema": {}
@@ -17195,7 +17593,7 @@
         "x-access": "session",
         "responses": {
           "200": {
-            "description": "Vue des préférences : interrupteur général et une ligne par domaine visible",
+            "description": "Vue des préférences : interrupteurs généraux email et appareils, une ligne par domaine visible (email et appareil), disponibilité des notifications natives, clé publique VAPID et nombre d'appareils",
             "content": {
               "application/json": {
                 "schema": {}
@@ -17215,7 +17613,7 @@
           "core"
         ],
         "summary": "Mise à jour des préférences de notification",
-        "description": "**Accès** : toute personne connectée — préférences de l'appelant.\n\nUn domaine inconnu ou non accessible à l'utilisateur est refusé (400). Voir ADR-0016 (spec 053).",
+        "description": "**Accès** : toute personne connectée — préférences de l'appelant.\n\nUn domaine inconnu ou non accessible à l'utilisateur est refusé (400), pour l'email comme pour les appareils. Voir ADR-0016 (spec 053) et ADR-0024 (spec 068).",
         "security": [
           {
             "session": []
@@ -17236,6 +17634,15 @@
                     "additionalProperties": {
                       "type": "boolean"
                     }
+                  },
+                  "pushEnabled": {
+                    "type": "boolean"
+                  },
+                  "pushDomains": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "boolean"
+                    }
                   }
                 }
               }
@@ -17250,6 +17657,124 @@
                 "schema": {}
               }
             }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/notifications/push/subscriptions": {
+      "post": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Abonnement de l'appareil courant aux notifications natives",
+        "description": "**Accès** : toute personne connectée — appareils de l'appelant.\n\nEnregistre l'abonnement Web Push de l'appareil pour l'appelant (spec 068, ADR-0024) et pose le cookie httpOnly `koinonia-push-device`, utilisé pour l'oublier à la déconnexion. Un appareil n'appartient qu'à un compte : un endpoint déjà enregistré pour un autre compte est réattribué à l'appelant. 503 si l'instance n'a pas de clés VAPID.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "endpoint": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "format": "uri"
+                  },
+                  "keys": {
+                    "type": "object",
+                    "properties": {
+                      "p256dh": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255,
+                        "pattern": "^[A-Za-z0-9_-]+={0,2}$"
+                      },
+                      "auth": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255,
+                        "pattern": "^[A-Za-z0-9_-]+={0,2}$"
+                      }
+                    },
+                    "required": [
+                      "p256dh",
+                      "auth"
+                    ]
+                  }
+                },
+                "required": [
+                  "endpoint",
+                  "keys"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Identifiant de l'abonnement",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Désabonnement de l'appareil courant",
+        "description": "**Accès** : toute personne connectée — appareils de l'appelant.\n\nSupprime l'abonnement désigné par `endpoint`, à défaut par le cookie `koinonia-push-device`, seulement s'il appartient à l'appelant. Répond 204 dans tous les cas (aucune information sur un abonnement d'autrui).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "endpoint": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Aucun contenu"
           },
           "400": {
             "description": "Corps invalide (détail Zod dans `details`)"
@@ -18917,6 +19442,639 @@
                 "schema": {}
               }
             }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/system-messages": {
+      "get": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Messages système d'une église",
+        "description": "**Accès** : permission `messages:publish` — dans l'église du paramètre `churchId`.\n\nMessages de l'église et messages pour toute l'instance (en lecture seule hors Super Admin), du plus récent au plus ancien, avec leur état (programmé, en cours, passé) et leurs statistiques : comptes notifiés, vus, fermés — sans liste nominative (spec 071).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "messages:publish",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des messages avec `stats` et `readOnly`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Publication d'un message système",
+        "description": "**Accès** : permission `messages:publish` — dans l'église visée ; Super Admin pour toute l'instance.\n\n`scope: \"church\"` (avec `churchId`) ou `\"instance\"` (Super Admin). Public par rôles, ministères et départements (responsables seulement en option) ; ministères et départements de l'église du message ; public vide refusé (400). Fin obligatoire, après le début et dans le futur, 90 jours au plus. Un message qui commence tout de suite est notifié aussitôt (cloche, email et appareil selon les préférences « Messages de l'administration ») ; un message Urgent part par email malgré la préférence (ADR-0025). Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "messages:publish",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "scope": {
+                            "type": "string",
+                            "enum": [
+                              "church"
+                            ]
+                          },
+                          "churchId": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "scope",
+                          "churchId"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "scope": {
+                            "type": "string",
+                            "enum": [
+                              "instance"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "scope"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                      },
+                      "body": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2000
+                      },
+                      "linkUrl": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 500
+                      },
+                      "linkLabel": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 60
+                      },
+                      "severity": {
+                        "type": "string",
+                        "enum": [
+                          "INFO",
+                          "IMPORTANT",
+                          "URGENT"
+                        ],
+                        "default": "INFO"
+                      },
+                      "audience": {
+                        "type": "object",
+                        "properties": {
+                          "roles": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "SUPER_ADMIN",
+                                "ADMIN",
+                                "SECRETARY",
+                                "MINISTER",
+                                "DEPARTMENT_HEAD",
+                                "DISCIPLE_MAKER",
+                                "REPORTER",
+                                "STAR",
+                                "PASTORAL_CARE_REFERENT",
+                                "ACCOUNTANT"
+                              ]
+                            },
+                            "maxItems": 20,
+                            "default": []
+                          },
+                          "ministryIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "maxItems": 100,
+                            "default": []
+                          },
+                          "departmentIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "maxItems": 300,
+                            "default": []
+                          },
+                          "headsOnly": {
+                            "type": "boolean",
+                            "default": false
+                          }
+                        }
+                      },
+                      "startsAt": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "date-time"
+                      },
+                      "endsAt": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "title",
+                      "body",
+                      "audience",
+                      "endsAt"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Message créé",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/system-messages/{id}": {
+      "get": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Détail d'un message système",
+        "description": "**Accès** : toute personne connectée — auteur ou personne du public.\n\nPour son auteur (même garde que la publication, sur l'église du message) : message et statistiques. Pour une personne du public : le message seul. 404 pour toute autre personne, sans révéler l'existence du message (spec 071).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message (et `stats` pour l'auteur)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Correction d'un message système",
+        "description": "**Accès** : permission `messages:publish` — dans l'église du message ; Super Admin pour un message d'instance.\n\nProgrammé : tout se modifie. En cours : titre, texte, lien et fin seulement (400 si le public, la sévérité ou le début changent), sans nouvelle notification. Passé ou retiré : 400. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "messages:publish",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "linkUrl": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 500
+                  },
+                  "linkLabel": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 60
+                  },
+                  "severity": {
+                    "type": "string",
+                    "enum": [
+                      "INFO",
+                      "IMPORTANT",
+                      "URGENT"
+                    ]
+                  },
+                  "audience": {
+                    "type": "object",
+                    "properties": {
+                      "roles": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "SUPER_ADMIN",
+                            "ADMIN",
+                            "SECRETARY",
+                            "MINISTER",
+                            "DEPARTMENT_HEAD",
+                            "DISCIPLE_MAKER",
+                            "REPORTER",
+                            "STAR",
+                            "PASTORAL_CARE_REFERENT",
+                            "ACCOUNTANT"
+                          ]
+                        },
+                        "maxItems": 20,
+                        "default": []
+                      },
+                      "ministryIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "maxItems": 100,
+                        "default": []
+                      },
+                      "departmentIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "maxItems": 300,
+                        "default": []
+                      },
+                      "headsOnly": {
+                        "type": "boolean",
+                        "default": false
+                      }
+                    }
+                  },
+                  "startsAt": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  },
+                  "endsAt": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Message à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/system-messages/{id}/receipt": {
+      "post": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Message système vu ou fermé",
+        "description": "**Accès** : toute personne connectée — personne du public du message.\n\n`seen` : affichage du bandeau ou ouverture du détail ; `dismiss` : fermeture du bandeau, sur tous les appareils de la personne. Idempotent. Réservé au public du message (404 sinon) ; un message Urgent ne se ferme pas (400). Alimente les statistiques globales (spec 071).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "seen",
+                      "dismiss"
+                    ]
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Aucun contenu"
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/system-messages/{id}/withdraw": {
+      "post": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Retrait immédiat d'un message système",
+        "description": "**Accès** : permission `messages:publish` — dans l'église du message ; Super Admin pour un message d'instance.\n\nLe bandeau disparaît tout de suite ; un message programmé ne sera jamais notifié. 400 si le message est déjà terminé ou retiré. Journalisé (spec 071).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "messages:publish",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message retiré",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/system-messages/audience-count": {
+      "post": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Décompte du public d'un message système, avant publication",
+        "description": "**Accès** : permission `messages:publish` — dans l'église visée ; Super Admin pour toute l'instance.\n\nNombre de comptes visés, et nombre de fiches STAR concernées sans compte lié, qui ne recevront pas le message (spec 071). Rien n'est enregistré.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "messages:publish",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "scope": {
+                            "type": "string",
+                            "enum": [
+                              "church"
+                            ]
+                          },
+                          "churchId": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "scope",
+                          "churchId"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "scope": {
+                            "type": "string",
+                            "enum": [
+                              "instance"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "scope"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "audience": {
+                        "type": "object",
+                        "properties": {
+                          "roles": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "SUPER_ADMIN",
+                                "ADMIN",
+                                "SECRETARY",
+                                "MINISTER",
+                                "DEPARTMENT_HEAD",
+                                "DISCIPLE_MAKER",
+                                "REPORTER",
+                                "STAR",
+                                "PASTORAL_CARE_REFERENT",
+                                "ACCOUNTANT"
+                              ]
+                            },
+                            "maxItems": 20,
+                            "default": []
+                          },
+                          "ministryIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "maxItems": 100,
+                            "default": []
+                          },
+                          "departmentIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "maxItems": 300,
+                            "default": []
+                          },
+                          "headsOnly": {
+                            "type": "boolean",
+                            "default": false
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "audience"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ recipients, membersWithoutAccount }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
           },
           "401": {
             "description": "Session absente"

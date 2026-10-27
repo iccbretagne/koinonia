@@ -19,9 +19,10 @@ export async function PUT(request: Request) {
     const userId = session.user.id!;
     const body = putSchema.parse(await request.json());
 
-    if (body.domains) {
+    const requestedKeys = [...Object.keys(body.domains ?? {}), ...Object.keys(body.pushDomains ?? {})];
+    if (requestedKeys.length > 0) {
       const visibleKeys = await getVisibleDomainKeys(userId);
-      for (const key of Object.keys(body.domains)) {
+      for (const key of requestedKeys) {
         if (!visibleKeys.has(key)) throw new ApiError(400, `Domaine de notification inconnu ou non accessible : "${key}"`);
       }
     }

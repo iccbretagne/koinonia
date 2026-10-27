@@ -13,9 +13,10 @@ import { careModule } from "../care/manifest";
 import { accountingModule } from "../accounting/manifest";
 import { jobsModule } from "../jobs/manifest";
 import { givingModule } from "../giving/manifest";
+import { messagesModule } from "../messages/manifest";
 
 /**
- * Les 13 modules composés par `src/lib/registry.ts`, importés par leur manifeste et non par leur
+ * Les 14 modules composés par `src/lib/registry.ts`, importés par leur manifeste et non par leur
  * index : un index re-exporte les services du module, donc Prisma, NextAuth et le client S3 —
  * indisponibles dans l'environnement de test `node`. C'est la raison pour laquelle ce fichier ne
  * couvrait que 3 modules avant l'extraction des manifestes.
@@ -34,6 +35,7 @@ const ALL_MODULES: ModuleManifest[] = [
   accountingModule,
   jobsModule,
   givingModule,
+  messagesModule,
 ];
 
 /** Dépendances déclarées, figées : une arête ajoutée ou retirée doit se voir en revue. */
@@ -51,6 +53,7 @@ const EXPECTED_DEPENDENCIES: Record<string, string[]> = {
   accounting: ["core", "planning"],
   jobs: ["core"],
   giving: ["core", "storage"],
+  messages: ["core"],
 };
 
 /**
@@ -108,6 +111,7 @@ const PERMISSION_OWNER: Record<string, string> = {
   "jobs:seek": "jobs",
   "jobs:view": "jobs",
   "giving:manage": "giving",
+  "messages:publish": "messages",
 };
 
 function buildRegistry(mods: ModuleManifest[] = ALL_MODULES) {
@@ -117,8 +121,8 @@ function buildRegistry(mods: ModuleManifest[] = ALL_MODULES) {
 }
 
 describe("Manifestes des modules", () => {
-  it("couvre les 13 modules composés par le registry", () => {
-    expect(ALL_MODULES).toHaveLength(13);
+  it("couvre les 14 modules composés par le registry", () => {
+    expect(ALL_MODULES).toHaveLength(14);
     expect(ALL_MODULES.map((m) => m.name).sort()).toEqual([
       "accounting",
       "agenda",
@@ -130,6 +134,7 @@ describe("Manifestes des modules", () => {
       "integration",
       "jobs",
       "media",
+      "messages",
       "planning",
       "rooms",
       "storage",
@@ -170,7 +175,7 @@ describe("Manifestes des modules", () => {
 
   it("l'ordre de chargement est résolvable et place chaque dépendance avant son dépendant", () => {
     const order = buildRegistry().resolveLoadOrder().map((m) => m.name);
-    expect(order).toHaveLength(13);
+    expect(order).toHaveLength(14);
 
     for (const mod of ALL_MODULES) {
       for (const dep of mod.dependsOn ?? []) {

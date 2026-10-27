@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Download,
   Calendar,
   CalendarCheck,
   HeartHandshake,
@@ -209,6 +210,7 @@ const CONFIG_BLOCKS: Record<string, string> = {
   "/admin/departments": "Organisation",
   "/admin/departments/functions": "Organisation",
   "/admin/rooms": "Organisation",
+  "/admin/messages": "Organisation",
   "/admin/users": "Accès",
   "/admin/access": "Accès",
   "/admin/pastoral-profiles": "Accès",
@@ -216,6 +218,7 @@ const CONFIG_BLOCKS: Record<string, string> = {
   "/admin/audit-logs": "Plateforme",
   "/admin/backups": "Plateforme",
   "/admin/api": "Plateforme",
+  "/admin/app-icon": "Plateforme",
 };
 
 function configPages(input: NavigationInput): NavPage[] {
@@ -535,6 +538,12 @@ export const ACCOUNT_PAGES: readonly { href: string; label: string; icon: Lucide
   { href: "/guide", label: "Guide d'utilisation", icon: BookOpen },
 ];
 
+/**
+ * Page d'installation (spec 070), proposée par la recherche. Hors `ACCOUNT_PAGES` : le menu du
+ * compte l'affiche par une ligne contextuelle, selon l'appareil.
+ */
+export const INSTALL_PAGE = { href: "/installer", label: "Installer l'application", icon: Download } as const;
+
 /** Libellé du dernier segment d'une sous-page que la navigation ne nomme pas. */
 const SUBPAGE_LABELS: Record<string, string> = {
   "star-view": "Planning des STAR",
@@ -759,6 +768,7 @@ export function searchablePages(spaces: readonly NavSpace[]): SearchablePage[] {
     }
   }
   for (const a of ACCOUNT_PAGES) add({ href: a.href, label: a.label, context: "Compte", icon: a.icon });
+  add({ href: INSTALL_PAGE.href, label: INSTALL_PAGE.label, context: "Compte", icon: INSTALL_PAGE.icon });
   return out;
 }
 

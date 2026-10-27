@@ -314,6 +314,24 @@ nouvelles offres) : les deux s'appliquent en cumul, sans fusion.
 Page utilisateur : `/profile/notifications` (interrupteur général + une ligne par domaine
 visible) ; API : `GET`/`PUT /api/notifications/preferences`.
 
+**Notifications natives (Web Push, spec 068, ADR-0024)** : troisième canal, sans rien changer
+aux sites d'appel. **La cloche est la source** : seule une ligne `Notification` existante part
+sur les appareils (même titre, message et lien), livrée par `deliverPendingPush`
+(`src/lib/push/deliver.ts`) — immédiatement après l'email dans `dispatchIfNoTx` (hors `tx` ;
+`email: false` ne coupe pas le push), et en rattrapage par la tâche cron `push-delivery`
+(`every-run`) pour les notifications créées en transaction. `Notification.pushedAt`, pris de
+façon atomique, garantit un seul envoi. Préférences par domaine dans
+`notification_push_preferences` (`*` = interrupteur général, domaine sans ligne = **activé**),
+appareils dans `push_subscriptions` (un appareil = un compte, oublié à la déconnexion via le
+cookie `koinonia-push-device`, supprimé sur `404`/`410`). Clés `VAPID_*` par environnement, lues
+à l'exécution ; sans elles le canal est indisponible. Conséquence : une information **à pousser**
+doit exister dans la cloche, et son texte ne doit rien contenir de plus que ce qu'un écran
+verrouillé peut montrer (pas de détail pastoral ni de coordonnée bancaire).
+
+**Seule exception à la préférence email** : `emailPolicy: "always"` des helpers, réservé aux
+messages système **Urgent** (spec 071, [ADR-0025](docs/adr/0025-email-urgent-hors-preference.md)).
+Tout autre usage exige un nouvel ADR.
+
 ## Design system (spec 055, ADR-0018)
 
 L'interface passe par des **tokens sémantiques** (rôle, pas teinte) déclarés en variables CSS dans
@@ -339,6 +357,15 @@ Agenda, Personnes, Demandes, Médias, Ressources, Administration), construite à
 déjà autorisées par `(auth)/layout.tsx` et partagée par la sidebar, la barre du bas, le panneau
 « Plus », le fil d'Ariane et la palette de recherche (`⌘K`/`Ctrl K`) — ce module ne décide d'aucun
 droit, il ne fait que regrouper ce que le layout a déjà autorisé.
+
+**Installer l'application** (spec 070) : page publique `/installer` (hors `(auth)`, déclarée dans
+`routes.public` du manifeste `core`), partageable avant la première connexion. La détection de
+l'appareil est cliente et pure (`src/lib/install/detect.ts`, `installTarget`) ;
+`beforeinstallprompt` est capté dès le root layout (`ServiceWorkerRegistration` →
+`prompt-store.ts`) pour proposer l'installation native. Le menu du compte (`AccountActions`,
+menu de l'avatar et panneau « Plus ») affiche une ligne **contextuelle** « Installer
+l'application », absente une fois installée ; la carte d'Accueil se masque 30 jours par appareil
+(`localStorage`).
 
 **Accueil** (`/accueil`, `TODAY_HREF` dans `navigation.ts`) : page d'accueil commune à tous les
 rôles (« Aujourd'hui »), qui rassemble prochains services, événements à venir, demandes en attente
@@ -393,6 +420,7 @@ Compt = Comptable.
 | `accounting:manage` | x | x | | | | | | | | x |
 | `accounting:stats` | x | x | x | | | | | | | x |
 | `giving:manage` | x | x | x | | | | | | | x |
+| `messages:publish` | x | x | x | | | | | | | |
 | `agenda:view` | x | x | x | | | | | | | |
 | `agenda:manage` | x | x | x | | | | | | | |
 | `care:qualify` | x | x | | | | | | | x | |
@@ -524,6 +552,27 @@ renommé spec 052) :
   contenu → slide. Modifications non enregistrées signalées dans la barre collante, garde à la
   sortie (lien interne, fermeture, rechargement ; ni bouton « Précédent » ni palette ⌘K)
 
+**Spécificités du module messages** (spec 071) :
+- `messages:publish` (Super Admin, Admin, Secrétaire) ouvre `/admin/messages` : publier, programmer,
+  corriger et retirer un **message système** dans son église. Un message pour **toute l'instance**
+  (`churchId` nul) exige en plus le Super Admin (`requireMessageAuthorAccess`,
+  `@/modules/messages/auth`) ; pour un message existant, l'église qui fait foi est celle du message
+- Public décrit par critères (rôles, ministères, départements, « responsables seulement »), stocké
+  en JSON validé par Zod, **évalué à l'affichage** (bandeau, détail, reçus) et **résolu une fois**
+  au début de la période pour la notification (`resolveRecipients`, `isInAudience` : même règle).
+  Ministère ou département = ses responsables (`user_departments`, Ministre du ministère) et, sauf
+  « responsables seulement », ses membres (fiche STAR liée au compte)
+- Bandeau sous la barre supérieure (`SystemMessageBanner`, prop `banner` d'`AuthLayoutShell`) ;
+  « fermé » est un reçu en base (`system_message_receipts`) donc vaut sur tous les appareils ;
+  un message Urgent ne se ferme pas. Statistiques globales (visées, vues, fermées), jamais de
+  liste nominative
+- Notification au début de la période (envoi immédiat à la publication, tâche cron
+  `system-messages` pour les messages programmés et en rattrapage ; `notifiedAt` pris de façon
+  atomique) dans le domaine « Messages de l'administration » (`system-messages`). **Exception
+  Urgent** : `notifyUsers(…, { emailPolicy: "always" })` envoie l'email malgré la préférence
+  ([ADR-0025](docs/adr/0025-email-urgent-hors-preference.md)) — seul usage autorisé de cette
+  option ; la notification native suit toujours la préférence
+
 **Spécificités du Comptable** (`ACCOUNTANT`) :
 - Seul rôle (hors Super Admin/Admin) avec `accounting:manage` : traite les demandes financières
   (validation, rejet, saisie des paiements)
@@ -550,9 +599,20 @@ renommé spec 052) :
   secrétariat et de la comptabilité, couleur, responsable pastoral) et l'historique des
   modifications de l'église ; `access:admins` lui permet de nommer ou retirer un Admin ou un
   Secrétaire dans cette église
+- Dépose le **logo de son église** (spec 072) dans ces mêmes paramètres : une image pour fond
+  clair et une, facultative, pour fond sombre (table `church_logos`, service
+  `@/modules/core`, `/api/churches/[churchId]/logo`, lecture réservée aux membres de l'église).
+  Il remplace les plumes ICC dans la sidebar et la barre du haut (`ChurchMark`, variante `dark:`
+  pour le thème) ; la page de connexion garde les plumes
 - Reste réservé au Super Admin (`church:manage`, plateforme) : créer, onboarder ou supprimer
   une église, en changer le nom, l'adresse publique (slug) ou le superviseur, les sauvegardes,
   les ministères et départements « système », et le rôle Super Admin
+- Ne change pas non plus l'**icône de l'application** (spec 069) : réglage de plateforme (une
+  icône pour toute l'instance, l'application installée étant liée à une seule adresse), écran
+  `/admin/app-icon` et API `/api/admin/app-icon` derrière `requireSuperAdmin()`. Variantes
+  préparées en base (`app_icon_variants`, service `@/modules/core`), servies par
+  `/api/app-icon/<variante>.png` (redirection vers `public/brand/` sans icône déposée) et par le
+  manifeste dynamique `/api/app-icon/manifest` — `public/manifest.json` n'existe plus
 
 **Spécificités du Reporter** :
 - Accès en lecture aux événements (`events:view`)

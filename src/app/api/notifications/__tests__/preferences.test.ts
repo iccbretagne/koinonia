@@ -90,3 +90,25 @@ describe("PUT /api/notifications/preferences", () => {
     expect(mockUpdatePreferences).not.toHaveBeenCalled();
   });
 });
+
+describe("PUT /api/notifications/preferences — notifications natives (spec 068)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRequireAuth.mockResolvedValue(createAdminSession());
+    mockGetPreferencesView.mockResolvedValue(VIEW);
+    mockGetVisibleDomainKeys.mockResolvedValue(new Set(["accounting"]));
+    mockUpdatePreferences.mockResolvedValue(undefined);
+  });
+
+  it("écrit l'interrupteur général et les domaines push", async () => {
+    const res = await PUT(jsonRequest({ pushEnabled: false, pushDomains: { accounting: false } }));
+    expect(res.status).toBe(200);
+    expect(mockUpdatePreferences).toHaveBeenCalledWith("user-1", { pushEnabled: false, pushDomains: { accounting: false } });
+  });
+
+  it("rejette un domaine push non visible (400)", async () => {
+    const res = await PUT(jsonRequest({ pushDomains: { care: true } }));
+    expect(res.status).toBe(400);
+    expect(mockUpdatePreferences).not.toHaveBeenCalled();
+  });
+});

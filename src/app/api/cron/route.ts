@@ -4,6 +4,7 @@ import { sendEmail, buildReminderEmail, buildPlanningDigestEmail, parseEmailList
 import { registry } from "@/lib/registry";
 import { createNotification, notifyUsers } from "@/lib/notifications";
 import { runScheduledTasks, type CronTask, type CronTaskOutcome } from "@/lib/cron-scheduler";
+import { runPushCatchUp } from "@/lib/push/deliver";
 
 /**
  * `/api/cron` est une adresse du **noyau** (spec 038, `NOYAU_ROUTES`) : elle répond
@@ -62,6 +63,12 @@ async function runPlanningChangeNotices() {
 async function runWithdrawalRelances() {
   const { runWithdrawalRelances: run } = await import("@/modules/planning");
   return run();
+}
+
+/** Notifications des messages système dont la période commence (spec 071). */
+async function runSystemMessages() {
+  const { dispatchDueMessages } = await import("@/modules/messages");
+  return dispatchDueMessages();
 }
 
 function authorizeCron(request: Request) {
@@ -368,6 +375,10 @@ function cronTasks(appUrl: string): CronTask[] {
     { key: "availability", schedule: { kind: "interval", minutes: 15 }, run: runAvailabilityTasks },
     // Relance unique 48 h avant l'événement : une précision horaire suffit.
     { key: "service-withdrawal-relances", schedule: { kind: "interval", minutes: 60 }, run: runWithdrawalRelances },
+    // Notifications natives créées en transaction ou interrompues (spec 068, ADR-0024).
+    { key: "push-delivery", schedule: { kind: "every-run" }, run: () => runPushCatchUp() },
+    // Messages système programmés, et rattrapage d'un envoi immédiat interrompu (spec 071).
+    { key: "system-messages", module: "messages", schedule: { kind: "every-run" }, run: runSystemMessages },
   ];
   return tasks.filter((t) => !t.module || registry.has(t.module));
 }

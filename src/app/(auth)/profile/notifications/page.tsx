@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getPreferencesView } from "@/lib/notification-preferences";
 import NotificationPreferencesClient from "./NotificationPreferencesClient";
 import JobSubscriptionClient from "./JobSubscriptionClient";
+import PushDeviceCard from "./PushDeviceCard";
 import PageHeader from "@/components/ui/PageHeader";
 
 export default async function NotificationPreferencesPage() {
@@ -16,8 +17,9 @@ export default async function NotificationPreferencesPage() {
       <PageHeader
         eyebrow="Mon profil"
         title="Mes notifications"
-        description="Les notifications restent visibles dans l'application ; choisissez ce que vous recevez aussi par email."
+        description="Les notifications restent visibles dans l'application ; choisissez ce que vous recevez aussi par email et sur vos appareils."
       />
+      <PushDeviceCard vapidPublicKey={view.vapidPublicKey} initialDeviceCount={view.deviceCount} />
       <NotificationPreferencesClient initialView={view} />
       <JobSubscriptionClient />
     </div>

@@ -329,6 +329,12 @@ describe("recherche de pages", () => {
     expect(list).toEqual(expect.arrayContaining(["/planning", "/disponibilites", "/profile", "/guide"]));
   });
 
+  it("propose « Installer l'application » dans la recherche (spec 070)", () => {
+    const pages = searchablePages(buildSpaces(star));
+    const hits = filterByQuery(pages, "installer", (p) => `${p.label} ${p.context}`, (p) => p.label);
+    expect(hits.map((p) => p.href)).toContain("/installer");
+  });
+
   it("ignore accents et casse, classe les débuts de libellé en tête", () => {
     expect(normalizeText("Événements")).toBe("evenements");
     const pages = searchablePages(buildSpaces(admin));

@@ -8,6 +8,8 @@ import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
 import Alert from "@/components/ui/Alert";
 import Link from "next/link";
+import { churchLogoSrc } from "@/modules/core/schemas";
+import ChurchLogoSlot from "./ChurchLogoSlot";
 
 interface Church {
   id: string;
@@ -18,6 +20,8 @@ interface Church {
   primaryColor: string;
   responsibleProfileId: string;
   supervisorProfileId: string;
+  /** Versions des logos (spec 072), `null` sans logo. */
+  logoVersions: { light: string | null; dark: string | null };
 }
 
 function parseEmailListInput(raw: string): string[] {
@@ -57,6 +61,8 @@ export default function ChurchEditClient({ church, profiles, supervisors, canEdi
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [logoLight, setLogoLight] = useState(church.logoVersions.light);
+  const [logoDark, setLogoDark] = useState(church.logoVersions.dark);
 
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
@@ -216,6 +222,26 @@ export default function ChurchEditClient({ church, profiles, supervisors, canEdi
           )}
         </div>
       </form>
+
+      <section aria-labelledby={`${colorId}-logo`} className="mt-8 space-y-4 border-t border-line pt-6">
+        <div>
+          <h2 id={`${colorId}-logo`} className="text-base font-semibold text-ink">
+            Logo de l&apos;église
+          </h2>
+          <p className="text-[13px] leading-[18px] text-ink-muted">
+            Affiché dans la barre latérale et la barre du haut, pour tous ceux qui travaillent dans{" "}
+            {church.name}. PNG, JPEG ou WebP, 2 Mo au plus. Enregistré dès le dépôt.
+          </p>
+        </div>
+        <ChurchLogoSlot churchId={church.id} variant="light" version={logoLight} fallbackSrc={null} onChange={setLogoLight} />
+        <ChurchLogoSlot
+          churchId={church.id}
+          variant="dark"
+          version={logoDark}
+          fallbackSrc={logoLight ? churchLogoSrc(church.id, "light", logoLight) : null}
+          onChange={setLogoDark}
+        />
+      </section>
     </div>
   );
 }

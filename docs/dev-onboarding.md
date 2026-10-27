@@ -162,6 +162,9 @@ L'environnement conteneurisé ne branche aucun service externe. Concrètement :
   stockage S3 configuré.
 - **Emails** : sans `SMTP_*`, l'envoi échoue et l'erreur est journalisée ; les notifications
   dans l'application, elles, fonctionnent.
+- **Notifications natives** : sans `VAPID_*`, « Mes notifications » les affiche indisponibles.
+  Pour les essayer, générer une paire (`npx web-push generate-vapid-keys`) dans `.env` ; le
+  navigateur exige `localhost` ou https.
 - **Formulaires publics** (`/agenda-public`, `/rejoindre`) : utilisables grâce aux clés de test
   Cloudflare Turnstile de `docker-compose.dev.yml`, dont le défi réussit toujours.
 

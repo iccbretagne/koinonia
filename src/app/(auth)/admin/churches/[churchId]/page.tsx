@@ -25,6 +25,7 @@ export default async function ChurchDetailPage({
       primaryColor: true,
       responsibleProfileId: true,
       supervisorProfileId: true,
+      logos: { select: { variant: true, version: true } },
     },
   });
 
@@ -67,6 +68,10 @@ export default async function ChurchDetailPage({
           primaryColor: church.primaryColor ?? "#5E17EB",
           responsibleProfileId: church.responsibleProfileId ?? "",
           supervisorProfileId: church.supervisorProfileId ?? "",
+          logoVersions: {
+            light: church.logos.find((l) => l.variant === "light")?.version ?? null,
+            dark: church.logos.find((l) => l.variant === "dark")?.version ?? null,
+          },
         }}
         profiles={profiles.map((p) => ({ id: p.id, label: `${p.name} (${roleLabel[p.role]})` }))}
         supervisors={supervisorCandidates.map((s) => ({

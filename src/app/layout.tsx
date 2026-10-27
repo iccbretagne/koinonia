@@ -4,6 +4,7 @@ import { Montserrat, Source_Sans_3 } from "next/font/google";
 import { TriangleAlert } from "lucide-react";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import { ToastProvider } from "@/components/ui/Toast";
+import { appIconUrl, getAppIconVersion } from "@/modules/core";
 import {
   STAGING_BUILD_VERSION,
   STAGING_BANNER_HEIGHT_CLASS,
@@ -29,16 +30,21 @@ const sourceSans = Source_Sans_3({
 // éviter un flash du thème clair. Sans choix explicite, prefers-color-scheme décide (globals.css).
 const THEME_SCRIPT = `try{var t=localStorage.getItem("koinonia-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
 
-export const metadata: Metadata = {
-  title: "Koinonia",
-  description: "Le back-office opérationnel de votre église, en une seule application.",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
+// Manifeste et icônes versionnés (spec 069) : une icône déposée change leur adresse, ce qui
+// contourne les caches des navigateurs.
+export async function generateMetadata(): Promise<Metadata> {
+  const version = await getAppIconVersion();
+  return {
     title: "Koinonia",
-  },
-};
+    description: "Le back-office opérationnel de votre église, en une seule application.",
+    manifest: `/api/app-icon/manifest?v=${version}`,
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "black-translucent",
+      title: "Koinonia",
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: [
@@ -83,13 +89,14 @@ export default async function RootLayout({
   const csp =
     requestHeaders.get("content-security-policy") ?? requestHeaders.get("content-security-policy-report-only");
   const nonce = csp?.match(/'nonce-([^']+)'/)?.[1];
+  const iconVersion = await getAppIconVersion();
 
   return (
     <html lang="fr" suppressHydrationWarning className={`${montserrat.variable} ${sourceSans.variable}`}>
       <head>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
-        <link rel="icon" href="/brand/koinonia-app-icon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/brand/koinonia-app-icon.svg" />
+        <link rel="icon" href={appIconUrl("favicon-48", iconVersion)} type="image/png" sizes="48x48" />
+        <link rel="apple-touch-icon" sizes="180x180" href={appIconUrl("apple-touch-180", iconVersion)} />
       </head>
       <body
         className={`font-sans antialiased bg-bg text-ink ${STAGING_BUILD_VERSION ? STAGING_BANNER_BODY_PADDING_CLASS : ""}`}
