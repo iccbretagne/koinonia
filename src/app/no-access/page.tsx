@@ -1,4 +1,5 @@
 import { auth, signOut } from "@/lib/auth";
+import { forgetPushDeviceOnSignOut } from "@/lib/push/sign-out";
 import { prisma } from "@/lib/prisma";
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
@@ -96,7 +97,7 @@ export default async function NoAccessPage() {
         {accessContent}
 
         <div className="mt-6 pt-4 border-t border-line text-center">
-          <form action={async () => { "use server"; await signOut({ redirectTo: "/" }); }}>
+          <form action={async () => { "use server"; await forgetPushDeviceOnSignOut(); await signOut({ redirectTo: "/" }); }}>
             <button type="submit" className="text-sm text-ink-subtle hover:text-ink-muted transition-colors">
               Se déconnecter
             </button>

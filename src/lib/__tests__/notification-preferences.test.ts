@@ -42,6 +42,8 @@ describe("getPreferencesView", () => {
     vi.clearAllMocks();
     prismaMock.notification.findMany.mockResolvedValue([]);
     prismaMock.notificationEmailPreference.findMany.mockResolvedValue([]);
+    prismaMock.notificationPushPreference.findMany.mockResolvedValue([]);
+    prismaMock.pushSubscription.count.mockResolvedValue(0);
   });
 
   it("un rôle sans care:qualify/care:view ne voit pas le domaine « care », mais voit « account » (toujours visible) et « jobs » (jobs:view)", async () => {

@@ -160,6 +160,8 @@ model User {
   auditLogs                         AuditLog[]
   notifications                     Notification[]
   notificationEmailPreferences      NotificationEmailPreference[]
+  notificationPushPreferences       NotificationPushPreference[]
+  pushSubscriptions                 PushSubscription[]
   submittedAnnouncements            Announcement[]               @relation("AnnouncementSubmittedBy")
   submittedRequests                 Request[]                    @relation("RequestSubmittedBy")
   reviewedRequests                  Request[]                    @relation("RequestReviewedBy")
@@ -733,11 +735,15 @@ model Notification {
   /// lui. Nullable : notifications antérieures et notifications sans objet précis.
   entityType String?  @db.VarChar(50)
   entityId   String?
+  /// Livraison push (spec 068, ADR-0024) : posé quand un passage prend la notification en
+  /// charge (envoyée ou écartée par préférence). Null = encore à traiter.
+  pushedAt   DateTime?
   user       User     @relation(fields: [userId], references: [id])
 
   @@index([userId, read, createdAt])
   @@index([userId, domain])
   @@index([entityType, entityId])
+  @@index([pushedAt, createdAt])
   @@map("notifications")
 }
 
@@ -745,6 +751,40 @@ model Notification {
 /// Absence de ligne = valeur par défaut du domaine (déclarée par son manifeste,
 /// `NotificationDomainDescriptor.defaultEmail`) : aucune donnée à migrer pour les comptes
 /// qui n'ont jamais ouvert la page de réglage.
+/// Abonnement Web Push d'un appareil (spec 068, ADR-0024). Un appareil n'appartient qu'à un
+/// compte : se réabonner depuis un autre compte le réattribue.
+model PushSubscription {
+  id            String    @id @default(cuid())
+  userId        String
+  endpoint      String    @db.Text
+  /// Empreinte SHA-256 de `endpoint` : unicité (un TEXT ne s'indexe pas en entier).
+  endpointHash  String    @unique @db.Char(64)
+  p256dh        String    @db.VarChar(255)
+  auth          String    @db.VarChar(255)
+  /// Libellé lisible (« iPhone · Safari ») dérivé de l'User-Agent.
+  label         String?   @db.VarChar(120)
+  createdAt     DateTime  @default(now())
+  lastSuccessAt DateTime?
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+/// Préférence push par domaine (spec 068) — même forme que `NotificationEmailPreference`.
+/// `domain = "*"` : interrupteur général « Recevoir les notifications sur mes appareils ».
+/// Domaine sans ligne : activé.
+model NotificationPushPreference {
+  userId    String
+  domain    String
+  enabled   Boolean
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, domain])
+  @@map("notification_push_preferences")
+}
+
 model NotificationEmailPreference {
   userId    String
   /// Clé de domaine déclarée par un manifeste (`planning`, `care`, …), ou `*` pour

@@ -17195,7 +17195,7 @@
         "x-access": "session",
         "responses": {
           "200": {
-            "description": "Vue des préférences : interrupteur général et une ligne par domaine visible",
+            "description": "Vue des préférences : interrupteurs généraux email et appareils, une ligne par domaine visible (email et appareil), disponibilité des notifications natives, clé publique VAPID et nombre d'appareils",
             "content": {
               "application/json": {
                 "schema": {}
@@ -17215,7 +17215,7 @@
           "core"
         ],
         "summary": "Mise à jour des préférences de notification",
-        "description": "**Accès** : toute personne connectée — préférences de l'appelant.\n\nUn domaine inconnu ou non accessible à l'utilisateur est refusé (400). Voir ADR-0016 (spec 053).",
+        "description": "**Accès** : toute personne connectée — préférences de l'appelant.\n\nUn domaine inconnu ou non accessible à l'utilisateur est refusé (400), pour l'email comme pour les appareils. Voir ADR-0016 (spec 053) et ADR-0024 (spec 068).",
         "security": [
           {
             "session": []
@@ -17236,6 +17236,15 @@
                     "additionalProperties": {
                       "type": "boolean"
                     }
+                  },
+                  "pushEnabled": {
+                    "type": "boolean"
+                  },
+                  "pushDomains": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "boolean"
+                    }
                   }
                 }
               }
@@ -17250,6 +17259,124 @@
                 "schema": {}
               }
             }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/notifications/push/subscriptions": {
+      "post": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Abonnement de l'appareil courant aux notifications natives",
+        "description": "**Accès** : toute personne connectée — appareils de l'appelant.\n\nEnregistre l'abonnement Web Push de l'appareil pour l'appelant (spec 068, ADR-0024) et pose le cookie httpOnly `koinonia-push-device`, utilisé pour l'oublier à la déconnexion. Un appareil n'appartient qu'à un compte : un endpoint déjà enregistré pour un autre compte est réattribué à l'appelant. 503 si l'instance n'a pas de clés VAPID.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "endpoint": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "format": "uri"
+                  },
+                  "keys": {
+                    "type": "object",
+                    "properties": {
+                      "p256dh": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255,
+                        "pattern": "^[A-Za-z0-9_-]+={0,2}$"
+                      },
+                      "auth": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255,
+                        "pattern": "^[A-Za-z0-9_-]+={0,2}$"
+                      }
+                    },
+                    "required": [
+                      "p256dh",
+                      "auth"
+                    ]
+                  }
+                },
+                "required": [
+                  "endpoint",
+                  "keys"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Identifiant de l'abonnement",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Désabonnement de l'appareil courant",
+        "description": "**Accès** : toute personne connectée — appareils de l'appelant.\n\nSupprime l'abonnement désigné par `endpoint`, à défaut par le cookie `koinonia-push-device`, seulement s'il appartient à l'appelant. Répond 204 dans tous les cas (aucune information sur un abonnement d'autrui).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "endpoint": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Aucun contenu"
           },
           "400": {
             "description": "Corps invalide (détail Zod dans `details`)"

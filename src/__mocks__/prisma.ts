@@ -36,6 +36,8 @@ export const prismaMock = {
   givingPage: createModelMock(),
   notification: createModelMock(),
   notificationEmailPreference: createModelMock(),
+  notificationPushPreference: createModelMock(),
+  pushSubscription: createModelMock(),
   request: createModelMock(),
   memberLinkRequest: createModelMock(),
   memberUserLink: createModelMock(),

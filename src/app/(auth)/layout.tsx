@@ -2,6 +2,7 @@ import pkg from "@/../package.json";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { auth, signOut, getCurrentChurchId } from "@/lib/auth";
+import { forgetPushDeviceOnSignOut } from "@/lib/push/sign-out";
 import { prisma } from "@/lib/prisma";
 import { rolePermissions, registry } from "@/lib/registry";
 import { buildMediaSpaceCards, type MediaSpaceAccess } from "@/lib/media-space";
@@ -339,6 +340,7 @@ async function hasAnnouncementSheetAccess(session: Session, churchId: string | n
 
 async function signOutAction() {
   "use server";
+  await forgetPushDeviceOnSignOut();
   await signOut({ redirectTo: "/" });
 }
 

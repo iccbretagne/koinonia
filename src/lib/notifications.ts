@@ -3,6 +3,7 @@ import { sendEmail, appendPreferenceFooter, buildGenericNotificationEmail } from
 import { notificationDomains } from "@/lib/registry";
 import { resolveEmailPreference, GLOBAL_DOMAIN } from "@/lib/notification-preferences";
 import type { Prisma } from "@/generated/prisma/client";
+import { deliverPendingPush } from "@/lib/push/deliver";
 
 /** Client Prisma acceptant un contexte transactionnel — miroir de `JobDescriptor.handler` (`@/core/module-registry`). */
 type PrismaOrTx = typeof prisma | Prisma.TransactionClient;
@@ -21,7 +22,8 @@ export interface NotificationOptions {
    * **Si fourni, l'email n'est jamais envoyé ici** : un envoi SMTP est une I/O externe qui ne
    * doit jamais s'exécuter à l'intérieur d'une transaction ouverte. C'est alors à l'appelant
    * d'invoquer `dispatchUserEmails` lui-même, une fois la transaction validée (même schéma que
-   * le fire-and-forget déjà pratiqué en comptabilité).
+   * le fire-and-forget déjà pratiqué en comptabilité). La notification native, elle, part
+   * quand même : la tâche cron `push-delivery` livre les notifications validées (ADR-0024).
    */
   tx?: Prisma.TransactionClient;
   /**
@@ -34,7 +36,8 @@ export interface NotificationOptions {
    * `dispatchUserEmails` parce qu'il obéit à une condition supplémentaire (ex.
    * `JobNotificationSubscription.email`) ou qu'il exploite le résultat de l'envoi. Sans ce
    * `false`, un `dispatchUserEmails` après coup fait recevoir deux emails au destinataire : le
-   * générique, puis le détaillé.
+   * générique, puis le détaillé. Ne coupe pas la notification native : elle suit la ligne
+   * de la cloche, qui existe (spec 068).
    */
   email?: NotificationEmailContent | false;
 }
@@ -50,10 +53,30 @@ interface NotificationInput {
   entityId?: string;
 }
 
-async function dispatchIfNoTx(userIds: string[], notification: NotificationInput, options?: NotificationOptions): Promise<void> {
-  if (options?.tx || options?.email === false) return;
-  const email = options?.email ?? buildGenericNotificationEmail(notification);
-  await dispatchUserEmails(userIds, notification.domain, email);
+/** Marge pour l'écart d'horloge entre l'application et la base (horodatage des lignes). */
+const CLOCK_SKEW_MS = 5000;
+
+/**
+ * Envoi hors transaction : l'email (spec 053), puis la notification native (spec 068,
+ * ADR-0024). Avec `tx`, rien ne part ici — la notification native est livrée par le rattrapage
+ * cron une fois la transaction validée.
+ */
+async function dispatchIfNoTx(
+  userIds: string[],
+  notification: NotificationInput,
+  options: NotificationOptions | undefined,
+  startedAt: Date
+): Promise<void> {
+  if (options?.tx) return;
+  if (options?.email !== false) {
+    const email = options?.email ?? buildGenericNotificationEmail(notification);
+    await dispatchUserEmails(userIds, notification.domain, email);
+  }
+  await deliverPendingPush({
+    userIds,
+    type: notification.type,
+    createdAfter: new Date(startedAt.getTime() - CLOCK_SKEW_MS),
+  });
 }
 
 /** Crée une notification pour un utilisateur — `domain` obligatoire (spec 053). */
@@ -61,12 +84,13 @@ export async function createNotification(
   params: { userId: string } & NotificationInput,
   options?: NotificationOptions
 ): Promise<void> {
+  const startedAt = new Date();
   const client: PrismaOrTx = options?.tx ?? prisma;
   const { userId, domain, type, title, message, link, entityType, entityId } = params;
   await client.notification.create({
     data: { userId, domain, type, title, message, link, entityType, entityId },
   });
-  await dispatchIfNoTx([userId], params, options);
+  await dispatchIfNoTx([userId], params, options, startedAt);
 }
 
 /** Notifie plusieurs utilisateurs déjà identifiés par l'appelant (spec 053). */
@@ -75,13 +99,14 @@ export async function notifyUsers(
   notification: NotificationInput,
   options?: NotificationOptions
 ): Promise<void> {
+  const startedAt = new Date();
   if (userIds.length === 0) return;
   const client: PrismaOrTx = options?.tx ?? prisma;
   await client.notification.createMany({
     data: userIds.map((userId) => ({ userId, ...notification })),
     skipDuplicates: true,
   });
-  await dispatchIfNoTx(userIds, notification, options);
+  await dispatchIfNoTx(userIds, notification, options, startedAt);
 }
 
 /** Notifie tous les utilisateurs ayant un rôle donné dans une église. */
@@ -91,6 +116,7 @@ export async function notifyUsersWithRole(
   notification: NotificationInput,
   options?: NotificationOptions
 ): Promise<void> {
+  const startedAt = new Date();
   const client: PrismaOrTx = options?.tx ?? prisma;
   const roles = await client.userChurchRole.findMany({
     where: { churchId, role: role as never },
@@ -101,7 +127,7 @@ export async function notifyUsersWithRole(
     data: roles.map((r) => ({ userId: r.userId, ...notification })),
     skipDuplicates: true,
   });
-  await dispatchIfNoTx(roles.map((r) => r.userId), notification, options);
+  await dispatchIfNoTx(roles.map((r) => r.userId), notification, options, startedAt);
 }
 
 /** Notifie tous les membres d'un département ayant une fonction système donnée. */
@@ -111,6 +137,7 @@ export async function notifyDeptMembers(
   notification: NotificationInput,
   options?: NotificationOptions
 ): Promise<void> {
+  const startedAt = new Date();
   const client: PrismaOrTx = options?.tx ?? prisma;
   const members = await client.userChurchRole.findMany({
     where: {
@@ -130,7 +157,7 @@ export async function notifyDeptMembers(
     data: userIds.map((userId) => ({ userId, ...notification })),
     skipDuplicates: true,
   });
-  await dispatchIfNoTx(userIds, notification, options);
+  await dispatchIfNoTx(userIds, notification, options, startedAt);
 }
 
 /**

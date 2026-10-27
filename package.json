@@ -54,6 +54,7 @@
     "sharp": "^0.35.5",
     "swagger-ui-react": "^5.34.0",
     "tailwindcss": "^4.0.0",
+    "web-push": "^3.6.7",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -66,6 +67,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/swagger-ui-react": "^5.18.0",
+    "@types/web-push": "^3.6.4",
     "@vitest/coverage-v8": "^4.1.12",
     "dependency-cruiser": "^17.4.3",
     "esbuild": "^0.28.2",
