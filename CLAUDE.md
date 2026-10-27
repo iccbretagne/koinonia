@@ -567,6 +567,12 @@ renommé spec 052) :
 - Reste réservé au Super Admin (`church:manage`, plateforme) : créer, onboarder ou supprimer
   une église, en changer le nom, l'adresse publique (slug) ou le superviseur, les sauvegardes,
   les ministères et départements « système », et le rôle Super Admin
+- Ne change pas non plus l'**icône de l'application** (spec 069) : réglage de plateforme (une
+  icône pour toute l'instance, l'application installée étant liée à une seule adresse), écran
+  `/admin/app-icon` et API `/api/admin/app-icon` derrière `requireSuperAdmin()`. Variantes
+  préparées en base (`app_icon_variants`, service `@/modules/core`), servies par
+  `/api/app-icon/<variante>.png` (redirection vers `public/brand/` sans icône déposée) et par le
+  manifeste dynamique `/api/app-icon/manifest` — `public/manifest.json` n'existe plus
 
 **Spécificités du Reporter** :
 - Accès en lecture aux événements (`events:view`)

@@ -1183,6 +1183,10 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
       "href": "/admin/api",
       "label": "API",
     },
+    {
+      "href": "/admin/app-icon",
+      "label": "Icône de l'application",
+    },
   ],
   "currentChurchId": "church-1",
   "departments": [
@@ -1329,6 +1333,10 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
     {
       "href": "/admin/api",
       "label": "API",
+    },
+    {
+      "href": "/admin/app-icon",
+      "label": "Icône de l'application",
     },
   ],
   "currentChurchId": null,

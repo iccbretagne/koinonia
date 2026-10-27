@@ -162,6 +162,7 @@ model User {
   notificationEmailPreferences      NotificationEmailPreference[]
   notificationPushPreferences       NotificationPushPreference[]
   pushSubscriptions                 PushSubscription[]
+  appIconsUpdated                   AppIconVariant[]             @relation("AppIconUpdatedBy")
   submittedAnnouncements            Announcement[]               @relation("AnnouncementSubmittedBy")
   submittedRequests                 Request[]                    @relation("RequestSubmittedBy")
   reviewedRequests                  Request[]                    @relation("RequestReviewedBy")
@@ -2711,4 +2712,22 @@ model GivingPage {
   updatedBy         User?    @relation("GivingPageUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
 
   @@map("giving_pages")
+}
+
+/// Variante d'icône de l'application déposée par un Super Admin (spec 069). Absence de ligne :
+/// l'icône livrée dans `public/brand/` s'applique. Un jeu complet partage la même `version`.
+model AppIconVariant {
+  /// "icon-192" | "icon-512" | "icon-maskable-512" | "apple-touch-180" | "favicon-48" | "badge-96"
+  variant     String   @id @db.VarChar(40)
+  data        Bytes    @db.MediumBlob
+  /// Empreinte courte du jeu (cache-busting `?v=`), changée à chaque dépôt.
+  version     String   @db.VarChar(32)
+  /// Couleur de fond utilisée pour remplir les coins (#rrggbb), conservée pour l'écran.
+  background  String?  @db.Char(7)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+  updatedBy   User?    @relation("AppIconUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([updatedById])
+  @@map("app_icon_variants")
 }

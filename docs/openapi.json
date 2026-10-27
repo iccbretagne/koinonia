@@ -1503,6 +1503,172 @@
         }
       }
     },
+    "/api/admin/app-icon": {
+      "get": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Icône de l'application en vigueur",
+        "description": "**Accès** : Super Admin.\n\nRéglage de plateforme (spec 069), une icône pour toute l'instance. Indique si l'icône est celle livrée avec Koinonia ou une icône déposée, sa version, sa couleur de fond, la présence d'une silhouette de badge et les 20 derniers changements (journal `AppIcon`).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "responses": {
+          "200": {
+            "description": "`{ custom, version, background, hasBadge, updatedAt, updatedBy, history[] }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Dépôt ou remplacement de l'icône de l'application et/ou de sa silhouette de badge",
+        "description": "**Accès** : Super Admin.\n\nAu moins un fichier. Icône : PNG, JPEG ou WebP carré (2 % de tolérance), 512 px au moins, 5 Mo au plus ; le format décodé fait foi (SVG, GIF refusés). `background` (#rrggbb) remplit les coins clairs ou transparents, obligatoire avec une icône. Silhouette : PNG ou WebP avec transparence, rendue en blanc ; exige une icône déposée. Le fichier n'est jamais servi tel quel : seules les variantes préparées sont enregistrées, dans une transaction (l'icône en vigueur ne change pas en cas de refus). 411 sans Content-Length, 413 au-delà de 11 Mo. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "requestBody": {
+          "description": "`icon` (image, facultatif), `background` (#rrggbb, requis avec `icon`), `badge` (image, facultatif)",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "État à jour (comme GET)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Retour à l'icône par défaut, ou retrait de la seule silhouette",
+        "description": "**Accès** : Super Admin.\n\n`icon` : toutes les variantes déposées sont retirées, l'icône livrée avec Koinonia s'applique. `badge` : la cloche générique remplace la silhouette. Journalisé si quelque chose a été retiré.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "target": {
+                    "type": "string",
+                    "enum": [
+                      "icon",
+                      "badge"
+                    ]
+                  }
+                },
+                "required": [
+                  "target"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "État à jour (comme GET)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/admin/app-icon/preview": {
+      "post": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Aperçu d'une icône de l'application avant enregistrement",
+        "description": "**Accès** : Super Admin.\n\nMêmes contrôles que le dépôt (spec 069). Renvoie les variantes préparées en data URL et la couleur de fond proposée (bord de l'image, hors coins) si `background` est absent. Rien n'est enregistré.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "requestBody": {
+          "description": "`icon` (image, facultatif), `background` (#rrggbb, facultatif), `badge` (image, facultatif)",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ background, variants: { <variante>: data URL }, badge: data URL | null }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
     "/api/admin/backups": {
       "get": {
         "tags": [
@@ -3229,6 +3395,76 @@
           },
           "403": {
             "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/app-icon/{variant}": {
+      "get": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Icône de l'application, par variante",
+        "description": "**Accès** : public, sans session.\n\nVariantes : `icon-192`, `icon-512`, `icon-maskable-512`, `apple-touch-180`, `favicon-48`, `badge-96` (suffixe `.png` accepté) ; 404 sinon. Icône déposée (spec 069) : PNG servi depuis la base, cache immuable si `v` est la version en vigueur, 5 minutes sinon. Sans icône déposée : 302 vers le fichier livré avec Koinonia ; sous une icône déposée sans silhouette, le badge redirige vers la cloche générique.",
+        "security": [],
+        "x-access": "public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "variant",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "v",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image PNG, ou redirection vers l'icône livrée",
+            "content": {
+              "image/png": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/app-icon/manifest": {
+      "get": {
+        "tags": [
+          "core"
+        ],
+        "summary": "Manifeste de l'application installable (PWA)",
+        "description": "**Accès** : public, sans session.\n\nNom, adresse de démarrage, couleurs et icônes de l'application (spec 069). Les icônes pointent vers `/api/app-icon/<variante>.png?v=<version>` : un changement d'icône change leur adresse. Cache de 5 minutes.",
+        "security": [],
+        "x-access": "public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "v",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Manifeste Web App",
+            "content": {
+              "application/manifest+json": {
+                "schema": {}
+              }
+            }
           }
         }
       }

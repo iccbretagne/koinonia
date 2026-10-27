@@ -30,6 +30,7 @@ const configLinksDef = [
   { href: "/admin/audit-logs",            label: "Historique",        permissions: ["church:settings"] },
   { href: "/admin/backups",               label: "Sauvegardes",       permissions: [], superAdminOnly: true },
   { href: "/admin/api",                   label: "API",               permissions: [], superAdminOnly: true },
+  { href: "/admin/app-icon",              label: "Icône de l'application", permissions: [], superAdminOnly: true },
 ];
 
 type NavLink = { href: string; label: string };

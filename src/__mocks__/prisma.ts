@@ -38,6 +38,7 @@ export const prismaMock = {
   notificationEmailPreference: createModelMock(),
   notificationPushPreference: createModelMock(),
   pushSubscription: createModelMock(),
+  appIconVariant: createModelMock(),
   request: createModelMock(),
   memberLinkRequest: createModelMock(),
   memberUserLink: createModelMock(),

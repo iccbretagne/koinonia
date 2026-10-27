@@ -216,6 +216,7 @@ const CONFIG_BLOCKS: Record<string, string> = {
   "/admin/audit-logs": "Plateforme",
   "/admin/backups": "Plateforme",
   "/admin/api": "Plateforme",
+  "/admin/app-icon": "Plateforme",
 };
 
 function configPages(input: NavigationInput): NavPage[] {

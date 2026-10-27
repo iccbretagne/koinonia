@@ -28,6 +28,7 @@ export const coreModule = defineModule({
       { path: "/admin/audit-logs" },
       { path: "/admin/backups" },
       { path: "/admin/api" },
+      { path: "/admin/app-icon" },
       { path: "/admin/pastoral-profiles" },
       { path: "/pastoral" },
     ],
@@ -38,7 +39,11 @@ export const coreModule = defineModule({
       { path: "/api/onboarding" },
       { path: "/api/audit-logs" },
       { path: "/api/admin/backups" },
+      { path: "/api/admin/app-icon" },
     ],
+    // Icône de l'application et manifeste PWA (spec 069) : servis à tous, y compris avant la
+    // connexion (onglet de la page de connexion, installation).
+    public: [{ path: "/api/app-icon", method: "GET" }],
   },
 
   permissions: {

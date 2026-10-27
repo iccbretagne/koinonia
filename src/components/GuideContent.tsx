@@ -301,6 +301,14 @@ const FEATURES: Feature[] = [
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
+    name: "Icône de l'application",
+    description: "Le Super Admin dépose l'icône de Koinonia pour toute l'instance (écran d'accueil, onglet du navigateur, notifications) : image carrée PNG, JPEG ou WebP de 512 px au moins, avec un aperçu iPhone, Android, onglet et notification avant d'enregistrer. Une silhouette blanche pour les notifications Android se dépose en plus, sinon une cloche s'affiche. « Revenir à l'icône par défaut » rétablit l'icône livrée. Sur iPhone, une application déjà installée garde l'ancienne icône jusqu'à sa réinstallation.",
+    category: "Administration",
+    screenshotTitle: "Icône de l'application",
+    screenshotFile: "guide-admin-app-icon.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
     name: "Gestion des utilisateurs",
     description: "Consultez tous les comptes de l'église, pré-créez-en un avant sa première connexion, ou supprimez un compte préparé par erreur qui ne s'est jamais connecté (spec 054).",
     category: "Administration",

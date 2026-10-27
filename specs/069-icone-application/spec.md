@@ -1,7 +1,7 @@
 # Spec — Changer l'icône de l'application depuis Koinonia
 
 - **Numéro** : 069
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-10-27
 - **Branche suggérée** : `feat/icone-application`
 - **Prolonge** : [spec 068 — notifications natives](../068-notifications-push/spec.md) (icônes de
@@ -114,26 +114,26 @@ l'auteur et la date.
 
 ## Critères d'acceptation
 
-- [ ] Seul un Super Admin accède à l'écran « Icône de l'application » ; un Admin d'église ou
+- [x] Seul un Super Admin accède à l'écran « Icône de l'application » ; un Admin d'église ou
   tout autre rôle se le voit refuser, même par adresse directe.
-- [ ] Une image PNG, JPEG ou WebP carrée d'au moins 512 px et d'au plus 5 Mo est acceptée ; un
+- [x] Une image PNG, JPEG ou WebP carrée d'au moins 512 px et d'au plus 5 Mo est acceptée ; un
   SVG, une image non carrée, trop petite, trop lourde, ou un fichier qui n'est pas une image est
   refusé avec un message explicite, et l'icône en vigueur ne change pas.
-- [ ] Une silhouette de badge peut être déposée en plus (PNG avec transparence) ; sans elle, le
+- [x] Une silhouette de badge peut être déposée en plus (PNG avec transparence) ; sans elle, le
   badge des notifications est une cloche générique.
-- [ ] L'aperçu montre l'image en forme iPhone, Android ronde, onglet et notification avant
+- [x] L'aperçu montre l'image en forme iPhone, Android ronde, onglet et notification avant
   l'enregistrement.
-- [ ] Les coins transparents ou clairs d'une image arrondie sont remplis d'une couleur de fond,
+- [x] Les coins transparents ou clairs d'une image arrondie sont remplis d'une couleur de fond,
   proposée et modifiable.
-- [ ] Après enregistrement, l'onglet du navigateur, l'icône d'installation et l'icône des
+- [x] Après enregistrement, l'onglet du navigateur, l'icône d'installation et l'icône des
   notifications sont celles déposées, pour tous les utilisateurs et toutes les églises.
-- [ ] « Revenir à l'icône par défaut » rétablit l'icône livrée avec Koinonia.
-- [ ] Déposer, remplacer et retirer l'icône apparaissent dans l'historique avec l'auteur et la
+- [x] « Revenir à l'icône par défaut » rétablit l'icône livrée avec Koinonia.
+- [x] Déposer, remplacer et retirer l'icône apparaissent dans l'historique avec l'auteur et la
   date.
-- [ ] L'écran explique que l'iPhone ne met pas à jour une application déjà installée, et
+- [x] L'écran explique que l'iPhone ne met pas à jour une application déjà installée, et
   qu'Android le fait en quelques jours.
-- [ ] Une mise à jour de Koinonia ne remplace pas une icône déposée.
-- [ ] Le fichier déposé n'est jamais servi tel quel : seules les versions préparées par Koinonia
+- [x] Une mise à jour de Koinonia ne remplace pas une icône déposée.
+- [x] Le fichier déposé n'est jamais servi tel quel : seules les versions préparées par Koinonia
   sont visibles.
 
 ## Hors périmètre

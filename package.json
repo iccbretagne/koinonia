@@ -21,6 +21,7 @@
     "lint:boundaries": "depcruise src/core src/modules src/app src/proxy.ts --config .dependency-cruiser.cjs",
     "lint:prisma-boundary": "./scripts/check-prisma-boundary.sh",
     "openapi": "tsx scripts/generate-openapi.ts",
+    "icons": "tsx scripts/generate-app-icons.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

@@ -1403,6 +1403,22 @@ préférence) ; `null` = encore à traiter. Mis à `createdAt` pour l'historique
 
 ### Plateforme
 
+#### `app_icon_variants` — icône de l'application (spec 069)
+
+Variantes préparées de l'icône déposée par un Super Admin, une ligne par variante (`icon-192`,
+`icon-512`, `icon-maskable-512`, `apple-touch-180`, `favicon-48`, `badge-96`). Donnée de
+plateforme, **sans `churchId`** : une icône pour toute l'instance. Aucune ligne = icône livrée
+dans `public/brand/`. Le fichier déposé n'est pas conservé.
+
+| Champ | Type | Description |
+|---|---|---|
+| `variant` | VarChar(40), PK | Nom de la variante |
+| `data` | MediumBlob | PNG préparé |
+| `version` | VarChar(32) | Version du jeu (`?v=`), partagée par toutes les lignes |
+| `background` | Char(7)? | Couleur de fond des coins (#rrggbb) |
+| `updatedById` | String? | Ref vers `users` (set null) |
+| `updatedAt` | DateTime | Dernière modification |
+
 #### `cron_task_runs` — planificateur des tâches planifiées (ADR-0021)
 
 Une ligne par tâche déclarée dans `POST /api/cron`, créée à son premier passage. Donnée de

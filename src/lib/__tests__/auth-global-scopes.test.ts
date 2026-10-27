@@ -41,10 +41,13 @@ function findGlobalScopeUsages(guardName: string): string[] {
 }
 
 // L'historique et les paramètres d'une église en sont sortis : ils relèvent de church:settings,
-// évaluée dans l'église (Admin de l'église).
+// évaluée dans l'église (Admin de l'église). L'icône de l'application (spec 069) vaut pour toute
+// l'instance : réglage de plateforme, jamais évalué dans une église.
 const EXPECTED_SUPER_ADMIN_FILES = [
   "(auth)/admin/churches/onboard/page.tsx",
   "(auth)/admin/churches/page.tsx",
+  "api/admin/app-icon/preview/route.ts",
+  "api/admin/app-icon/route.ts",
 ].sort();
 
 const EXPECTED_PLATFORM_PERMISSION_FILES = [

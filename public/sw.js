@@ -1,9 +1,7 @@
-const CACHE_NAME = "koinonia-v4";
+const CACHE_NAME = "koinonia-v5";
 const STATIC_ASSETS = [
   "/",
   "/accueil",
-  "/brand/koinonia-icon-192.png",
-  "/manifest.json",
 ];
 
 // Install: cache static assets
@@ -76,8 +74,9 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(title, {
       body: payload.body || "",
-      icon: "/brand/koinonia-icon-192.png",
-      badge: "/brand/koinonia-badge-96.png",
+      // Icône réglable (spec 069) : déposée, ou redirection vers l'icône livrée.
+      icon: "/api/app-icon/icon-192.png",
+      badge: "/api/app-icon/badge-96.png",
       tag: payload.tag,
       data: { url: payload.url || "/accueil" },
     })
