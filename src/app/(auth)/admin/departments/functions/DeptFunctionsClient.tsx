@@ -76,6 +76,12 @@ const FUNCTIONS = [
     description: "Ses responsables désignent les personnes d'ouverture et de fermeture des cultes.",
     icon: "🔐",
   },
+  {
+    key: "VIE_DES_STAR" as const,
+    label: "Vie des STAR (PVS)",
+    description: "Reçoit et étudie les candidatures au service, puis affecte les candidats aux départements (spec 073).",
+    icon: "🙋",
+  },
 ];
 
 type FnKey = (typeof FUNCTIONS)[number]["key"];

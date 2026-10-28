@@ -10,7 +10,7 @@
 ## Prérequis
 
 - [x] Branche créée : `feat/candidatures-service` (depuis `origin/main`)
-- [ ] **T0** — Valider `@react-pdf/renderer` avant tout le reste :
+- [x] **T0** — Valider `@react-pdf/renderer` avant tout le reste :
   - l'installer ;
   - rendre un PDF minimal dans une route de test locale (non commitée) ;
   - `npm run build` et `npm audit --omit=dev --audit-level=high` doivent passer ;
@@ -23,25 +23,25 @@
 
 ### 1. Données & migration
 
-- [ ] **T1** — Ajouter au schéma :
+- [x] **T1** — Ajouter au schéma :
   - les enums `ServingApplicationStatus`, `ServingAssignmentStatus`, `MaritalStatus` ;
   - les modèles `ServingApplication`, `ServingAssignment`, `ServingSettings` ;
   - `Department.contactEmail` ;
   - les relations inverses sur `Church`, `Member` et `Department`.
 
   *(fichier : `prisma/schema.prisma`)*
-- [ ] **T2** — Générer la migration :
+- [x] **T2** — Générer la migration :
   - `npm run db:migrate -- --name serving_applications` ;
   - vérifier le SQL (index, `ON DELETE CASCADE` des affectations, `SET NULL` sur `memberId`).
 
   *(fichier : `prisma/migrations/*_serving_applications/migration.sql`)*
-- [ ] **T3** [P] — Ajouter la fonction de département `VIE_DES_STAR`, libellé « Vie des STAR
+- [x] **T3** [P] — Ajouter la fonction de département `VIE_DES_STAR`, libellé « Vie des STAR
   (PVS) », et la référencer dans la vue d'ensemble des accès si les autres fonctions y sont.
   *(fichiers : `src/lib/department-functions.ts`, `src/lib/access-overview.ts`)*
 
 ### 2. Module, accès, services
 
-- [ ] **T4** — Créer le module `serving` :
+- [x] **T4** — Créer le module `serving` :
   - manifeste (routes, `serving:manage` pour Super Admin et Admin, domaine de notification
     `serving`, `dependsOn: ["core", "planning"]`) ;
   - index ;
@@ -50,16 +50,16 @@
 
   *(fichiers : `src/modules/serving/manifest.ts`, `src/modules/serving/index.ts`,
   `src/lib/manifests.ts`, `.dependency-cruiser.cjs`)*
-- [ ] **T5** — Mettre à jour la matrice des permissions et sa documentation. *(fichiers :
+- [x] **T5** — Mettre à jour la matrice des permissions et sa documentation. *(fichiers :
   `src/core/__tests__/permissions.test.ts`, `CLAUDE.md`, `docs/auth.md`)*
-- [ ] **T6** [P] — Écrire les schémas Zod purs :
+- [x] **T6** [P] — Écrire les schémas Zod purs :
   - fiche publique : champs vides → `null`, booléen non répondu → `null`, formations PCNC en
     liste fermée, `consent` requis à `true`, piège `website` ;
   - réglages : `observationMonths` 1–12, `retentionMonths` 1–36, emails PVS ;
   - actions sur une candidature et sur une affectation.
 
   *(fichier : `src/modules/serving/schemas.ts`)*
-- [ ] **T7** — Écrire les fonctions d'état pures :
+- [x] **T7** — Écrire les fonctions d'état pures :
   - `canTransition` ;
   - `needsPvsAction` ;
   - `observationEndsAt` (ajout de mois, fin de mois bornée) ;
@@ -67,22 +67,22 @@
   - `retentionDeadline` (trois cas de D5).
 
   *(fichier : `src/modules/serving/services/state.ts`)*
-- [ ] **T8** — Écrire les règles d'accès pures (`canManageApplications`, `isDepartmentLead`,
+- [x] **T8** — Écrire les règles d'accès pures (`canManageApplications`, `isDepartmentLead`,
   `canViewApplication`, `canDecideAssignment`, `isOwnApplication`, `canEditSettings`) et les
   gardes `requireServingAccess`, `requireServingSettingsAccess`, `requireAssignmentDecision`
   (chargement des départements PVS, Super Admin, `rolePermissions`).
   *(fichiers : `src/modules/serving/services/access.ts`, `src/modules/serving/auth.ts`)*
-- [ ] **T9** [P] — Écrire `normalizePhoto` et `getPhotoStream` :
+- [x] **T9** [P] — Écrire `normalizePhoto` et `getPhotoStream` :
   - contrôle sur le format décodé, sans SVG ;
   - JPEG 600×800 sans métadonnées, `limitInputPixels` ;
   - stockage sous la clé `serving/<churchId>/<id>.jpg` via `@/modules/storage`.
 
   *(fichier : `src/modules/serving/services/photo.ts`)*
-- [ ] **T10** [P] — Écrire `getServingSettings` (valeurs par défaut sans ligne) et
+- [x] **T10** [P] — Écrire `getServingSettings` (valeurs par défaut sans ligne) et
   `updateServingSettings` (réglages et `contactEmail` des seuls départements PVS de l'église,
   journalisé).
   *(fichier : `src/modules/serving/services/settings.ts`)*
-- [ ] **T11** — Préparer les notifications, domaine `serving` :
+- [x] **T11** — Préparer les notifications, domaine `serving` :
   - destinataires PVS : comptes liés aux départements PVS, plus Admin ; à défaut, Admin ;
   - destinataires d'un département : `DEPARTMENT_HEAD` et `MINISTER` du ministère ; à défaut,
     Admin ;
@@ -90,9 +90,9 @@
   - contenu limité à : prénom, nom, lien.
 
   *(fichier : `src/modules/serving/services/notifications.ts`)*
-- [ ] **T12** — Ajouter `"VIEW"` aux actions acceptées par `logAudit`. *(fichier :
+- [x] **T12** — Ajouter `"VIEW"` aux actions acceptées par `logAudit`. *(fichier :
   `src/lib/audit.ts`)*
-- [ ] **T13** — Écrire les services de candidature :
+- [x] **T13** — Écrire les services de candidature :
   - `submitApplication` (crée la candidature, stocke la photo, notifie le PVS) ;
   - `listApplications` (vue PVS et vue département, filtrées par droit) ;
   - `getApplication` (journalise `VIEW`) ;
@@ -100,7 +100,7 @@
   - `linkMember`.
 
   *(fichier : `src/modules/serving/services/applications.ts`)*
-- [ ] **T14** [P] — Écrire `renderApplicationPdf` à partir du `FichePDF` de Jenny :
+- [x] **T14** [P] — Écrire `renderApplicationPdf` à partir du `FichePDF` de Jenny :
   - typé, sans `any` ;
   - « Non renseigné » pour un booléen nul ;
   - nom et logo de l'église ;
@@ -110,7 +110,7 @@
 
 ### 3. API (lot 1)
 
-- [ ] **T15** — Écrire la route publique `POST /api/serving/public/[churchSlug]`, dans cet ordre :
+- [x] **T15** — Écrire la route publique `POST /api/serving/public/[churchSlug]`, dans cet ordre :
   1. 411/413 avant lecture du corps ;
   2. 404 si l'église est inconnue ou n'a pas de département PVS ;
   3. limite de débit ;
@@ -121,23 +121,23 @@
 
   Avec son `contract.ts`.
   *(fichiers : `src/app/api/serving/public/[churchSlug]/route.ts`, `contract.ts`)*
-- [ ] **T16** — Écrire `GET /api/serving/applications`, `GET`/`PATCH
+- [x] **T16** — Écrire `GET /api/serving/applications`, `GET`/`PATCH
   /api/serving/applications/[id]` (actions `reject` et `link-member`), avec `resolveChurchId`
   pour l'objet identifié et les contrats.
   *(fichiers : `src/app/api/serving/applications/route.ts`, `[id]/route.ts`, `contract.ts`)*
-- [ ] **T17** [P] — Écrire `GET …/[id]/photo` (`no-store`) et `GET …/[id]/pdf` (journalisé
+- [x] **T17** [P] — Écrire `GET …/[id]/photo` (`no-store`) et `GET …/[id]/pdf` (journalisé
   `EXPORT`, `attachment`), ouverts à `canViewApplication` ou `isOwnApplication`.
   *(fichiers : `src/app/api/serving/applications/[id]/photo/route.ts`, `pdf/route.ts`,
   `contract.ts`)*
-- [ ] **T18** [P] — Écrire `GET`/`PUT /api/serving/settings` (`canEditSettings`). *(fichiers :
+- [x] **T18** [P] — Écrire `GET`/`PUT /api/serving/settings` (`canEditSettings`). *(fichiers :
   `src/app/api/serving/settings/route.ts`, `contract.ts`)*
-- [ ] **T19** — Ajouter à la liste blanche le fichier qui envoie la copie institutionnelle, avec
+- [x] **T19** — Ajouter à la liste blanche le fichier qui envoie la copie institutionnelle, avec
   sa justification.
   *(fichier : `src/lib/__tests__/notifications-no-direct-email.test.ts`)*
 
 ### 4. UI (lot 1)
 
-- [ ] **T20** — Créer la page publique `/servir/[churchSlug]` :
+- [x] **T20** — Créer la page publique `/servir/[churchSlug]` :
   - en-tête avec le nom (et le logo) de l'église ;
   - `PublicFormUnavailable` si l'église est inconnue, n'a pas de département PVS ou si Turnstile
     est absent ;
@@ -146,29 +146,29 @@
   - vérification mobile.
 
   *(fichiers : `src/app/servir/[churchSlug]/page.tsx`, `ServingForm.tsx`)*
-- [ ] **T21** — Ajouter le lien « Candidatures » au menu :
+- [x] **T21** — Ajouter le lien « Candidatures » au menu :
   - calculé dans le layout authentifié (gère les candidatures, ou responsable ou Ministre d'un
     département avec une affectation active) ;
   - libellés du fil d'Ariane.
 
   *(fichiers : `src/app/(auth)/layout.tsx`, `src/lib/navigation.ts`)*
-- [ ] **T22** — Créer la liste `/candidatures` : onglets « À traiter », « En cours », « Mes
+- [x] **T22** — Créer la liste `/candidatures` : onglets « À traiter », « En cours », « Mes
   départements » et « Archivées », `DataTable` (cartes sur mobile), `StatusChip` par affectation,
   `EmptyState`. *(fichiers : `src/app/(auth)/candidatures/page.tsx`, `ApplicationsClient.tsx`)*
-- [ ] **T23** — Créer la fiche `/candidatures/[id]` :
+- [x] **T23** — Créer la fiche `/candidatures/[id]` :
   - photo et toutes les rubriques ;
   - « Télécharger le PDF » ;
   - historique des affectations ;
   - action PVS « Ne pas retenir » (`ConfirmModal` + motif).
 
   *(fichiers : `src/app/(auth)/candidatures/[id]/page.tsx`, `ApplicationDetail.tsx`)*
-- [ ] **T24** [P] — Créer la page `/candidatures/parametres` : durée d'observation, durée de
+- [x] **T24** [P] — Créer la page `/candidatures/parametres` : durée d'observation, durée de
   conservation, adresse email de chaque département PVS.
   *(fichiers : `src/app/(auth)/candidatures/parametres/page.tsx`, `ServingSettingsForm.tsx`)*
 
 ### 5. Tests (lot 1)
 
-- [ ] **T25** [P] — Tester `state.ts` :
+- [x] **T25** [P] — Tester `state.ts` :
   - transitions ;
   - `needsPvsAction` ;
   - fin de mois (31 janvier + 1 mois) ;
@@ -176,7 +176,7 @@
   - les trois cas de conservation.
 
   *(fichier : `src/modules/serving/services/__tests__/state.test.ts`)*
-- [ ] **T26** [P] — Tester `access.ts` sur des sessions fabriquées :
+- [x] **T26** [P] — Tester `access.ts` sur des sessions fabriquées :
   - Admin oui, Secrétaire non ;
   - membre PVS lié (rôle STAR) et responsable PVS oui ;
   - responsable ou Ministre d'un autre département non ;
@@ -185,13 +185,13 @@
   - `isOwnApplication` (lien validé et affectation active).
 
   *(fichier : `src/modules/serving/services/__tests__/access.test.ts`)*
-- [ ] **T27** [P] — Tester les schémas : vides → `null`, booléen non répondu → `null`,
+- [x] **T27** [P] — Tester les schémas : vides → `null`, booléen non répondu → `null`,
   consentement requis, formation hors liste refusée, date invalide refusée.
   *(fichier : `src/modules/serving/__tests__/schemas.test.ts`)*
-- [ ] **T28** [P] — Tester `photo.ts` (SVG et non-image refusés, PNG → JPEG sans EXIF) et
+- [x] **T28** [P] — Tester `photo.ts` (SVG et non-image refusés, PNG → JPEG sans EXIF) et
   `pdf.tsx` (le rendu produit un PDF non vide, booléen nul → « Non renseigné »).
   *(fichiers : `src/modules/serving/services/__tests__/photo.test.ts`, `pdf.test.ts`)*
-- [ ] **T29** — Tester `submitApplication` et `rejectApplication`, Prisma et storage mockés :
+- [x] **T29** — Tester `submitApplication` et `rejectApplication`, Prisma et storage mockés :
   piège sans effet, notification sans donnée sensible, `VIEW` journalisé par `getApplication`.
   *(fichier : `src/modules/serving/services/__tests__/applications.test.ts`)*
 

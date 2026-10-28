@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "API Koinonia",
-    "version": "1.32.0",
+    "version": "1.33.0",
     "description": "API interne de Koinonia, appelée par l'application (session NextAuth, même origine). Générée depuis les contrats `contract.ts` des routes — voir `docs/api.md` (conventions) et ADR-0023."
   },
   "components": {
@@ -19442,6 +19442,450 @@
                 "schema": {}
               }
             }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/serving/applications": {
+      "get": {
+        "tags": [
+          "serving"
+        ],
+        "summary": "Liste des candidatures au service",
+        "description": "**Accès** : toute personne connectée — équipe PVS, `serving:manage`, ou responsable/Ministre d'un département affecté, dans l'église `churchId`.\n\nSpec 073. Vue `pvs` : toutes les candidatures de l'église, réservée à l'équipe PVS, aux Admins et au Super Admin (403 sinon). Vue `department` : candidatures affectées (ou renvoyées) à un département dont l'appelant est responsable ou Ministre, réduites à ces affectations ; un renvoi reste visible comme trace, sans accès à la fiche (`canOpen: false`).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pvs",
+                "department"
+              ],
+              "default": "pvs"
+            },
+            "required": false,
+            "name": "view",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Candidatures résumées (identité, statut, onglet, affectations)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/serving/applications/{id}": {
+      "get": {
+        "tags": [
+          "serving"
+        ],
+        "summary": "Fiche de candidature",
+        "description": "**Accès** : toute personne connectée — équipe PVS, `serving:manage`, ou responsable/Ministre d'un département dont l'affectation est en attente, en observation ou confirmée.\n\nSpec 073. Église déterminée par la candidature. Chaque consultation est journalisée (`VIEW`). Hors équipe PVS : ni motif de non-retenue, ni fiche STAR rattachée, ni affectations des autres départements. Un département qui a renvoyé n'y a plus accès (403).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fiche complète, affectations visibles et droits de l'appelant",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "serving"
+        ],
+        "summary": "Décision du PVS sur une candidature",
+        "description": "**Accès** : toute personne connectée — équipe PVS, `serving:manage` ou Super Admin, dans l'église de la candidature.\n\n`reject` : ne pas retenir (motif facultatif), possible tant qu'aucun département ne suit la personne (409 sinon) ; les renvois en attente sont considérés comme traités. `link-member` : rattacher à une fiche STAR existante de l'église (404 si elle n'en est pas), ou retirer le rattachement (`null`), impossible une fois la personne accueillie (409). Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "reject"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "maxLength": 2000
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "link-member"
+                        ]
+                      },
+                      "memberId": {
+                        "type": "string",
+                        "nullable": true,
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "memberId"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Fiche à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/serving/applications/{id}/pdf": {
+      "get": {
+        "tags": [
+          "serving"
+        ],
+        "summary": "Fiche de candidature en PDF",
+        "description": "**Accès** : toute personne connectée — mêmes droits que la fiche, ou le STAR lui-même une fois accueilli dans un département.\n\nSpec 073. Généré à la demande (nom et logo de l'église, pied de page confidentiel) ; chaque téléchargement est journalisé (`EXPORT`). Les questions Oui/Non sans réponse apparaissent « Non renseigné ».",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF en pièce à télécharger",
+            "content": {
+              "application/pdf": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/serving/applications/{id}/photo": {
+      "get": {
+        "tags": [
+          "serving"
+        ],
+        "summary": "Photo d'une candidature",
+        "description": "**Accès** : toute personne connectée — mêmes droits que la fiche, ou le STAR lui-même une fois accueilli dans un département.\n\nSpec 073. JPEG réencodé à l'envoi, servi sans cache (`no-store`).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image JPEG",
+            "content": {
+              "image/jpeg": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/serving/public/{churchSlug}": {
+      "post": {
+        "tags": [
+          "serving"
+        ],
+        "summary": "Envoi d'une candidature au service par le formulaire public",
+        "description": "**Accès** : public, sans session.\n\nSpec 073. 411 sans Content-Length et 413 au-delà de 9 Mo, avant lecture du corps. 404 si l'église est inconnue ou n'a pas de département de fonction « Vie des STAR (PVS) ». Limitée à 5 envois par minute et par IP, protégée par Turnstile (400) et par un champ piège (faux succès). La photo est obligatoire : format décodé JPEG, PNG, WebP ou HEIC (jamais de SVG), 8 Mo au plus, réencodée en JPEG 600 × 800 sans métadonnées. Le consentement est requis. Notifie l'équipe PVS (lien seul) et met en copie l'adresse email du PVS. Aucun identifiant n'est renvoyé.",
+        "security": [],
+        "x-access": "public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchSlug",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "description": "Champs de la fiche (`applicationFormSchema` de `@/modules/serving/schemas`, `pcncTrainings` répété), `photo` (image), `consent`, `turnstileToken`, `website` (piège, vide)",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "`{ ok: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/serving/settings": {
+      "get": {
+        "tags": [
+          "serving"
+        ],
+        "summary": "Réglages des candidatures au service",
+        "description": "**Accès** : toute personne connectée — Super Admin, `serving:manage` ou responsable d'un département PVS, dans l'église `churchId`.\n\nSpec 073. Valeurs par défaut (observation 3 mois, conservation 12 mois) tant que rien n'est enregistré.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Durées et adresse email de chaque département PVS",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "serving"
+        ],
+        "summary": "Modification des réglages des candidatures",
+        "description": "**Accès** : toute personne connectée — Super Admin, `serving:manage` ou responsable d'un département PVS, dans l'église `churchId`.\n\nSpec 073. La durée d'observation ne s'applique qu'aux accueils suivants. Les adresses email ne peuvent viser qu'un département PVS de l'église (400 sinon). Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "churchId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "observationMonths": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 12
+                  },
+                  "retentionMonths": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 36
+                  },
+                  "pvsEmails": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "departmentId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "email": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 255,
+                              "format": "email"
+                            },
+                            {
+                              "nullable": true
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "departmentId",
+                        "email"
+                      ]
+                    },
+                    "maxItems": 20
+                  }
+                },
+                "required": [
+                  "churchId",
+                  "observationMonths",
+                  "retentionMonths",
+                  "pvsEmails"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Réglages enregistrés",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
           },
           "401": {
             "description": "Session absente"

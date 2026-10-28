@@ -120,6 +120,10 @@ export const prismaMock = {
   financialRequest: createModelMock(),
   financialAttachment: createModelMock(),
   financialPayment: createModelMock(),
+  // Module candidatures au service (spec 073)
+  servingApplication: createModelMock(),
+  servingAssignment: createModelMock(),
+  servingSettings: createModelMock(),
   $queryRaw: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   $transaction: vi.fn((arg: any) => (Array.isArray(arg) ? Promise.all(arg) : arg(prismaMock))),

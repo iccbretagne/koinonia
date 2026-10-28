@@ -52,6 +52,11 @@ const FUNCTION_ACCESS: Partial<Record<DeptFunction, FunctionAccessEntry>> = {
   PRODUCTION_MEDIA: { module: "media", label: "Espace Communication & Production — Visuels" },
   COMMUNICATION: { module: "media", label: "Espace Communication & Production — Réseaux sociaux" },
   PHOTOS: { module: "media", label: "Espace Communication & Production — Photos" },
+  VIE_DES_STAR: {
+    module: "serving",
+    label: "Candidatures au service : étude, affectation et suivi des fiches",
+    headLabel: "Réglages des candidatures (durées, adresse email du PVS)",
+  },
 };
 
 type DeptRow = { id: string; function: string | null };

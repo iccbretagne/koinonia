@@ -97,6 +97,8 @@ export interface NavigationInput {
   readonly mediaLinks: readonly Link[];
   readonly agendaLinks?: readonly Link[];
   readonly integrationLinks?: readonly Link[];
+  /** Candidatures au service (spec 073) : équipe PVS, Admin, ou département qui en suit une. */
+  readonly servingLinks?: readonly Link[];
   readonly famillesUrl?: string | null;
   readonly hasDiscipleship?: boolean;
   readonly hasEventsAccess?: boolean;
@@ -311,6 +313,7 @@ function peoplePagesFor(input: NavigationInput, carePages: NavPage[]): NavPage[]
   const people: NavPage[] = [];
   if (input.hasMembersAccess) people.push({ href: "/admin/members", label: "STAR" });
   if (input.hasDiscipleship) people.push({ href: "/admin/discipleship", label: "Discipolat" });
+  for (const l of input.servingLinks ?? []) people.push({ href: l.href, label: l.label });
   for (const l of input.integrationLinks ?? []) {
     people.push({ href: l.href, label: l.label, sidebarBlock: "Intégration", sidebarLabel: INTEGRATION_SHORT_LABELS[l.href] });
   }
