@@ -23,6 +23,7 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   UPDATE: { label: "Modification", color: "bg-info-soft text-info" },
   DELETE: { label: "Suppression", color: "bg-danger-soft text-danger" },
   EXPORT: { label: "Export", color: "bg-brand-soft text-brand-text" },
+  VIEW: { label: "Consultation", color: "bg-surface-sunken text-ink-muted" },
 };
 
 function formatDate(iso: string) {

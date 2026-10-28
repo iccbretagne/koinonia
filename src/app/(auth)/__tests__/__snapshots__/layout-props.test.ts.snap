@@ -152,6 +152,12 @@ exports[`AuthLayout — props de navigation > Admin aussi Admin d'une autre égl
       "label": "Traitement des demandes",
     },
   ],
+  "servingLinks": [
+    {
+      "href": "/candidatures",
+      "label": "Candidatures",
+    },
+  ],
   "showStarEvents": false,
   "user": {
     "email": "test@example.com",
@@ -314,6 +320,12 @@ exports[`AuthLayout — props de navigation > Admin aussi pasteur, vue admin cho
       "label": "Traitement des demandes",
     },
   ],
+  "servingLinks": [
+    {
+      "href": "/candidatures",
+      "label": "Candidatures",
+    },
+  ],
   "showStarEvents": false,
   "user": {
     "email": "test@example.com",
@@ -472,6 +484,12 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
       "label": "Traitement des demandes",
     },
   ],
+  "servingLinks": [
+    {
+      "href": "/candidatures",
+      "label": "Candidatures",
+    },
+  ],
   "showStarEvents": false,
   "user": {
     "email": "test@example.com",
@@ -528,6 +546,7 @@ exports[`AuthLayout — props de navigation > Comptable 1`] = `
     },
   ],
   "requestLinks": [],
+  "servingLinks": [],
   "showStarEvents": false,
   "user": {
     "email": "test@example.com",
@@ -606,6 +625,7 @@ exports[`AuthLayout — props de navigation > Ministre 1`] = `
       "label": "Mes demandes",
     },
   ],
+  "servingLinks": [],
   "showStarEvents": false,
   "user": {
     "email": "test@example.com",
@@ -662,6 +682,7 @@ exports[`AuthLayout — props de navigation > Pasteur seul (profil pastoral, vue
       "label": "Mes demandes",
     },
   ],
+  "servingLinks": [],
   "showStarEvents": false,
   "user": {
     "email": "test@example.com",
@@ -731,6 +752,7 @@ exports[`AuthLayout — props de navigation > Resp. département Communication, 
       "label": "Mes demandes",
     },
   ],
+  "servingLinks": [],
   "showStarEvents": false,
   "user": {
     "email": "test@example.com",
@@ -825,6 +847,7 @@ exports[`AuthLayout — props de navigation > Resp. département Production Méd
       "label": "Mes demandes",
     },
   ],
+  "servingLinks": [],
   "showStarEvents": false,
   "user": {
     "email": "test@example.com",
@@ -881,6 +904,7 @@ exports[`AuthLayout — props de navigation > Référent soins pastoraux 1`] = `
     },
   ],
   "requestLinks": [],
+  "servingLinks": [],
   "showStarEvents": false,
   "user": {
     "email": "test@example.com",
@@ -946,6 +970,7 @@ exports[`AuthLayout — props de navigation > STAR du Protocole 1`] = `
       "label": "Demande RDV pastoral",
     },
   ],
+  "servingLinks": [],
   "showStarEvents": true,
   "user": {
     "email": "test@example.com",
@@ -1007,6 +1032,7 @@ exports[`AuthLayout — props de navigation > STAR lié, berger de famille 1`] =
       "label": "Demande RDV pastoral",
     },
   ],
+  "servingLinks": [],
   "showStarEvents": true,
   "user": {
     "email": "test@example.com",
@@ -1141,6 +1167,7 @@ exports[`AuthLayout — props de navigation > Secrétaire avec profil pastoral p
       "label": "Traitement des demandes",
     },
   ],
+  "servingLinks": [],
   "showStarEvents": false,
   "user": {
     "email": "test@example.com",
@@ -1311,6 +1338,12 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
       "label": "Traitement des demandes",
     },
   ],
+  "servingLinks": [
+    {
+      "href": "/candidatures",
+      "label": "Candidatures",
+    },
+  ],
   "showStarEvents": false,
   "user": {
     "email": "test@example.com",
@@ -1414,6 +1447,7 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
   "isPastoral": false,
   "mediaLinks": [],
   "requestLinks": [],
+  "servingLinks": [],
   "showStarEvents": false,
   "user": {
     "email": "test@example.com",

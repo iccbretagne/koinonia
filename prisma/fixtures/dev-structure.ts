@@ -65,6 +65,7 @@ export const DEV_DEPARTMENTS: DevDepartmentDef[] = [
   { key: "secretariat", ministryKey: "coordination", name: "Secrétariat", function: "SECRETARIAT" },
   { key: "logistique", ministryKey: "coordination", name: "Logistique" },
   { key: "gestion-site", ministryKey: "coordination", name: "Gestion de site" },
+  { key: "vie-des-star", ministryKey: "coordination", name: "Vie des STAR", function: "VIE_DES_STAR" },
   // ICC Kervignac — Jeunesse
   { key: "impact-junior", ministryKey: "jeunesse", name: "Impact Junior" },
   { key: "pole-ado", ministryKey: "jeunesse", name: "Pôle ado" },

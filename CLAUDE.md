@@ -429,6 +429,7 @@ Compt = Comptable.
 | `rooms:view` | x | x | x | x | x | | | | | |
 | `rooms:reserve` | x | x | x | x | x | | | | | |
 | `rooms:manage` | x | x | | | | | | | | |
+| `serving:manage` | x | x | | | | | | | | |
 | `jobs:view`/`post`/`seek`/`freelance` | x | x | x | x | x | x | x | x | x | x |
 | `jobs:manage` | x | x | x | | | | | | | |
 
@@ -572,6 +573,17 @@ renommé spec 052) :
   Urgent** : `notifyUsers(…, { emailPolicy: "always" })` envoie l'email malgré la préférence
   ([ADR-0025](docs/adr/0025-email-urgent-hors-preference.md)) — seul usage autorisé de cette
   option ; la notification native suit toujours la préférence
+
+**Spécificités du module candidatures** (spec 073) :
+- `serving:manage` (Super Admin, Admin) ne fait que l'administration : l'accès réel passe par
+  l'équipe **Vie des STAR** (fonction de département `VIE_DES_STAR`), résolue objet par objet
+  dans `@/modules/serving/auth` — Secrétaire exclu. Avant affectation, seuls le PVS et l'Admin
+  voient la fiche ; après, les responsables et Ministres des départements affectés (plus après
+  un renvoi) ; une fois accueilli, le STAR voit sa propre fiche dans « Mon profil »
+- Formulaire public `/servir/<slug>` (404 sans département PVS), photo réencodée, notifications
+  lien seul, copie à `Department.contactEmail` du PVS (liste blanche `sendEmail`)
+- Le module ne peut importer ni `planning` ni `core` : les routes injectent
+  `attachMemberToDepartment`/`detachMemberFromDepartment` et le logo de l'église
 
 **Spécificités du Comptable** (`ACCOUNTANT`) :
 - Seul rôle (hors Super Admin/Admin) avec `accounting:manage` : traite les demandes financières

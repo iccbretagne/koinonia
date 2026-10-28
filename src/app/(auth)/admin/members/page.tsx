@@ -1,6 +1,7 @@
 import { requireAuth, getCurrentChurchId, requireChurchPermission, getUserMinistryScope } from "@/lib/auth";
 import { resolveMemberDepartmentScope } from "@/lib/member-scope";
-import { rolePermissions } from "@/lib/registry";
+import { registry, rolePermissions } from "@/lib/registry";
+import { listObservationMemberIds } from "@/modules/serving";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button-classes";
@@ -105,6 +106,9 @@ export default async function MembersPage() {
     orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
   });
 
+  // Badge « En observation » (candidatures au service, spec 073)
+  const observation = registry.has("serving") ? await listObservationMemberIds(churchId) : [];
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -176,6 +180,7 @@ export default async function MembersPage() {
               ? { userId: m.userLinks[0].userId, userName: m.userLinks[0].user.name, userEmail: m.userLinks[0].user.email }
               : null,
             churchId: primaryDept?.department.ministry.churchId ?? "",
+            observationDeptIds: observation.filter((o) => o.memberId === m.id).map((o) => o.departmentId),
           };
         })}
         departments={departments.map((d) => ({

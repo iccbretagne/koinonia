@@ -15,10 +15,11 @@ import { accountingModule } from "@/modules/accounting/manifest";
 import { jobsModule } from "@/modules/jobs/manifest";
 import { givingModule } from "@/modules/giving/manifest";
 import { messagesModule } from "@/modules/messages/manifest";
+import { servingModule } from "@/modules/serving/manifest";
 import type { Role } from "@/generated/prisma/client";
 
 /**
- * Les 14 modules du registry (`src/lib/registry.ts`), importés par leur manifeste et non par
+ * Les 15 modules du registry (`src/lib/registry.ts`), importés par leur manifeste et non par
  * leur index : un index re-exporte les services du module, donc Prisma, NextAuth et le client
  * S3 — indisponibles dans l'environnement de test `node`. Le manifeste, lui, ne dépend que de
  * `defineModule`.
@@ -38,6 +39,7 @@ const ALL_MODULES = [
   jobsModule,
   givingModule,
   messagesModule,
+  servingModule,
 ];
 
 /** Les 10 rôles de l'enum Prisma `Role`. */
@@ -119,6 +121,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "rooms:manage",
     "rooms:reserve",
     "rooms:view",
+    "serving:manage",
     "users:manage",
   ],
   ADMIN: [
@@ -172,6 +175,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "rooms:manage",
     "rooms:reserve",
     "rooms:view",
+    "serving:manage",
     "users:manage",
   ],
   SECRETARY: [
@@ -310,7 +314,7 @@ function buildFullRegistry() {
 }
 
 describe("buildRolePermissions", () => {
-  it("couvre les 14 modules du registry", () => {
+  it("couvre les 15 modules du registry", () => {
     expect(ALL_MODULES.map((m) => m.name).sort()).toEqual([
       "accounting",
       "agenda",
@@ -325,6 +329,7 @@ describe("buildRolePermissions", () => {
       "messages",
       "planning",
       "rooms",
+      "serving",
       "storage",
     ]);
   });

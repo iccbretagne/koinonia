@@ -129,6 +129,9 @@ model Church {
   logos                     ChurchLogo[]
   // Messages système (spec 071)
   systemMessages            SystemMessage[]
+  // Candidatures au service (spec 073)
+  servingApplications ServingApplication[]
+  servingSettings     ServingSettings?
 
   @@map("churches")
 }
@@ -236,6 +239,7 @@ model User {
   // (relation superviseur église déplacée vers PastoralProfile)
 
     availabilityEntries AvailabilityResponse[] @relation("AvailabilityEnteredBy")
+
   @@map("users")
 }
 
@@ -290,6 +294,8 @@ model Department {
   ministryId        String
   isSystem          Boolean              @default(false)
   function          String?
+  /// Adresse de contact de l'équipe (spec 073 : boîte du PVS, en copie des candidatures)
+  contactEmail          String?                @db.VarChar(255)
   ministry          Ministry             @relation(fields: [ministryId], references: [id])
   memberDepts       MemberDepartment[]
   eventDepts        EventDepartment[]
@@ -312,6 +318,8 @@ model Department {
   availabilityAsks  AvailabilityAsk[]
 
   serviceWithdrawals ServiceWithdrawal[]
+
+  servingAssignments ServingAssignment[]
 
   @@map("departments")
 }
@@ -348,6 +356,9 @@ model Member {
   // Désistements (spec 061)
   serviceWithdrawals    ServiceWithdrawal[] @relation("WithdrawnMember")
   serviceReplacements   ServiceWithdrawal[] @relation("ReplacementMember")
+
+  // Candidatures au service (spec 073) : fiche STAR créée ou rattachée à l'accueil
+  servingApplications ServingApplication[]
 
   @@map("members")
 }
@@ -712,7 +723,7 @@ model AuditLog {
   id         String   @id @default(cuid())
   userId     String
   churchId   String?
-  action     String // CREATE, UPDATE, DELETE, EXPORT
+  action     String // CREATE, UPDATE, DELETE, EXPORT, VIEW
   entityType String // Event, Planning, Member, etc.
   entityId   String
   details    Json?
@@ -2814,4 +2825,128 @@ model ChurchLogo {
   @@id([churchId, variant])
   @@index([updatedById])
   @@map("church_logos")
+}
+
+// ─── Candidatures au service (spec 073) ──────────────────────────────────────
+
+enum ServingApplicationStatus {
+  RECEIVED // à traiter par le PVS
+  VALIDATED // au moins une affectation créée
+  REJECTED // non retenue
+}
+
+enum ServingAssignmentStatus {
+  PENDING // affectée, en attente d'accueil par le département
+  OBSERVATION // accueillie : STAR du département, en observation
+  CONFIRMED
+  SENT_BACK // refusée avant accueil ou renvoyée pendant l'observation
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+}
+
+/// Candidature au service (spec 073). Données personnelles sensibles : PVS/Admin avant
+/// affectation, puis Resp./Ministre des départements à affectation active ; purge automatique.
+model ServingApplication {
+  id       String                   @id @default(cuid())
+  churchId String
+  status   ServingApplicationStatus @default(RECEIVED)
+
+  firstName              String         @db.VarChar(100)
+  lastName               String         @db.VarChar(100)
+  birthDate              DateTime       @db.Date
+  profession             String?        @db.VarChar(150)
+  maritalStatus          MaritalStatus?
+  childrenCount          Int?
+  street                 String?        @db.VarChar(200)
+  city                   String?        @db.VarChar(100)
+  postalCode             String?        @db.VarChar(20)
+  country                String?        @db.VarChar(100)
+  phone                  String?        @db.VarChar(30)
+  email                  String?        @db.VarChar(200)
+  /// null = non renseigné
+  baptized               Boolean?
+  baptismDate            DateTime?      @db.Date
+  baptismPlace           String?        @db.VarChar(200)
+  previousChurch         Boolean?
+  previousChurchName     String?        @db.VarChar(200)
+  previousChurchLocation String?        @db.VarChar(200)
+  /// string[] parmi une liste fermée (formations PCNC)
+  pcncTrainings          Json
+  hasServed              Boolean?
+  servedDepartment       String?        @db.VarChar(200)
+  ministryService        String?        @db.VarChar(300)
+  communityService       String?        @db.VarChar(300)
+  otherRoles             String?        @db.VarChar(300)
+  availableToServe       Boolean?
+  interests              String?        @db.VarChar(500)
+  observations           String?        @db.Text
+  journeyDetails         String?        @db.Text
+  spiritualGoals         String?        @db.Text
+  specificDetails        String?        @db.Text
+  photoKey               String         @db.VarChar(255)
+  consentAt              DateTime
+
+  /// Fiche STAR liée (existante ou créée au premier accueil)
+  memberId        String?
+  /// Validation ou non-retenue
+  decidedAt       DateTime?
+  decidedById     String?
+  rejectionReason String?   @db.Text
+  purgeWarnedAt   DateTime?
+
+  church      Church              @relation(fields: [churchId], references: [id])
+  member      Member?             @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  assignments ServingAssignment[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([churchId, status, createdAt])
+  @@index([memberId])
+  @@map("serving_applications")
+}
+
+model ServingAssignment {
+  id            String                  @id @default(cuid())
+  applicationId String
+  departmentId  String
+  status        ServingAssignmentStatus @default(PENDING)
+
+  assignedById      String
+  assignedAt        DateTime  @default(now())
+  acceptedAt        DateTime?
+  acceptedById      String?
+  /// Figée à l'accueil : un changement de réglage ne touche pas l'en-cours
+  observationEndsAt DateTime?
+  /// Confirmation ou renvoi
+  decidedAt         DateTime?
+  decidedById       String?
+  sentBackReason    String?   @db.Text
+  /// Renvoi traité par le PVS (réaffectation ou non-retenue)
+  resolvedAt        DateTime?
+  endingReminderAt  DateTime?
+  overdueRemindedAt DateTime?
+
+  application ServingApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  department  Department         @relation(fields: [departmentId], references: [id])
+
+  @@index([departmentId, status])
+  @@index([applicationId])
+  @@index([status, observationEndsAt])
+  @@map("serving_assignments")
+}
+
+model ServingSettings {
+  id                String   @id @default(cuid())
+  churchId          String   @unique
+  observationMonths Int      @default(3)
+  retentionMonths   Int      @default(12)
+  church            Church   @relation(fields: [churchId], references: [id])
+  updatedAt         DateTime @updatedAt
+
+  @@map("serving_settings")
 }

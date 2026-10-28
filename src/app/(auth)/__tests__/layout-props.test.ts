@@ -27,6 +27,16 @@ vi.mock("@/lib/auth", () => ({
   getCurrentChurchId: (...args: unknown[]) => mockGetCurrentChurchId(...args),
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
+// Candidatures (spec 073) : seul le câblage du lien est vérifié ici ; les règles d'accès sont
+// testées dans le module serving. Gestionnaires : Super Admin et Admin.
+vi.mock("@/modules/serving/auth", () => ({
+  servingActorFromSession: async (session: { user: { isSuperAdmin: boolean; churchRoles: { role: string }[] } }) => ({
+    canManage: session.user.isSuperAdmin || session.user.churchRoles.some((r) => r.role === "ADMIN"),
+  }),
+}));
+vi.mock("@/modules/serving", () => ({
+  hasServingAccess: async (actor: { canManage: boolean }) => actor.canManage,
+}));
 // Règle de lecture de la trame (#676) : on ne vérifie ici que son câblage dans le layout ; la
 // règle elle-même est testée dans le module planning. Lecteurs : tout rôle sauf STAR/Reporter.
 const mockCanReadAnnouncementSheet = vi.fn(async (session: { user: { isSuperAdmin: boolean; churchRoles: { role: string }[] } }) =>

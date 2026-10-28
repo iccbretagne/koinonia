@@ -433,6 +433,30 @@ dont est issu un suivi.
 | `rooms:reserve` | x | x | x | x | x | | | | | |
 | `rooms:manage` | x | x | | | | | | | | |
 
+#### Module `serving` (candidatures au service, spec 073)
+
+| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `serving:manage` | x | x | | | | | | | | |
+
+La permission ne décrit que l'administration de l'église. L'accès réel aux candidatures se
+résout objet par objet dans `@/modules/serving/auth` et `services/access.ts`, sans ouverture
+globale par rôle (le Secrétaire n'y a pas accès) :
+
+- **Étude et traitement avant affectation** : `serving:manage`, Super Admin, ou tout rôle dont
+  les départements comptent un département de fonction `VIE_DES_STAR` (équipe PVS : responsable,
+  STAR du PVS dont le compte est lié, Ministre du ministère du PVS).
+- **Lecture de la fiche par un département** : responsable (principal ou adjoint) du
+  département ou Ministre de son ministère, tant que l'affectation est en attente, en
+  observation ou confirmée — plus après un renvoi au PVS.
+- **Vue du STAR** (D8) : compte lié (lien validé) à la fiche STAR de la candidature, une fois
+  accueilli dans un département ; vue réduite, sans informations internes.
+- **Réglages** (durées, adresse email du PVS) : Super Admin, `serving:manage`, ou responsable
+  d'un département PVS.
+
+Chaque consultation de fiche est journalisée (`VIEW`), chaque téléchargement du PDF aussi
+(`EXPORT`).
+
 #### Module `jobs` (emploi)
 
 Transversal — ouvert à tous les rôles authentifiés pour la consultation/candidature, modération
