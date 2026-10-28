@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import type { Attachment } from "nodemailer/lib/mailer";
 
 function jobTypeLabel(type: string): string {
   if (type === "EMPLOI") return "Emploi";
@@ -34,18 +35,22 @@ const transporter = nodemailer.createTransport({
 
 interface SendEmailOptions {
   to: string | string[];
+  cc?: string | string[];
   subject: string;
   html: string;
+  attachments?: Attachment[];
 }
 
-export async function sendEmail({ to, subject, html }: SendEmailOptions) {
+export async function sendEmail({ to, cc, subject, html, attachments }: SendEmailOptions) {
   const from = process.env.SMTP_FROM || "Koinonia <noreply@koinonia.local>";
 
   await transporter.sendMail({
     from,
     to,
+    cc,
     subject,
     html,
+    attachments
   });
 }
 

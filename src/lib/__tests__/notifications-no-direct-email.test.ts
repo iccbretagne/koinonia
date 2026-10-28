@@ -31,6 +31,8 @@ const WHITELIST = new Set([
   "src/app/api/accounting/requests/route.ts", // adresse institutionnelle church.accountingEmails
   "src/app/api/agenda/requests/[id]/schedule/route.ts", // profil pastoral sans compte, planification
   "src/app/api/integration/requests/route.ts", // confirmation de dépôt du formulaire public d'accueil
+  "src/app/api/pvs-fiche-identite/route.ts", // fiche d'identité publique (candidat sans compte) : adresses institutionnelles FICHE_RECEIVER_EMAIL / FICHE_CC_EMAIL
+
 ]);
 
 function walk(dir: string, acc: string[] = []): string[] {

@@ -1,0 +1,1 @@
+export { ficheIdentiteModule  } from "./manifest";

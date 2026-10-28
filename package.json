@@ -33,6 +33,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1143.0",
     "@prisma/adapter-mariadb": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "@react-pdf/renderer": "^4.9.0",
     "@tailwindcss/postcss": "^4.3.3",
     "archiver": "^7.0.1",
     "exceljs": "^4.4.0",

@@ -2555,3 +2555,62 @@ model PlanningChangeNotice {
   @@index([churchId, lastChangedAt])
   @@map("planning_change_notices")
 }
+
+
+//pvs fiche d'identité
+enum StatutFamilial {
+  CELIBATAIRE
+  MARIE
+  DIVORCE
+  VEUF
+}
+
+ 
+
+model FicheIdentite {
+  id                    String   @id @default(cuid())
+  createdAt             DateTime @default(now())
+
+  // Identité
+  nom                   String
+  prenom                String
+  dateNaissance         DateTime
+  profession            String?
+  statutFamilial        StatutFamilial?
+  enfants               Int?     
+  photoUrl              String?  
+
+  // Adresse
+  rue                   String?
+  ville                 String?
+  codePostal            String?
+  pays                  String?
+
+  // Contact
+  telephone             String?
+  email                 String?
+
+  // Parcours spirituel
+  baptise               Boolean  @default(false)
+  dateBapteme           DateTime?
+  lieuBapteme           String?
+  ancienneEglise        Boolean  @default(false)
+  nomEgliseAncienne     String?
+  villePaysEgliseAncienne String?
+
+  dejaServi             Boolean  @default(false)
+  departementService    String?
+  serviceMinistere      String?
+  serviceCommunautaire  String?
+  autresRoles           String?
+
+  disponiblePourServir  Boolean  @default(false)
+  domainesInteret       String?
+
+  observations          String?  @db.Text
+
+  formationPCNC         String?
+  infosSupplementaires  String?  @db.Text
+  objectifsSpirituels   String?  @db.Text
+  detailsSpecifiques    String?  @db.Text
+}
