@@ -160,6 +160,7 @@ Départements d'un ministère (Choristes, Musiciens, Son...).
 | `name` | String | Nom du département |
 | `ministryId` | String | Ref vers `ministries` |
 | `function` | String? | Fonction spéciale : `SECRETARIAT`, `COMMUNICATION`, `PRODUCTION_MEDIA`, ou valeur personnalisée (nullable) |
+| `contactEmail` | String? | Adresse d'équipe du département (spec 073) : pour un département `VIE_DES_STAR`, reçoit une copie des nouvelles candidatures et des renvois (lien seul) |
 
 #### `members`
 
@@ -652,6 +653,7 @@ SECRETARIAT       # Departement traitant les diffusions internes et demandes
 COMMUNICATION     # Departement traitant les publications reseaux sociaux
 PRODUCTION_MEDIA  # Departement traitant les demandes de visuels
 CAPTATION_AUDIO   # Departement de captation audio — pilote isCaptureTeamMember/Lead (module audio)
+VIE_DES_STAR      # Pole Vie des STAR — recoit et oriente les candidatures au service (module serving)
 ```
 
 Des valeurs personnalisées sont possibles. Un seul département par fonction et par église. Assigné via `PATCH /api/departments/[id]`. Constantes définies dans `src/lib/department-functions.ts`.
@@ -2078,6 +2080,56 @@ Toute modification est journalisée (`audit_logs`, `entityType: "GivingPage"`). 
 de bénéficiaire, d'IBAN, de BIC, de lien de don en ligne, de l'affichage du virement ou du don en
 ligne, le dépôt, le remplacement ou le retrait du logo, ou la désactivation de la page, alerte `churches.accountingEmails` (à défaut les Admins,
 domaine de notification `giving`).
+
+### Module Candidatures au service (`serving`)
+
+Spec 073. Une candidature reçue du formulaire public `/servir/<slug>` est étudiée par le Pôle Vie
+des STAR (départements de fonction `VIE_DES_STAR`), puis orientée vers un ou plusieurs
+départements, chacun suivant sa propre affectation.
+
+#### `serving_applications`
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `status` | `ServingApplicationStatus` | `RECEIVED` (reçue), `VALIDATED` (orientée), `REJECTED` (non retenue) |
+| `firstName` … `specificDetails` | divers | Réponses du formulaire (identité, adresse, contact, parcours spirituel, formations PCNC en JSON, service, disponibilité, observations) ; un Oui/Non sans réponse vaut `null` |
+| `photoKey` | String | Clé de stockage de la photo, réencodée en JPEG (`serving/<churchId>/<uuid>.jpg`) |
+| `consentAt` | DateTime | Consentement donné à l'envoi |
+| `memberId` | String? | Ref vers `members` : fiche STAR rattachée, ou créée au premier accueil (SetNull) |
+| `decidedAt` / `decidedById` / `rejectionReason` | DateTime? / String? | Validation ou non-retenue (motif visible du PVS seul) |
+| `purgeWarnedAt` | DateTime? | Avertissement envoyé au PVS un mois avant l'effacement d'une candidature jamais traitée |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+#### `serving_assignments`
+
+Une ligne par département vers lequel la candidature est orientée (suppression en cascade).
+
+| Champ | Type | Description |
+|---|---|---|
+| `applicationId` / `departmentId` | String | Candidature et département |
+| `status` | `ServingAssignmentStatus` | `PENDING` (en attente d'accueil), `OBSERVATION`, `CONFIRMED`, `SENT_BACK` (renvoyée au PVS) |
+| `assignedById` / `assignedAt` | String / DateTime | Orientation par le PVS |
+| `acceptedAt` / `acceptedById` | DateTime? / String? | Accueil par le département |
+| `observationEndsAt` | DateTime? | Fin d'observation, figée à l'accueil (un changement de réglage ne touche pas l'en-cours) |
+| `decidedAt` / `decidedById` / `sentBackReason` | DateTime? / String? | Confirmation ou renvoi (motif obligatoire) |
+| `resolvedAt` | DateTime? | Renvoi traité par le PVS (réorientation ou non-retenue) |
+| `endingReminderAt` / `overdueRemindedAt` | DateTime? | Rappel J-14 et dernière relance « échue » (tous les 7 jours) |
+
+#### `serving_settings`
+
+Une ligne au plus par église ; à défaut, 3 mois d'observation et 12 mois de conservation.
+
+| Champ | Type | Description |
+|---|---|---|
+| `churchId` | String (unique) | Ref vers `churches` |
+| `observationMonths` | Int | Durée d'observation (1 à 12 mois) |
+| `retentionMonths` | Int | Conservation d'une candidature non retenue ou jamais traitée (1 à 36 mois) |
+
+Chaque consultation (`VIEW`) et téléchargement PDF (`EXPORT`) d'une fiche est journalisé
+(`audit_logs`, `entityType: "ServingApplication"`). La tâche cron `serving` efface au terme de la
+conservation la photo, puis la ligne et ses notifications.
 
 ## Seed (données initiales)
 

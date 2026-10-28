@@ -17,7 +17,7 @@
   - en cas d'échec, basculer sur `jspdf` côté serveur et le noter dans `plan.md`.
 
   *(fichiers : `package.json`, `package-lock.json`, `next.config.ts` si `serverExternalPackages`)*
-- [ ] Migration Prisma générée (T2)
+- [x] Migration Prisma générée (T2)
 
 ## Lot 1 — Socle : formulaire public, PVS, PDF
 
@@ -199,7 +199,7 @@
 
 ### 2. Services
 
-- [ ] **T30** — Écrire les services d'affectation :
+- [x] **T30** — Écrire les services d'affectation :
   - `assignApplication` : un ou plusieurs départements de l'église ; refuse un département où la
     fiche liée est déjà ; résout les renvois en attente ; notifie les départements ;
   - `acceptAssignment` : crée ou lit le `Member`, puis `attachMember` injecté, puis
@@ -209,32 +209,32 @@
     notifie le PVS.
 
   *(fichier : `src/modules/serving/services/assignments.ts`)*
-- [ ] **T31** [P] — Écrire `findMemberMatches` (même nom ou même email dans l'église, via
+- [x] **T31** [P] — Écrire `findMemberMatches` (même nom ou même email dans l'église, via
   `searchMembersChurchWide` injecté) et `listObservationMemberIds(churchId)`.
   *(fichier : `src/modules/serving/services/members.ts`)*
-- [ ] **T32** [P] — Écrire `getOwnApplication(userId, churchId)` et `toOwnApplicationView`, une
+- [x] **T32** [P] — Écrire `getOwnApplication(userId, churchId)` et `toOwnApplicationView`, une
   vue réduite sans motifs, sans affectations en attente ou renvoyées, sans journal (D8).
   *(fichier : `src/modules/serving/services/own.ts`)*
 
 ### 3. API (lot 2)
 
-- [ ] **T33** — Écrire `POST /api/serving/applications/[id]/assignments` (`canManage`).
+- [x] **T33** — Écrire `POST /api/serving/applications/[id]/assignments` (`canManage`).
   *(fichiers : `src/app/api/serving/applications/[id]/assignments/route.ts`, `contract.ts`)*
-- [ ] **T34** — Écrire `PATCH /api/serving/assignments/[id]` avec les actions `accept`, `confirm`
+- [x] **T34** — Écrire `PATCH /api/serving/assignments/[id]` avec les actions `accept`, `confirm`
   et `send-back`. La route injecte `attachMemberToDepartment` et `detachMemberFromDepartment`
   depuis `@/modules/planning`. *(fichiers : `src/app/api/serving/assignments/[id]/route.ts`,
   `contract.ts`)*
-- [ ] **T35** [P] — Écrire `GET /api/serving/applications/[id]/member-matches` (`canManage`) et
+- [x] **T35** [P] — Écrire `GET /api/serving/applications/[id]/member-matches` (`canManage`) et
   `GET /api/serving/me` (vue réduite ou `null`).
   *(fichiers : `…/[id]/member-matches/route.ts`, `src/app/api/serving/me/route.ts`,
   `contract.ts`)*
 
 ### 4. UI (lot 2)
 
-- [ ] **T36** — Ajouter l'action PVS « Valider et affecter » à la fiche : `Modal` avec choix
+- [x] **T36** — Ajouter l'action PVS « Valider et affecter » à la fiche : `Modal` avec choix
   multiple de départements et suggestions de fiches existantes avec « Rattacher » ;
   réaffectation après renvoi. *(fichier : `src/app/(auth)/candidatures/[id]/AssignModal.tsx`)*
-- [ ] **T37** — Ajouter les actions responsable/Ministre à la fiche :
+- [x] **T37** — Ajouter les actions responsable/Ministre à la fiche :
   - « Accueillir dans le département » ;
   - « Confirmer » ;
   - « Renvoyer au PVS » (motif obligatoire) ;
@@ -242,17 +242,17 @@
   - actions en `BottomSheet` sous `md`.
 
   *(fichier : `src/app/(auth)/candidatures/[id]/AssignmentActions.tsx`)*
-- [ ] **T38** [P] — Ajouter la carte « Ma fiche de candidature » dans « Mon profil » : lecture
+- [x] **T38** [P] — Ajouter la carte « Ma fiche de candidature » dans « Mon profil » : lecture
   seule, photo, PDF, départements et étape, mention « pour corriger, adresse-toi au PVS ».
   Affichée si le module est actif. *(fichiers : `src/app/(auth)/profile/page.tsx`,
   `OwnApplicationCard.tsx`)*
-- [ ] **T39** [P] — Afficher le badge « En observation » dans la liste des STAR : identifiants
+- [x] **T39** [P] — Afficher le badge « En observation » dans la liste des STAR : identifiants
   passés en prop depuis la page si le module est actif. *(fichiers :
   `src/app/(auth)/admin/members/page.tsx` et son composant client)*
 
 ### 5. Tests (lot 2)
 
-- [ ] **T40** — Tester `assignments.ts`, Prisma mocké et attach/detach injectés :
+- [x] **T40** — Tester `assignments.ts`, Prisma mocké et attach/detach injectés :
   - acceptation qui crée le `Member` puis rattache ;
   - acceptation rejouée après un 409 ;
   - `observationEndsAt` figé malgré un changement de réglage ;
@@ -261,14 +261,14 @@
   - département déjà porté refusé.
 
   *(fichier : `src/modules/serving/services/__tests__/assignments.test.ts`)*
-- [ ] **T41** [P] — Tester `own.ts` : la vue réduite n'expose ni `sentBackReason`, ni
+- [x] **T41** [P] — Tester `own.ts` : la vue réduite n'expose ni `sentBackReason`, ni
   `rejectionReason`, ni affectation `PENDING` ou `SENT_BACK` ; `null` sans lien ou après renvoi
   total.
   *(fichier : `src/modules/serving/services/__tests__/own.test.ts`)*
 
 ## Lot 3 — Cycle de vie : rappels, relances, purge
 
-- [ ] **T42** — Écrire `runServingTasks(appUrl)` :
+- [x] **T42** — Écrire `runServingTasks(appUrl)` :
   - rappel « fin proche » à J-14 (une fois) ;
   - relance « échue » tous les 7 jours ;
   - avertissement PVS un mois avant l'effacement d'une candidature jamais traitée ;
@@ -276,9 +276,9 @@
     de la photo, journal `DELETE` sans donnée personnelle.
 
   *(fichier : `src/modules/serving/services/lifecycle.ts`)*
-- [ ] **T43** — Déclarer la tâche cron `serving` (module `serving`, toutes les 60 minutes).
+- [x] **T43** — Déclarer la tâche cron `serving` (module `serving`, toutes les 60 minutes).
   *(fichier : `src/app/api/cron/route.ts`)*
-- [ ] **T44** — Tester `lifecycle.ts` :
+- [x] **T44** — Tester `lifecycle.ts` :
   - rappel unique ;
   - relance espacée de 7 jours ;
   - avertissement unique ;
@@ -290,29 +290,32 @@
 
 ## Documentation & garde-fous
 
-- [ ] **T45** — `npm run openapi` et commit de `docs/openapi.json`, couverture des préfixes vérifiée
+- [x] **T45** — `npm run openapi` et commit de `docs/openapi.json`, couverture des préfixes vérifiée
   par `route-exhaustiveness.test.ts`.
   *(fichier : `docs/openapi.json`)*
-- [ ] **T46** [P] — Documenter :
+- [x] **T46** [P] — Documenter :
   - section « Spécificités du module candidatures » dans `CLAUDE.md` et `docs/auth.md` ;
   - nouvelle fonction de département ;
   - entrée « Ajouté » du CHANGELOG ;
   - statuts de la spec (Implémentée) et du plan (Terminé).
 
   *(fichiers : `CLAUDE.md`, `docs/auth.md`, `CHANGELOG.md`, `specs/073-…/spec.md`, `plan.md`)*
-- [ ] **T47** — Préparer un jeu de données de dev : un département « Vie des STAR » et une
+- [x] **T47** — Préparer un jeu de données de dev : un département « Vie des STAR » et une
   candidature d'exemple, si le seed de dev couvre les autres fonctions.
   *(fichier : `prisma/seed-dev.ts`)*
+  — Fait pour le département (`prisma/fixtures/dev-structure.ts`). Pas de candidature d'exemple :
+  la photo est obligatoire et vit dans le stockage objet, que le seed ne remplit pas ; une
+  candidature se crée en quelques secondes depuis `/servir/<slug>`.
 
 ## Vérification finale
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `npm run lint:boundaries` et `npm run lint:prisma-boundary` (seuil inchangé)
-- [ ] `npm run test`
-- [ ] `npm run build` (frontière client/serveur, `@react-pdf/renderer`) et `git checkout
+- [x] `npm run typecheck`
+- [x] `npm run lint`
+- [x] `npm run lint:boundaries` et `npm run lint:prisma-boundary` (seuil inchangé)
+- [x] `npm run test`
+- [x] `npm run build` (frontière client/serveur, `@react-pdf/renderer`) et `git checkout
   next-env.d.ts`
-- [ ] `npm audit --omit=dev --audit-level=high`
+- [x] `npm audit --omit=dev --audit-level=high`
 - [ ] Parcours manuel en local :
   1. soumission depuis un mobile ;
   2. fiche PVS ;
@@ -323,5 +326,5 @@
   7. réaffectation ;
   8. confirmation ;
   9. « Ma fiche » côté STAR.
-- [ ] Tous les critères d'acceptation de `spec.md` satisfaits
+- [x] Tous les critères d'acceptation de `spec.md` satisfaits
 - [ ] PR ouverte vers `main` (après accord), déployée en recette pour la revue de Jenny

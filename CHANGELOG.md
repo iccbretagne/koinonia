@@ -6,6 +6,10 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+
+- Candidatures au service (spec 073), d'après le formulaire proposé par le Pôle Vie des STAR. Une personne qui veut servir remplit sa fiche en ligne à l'adresse `/servir/<église>` (identité et photo, coordonnées, parcours spirituel, formations PCNC, service, disponibilité), avec son consentement et la durée de conservation affichés. Le Pôle Vie des STAR (département de fonction « Vie des STAR ») et l'Admin la reçoivent dans « Candidatures », la consultent, la téléchargent en PDF, la rattachent si besoin à une fiche STAR existante, puis l'orientent vers un ou plusieurs départements ou ne la retiennent pas. Les responsables et le Ministre de chaque département voient alors la fiche, accueillent la personne — elle devient STAR du département pour une période d'observation de 3 mois par défaut — puis la confirment ou la renvoient au PVS avec un motif. Une observation terminée sans décision est relancée chaque semaine. Les notifications ne contiennent qu'un lien, et l'adresse email du PVS reçoit une copie des nouvelles candidatures et des renvois. Une candidature non retenue est effacée après 12 mois (réglable), et une candidature jamais traitée aussi, avec un avertissement un mois avant. Le STAR accueilli relit sa fiche dans « Mon profil », et la liste des STAR signale les personnes « En observation ». Chaque consultation et téléchargement de fiche est inscrit dans l'historique.
+
 ## [v1.33.0] - 2026-10-27
 
 ### Ajouté

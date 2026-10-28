@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { resolveChurchId } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
 import { Alert, EmptyState, PageHeader, StatusChip, buttonClasses } from "@/components/ui";
 import { getApplication } from "@/modules/serving";
@@ -9,6 +10,8 @@ import { APPLICATION_STATUS_LABEL } from "@/modules/serving/schemas";
 import ApplicationAnswers from "../ApplicationAnswers";
 import AssignmentChip, { formatDay } from "../AssignmentChip";
 import ApplicationActions from "./ApplicationActions";
+import AssignModal from "./AssignModal";
+import AssignmentActions from "./AssignmentActions";
 
 /**
  * Fiche de candidature (spec 073). L'église qui fait foi est celle de la candidature ; chaque
@@ -17,8 +20,10 @@ import ApplicationActions from "./ApplicationActions";
 export default async function CandidaturePage({ params }: { readonly params: Promise<{ id: string }> }) {
   const { id } = await params;
   let app;
+  let churchId: string;
   try {
-    const actor = await requireServingActor(await resolveChurchId("servingApplication", id));
+    churchId = await resolveChurchId("servingApplication", id);
+    const actor = await requireServingActor(churchId);
     app = await getApplication(actor, id);
   } catch (error) {
     if (error instanceof ApiError && error.statusCode === 404) notFound();
@@ -30,6 +35,18 @@ export default async function CandidaturePage({ params }: { readonly params: Pro
 
   const hasActive = app.assignments.some((a) => a.status !== "SENT_BACK");
   const canReject = app.canManage && app.status !== "REJECTED" && !hasActive;
+  // Orientation : candidature reçue, ou validée avec un renvoi à traiter (réaffectation).
+  const canAssign = app.canManage && (app.status === "RECEIVED" || (app.status === "VALIDATED" && app.hasPendingSendBack));
+  const departments = canAssign
+    ? (
+        await prisma.department.findMany({
+          where: { isSystem: false, ministry: { churchId } },
+          select: { id: true, name: true, ministry: { select: { name: true } } },
+          orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
+        })
+      ).map((d) => ({ id: d.id, name: d.name, ministryName: d.ministry.name }))
+    : [];
+  const name = `${app.firstName} ${app.lastName}`;
 
   return (
     <div className="max-w-4xl mx-auto space-y-4">
@@ -72,13 +89,31 @@ export default async function CandidaturePage({ params }: { readonly params: Pro
                   {a.decidedAt && <span className="text-xs text-ink-subtle">le {formatDay(a.decidedAt)}</span>}
                 </div>
                 {a.sentBackReason && <p className="text-sm text-ink-muted">Motif du renvoi : {a.sentBackReason}</p>}
+                {a.leads && (a.status === "PENDING" || a.status === "OBSERVATION") && (
+                  <AssignmentActions assignmentId={a.id} status={a.status} name={name} departmentName={a.departmentName} />
+                )}
               </li>
             ))}
           </ul>
         </section>
       )}
 
-      {canReject && <ApplicationActions applicationId={app.id} name={`${app.firstName} ${app.lastName}`} />}
+      {(canAssign || canReject) && (
+        <div className="flex flex-wrap gap-2">
+          {canAssign && (
+            <AssignModal
+              applicationId={app.id}
+              name={name}
+              departments={departments}
+              excludedIds={app.assignments.filter((a) => a.status !== "SENT_BACK").map((a) => a.departmentId)}
+              member={app.member}
+              memberLocked={app.assignments.some((a) => a.status === "OBSERVATION" || a.status === "CONFIRMED")}
+              reassign={app.status === "VALIDATED"}
+            />
+          )}
+          {canReject && <ApplicationActions applicationId={app.id} name={name} />}
+        </div>
+      )}
 
       <ApplicationAnswers app={app} />
     </div>

@@ -26,3 +26,14 @@ export {
   DEFAULT_RETENTION_MONTHS,
   type ServingSettingsView,
 } from "./services/settings";
+export {
+  assignApplication,
+  acceptAssignment,
+  confirmAssignment,
+  sendBackAssignment,
+  type AttachMember,
+  type DetachMember,
+} from "./services/assignments";
+export { findMemberMatches, listObservationMemberIds, type MemberMatch, type MemberSearch } from "./services/members";
+export { getOwnApplication, type OwnApplicationView, type OwnAssignment } from "./services/own";
+export { runServingTasks, type ServingTasksResult } from "./services/lifecycle";

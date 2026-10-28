@@ -1,7 +1,7 @@
 # Plan technique — Candidatures au service (fiche STAR)
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Validé
+- **Statut** : Terminé
 - **Mis à jour le** : 2026-10-28
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
@@ -282,9 +282,13 @@ ce département. Un refus avant l'accueil (`PENDING` → `SENT_BACK`) ne touche 
   - avertissement PVS un mois avant effacement d'une candidature jamais traitée
     (`purgeWarnedAt`), D5 ;
   - **purge** : candidatures arrivées à échéance, sans affectation `PENDING`, `OBSERVATION` ni
-    `CONFIRMED`. Suppression de la ligne (affectations en cascade) **puis** de la photo
-    (`deleteMediaFile`). Une photo dont la suppression échoue est journalisée et retentée au
-    passage suivant via une clé orpheline. Le journal `DELETE` ne porte que l'identifiant.
+    `CONFIRMED`. ~~Suppression de la ligne puis de la photo, clé orpheline retentée~~ —
+    **modifié à l'implémentation** : la photo est supprimée **d'abord** (`deleteMediaFile`,
+    idempotent côté stockage), puis la ligne (affectations en cascade) et ses notifications. Si
+    la photo ne part pas, la ligne reste et le passage suivant réessaie naturellement : aucune
+    clé orpheline à suivre. La tâche planifiée n'ayant pas d'auteur (`AuditLog.userId` est
+    obligatoire), l'effacement est tracé dans le journal technique (`logger.info`, identifiant
+    et église seulement) plutôt que dans `audit_logs`.
 
 **Journal d'audit** : `logAudit` accepte `"VIEW"` en plus. C'est un ajout au type, sans
 migration, puisque `action` est une chaîne. Les consultations de fiche (`VIEW`) et les

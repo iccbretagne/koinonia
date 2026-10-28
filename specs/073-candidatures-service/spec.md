@@ -1,7 +1,7 @@
 # Spec — Candidatures au service (fiche STAR)
 
 - **Numéro** : 073
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-10-28
 - **Branche suggérée** : `feat/candidatures-service`
 
@@ -173,61 +173,61 @@ jointe : un lien vers Koinonia suffit.
 ## Critères d'acceptation
 
 **Formulaire public**
-- [ ] Chaque église a sa propre adresse publique de candidature, qui affiche son nom.
-- [ ] Une église sans département PVS ou inconnue affiche « formulaire non disponible ».
-- [ ] La fiche comporte tous les champs du formulaire de Jenny.
-- [ ] Le consentement est obligatoire et la page annonce qui verra la fiche et la durée de
+- [x] Chaque église a sa propre adresse publique de candidature, qui affiche son nom.
+- [x] Une église sans département PVS ou inconnue affiche « formulaire non disponible ».
+- [x] La fiche comporte tous les champs du formulaire de Jenny.
+- [x] Le consentement est obligatoire et la page annonce qui verra la fiche et la durée de
   conservation.
-- [ ] La photo est obligatoire et limitée à 8 Mo ; une image non valide est refusée avec un
+- [x] La photo est obligatoire et limitée à 8 Mo ; une image non valide est refusée avec un
   message.
-- [ ] Un envoi réussi affiche une confirmation.
-- [ ] La vérification anti-robots et la limite d'envois s'appliquent.
+- [x] Un envoi réussi affiche une confirmation.
+- [x] La vérification anti-robots et la limite d'envois s'appliquent.
 
 **Accès**
-- [ ] Avant affectation, seuls l'équipe PVS et l'Admin de l'église (et le Super Admin) voient et
+- [x] Avant affectation, seuls l'équipe PVS et l'Admin de l'église (et le Super Admin) voient et
   téléchargent la candidature.
-- [ ] Un Resp. ou Ministre ne voit une candidature qu'une fois affectée à son département, et ne
+- [x] Un Resp. ou Ministre ne voit une candidature qu'une fois affectée à son département, et ne
   la voit plus après un renvoi.
-- [ ] Une candidature d'une église n'est jamais visible depuis une autre église.
-- [ ] Le téléchargement PDF se fait depuis Koinonia, avec la photo.
-- [ ] Chaque consultation et chaque téléchargement est journalisé.
+- [x] Une candidature d'une église n'est jamais visible depuis une autre église.
+- [x] Le téléchargement PDF se fait depuis Koinonia, avec la photo.
+- [x] Chaque consultation et chaque téléchargement est journalisé.
 
 **Circuit**
-- [ ] Le PVS peut valider en affectant à un ou plusieurs départements, ou marquer « non
+- [x] Le PVS peut valider en affectant à un ou plusieurs départements, ou marquer « non
   retenue ».
-- [ ] Le Resp. ou le Ministre peut accepter une affectation : la personne devient STAR du
+- [x] Le Resp. ou le Ministre peut accepter une affectation : la personne devient STAR du
   département, marquée « en observation » et planifiable, pour la durée d'observation de
   l'église.
-- [ ] Le PVS (responsable du PVS) et l'Admin règlent la durée d'observation (3 mois par défaut) ;
+- [x] Le PVS (responsable du PVS) et l'Admin règlent la durée d'observation (3 mois par défaut) ;
   un changement ne modifie pas les observations en cours.
-- [ ] Un renvoi retire la personne du département concerné.
-- [ ] Sans décision à la fin de l'observation, l'observation passe « échue » et des relances partent
+- [x] Un renvoi retire la personne du département concerné.
+- [x] Sans décision à la fin de l'observation, l'observation passe « échue » et des relances partent
   jusqu'à une décision ; aucune confirmation automatique.
-- [ ] Le Resp. ou le Ministre peut renvoyer au PVS, avant ou pendant l'observation, avec un motif
+- [x] Le Resp. ou le Ministre peut renvoyer au PVS, avant ou pendant l'observation, avec un motif
   obligatoire. Les autres affectations ne changent pas.
-- [ ] Le Resp. ou le Ministre peut confirmer le STAR pendant l'observation.
-- [ ] Un rappel part avant la fin de l'observation.
-- [ ] Le PVS peut réaffecter une candidature renvoyée.
-- [ ] À la validation, le PVS peut rattacher la candidature à une fiche STAR existante, avec une
+- [x] Le Resp. ou le Ministre peut confirmer le STAR pendant l'observation.
+- [x] Un rappel part avant la fin de l'observation.
+- [x] Le PVS peut réaffecter une candidature renvoyée.
+- [x] À la validation, le PVS peut rattacher la candidature à une fiche STAR existante, avec une
   suggestion des homonymes et des emails identiques.
 
 **Notifications et email de département**
-- [ ] Les notifications du tableau ci-dessus partent, sans pièce jointe ni donnée sensible.
-- [ ] L'Admin d'église et le responsable du PVS peuvent saisir l'adresse email du PVS, qui reçoit
+- [x] Les notifications du tableau ci-dessus partent, sans pièce jointe ni donnée sensible.
+- [x] L'Admin d'église et le responsable du PVS peuvent saisir l'adresse email du PVS, qui reçoit
   les notifications de nouvelle candidature et de renvoi.
 
 **Consultation par le STAR**
-- [ ] Un STAR accueilli dans au moins un département, compte lié à sa fiche, voit sa fiche de
+- [x] Un STAR accueilli dans au moins un département, compte lié à sa fiche, voit sa fiche de
   candidature dans « Mon profil », en lecture seule, avec le téléchargement PDF.
-- [ ] Il voit ses départements et leur étape, jamais les motifs de renvoi, les affectations
+- [x] Il voit ses départements et leur étape, jamais les motifs de renvoi, les affectations
   renvoyées ni le journal.
-- [ ] Sans accueil en cours ou confirmé, ou sans compte lié, il ne voit rien.
+- [x] Sans accueil en cours ou confirmé, ou sans compte lié, il ne voit rien.
 
 **Conservation**
-- [ ] Une candidature non retenue est effacée, photo comprise, 1 an après la décision ; une
+- [x] Une candidature non retenue est effacée, photo comprise, 1 an après la décision ; une
   candidature jamais traitée, 1 an après sa réception (PVS prévenu un mois avant).
-- [ ] La durée est réglable par église, par l'Admin ou le responsable du PVS.
-- [ ] L'effacement est journalisé sans donnée personnelle.
+- [x] La durée est réglable par église, par l'Admin ou le responsable du PVS.
+- [x] L'effacement est journalisé sans donnée personnelle.
 
 ## Hors périmètre
 

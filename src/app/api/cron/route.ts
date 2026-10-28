@@ -47,6 +47,13 @@ async function runJobsLifecycleTask(appUrl: string) {
   return runJobOffersLifecycle(appUrl);
 }
 
+/** Candidatures au service (spec 073) : rappels de fin d'observation, relances, effacement. */
+async function runServingTasks() {
+  if (!registry.has("serving")) return null;
+  const { runServingTasks: run } = await import("@/modules/serving");
+  return run();
+}
+
 /** Collecte des disponibilités (spec 058) : ouverture, demandes ciblées, relances. Module planning (noyau). */
 async function runAvailabilityTasks() {
   const { runAvailabilityTasks: run } = await import("@/modules/planning");
@@ -368,6 +375,8 @@ function cronTasks(appUrl: string): CronTask[] {
       run: () => runIntegrationInactivityTasks(appUrl),
     },
     { key: "care", module: "care", schedule: { kind: "interval", minutes: 60 }, run: () => runCareTasks(appUrl) },
+    // Rappels idempotents (horodatages) et effacement au terme de la conservation.
+    { key: "serving", module: "serving", schedule: { kind: "interval", minutes: 60 }, run: runServingTasks },
     { key: "jobs-lifecycle", module: "jobs", schedule: { kind: "interval", minutes: 60 }, run: () => runJobsLifecycleTask(appUrl) },
     // Le délai de regroupement est réglé par église ; le passage de 5 minutes borne la précision.
     { key: "planning-change-notices", schedule: { kind: "every-run" }, run: runPlanningChangeNotices },
@@ -406,6 +415,7 @@ export async function POST(request: Request) {
       msdpInactivity: care?.msdpInactivityResult ?? null,
       careRelance: care?.careRelanceResult ?? null,
       jobOffersLifecycle: resultOf(outcomes["jobs-lifecycle"]),
+      serving: resultOf(outcomes["serving"]),
       availability: resultOf(outcomes["availability"]),
       planningChangeNotices: resultOf(outcomes["planning-change-notices"]),
       serviceWithdrawalRelances: resultOf(outcomes["service-withdrawal-relances"]),

@@ -8,7 +8,9 @@ import ThemeSelector from "@/components/ThemeSelector";
 import Alert from "@/components/ui/Alert";
 import PageHeader from "@/components/ui/PageHeader";
 import StatusChip from "@/components/ui/StatusChip";
-import { Bell, ChevronRight, Clock, Link2 } from "lucide-react";
+import { Bell, ChevronRight, Clock, FileText, Link2 } from "lucide-react";
+import { registry } from "@/lib/registry";
+import { getOwnApplication } from "@/modules/serving";
 
 /** Section de la page profil : titre `title-md` puis contenu sur une carte. */
 function ProfileSection({
@@ -99,6 +101,17 @@ export default async function ProfilePage() {
     orderBy: { name: "asc" },
   });
 
+  // Fiche de candidature du STAR accueilli (spec 073, D8), une par église liée
+  const ownApplications = registry.has("serving")
+    ? (
+        await Promise.all(
+          links
+            .filter((l) => l.validatedAt)
+            .map(async (l) => ({ church: l.church, app: await getOwnApplication(session.user.id, l.church.id) }))
+        )
+      ).filter((o) => o.app !== null)
+    : [];
+
   const displayName = session.user.displayName ?? session.user.name ?? session.user.email ?? "";
   const initials = displayName
     .split(/\s+/)
@@ -182,6 +195,26 @@ export default async function ProfilePage() {
           </ul>
         )}
       </ProfileSection>
+
+      {ownApplications.length > 0 && (
+        <ProfileSection title="Ma fiche de candidature" description="Les réponses envoyées au Pôle Vie des STAR, en lecture seule.">
+          <ul className="-my-2 divide-y divide-line">
+            {ownApplications.map((o) => (
+              <li key={o.church.id}>
+                <Link
+                  href={`/candidatures/ma-fiche?churchId=${o.church.id}`}
+                  className="-mx-2 flex min-h-11 items-center gap-3 rounded-control px-2 py-3 text-[15px] font-semibold text-ink transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-focus"
+                >
+                  <FileText aria-hidden="true" className="size-5 text-ink-subtle" strokeWidth={1.75} />
+                  <span className="flex-1">Voir ma fiche</span>
+                  <span className="text-[13px] font-normal text-ink-muted">{o.church.name}</span>
+                  <ChevronRight aria-hidden="true" className="size-4 text-ink-subtle" strokeWidth={1.75} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </ProfileSection>
+      )}
 
       {rejectedRequests.length > 0 && (
         <ProfileSection title="Demandes refusées">

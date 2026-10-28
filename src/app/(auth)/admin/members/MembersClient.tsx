@@ -26,6 +26,8 @@ interface Member {
   primaryDepartment: { id: string; name: string; ministry: { id: string; name: string } } | null;
   allDepartments: DeptRef[];
   userLink: { userId: string; userName: string | null; userEmail: string } | null;
+  /** Départements où le STAR est en période d'observation (candidatures, spec 073). */
+  observationDeptIds?: string[];
 }
 
 type DuplicateCandidate = { id: string; firstName: string; lastName: string; email: string | null };
@@ -685,6 +687,15 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
 
                 {/* Departments */}
                 <div className="flex flex-wrap gap-1.5">
+                  {(m.observationDeptIds ?? []).length > 0 && (
+                    <span className="text-xs bg-warning-soft text-warning px-2 py-0.5 rounded-full font-medium">
+                      En observation
+                      {(() => {
+                        const names = m.allDepartments.filter((d) => m.observationDeptIds!.includes(d.id)).map((d) => d.name);
+                        return names.length > 0 ? ` · ${names.join(", ")}` : "";
+                      })()}
+                    </span>
+                  )}
                   {m.primaryDepartment && (
                     <span className="text-xs bg-brand-soft text-brand-text px-2 py-0.5 rounded-full font-medium">
                       {m.primaryDepartment.name}

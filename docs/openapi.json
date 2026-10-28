@@ -6793,7 +6793,7 @@
           "noyau"
         ],
         "summary": "Exécution des tâches planifiées",
-        "description": "**Accès** : tâche planifiée (`Authorization: Bearer $CRON_SECRET`) — en-tête `Authorization: Bearer <CRON_SECRET>` (401 sinon).\n\nAppelée toutes les 5 minutes par le minuteur système ; chaque tâche ne s'exécute que lorsqu'elle est due (ADR-0021). Tâches : rappels de service J-1 et J-3, récapitulatif des changements au secrétariat, relances d'intégration et de soins pastoraux, cycle de vie des offres d'emploi, collecte des disponibilités (spec 058), récapitulatifs de changements de planning (spec 060) et relance des services à remplacer (spec 061). Les tâches d'un module désactivé ne sont pas exécutées.",
+        "description": "**Accès** : tâche planifiée (`Authorization: Bearer $CRON_SECRET`) — en-tête `Authorization: Bearer <CRON_SECRET>` (401 sinon).\n\nAppelée toutes les 5 minutes par le minuteur système ; chaque tâche ne s'exécute que lorsqu'elle est due (ADR-0021). Tâches : rappels de service J-1 et J-3, récapitulatif des changements au secrétariat, relances d'intégration et de soins pastoraux, cycle de vie des offres d'emploi, collecte des disponibilités (spec 058), récapitulatifs de changements de planning (spec 060), relance des services à remplacer (spec 061) et cycle de vie des candidatures au service (spec 073 : rappels de fin d'observation, relances, effacement). Les tâches d'un module désactivé ne sont pas exécutées.",
         "security": [
           {
             "cron": []
@@ -19638,6 +19638,114 @@
         }
       }
     },
+    "/api/serving/applications/{id}/assignments": {
+      "post": {
+        "tags": [
+          "serving"
+        ],
+        "summary": "Orienter une candidature vers des départements",
+        "description": "**Accès** : toute personne connectée — équipe PVS, `serving:manage` ou Super Admin, dans l'église de la candidature.\n\nSpec 073. Crée une affectation en attente par département (départements non système de l'église, 400 sinon) et valide la candidature ; sert aussi à réaffecter après un renvoi, les renvois en attente étant alors considérés comme traités. Refusé (409) si la candidature n'est pas retenue, si le département suit déjà la personne, ou si la fiche STAR rattachée en est déjà membre. Notifie les responsables et le Ministre de chaque département (lien seul). Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "departmentIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "minItems": 1,
+                    "maxItems": 10
+                  }
+                },
+                "required": [
+                  "departmentIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Fiche à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/serving/applications/{id}/member-matches": {
+      "get": {
+        "tags": [
+          "serving"
+        ],
+        "summary": "Fiches STAR qui pourraient correspondre",
+        "description": "**Accès** : toute personne connectée — équipe PVS, `serving:manage` ou Super Admin, dans l'église de la candidature.\n\nSpec 073. Fiches STAR de l'église portant les mêmes prénom et nom que la candidature, ou la même adresse email, pour rattacher la candidature plutôt que créer un doublon à l'accueil. Identité et départements seulement.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste `{ id, firstName, lastName, email, departmentNames, reason }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
     "/api/serving/applications/{id}/pdf": {
       "get": {
         "tags": [
@@ -19707,6 +19815,150 @@
             "description": "Image JPEG",
             "content": {
               "image/jpeg": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/serving/assignments/{id}": {
+      "patch": {
+        "tags": [
+          "serving"
+        ],
+        "summary": "Décision du département sur une affectation",
+        "description": "**Accès** : toute personne connectée — responsable (principal ou adjoint) du département de l'affectation, Ministre de son ministère, ou Super Admin.\n\nSpec 073. `accept` (en attente) : la personne devient STAR du département — fiche STAR créée depuis la candidature si aucune n'est rattachée — et la période d'observation commence, sa durée étant figée au réglage du moment. `confirm` (en observation, avant ou après l'échéance) : STAR confirmé, PVS notifié. `send-back` (en attente ou en observation, motif obligatoire) : renvoi au PVS ; pendant l'observation, la personne est retirée du département et ses services à venir y sont supprimés ; PVS notifié, copie à l'adresse du PVS. Toute autre transition : 409. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "accept"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "confirm"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "send-back"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 2000
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "reason"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ applicationId }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/serving/me": {
+      "get": {
+        "tags": [
+          "serving"
+        ],
+        "summary": "Ma fiche de candidature",
+        "description": "**Accès** : toute personne connectée — tout utilisateur ayant un rôle dans l'église.\n\nSpec 073 (D8). Fiche de candidature de l'utilisateur dans l'église, en lecture seule, une fois accueilli par au moins un département (via une fiche STAR liée à son compte). Sans information interne : ni motif, ni département qui l'a renvoyé. `null` s'il n'en a pas.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fiche et départements d'accueil, ou `null`",
+            "content": {
+              "application/json": {
                 "schema": {}
               }
             }
