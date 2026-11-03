@@ -49,7 +49,7 @@ STAR compris, indépendamment de son rôle et de son département :
 | **Organisateur** | tout paramétrer, voir tous les tableaux, attribuer les rôles, constituer l'équipe |
 | **Trésorier** | confirmer les paiements, encaisser, rembourser, exporter les règlements |
 | **Accueil / sécurité** | contrôler les entrées et sorties, chercher un nom, voir le compteur, encaisser une entrée à régler ; ne voit pas les coordonnées |
-| **Restauration** (Agapé) | distribuer ce qui est « à retirer sur place » (repas), encaisser sur place, gérer le stock |
+| **Restauration** (Agapé) | composer le menu (plats, descriptions, allergènes, stock), distribuer ce qui est « à retirer sur place », encaisser sur place, gérer le stock, imprimer les étiquettes |
 | **Observateur** | voir les tableaux de bord, sans rien modifier |
 
 - Une personne peut cumuler plusieurs rôles.
@@ -98,6 +98,21 @@ Une option peut être, par exemple, un repas, un t-shirt ou une place dans la na
 - un réglage **remboursable** et une **date limite de remboursement**.
 
 Un concert peut n'avoir **aucune** option.
+
+**Qui compose le menu.** Pour une option « à retirer sur place », comme un repas, l'équipe
+**Restauration** compose le menu. Elle peut :
+- ajouter, renommer et décrire les plats (variantes) ;
+- indiquer les allergènes ;
+- fixer le stock de chaque plat.
+
+L'**organisateur** garde ce qui engage les inscrits : l'existence de l'option, son **prix**, la
+**date limite de paiement** et les règles de **remboursement**.
+
+Une fois les inscriptions ouvertes :
+- un plat déjà réservé ne peut pas être supprimé. Il peut seulement être **fermé** aux nouvelles
+  commandes ;
+- le stock ne peut pas descendre sous le nombre déjà réservé ;
+- chaque modification est inscrite dans l'historique de l'événement.
 
 #### Inscription (page publique)
 
@@ -341,6 +356,33 @@ comme le contrôle.
   allergies signalées.
 - **Après l'événement** : repas non retirés et ventes sur place.
 
+#### Étiquettes (préparation nominative)
+
+Option par repas, **« Préparation nominative »**, activable par l'organisateur ou la
+restauration. Elle sert quand les repas sont préparés en paquets au nom des personnes.
+
+**Contenu d'une étiquette** (une par repas) :
+- le nom du participant ;
+- le plat ;
+- les allergies signalées ;
+- la référence de la réservation ;
+- « à régler : 12 € » si le repas n'est pas encore payé ;
+- un code facultatif qui ouvre la réservation sur l'écran de distribution. Ce code **ne permet
+  pas d'entrer** : il est distinct du billet.
+
+**Impression** sur planches d'étiquettes A4 standard, depuis le navigateur, sans logiciel. On
+choisit :
+- **le format** de la planche ;
+- **l'ensemble à imprimer** :
+  - tous les repas ;
+  - un plat à la fois ;
+  - les repas groupés par réservation, pour faire un sac par famille ;
+  - seulement les étiquettes nouvelles ou modifiées depuis la dernière impression.
+
+**Étiquette périmée.** Quand un inscrit change de plat ou annule après l'impression, l'écran de
+distribution signale « étiquette à refaire ». La restauration peut réimprimer cette étiquette
+seule.
+
 ### Données personnelles
 
 - **Données minimales** :
@@ -459,6 +501,13 @@ comme le contrôle.
 - [ ] Le stock par variante (préparés, réservés, remis, disponibles) se met à jour en direct, et la
   vente sur place décompte le stock disponible.
 - [ ] Avant l'événement, la restauration lit le nombre de repas à préparer par variante.
+- [ ] La restauration compose le menu : plats, descriptions, allergènes et stock. Elle ne peut
+  modifier ni le prix, ni la date limite de paiement, ni les règles de remboursement. Un plat
+  réservé ne se supprime pas, et le stock ne descend pas sous le nombre réservé.
+- [ ] Avec la préparation nominative, la restauration imprime une étiquette par repas : tout, par
+  plat, par réservation, ou seulement les nouvelles. Une étiquette périmée est signalée à la
+  distribution.
+- [ ] Le code d'une étiquette ne fait pas entrer au contrôle.
 
 ### Commun
 - [ ] Désactivé, le module n'apparaît nulle part et sa page publique répond « non disponible ».

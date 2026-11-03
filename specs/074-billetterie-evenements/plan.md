@@ -83,8 +83,10 @@ model TicketingEvent {
 }
 model TicketingTariff   { id, eventId, ageGroup, price Decimal, @@unique([eventId, ageGroup]) }
 model TicketingOption   { id, eventId, label, type, scope, price Decimal, stock Int?, pickup Boolean,
+                          namedPrep Boolean @default(false),   // préparation nominative (étiquettes)
                           refundable Boolean, refundDeadline DateTime?, position }
-model TicketingVariant  { id, optionId, label, stock Int?, prepared Int?, position }   // CHOICE ; préparés : Agapé
+model TicketingVariant  { id, optionId, label, description?, allergens?, stock Int?, prepared Int?,
+                          closed Boolean @default(false), position }   // menu composé par Agapé
 model TicketingBooking  {
   id, eventId, reference (unique par événement), contactName, contactEmail, contactPhone?,
   userId?                    // compte dont l'email correspond, pour « Mes réservations »
@@ -99,7 +101,9 @@ model TicketingParticipant {
 }
 model TicketingItem {        // option choisie, par participant ou par réservation
   id, bookingId, participantId?, optionId, variantId?, quantity Int, unitPrice Decimal,
-  status TicketingChargeStatus, deliveredQty Int @default(0), deliveredAt?, deliveredById?
+  status TicketingChargeStatus, deliveredQty Int @default(0), deliveredAt?, deliveredById?,
+  labelTokenHash @unique?,         // code d'étiquette : ouvre la distribution, jamais le contrôle
+  labelPrintedAt?, labelPrintedVersion Int?, labelVersion Int @default(1)   // étiquette périmée si différent
 }
 model TicketingPayment {     // déclaration, encaissement, remboursement
   id, bookingId, kind, status, method (WERO | REVOLUT | TRANSFER | CASH | CHEQUE),
@@ -151,7 +155,9 @@ cochés par l'agent. On n'a donc jamais à répartir un montant après coup.
 | paramétrer, rôles, équipe | ORGANIZER |
 | règlements, remboursements | ORGANIZER, TREASURER |
 | contrôle d'accès, ajout sur place | ORGANIZER, RECEPTION |
-| distribution, stock | ORGANIZER, CATERING |
+| distribution, stock, étiquettes | ORGANIZER, CATERING |
+| menu d'une option à retirer : variantes, descriptions, allergènes, stock, fermeture | ORGANIZER, CATERING |
+| existence de l'option, prix, date limite de paiement, remboursement | ORGANIZER |
 | tableaux en lecture | tous les rôles |
 
 - **Données servies à RECEPTION** : nom, tranche d'âge, état « à régler » de l'entrée, et
@@ -224,6 +230,19 @@ la matrice figée, `CLAUDE.md` et `docs/auth.md`.
   `capacityLevel` vaut `ok`, `90` ou `100`. Une notification à l'organisateur part au premier
   franchissement des 90 % et des 100 %.
 - **`catering.ts`** : à préparer par variante (payés et dus), stock en direct, non retirés.
+- **`menu.ts`** : édition du menu par la restauration.
+  - variantes : ajout, renommage, description, allergènes, stock, fermeture ;
+  - un plat réservé ne se supprime pas, il se ferme seulement ;
+  - le stock ne descend pas sous le nombre réservé ;
+  - les champs réservés à l'organisateur sont refusés ;
+  - chaque changement est journalisé (`logAudit`, entité `TicketingOption`).
+- **`labels.ts`** : étiquettes des options `namedPrep`.
+  - sélection : tout, par variante, par réservation, ou nouvelles et modifiées
+    (`labelPrintedVersion ≠ labelVersion`) ;
+  - le contenu : nom, plat, allergies (réponses), référence, « à régler », et le code d'étiquette
+    si demandé ;
+  - `markPrinted` ;
+  - `labelVersion` s'incrémente à chaque changement de plat, de nom ou d'état de l'élément.
 - **`exports.ts`** (`exceljs`) : participants, règlements, remboursements, options, registre
   des passages.
 - **`emails.ts`** : gabarits en `buildXxxEmail` (`@/lib/email`).
@@ -252,7 +271,8 @@ Toutes les routes ont leur `contract.ts`, et `npm run openapi` est relancé.
 | `…/[id]/snapshot` | GET `?for=reception\|catering` | RECEPTION ou CATERING (et ORGANIZER) |
 | `…/[id]/sync` | POST | RECEPTION ou CATERING selon les opérations |
 | `…/[id]/presence` | GET | tous les rôles |
-| `…/[id]/variants/[variantId]` | PATCH (`prepared`) | CATERING, ORGANIZER |
+| `…/[id]/options/[optionId]/variants`, `…/variants/[variantId]` | POST, PATCH, DELETE (menu, préparés, fermeture) | CATERING, ORGANIZER |
+| `…/[id]/labels` | GET `?set=all\|variant\|booking\|changed&variantId=`, POST (marquer imprimées) | CATERING, ORGANIZER |
 | `…/[id]/export` | GET `?type=participants\|payments\|options\|passages` | ORGANIZER ; TREASURER pour les règlements |
 | `…/[id]/poster` | GET, PUT, DELETE | lecture publique si l'événement est publié ; écriture ORGANIZER |
 | `/api/ticketing/my` | GET | session : mes réservations et mes affectations |
@@ -298,6 +318,12 @@ réservations.
   - compteur et alerte de jauge ;
   - ajout sur place ;
   - +1 / −1 avec motif.
+- **`[id]/etiquettes/page.tsx`** : page d'impression, avec des styles `@media print` et des
+  formats de planche A4 au choix (par exemple 3 × 7 de 63,5 × 38,1 mm, ou 2 × 7 de
+  99,1 × 38,1 mm). Les QR sont générés par `src/lib/qr.ts`, et l'impression se fait avec
+  `window.print()`, sans dépendance.
+- **Écran Restauration** : onglet « Menu » (plats, descriptions, allergènes, stock, fermer un
+  plat) et badge « étiquette à refaire » sur la fiche de distribution.
 - **`mes-reservations/page.tsx`** : réservations liées au compte.
 
 **« Mon planning »** : un encart « Événements » liste les affectations de billetterie (poste,
@@ -406,6 +432,16 @@ d'événement actif (drapeau `hasTicketing` dans `(auth)/layout.tsx`).
   - ajout sur place hors ligne.
 - **`catering`** : stock (préparés, réservés, remis, disponibles), remise avec encaissement,
   vente sur place.
+- **`menu`** :
+  - la restauration modifie les plats mais pas le prix ni les règles ;
+  - un plat réservé ne se supprime pas ;
+  - le stock ne descend pas sous le nombre réservé ;
+  - audit.
+- **`labels`** :
+  - sélections ;
+  - « à régler » ;
+  - étiquette périmée après un changement de plat ;
+  - un code d'étiquette refusé au contrôle d'accès, et accepté à la distribution.
 - **`snapshot`** : l'accueil ne reçoit ni email, ni téléphone de contact, ni montants d'options.
 - **Routes publiques** :
   - jeton inconnu en 404 ;
