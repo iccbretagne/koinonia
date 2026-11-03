@@ -66,7 +66,10 @@ relevé de compte. Chaque ligne est soit une **entrée**, soit une **sortie** d'
 - **Champs** : la date, le montant, le **type**, le fournisseur et un commentaire facultatif.
 - **Fournisseur** : « Super U Location » est proposé par défaut, et tout autre fournisseur peut
   être saisi librement.
-- **Justificatif obligatoire** : une photo prise depuis le téléphone, ou un fichier image ou PDF.
+- **Justificatif obligatoire**, au choix :
+  - **une photo** prise sur le moment avec le téléphone ;
+  - **un document** déjà existant : scan, PDF reçu par email, image de la galerie, sur téléphone
+    comme sur ordinateur.
 - **Types** :
 
   | Type | Précisions |
@@ -188,6 +191,8 @@ Le reste de la comptabilité n'est pas touché.
   immédiatement.
 - [ ] Un membre de la navette déclare une dépense depuis son téléphone, avec la photo du
   justificatif. Elle compte aussitôt, sans validation.
+- [ ] Le justificatif peut aussi être un document existant (PDF ou image), choisi depuis un
+  téléphone ou un ordinateur.
 - [ ] Une sortie sans justificatif ne peut pas être enregistrée.
 - [ ] Pour n'importe quelle période, le tableau donne les entrées, les sorties, l'écart, les
   soldes de début et de fin, et le solde à date.

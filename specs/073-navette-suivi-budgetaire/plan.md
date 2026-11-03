@@ -277,8 +277,16 @@ comme `/api/giving/logo`. Débit limité (`RATE_LIMIT_MUTATION`).
       puis correction).
   - **Formulaire de ligne** (`Modal`, ou `BottomSheet` sur mobile) :
     - le type d'abord, puis les champs utiles à ce type ;
-    - le justificatif par `<input type="file" accept="image/*,application/pdf" capture="environment">`,
-      avec un aperçu ;
+    - le justificatif, par **deux boutons** :
+      - **« Prendre une photo »** : `<input type="file" accept="image/*" capture="environment">`
+        ouvre directement l'appareil photo ;
+      - **« Choisir un document »** : `<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf">`
+        **sans** `capture`, pour un scan, un PDF reçu par email ou une image de la galerie. Sur
+        mobile, `capture` empêcherait de choisir un fichier existant ; il faut donc deux
+        champs ;
+      - un aperçu (miniature de l'image, ou icône et nom du PDF) et « Remplacer » ;
+      - sur ordinateur, les deux boutons ouvrent le sélecteur de fichiers, et l'on peut aussi
+        glisser-déposer le fichier ;
     - le montant saisi en euros, toujours positif. Le signe est déduit du type, sauf pour le
       solde de départ ;
     - « Super U Location » proposé par défaut pour le fournisseur ;
