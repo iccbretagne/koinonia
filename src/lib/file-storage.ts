@@ -62,6 +62,23 @@ export async function deleteFile(s3Key: string): Promise<void> {
   }
 }
 
+/** Contenu d'un fichier stocké (S3 ou local), `null` s'il est introuvable. */
+export async function readStoredFile(s3Key: string): Promise<Buffer | null> {
+  if (S3_CONFIGURED) {
+    const { GetObjectCommand } = await import("@aws-sdk/client-s3");
+    const s3 = await makeS3Client();
+    try {
+      const res = await s3.send(new GetObjectCommand({ Bucket: process.env.ACCOUNTING_S3_BUCKET!, Key: s3Key }));
+      if (!res.Body) return null;
+      return Buffer.from(await res.Body.transformToByteArray());
+    } catch {
+      return null;
+    }
+  }
+  const localPath = path.join(LOCAL_BASE, ...s3Key.split("/").slice(1));
+  return fs.readFile(localPath).catch(() => null);
+}
+
 export async function serveLocalFile(s3Key: string): Promise<{ buffer: Buffer; mimeType: string } | null> {
   const localPath = path.join(LOCAL_BASE, ...s3Key.split("/").slice(1));
   try {

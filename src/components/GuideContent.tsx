@@ -461,6 +461,14 @@ const FEATURES: Feature[] = [
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "edit" },
   },
   {
+    name: "Navette : suivi du budget",
+    description: "Sous « Comptabilité », l'écran « Navette » suit le budget de la navette comme un relevé de compte : la comptabilité saisit le solde de départ et les abondements, l'équipe navette déclare chaque dépense (carburant, location, caution, péage…) avec son justificatif, en photo ou en document. Pas de validation : la dépense compte aussitôt, et la comptabilité est prévenue. L'auteur corrige ou supprime sa ligne pendant 48 heures ; tout changement est conservé dans l'historique. Choisissez une période pour voir les entrées, les sorties et le solde. Une dépense payée de sa poche se rembourse depuis la ligne (« Demander le remboursement ») ; les avances de budget versées à la Navette s'ajoutent toutes seules. L'accès est ouvert à la comptabilité et aux membres d'un département de fonction « Navette » : ajouter quelqu'un à ce département lui donne ces droits.",
+    category: "Comptabilité",
+    screenshotTitle: "Navette",
+    screenshotFile: "guide-navette.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "edit" },
+  },
+  {
     name: "Page de dons et slide",
     description: "Depuis « Page de dons » (/dons), paramétrez la page publique où chacun trouve comment donner : don en ligne, virement (IBAN vérifié, copiable en un geste), chèques et espèces dans l'enveloppe de l'accueil, reçu fiscal, verset. L'aperçu se met à jour en direct ; activez la page puis enregistrez. « Slide de projection » affiche le QR code vers la page : téléchargez-la en PNG ou projetez-la en plein écran (Échap pour sortir). « Message WhatsApp » prépare le message « Dîmes / Offrandes » à diffuser, prêt à copier. Tout changement de coordonnées bancaires est signalé à la comptabilité.",
     category: "Comptabilité",

@@ -127,6 +127,9 @@ model Church {
   // Page publique « Donner » (spec 065)
   givingPage                GivingPage?
   logos                     ChurchLogo[]
+  shuttleEntries            ShuttleEntry[]
+  shuttleRentals            ShuttleRental[]
+  shuttleSettings           ShuttleSettings?
   // Messages système (spec 071)
   systemMessages            SystemMessage[]
 
@@ -167,6 +170,11 @@ model User {
   pushSubscriptions                 PushSubscription[]
   appIconsUpdated                   AppIconVariant[]             @relation("AppIconUpdatedBy")
   churchLogosUpdated                ChurchLogo[]                 @relation("ChurchLogoUpdatedBy")
+  shuttleEntriesCreated             ShuttleEntry[]               @relation("ShuttleEntryCreatedBy")
+  shuttleEntriesUpdated             ShuttleEntry[]               @relation("ShuttleEntryUpdatedBy")
+  shuttleEntriesFlagged             ShuttleEntry[]               @relation("ShuttleEntryFlaggedBy")
+  shuttleEntriesDeleted             ShuttleEntry[]               @relation("ShuttleEntryDeletedBy")
+  shuttleRentalsCreated             ShuttleRental[]              @relation("ShuttleRentalCreatedBy")
   systemMessagesCreated             SystemMessage[]              @relation("SystemMessageCreatedBy")
   systemMessagesUpdated             SystemMessage[]              @relation("SystemMessageUpdatedBy")
   systemMessageReceipts             SystemMessageReceipt[]
@@ -1779,6 +1787,8 @@ model FinancialRequest {
   corrections  FinancialRequest[]    @relation("RequestCorrections")
   attachments  FinancialAttachment[]
   payments     FinancialPayment[]
+  shuttleReimbursedEntry ShuttleEntry? @relation("ShuttleReimbursement")
+  shuttleImportedEntry   ShuttleEntry? @relation("ShuttleSourceRequest")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2814,4 +2824,127 @@ model ChurchLogo {
   @@id([churchId, variant])
   @@index([updatedById])
   @@map("church_logos")
+}
+
+// ─── Module navette (spec 073) ─────────────────────────────────────
+
+/// Nature d'une ligne du registre de la navette.
+enum ShuttleEntryKind {
+  OPENING_BALANCE // solde de départ (signé), un seul par église
+  FUNDING // abondement de l'église (+)
+  DEPOSIT_RETURN // caution restituée (+)
+  VENDOR_REFUND // remboursement du loueur (+)
+  EXPENSE // dépense (−)
+}
+
+/// Type d'une dépense de la navette.
+enum ShuttleExpenseCategory {
+  FUEL
+  MILEAGE
+  RENTAL
+  DEPOSIT
+  TOLL_PARKING
+  CLEANING
+  DAMAGE_FINE
+  INSURANCE
+  OTHER
+}
+
+/// Mode de versement d'un abondement.
+enum ShuttlePaymentMethod {
+  TRANSFER
+  CASH
+  CHURCH_CARD
+  CHEQUE
+}
+
+/// Ligne du registre de la navette : montant signé (+ entrée, − sortie). Écrite uniquement par
+/// le service du module ; supprimée logiquement (`deletedAt`) pour rester dans l'historique.
+model ShuttleEntry {
+  id                     String                  @id @default(cuid())
+  churchId               String
+  kind                   ShuttleEntryKind
+  category               ShuttleExpenseCategory?
+  amount                 Decimal                 @db.Decimal(10, 2)
+  date                   DateTime                @db.Date
+  label                  String?                 @db.VarChar(200)
+  vendor                 String?                 @db.VarChar(120)
+  paymentMethod          ShuttlePaymentMethod?
+  liters                 Decimal?                @db.Decimal(7, 2)
+  kilometers             Int?
+  personalAdvance        Boolean                 @default(false)
+  rentalId               String?
+  /// Restitution : la caution (dépense DEPOSIT) qu'elle solde.
+  returnOfId             String?                 @unique
+  depositRetainedAt      DateTime?
+  depositRetainedNote    String?                 @db.VarChar(300)
+  /// Note de frais de remboursement créée depuis cette ligne (avance personnelle).
+  reimbursementRequestId String?                 @unique
+  /// Note de frais faite hors registre, ajoutée au registre par la compta.
+  sourceRequestId        String?                 @unique
+  receiptKey             String?                 @db.VarChar(512)
+  receiptName            String?                 @db.VarChar(255)
+  receiptMime            String?                 @db.VarChar(100)
+  receiptSize            Int?
+  flagNote               String?                 @db.VarChar(300)
+  flaggedAt              DateTime?
+  flaggedById            String?
+  createdById            String?
+  updatedById            String?
+  deletedAt              DateTime?
+  deletedById            String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+
+  church               Church            @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  rental               ShuttleRental?    @relation(fields: [rentalId], references: [id], onDelete: SetNull)
+  returnOf             ShuttleEntry?     @relation("ShuttleDepositReturn", fields: [returnOfId], references: [id], onDelete: SetNull)
+  returnedBy           ShuttleEntry?     @relation("ShuttleDepositReturn")
+  reimbursementRequest FinancialRequest? @relation("ShuttleReimbursement", fields: [reimbursementRequestId], references: [id], onDelete: SetNull)
+  sourceRequest        FinancialRequest? @relation("ShuttleSourceRequest", fields: [sourceRequestId], references: [id], onDelete: SetNull)
+  createdBy            User?             @relation("ShuttleEntryCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy            User?             @relation("ShuttleEntryUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  flaggedBy            User?             @relation("ShuttleEntryFlaggedBy", fields: [flaggedById], references: [id], onDelete: SetNull)
+  deletedBy            User?             @relation("ShuttleEntryDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull)
+
+  @@index([churchId, deletedAt, date])
+  @@index([rentalId])
+  @@index([createdById])
+  @@index([updatedById])
+  @@index([flaggedById])
+  @@index([deletedById])
+  @@map("shuttle_entries")
+}
+
+/// Location de véhicule de la navette, qui regroupe ses dépenses.
+model ShuttleRental {
+  id          String    @id @default(cuid())
+  churchId    String
+  vendor      String    @db.VarChar(120)
+  vehicle     String?   @db.VarChar(120)
+  startDate   DateTime  @db.Date
+  endDate     DateTime? @db.Date
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  church    Church         @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  createdBy User?          @relation("ShuttleRentalCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  entries   ShuttleEntry[]
+
+  @@index([churchId, startDate])
+  @@index([createdById])
+  @@map("shuttle_rentals")
+}
+
+/// Réglages de la navette par église (seuil d'alerte de solde bas ; null = désactivée).
+model ShuttleSettings {
+  churchId            String   @id
+  lowBalanceThreshold Decimal? @db.Decimal(10, 2)
+  updatedById         String?
+  updatedAt           DateTime @updatedAt
+
+  church Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  @@map("shuttle_settings")
 }

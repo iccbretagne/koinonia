@@ -421,6 +421,7 @@ Compt = Comptable.
 | `accounting:stats` | x | x | x | | | | | | | x |
 | `giving:manage` | x | x | x | | | | | | | x |
 | `messages:publish` | x | x | x | | | | | | | |
+| `shuttle:manage` | x | x | | | | | | | | x |
 | `agenda:view` | x | x | x | | | | | | | |
 | `agenda:manage` | x | x | x | | | | | | | |
 | `care:qualify` | x | x | | | | | | | x | |
@@ -551,6 +552,28 @@ renommé spec 052) :
   aperçu — l'aperçu de la slide réutilise la vraie scène via `toSlideProps`, seule traduction
   contenu → slide. Modifications non enregistrées signalées dans la barre collante, garde à la
   sortie (lien interne, fermeture, rechargement ; ni bouton « Précédent » ni palette ⌘K)
+
+**Spécificités du module navette** (spec 073) — extension de la comptabilité, désactivable seule
+(`ENABLED_MODULES`) :
+- `shuttle:manage` (Super Admin, Admin, Comptable) : registre complet de la navette sous
+  `/accounting/navette` — solde de départ, abondements, correction ou suppression de n'importe
+  quelle ligne à tout moment, signalements, cautions non restituées, seuil de solde bas, export
+- **Équipe navette** = membres d'un département de fonction `NAVETTE` (fiche liée), ses
+  responsables et adjoints (`user_departments`) et le Ministre de son ministère
+  (`getShuttleAccess`, `@/modules/shuttle/auth`), quel que soit le rôle, STAR compris. Droits
+  d'écriture énumérés (ADR-0014, règle 5) : déclarer dépenses, restitutions de caution et
+  remboursements du loueur avec justificatif (photo ou document, type vérifié sur le contenu),
+  gérer les locations, corriger ou supprimer **ses** lignes pendant 48 h, demander le
+  remboursement de **ses** avances personnelles. Composer ce département est une décision de
+  sécurité
+- Déclaratif, sans approbation : registre à montants signés (`shuttle_entries`), solde et solde
+  courant calculés à la lecture, suppression logique, historique par `logAudit` (avant/après).
+  Toute mutation par l'équipe notifie la compta (domaine `shuttle` : Comptables, à défaut
+  Admins) ; le franchissement du seuil de solde bas alerte aussi les responsables
+- Liens avec `accounting` (via son index, jamais l'inverse) : note de frais créée depuis une ligne
+  « avance personnelle » (`createLinkedExpenseReport`, justificatif copié, ouverte à l'auteur même
+  STAR), avances de budget versées au département Navette **lues** comme entrées du registre, et
+  notes de frais de la Navette hors registre ajoutables par la compta
 
 **Spécificités du module messages** (spec 071) :
 - `messages:publish` (Super Admin, Admin, Secrétaire) ouvre `/admin/messages` : publier, programmer,

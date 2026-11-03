@@ -1,7 +1,7 @@
 # Spec — Navette : suivi budgétaire déclaratif
 
 - **Numéro** : 073
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-11-03
 - **Branche suggérée** : `feat/navette-suivi-budgetaire`
 - **Issue** : [#707](https://github.com/iccbretagne/koinonia/issues/707)

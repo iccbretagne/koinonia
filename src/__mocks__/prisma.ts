@@ -16,6 +16,7 @@ function createModelMock() {
     deleteMany: vi.fn(),
     count: vi.fn(),
     groupBy: vi.fn(),
+    aggregate: vi.fn(),
   };
 }
 
@@ -120,6 +121,9 @@ export const prismaMock = {
   financialRequest: createModelMock(),
   financialAttachment: createModelMock(),
   financialPayment: createModelMock(),
+  shuttleEntry: createModelMock(),
+  shuttleRental: createModelMock(),
+  shuttleSettings: createModelMock(),
   $queryRaw: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   $transaction: vi.fn((arg: any) => (Array.isArray(arg) ? Promise.all(arg) : arg(prismaMock))),

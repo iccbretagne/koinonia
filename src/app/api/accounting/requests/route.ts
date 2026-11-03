@@ -1,9 +1,12 @@
 import { requireCurrentChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { sendEmail, buildAccountingNewRequestEmail, parseEmailList } from "@/lib/email";
-import { notifyUsers } from "@/lib/notifications";
-import { assertAttachmentsAssignable, getAccountingDepartmentScope, accountingScopeWhere } from "@/modules/accounting";
+import {
+  assertAttachmentsAssignable,
+  getAccountingDepartmentScope,
+  accountingScopeWhere,
+  notifyAccountingNewRequest,
+} from "@/modules/accounting";
 import { createSchema } from "./contract";
 
 export async function GET(request: Request) {
@@ -102,64 +105,10 @@ export async function POST(request: Request) {
     });
 
     // Notification email compta + in-app (best-effort)
-    notifyAccountingTeam(churchId, req).catch(() => {});
+    notifyAccountingNewRequest(churchId, req).catch(() => {});
 
     return successResponse(req, 201);
   } catch (error) {
     return errorResponse(error);
   }
-}
-
-async function notifyAccountingTeam(
-  churchId: string,
-  req: { id: string; label: string; type: string; description: string | null; amount: unknown; department: { name: string } | null; submittedBy: { name: string | null; email: string | null } }
-) {
-  const church = await prisma.church.findUnique({
-    where: { id: churchId },
-    select: { accountingEmails: true, name: true },
-  });
-
-  const accountants = await prisma.userChurchRole.findMany({
-    where: { churchId, role: "ACCOUNTANT" },
-    select: { userId: true },
-  });
-  const accountantIds = accountants.map((a) => a.userId);
-  const emails = parseEmailList(church?.accountingEmails);
-  if (emails.length === 0 && accountantIds.length === 0) return;
-
-  // Un seul email par destinataire : le gabarit détaillé est passé à la notification, qui
-  // l'envoie aux comptables selon leur préférence du domaine "accounting" (spec 053) — sans lui,
-  // le helper enverrait en plus son email générique.
-  // `||` et non `??` : une variable présente mais vide dans le .env ne doit pas produire un lien relatif
-  const appUrl = process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
-  const amount = Number(req.amount).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
-  const email = buildAccountingNewRequestEmail({
-    requestLabel:   req.label,
-    requestAmount:  amount,
-    requestType:    req.type,
-    departmentName: req.department?.name ?? "—",
-    submitterName:  req.submittedBy.name ?? req.submittedBy.email ?? "—",
-    description:    req.description,
-    churchName:     church!.name,
-    requestUrl:     `${appUrl}/accounting/requests/${req.id}`,
-  });
-
-  // Adresse institutionnelle configurée par l'église (church.accountingEmails, liste blanche :
-  // destinataire sans compte) — se cumule avec les comptables, ne les remplace pas.
-  if (emails.length > 0) {
-    sendEmail({ to: emails, ...email })
-      .catch((err) => console.error("[accounting] sendEmail to accountingEmails failed:", err?.message ?? err));
-  }
-
-  await notifyUsers(
-    accountantIds,
-    {
-      domain:  "accounting",
-      type:    "ACCOUNTING_NEW_REQUEST",
-      title:   "Nouvelle demande financière",
-      message: `${req.type === "EXPENSE_REPORT" ? "Note de frais" : "Avance de budget"} : ${req.label}`,
-      link:    `/accounting/requests/${req.id}`,
-    },
-    { email }
-  );
 }

@@ -3,6 +3,7 @@ import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import AccountingDashboard from "./AccountingDashboard";
+import { isShuttleVisible } from "@/modules/shuttle/auth";
 import AccountingNav from "../AccountingNav";
 
 export default async function AccountingRequestsPage() {
@@ -20,6 +21,7 @@ export default async function AccountingRequestsPage() {
   const canManage = perms.has("accounting:manage");
   const canSubmit = perms.has("accounting:submit") || isPastoral;
   const canViewStats = perms.has("accounting:stats") || isPastoral;
+  const canViewShuttle = await isShuttleVisible(session, churchId);
 
   // Scope des demandes visibles :
   // - canManage ou isPastoral → toutes les demandes de l'église
@@ -102,7 +104,7 @@ export default async function AccountingRequestsPage() {
         )}
       </div>
 
-      <AccountingNav canViewStats={canViewStats} active="requests" />
+      <AccountingNav canViewStats={canViewStats} canViewShuttle={canViewShuttle} active="requests" />
 
       <AccountingDashboard
         requests={requests.map((r) => ({
