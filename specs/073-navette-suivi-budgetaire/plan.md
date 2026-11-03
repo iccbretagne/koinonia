@@ -348,7 +348,8 @@ comme `/api/giving/logo`. Débit limité (`RATE_LIMIT_MUTATION`).
         **sans** `capture`, pour un scan, un PDF reçu par email ou une image de la galerie. Sur
         mobile, `capture` empêcherait de choisir un fichier existant ; il faut donc deux
         champs ;
-      - un aperçu (miniature de l'image, ou icône et nom du PDF) et « Remplacer » ;
+      - le nom et le poids du fichier choisi (pas de miniature : une URL d'objet en `src` est
+        signalée par CodeQL) et « Retirer » ;
       - sur ordinateur, les deux boutons ouvrent le sélecteur de fichiers, et l'on peut aussi
         glisser-déposer le fichier ;
     - le montant saisi en euros, toujours positif. Le signe est déduit du type, sauf pour le

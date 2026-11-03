@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, FileText, Upload, X } from "lucide-react";
+import { Camera, FileText, Image as ImageIcon, Upload, X } from "lucide-react";
 import { Button, Checkbox, Input, Modal, Select, Textarea, useToast } from "@/components/ui";
 import type { LedgerLine } from "@/modules/shuttle";
 import {
@@ -107,13 +107,6 @@ export default function EntryForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const preview = useMemo(() => (file?.type.startsWith("image/") ? URL.createObjectURL(file) : null), [file]);
-  useEffect(
-    () => () => {
-      if (preview) URL.revokeObjectURL(preview);
-    },
-    [preview]
-  );
 
   const editing = seed.mode === "edit";
   const existingReceipt = editing && seed.line.hasReceipt ? seed.line.receiptName ?? "Justificatif enregistré" : null;
@@ -351,14 +344,15 @@ export default function EntryForm({
           </legend>
           {file ? (
             <div className="flex items-center gap-3">
-              {preview ? (
-                // Aperçu local de la photo choisie : URL d'objet, pas d'optimisation possible.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={preview} alt="Aperçu du justificatif" className="size-16 rounded-control object-cover" />
+              {file.type.startsWith("image/") ? (
+                <ImageIcon aria-hidden="true" className="size-10 shrink-0 text-ink-muted" />
               ) : (
-                <FileText aria-hidden="true" className="size-10 text-ink-muted" />
+                <FileText aria-hidden="true" className="size-10 shrink-0 text-ink-muted" />
               )}
-              <span className="min-w-0 flex-1 truncate text-sm text-ink">{file.name}</span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-sm text-ink">{file.name}</span>
+                <span className="text-[13px] text-ink-muted">{(file.size / 1024 / 1024).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} Mo</span>
+              </span>
               <button
                 type="button"
                 aria-label="Retirer le justificatif"
