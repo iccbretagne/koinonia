@@ -52,6 +52,7 @@ const FUNCTION_ACCESS: Partial<Record<DeptFunction, FunctionAccessEntry>> = {
   PRODUCTION_MEDIA: { module: "media", label: "Espace Communication & Production — Visuels" },
   COMMUNICATION: { module: "media", label: "Espace Communication & Production — Réseaux sociaux" },
   PHOTOS: { module: "media", label: "Espace Communication & Production — Photos" },
+  NAVETTE: { module: "shuttle", label: "Navette : déclarer les dépenses du budget, demander le remboursement de ses avances" },
 };
 
 type DeptRow = { id: string; function: string | null };

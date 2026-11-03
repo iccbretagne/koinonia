@@ -1443,6 +1443,31 @@ dans `public/brand/`. Le fichier déposé n'est pas conservé.
 | `updatedById` | String? | Ref vers `users` (set null) |
 | `updatedAt` | DateTime | Dernière modification |
 
+#### `shuttle_entries` — registre de la navette (spec 073)
+
+Une ligne par mouvement : montant **signé** (`amount`, Decimal(10,2) : + entrée, − sortie).
+`kind` : `OPENING_BALANCE` (un seul par église, peut être négatif), `FUNDING` (abondement, avec
+`paymentMethod`), `DEPOSIT_RETURN` (caution restituée, `returnOfId` unique vers la caution),
+`VENDOR_REFUND`, `EXPENSE` (avec `category` : `FUEL`, `MILEAGE`, `RENTAL`, `DEPOSIT`,
+`TOLL_PARKING`, `CLEANING`, `DAMAGE_FINE`, `INSURANCE`, `OTHER`). Champs : `date` (Date), `label`,
+`vendor`, `liters`, `kilometers`, `personalAdvance`, `rentalId`, `depositRetainedAt`/`Note`,
+justificatif (`receiptKey`, stockage `shuttle/<churchId>/…`, `receiptName`, `receiptMime`,
+`receiptSize`), signalement (`flagNote`, `flaggedAt`, `flaggedById`), liens comptables
+`reimbursementRequestId` et `sourceRequestId` (uniques, vers `financial_requests`, set null),
+auteurs et suppression logique (`deletedAt`, `deletedById`). Le solde et le solde courant sont
+calculés à la lecture ; les avances de budget versées au département Navette n'y sont pas
+recopiées, elles sont lues dans `financial_payments`.
+
+#### `shuttle_rentals` — locations de véhicule de la navette (spec 073)
+
+`vendor`, `vehicle`, `startDate`, `endDate` (Date), `createdById` ; regroupe des lignes du
+registre (`shuttle_entries.rentalId`, set null).
+
+#### `shuttle_settings` — réglages de la navette (spec 073)
+
+Une ligne par église (`churchId` PK) : `lowBalanceThreshold` (null = pas d'alerte),
+`updatedById`. Sert aussi de verrou pour l'unicité du solde de départ.
+
 #### `church_logos` — logo de l'église dans l'interface (spec 072)
 
 Logo déposé par l'Admin de l'église (`church:settings`), une ligne par fond (clé

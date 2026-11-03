@@ -113,6 +113,8 @@ export interface NavigationInput {
   readonly hasAvailability?: boolean;
   readonly hasRooms?: boolean;
   readonly hasAccounting?: boolean;
+  /** Registre de la navette (spec 073), rangé sous « Comptabilité ». */
+  readonly hasShuttle?: boolean;
   readonly hasJobs?: boolean;
   /** Vue pastorale active (cookie `koinonia-view-mode`). */
   readonly isPastoral?: boolean;
@@ -319,10 +321,24 @@ function peoplePagesFor(input: NavigationInput, carePages: NavPage[]): NavPage[]
   return people;
 }
 
+const ACCOUNTING_BLOCK = "Comptabilité";
+
 function requestPagesFor(input: NavigationInput): NavPage[] {
   const requests: NavPage[] = input.requestLinks.map((l) => ({ href: l.href, label: l.label }));
+  // « Navette » se range sous « Comptabilité » (spec 073) : un bloc de sidebar les regroupe, et
+  // le préfixe plus long de la navette l'emporte sur celui de la comptabilité.
+  const accountingBlock = input.hasShuttle ? ACCOUNTING_BLOCK : undefined;
   if (input.hasAccounting) {
-    requests.push({ href: "/accounting/requests", label: "Comptabilité", matchPrefixes: ["/accounting"] });
+    requests.push({
+      href: "/accounting/requests",
+      label: "Comptabilité",
+      matchPrefixes: ["/accounting"],
+      sidebarBlock: accountingBlock,
+      sidebarLabel: accountingBlock ? "Demandes" : undefined,
+    });
+  }
+  if (input.hasShuttle) {
+    requests.push({ href: "/accounting/navette", label: "Navette", sidebarBlock: accountingBlock });
   }
   return requests;
 }

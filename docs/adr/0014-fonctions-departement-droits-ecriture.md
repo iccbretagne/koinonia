@@ -63,8 +63,10 @@ On **amende ADR-0013** : sa règle 1 devient la règle **par défaut**, et non p
    `CAPTATION_AUDIO` (audio), `PROTOCOLE` (agenda pastoral), `INTEGRATION` et `MSDP` (dossiers
    d'accueil et parcours d'intégration, `requireIntegrationAccess`), `PHOTOS` (espace
    Communication & Production). Ces trois dernières manquaient à cette liste avant la spec 054 —
-   elles existaient déjà dans le code au moment où cet ADR a été rédigé. Toute nouvelle entrée
-   passe par une spec.
+   elles existaient déjà dans le code au moment où cet ADR a été rédigé. `NAVETTE` (registre de
+   suivi budgétaire de la navette, spec 073 : déclarer des dépenses avec justificatif, gérer les
+   locations, corriger ses lignes sous 48 h, demander le remboursement de ses avances). Toute
+   nouvelle entrée passe par une spec.
 
 ## Alternatives considérées
 

@@ -28,7 +28,7 @@ const WHITELIST = new Set([
   "src/modules/care/services/notifications.ts", // branche « profil pastoral / demandeur sans compte »
   "src/modules/care/services/appointments.ts", // confirmation de dépôt du formulaire public
   "src/app/api/cron/route.ts", // membre sans compte lié (T25) + digest planning vers church.secretariatEmails (institutionnelle)
-  "src/app/api/accounting/requests/route.ts", // adresse institutionnelle church.accountingEmails
+  "src/modules/accounting/services/requests.ts", // adresse institutionnelle church.accountingEmails
   "src/app/api/agenda/requests/[id]/schedule/route.ts", // profil pastoral sans compte, planification
   "src/app/api/integration/requests/route.ts", // confirmation de dépôt du formulaire public d'accueil
   "src/modules/giving/services/alerts.ts", // adresse institutionnelle church.accountingEmails (spec 065)

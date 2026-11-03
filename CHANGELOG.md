@@ -6,6 +6,10 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+
+- Navette : suivi du budget (spec 073), sous « Comptabilité ». La comptabilité saisit le solde de départ et les abondements remis au fil de l'eau ; l'équipe navette déclare chaque dépense (carburant, frais kilométriques, location, caution, péage, nettoyage…) avec son justificatif, en photo prise au téléphone ou en document (scan, PDF). Pas de validation : la dépense compte aussitôt et la comptabilité est prévenue. Le relevé montre le solde après chaque ligne ; pour n'importe quelle période, on lit les entrées, les sorties et le solde. L'auteur corrige ou supprime sa ligne pendant 48 heures, la comptabilité à tout moment, et tout est conservé dans l'historique. Les locations regroupent leurs dépenses et les cautions non restituées restent en vue ; une alerte prévient quand le solde passe sous un seuil ; l'export livre le relevé et ses justificatifs. Une dépense payée de sa poche se rembourse depuis la ligne par une note de frais (même pour un STAR) ; les avances de budget versées à la Navette s'ajoutent toutes seules au registre, et les notes de frais de la Navette faites à part s'y ajoutent d'un geste. Accès : comptabilité, et membres d'un département de fonction « Navette ».
+
 ## [v1.33.0] - 2026-10-27
 
 ### Ajouté
