@@ -44,12 +44,13 @@ export async function getShuttleAccess(session: Session, churchId: string, db?: 
   const departments = await getShuttleDepartments(churchId, db);
   if (departments.length === 0) return { manager, member: false, hasTeam: false };
   const deptIds = departments.map((d) => d.id);
-  const ministryIds = departments.map((d) => d.ministryId);
+  const deptIdSet = new Set(deptIds);
+  const ministryIds = new Set(departments.map((d) => d.ministryId));
 
   const lead = roles.some(
     (r) =>
-      r.departments.some((d) => deptIds.includes(d.department.id)) ||
-      (r.role === "MINISTER" && !!r.ministryId && ministryIds.includes(r.ministryId))
+      r.departments.some((d) => deptIdSet.has(d.department.id)) ||
+      (r.role === "MINISTER" && !!r.ministryId && ministryIds.has(r.ministryId))
   );
   if (lead) return { manager, member: true, hasTeam: true };
 

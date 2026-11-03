@@ -71,6 +71,75 @@ function historyDetail(item: HistoryItem): string | null {
   return null;
 }
 
+/** Avance personnelle : état du remboursement et actions de l'auteur (lien A). */
+function AdvanceBlock({
+  line,
+  isAuthor,
+  busy,
+  onRequest,
+  onCancel,
+}: {
+  readonly line: LedgerLine;
+  readonly isAuthor: boolean;
+  readonly busy: boolean;
+  readonly onRequest: () => void;
+  readonly onCancel: () => void;
+}) {
+  const reimbursement = line.reimbursement;
+  const canRequest = isAuthor && !isActive(reimbursement?.status);
+  let status: React.ReactNode = null;
+  if (reimbursement) {
+    status = (
+      <div className="flex flex-wrap items-center gap-2">
+        <ReimbursementChip status={reimbursement.status} />
+        {reimbursement.paid > 0 && <span className="text-sm text-ink-muted">{euro(reimbursement.paid)} versés</span>}
+        {reimbursement.status === "REJECTED" && reimbursement.rejectionReason && (
+          <span className="text-sm text-ink-muted">Motif : {reimbursement.rejectionReason}</span>
+        )}
+      </div>
+    );
+  } else if (!line.sourceRequestId) {
+    status = <p className="text-sm text-ink-muted">Remboursement non demandé.</p>;
+  }
+  return (
+    <div className="space-y-2 rounded-control bg-surface-sunken px-3 py-2">
+      <p className="text-sm text-ink">Avance personnelle</p>
+      {status}
+      <div className="flex flex-wrap gap-2">
+        {canRequest && (
+          <Button size="sm" disabled={busy} onClick={onRequest}>
+            Demander le remboursement
+          </Button>
+        )}
+        {isAuthor && reimbursement?.status === "REQUESTED" && (
+          <Button size="sm" variant="secondary" disabled={busy} onClick={onCancel}>
+            Annuler la demande
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Lignes « intitulé : valeur » du détail, selon ce que la ligne renseigne. */
+function detailRows(line: LedgerLine): [string, React.ReactNode][] {
+  const optional: [string, React.ReactNode | null][] = [
+    ["Type", line.category ? EXPENSE_CATEGORY_LABEL[line.category] : null],
+    ["Fournisseur", line.vendor],
+    ["Mode", line.paymentMethod ? PAYMENT_METHOD_LABEL[line.paymentMethod] : null],
+    ["Litres", line.liters === null ? null : String(line.liters).replace(".", ",")],
+    ["Kilomètres", line.kilometers === null ? null : String(line.kilometers)],
+    ["Location", line.rental?.label ?? null],
+    ["Commentaire", line.label && line.category !== "OTHER" ? line.label : null],
+    ["Déclarée par", line.createdBy?.name ?? null],
+  ];
+  return [
+    ["Date", frDate(line.date)],
+    ["Montant", <span key="a" className={line.amount < 0 ? "text-danger" : "text-success"}>{euro(line.amount)}</span>],
+    ...optional.filter((row): row is [string, React.ReactNode] => row[1] !== null && row[1] !== ""),
+  ];
+}
+
 /** Détail d'une ligne : justificatif, historique et actions permises (spec 073). */
 export default function EntryDetail({
   line,
@@ -94,7 +163,7 @@ export default function EntryDetail({
   const [note, setNote] = useState("");
 
   useEffect(() => {
-    if (!line || line.source !== "ledger") return;
+    if (line?.source !== "ledger") return;
     let cancelled = false;
     fetch(`/api/accounting/navette/entries/${line.id}/history`)
       .then((r) => (r.ok ? r.json() : []))
@@ -109,9 +178,6 @@ export default function EntryDetail({
   const base = `/api/accounting/navette/entries/${line.id}`;
   const editable = canEditLine(line, viewer);
   const isAuthor = line.createdBy?.id === viewer.userId;
-  const reimbursement = line.reimbursement;
-  const canRequestReimbursement =
-    isAuthor && line.kind === "EXPENSE" && line.personalAdvance && !isActive(reimbursement?.status);
 
   async function call(url: string, init: RequestInit, success: string) {
     setBusy(true);
@@ -143,18 +209,7 @@ export default function EntryDetail({
     if (ok) onClose();
   }
 
-  const rows: [string, React.ReactNode][] = [
-    ["Date", frDate(line.date)],
-    ["Montant", <span key="a" className={line.amount < 0 ? "text-danger" : "text-success"}>{euro(line.amount)}</span>],
-  ];
-  if (line.category) rows.push(["Type", EXPENSE_CATEGORY_LABEL[line.category]]);
-  if (line.vendor) rows.push(["Fournisseur", line.vendor]);
-  if (line.paymentMethod) rows.push(["Mode", PAYMENT_METHOD_LABEL[line.paymentMethod]]);
-  if (line.liters !== null) rows.push(["Litres", String(line.liters).replace(".", ",")]);
-  if (line.kilometers !== null) rows.push(["Kilomètres", String(line.kilometers)]);
-  if (line.rental) rows.push(["Location", line.rental.label]);
-  if (line.label && !(line.category === "OTHER")) rows.push(["Commentaire", line.label]);
-  if (line.createdBy) rows.push(["Déclarée par", line.createdBy.name]);
+  const rows = detailRows(line);
 
   return (
     <>
@@ -198,32 +253,13 @@ export default function EntryDetail({
           )}
 
           {line.kind === "EXPENSE" && line.personalAdvance && (
-            <div className="space-y-2 rounded-control bg-surface-sunken px-3 py-2">
-              <p className="text-sm text-ink">Avance personnelle</p>
-              {reimbursement ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <ReimbursementChip status={reimbursement.status} />
-                  {reimbursement.paid > 0 && <span className="text-sm text-ink-muted">{euro(reimbursement.paid)} versés</span>}
-                  {reimbursement.status === "REJECTED" && reimbursement.rejectionReason && (
-                    <span className="text-sm text-ink-muted">Motif : {reimbursement.rejectionReason}</span>
-                  )}
-                </div>
-              ) : (
-                !line.sourceRequestId && <p className="text-sm text-ink-muted">Remboursement non demandé.</p>
-              )}
-              <div className="flex flex-wrap gap-2">
-                {canRequestReimbursement && (
-                  <Button size="sm" disabled={busy} onClick={() => call(`${base}/reimbursement`, { method: "POST" }, "Remboursement demandé à la comptabilité")}>
-                    Demander le remboursement
-                  </Button>
-                )}
-                {isAuthor && reimbursement?.status === "REQUESTED" && (
-                  <Button size="sm" variant="secondary" disabled={busy} onClick={() => call(`${base}/reimbursement`, { method: "DELETE" }, "Demande annulée")}>
-                    Annuler la demande
-                  </Button>
-                )}
-              </div>
-            </div>
+            <AdvanceBlock
+              line={line}
+              isAuthor={isAuthor}
+              busy={busy}
+              onRequest={() => call(`${base}/reimbursement`, { method: "POST" }, "Remboursement demandé à la comptabilité")}
+              onCancel={() => call(`${base}/reimbursement`, { method: "DELETE" }, "Demande annulée")}
+            />
           )}
 
           {noteFor ? (

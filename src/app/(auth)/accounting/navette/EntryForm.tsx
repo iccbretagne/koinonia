@@ -73,6 +73,42 @@ function initialState(seed: EntryFormSeed) {
 
 const toNumber = (v: string) => Number(v.replace(/\s/g, "").replace(",", "."));
 
+type FormState = ReturnType<typeof initialState>;
+
+/** Natures proposées : l'équipe déclare dépenses et entrées du loueur ; la compta, tout. */
+function availableKinds(manager: boolean, hasOpeningBalance: boolean): ShuttleEntryKind[] {
+  if (!manager) return MEMBER_KINDS;
+  return ["EXPENSE", "FUNDING", ...(hasOpeningBalance ? [] : (["OPENING_BALANCE"] as const)), "DEPOSIT_RETURN", "VENDOR_REFUND"];
+}
+
+/** Corps envoyé à l'API, selon la nature de la ligne. */
+function buildPayload(form: FormState) {
+  const amount = toNumber(form.amount);
+  const base = { kind: form.kind, date: form.date, label: form.label || null };
+  switch (form.kind) {
+    case "OPENING_BALANCE":
+      return { ...base, amount: form.negative ? -amount : amount };
+    case "FUNDING":
+      return { ...base, amount, paymentMethod: form.paymentMethod };
+    case "DEPOSIT_RETURN":
+      return { ...base, amount, vendor: form.vendor || null, rentalId: form.rentalId || null, returnOfId: form.returnOfId || null };
+    case "VENDOR_REFUND":
+      return { ...base, amount, vendor: form.vendor || null, rentalId: form.rentalId || null };
+    default:
+      return {
+        ...base,
+        amount,
+        category: form.category,
+        vendor: form.vendor || null,
+        liters: form.category === "FUEL" && form.liters ? toNumber(form.liters) : null,
+        kilometers: form.category === "MILEAGE" && form.kilometers ? Math.round(toNumber(form.kilometers)) : null,
+        personalAdvance: form.personalAdvance,
+        rentalId: form.rentalId || null,
+      };
+  }
+}
+
+
 /**
  * Saisie d'une ligne du registre (spec 073) : la nature d'abord, puis les champs utiles. Le
  * justificatif se donne par **photo** (appareil photo du téléphone) ou par **document** existant
@@ -110,15 +146,7 @@ export default function EntryForm({
 
   const editing = seed.mode === "edit";
   const existingReceipt = editing && seed.line.hasReceipt ? seed.line.receiptName ?? "Justificatif enregistré" : null;
-  const kinds: ShuttleEntryKind[] = manager
-    ? [
-        "EXPENSE",
-        "FUNDING",
-        ...(hasOpeningBalance ? [] : (["OPENING_BALANCE"] as ShuttleEntryKind[])),
-        "DEPOSIT_RETURN",
-        "VENDOR_REFUND",
-      ]
-    : MEMBER_KINDS;
+  const kinds = availableKinds(manager, hasOpeningBalance);
   const receiptRequired = RECEIPT_REQUIRED.includes(form.kind);
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -129,32 +157,6 @@ export default function EntryForm({
       return;
     }
     setFile(f);
-  }
-
-  function payload() {
-    const amount = toNumber(form.amount);
-    const base = { kind: form.kind, date: form.date, label: form.label || null };
-    switch (form.kind) {
-      case "OPENING_BALANCE":
-        return { ...base, amount: form.negative ? -amount : amount };
-      case "FUNDING":
-        return { ...base, amount, paymentMethod: form.paymentMethod };
-      case "DEPOSIT_RETURN":
-        return { ...base, amount, vendor: form.vendor || null, rentalId: form.rentalId || null, returnOfId: form.returnOfId || null };
-      case "VENDOR_REFUND":
-        return { ...base, amount, vendor: form.vendor || null, rentalId: form.rentalId || null };
-      default:
-        return {
-          ...base,
-          amount,
-          category: form.category,
-          vendor: form.vendor || null,
-          liters: form.category === "FUEL" && form.liters ? toNumber(form.liters) : null,
-          kilometers: form.category === "MILEAGE" && form.kilometers ? Math.round(toNumber(form.kilometers)) : null,
-          personalAdvance: form.personalAdvance,
-          rentalId: form.rentalId || null,
-        };
-    }
   }
 
   async function submit(e: React.SubmitEvent<HTMLFormElement>) {
@@ -170,7 +172,7 @@ export default function EntryForm({
       return;
     }
     const body = new FormData();
-    body.append("data", JSON.stringify(payload()));
+    body.append("data", JSON.stringify(buildPayload(form)));
     if (file) body.append("file", file);
     setBusy(true);
     try {
@@ -284,7 +286,7 @@ export default function EntryForm({
                   { value: "", label: "Aucune" },
                   ...rentals.slice(0, 30).map((r) => ({
                     value: r.id,
-                    label: `${r.vendor}${r.vehicle ? ` · ${r.vehicle}` : ""} · ${frDate(r.startDate)}`,
+                    label: [r.vendor, r.vehicle, frDate(r.startDate)].filter(Boolean).join(" · "),
                   })),
                 ]}
               />

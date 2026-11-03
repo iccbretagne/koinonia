@@ -122,7 +122,7 @@ export function isActiveReimbursement(status: ReimbursementStatus | null | undef
 
 function rentalLabel(r: { vendor: string; vehicle: string | null; startDate: Date }) {
   const day = r.startDate.toLocaleDateString("fr-FR", { timeZone: "UTC" });
-  return `${r.vendor}${r.vehicle ? ` · ${r.vehicle}` : ""} · ${day}`;
+  return [r.vendor, r.vehicle, day].filter(Boolean).join(" · ");
 }
 
 async function loadBudgetAdvanceLines(churchId: string): Promise<LedgerLine[]> {
@@ -178,15 +178,12 @@ export async function currentBalance(churchId: string): Promise<number> {
   return euros(cents(Number(agg._sum.amount ?? 0)) + advances.reduce((s, l) => s + cents(l.amount), 0));
 }
 
-/** Relevé complet et synthèses d'une période. */
-export async function getLedger(
-  churchId: string,
-  query: LedgerQuery,
-  viewer: { userId: string; manager: boolean },
-  now = new Date()
-): Promise<LedgerSummary> {
+type LedgerRow = Awaited<ReturnType<typeof loadRows>>[number];
+type Progress = Awaited<ReturnType<typeof getRequestsProgress>>[number];
+
+async function loadRows(churchId: string) {
   const prisma = await db();
-  const rows = await prisma.shuttleEntry.findMany({
+  return prisma.shuttleEntry.findMany({
     where: { churchId, deletedAt: null },
     include: {
       createdBy: { select: { id: true, name: true, email: true } },
@@ -194,49 +191,96 @@ export async function getLedger(
       returnedBy: { select: { id: true, deletedAt: true } },
     },
   });
+}
+
+function toLedgerLine(r: LedgerRow, progressById: Map<string, Progress>): LedgerLine {
+  const req = r.reimbursementRequestId ? progressById.get(r.reimbursementRequestId) : undefined;
+  const reimbursement: ReimbursementInfo | null = req
+    ? { requestId: req.id, ...reimbursementStatus(req), rejectionReason: req.rejectionReason }
+    : null;
+  return {
+    id: r.id,
+    source: "ledger",
+    kind: r.kind,
+    category: r.category,
+    amount: Number(r.amount),
+    date: toIsoDate(r.date),
+    label: r.label,
+    vendor: r.vendor,
+    paymentMethod: r.paymentMethod,
+    liters: r.liters === null ? null : Number(r.liters),
+    kilometers: r.kilometers,
+    personalAdvance: r.personalAdvance,
+    rental: r.rental ? { id: r.rental.id, label: rentalLabel(r.rental) } : null,
+    returnOfId: r.returnOfId,
+    returned: !!r.returnedBy && !r.returnedBy.deletedAt,
+    depositRetainedAt: r.depositRetainedAt?.toISOString() ?? null,
+    depositRetainedNote: r.depositRetainedNote,
+    hasReceipt: !!r.receiptKey,
+    receiptName: r.receiptName,
+    receiptMime: r.receiptMime,
+    flagNote: r.flagNote,
+    createdBy: r.createdBy ? { id: r.createdBy.id, name: r.createdBy.name ?? r.createdBy.email ?? "—" } : null,
+    createdAt: r.createdAt.toISOString(),
+    updatedAt: r.updatedAt.toISOString(),
+    authorEditUntil: new Date(r.createdAt.getTime() + AUTHOR_EDIT_WINDOW_HOURS * 3_600_000).toISOString(),
+    reimbursement,
+    sourceRequestId: r.sourceRequestId,
+    requestId: null,
+    runningBalance: 0,
+  };
+}
+
+/** Sorties par type et entrées/sorties par mois, sur les lignes d'une période. */
+function periodBreakdowns(lines: readonly LedgerLine[]) {
+  const categoryTotals = new Map<ShuttleExpenseCategory, number>();
+  const monthTotals = new Map<string, { inflows: number; outflows: number }>();
+  for (const l of lines) {
+    if (l.kind === "EXPENSE" && l.category) {
+      categoryTotals.set(l.category, (categoryTotals.get(l.category) ?? 0) - cents(l.amount));
+    }
+    const month = l.date.slice(0, 7);
+    const m = monthTotals.get(month) ?? { inflows: 0, outflows: 0 };
+    if (l.amount > 0) m.inflows += cents(l.amount);
+    else m.outflows -= cents(l.amount);
+    monthTotals.set(month, m);
+  }
+  return { categoryTotals, monthTotals };
+}
+
+/** Coût d'une location : ses dépenses hors caution, moins les remboursements du loueur. */
+function rentalCosts(rows: readonly LedgerRow[]) {
+  const rentalCost = new Map<string, { label: string; startDate: string; cost: number }>();
+  for (const r of rows) {
+    if (!r.rental) continue;
+    const entry = rentalCost.get(r.rental.id) ?? {
+      label: rentalLabel(r.rental),
+      startDate: toIsoDate(r.rental.startDate),
+      cost: 0,
+    };
+    if ((r.kind === "EXPENSE" && r.category !== "DEPOSIT") || r.kind === "VENDOR_REFUND") {
+      entry.cost -= cents(Number(r.amount));
+    }
+    rentalCost.set(r.rental.id, entry);
+  }
+  return rentalCost;
+}
+
+/** Relevé complet et synthèses d'une période. */
+export async function getLedger(
+  churchId: string,
+  query: LedgerQuery,
+  viewer: { userId: string; manager: boolean },
+  now = new Date()
+): Promise<LedgerSummary> {
+  const rows = await loadRows(churchId);
 
   const progress = await getRequestsProgress(
     rows.map((r) => r.reimbursementRequestId).filter((id): id is string => !!id)
   );
   const progressById = new Map(progress.map((p) => [p.id, p]));
 
-  const ledgerLines: LedgerLine[] = rows.map((r) => {
-    const req = r.reimbursementRequestId ? progressById.get(r.reimbursementRequestId) : undefined;
-    const reimbursement: ReimbursementInfo | null = req
-      ? { requestId: req.id, ...reimbursementStatus(req), rejectionReason: req.rejectionReason }
-      : null;
-    return {
-      id: r.id,
-      source: "ledger",
-      kind: r.kind,
-      category: r.category,
-      amount: Number(r.amount),
-      date: toIsoDate(r.date),
-      label: r.label,
-      vendor: r.vendor,
-      paymentMethod: r.paymentMethod,
-      liters: r.liters === null ? null : Number(r.liters),
-      kilometers: r.kilometers,
-      personalAdvance: r.personalAdvance,
-      rental: r.rental ? { id: r.rental.id, label: rentalLabel(r.rental) } : null,
-      returnOfId: r.returnOfId,
-      returned: !!r.returnedBy && !r.returnedBy.deletedAt,
-      depositRetainedAt: r.depositRetainedAt?.toISOString() ?? null,
-      depositRetainedNote: r.depositRetainedNote,
-      hasReceipt: !!r.receiptKey,
-      receiptName: r.receiptName,
-      receiptMime: r.receiptMime,
-      flagNote: r.flagNote,
-      createdBy: r.createdBy ? { id: r.createdBy.id, name: r.createdBy.name ?? r.createdBy.email ?? "—" } : null,
-      createdAt: r.createdAt.toISOString(),
-      updatedAt: r.updatedAt.toISOString(),
-      authorEditUntil: new Date(r.createdAt.getTime() + AUTHOR_EDIT_WINDOW_HOURS * 3600_000).toISOString(),
-      reimbursement,
-      sourceRequestId: r.sourceRequestId,
-      requestId: null,
-      runningBalance: 0,
-    };
-  });
+  const ledgerLines = rows.map((r) => toLedgerLine(r, progressById));
 
   const all = [...ledgerLines, ...(await loadBudgetAdvanceLines(churchId))].sort(
     (a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt)
@@ -255,32 +299,9 @@ export async function getLedger(
   const inflowCents = inPeriod.filter((l) => l.amount > 0).reduce((s, l) => s + cents(l.amount), 0);
   const outflowCents = inPeriod.filter((l) => l.amount < 0).reduce((s, l) => s - cents(l.amount), 0);
 
-  const categoryTotals = new Map<ShuttleExpenseCategory, number>();
-  const monthTotals = new Map<string, { inflows: number; outflows: number }>();
-  for (const l of inPeriod) {
-    if (l.kind === "EXPENSE" && l.category) {
-      categoryTotals.set(l.category, (categoryTotals.get(l.category) ?? 0) - cents(l.amount));
-    }
-    const month = l.date.slice(0, 7);
-    const m = monthTotals.get(month) ?? { inflows: 0, outflows: 0 };
-    if (l.amount > 0) m.inflows += cents(l.amount);
-    else m.outflows -= cents(l.amount);
-    monthTotals.set(month, m);
-  }
+  const { categoryTotals, monthTotals } = periodBreakdowns(inPeriod);
 
-  // Coût d'une location : ses dépenses hors caution, moins les remboursements du loueur.
-  const rentalCost = new Map<string, { label: string; startDate: string; cost: number }>();
-  for (const r of rows) {
-    if (!r.rental) continue;
-    const entry = rentalCost.get(r.rental.id) ?? {
-      label: rentalLabel(r.rental),
-      startDate: toIsoDate(r.rental.startDate),
-      cost: 0,
-    };
-    if (r.kind === "EXPENSE" && r.category !== "DEPOSIT") entry.cost -= cents(Number(r.amount));
-    if (r.kind === "VENDOR_REFUND") entry.cost -= cents(Number(r.amount));
-    rentalCost.set(r.rental.id, entry);
-  }
+  const rentalCost = rentalCosts(rows);
 
   const outstandingDeposits = ledgerLines
     .filter((l) => l.kind === "EXPENSE" && l.category === "DEPOSIT" && !l.returned && !l.depositRetainedAt)

@@ -72,7 +72,7 @@ export async function requestReimbursement(entryId: string, actor: ShuttleActor)
     churchId: entry.churchId,
     departmentId: await authorShuttleDepartment(entry.churchId, actor.id),
     submittedById: actor.id,
-    label: `Navette : ${entryTitle(entry)}${entry.vendor ? `, ${entry.vendor}` : ""}, ${day}`.slice(0, 200),
+    label: `Navette : ${[entryTitle(entry), entry.vendor, day].filter(Boolean).join(", ")}`.slice(0, 200),
     description: [entry.label, "Avance personnelle déclarée dans le registre de la navette."].filter(Boolean).join("\n"),
     amount,
     receipt: entry.receiptKey

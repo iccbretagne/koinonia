@@ -56,6 +56,48 @@ function Bars({ items }: { readonly items: { label: string; value: number }[] })
   );
 }
 
+function renderLineCell(l: LedgerLine) {
+  return (
+    <span className="flex flex-wrap items-center gap-1.5">
+      <span className="font-semibold text-ink">{lineTitle(l)}</span>
+      {l.vendor && <span className="text-ink-muted">· {l.vendor}</span>}
+      {l.hasReceipt && <Paperclip aria-label="Justificatif joint" className="size-3.5 text-ink-muted" />}
+      {l.flagNote && (
+        <StatusChip tone="warning" icon={Flag}>
+          Signalée
+        </StatusChip>
+      )}
+      {l.source === "accounting" && <StatusChip tone="brand">Comptabilité</StatusChip>}
+      {l.personalAdvance && !l.reimbursement && <StatusChip tone="neutral">Avance perso</StatusChip>}
+      {l.reimbursement && <ReimbursementChip status={l.reimbursement.status} />}
+    </span>
+  );
+}
+
+const renderDate = (l: LedgerLine) => frDate(l.date);
+const renderAuthor = (l: LedgerLine) => l.createdBy?.name ?? "—";
+const renderAmount = (l: LedgerLine) => <Amount value={l.amount} />;
+const renderBalance = (l: LedgerLine) => <Amount value={l.runningBalance} />;
+
+const LEDGER_COLUMNS = [
+  { header: "Date", accessor: renderDate },
+  { header: "Ligne", primary: true, accessor: renderLineCell },
+  { header: "Par", accessor: renderAuthor, hideOnMobile: true },
+  { header: "Montant", align: "right" as const, accessor: renderAmount },
+  { header: "Solde", align: "right" as const, hideOnMobile: true, accessor: renderBalance },
+];
+
+/** Action « Détail » d'une ligne du relevé. */
+function detailAction(open: (id: string) => void) {
+  return function renderDetailAction(l: LedgerLine) {
+    return (
+      <Button size="sm" variant="ghost" onClick={() => open(l.id)}>
+        Détail
+      </Button>
+    );
+  };
+}
+
 /**
  * Écran du registre de la navette (spec 073) : solde à date, période, relevé avec solde courant,
  * répartitions, cautions et avances, locations et réglages.
@@ -192,20 +234,25 @@ export default function ShuttleClient({
       </section>
 
       <section aria-label="Période" className="space-y-3">
-        <div role="group" aria-label="Période" className="flex flex-wrap gap-2">
+        <fieldset className="flex flex-wrap gap-2">
+          <legend className="sr-only">Période</legend>
           {PRESETS.map((pr) => (
             <FilterChip key={pr.key} pressed={pr.key === "custom" ? customOpen : !customOpen && preset === pr.key} onClick={() => choosePreset(pr.key)}>
               {pr.label}
             </FilterChip>
           ))}
-        </div>
+        </fieldset>
         {customOpen && (
           <form
             className="flex flex-wrap items-end gap-3"
             onSubmit={(e) => {
               e.preventDefault();
               const data = new FormData(e.currentTarget);
-              router.push(hrefWith({ du: String(data.get("du") || "") || undefined, au: String(data.get("au") || "") || undefined }));
+              const field = (name: string) => {
+                const v = data.get(name);
+                return typeof v === "string" && v ? v : undefined;
+              };
+              router.push(hrefWith({ du: field("du"), au: field("au") }));
             }}
           >
             <Input label="Du" type="date" name="du" defaultValue={from} />
@@ -240,32 +287,8 @@ export default function ShuttleClient({
           data={[...ledger.entries].reverse()}
           highlightedId={highlightId}
           emptyState={<EmptyState title="Aucune ligne sur cette période" description="Déclarez une dépense ou changez de période." />}
-          columns={[
-            { header: "Date", accessor: (l) => frDate(l.date) },
-            {
-              header: "Ligne",
-              primary: true,
-              accessor: (l) => (
-                <span className="flex flex-wrap items-center gap-1.5">
-                  <span className="font-semibold text-ink">{lineTitle(l)}</span>
-                  {l.vendor && <span className="text-ink-muted">· {l.vendor}</span>}
-                  {l.hasReceipt && <Paperclip aria-label="Justificatif joint" className="size-3.5 text-ink-muted" />}
-                  {l.flagNote && <StatusChip tone="warning" icon={Flag}>Signalée</StatusChip>}
-                  {l.source === "accounting" && <StatusChip tone="brand">Comptabilité</StatusChip>}
-                  {l.personalAdvance && !l.reimbursement && <StatusChip tone="neutral">Avance perso</StatusChip>}
-                  {l.reimbursement && <ReimbursementChip status={l.reimbursement.status} />}
-                </span>
-              ),
-            },
-            { header: "Par", accessor: (l) => l.createdBy?.name ?? "—", hideOnMobile: true },
-            { header: "Montant", align: "right", accessor: (l) => <Amount value={l.amount} /> },
-            { header: "Solde", align: "right", hideOnMobile: true, accessor: (l) => <Amount value={l.runningBalance} /> },
-          ]}
-          actions={(l) => (
-            <Button size="sm" variant="ghost" onClick={() => setDetailId(l.id)}>
-              Détail
-            </Button>
-          )}
+          columns={LEDGER_COLUMNS}
+          actions={detailAction(setDetailId)}
         />
       )}
 

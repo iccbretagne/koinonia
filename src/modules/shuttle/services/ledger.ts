@@ -202,7 +202,7 @@ export async function createEntry(churchId: string, input: EntryInput, file: Fil
   const entry = await prisma.$transaction(async (tx) => {
     if (input.kind === "OPENING_BALANCE") await assertSingleOpeningBalance(tx, churchId);
     return tx.shuttleEntry.create({
-      data: { churchId, ...entryFields(input), ...(receipt ?? {}), createdById: actor.id, updatedById: actor.id },
+      data: { churchId, ...entryFields(input), ...receipt, createdById: actor.id, updatedById: actor.id },
     });
   });
 
@@ -228,7 +228,7 @@ async function assertCanEdit(entry: ShuttleEntry, actor: ShuttleActor, now: Date
   if (actor.manager) return;
   if (entry.createdById !== actor.id) throw new ApiError(403, "Seul l'auteur de la ligne ou la comptabilité peut la modifier");
   if (MANAGER_ONLY_KINDS.includes(entry.kind)) throw new ApiError(403, "Réservé à la comptabilité");
-  if (now.getTime() - entry.createdAt.getTime() > AUTHOR_EDIT_WINDOW_HOURS * 3600_000) {
+  if (now.getTime() - entry.createdAt.getTime() > AUTHOR_EDIT_WINDOW_HOURS * 3_600_000) {
     throw new ApiError(403, "Le délai de 48 heures est dépassé : demandez la correction à la comptabilité.");
   }
   if (entry.reimbursementRequestId) {
@@ -270,7 +270,7 @@ export async function updateEntry(
     if (input.kind === "OPENING_BALANCE") await assertSingleOpeningBalance(tx, existing.churchId, existing.id);
     return tx.shuttleEntry.update({
       where: { id: entryId },
-      data: { ...entryFields(input), ...(receipt ?? {}), updatedById: actor.id },
+      data: { ...entryFields(input), ...receipt, updatedById: actor.id },
     });
   });
 

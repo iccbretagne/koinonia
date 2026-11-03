@@ -1,6 +1,6 @@
 import { PassThrough } from "node:stream";
 import { ENTRY_KIND_LABEL, EXPENSE_CATEGORY_LABEL, PAYMENT_METHOD_LABEL, type LedgerQuery } from "../schemas";
-import { getLedger, type LedgerLine } from "./ledger-read";
+import { getLedger, type LedgerLine, type LedgerSummary } from "./ledger-read";
 import { readReceipt } from "./receipts";
 
 /**
@@ -19,11 +19,13 @@ function receiptFileName(l: LedgerLine, ext: string) {
   return `${l.date}_${type}_${Math.abs(l.amount).toFixed(2)}_${l.id.slice(-6)}.${ext}`;
 }
 
-export async function buildShuttleExport(churchId: string, period: Pick<LedgerQuery, "from" | "to">): Promise<Buffer> {
-  const ledger = await getLedger(churchId, { from: period.from, to: period.to }, { userId: "", manager: false });
-  const ExcelJS = (await import("exceljs")).default;
-  const wb = new ExcelJS.Workbook();
+type Workbook = import("exceljs").Workbook;
 
+const extensionOf = (mime: string | null) =>
+  mime === "application/pdf" ? "pdf" : (mime?.split("/")[1] ?? "bin").replace("jpeg", "jpg");
+
+/** Feuille « Relevé » ; renvoie les justificatifs à joindre, avec leur nom dans l'archive. */
+function addStatementSheet(wb: Workbook, ledger: LedgerSummary) {
   const sheet = wb.addWorksheet("Relevé");
   sheet.columns = [
     { header: "Date", key: "date", width: 12 },
@@ -44,8 +46,7 @@ export async function buildShuttleExport(churchId: string, period: Pick<LedgerQu
 
   const receipts: { line: LedgerLine; file: string }[] = [];
   for (const l of ledger.entries) {
-    const ext = l.receiptMime === "application/pdf" ? "pdf" : (l.receiptMime?.split("/")[1] ?? "bin").replace("jpeg", "jpg");
-    const file = l.hasReceipt ? `justificatifs/${receiptFileName(l, ext)}` : "";
+    const file = l.hasReceipt ? `justificatifs/${receiptFileName(l, extensionOf(l.receiptMime))}` : "";
     if (file) receipts.push({ line: l, file });
     sheet.addRow({
       date: l.date,
@@ -64,7 +65,11 @@ export async function buildShuttleExport(churchId: string, period: Pick<LedgerQu
     });
   }
   for (const key of ["amount", "balance"]) sheet.getColumn(key).numFmt = "#,##0.00";
+  return receipts;
+}
 
+/** Feuille « Synthèse » : totaux de la période, sorties par type, mois. */
+function addSummarySheet(wb: Workbook, ledger: LedgerSummary) {
   const summary = wb.addWorksheet("Synthèse");
   const p = ledger.period;
   summary.addRows([
@@ -83,6 +88,34 @@ export async function buildShuttleExport(churchId: string, period: Pick<LedgerQu
   ]);
   summary.getColumn(1).width = 30;
   summary.getColumn(2).width = 18;
+}
+
+/** Contenu des justificatifs, lus en parallèle (clés relues en base, jamais transmises au client). */
+async function loadReceiptFiles(churchId: string, receipts: { line: LedgerLine; file: string }[]) {
+  if (receipts.length === 0) return [];
+  const prisma = await db();
+  const keys = await prisma.shuttleEntry.findMany({
+    where: { id: { in: receipts.map((r) => r.line.id) }, churchId },
+    select: { id: true, receiptKey: true },
+  });
+  const keyById = new Map(keys.map((k) => [k.id, k.receiptKey]));
+  const files = await Promise.all(
+    receipts.map(async (r) => {
+      const key = keyById.get(r.line.id);
+      const bytes = key ? await readReceipt(key) : null;
+      return bytes ? { name: r.file, bytes } : null;
+    })
+  );
+  return files.filter((f): f is { name: string; bytes: Buffer } => f !== null);
+}
+
+export async function buildShuttleExport(churchId: string, period: Pick<LedgerQuery, "from" | "to">): Promise<Buffer> {
+  const ledger = await getLedger(churchId, { from: period.from, to: period.to }, { userId: "", manager: false });
+  const ExcelJS = (await import("exceljs")).default;
+  const wb = new ExcelJS.Workbook();
+  const receipts = addStatementSheet(wb, ledger);
+  addSummarySheet(wb, ledger);
+  const files = await loadReceiptFiles(churchId, receipts);
 
   const archiver = (await import("archiver")).default;
   const archive = archiver("zip", { zlib: { level: 6 } });
@@ -95,20 +128,7 @@ export async function buildShuttleExport(churchId: string, period: Pick<LedgerQu
   });
   archive.pipe(out);
   archive.append(Buffer.from(await wb.xlsx.writeBuffer()), { name: "releve.xlsx" });
-
-  if (receipts.length > 0) {
-    const prisma = await db();
-    const keys = await prisma.shuttleEntry.findMany({
-      where: { id: { in: receipts.map((r) => r.line.id) }, churchId },
-      select: { id: true, receiptKey: true },
-    });
-    const keyById = new Map(keys.map((k) => [k.id, k.receiptKey]));
-    for (const r of receipts) {
-      const key = keyById.get(r.line.id);
-      const bytes = key ? await readReceipt(key) : null;
-      if (bytes) archive.append(bytes, { name: r.file });
-    }
-  }
+  for (const f of files) archive.append(f.bytes, { name: f.name });
   await archive.finalize();
   await done;
   return Buffer.concat(chunks);
