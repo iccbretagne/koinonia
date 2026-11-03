@@ -71,6 +71,12 @@ const FUNCTIONS = [
     icon: "🎤",
   },
   {
+    key: "NAVETTE" as const,
+    label: "Navette",
+    description: "Suit le budget de la navette : ses membres déclarent les dépenses avec justificatif et demandent le remboursement de leurs avances (spec 073).",
+    icon: "🚐",
+  },
+  {
     key: "SECURITE" as const,
     label: "Sécurité",
     description: "Ses responsables désignent les personnes d'ouverture et de fermeture des cultes.",
