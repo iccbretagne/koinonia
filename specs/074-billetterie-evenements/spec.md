@@ -1,7 +1,7 @@
 # Spec — Billetterie : inscriptions, paiements et présences des événements
 
 - **Numéro** : 074
-- **Statut** : En revue
+- **Statut** : Validée
 - **Créée le** : 2026-11-03
 - **Branche suggérée** : `feat/billetterie`
 - **Issue** : [#708](https://github.com/iccbretagne/koinonia/issues/708)
@@ -127,6 +127,40 @@ compte. Une personne connectée voit son nom pré-rempli.
 - Après la date limite, ou une fois l'événement complet, l'inscription est fermée avec un message
   clair.
 
+#### Retrouver et gérer sa réservation
+
+La plupart des inscrits n'ont **pas de compte Koinonia**. Leur réservation leur appartient
+quand même, sans mot de passe.
+
+- **Lien personnel** : l'email de confirmation contient un lien secret, impossible à deviner,
+  vers **« Ma réservation »**. Il reste valable jusqu'à la clôture de l'événement.
+- **Lien perdu** : sur la page publique de l'événement, « Retrouver ma réservation » demande
+  l'email de la réservation et y renvoie le lien. Le message affiché est le même que l'email soit
+  connu ou non, pour ne pas révéler qui est inscrit. Le nombre de demandes est limité.
+- **Avec un compte** : si l'email de la réservation est celui d'un compte Koinonia, la
+  réservation apparaît aussi dans « Mes réservations », sans passer par le lien.
+
+Depuis « Ma réservation », le titulaire :
+- voit le récapitulatif, ce qui est payé et ce qui reste à régler, avec la référence et les
+  instructions de paiement ;
+- **affiche ou transmet** chaque billet séparément, par lien ou par WhatsApp ;
+- clique **« J'ai payé »** ;
+- **modifie ses options** (changer de menu, en ajouter, en retirer) jusqu'à la **date limite de
+  paiement des options**, dans la limite du stock. Une option déjà payée qu'il retire suit les
+  règles de remboursement ;
+- **ajoute un participant**, tant que l'inscription est ouverte et qu'il reste des places, avec
+  les mêmes règles que l'inscription ;
+- **corrige le nom** d'un participant, par exemple pour un billet transmis à quelqu'un d'autre,
+  jusqu'au début de l'événement ;
+- **met à jour son téléphone** ;
+- **annule** un participant ou toute la réservation.
+
+Chaque modification envoie un email récapitulatif. Les billets restent les mêmes, sauf ceux des
+participants annulés.
+
+Le lien d'un **billet individuel** ne donne accès qu'à ce billet : son porteur ne voit ni les
+autres participants ni les paiements, et ne peut rien modifier.
+
 #### Billets
 
 - **Un billet par participant**, avec son nom et un code à scanner. Chaque billet a son propre
@@ -169,8 +203,8 @@ compte. Une personne connectée voit son nom pré-rempli.
 **Date limite de paiement des repas et options**
 - L'organisateur fixe une **date limite de paiement des options**. Il l'aligne en général sur la
   date de commande ou de préparation des repas.
-- Quelques jours avant, une **relance** automatique part vers les réservations qui doivent encore
-  quelque chose.
+- Avant cette date, une **relance** automatique part vers les réservations qui doivent encore
+  quelque chose. L'organisateur règle ce délai (3 jours par défaut).
 - À la date limite, les options **non réglées** (ni payées ni déclarées) sont **libérées** : elles
   sortent de la réservation, le stock est rendu, et le participant est prévenu.
 - **Exception** : si l'organisateur autorise le **paiement sur place**, l'option reste réservée et
@@ -381,6 +415,10 @@ comme le contrôle.
   comptes de l'église, STAR compris. Chacun n'accède qu'à ce que son rôle permet.
 - [ ] Un concert gratuit sans option, une soirée gratuite avec repas payants et un événement à
   entrée payante se paramètrent tous.
+- [ ] Le titulaire d'une réservation, sans compte, la retrouve par son lien personnel ou par
+  « Retrouver ma réservation ». Il y modifie ses options avant la date limite, ajoute un
+  participant, corrige un nom et annule. Le lien d'un billet seul ne permet rien de tout cela.
+- [ ] « Retrouver ma réservation » affiche le même message que l'email soit connu ou non.
 - [ ] Une personne sans compte inscrit quatre personnes, choisit leurs options et reçoit aussitôt
   quatre billets nominatifs, chacun transmissible séparément, ainsi que les instructions de
   paiement.
@@ -451,7 +489,6 @@ Décisions prises d'après l'issue #708, à revoir en recette si besoin :
   Les billets individuels restent valables.
 - **Création d'événement** : ouverte aux Super Admin, Admin et Secrétaire. Le Ministre ne crée pas
   d'événement, mais peut en être organisateur.
-- [À CLARIFIER : la relance de paiement part-elle **3 jours** avant la date limite, ou le délai
-  est-il réglable par l'organisateur ?]
-- [À CLARIFIER : l'**ajout sur place** à l'entrée (inscription et encaissement à la porte)
-  est-il nécessaire dès le 31/12, ou peut-il attendre ?]
+- **Relance de paiement** : son délai avant la date limite est **réglable par l'organisateur**
+  (3 jours par défaut).
+- **Ajout sur place** à l'entrée : livré avec le lot 2, disponible dès le 31/12.
