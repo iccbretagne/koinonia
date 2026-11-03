@@ -109,6 +109,104 @@ function buildPayload(form: FormState) {
 }
 
 
+/** Justificatif : photo prise sur le moment, ou document existant (scan, PDF, galerie). */
+function ReceiptField({
+  file,
+  required,
+  existingReceipt,
+  onPick,
+  onClear,
+}: {
+  readonly file: File | null;
+  readonly required: boolean;
+  readonly existingReceipt: string | null;
+  readonly onPick: (f: File | undefined) => void;
+  readonly onClear: () => void;
+}) {
+  const photoRef = useRef<HTMLInputElement>(null);
+  const docRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const hint =
+    existingReceipt && !file
+      ? `Déjà joint : ${existingReceipt}. Un nouveau fichier le remplacera.`
+      : "Photo, scan ou PDF, 10 Mo au plus. Sur ordinateur, vous pouvez aussi glisser le fichier ici.";
+  return (
+    <fieldset
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragging(false);
+        onPick(e.dataTransfer.files[0]);
+      }}
+      className={`rounded-card border border-dashed p-3 ${dragging ? "border-brand bg-brand-soft" : "border-control-line"}`}
+    >
+      <legend className="px-1 text-sm font-medium text-ink-muted">
+        Justificatif{required ? " (obligatoire)" : " (facultatif)"}
+      </legend>
+      {file ? (
+        <div className="flex items-center gap-3">
+          {file.type.startsWith("image/") ? (
+            <ImageIcon aria-hidden="true" className="size-10 shrink-0 text-ink-muted" />
+          ) : (
+            <FileText aria-hidden="true" className="size-10 shrink-0 text-ink-muted" />
+          )}
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-sm text-ink">{file.name}</span>
+            <span className="text-[13px] text-ink-muted">{(file.size / 1024 / 1024).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} Mo</span>
+          </span>
+          <button
+            type="button"
+            aria-label="Retirer le justificatif"
+            onClick={() => onClear()}
+            className="grid size-11 place-items-center rounded-control text-ink-muted hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-focus"
+          >
+            <X aria-hidden="true" className="size-5" />
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button type="button" variant="secondary" onClick={() => photoRef.current?.click()}>
+            <Camera aria-hidden="true" className="size-4" /> Prendre une photo
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => docRef.current?.click()}>
+            <Upload aria-hidden="true" className="size-4" /> Choisir un document
+          </Button>
+        </div>
+      )}
+      <p className="mt-2 text-[13px] leading-[18px] text-ink-muted">
+        {hint}
+      </p>
+      <input
+        ref={photoRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        aria-label="Photo du justificatif"
+        onChange={(e) => {
+          onPick(e.target.files?.[0]);
+          e.target.value = "";
+        }}
+      />
+      <input
+        ref={docRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,application/pdf"
+        className="hidden"
+        aria-label="Document justificatif"
+        onChange={(e) => {
+          onPick(e.target.files?.[0]);
+          e.target.value = "";
+        }}
+      />
+    </fieldset>
+  );
+}
+
 /**
  * Saisie d'une ligne du registre (spec 073) : la nature d'abord, puis les champs utiles. Le
  * justificatif se donne par **photo** (appareil photo du téléphone) ou par **document** existant
@@ -135,11 +233,8 @@ export default function EntryForm({
   const router = useRouter();
   const toast = useToast();
   const ids = useId();
-  const photoRef = useRef<HTMLInputElement>(null);
-  const docRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState(() => initialState(seed));
   const [file, setFile] = useState<File | null>(null);
-  const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -328,81 +423,13 @@ export default function EntryForm({
           </label>
         )}
 
-        <fieldset
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragging(true);
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragging(false);
-            pick(e.dataTransfer.files[0]);
-          }}
-          className={`rounded-card border border-dashed p-3 ${dragging ? "border-brand bg-brand-soft" : "border-control-line"}`}
-        >
-          <legend className="px-1 text-sm font-medium text-ink-muted">
-            Justificatif{receiptRequired ? " (obligatoire)" : " (facultatif)"}
-          </legend>
-          {file ? (
-            <div className="flex items-center gap-3">
-              {file.type.startsWith("image/") ? (
-                <ImageIcon aria-hidden="true" className="size-10 shrink-0 text-ink-muted" />
-              ) : (
-                <FileText aria-hidden="true" className="size-10 shrink-0 text-ink-muted" />
-              )}
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-sm text-ink">{file.name}</span>
-                <span className="text-[13px] text-ink-muted">{(file.size / 1024 / 1024).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} Mo</span>
-              </span>
-              <button
-                type="button"
-                aria-label="Retirer le justificatif"
-                onClick={() => setFile(null)}
-                className="grid size-11 place-items-center rounded-control text-ink-muted hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-focus"
-              >
-                <X aria-hidden="true" className="size-5" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button type="button" variant="secondary" onClick={() => photoRef.current?.click()}>
-                <Camera aria-hidden="true" className="size-4" /> Prendre une photo
-              </Button>
-              <Button type="button" variant="secondary" onClick={() => docRef.current?.click()}>
-                <Upload aria-hidden="true" className="size-4" /> Choisir un document
-              </Button>
-            </div>
-          )}
-          <p className="mt-2 text-[13px] leading-[18px] text-ink-muted">
-            {existingReceipt && !file
-              ? `Déjà joint : ${existingReceipt}. Un nouveau fichier le remplacera.`
-              : "Photo, scan ou PDF, 10 Mo au plus. Sur ordinateur, vous pouvez aussi glisser le fichier ici."}
-          </p>
-          <input
-            ref={photoRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            aria-label="Photo du justificatif"
-            onChange={(e) => {
-              pick(e.target.files?.[0]);
-              e.target.value = "";
-            }}
-          />
-          <input
-            ref={docRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,application/pdf"
-            className="hidden"
-            aria-label="Document justificatif"
-            onChange={(e) => {
-              pick(e.target.files?.[0]);
-              e.target.value = "";
-            }}
-          />
-        </fieldset>
+        <ReceiptField
+          file={file}
+          required={receiptRequired}
+          existingReceipt={existingReceipt}
+          onPick={pick}
+          onClear={() => setFile(null)}
+        />
 
         {!manager && !editing && (
           <p className="text-[13px] leading-[18px] text-ink-muted">
