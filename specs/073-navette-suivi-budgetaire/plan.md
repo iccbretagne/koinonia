@@ -181,7 +181,7 @@ lignes pendant 48 heures.
   - **Notification des gestionnaires** à chaque mutation faite par un **non-gestionnaire**.
     Destinataires : les `ACCOUNTANT` de l'église, à défaut les `ADMIN` (`notifyUsersWithRole`).
     Domaine `shuttle`. Exemple : « Navette : dépense de 62,00 € (Carburant) déclarée par Prénom
-    Nom », avec un lien vers `/navette?ligne=<id>`. Le texte se lit sans risque sur un écran
+    Nom », avec un lien vers `/accounting/navette?ligne=<id>`. Le texte se lit sans risque sur un écran
     verrouillé.
   - **Alerte de solde bas** : après chaque mutation, on compare le solde avant et après au
     seuil. On notifie au **franchissement à la baisse** seulement, pas à chaque ligne sous le
@@ -213,23 +213,23 @@ lignes pendant 48 heures.
 
 ## API
 
-Toutes les routes sont déclarées dans `routes.api` du manifeste (`/api/navette`), avec un
+Toutes les routes sont déclarées dans `routes.api` du manifeste (`/api/accounting/navette`), avec un
 `contract.ts` voisin, puis `npm run openapi`.
 
 | Endpoint | Méthode | Accès | Entrée | Sortie |
 |---|---|---|---|---|
-| `/api/navette` | GET | membre ou gestionnaire, église courante | `?from&to&category&author&rental&flagged` | relevé et synthèses (`getLedger`) |
-| `/api/navette/entries` | POST | membre (types ouverts) ou gestionnaire | multipart : `data` (JSON validé Zod) + `file` | entrée créée (201) |
-| `/api/navette/entries/[id]` | PATCH | auteur sous 48 h ou gestionnaire, église de la ligne | multipart : `data` partiel + `file?` | entrée |
-| `/api/navette/entries/[id]` | DELETE | auteur sous 48 h ou gestionnaire | — | `{ ok }` |
-| `/api/navette/entries/[id]/receipt` | GET | membre ou gestionnaire de l'église de la ligne | — | fichier (`nosniff`, `private`) |
-| `/api/navette/entries/[id]/history` | GET | membre ou gestionnaire | — | historique |
-| `/api/navette/entries/[id]/flag` | PUT, DELETE | gestionnaire | `{ note }` | entrée |
-| `/api/navette/entries/[id]/retained` | PUT | gestionnaire | `{ note }` | entrée |
-| `/api/navette/rentals` | GET, POST | membre ou gestionnaire | `{ vendor, vehicle?, startDate, endDate? }` | location(s) |
-| `/api/navette/rentals/[id]` | PATCH | membre ou gestionnaire | partiel | location |
-| `/api/navette/settings` | GET, PUT | gestionnaire | `{ lowBalanceThreshold: number \| null }` | réglages |
-| `/api/navette/export` | GET | gestionnaire | `?from&to` | ZIP |
+| `/api/accounting/navette` | GET | membre ou gestionnaire, église courante | `?from&to&category&author&rental&flagged` | relevé et synthèses (`getLedger`) |
+| `/api/accounting/navette/entries` | POST | membre (types ouverts) ou gestionnaire | multipart : `data` (JSON validé Zod) + `file` | entrée créée (201) |
+| `/api/accounting/navette/entries/[id]` | PATCH | auteur sous 48 h ou gestionnaire, église de la ligne | multipart : `data` partiel + `file?` | entrée |
+| `/api/accounting/navette/entries/[id]` | DELETE | auteur sous 48 h ou gestionnaire | — | `{ ok }` |
+| `/api/accounting/navette/entries/[id]/receipt` | GET | membre ou gestionnaire de l'église de la ligne | — | fichier (`nosniff`, `private`) |
+| `/api/accounting/navette/entries/[id]/history` | GET | membre ou gestionnaire | — | historique |
+| `/api/accounting/navette/entries/[id]/flag` | PUT, DELETE | gestionnaire | `{ note }` | entrée |
+| `/api/accounting/navette/entries/[id]/retained` | PUT | gestionnaire | `{ note }` | entrée |
+| `/api/accounting/navette/rentals` | GET, POST | membre ou gestionnaire | `{ vendor, vehicle?, startDate, endDate? }` | location(s) |
+| `/api/accounting/navette/rentals/[id]` | PATCH | membre ou gestionnaire | partiel | location |
+| `/api/accounting/navette/settings` | GET, PUT | gestionnaire | `{ lowBalanceThreshold: number \| null }` | réglages |
+| `/api/accounting/navette/export` | GET | gestionnaire | `?from&to` | ZIP |
 
 **Église** : les collections utilisent l'église courante (`getCurrentChurchId`). Les routes
 `[id]` utilisent l'**église de la ligne** (lue en base), jamais le contexte affiché. Une ligne
@@ -240,12 +240,21 @@ comme `/api/giving/logo`. Débit limité (`RATE_LIMIT_MUTATION`).
 
 ## UI / composants
 
-- **Navigation** (`(auth)/layout.tsx` → `navigation.ts`) : nouveau drapeau `hasShuttle`,
-  calculé seulement si `registry.has("shuttle")`. Il vaut vrai pour un gestionnaire dont
-  l'église a au moins un département `NAVETTE`, et pour un membre de l'équipe. Il ajoute
-  « Navette » (`/navette`) dans l'espace **Demandes**, à côté de « Comptabilité ».
-  `MoreSheet.tsx` et `NavPageList.tsx` ne sont pas modifiés : ils consomment `navigation.ts`.
-- **`/navette`** (`src/app/(auth)/navette/page.tsx`, Server Component) : `requireShuttleAccess`
+- **Navigation, sous « Comptabilité »** (`(auth)/layout.tsx` → `navigation.ts`) :
+  - nouveau drapeau `hasShuttle`, calculé seulement si `registry.has("shuttle")`. Il vaut vrai
+    pour un gestionnaire dont l'église a au moins un département `NAVETTE`, et pour un membre de
+    l'équipe ;
+  - dans l'espace **Demandes**, la sidebar affiche un bloc **« Comptabilité »** qui regroupe
+    « Demandes » (`/accounting/requests`, pour `accounting:view`) et, juste en dessous,
+    « Navette » (`/accounting/navette`). Le regroupement passe par `sidebarBlock` et
+    `sidebarLabel` ;
+  - un membre de l'équipe sans `accounting:view` (un STAR, par exemple) voit le bloc
+    « Comptabilité » avec la seule entrée « Navette » ;
+  - sur mobile, le panneau « Plus » liste « Comptabilité » puis « Navette » ;
+  - l'entrée active est celle du préfixe le plus long : `/accounting/navette` allume
+    « Navette », pas « Comptabilité » ;
+  - `MoreSheet.tsx` et `NavPageList.tsx` ne sont pas modifiés : ils consomment `navigation.ts`.
+- **`/accounting/navette`** (`src/app/(auth)/accounting/navette/page.tsx`, Server Component) : `requireShuttleAccess`
   sur l'église courante, puis `ShuttleClient` avec les données initiales.
   - **En-tête** (`PageHeader`) : « Navette », avec le **solde à date** bien visible, en rouge
     s'il est négatif. Actions : « Déclarer une dépense » (principale) et « Autre entrée ».
@@ -275,7 +284,8 @@ comme `/api/giving/logo`. Débit limité (`RATE_LIMIT_MUTATION`).
     - « Super U Location » proposé par défaut pour le fournisseur ;
     - la location à choisir dans les locations récentes ;
     - pour un membre, un rappel : « modifiable pendant 48 h ».
-- **Comptabilité** : un lien « Navette » dans `AccountingNav`, quand `hasShuttle`.
+- **Onglets de la comptabilité** : `AccountingNav` gagne un onglet « Navette » (Demandes,
+  Statistiques, Navette) quand `hasShuttle`, pour passer d'un écran à l'autre sans le menu.
 - **Guide** (`GuideContent.tsx`) : une section « Navette ». ADR-0014 exige de documenter que la
   composition du département Navette donne des droits.
 
@@ -285,7 +295,7 @@ comme `/api/giving/logo`. Débit limité (`RATE_LIMIT_MUTATION`).
 defineModule({
   name: "shuttle",
   dependsOn: ["core", "planning", "accounting"],
-  routes: { authenticated: [{ path: "/navette" }], api: [{ path: "/api/navette" }] },
+  routes: { authenticated: [{ path: "/accounting/navette" }], api: [{ path: "/api/accounting/navette" }] },
   permissions: { "shuttle:manage": ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT"] },
   notificationDomains: [{ key: "shuttle", label: "Navette", description: "Dépenses déclarées, signalements, solde bas.", defaultEmail: true, visibleWith: ["shuttle:manage"] }],
 });
@@ -296,6 +306,15 @@ Ajouté à `src/lib/manifests.ts` (15 modules). Il faut mettre à jour en même 
 - le tableau des permissions du `CLAUDE.md` et `docs/auth.md`.
 
 ## Décisions & alternatives écartées
+
+- **Choix** : les adresses `/accounting/navette` et `/api/accounting/navette` appartiennent au
+  module `shuttle`, sous le préfixe `/accounting` de la comptabilité. *Pourquoi* : l'écran est
+  rangé sous la comptabilité, dans l'URL comme dans le menu. La résolution des routes donne la
+  priorité au préfixe le plus long, et seuls les préfixes **identiques** sont interdits
+  (`routes-exhaustivite.test.ts`). Il n'existe aucun layout `/accounting` qui exigerait
+  `accounting:view` et bloquerait un STAR de l'équipe : le contrôle reste dans chaque page.
+- **Écarté** : une adresse `/navette` à la racine. *Raison* : l'écran serait séparé de la
+  comptabilité, alors qu'il en est une extension.
 
 - **Choix** : un module `shuttle` distinct qui dépend de `accounting`. *Pourquoi* : il se
   désactive seul (`ENABLED_MODULES`), sans toucher au circuit des demandes ; c'est
