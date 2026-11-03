@@ -73,6 +73,10 @@ model ShuttleEntry {
   liters          Decimal?                @db.Decimal(7, 2)
   kilometers      Int?
   personalAdvance Boolean                 @default(false)
+  /// A : note de frais de remboursement créée depuis cette ligne (avance personnelle).
+  reimbursementRequestId String?          @unique
+  /// C : note de frais saisie hors registre, ajoutée au registre par la compta.
+  sourceRequestId String?                 @unique
   rentalId        String?
   /// DEPOSIT_RETURN → la caution (EXPENSE/DEPOSIT) qu'elle solde.
   returnOfId      String?                 @unique
@@ -95,6 +99,8 @@ model ShuttleEntry {
 
   church    Church         @relation(fields: [churchId], references: [id], onDelete: Cascade)
   rental    ShuttleRental? @relation(fields: [rentalId], references: [id], onDelete: SetNull)
+  reimbursementRequest FinancialRequest? @relation("ShuttleReimbursement", fields: [reimbursementRequestId], references: [id], onDelete: SetNull)
+  sourceRequest        FinancialRequest? @relation("ShuttleSourceRequest", fields: [sourceRequestId], references: [id], onDelete: SetNull)
   returnOf  ShuttleEntry?  @relation("DepositReturn", fields: [returnOfId], references: [id], onDelete: SetNull)
   returnedBy ShuttleEntry? @relation("DepositReturn")
   createdBy User?          @relation("ShuttleEntryCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
@@ -134,6 +140,12 @@ model ShuttleSettings {
 
 Migration `add_shuttle_ledger`, générée par `prisma migrate diff` puis rejouée en CI (job
 `migrations`).
+
+Le lien **B** (avances de budget versées) n'est **pas stocké** dans le registre : il est **lu**
+dans les tables de la comptabilité. Ce sont les tranches versées (`FinancialPayment.releasedAt`
+non nul) des demandes `BUDGET_ADVANCE` dont `departmentId` est un département `NAVETTE` de
+l'église. Une correction dans la comptabilité se reflète donc toujours dans le registre, sans
+synchronisation.
 
 `DEPT_FN.NAVETTE` (« Navette ») est ajouté dans `src/lib/department-functions.ts` et dans
 `access-overview.ts`. Pas de migration pour cela : `Department.function` est une chaîne.
@@ -187,6 +199,45 @@ lignes pendant 48 heures.
     seuil. On notifie au **franchissement à la baisse** seulement, pas à chaque ligne sous le
     seuil. Destinataires : les gestionnaires, plus les responsables et adjoints des départements
     `NAVETTE` (`user_departments`).
+- **`accounting-link.ts`** (liens A, B et C, via l'index de `@/modules/accounting`)
+  - **A, `requestReimbursement(entryId, actor)`** :
+    - seulement pour l'auteur de la ligne, sur une `EXPENSE` non supprimée avec
+      `personalAdvance` ;
+    - pas de demande en cours sur la ligne : on peut en refaire une si la précédente est
+      `REJECTED` ou `CANCELLED` ;
+    - crée une demande `EXPENSE_REPORT` par `createFinancialRequest` (nouveau service exporté
+      par `accounting`), avec :
+      - `submittedById` = l'auteur ;
+      - `departmentId` = le département `NAVETTE` dont il est membre (le premier, s'il y en a
+        plusieurs) ;
+      - le libellé « Navette : Carburant, Super U, 12/11 » ;
+      - le montant de la ligne.
+    - **copie** le justificatif sous une nouvelle clé `accounting/<churchId>/…` (pièce
+      `FinancialAttachment`), afin qu'une suppression côté comptabilité n'efface jamais la
+      pièce du registre ;
+    - renseigne `reimbursementRequestId`, avec audit ;
+    - notifie la compta par le même chemin que `POST /api/accounting/requests`
+      (`notifyAccountingNewRequest`, extrait de la route vers un service de `accounting`).
+  - **A, `cancelReimbursement(entryId, actor)`** : auteur seulement, si la demande est encore
+    `SUBMITTED` ; elle passe à `CANCELLED`, comme l'annulation par le demandeur dans la
+    comptabilité.
+  - **A, état affiché** : `reimbursementStatus(request)`, dérivé de `status` et des tranches
+    versées. Il vaut `REQUESTED`, `PROCESSING`, `APPROVED`, `REJECTED` (avec le motif),
+    `PARTIALLY_PAID` ou `PAID`.
+  - **A, verrou** : `updateEntry` et `deleteEntry` refusent au membre une ligne qui a une demande
+    non `REJECTED` ou `CANCELLED`. Le gestionnaire n'est pas concerné.
+  - **B, `listBudgetAdvanceReleases(churchId)`** : tranches versées des `BUDGET_ADVANCE` des
+    départements `NAVETTE`. Elles sont fusionnées dans `getLedger` comme des entrées en lecture
+    seule : `source: "accounting"`, avec `requestId`, la date `releasedAt` et le montant
+    `releasedAmount`.
+  - **C, `listUnlinkedExpenseReports(churchId)`** : demandes `EXPENSE_REPORT` des départements
+    `NAVETTE`, non `CANCELLED`, qui ne sont liées à aucune ligne (ni
+    `reimbursementRequestId`, ni `sourceRequestId`).
+  - **C, `importExpenseReport(requestId, category, actor)`** : réservé au gestionnaire.
+    - crée une `EXPENSE` avec le montant et le libellé de la demande ;
+    - prend comme date la date de création de la demande, modifiable ensuite ;
+    - copie la première pièce jointe comme justificatif ;
+    - renseigne `sourceRequestId` et `personalAdvance = true`, puisque c'est une note de frais.
 - **`ledger-read.ts`**
   - `getLedger(churchId, { from?, to? }, filters)` renvoie :
     - `balanceToDate` ;
@@ -195,7 +246,10 @@ lignes pendant 48 heures.
     - `byCategory`, `byMonth`, `byRental` (sorties nettes, hors cautions et restitutions) ;
     - `outstandingDeposits` (cautions sans restitution liée, non marquées « non restituée »,
       avec leur ancienneté) ;
-    - `personalAdvances` (lignes de la période où `personalAdvance` est coché).
+    - `personalAdvances` (lignes de la période où `personalAdvance` est coché), avec l'état de
+      leur remboursement ;
+    - les entrées **B** fusionnées au relevé et aux totaux (`source: "accounting"`) ;
+    - `unlinkedExpenseReports` (**C**), pour le gestionnaire seulement.
   - Le solde de début de période est la somme des lignes datées **avant** `from`.
   - `getEntryHistory(id)` : lignes d'audit de l'entrée.
 - **`flags.ts`** : `flagEntry(id, note, actor)` et `clearFlag(id, actor)`, réservés au
@@ -226,6 +280,8 @@ Toutes les routes sont déclarées dans `routes.api` du manifeste (`/api/account
 | `/api/accounting/navette/entries/[id]/history` | GET | membre ou gestionnaire | — | historique |
 | `/api/accounting/navette/entries/[id]/flag` | PUT, DELETE | gestionnaire | `{ note }` | entrée |
 | `/api/accounting/navette/entries/[id]/retained` | PUT | gestionnaire | `{ note }` | entrée |
+| `/api/accounting/navette/entries/[id]/reimbursement` | POST, DELETE | auteur de la ligne (A) | — | état de la demande |
+| `/api/accounting/navette/import/[requestId]` | POST | gestionnaire (C) | `{ category }` | entrée créée |
 | `/api/accounting/navette/rentals` | GET, POST | membre ou gestionnaire | `{ vendor, vehicle?, startDate, endDate? }` | location(s) |
 | `/api/accounting/navette/rentals/[id]` | PATCH | membre ou gestionnaire | partiel | location |
 | `/api/accounting/navette/settings` | GET, PUT | gestionnaire | `{ lowBalanceThreshold: number \| null }` | réglages |
@@ -269,9 +325,17 @@ comme `/api/giving/logo`. Débit limité (`RATE_LIMIT_MUTATION`).
       mobile), avec le justificatif, l'historique et les actions permises.
     - **Répartition** : par type, par mois, par location (barres simples en tokens, sans
       bibliothèque).
-    - **Cautions & avances** : cautions en cours, avec leur ancienneté et l'action
-      « Restituée » (qui pré-remplit une restitution liée) ou « Non restituée » pour le
-      gestionnaire ; avances personnelles de la période.
+    - **Cautions & avances** :
+      - cautions en cours, avec leur ancienneté et l'action « Restituée » (qui pré-remplit une
+        restitution liée) ou « Non restituée » pour le gestionnaire ;
+      - avances personnelles de la période, avec l'état de leur remboursement (`StatusChip`) ;
+      - pour le gestionnaire, « Notes de frais hors registre » (C), avec « Ajouter au
+        registre ».
+    - Les entrées **B** apparaissent dans le relevé avec une pastille « Comptabilité » et un lien
+      vers la demande, sans action de modification.
+    - Le détail d'une ligne « avance personnelle » propose à son auteur « Demander le
+      remboursement », puis affiche l'état de la demande et « Annuler la demande » tant qu'elle
+      est en attente.
     - **Locations** : liste et création, avec le coût de chaque location.
     - **Réglages**, gestionnaire seulement : seuil d'alerte et solde de départ (saisie unique,
       puis correction).
@@ -313,7 +377,33 @@ Ajouté à `src/lib/manifests.ts` (15 modules). Il faut mettre à jour en même 
 - la matrice figée de `src/core/__tests__/permissions.test.ts` ;
 - le tableau des permissions du `CLAUDE.md` et `docs/auth.md`.
 
+## Changements dans le module `accounting`
+
+C'est le seul endroit où l'on touche à la comptabilité :
+- la création d'une demande (`tx.financialRequest.create` et la notification de la compta) est
+  extraite de `POST /api/accounting/requests` vers un service `createFinancialRequest` et
+  `notifyAccountingNewRequest`, exportés par `@/modules/accounting` ;
+- la route existante appelle ce service, sans changer de comportement : ses tests existants
+  restent verts ;
+- `copyAttachmentFile` est exporté pour copier une pièce sous une nouvelle clé.
+
+`shuttle` importe `@/modules/accounting` (index), ce qui est autorisé par son `dependsOn` et
+vérifié par `lint:boundaries`. `accounting` n'importe jamais `shuttle`.
+
 ## Décisions & alternatives écartées
+
+- **Choix** : le lien **B** est lu dans la comptabilité, pas recopié dans le registre.
+  *Pourquoi* : aucune synchronisation, ni sur le bus ni dans la route de paiement ; une
+  correction ou une annulation côté comptabilité est toujours reflétée ; `accounting` ne dépend
+  pas de `shuttle`.
+- **Écarté** : créer une ligne `FUNDING` au versement via le bus d'événements. *Raison* : il
+  faudrait toucher la route de paiement et gérer les corrections et les doublons, pour un
+  résultat identique.
+- **Choix** : copier le justificatif plutôt que le partager entre la ligne et la note de frais.
+  *Pourquoi* : chaque module supprime ses fichiers sans risque pour l'autre.
+- **Choix** : figer la ligne pour le membre dès la demande de remboursement. *Pourquoi* : la
+  note de frais et la ligne doivent rester d'accord sur le montant ; seule la compta, qui voit
+  les deux, peut corriger.
 
 - **Choix** : les adresses `/accounting/navette` et `/api/accounting/navette` appartiennent au
   module `shuttle`, sous le préfixe `/accounting` de la comptabilité. *Pourquoi* : l'écran est
@@ -382,6 +472,15 @@ Ajouté à `src/lib/manifests.ts` (15 modules). Il faut mettre à jour en même 
   - l'audit avant et après ;
   - une notification pour un non-gestionnaire, aucune pour un gestionnaire ;
   - l'alerte au seul franchissement du seuil.
+- **`accounting-link`** :
+  - A : auteur seulement, `personalAdvance` exigé, une seule demande en cours ;
+  - A : justificatif copié ; état dérivé (partiel, payé, rejeté) ;
+  - A : annulation si `SUBMITTED` uniquement ;
+  - A : verrou de la ligne pour le membre ;
+  - B : seules les tranches versées des `BUDGET_ADVANCE` des départements `NAVETTE` de l'église
+    sont prises, avec le montant versé ;
+  - C : liste des notes de frais non liées, et import qui les en retire ;
+  - non-régression de `POST /api/accounting/requests` après l'extraction du service.
 - **`ledger-read`** :
   - soldes de début et de fin de période ;
   - solde courant, y compris avec une ligne antidatée ;

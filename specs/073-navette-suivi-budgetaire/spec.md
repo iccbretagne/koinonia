@@ -42,7 +42,8 @@ qui n'en a pas besoin peut la **désactiver**.
   la fonction est « Navette », quel que soit son rôle (STAR, Resp. département, Ministre) :
   - déclarent des dépenses et des restitutions de caution ;
   - voient le solde et tout le registre ;
-  - corrigent ou suppriment **leurs propres** lignes pendant 48 heures.
+  - corrigent ou suppriment **leurs propres** lignes pendant 48 heures ;
+  - demandent le remboursement de **leurs propres** avances personnelles.
 - **Tous les autres rôles**, dont le Secrétaire : aucun accès, sauf s'ils appartiennent à l'équipe
   navette.
 
@@ -85,8 +86,8 @@ relevé de compte. Chaque ligne est soit une **entrée**, soit une **sortie** d'
   | Autre | libellé obligatoire |
 
 - **Avance personnelle** : une case indique que la dépense a été réglée avec l'argent personnel
-  d'un membre. Elle est **seulement signalée**. Le remboursement suit le circuit habituel de la
-  comptabilité, en dehors de ce registre.
+  d'un membre. Son auteur peut en **demander le remboursement** depuis la ligne (voir « Lien avec
+  la comptabilité »).
 
 Une sortie est **prise en compte dès sa déclaration**. Il n'y a ni approbation ni refus : le
 registre trace, il n'autorise pas.
@@ -95,6 +96,56 @@ registre trace, il n'autorise pas.
 de véhicule, définie par le loueur, le véhicule, la date de début et la date de fin. Le coût de
 chaque location se lit alors d'un coup d'œil, et une caution versée se rapproche de sa
 restitution.
+
+### Lien avec la comptabilité
+
+Le registre et le circuit habituel de la comptabilité (notes de frais, avances de budget) restent
+distincts, mais se rejoignent sur trois points pour éviter toute double saisie.
+
+**A. Remboursement d'une avance personnelle**
+
+- **Demande depuis la ligne** : sur une dépense cochée « avance personnelle », son **auteur**
+  peut cliquer « Demander le remboursement ». Une **note de frais** est alors créée dans la
+  comptabilité :
+  - déjà remplie avec le montant, le type, la date et le fournisseur ;
+  - avec le **même justificatif** ;
+  - rattachée au département Navette ;
+  - au nom de l'auteur.
+- **Ouvert à toute l'équipe** : ce bouton est disponible pour tout membre de l'équipe navette, y
+  compris un STAR qui ne peut pas faire de note de frais ailleurs. Il ne sert qu'à **ses propres**
+  dépenses navette.
+- **Circuit habituel** : la note de frais suit le circuit de la comptabilité (traitement,
+  validation ou rejet, versement). Le demandeur reçoit les notifications habituelles.
+- **Suivi sur la ligne** : la ligne affiche l'état de la demande :
+  - **Demandé** ;
+  - **En cours** ;
+  - **Validé** ;
+  - **Rejeté**, avec son motif ;
+  - **Remboursé**, totalement ou partiellement, avec le montant versé.
+- **Une seule demande en cours par ligne**. Tant qu'elle est en attente, l'auteur peut
+  l'**annuler** depuis la ligne. Si elle est rejetée, il peut en refaire une.
+- **Ligne figée** : dès que le remboursement est demandé, le membre ne peut plus modifier ni
+  supprimer la ligne, même dans les 48 heures. La compta le peut toujours.
+- **Solde inchangé** : le remboursement n'affecte pas le solde de la navette. La dépense a déjà
+  été comptée une fois, à sa déclaration.
+
+**B. Avances de budget versées à la Navette**
+
+- **Entrée automatique** : quand la compta verse une **avance de budget** demandée pour le
+  département Navette, chaque versement apparaît **automatiquement** dans le registre. Il prend la
+  forme d'une entrée « Avance de budget versée », à la date et au montant réellement versés.
+- **Pas de double saisie** : la compta n'a pas d'abondement à ressaisir.
+- **Lien vers la demande** : la ligne renvoie à la demande d'origine. Elle ne se modifie pas
+  depuis le registre ; une correction se fait dans la comptabilité, et le registre suit.
+- **Versements partiels** : chaque versement apparaît séparément.
+
+**C. Notes de frais de la Navette hors du registre**
+
+- **Repérage** : une note de frais du département Navette faite **directement** dans la
+  comptabilité, sans passer par le registre, n'y figure pas.
+- **Rattrapage** : la compta voit la liste de ces notes de frais et peut, d'un geste, les
+  **ajouter au registre** comme dépense, avec le justificatif repris.
+- **But** : aucune dépense de la navette n'échappe au suivi du budget.
 
 ### Corrections et traçabilité
 
@@ -212,11 +263,21 @@ Le reste de la comptabilité n'est pas touché.
 - [ ] Désactivée, la fonctionnalité n'apparaît nulle part. Réactivée, les données sont
   intactes.
 - [ ] Le registre d'une église n'est jamais visible depuis une autre église.
+- [ ] L'auteur d'une dépense « avance personnelle », même STAR, en demande le remboursement depuis
+  la ligne. La note de frais créée reprend le montant et le justificatif, et suit le circuit
+  habituel.
+- [ ] La ligne affiche l'état de la demande de remboursement. Elle n'est plus modifiable par le
+  membre une fois la demande faite, et le solde de la navette ne change pas au remboursement.
+- [ ] Un versement d'avance de budget pour le département Navette apparaît comme une entrée du
+  registre, sans saisie par la compta, au montant réellement versé.
+- [ ] Une note de frais de la Navette faite hors du registre est listée pour la compta, qui peut
+  l'ajouter au registre en un geste.
 
 ## Hors périmètre
 
 - Approbation ou refus des dépenses.
-- Avances et remboursements aux membres : circuit habituel de la comptabilité.
+- Traitement des notes de frais et des avances (validation, versement) : il reste dans le circuit
+  habituel de la comptabilité. Le registre ne fait que s'y relier.
 - Barème kilométrique et toute notion fiscale.
 - Réservation des véhicules auprès du loueur, planification des trajets et des chauffeurs.
 - Rapprochement bancaire automatique.
