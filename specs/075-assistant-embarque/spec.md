@@ -1,7 +1,7 @@
 # Spec — Assistant de prise en main
 
 - **Numéro** : 075
-- **Statut** : En revue
+- **Statut** : Validée
 - **Créée le** : 2026-11-04
 - **Branche suggérée** : `feat/assistant`
 
@@ -135,6 +135,8 @@ Exemples de questions de données prévues dès le départ, selon le rôle :
       courante, avec un lien vers l'écran complet.
 - [ ] Une réponse sur des données ne montre jamais plus que ce que l'écran correspondant montre à
       cette personne (même périmètre de rôle, de département, de ministère et d'église).
+- [ ] Aucune réponse ne recopie une donnée de suivi pastoral ni le téléphone, l'email ou
+      l'adresse d'une autre personne : l'assistant renvoie vers l'écran.
 - [ ] Un lien proposé par l'assistant ouvre toujours un écran accessible au rôle de la personne.
 - [ ] Un STAR qui demande une information ou un geste réservé à un autre rôle reçoit
       l'explication de qui peut le faire, sans aucune donnée.
@@ -163,9 +165,8 @@ Exemples de questions de données prévues dès le départ, selon le rôle :
 - Agir à la place de l'utilisateur (déclarer une absence, créer un événement, valider une
   demande) : l'assistant **explique et montre**, il ne fait pas.
 - Toute donnée que la personne ne voit pas déjà dans un écran.
-- Données de suivi pastoral et coordonnées personnelles d'autres personnes, même visibles à
-  l'écran : l'assistant renvoie vers l'écran sans les recopier. [À CLARIFIER: confirmer
-  l'exclusion des données pastorales et des coordonnées.]
+- Données de suivi pastoral et coordonnées personnelles d'autres personnes (téléphone, email,
+  adresse), même visibles à l'écran : l'assistant renvoie vers l'écran sans les recopier.
 - Assistance au public sans compte.
 - Accompagnement spirituel ou pastoral, réponses bibliques.
 - Messages vocaux, captures d'écran envoyées par l'utilisateur.
@@ -177,13 +178,13 @@ Exemples de questions de données prévues dès le départ, selon le rôle :
 - Le contenu (questions-réponses sur l'application, catalogue des questions de données) est à
   rédiger. Proposition : les 10 écrans les plus utilisés et une vingtaine de questions de données
   au premier lot, puis chaque module enrichit les siennes.
-- [À CLARIFIER: confirmer que l'assistant ne recopie ni les données pastorales ni les
-  coordonnées personnelles d'autres personnes (il renvoie vers l'écran).]
 
 ## Décisions
 
 - Aucun service externe : tout se passe dans Koinonia.
 - Deux familles de questions : sur l'application, et sur les données que la personne voit déjà.
 - Activation : Super Admin pour l'instance ; l'Admin d'église peut le couper pour son église.
+- Données sensibles : l'assistant ne recopie jamais de données de suivi pastoral ni les
+  coordonnées personnelles d'autres personnes ; il renvoie vers l'écran concerné.
 - Conservation : aucune conversation ; compteurs, avis et texte anonymisé des questions sans
   réponse ou jugées « Pas utile » seulement.
