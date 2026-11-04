@@ -161,6 +161,19 @@ module.exports = {
         path: "^src/modules/(?!giving/|storage/)",
       },
     },
+    {
+      name: "no-ticketing-imports-other-modules",
+      severity: "error",
+      comment:
+        "Le module ticketing ne peut importer aucun autre module, sauf storage (infrastructure partagee, ADR-0006).",
+      from: {
+        path: "^src/modules/ticketing/",
+        pathNot: "/__tests__/",
+      },
+      to: {
+        path: "^src/modules/(?!ticketing/|storage/)",
+      },
+    },
     /**
      * storage est l'infrastructure partagee (ADR-0006) : les autres modules
      * l'importent, mais lui-meme ne depend d'aucun module metier.

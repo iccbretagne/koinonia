@@ -21169,6 +21169,2402 @@
         }
       }
     },
+    "/api/ticketing/events": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Événements de billetterie de l'église courante",
+        "description": "**Accès** : toute personne connectée — `ticketing:manage` dans l'église courante, ou un rôle sur l'événement.\n\nTous les événements de l'église pour `ticketing:manage` ; sinon ceux, non clôturés, où l'on a un rôle d'événement (spec 074).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "responses": {
+          "200": {
+            "description": "Liste des événements avec places prises",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Création d'un événement de billetterie",
+        "description": "**Accès** : permission `ticketing:manage`.\n\nCrée un brouillon : adresse publique (slug) unique dans l'église, préfixe de référence déduit du titre et de l'année, places ouvertes = jauge, tarif adulte gratuit. Journalisée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "ticketing:manage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 150
+                  },
+                  "startsAt": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  },
+                  "endsAt": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  },
+                  "capacity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100000
+                  }
+                },
+                "required": [
+                  "title",
+                  "startsAt",
+                  "endsAt",
+                  "capacity"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Événement créé",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Détail d'un événement de billetterie",
+        "description": "**Accès** : toute personne connectée — un rôle sur l'événement (organisateur implicite pour `ticketing:manage`).\n\nParamétrage, tarifs, options et variantes (avec quantités réservées), rôles et places prises. L'église qui fait foi est celle de l'événement : autre église ou introuvable → 404.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Événement et droits de l'appelant",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Paramétrage d'un événement",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement.\n\nInformations, jauge et places ouvertes (jamais sous les inscrits, jamais au-dessus de la jauge), tarifs par tranche d'âge, moyens de paiement (IBAN propre à l'événement, vérifié ; jamais celui de l'église), règles de paiement, d'annulation et de mineurs, ajout sur place, conservation, état. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 150
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 5000
+                  },
+                  "location": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 200
+                  },
+                  "startsAt": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  },
+                  "endsAt": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  },
+                  "registrationDeadline": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  },
+                  "capacity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "seatsOpen": {
+                    "type": "integer",
+                    "nullable": true,
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "DRAFT",
+                      "OPEN",
+                      "CLOSED",
+                      "ARCHIVED"
+                    ]
+                  },
+                  "tariffs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "ageGroup": {
+                          "type": "string",
+                          "enum": [
+                            "ADULT",
+                            "TEEN",
+                            "CHILD",
+                            "INFANT"
+                          ]
+                        },
+                        "price": {
+                          "type": "number",
+                          "nullable": true,
+                          "minimum": 0,
+                          "maximum": 10000
+                        }
+                      },
+                      "required": [
+                        "ageGroup",
+                        "price"
+                      ]
+                    },
+                    "maxItems": 4
+                  },
+                  "paymentMethods": {
+                    "type": "object",
+                    "properties": {
+                      "wero": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                          "target": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          }
+                        },
+                        "required": [
+                          "target"
+                        ]
+                      },
+                      "revolut": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                          "link": {
+                            "type": "string",
+                            "maxLength": 300,
+                            "format": "uri"
+                          }
+                        },
+                        "required": [
+                          "link"
+                        ]
+                      },
+                      "transfer": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                          "iban": {
+                            "type": "string",
+                            "maxLength": 42
+                          },
+                          "holder": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          }
+                        },
+                        "required": [
+                          "iban",
+                          "holder"
+                        ]
+                      },
+                      "cash": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "cheque": {
+                        "type": "boolean",
+                        "default": false
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "optionPaymentDeadline": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  },
+                  "reminderDaysBefore": {
+                    "type": "integer",
+                    "nullable": true,
+                    "minimum": 0,
+                    "maximum": 30
+                  },
+                  "allowOnsitePayment": {
+                    "type": "boolean"
+                  },
+                  "allowUnaccompaniedMinors": {
+                    "type": "boolean"
+                  },
+                  "allowWalkIns": {
+                    "type": "boolean"
+                  },
+                  "entryRefundable": {
+                    "type": "boolean"
+                  },
+                  "entryRefundDeadline": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  },
+                  "questions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40
+                        },
+                        "label": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "required": {
+                          "type": "boolean",
+                          "default": false
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "label"
+                      ]
+                    },
+                    "maxItems": 10
+                  },
+                  "referencePrefix": {
+                    "type": "string",
+                    "pattern": "^[A-Z0-9]{2,8}$"
+                  },
+                  "retentionDays": {
+                    "type": "integer",
+                    "minimum": 7,
+                    "maximum": 730
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Événement mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/bookings": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Réservations d'un événement",
+        "description": "**Accès** : toute personne connectée — un rôle de lecture sur l'événement.\n\nParticipants, éléments payants et soldes (dû, déclaré, payé, reste, à rembourser). Coordonnées et réponses pour l'organisateur et le trésorier seulement ; l'observateur reçoit les noms et soldes, sans contact ni détail des éléments.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des réservations",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/bookings/{bookingId}": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Détail d'une réservation (équipe)",
+        "description": "**Accès** : toute personne connectée — organisateur ou trésorier de l'événement.\n\nMême contenu que « Ma réservation », pour l'organisateur et le trésorier.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "bookingId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Réservation",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Annulation ou relance d'une réservation par l'organisation",
+        "description": "**Accès** : toute personne connectée — organisateur ou trésorier de l'événement.\n\n`cancelParticipant`, `cancelBooking` : places et stock rendus, remboursement selon les règles de chaque élément, contact prévenu, restauration prévenue si une option à retirer est touchée. `remind` : renvoie le récapitulatif et les instructions de paiement.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "bookingId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "cancelParticipant"
+                        ]
+                      },
+                      "participantId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 40
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "participantId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "cancelBooking"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "remind"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Résultat",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/bookings/{bookingId}/receipts": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Encaissement direct sur une réservation",
+        "description": "**Accès** : toute personne connectée — organisateur, trésorier, accueil (entrées) ou restauration (options à retirer).\n\nEspèces, chèque (ou autre moyen reçu) sur les éléments cochés, à régler ou déclarés : ils passent à payé. L'accueil n'encaisse que les entrées, la restauration que les options à retirer sur place (403 sinon). Idempotent par `opId`.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "bookingId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "method": {
+                    "type": "string",
+                    "enum": [
+                      "WERO",
+                      "REVOLUT",
+                      "TRANSFER",
+                      "CASH",
+                      "CHEQUE"
+                    ]
+                  },
+                  "charges": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "entry",
+                            "item"
+                          ]
+                        },
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 1,
+                    "maxItems": 100
+                  },
+                  "opId": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 64
+                  }
+                },
+                "required": [
+                  "method",
+                  "charges"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Encaissement enregistré",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/bookings/{bookingId}/refunds": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Remboursement d'éléments « à rembourser »",
+        "description": "**Accès** : toute personne connectée — organisateur ou trésorier de l'événement.\n\nLes éléments choisis à l'état « à rembourser » passent à remboursé, avec le moyen et la date (409 si aucun).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "bookingId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "method": {
+                    "type": "string",
+                    "enum": [
+                      "WERO",
+                      "REVOLUT",
+                      "TRANSFER",
+                      "CASH",
+                      "CHEQUE"
+                    ]
+                  },
+                  "charges": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "entry",
+                            "item"
+                          ]
+                        },
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 1,
+                    "maxItems": 100
+                  }
+                },
+                "required": [
+                  "method",
+                  "charges"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Remboursement enregistré",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/export": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Export Excel d'un événement",
+        "description": "**Accès** : toute personne connectée — selon le type d'export.\n\n`participants` et `options` pour l'organisateur ; `payments` et `refunds` pour l'organisateur et le trésorier ; `passages` (registre des entrées et sorties) pour l'organisateur et l'accueil. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "participants",
+                "payments",
+                "refunds",
+                "options",
+                "passages"
+              ]
+            },
+            "required": true,
+            "name": "type",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Classeur Excel",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/options": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Ajout d'une option à un événement",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement.\n\nRepas, t-shirt, navette… : type (choix unique, quantité, case à cocher), portée (participant ou réservation), prix, stock, « à retirer sur place », préparation nominative, remboursement et sa date limite. Variantes initiales facultatives (la restauration compose le menu ensuite). Journalisée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 500
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "CHOICE",
+                      "QUANTITY",
+                      "CHECKBOX"
+                    ]
+                  },
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "PARTICIPANT",
+                      "BOOKING"
+                    ]
+                  },
+                  "price": {
+                    "type": "number",
+                    "nullable": true,
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "stock": {
+                    "type": "integer",
+                    "nullable": true,
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "pickup": {
+                    "type": "boolean"
+                  },
+                  "namedPrep": {
+                    "type": "boolean"
+                  },
+                  "refundable": {
+                    "type": "boolean"
+                  },
+                  "refundDeadline": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  },
+                  "active": {
+                    "type": "boolean"
+                  },
+                  "position": {
+                    "type": "integer",
+                    "nullable": true,
+                    "minimum": 0,
+                    "maximum": 1000
+                  },
+                  "variants": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 120
+                        }
+                      },
+                      "required": [
+                        "label"
+                      ]
+                    },
+                    "maxItems": 20
+                  }
+                },
+                "required": [
+                  "label",
+                  "type",
+                  "scope",
+                  "price"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Option créée",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/options/{optionId}": {
+      "patch": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Modification d'une option",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement.\n\nChamps qui engagent les inscrits : existence, prix, stock (jamais sous les quantités réservées), remboursement. Le type ne change plus une fois l'option choisie. Journalisée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "optionId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 500
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "CHOICE",
+                      "QUANTITY",
+                      "CHECKBOX"
+                    ]
+                  },
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "PARTICIPANT",
+                      "BOOKING"
+                    ]
+                  },
+                  "price": {
+                    "type": "number",
+                    "nullable": true,
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "stock": {
+                    "type": "integer",
+                    "nullable": true,
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "pickup": {
+                    "type": "boolean"
+                  },
+                  "namedPrep": {
+                    "type": "boolean"
+                  },
+                  "refundable": {
+                    "type": "boolean"
+                  },
+                  "refundDeadline": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  },
+                  "active": {
+                    "type": "boolean"
+                  },
+                  "position": {
+                    "type": "integer",
+                    "nullable": true,
+                    "minimum": 0,
+                    "maximum": 1000
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Option mise à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Suppression d'une option",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement.\n\nSupprimée si jamais choisie ; sinon seulement désactivée (`deleted: false`). Journalisée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "optionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ deleted }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/payments": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Règlements d'un événement",
+        "description": "**Accès** : toute personne connectée — organisateur ou trésorier de l'événement.\n\nDéclarations, encaissements et remboursements, du plus récent au plus ancien.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des paiements",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/payments/{paymentId}": {
+      "patch": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Confirmation ou refus d'un paiement déclaré",
+        "description": "**Accès** : toute personne connectée — organisateur ou trésorier de l'événement.\n\n`confirm` : les éléments déclarés passent à payé (un élément annulé entre-temps passe à « à rembourser »). `reject` avec motif : ils repassent à régler. Le contact est prévenu. 409 si la déclaration est déjà traitée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "paymentId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "confirm"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "reject"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 300
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "reason"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Déclaration traitée",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/poster": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Affiche d'un événement (équipe)",
+        "description": "**Accès** : toute personne connectée — un rôle sur l'événement.\n\nImage de l'affiche, quel que soit l'état de l'événement (404 sans affiche).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image",
+            "content": {
+              "image/*": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Dépôt de l'affiche",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement.\n\nCorps binaire JPEG, PNG ou WebP, 3 Mo au plus, type vérifié sur le contenu. Remplace l'affiche précédente ; journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "description": "Image de l'affiche",
+          "content": {
+            "image/*": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ ok: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Retrait de l'affiche",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ ok: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/roles": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Rôles d'un événement et comptes de l'église",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement.\n\nRôles attribués et comptes de l'église de l'événement (STAR compris), pour le choix.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ roles, accounts }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Attribution des rôles d'un événement",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement.\n\nRemplace la liste : organisateur, trésorier, accueil, restauration, observateur, cumulables, à n'importe quel compte de l'église (400 sinon). Les nouveaux titulaires sont notifiés ; journalisée. Les rôles s'arrêtent à la clôture.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "roles": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "userId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "ORGANIZER",
+                            "TREASURER",
+                            "RECEPTION",
+                            "CATERING",
+                            "OBSERVER"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "userId",
+                        "role"
+                      ]
+                    },
+                    "maxItems": 200
+                  }
+                },
+                "required": [
+                  "roles"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rôles enregistrés",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/my": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Mes réservations de billetterie",
+        "description": "**Accès** : toute personne connectée.\n\nRéservations dont l'email est celui du compte connecté (événements non clôturés), avec le lien « Ma réservation ».",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "responses": {
+          "200": {
+            "description": "Liste des réservations",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/public/{churchSlug}/{eventSlug}": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Page publique d'un événement",
+        "description": "**Accès** : public, sans session.\n\nÉvénement ouvert ou clos aux inscriptions seulement (brouillon et clôturé : 404, même réponse qu'une adresse inconnue). Tarifs, options et plats ouverts avec le stock restant, places restantes, questions, moyens de paiement proposés (sans coordonnées), raison de fermeture le cas échéant.",
+        "security": [],
+        "x-access": "public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "eventSlug",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Événement public",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ticketing/public/{churchSlug}/{eventSlug}/bookings": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Inscription publique à un événement",
+        "description": "**Accès** : public, sans session.\n\nSans compte. Turnstile obligatoire (refus si la vérification échoue ou n'est pas configurée), 5 demandes par minute et par IP, corps de 32 Ko au plus, champs inconnus refusés. En une transaction sous verrou de l'événement : inscriptions ouvertes (409 sinon), places et stock jamais dépassés (409), un adulte requis avec des mineurs (sauf autorisation de l'organisateur, alors responsable légal exigé), questions obligatoires, prix figés, référence `PREFIX-0042`, jetons dont seule l'empreinte est stockée. Lien vers le compte dont l'email correspond. Email immédiat : billets nominatifs, lien « Ma réservation », instructions de paiement.",
+        "security": [],
+        "x-access": "public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "eventSlug",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "participants": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "firstName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 80
+                        },
+                        "lastName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 80
+                        },
+                        "ageGroup": {
+                          "type": "string",
+                          "enum": [
+                            "ADULT",
+                            "TEEN",
+                            "CHILD",
+                            "INFANT"
+                          ]
+                        },
+                        "options": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "optionId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 40
+                              },
+                              "variantId": {
+                                "type": "string",
+                                "nullable": true,
+                                "minLength": 1,
+                                "maxLength": 40
+                              },
+                              "quantity": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 20,
+                                "default": 1
+                              }
+                            },
+                            "required": [
+                              "optionId"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "maxItems": 20,
+                          "default": []
+                        }
+                      },
+                      "required": [
+                        "firstName",
+                        "lastName",
+                        "ageGroup"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 1,
+                    "maxItems": 20
+                  },
+                  "bookingOptions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "optionId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40
+                        },
+                        "variantId": {
+                          "type": "string",
+                          "nullable": true,
+                          "minLength": 1,
+                          "maxLength": 40
+                        },
+                        "quantity": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 20,
+                          "default": 1
+                        }
+                      },
+                      "required": [
+                        "optionId"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 20,
+                    "default": []
+                  },
+                  "answers": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 500
+                    },
+                    "default": {}
+                  },
+                  "contact": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150
+                      },
+                      "email": {
+                        "type": "string",
+                        "maxLength": 191,
+                        "format": "email"
+                      },
+                      "phone": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 40,
+                        "pattern": "^[+\\d\\s().-]*$"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "email"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "guardian": {
+                    "type": "object",
+                    "nullable": true,
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150
+                      },
+                      "phone": {
+                        "type": "string",
+                        "minLength": 6,
+                        "maxLength": 40,
+                        "pattern": "^[+\\d\\s().-]+$"
+                      },
+                      "consent": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ]
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "phone",
+                      "consent"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "turnstileToken": {
+                    "type": "string",
+                    "maxLength": 4096
+                  }
+                },
+                "required": [
+                  "participants",
+                  "contact"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "`{ reference, manageToken }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          }
+        }
+      }
+    },
+    "/api/ticketing/public/{churchSlug}/{eventSlug}/poster": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Affiche publique d'un événement",
+        "description": "**Accès** : public, sans session.\n\nServie seulement pour un événement ouvert ou clos aux inscriptions (404 sinon).",
+        "security": [],
+        "x-access": "public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "eventSlug",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image",
+            "content": {
+              "image/*": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ticketing/public/{churchSlug}/{eventSlug}/recover": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Retrouver ma réservation",
+        "description": "**Accès** : public, sans session.\n\nRenvoie par email les liens « Ma réservation » des réservations actives de cet email pour l'événement. Réponse toujours identique, que l'email soit connu ou non. Turnstile obligatoire, 3 demandes par minute et par IP.",
+        "security": [],
+        "x-access": "public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "eventSlug",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "maxLength": 191,
+                    "format": "email"
+                  },
+                  "turnstileToken": {
+                    "type": "string",
+                    "maxLength": 4096
+                  }
+                },
+                "required": [
+                  "email"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ ok: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          }
+        }
+      }
+    },
+    "/api/ticketing/public/bookings/{token}": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Ma réservation (lien personnel)",
+        "description": "**Accès** : jeton de partage dans l'adresse.\n\nJeton de gestion dans l'adresse (seule son empreinte est stockée) ; jeton inconnu → 404, toujours le même message. Récapitulatif, éléments et états de paiement, billets, code de réservation, instructions de paiement, gestes possibles.",
+        "security": [],
+        "x-access": "token",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Réservation",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Modification de ma réservation",
+        "description": "**Accès** : jeton de partage dans l'adresse.\n\n`updateOptions` jusqu'à la date limite de paiement des options et dans la limite du stock (un changement de plat garde le prix ; une option retirée suit les règles de remboursement) ; `addParticipant` si l'inscription est ouverte ; `renameParticipant` jusqu'au début ; `updatePhone` ; `cancelParticipant` et `cancelBooking` (places et stock rendus, remboursement selon les règles). Email récapitulatif à chaque modification. 30 demandes par minute et par IP.",
+        "security": [],
+        "x-access": "token",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "updateOptions"
+                        ]
+                      },
+                      "participants": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "participantId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 40
+                            },
+                            "options": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "optionId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 40
+                                  },
+                                  "variantId": {
+                                    "type": "string",
+                                    "nullable": true,
+                                    "minLength": 1,
+                                    "maxLength": 40
+                                  },
+                                  "quantity": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 20,
+                                    "default": 1
+                                  }
+                                },
+                                "required": [
+                                  "optionId"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "maxItems": 20
+                            }
+                          },
+                          "required": [
+                            "participantId",
+                            "options"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 20
+                      },
+                      "bookingOptions": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "optionId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 40
+                            },
+                            "variantId": {
+                              "type": "string",
+                              "nullable": true,
+                              "minLength": 1,
+                              "maxLength": 40
+                            },
+                            "quantity": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 20,
+                              "default": 1
+                            }
+                          },
+                          "required": [
+                            "optionId"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 20
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "participants",
+                      "bookingOptions"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "addParticipant"
+                        ]
+                      },
+                      "participant": {
+                        "type": "object",
+                        "properties": {
+                          "firstName": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80
+                          },
+                          "lastName": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80
+                          },
+                          "ageGroup": {
+                            "type": "string",
+                            "enum": [
+                              "ADULT",
+                              "TEEN",
+                              "CHILD",
+                              "INFANT"
+                            ]
+                          },
+                          "options": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "optionId": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 40
+                                },
+                                "variantId": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "minLength": 1,
+                                  "maxLength": 40
+                                },
+                                "quantity": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 20,
+                                  "default": 1
+                                }
+                              },
+                              "required": [
+                                "optionId"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "maxItems": 20,
+                            "default": []
+                          }
+                        },
+                        "required": [
+                          "firstName",
+                          "lastName",
+                          "ageGroup"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "participant"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "renameParticipant"
+                        ]
+                      },
+                      "participantId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 40
+                      },
+                      "firstName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "lastName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "participantId",
+                      "firstName",
+                      "lastName"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "updatePhone"
+                        ]
+                      },
+                      "phone": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 40,
+                        "pattern": "^[+\\d\\s().-]*$"
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "cancelParticipant"
+                        ]
+                      },
+                      "participantId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 40
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "participantId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "cancelBooking"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ message }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          }
+        }
+      }
+    },
+    "/api/ticketing/public/bookings/{token}/payment": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "« J'ai payé »",
+        "description": "**Accès** : jeton de partage dans l'adresse.\n\nLes éléments à régler passent à déclaré avec le moyen indiqué (Wero, Revolut, virement) ; le trésorier est prévenu. 409 s'il n'y a rien à régler.",
+        "security": [],
+        "x-access": "token",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "method": {
+                    "type": "string",
+                    "enum": [
+                      "WERO",
+                      "REVOLUT",
+                      "TRANSFER"
+                    ]
+                  }
+                },
+                "required": [
+                  "method"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Déclaration enregistrée",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          }
+        }
+      }
+    },
+    "/api/ticketing/public/tickets/{token}": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Billet individuel",
+        "description": "**Accès** : jeton de partage dans l'adresse.\n\nJeton de billet dans l'adresse : ce billet seul (nom, tranche d'âge, événement, validité, contenu du QR), sans les autres participants, les paiements ni aucun droit de modification. Jeton inconnu → 404.",
+        "security": [],
+        "x-access": "token",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Billet",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/user/tour-seen": {
       "patch": {
         "tags": [

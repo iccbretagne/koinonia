@@ -71,6 +71,12 @@ async function runSystemMessages() {
   return dispatchDueMessages();
 }
 
+/** Échéances de la billetterie (spec 074) : relances, libérations, rappels, clôture, purge. */
+async function runTicketingDeadlines() {
+  const { runTicketingDeadlines: run } = await import("@/modules/ticketing");
+  return run();
+}
+
 function authorizeCron(request: Request) {
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
@@ -379,6 +385,8 @@ function cronTasks(appUrl: string): CronTask[] {
     { key: "push-delivery", schedule: { kind: "every-run" }, run: () => runPushCatchUp() },
     // Messages système programmés, et rattrapage d'un envoi immédiat interrompu (spec 071).
     { key: "system-messages", module: "messages", schedule: { kind: "every-run" }, run: runSystemMessages },
+    // Billetterie (spec 074) : idempotente (horodatages par réservation), précision au quart d'heure.
+    { key: "ticketing", module: "ticketing", schedule: { kind: "interval", minutes: 15 }, run: runTicketingDeadlines },
   ];
   return tasks.filter((t) => !t.module || registry.has(t.module));
 }

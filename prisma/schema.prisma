@@ -130,6 +130,7 @@ model Church {
   shuttleEntries            ShuttleEntry[]
   shuttleRentals            ShuttleRental[]
   shuttleSettings           ShuttleSettings?
+  ticketingEvents           TicketingEvent[]
   // Messages système (spec 071)
   systemMessages            SystemMessage[]
 
@@ -175,6 +176,10 @@ model User {
   shuttleEntriesFlagged             ShuttleEntry[]               @relation("ShuttleEntryFlaggedBy")
   shuttleEntriesDeleted             ShuttleEntry[]               @relation("ShuttleEntryDeletedBy")
   shuttleRentalsCreated             ShuttleRental[]              @relation("ShuttleRentalCreatedBy")
+  ticketingEventsCreated            TicketingEvent[]             @relation("TicketingEventCreatedBy")
+  ticketingRoles                    TicketingEventRole[]
+  ticketingBookings                 TicketingBooking[]
+  ticketingAssignments              TicketingAssignment[]
   systemMessagesCreated             SystemMessage[]              @relation("SystemMessageCreatedBy")
   systemMessagesUpdated             SystemMessage[]              @relation("SystemMessageUpdatedBy")
   systemMessageReceipts             SystemMessageReceipt[]
@@ -2947,4 +2952,436 @@ model ShuttleSettings {
   church Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
 
   @@map("shuttle_settings")
+}
+
+// ─── Module billetterie (spec 074) ─────────────────────────────────
+
+enum TicketingEventStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+/// Tranche d'âge d'un participant : adulte, 12–17 ans, enfant, moins de 3 ans.
+enum TicketingAgeGroup {
+  ADULT
+  TEEN
+  CHILD
+  INFANT
+}
+
+enum TicketingOptionType {
+  CHOICE
+  QUANTITY
+  CHECKBOX
+}
+
+enum TicketingOptionScope {
+  PARTICIPANT
+  BOOKING
+}
+
+/// État de paiement d'un élément payant (entrée d'un participant ou option choisie).
+enum TicketingChargeStatus {
+  FREE
+  DUE
+  DECLARED
+  PAID
+  REFUND_DUE
+  REFUNDED
+  RELEASED
+  CANCELLED
+}
+
+enum TicketingRole {
+  ORGANIZER
+  TREASURER
+  RECEPTION
+  CATERING
+  OBSERVER
+}
+
+enum TicketingPaymentKind {
+  DECLARATION
+  RECEIPT
+  REFUND
+}
+
+enum TicketingPaymentStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+}
+
+enum TicketingPaymentMethod {
+  WERO
+  REVOLUT
+  TRANSFER
+  CASH
+  CHEQUE
+}
+
+enum TicketingRecordStatus {
+  ACTIVE
+  CANCELLED
+}
+
+enum TicketingBookingSource {
+  ONLINE
+  ONSITE
+}
+
+enum TicketingPassageSubject {
+  PARTICIPANT
+  STAFF
+  MANUAL
+}
+
+enum TicketingDirection {
+  IN
+  OUT
+}
+
+/// Événement de billetterie : inscriptions, paiements, équipe et présences.
+model TicketingEvent {
+  id                       String               @id @default(cuid())
+  churchId                 String
+  slug                     String               @db.VarChar(80)
+  title                    String               @db.VarChar(150)
+  description              String?              @db.Text
+  location                 String?              @db.VarChar(200)
+  posterKey                String?              @db.VarChar(512)
+  startsAt                 DateTime
+  endsAt                   DateTime
+  registrationDeadline     DateTime?
+  /// Jauge réglementaire : personnes présentes au maximum, équipe comprise.
+  capacity                 Int
+  /// Places ouvertes à l'inscription.
+  seatsOpen                Int
+  status                   TicketingEventStatus @default(DRAFT)
+  /// Moyens de paiement et instructions : { wero?, revolut?, transfer?, onsite }.
+  paymentMethods           Json
+  optionPaymentDeadline    DateTime?
+  reminderDaysBefore       Int                  @default(3)
+  allowOnsitePayment       Boolean              @default(false)
+  allowUnaccompaniedMinors Boolean              @default(false)
+  allowWalkIns             Boolean              @default(false)
+  /// Remboursement de l'entrée payante en cas d'annulation, et sa date limite.
+  entryRefundable          Boolean              @default(true)
+  entryRefundDeadline      DateTime?
+  /// Questions supplémentaires : [{ id, label, required }].
+  questions                Json
+  referencePrefix          String               @db.VarChar(8)
+  nextReference            Int                  @default(1)
+  retentionDays            Int                  @default(90)
+  /// Dernier seuil de jauge notifié (0, 90, 100).
+  capacityAlertLevel       Int                  @default(0)
+  seatsAlertSent           Boolean              @default(false)
+  closedAt                 DateTime?
+  purgedAt                 DateTime?
+  createdById              String?
+  createdAt                DateTime             @default(now())
+  updatedAt                DateTime             @updatedAt
+
+  church        Church                @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  createdBy     User?                 @relation("TicketingEventCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  tariffs       TicketingTariff[]
+  options       TicketingOption[]
+  bookings      TicketingBooking[]
+  roles         TicketingEventRole[]
+  posts         TicketingPost[]
+  assignments   TicketingAssignment[]
+  passages      TicketingPassage[]
+  onsiteSales   TicketingOnsiteSale[]
+  payments      TicketingPayment[]
+  participants  TicketingParticipant[]
+
+  @@unique([churchId, slug])
+  @@index([createdById])
+  @@map("ticketing_events")
+}
+
+model TicketingTariff {
+  id       String            @id @default(cuid())
+  eventId  String
+  ageGroup TicketingAgeGroup
+  price    Decimal           @db.Decimal(10, 2)
+
+  event TicketingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, ageGroup])
+  @@map("ticketing_tariffs")
+}
+
+/// Option d'un événement (repas, t-shirt, navette…) ; « à retirer sur place » pour Agapé.
+model TicketingOption {
+  id             String               @id @default(cuid())
+  eventId        String
+  label          String               @db.VarChar(120)
+  description    String?              @db.VarChar(500)
+  type           TicketingOptionType
+  scope          TicketingOptionScope
+  price          Decimal              @db.Decimal(10, 2)
+  stock          Int?
+  pickup         Boolean              @default(false)
+  /// Préparation nominative : une étiquette par repas.
+  namedPrep      Boolean              @default(false)
+  refundable     Boolean              @default(true)
+  refundDeadline DateTime?
+  active         Boolean              @default(true)
+  position       Int                  @default(0)
+
+  event    TicketingEvent        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  variants TicketingVariant[]
+  items    TicketingItem[]
+  sales    TicketingOnsiteSale[]
+
+  @@index([eventId])
+  @@map("ticketing_options")
+}
+
+/// Variante d'une option à choix (plat du menu), composée par la restauration.
+model TicketingVariant {
+  id          String  @id @default(cuid())
+  optionId    String
+  label       String  @db.VarChar(120)
+  description String? @db.VarChar(300)
+  allergens   String? @db.VarChar(200)
+  stock       Int?
+  /// Repas préparés, saisis par la restauration.
+  prepared    Int?
+  /// Fermé aux nouvelles commandes (un plat réservé ne se supprime pas).
+  closed      Boolean @default(false)
+  position    Int     @default(0)
+
+  option TicketingOption       @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  items  TicketingItem[]
+  sales  TicketingOnsiteSale[]
+
+  @@index([optionId])
+  @@map("ticketing_variants")
+}
+
+/// Réservation : un contact, un ou plusieurs participants, des options. Accès sans compte par
+/// jetons dérivés (seules leurs empreintes sont stockées).
+model TicketingBooking {
+  id                String                 @id @default(cuid())
+  eventId           String
+  reference         String                 @db.VarChar(20)
+  contactName       String                 @db.VarChar(150)
+  contactEmail      String                 @db.VarChar(191)
+  contactPhone      String?                @db.VarChar(40)
+  userId            String?
+  guardianName      String?                @db.VarChar(150)
+  guardianPhone     String?                @db.VarChar(40)
+  guardianConsentAt DateTime?
+  answers           Json
+  source            TicketingBookingSource @default(ONLINE)
+  /// Sel des jetons dérivés : le changer révoque les anciens liens.
+  tokenSalt         String                 @db.VarChar(32)
+  manageTokenHash   String                 @unique @db.Char(64)
+  scanTokenHash     String                 @unique @db.Char(64)
+  status            TicketingRecordStatus  @default(ACTIVE)
+  reminderSentAt    DateTime?
+  dayBeforeSentAt   DateTime?
+  cancelledAt       DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  event        TicketingEvent         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user         User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  participants TicketingParticipant[]
+  items        TicketingItem[]
+  payments     TicketingPayment[]
+
+  @@unique([eventId, reference])
+  @@index([eventId, contactEmail])
+  @@index([userId])
+  @@map("ticketing_bookings")
+}
+
+model TicketingParticipant {
+  id              String                @id @default(cuid())
+  bookingId       String
+  eventId         String
+  firstName       String                @db.VarChar(80)
+  lastName        String                @db.VarChar(80)
+  ageGroup        TicketingAgeGroup
+  ticketTokenHash String                @unique @db.Char(64)
+  status          TicketingRecordStatus @default(ACTIVE)
+  entryPrice      Decimal               @db.Decimal(10, 2)
+  entryStatus     TicketingChargeStatus
+  cancelledAt     DateTime?
+  createdAt       DateTime              @default(now())
+
+  booking  TicketingBooking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  event    TicketingEvent     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  items    TicketingItem[]
+  passages TicketingPassage[]
+
+  @@index([bookingId])
+  @@index([eventId])
+  @@map("ticketing_participants")
+}
+
+/// Option choisie, pour un participant ou pour la réservation.
+model TicketingItem {
+  id                  String                @id @default(cuid())
+  bookingId           String
+  participantId       String?
+  optionId            String
+  variantId           String?
+  quantity            Int
+  unitPrice           Decimal               @db.Decimal(10, 2)
+  status              TicketingChargeStatus
+  deliveredQty        Int                   @default(0)
+  deliveredAt         DateTime?
+  deliveredById       String?
+  /// Option retirée de la réservation (annulation, changement) ; l'état dit s'il reste à rembourser.
+  cancelledAt         DateTime?
+  /// Version de l'étiquette : change avec le plat, le nom ou l'état ; comparée à la version imprimée.
+  labelVersion        Int                   @default(1)
+  labelPrintedVersion Int?
+  labelPrintedAt      DateTime?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  booking     TicketingBooking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  participant TicketingParticipant? @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  option      TicketingOption       @relation(fields: [optionId], references: [id], onDelete: Restrict)
+  variant     TicketingVariant?     @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  @@index([bookingId])
+  @@index([optionId])
+  @@index([variantId])
+  @@index([participantId])
+  @@map("ticketing_items")
+}
+
+/// Déclaration « J'ai payé », encaissement direct ou remboursement.
+model TicketingPayment {
+  id            String                 @id @default(cuid())
+  bookingId     String
+  eventId       String
+  kind          TicketingPaymentKind
+  status        TicketingPaymentStatus
+  method        TicketingPaymentMethod
+  amount        Decimal                @db.Decimal(10, 2)
+  /// Éléments couverts : [{ type: "entry" | "item", id }].
+  chargeRefs    Json
+  reason        String?                @db.VarChar(300)
+  /// Identifiant d'opération hors ligne (idempotence).
+  opId          String?                @unique @db.VarChar(64)
+  recordedById  String?
+  confirmedById String?
+  confirmedAt   DateTime?
+  createdAt     DateTime               @default(now())
+
+  booking TicketingBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  event   TicketingEvent   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([eventId, kind, status])
+  @@map("ticketing_payments")
+}
+
+model TicketingEventRole {
+  id      String        @id @default(cuid())
+  eventId String
+  userId  String
+  role    TicketingRole
+
+  event TicketingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId, role])
+  @@index([userId])
+  @@map("ticketing_event_roles")
+}
+
+model TicketingPost {
+  id       String @id @default(cuid())
+  eventId  String
+  name     String @db.VarChar(120)
+  position Int    @default(0)
+
+  event       TicketingEvent        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  assignments TicketingAssignment[]
+
+  @@index([eventId])
+  @@map("ticketing_posts")
+}
+
+/// Affectation à l'équipe de l'événement : membre de l'église ou intervenant nommé ; badge.
+model TicketingAssignment {
+  id             String    @id @default(cuid())
+  eventId        String
+  postId         String?
+  userId         String?
+  guestName      String?   @db.VarChar(150)
+  startsAt       DateTime?
+  endsAt         DateTime?
+  tokenSalt      String    @db.VarChar(32)
+  badgeTokenHash String    @unique @db.Char(64)
+  createdAt      DateTime  @default(now())
+
+  event    TicketingEvent     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  post     TicketingPost?     @relation(fields: [postId], references: [id], onDelete: SetNull)
+  user     User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  passages TicketingPassage[]
+
+  @@index([eventId])
+  @@index([postId])
+  @@index([userId])
+  @@map("ticketing_assignments")
+}
+
+/// Passage au contrôle (entrée, sortie, comptage manuel). Identifiant généré par l'appareil.
+model TicketingPassage {
+  id            String                  @id @db.VarChar(64)
+  eventId       String
+  subject       TicketingPassageSubject
+  participantId String?
+  assignmentId  String?
+  direction     TicketingDirection
+  delta         Int                     @default(1)
+  reason        String?                 @db.VarChar(200)
+  deviceId      String                  @db.VarChar(64)
+  operatorId    String?
+  gate          String?                 @db.VarChar(60)
+  scannedAt     DateTime
+  receivedAt    DateTime                @default(now())
+  anomaly       Boolean                 @default(false)
+
+  event       TicketingEvent        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participant TicketingParticipant? @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  assignment  TicketingAssignment?  @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, scannedAt])
+  @@index([participantId])
+  @@index([assignmentId])
+  @@map("ticketing_passages")
+}
+
+/// Vente sur place d'une option à retirer (repas). Identifiant généré par l'appareil.
+model TicketingOnsiteSale {
+  id        String                 @id @db.VarChar(64)
+  eventId   String
+  optionId  String
+  variantId String?
+  quantity  Int
+  amount    Decimal                @db.Decimal(10, 2)
+  method    TicketingPaymentMethod
+  soldById  String?
+  soldAt    DateTime
+
+  event   TicketingEvent    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  option  TicketingOption   @relation(fields: [optionId], references: [id], onDelete: Restrict)
+  variant TicketingVariant? @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  @@index([eventId])
+  @@index([optionId])
+  @@index([variantId])
+  @@map("ticketing_onsite_sales")
 }

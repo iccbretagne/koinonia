@@ -1,7 +1,7 @@
 # Tâches — Billetterie : inscriptions, paiements et présences des événements
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md`
-- **Statut** : À faire
+- **Statut** : En cours
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
@@ -9,21 +9,21 @@
 
 ## Prérequis
 
-- [ ] Branche de session repartie de `main` (après la fusion de la PR #709)
-- [ ] Migration Prisma générée (schéma modifié)
+- [x] Branche de session repartie de `main` (après la fusion de la PR #709)
+- [x] Migration Prisma générée (schéma modifié) — une seule migration `add_ticketing` porte les tables des trois lots
 - [ ] Dépendance `jsqr` (Apache-2.0) ajoutée (lot 2)
 
 ## Lot 1 — Événement, inscriptions, paiements, billets, rôles
 
 ### 1.1 Données & module
 
-- [ ] **T1** — Enums et modèles `TicketingEvent`, `TicketingTariff`, `TicketingOption`,
+- [x] **T1** — Enums et modèles `TicketingEvent`, `TicketingTariff`, `TicketingOption`,
   `TicketingVariant`, `TicketingBooking`, `TicketingParticipant`, `TicketingItem`,
   `TicketingPayment`, `TicketingEventRole`, avec les relations inverses (`Church`, `User`)
   *(fichier : `prisma/schema.prisma`)*
-- [ ] **T2** — Migration `add_ticketing` (lot 1) et `prisma generate`, plus les mocks Prisma
+- [x] **T2** — Migration `add_ticketing` (lot 1) et `prisma generate`, plus les mocks Prisma
   *(fichiers : `prisma/migrations/…_add_ticketing/`, `src/__mocks__/prisma.ts`)*
-- [ ] **T3** — Manifeste `ticketing` :
+- [x] **T3** — Manifeste `ticketing` :
   - routes authentifiées `/billetterie` et `/api/ticketing` ;
   - routes publiques `/inscription`, `/reservation`, `/billet` et `/api/ticketing/public` ;
   - permission `ticketing:manage` (SA, Admin, Secrétaire) ;
@@ -31,35 +31,35 @@
   - ajout à `allManifests` (16 modules).
 
   *(fichiers : `src/modules/ticketing/manifest.ts`, `src/lib/manifests.ts`)*
-- [ ] **T4** [P] — Schémas Zod purs :
+- [x] **T4** [P] — Schémas Zod purs :
   - paramétrage, tarifs, options et variantes (menu) ;
   - inscription, modification de réservation, déclaration de paiement, encaissement ;
   - rôles ;
   - libellés.
 
   *(fichier : `src/modules/ticketing/schemas.ts`)*
-- [ ] **T5** — Gardes `getEventAccess` et `requireEventRole`, avec la matrice des actions
+- [x] **T5** — Gardes `getEventAccess` et `requireEventRole`, avec la matrice des actions
   *(fichier : `src/modules/ticketing/auth.ts`)*
-- [ ] **T6** [P] — Jetons : génération, empreinte SHA-256, comparaison *(fichier :
+- [x] **T6** [P] — Jetons : génération, empreinte SHA-256, comparaison *(fichier :
   `src/modules/ticketing/services/tokens.ts`)*
 
 ### 1.2 Services
 
-- [ ] **T7** — Événements : création (slug, préfixe), paramétrage, états, tarifs, options,
+- [x] **T7** — Événements : création (slug, préfixe), paramétrage, états, tarifs, options,
   rôles, `getPublicEvent` (places et stock restants) *(fichier : `services/events.ts`)*
-- [ ] **T8** — Inscription `createBooking` (une transaction sous verrou) :
+- [x] **T8** — Inscription `createBooking` (une transaction sous verrou) :
   - places, stock, date limite ;
   - règle des mineurs ;
   - prix figés, référence, jetons ;
   - lien vers un compte.
 
   *(fichier : `services/booking.ts`)*
-- [ ] **T9** — Gestion par jeton : options jusqu'à la date limite, ajout de participant,
+- [x] **T9** — Gestion par jeton : options jusqu'à la date limite, ajout de participant,
   renommage, téléphone, annulations avec états de remboursement, `recoverBooking` à réponse
   constante *(fichier : `services/booking.ts`)*
-- [ ] **T10** — Paiements : `declarePayment`, `confirm`/`reject`, `recordReceipt` (éléments
+- [x] **T10** — Paiements : `declarePayment`, `confirm`/`reject`, `recordReceipt` (éléments
   choisis), `markRefunded`, `balances` *(fichier : `services/payments.ts`)*
-- [ ] **T11** — Emails et notifications :
+- [x] **T11** — Emails et notifications :
   - gabarits : réservation, paiement confirmé ou refusé, relance, option libérée, rappel de la
     veille, annulation ;
   - `sendEmail` si le contact n'a pas de compte, sinon `createNotification` (domaine
@@ -68,61 +68,61 @@
   - liste blanche `notifications-no-direct-email`.
 
   *(fichiers : `services/emails.ts`, `src/lib/email.ts`)*
-- [ ] **T12** — Échéances (tâche cron `ticketing`, 15 min) : relance au délai réglé, libération
+- [x] **T12** — Échéances (tâche cron `ticketing`, 15 min) : relance au délai réglé, libération
   sauf paiement sur place, rappel de la veille, purge après la durée de conservation
   *(fichiers : `services/deadlines.ts`, `src/app/api/cron/route.ts`)*
-- [ ] **T13** [P] — Exports : participants, règlements, remboursements, options
+- [x] **T13** [P] — Exports : participants, règlements, remboursements, options
   *(fichier : `services/exports.ts`)*
-- [ ] **T14** — Index public du module *(fichier : `src/modules/ticketing/index.ts`)*
+- [x] **T14** — Index public du module *(fichier : `src/modules/ticketing/index.ts`)*
 
 ### 1.3 API
 
 Chaque route a son `contract.ts`.
 
-- [ ] **T15** — `/api/ticketing/events` (GET, POST) et `/events/[id]` (GET, PATCH)
-- [ ] **T16** [P] — `/events/[id]/options` et `/options/[optionId]` (organisateur),
+- [x] **T15** — `/api/ticketing/events` (GET, POST) et `/events/[id]` (GET, PATCH)
+- [x] **T16** [P] — `/events/[id]/options` et `/options/[optionId]` (organisateur),
   `/events/[id]/roles`
-- [ ] **T17** [P] — `/events/[id]/bookings`, `/bookings/[bookingId]`,
+- [x] **T17** [P] — `/events/[id]/bookings`, `/bookings/[bookingId]`,
   `/payments/[paymentId]`, `/bookings/[bookingId]/receipts`
-- [ ] **T18** [P] — `/events/[id]/export`, `/events/[id]/poster`, `/api/ticketing/my`
-- [ ] **T19** — Routes publiques (Turnstile, débit) : `public/[churchSlug]/[eventSlug]` (GET),
+- [x] **T18** [P] — `/events/[id]/export`, `/events/[id]/poster`, `/api/ticketing/my`
+- [x] **T19** — Routes publiques (Turnstile, débit) : `public/[churchSlug]/[eventSlug]` (GET),
   `…/bookings` (POST), `…/recover` (POST), `public/bookings/[token]` (GET, PATCH),
   `…/payment` (POST), `public/tickets/[token]` (GET)
-- [ ] **T20** — `npm run openapi` *(fichier : `docs/openapi.json`)*
+- [x] **T20** — `npm run openapi` *(fichier : `docs/openapi.json`)*
 
 ### 1.4 UI
 
-- [ ] **T21** — Navigation : drapeau `hasTicketing` et « Billetterie » dans l'espace Agenda
+- [x] **T21** — Navigation : drapeau `hasTicketing` et « Billetterie » dans l'espace Agenda
   *(fichiers : `src/app/(auth)/layout.tsx`, `src/lib/navigation.ts`)*
-- [ ] **T22** — `/billetterie` : liste des événements et « Créer un événement »
-- [ ] **T23** — `/billetterie/[id]` : onglets Aperçu (lien public et QR), Paramètres (infos,
+- [x] **T22** — `/billetterie` : liste des événements et « Créer un événement »
+- [x] **T23** — `/billetterie/[id]` : onglets Aperçu (lien public et QR), Paramètres (infos,
   jauge, tarifs, options et variantes, paiements, règles, mineurs, ajout sur place,
   conservation), Inscrits, Règlements, et Équipe (rôles)
-- [ ] **T24** — Page publique d'inscription `/inscription/[churchSlug]/[eventSlug]` :
+- [x] **T24** — Page publique d'inscription `/inscription/[churchSlug]/[eventSlug]` :
   formulaire par étapes, Turnstile, « Retrouver ma réservation »
-- [ ] **T25** — Page publique `/reservation/[token]` :
+- [x] **T25** — Page publique `/reservation/[token]` :
   - récapitulatif et instructions de paiement ;
   - « J'ai payé » ;
   - billets et partage ;
   - modifications et annulations.
-- [ ] **T26** [P] — Page publique `/billet/[token]` (billet seul et QR), et
+- [x] **T26** [P] — Page publique `/billet/[token]` (billet seul et QR), et
   `/billetterie/mes-reservations`
 
 ### 1.5 Tests (lot 1)
 
-- [ ] **T27** — `auth` : matrice des rôles, organisateur implicite, autre église en 404
-- [ ] **T28** — `booking` :
+- [x] **T27** — `auth` : matrice des rôles, organisateur implicite, autre église en 404
+- [x] **T28** — `booking` :
   - places, stock, date limite, mineurs ;
   - prix figés, référence, jetons ;
   - modifications, annulations, remboursements ;
   - `recoverBooking`.
-- [ ] **T29** — `payments` et `deadlines` : déclaration, confirmation, refus, encaissement
+- [x] **T29** — `payments` et `deadlines` : déclaration, confirmation, refus, encaissement
   partiel, relance, libération, rappel, purge
-- [ ] **T30** — Routes publiques et authentifiées : jetons inconnus, billet seul, Turnstile,
+- [x] **T30** — Routes publiques et authentifiées : jetons inconnus, billet seul, Turnstile,
   débit, brouillon invisible, 403/404, Zod
-- [ ] **T31** — Matrices : `permissions.test` (`ticketing:manage`), `manifests`,
+- [x] **T31** — Matrices : `permissions.test` (`ticketing:manage`), `manifests`,
   `routes-exhaustivite`, `openapi`, liste blanche email, navigation
-- [ ] **T32** — Commit « lot 1 »
+- [x] **T32** — Commit « lot 1 »
 
 ## Lot 2 — Équipe et contrôle des présences
 
