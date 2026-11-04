@@ -1468,6 +1468,48 @@ registre (`shuttle_entries.rentalId`, set null).
 Une ligne par église (`churchId` PK) : `lowBalanceThreshold` (null = pas d'alerte),
 `updatedById`. Sert aussi de verrou pour l'unicité du solde de départ.
 
+#### Billetterie (spec 074) — `ticketing_*`
+
+Montants en `Decimal(10,2)`. Toutes les tables portent `eventId` (cascade), l'événement porte
+`churchId`. Aucun jeton n'est stocké : seulement leur empreinte SHA-256 (`Char(64)`, unique), le
+jeton étant dérivé à la demande d'un sel (`tokenSalt`) et d'un secret serveur.
+
+- **`ticketing_events`** : `slug` (unique par église), titre, description, lieu, `posterKey`,
+  `startsAt`/`endsAt`, `registrationDeadline`, `capacity` (jauge, équipe comprise), `seatsOpen`,
+  `status` (`DRAFT`, `OPEN`, `CLOSED`, `ARCHIVED` ; « complet » est calculé), `paymentMethods`
+  (JSON : Wero, Revolut, IBAN propre à l'événement, espèces, chèque), `optionPaymentDeadline`,
+  `reminderDaysBefore`, `allowOnsitePayment`, `allowUnaccompaniedMinors`, `allowWalkIns`,
+  `entryRefundable`/`entryRefundDeadline`, `questions` (JSON), `referencePrefix` et
+  `nextReference` (compteur, verrou de l'inscription), `retentionDays`, `capacityAlertLevel` et
+  `seatsAlertSent` (alertes envoyées une fois), `closedAt`, `purgedAt`, `createdById`.
+- **`ticketing_tariffs`** : un prix par tranche d'âge (`ADULT`, `TEEN`, `CHILD`, `INFANT`).
+- **`ticketing_options`** : `type` (`CHOICE`, `QUANTITY`, `CHECKBOX`), `scope` (`PARTICIPANT`,
+  `BOOKING`), `price`, `stock`, `pickup` (à retirer sur place), `namedPrep` (étiquettes),
+  `refundable`/`refundDeadline`, `active`. **`ticketing_variants`** : plats du menu, composés par
+  la restauration (`description`, `allergens`, `stock`, `prepared`, `closed`).
+- **`ticketing_bookings`** : `reference` (unique par événement), contact, `userId` (compte dont
+  l'email correspond, set null), responsable légal d'un mineur non accompagné, `answers`,
+  `source` (`ONLINE`, `ONSITE`), `manageTokenHash`, `scanTokenHash`, `status`, horodatages de
+  relance (`reminderSentAt`, `dayBeforeSentAt`).
+- **`ticketing_participants`** : nom, tranche d'âge, `ticketTokenHash`, `status`, prix d'entrée
+  figé et son état (`entryStatus`). **`ticketing_items`** : option choisie (par participant ou
+  par réservation), prix figé, `status` (`FREE`, `DUE`, `DECLARED`, `PAID`, `REFUND_DUE`,
+  `REFUNDED`, `RELEASED`, `CANCELLED`), `cancelledAt`, remise (`deliveredQty`, `deliveredAt`),
+  versions d'étiquette (`labelVersion`, `labelPrintedVersion`).
+- **`ticketing_payments`** : `kind` (`DECLARATION`, `RECEIPT`, `REFUND`), `status`, `method`,
+  `amount`, `chargeRefs` (éléments couverts), `reason`, `opId` (unique, opération hors ligne).
+- **`ticketing_event_roles`** : (`eventId`, `userId`, `role`) unique — `ORGANIZER`, `TREASURER`,
+  `RECEPTION`, `CATERING`, `OBSERVER`.
+- **`ticketing_posts`**, **`ticketing_assignments`** : équipe propre à l'événement (compte ou
+  `guestName`, créneau, `badgeTokenHash`).
+- **`ticketing_passages`** : identifiant généré par l'appareil (idempotence), `subject`
+  (`PARTICIPANT`, `STAFF`, `MANUAL`), `direction`, `delta`, `reason`, `deviceId`, `scannedAt`
+  (horloge corrigée), `receivedAt`, `anomaly`. Les présences sont calculées à partir de cette
+  table, jamais stockées. **`ticketing_onsite_sales`** : ventes sur place de la restauration.
+
+Purge après `closedAt + retentionDays` : noms, contacts, réponses et motifs anonymisés, compteurs
+et montants gardés.
+
 #### `church_logos` — logo de l'église dans l'interface (spec 072)
 
 Logo déposé par l'Admin de l'église (`church:settings`), une ligne par fond (clé

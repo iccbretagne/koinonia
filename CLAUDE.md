@@ -422,6 +422,7 @@ Compt = Comptable.
 | `giving:manage` | x | x | x | | | | | | | x |
 | `messages:publish` | x | x | x | | | | | | | |
 | `shuttle:manage` | x | x | | | | | | | | x |
+| `ticketing:manage` | x | x | x | | | | | | | |
 | `agenda:view` | x | x | x | | | | | | | |
 | `agenda:manage` | x | x | x | | | | | | | |
 | `care:qualify` | x | x | | | | | | | x | |
@@ -574,6 +575,37 @@ renommé spec 052) :
   « avance personnelle » (`createLinkedExpenseReport`, justificatif copié, ouverte à l'auteur même
   STAR), avances de budget versées au département Navette **lues** comme entrées du registre, et
   notes de frais de la Navette hors registre ajoutables par la compta
+
+**Spécificités du module billetterie** (spec 074) — désactivable (`ENABLED_MODULES`) :
+- `ticketing:manage` (Super Admin, Admin, Secrétaire) ouvre `/billetterie` et la création
+  d'événements ; son détenteur est **organisateur implicite** de tous les événements de son
+  église
+- **Rôles d'événement** (`ticketing_event_roles`) : Organisateur, Trésorier, Accueil / sécurité,
+  Restauration, Observateur, cumulables, attribués à n'importe quel compte de l'église (STAR
+  compris) et éteints à la clôture. Ce sont des **données** vérifiées objet par objet
+  (`getEventAccess`/`requireEventAction`, `@/modules/ticketing/auth`, matrice `EVENT_ACTIONS`) ;
+  l'église qui fait foi est celle de l'événement (autre église : 404). L'accueil ne reçoit jamais
+  l'email, le téléphone du contact ni les montants d'option ; la restauration compose le menu
+  (plats, allergènes, stock, fermeture) mais pas le prix ni les règles de l'option
+- **Public sans compte** (`routes.public`) : `/inscription/<église>/<événement>` (Turnstile, débit
+  limité), `/reservation/<jeton>` (gestion), `/billet/<jeton>` (ce billet seul). Jetons dérivés
+  (HMAC de `TICKETING_TOKEN_SECRET`, à défaut `AUTH_SECRET`), seule leur **empreinte** SHA-256
+  est stockée ; QR : billet = URL, réservation `KOINONIA-RESA:`, badge `KOINONIA-BADGE:`,
+  étiquette `KOINONIA-REPAS:` (jamais accepté au contrôle d'entrée)
+- Koinonia n'encaisse rien : Wero, Revolut, virement sur un IBAN **propre à l'événement** (jamais
+  celui de l'église), espèces, chèque. État de paiement **par élément** (entrée, option) ;
+  « J'ai payé » → déclaré → confirmé ou refusé par le trésorier ; encaissement direct borné par
+  rôle ; annulation libre, remboursement selon les règles de chaque élément
+- Emails au contact : `sendEmail` direct s'il n'a pas de compte (liste blanche), sinon
+  `createNotification` (domaine `ticketing`). Tâche cron `ticketing` (15 min) : relance avant la
+  date limite des options, libération des options non réglées (sauf paiement sur place), rappel
+  de la veille, clôture 24 h après la fin, purge des données nominatives après la durée de
+  conservation
+- Écrans de terrain **hors ligne** ([ADR-0026](docs/adr/0026-ecrans-hors-ligne.md)) :
+  `/billetterie/[id]/controle` (accueil) et `/billetterie/[id]/restauration` — instantané
+  d'empreintes, file IndexedDB, synchronisation idempotente (`…/sync`), présences **calculées** à
+  partir des passages, seuils de jauge 90 % et 100 % notifiés une fois. L'équipe (postes,
+  affectations, badges) est propre à l'événement ; « Mon planning » la lit seulement
 
 **Spécificités du module messages** (spec 071) :
 - `messages:publish` (Super Admin, Admin, Secrétaire) ouvre `/admin/messages` : publier, programmer,

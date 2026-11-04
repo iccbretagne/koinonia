@@ -1,7 +1,7 @@
 # Spec — Billetterie : inscriptions, paiements et présences des événements
 
 - **Numéro** : 074
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-11-03
 - **Branche suggérée** : `feat/billetterie`
 - **Issue** : [#708](https://github.com/iccbretagne/koinonia/issues/708)

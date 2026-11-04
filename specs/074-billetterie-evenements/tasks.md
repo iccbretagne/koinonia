@@ -1,7 +1,7 @@
 # Tâches — Billetterie : inscriptions, paiements et présences des événements
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md`
-- **Statut** : En cours
+- **Statut** : Terminé
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
@@ -173,38 +173,38 @@ Chaque route a son `contract.ts`.
 
 ## Lot 3 — Restauration (Agapé)
 
-- [ ] **T48** — Champs du menu et des étiquettes (`namedPrep`, variante : description,
+- [x] **T48** — Champs du menu et des étiquettes (`namedPrep`, variante : description,
   allergènes, préparés, fermeture ; élément : code d'étiquette, versions) et migration
   `add_ticketing_catering`, plus le modèle `TicketingOnsiteSale`
-- [ ] **T49** — Menu par la restauration : variantes, allergènes, stock et fermeture, avec ses
+- [x] **T49** — Menu par la restauration : variantes, allergènes, stock et fermeture, avec ses
   limites (plat réservé non supprimable, stock jamais sous le réservé, champs réservés à
   l'organisateur) et l'audit *(fichier : `services/menu.ts`)*
-- [ ] **T50** — Restauration : à préparer par variante, stock en direct, remise avec
+- [x] **T50** — Restauration : à préparer par variante, stock en direct, remise avec
   encaissement, vente sur place, non retirés ; instantané `catering` et opérations de
   synchronisation `delivery` et `onsiteSale` *(fichiers : `services/catering.ts`,
   `snapshot.ts`, `sync.ts`)*
-- [ ] **T51** — Étiquettes : sélections (tout, plat, réservation, modifiées), contenu, code
+- [x] **T51** — Étiquettes : sélections (tout, plat, réservation, modifiées), contenu, code
   d'étiquette, `markPrinted`, incrément de `labelVersion` *(fichier : `services/labels.ts`)*
-- [ ] **T52** — API : `/options/[optionId]/variants`, `/variants/[variantId]`, `/labels`
-- [ ] **T53** — Écran `/billetterie/[id]/restauration` :
+- [x] **T52** — API : `/options/[optionId]/variants`, `/variants/[variantId]`, `/labels`
+- [x] **T53** — Écran `/billetterie/[id]/restauration` :
   - onglet Distribution : scan, fiche, « Remis » avec encaissement, vente sur place, hors ligne,
     badge « étiquette à refaire » ;
   - onglet Menu ;
   - onglet Stock.
-- [ ] **T54** — Page d'impression `/billetterie/[id]/etiquettes` : formats de planche A4,
+- [x] **T54** — Page d'impression `/billetterie/[id]/etiquettes` : formats de planche A4,
   `@media print`, QR facultatif, et « marquer imprimées »
-- [ ] **T55** — Onglet Restauration du tableau de bord : à préparer, stock, non retirés, ventes
+- [x] **T55** — Onglet Restauration du tableau de bord : à préparer, stock, non retirés, ventes
   sur place
-- [ ] **T56** — Tests :
+- [x] **T56** — Tests :
   - `menu` (droits, limites, audit) ;
   - `catering` (stock, remise, vente sur place) ;
   - `labels` (sélections, « à régler », étiquette périmée, code refusé au contrôle) ;
   - routes du lot 3.
-- [ ] **T57** — Commit « lot 3 »
+- [x] **T57** — Commit « lot 3 »
 
 ## Documentation
 
-- [ ] **T58** — Documentation :
+- [x] **T58** — Documentation :
   - `CLAUDE.md` : tableau des permissions et spécificités de la billetterie ;
   - `docs/auth.md` ;
   - `docs/database.md` ;
@@ -213,10 +213,10 @@ Chaque route a son `contract.ts`.
 
 ## Vérification finale
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `npm run lint:boundaries` et `npm run lint:prisma-boundary`
-- [ ] `npm run test`
+- [x] `npm run typecheck`
+- [x] `npm run lint`
+- [x] `npm run lint:boundaries` et `npm run lint:prisma-boundary`
+- [x] `npm run test`
 - [ ] `npm run build`
 - [ ] Tous les critères d'acceptation de `spec.md` satisfaits
 - [ ] Commit et push, déploiement en staging, PR vers `main`
