@@ -13,150 +13,177 @@
 Koinonia couvre désormais beaucoup de domaines : planning, disponibilités, demandes,
 comptabilité, navette, dons, suivi pastoral, salles, emploi, billetterie… Chaque rôle n'en voit
 qu'une partie, mais cette partie reste riche, et les utilisateurs occasionnels ne retrouvent pas
-où faire un geste.
+où faire un geste ni où lire une information.
 
 Aujourd'hui, l'aide existe mais elle est dispersée et peu consultée :
 - un **guide des fonctionnalités** par rôle, sur une page à part ;
 - une **visite guidée** au premier lancement, qu'on ne revoit plus ensuite ;
 - la **recherche** (⌘K), qui trouve des pages mais n'explique pas comment faire.
 
-Les questions arrivent donc sur WhatsApp, auprès des responsables et des administrateurs :
-« comment je déclare une absence ? », « où je vois mon planning ? », « comment je rembourse une
-dépense de la navette ? ». Chaque nouveau module ajoute des questions, et les mêmes reviennent à
-chaque nouvel arrivant.
+Les questions arrivent donc sur WhatsApp, auprès des responsables et des administrateurs. Elles
+sont de deux sortes :
+- **sur l'application** : « comment je déclare une absence ? », « comment je rembourse une
+  dépense de la navette ? » ;
+- **sur ce que la personne peut déjà voir** : « je sers quand ce mois-ci ? », « qui est en service
+  dimanche dans mon département ? », « combien de demandes de compta j'ai à valider ? ».
 
-On veut qu'un utilisateur trouve la réponse **dans Koinonia, au moment où il se pose la
+On veut qu'un utilisateur obtienne la réponse **dans Koinonia, au moment où il se pose la
 question**, adaptée à **son rôle** et à **l'écran où il se trouve**, avec un lien direct vers le
 bon écran.
+
+L'assistant fonctionne **entièrement dans Koinonia, sans service externe** : aucune question ni
+donnée ne quitte l'instance, il n'y a ni abonnement ni coût à l'usage, et ses réponses sont
+prévisibles. Il comprend les questions **prévues** (sur l'application et sur les données), pas
+toute question imaginable ; ce qu'il ne sait pas faire est remonté pour enrichir l'aide.
 
 ## Utilisateurs concernés
 
 **Tous les rôles connectés** (Super Admin, Admin, Secrétaire, Ministre, Resp. département,
 Faiseur de Disciples, Reporter, STAR, Référent soins pastoraux, Comptable) :
-- ouvrent l'aide depuis n'importe quel écran ;
+- ouvrent l'assistant depuis n'importe quel écran ;
 - posent une question en langage courant ;
-- reçoivent une réponse limitée à ce que **leur rôle** permet de faire, avec des liens vers les
-  écrans concernés.
+- reçoivent une réponse limitée à ce que **leur rôle** permet de faire et de voir.
 
-**Super Admin** : active ou désactive l'assistant pour toute l'instance, et voit son usage
-(nombre de questions, part des réponses jugées utiles) ainsi que le texte **anonymisé** des
-questions jugées « Pas utile », pour améliorer la documentation.
+**Super Admin** :
+- active ou désactive l'assistant pour toute l'instance ;
+- voit son usage : nombre de questions, part des réponses jugées utiles, et le texte
+  **anonymisé** des questions restées sans réponse ou jugées « Pas utile », pour compléter l'aide.
 
-**Admin d'église** : peut couper l'assistant pour **son** église quand l'instance l'a activé ;
-ses membres gardent alors l'aide écrite.
+**Admin d'église** : peut couper l'assistant pour **son** église quand l'instance l'a activé ; ses
+membres gardent alors l'accès au guide.
 
 **Public sans compte** (pages d'inscription, de dons…) : non concerné.
 
 ## Comportement attendu
 
-### Scénario principal — poser une question
+### Scénario principal — question sur l'application
 
 1. Un STAR, sur l'écran « Mon planning », touche le bouton d'aide présent sur tous les écrans.
-2. Le panneau d'aide s'ouvre. Il propose d'abord **quelques questions fréquentes liées à cet
-   écran** (par exemple « Comment déclarer une indisponibilité ? »), puis un champ libre.
-3. Il écrit : « je ne suis pas dispo dimanche, je fais comment ? ».
-4. L'assistant répond en quelques phrases, en français simple :
-   - les étapes à suivre ;
+2. Le panneau s'ouvre. Il propose d'abord **quelques questions fréquentes liées à cet écran et à
+   son rôle**, puis un champ libre.
+3. Il écrit : « je suis pas dispo dimanche je fais comment ».
+4. L'assistant reconnaît la question malgré la formulation, les fautes et les mots familiers
+   (« dispo », « absent », « pas là ») et répond :
+   - les étapes à suivre, en français simple ;
    - un **lien direct** vers l'écran concerné (« Ouvrir Disponibilités ») ;
-   - si besoin, ce que son rôle **ne permet pas** et à qui s'adresser (« votre responsable de
+   - si besoin, ce que son rôle ne permet pas et à qui s'adresser (« votre responsable de
      département »).
-5. Il peut poser une question de suivi dans la même conversation.
-6. Sous chaque réponse, il indique si elle l'a aidé (« Utile » / « Pas utile »).
+5. Sous chaque réponse, il indique si elle l'a aidé (« Utile » / « Pas utile »).
+
+### Scénario principal — question sur ses données
+
+1. Un STAR demande : « je sers quand ce mois-ci ? ».
+2. L'assistant reconnaît une question de données prévue et répond avec **ses propres
+   informations**, celles qu'il voit déjà dans « Mon planning » : la liste de ses services du
+   mois, avec la date, l'événement et le département.
+3. Un lien « Voir dans Mon planning » ouvre l'écran complet.
+
+Exemples de questions de données prévues dès le départ, selon le rôle :
+- **Tous** : mon prochain service ; mes services du mois ; mes demandes en attente ; mes
+  réservations de billetterie ; mes affectations à l'équipe d'un événement.
+- **STAR** : mes indisponibilités déclarées ; qui me remplace ; les consignes de mon département.
+- **Resp. département / Ministre** : qui est en service dimanche ; qui est indisponible ; les
+  postes non pourvus ; les demandes à traiter dans mon périmètre.
+- **Secrétaire / Admin** : les événements de la semaine ; les demandes en attente par type ; les
+  comptes rendus manquants.
+- **Comptable** : les demandes à valider ; le montant en attente de paiement ; le solde de la
+  navette.
 
 ### Scénario — réponse adaptée au rôle
 
 - Un **STAR** demande « comment je modifie le planning du département ? ». L'assistant explique
   que ce geste revient au responsable de département ou au ministre, et ce que le STAR peut faire
   lui-même (déclarer une indisponibilité, demander un remplacement).
-- Un **Resp. département** pose la même question : l'assistant donne les étapes et le lien vers
-  la grille de son département.
-- L'assistant ne propose **jamais** un écran que le rôle ne peut pas ouvrir.
-
-### Scénario — aide sans assistant (repli)
-
-- **Si l'assistant n'est pas configuré, désactivé ou indisponible** (panne du service, quota
-  atteint), le bouton d'aide reste là. Le panneau montre alors :
-  - l'**aide de l'écran courant** pour le rôle : ce qu'on y fait et les gestes principaux ;
-  - les **questions fréquentes** de cet écran, avec leurs réponses écrites ;
-  - une **recherche** dans l'aide ;
-  - un lien vers le guide complet.
-- Le passage de l'un à l'autre ne casse rien : l'utilisateur voit un message clair (« L'assistant
-  n'est pas disponible, voici l'aide de cet écran »).
+- Le même STAR demande « qui est indisponible dimanche ? ». L'assistant répond que cette
+  information est réservée aux responsables, sans rien en dévoiler.
+- Un **Resp. département** pose les mêmes questions : il obtient les étapes, la liste demandée
+  **pour ses départements seulement**, et les liens vers la grille de son département.
+- L'assistant ne propose **jamais** un écran que le rôle ne peut pas ouvrir, et ne montre
+  **jamais** une information que l'écran correspondant ne montrerait pas à cette personne.
 
 ### Scénarios alternatifs / cas limites
 
-- **Question hors sujet** (météo, Bible, conseil personnel, question sur une personne) :
-  l'assistant répond qu'il aide uniquement à utiliser Koinonia, poliment, sans argumenter.
-- **Question sur des données** (« combien de STAR sont dispo dimanche ? », « qui est en service
-  ? ») : l'assistant explique **où** trouver l'information dans Koinonia, sans jamais y accéder
-  lui-même.
-- **Information personnelle tapée dans la question** (nom, téléphone, situation pastorale) : un
-  rappel discret sous le champ invite à ne pas en saisir, et les adresses email et numéros de
-  téléphone sont **masqués automatiquement** avant que la question ne quitte Koinonia.
-- **Réponse incertaine** : l'assistant dit qu'il ne sait pas, plutôt que d'inventer, et propose
-  le guide ou de contacter un administrateur de l'église.
-- **Fonction absente de l'instance** (module désactivé) : l'assistant ne la mentionne pas, comme
-  si elle n'existait pas.
-- **Trop de questions** : au-delà d'une limite par personne et par jour, l'assistant se met en
-  pause pour cette personne et l'aide écrite prend le relais, avec un message clair. La limite
-  est de **30 questions par personne et par jour**.
+- **Question non reconnue** : l'assistant le dit simplement, propose les deux ou trois questions
+  les plus proches qu'il connaît et le lien vers le guide. La question est enregistrée, sans le
+  nom de la personne, pour compléter l'aide.
+- **Question hors sujet** (météo, Bible, conseil personnel) : l'assistant répond qu'il aide
+  uniquement à utiliser Koinonia, poliment.
+- **Question de données non prévue** (« combien de STAR ont servi plus de 3 fois en octobre ? ») :
+  l'assistant indique l'écran le plus proche (statistiques, planning) et enregistre la question
+  comme ci-dessus.
+- **Plusieurs églises** : les réponses sur les données portent sur l'**église courante**, comme
+  les écrans ; l'assistant le rappelle si la personne a plusieurs églises.
+- **Fonction absente de l'instance** (module désactivé) : l'assistant ne la mentionne pas, ni
+  pour expliquer un geste ni pour répondre sur des données.
+- **Rien à montrer** (aucun service ce mois-ci, aucune demande en attente) : l'assistant le dit
+  clairement plutôt que de renvoyer une liste vide.
+- **Liste longue** : l'assistant montre les premiers éléments et renvoie vers l'écran pour la
+  suite.
 - **Mobile** : le panneau s'ouvre en plein écran sur téléphone, sans masquer la barre de
   navigation une fois fermé.
-- **Nouvelle version de Koinonia** : les réponses suivent la documentation de la version en
-  service, sans action manuelle de l'église.
+- **Nouvelle version de Koinonia** : les questions et réponses suivent la version en service ;
+  un nouveau module arrive avec ses propres questions.
 
 ## Critères d'acceptation
 
 - [ ] Un bouton d'aide est accessible depuis tous les écrans connectés, sur ordinateur et sur
       téléphone.
 - [ ] Le panneau propose des questions fréquentes propres à l'écran courant et au rôle.
-- [ ] L'assistant répond en français à une question libre, avec au moins un lien vers l'écran
-      concerné quand il en existe un.
+- [ ] Une question sur l'application formulée librement, avec fautes ou mots familiers, reçoit
+      la bonne réponse écrite et un lien vers l'écran concerné.
+- [ ] Une question de données prévue reçoit les informations de la personne, pour l'église
+      courante, avec un lien vers l'écran complet.
+- [ ] Une réponse sur des données ne montre jamais plus que ce que l'écran correspondant montre à
+      cette personne (même périmètre de rôle, de département, de ministère et d'église).
 - [ ] Un lien proposé par l'assistant ouvre toujours un écran accessible au rôle de la personne.
-- [ ] Un STAR qui demande comment faire un geste réservé à un autre rôle reçoit l'explication de
-      qui peut le faire, sans lien vers un écran qu'il ne peut pas ouvrir.
-- [ ] L'assistant n'a accès à **aucune donnée de l'église** (personnes, plannings, finances,
-      suivi pastoral) : seule la documentation, le rôle et l'écran courant lui sont fournis.
-- [ ] Une question hors sujet reçoit un refus poli et une redirection vers l'aide.
+- [ ] Un STAR qui demande une information ou un geste réservé à un autre rôle reçoit
+      l'explication de qui peut le faire, sans aucune donnée.
+- [ ] Aucune question ni aucune donnée ne quitte Koinonia : l'assistant fonctionne sans service
+      externe.
+- [ ] Une question non reconnue reçoit des suggestions proches et le lien vers le guide ; elle
+      est enregistrée sans le nom de la personne.
+- [ ] Une question hors sujet reçoit un refus poli.
 - [ ] Une fonction d'un module désactivé n'est jamais mentionnée.
-- [ ] Sans assistant (non configuré, désactivé, panne, limite atteinte), l'aide écrite de l'écran
-      s'affiche avec ses questions fréquentes et une recherche.
-- [ ] Au-delà de 30 questions dans la journée, la personne bascule sur l'aide écrite, avec un
-      message clair.
-- [ ] Les emails et numéros de téléphone tapés dans une question sont masqués avant l'envoi.
-- [ ] Une conversation n'est pas conservée après la fermeture du panneau ; seuls restent les
-      compteurs, les avis « Utile / Pas utile » et le texte anonymisé des questions « Pas utile ».
 - [ ] Chaque réponse peut être jugée « Utile » / « Pas utile ».
-- [ ] Le Super Admin peut activer et désactiver l'assistant pour l'instance, et voit le nombre de
-      questions, la part de réponses jugées utiles et le texte des questions « Pas utile »,
-      sans jamais savoir qui les a posées.
-- [ ] L'Admin d'église peut couper l'assistant pour son église ; ses membres voient alors l'aide
-      écrite.
+- [ ] Une conversation n'est pas conservée après la fermeture du panneau ; seuls restent les
+      compteurs, les avis et le texte anonymisé des questions sans réponse ou jugées
+      « Pas utile ».
+- [ ] Le Super Admin active ou désactive l'assistant pour l'instance et voit l'usage et les
+      questions anonymisées, sans jamais savoir qui les a posées.
+- [ ] L'Admin d'église peut couper l'assistant pour son église ; ses membres voient alors le lien
+      vers le guide à la place.
 - [ ] Le module se désactive comme les autres ; désactivé, aucun bouton d'aide ne mène à
-      l'assistant, et l'aide écrite reste disponible.
+      l'assistant.
 
 ## Hors périmètre
 
-- Agir à la place de l'utilisateur (déclarer une absence, créer un événement, remplir un
-  formulaire) : l'assistant **explique**, il ne fait pas.
-- Lire, résumer ou analyser les données de l'église.
-- Assistance au public sans compte (pages d'inscription, de dons, d'accueil).
+- Comprendre **n'importe quelle** question ou combiner librement les données : seules les
+  questions prévues sont traitées. Une IA (externe ou installée sur le serveur) pourra s'ajouter
+  plus tard, sur les mêmes questions et les mêmes droits ; ce n'est pas l'objet de cette spec.
+- Agir à la place de l'utilisateur (déclarer une absence, créer un événement, valider une
+  demande) : l'assistant **explique et montre**, il ne fait pas.
+- Toute donnée que la personne ne voit pas déjà dans un écran.
+- Données de suivi pastoral et coordonnées personnelles d'autres personnes, même visibles à
+  l'écran : l'assistant renvoie vers l'écran sans les recopier. [À CLARIFIER: confirmer
+  l'exclusion des données pastorales et des coordonnées.]
+- Assistance au public sans compte.
 - Accompagnement spirituel ou pastoral, réponses bibliques.
 - Messages vocaux, captures d'écran envoyées par l'utilisateur.
 - Langues autres que le français.
-- Remplacement de la visite guidée existante (elle reste en place).
+- Remplacement de la visite guidée existante.
 
 ## Questions ouvertes
 
-- Les réponses écrites de l'aide de repli (questions fréquentes par écran) sont à rédiger.
-  Proposition : les 10 écrans les plus utilisés, rédigés avec le plan.
-- Coût : l'assistant repose sur un service externe payant à l'usage ; le budget mensuel accepté
-  est à confirmer avant la mise en production (sans effet sur le plan).
+- Le contenu (questions-réponses sur l'application, catalogue des questions de données) est à
+  rédiger. Proposition : les 10 écrans les plus utilisés et une vingtaine de questions de données
+  au premier lot, puis chaque module enrichit les siennes.
+- [À CLARIFIER: confirmer que l'assistant ne recopie ni les données pastorales ni les
+  coordonnées personnelles d'autres personnes (il renvoie vers l'écran).]
 
 ## Décisions
 
+- Aucun service externe : tout se passe dans Koinonia.
+- Deux familles de questions : sur l'application, et sur les données que la personne voit déjà.
 - Activation : Super Admin pour l'instance ; l'Admin d'église peut le couper pour son église.
-- Limite : 30 questions par personne et par jour.
-- Conservation : aucune conversation ; compteurs, avis et texte anonymisé des questions
-  « Pas utile » seulement.
-- Emails et numéros de téléphone masqués automatiquement avant l'envoi.
+- Conservation : aucune conversation ; compteurs, avis et texte anonymisé des questions sans
+  réponse ou jugées « Pas utile » seulement.
