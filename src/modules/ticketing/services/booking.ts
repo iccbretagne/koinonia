@@ -398,7 +398,7 @@ function stockAdditions(current: Map<string, HeldItem>, wanted: Map<string, Want
   const additions: { optionId: string; variantId: string | null; quantity: number }[] = [];
   for (const [key, want] of wanted) {
     const have = current.get(key);
-    if (!have || have.variantId !== want.variantId) {
+    if (have?.variantId !== want.variantId || !have) {
       additions.push({ optionId: want.optionId, variantId: want.variantId, quantity: want.quantity });
     } else if (have.quantity < want.quantity) {
       additions.push({ optionId: want.optionId, variantId: want.variantId, quantity: want.quantity - have.quantity });
