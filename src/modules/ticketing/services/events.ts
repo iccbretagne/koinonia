@@ -52,12 +52,12 @@ export function defaultPrefix(title: string, startsAt: Date): string {
   return `${initials || "EV"}${String(startsAt.getFullYear()).slice(-2)}`;
 }
 
-async function uniqueSlug(churchId: string, base: string, excludeId?: string): Promise<string> {
+async function uniqueSlug(churchId: string, base: string): Promise<string> {
   const prisma = await db();
   let slug = base;
   for (let n = 2; n < 100; n++) {
     const clash = await prisma.ticketingEvent.findFirst({
-      where: { churchId, slug, ...(excludeId ? { id: { not: excludeId } } : {}) },
+      where: { churchId, slug },
       select: { id: true },
     });
     if (!clash) return slug;
