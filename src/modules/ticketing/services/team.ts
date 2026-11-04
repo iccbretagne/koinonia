@@ -75,7 +75,7 @@ export interface AssignmentInput {
 export async function createAssignment(eventId: string, actorId: string, input: AssignmentInput) {
   const prisma = await db();
   const event = await eventChurch(eventId);
-  if (!input.userId === !input.guestName) throw new ApiError(400, "Indiquez un compte ou le nom d'un intervenant");
+  if (Boolean(input.userId) === Boolean(input.guestName)) throw new ApiError(400, "Indiquez un compte ou le nom d'un intervenant");
   if (input.postId) await postOf(eventId, input.postId);
   if (input.userId) {
     const member = await prisma.userChurchRole.findFirst({ where: { userId: input.userId, churchId: event.churchId }, select: { id: true } });

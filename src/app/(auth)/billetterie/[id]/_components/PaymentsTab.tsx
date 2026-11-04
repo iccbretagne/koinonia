@@ -10,6 +10,7 @@ import { useApi } from "../../use-api";
 type ChargeAction = { booking: BookingRow; mode: "receipt" | "refund" };
 const KIND_LABEL = { DECLARATION: "Déclaration", RECEIPT: "Encaissement", REFUND: "Remboursement" } as const;
 const STATUS_LABEL = { PENDING: "À confirmer", CONFIRMED: "Confirmé", REJECTED: "Refusé" } as const;
+const STATUS_TONE = { PENDING: "warning", CONFIRMED: "success", REJECTED: "neutral" } as const;
 
 function ChargesModal({ eventId, action, onClose }: { readonly eventId: string; readonly action: ChargeAction; readonly onClose: () => void }) {
   const { call, busy } = useApi();
@@ -166,7 +167,7 @@ export default function PaymentsTab({
                 {new Date(p.createdAt).toLocaleString("fr-FR")} · {p.reference} · {KIND_LABEL[p.kind]} {PAYMENT_METHOD_LABEL[p.method]} {formatEuros(p.amount)}
                 {p.reason ? ` — ${p.reason}` : ""}
               </span>
-              <StatusChip tone={p.status === "CONFIRMED" ? "success" : p.status === "PENDING" ? "warning" : "neutral"}>{STATUS_LABEL[p.status]}</StatusChip>
+              <StatusChip tone={STATUS_TONE[p.status]}>{STATUS_LABEL[p.status]}</StatusChip>
             </li>
           ))}
           {payments.length === 0 && <li className="px-4 py-3 text-[15px] text-ink-muted">Aucun paiement.</li>}

@@ -41,6 +41,140 @@ function allowed(op: SyncOp, roles: Set<TicketingRole>): boolean {
   return false;
 }
 
+type PassageOp = Extract<SyncOp, { type: "passage" | "manual" }>;
+
+/** État partagé par les opérations d'un envoi, traitées dans l'ordre. */
+interface SyncContext {
+  eventId: string;
+  deviceId: string;
+  clientTime: Date;
+  now: Date;
+  operator: { userId: string; roles: Set<TicketingRole> };
+  known: Set<string>;
+  history: PassageLite[];
+  activeParticipants: Set<string>;
+  validAssignments: Set<string>;
+  anomalies: number;
+}
+
+/** Applique `fn` à chaque élément, l'un après l'autre (l'ordre compte pour les anomalies). */
+async function inOrder<T, R>(items: T[], fn: (item: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = [];
+  await items.reduce(async (previous, item) => {
+    await previous;
+    results.push(await fn(item));
+  }, Promise.resolve());
+  return results;
+}
+
+function passageTarget(ctx: SyncContext, op: PassageOp): boolean {
+  if (op.type === "manual") return true;
+  if (op.subject === "PARTICIPANT") return !!op.participantId && ctx.activeParticipants.has(op.participantId);
+  return !!op.assignmentId && ctx.validAssignments.has(op.assignmentId);
+}
+
+async function applyPassage(ctx: SyncContext, op: PassageOp): Promise<OpResult> {
+  if (ctx.known.has(op.id)) return { id: op.id, status: "duplicate" };
+  if (!passageTarget(ctx, op)) return { id: op.id, status: "rejected", reason: "Billet ou badge inconnu, ou annulé" };
+  const isPassage = op.type === "passage";
+  const passage: PassageLite = {
+    id: op.id,
+    subject: isPassage ? op.subject : "MANUAL",
+    participantId: isPassage && op.subject === "PARTICIPANT" ? (op.participantId ?? null) : null,
+    assignmentId: isPassage && op.subject === "STAFF" ? (op.assignmentId ?? null) : null,
+    direction: op.direction,
+    delta: 1,
+    scannedAt: correctClock(op.scannedAt, ctx.clientTime, ctx.now),
+    receivedAt: ctx.now,
+  };
+  const anomaly = isAnomalous(ctx.history, passage);
+  if (anomaly) ctx.anomalies++;
+  const prisma = await db();
+  await prisma.ticketingPassage.create({
+    data: {
+      ...passage,
+      eventId: ctx.eventId,
+      reason: isPassage ? null : op.reason,
+      deviceId: ctx.deviceId,
+      operatorId: ctx.operator.userId,
+      gate: op.gate ?? null,
+      anomaly,
+    },
+  });
+  ctx.history.push(passage);
+  ctx.known.add(op.id);
+  return { id: op.id, status: "applied" };
+}
+
+async function applyWalkIn(ctx: SyncContext, op: Extract<SyncOp, { type: "walkin" }>): Promise<OpResult> {
+  const created = await createWalkIn(
+    ctx.eventId,
+    op.id,
+    { participants: op.participants.map((p) => ({ ...p, options: [] })), phone: op.phone, method: op.method },
+    ctx.operator.userId
+  );
+  if (created.duplicate) return { id: op.id, status: "duplicate" };
+  if (op.enter) {
+    const scannedAt = correctClock(op.scannedAt, ctx.clientTime, ctx.now);
+    const rows = created.participantIds.map((participantId, i) => ({
+      id: `${op.id}-in-${i}`,
+      eventId: ctx.eventId,
+      subject: "PARTICIPANT" as const,
+      participantId,
+      direction: "IN" as const,
+      deviceId: ctx.deviceId,
+      operatorId: ctx.operator.userId,
+      gate: op.gate ?? null,
+      scannedAt,
+    }));
+    const prisma = await db();
+    await prisma.ticketingPassage.createMany({ data: rows, skipDuplicates: true });
+    ctx.history.push(...rows.map((r) => ({ ...r, assignmentId: null, delta: 1, receivedAt: ctx.now })));
+  }
+  return { id: op.id, status: "applied" };
+}
+
+async function applyReceipt(ctx: SyncContext, op: Extract<SyncOp, { type: "receipt" }>): Promise<OpResult> {
+  const prisma = await db();
+  const existing = await prisma.ticketingPayment.findUnique({ where: { opId: op.id }, select: { id: true } });
+  if (existing) return { id: op.id, status: "duplicate" };
+  const { roles } = ctx.operator;
+  const scope = roles.has("ORGANIZER") || roles.has("TREASURER") ? "all" : "entry";
+  const charges = op.participantIds.map((id) => ({ type: "entry" as const, id }));
+  await recordReceipt(ctx.eventId, op.bookingId, { method: op.method, charges, opId: op.id }, ctx.operator.userId, scope);
+  return { id: op.id, status: "applied" };
+}
+
+async function applyOne(ctx: SyncContext, op: SyncOp): Promise<OpResult> {
+  switch (op.type) {
+    case "passage":
+    case "manual":
+      return applyPassage(ctx, op);
+    case "walkin":
+      return applyWalkIn(ctx, op);
+    case "receipt":
+      return applyReceipt(ctx, op);
+    case "delivery": {
+      const scannedAt = correctClock(op.scannedAt, ctx.clientTime, ctx.now);
+      const r = await deliverItem(ctx.eventId, { id: op.id, itemId: op.itemId, delivered: op.delivered, method: op.method, scannedAt }, ctx.operator.userId);
+      return { id: op.id, status: r.changed ? "applied" : "duplicate" };
+    }
+    case "onsiteSale": {
+      const r = await recordOnsiteSale(ctx.eventId, { ...op, scannedAt: correctClock(op.scannedAt, ctx.clientTime, ctx.now) }, ctx.operator.userId);
+      return { id: op.id, status: r.duplicate ? "duplicate" : "applied" };
+    }
+  }
+}
+
+async function safeApply(ctx: SyncContext, op: SyncOp): Promise<OpResult> {
+  if (!allowed(op, ctx.operator.roles)) return { id: op.id, status: "rejected", reason: "Rôle insuffisant" };
+  try {
+    return await applyOne(ctx, op);
+  } catch (error) {
+    return { id: op.id, status: "rejected", reason: error instanceof ApiError ? error.message : "Opération refusée" };
+  }
+}
+
 export async function applyOperations(
   eventId: string,
   input: { deviceId: string; clientTime: Date; ops: SyncOp[] },
@@ -51,121 +185,43 @@ export async function applyOperations(
   const event = await prisma.ticketingEvent.findUniqueOrThrow({ where: { id: eventId }, select: { capacity: true, status: true } });
   if (event.status === "DRAFT" || event.status === "ARCHIVED") throw new ApiError(409, "Événement fermé au contrôle");
 
-  const passageOps = input.ops.filter((o): o is Extract<SyncOp, { type: "passage" | "manual" }> => o.type === "passage" || o.type === "manual");
-  const known = new Set(
-    (await prisma.ticketingPassage.findMany({ where: { id: { in: passageOps.map((o) => o.id) } }, select: { id: true } })).map((p) => p.id)
-  );
-  const history: PassageLite[] = await prisma.ticketingPassage.findMany({
-    where: { eventId },
-    select: { id: true, subject: true, participantId: true, assignmentId: true, direction: true, delta: true, scannedAt: true, receivedAt: true },
-  });
+  const passageOps = input.ops.filter((o): o is PassageOp => o.type === "passage" || o.type === "manual");
   const participantIds = passageOps.flatMap((o) => (o.type === "passage" && o.participantId ? [o.participantId] : []));
   const assignmentIds = passageOps.flatMap((o) => (o.type === "passage" && o.assignmentId ? [o.assignmentId] : []));
-  const [participants, assignments] = await Promise.all([
+  const [knownRows, history, participants, assignments] = await Promise.all([
+    prisma.ticketingPassage.findMany({ where: { id: { in: passageOps.map((o) => o.id) } }, select: { id: true } }),
+    prisma.ticketingPassage.findMany({
+      where: { eventId },
+      select: { id: true, subject: true, participantId: true, assignmentId: true, direction: true, delta: true, scannedAt: true, receivedAt: true },
+    }),
     prisma.ticketingParticipant.findMany({ where: { id: { in: participantIds }, eventId }, select: { id: true, status: true } }),
     prisma.ticketingAssignment.findMany({ where: { id: { in: assignmentIds }, eventId }, select: { id: true } }),
   ]);
-  const activeParticipants = new Set(participants.filter((p) => p.status === "ACTIVE").map((p) => p.id));
-  const validAssignments = new Set(assignments.map((a) => a.id));
-
-  const results: OpResult[] = [];
-  let anomalies = 0;
-  for (const op of input.ops) {
-    if (!allowed(op, operator.roles)) {
-      results.push({ id: op.id, status: "rejected", reason: "Rôle insuffisant" });
-      continue;
-    }
-    try {
-      results.push(await applyOne(op));
-    } catch (error) {
-      results.push({ id: op.id, status: "rejected", reason: error instanceof ApiError ? error.message : "Opération refusée" });
-    }
-  }
-
-  async function applyOne(op: SyncOp): Promise<OpResult> {
-    switch (op.type) {
-      case "passage":
-      case "manual": {
-        if (known.has(op.id)) return { id: op.id, status: "duplicate" };
-        if (op.type === "passage") {
-          const ok = op.subject === "PARTICIPANT" ? !!op.participantId && activeParticipants.has(op.participantId) : !!op.assignmentId && validAssignments.has(op.assignmentId);
-          if (!ok) return { id: op.id, status: "rejected", reason: "Billet ou badge inconnu, ou annulé" };
-        }
-        const passage: PassageLite = {
-          id: op.id,
-          subject: op.type === "manual" ? "MANUAL" : op.subject,
-          participantId: op.type === "passage" && op.subject === "PARTICIPANT" ? op.participantId! : null,
-          assignmentId: op.type === "passage" && op.subject === "STAFF" ? op.assignmentId! : null,
-          direction: op.direction,
-          delta: 1,
-          scannedAt: correctClock(op.scannedAt, input.clientTime, now),
-          receivedAt: now,
-        };
-        const anomaly = isAnomalous(history, passage);
-        if (anomaly) anomalies++;
-        await prisma.ticketingPassage.create({
-          data: {
-            ...passage,
-            eventId,
-            reason: op.type === "manual" ? op.reason : null,
-            deviceId: input.deviceId,
-            operatorId: operator.userId,
-            gate: op.gate ?? null,
-            anomaly,
-          },
-        });
-        history.push(passage);
-        known.add(op.id);
-        return { id: op.id, status: "applied" };
-      }
-      case "walkin": {
-        const created = await createWalkIn(eventId, op.id, { participants: op.participants.map((p) => ({ ...p, options: [] })), phone: op.phone, method: op.method }, operator.userId);
-        if (created.duplicate) return { id: op.id, status: "duplicate" };
-        if (op.enter) {
-          const scannedAt = correctClock(op.scannedAt, input.clientTime, now);
-          const rows = created.participantIds.map((participantId, i) => ({
-            id: `${op.id}-in-${i}`,
-            eventId,
-            subject: "PARTICIPANT" as const,
-            participantId,
-            direction: "IN" as const,
-            deviceId: input.deviceId,
-            operatorId: operator.userId,
-            gate: op.gate ?? null,
-            scannedAt,
-          }));
-          await prisma.ticketingPassage.createMany({ data: rows, skipDuplicates: true });
-          history.push(...rows.map((r) => ({ ...r, assignmentId: null, delta: 1, receivedAt: now })));
-        }
-        return { id: op.id, status: "applied" };
-      }
-      case "receipt": {
-        const existing = await prisma.ticketingPayment.findUnique({ where: { opId: op.id }, select: { id: true } });
-        if (existing) return { id: op.id, status: "duplicate" };
-        await recordReceipt(eventId, op.bookingId, { method: op.method, charges: op.participantIds.map((id) => ({ type: "entry" as const, id })), opId: op.id }, operator.userId, operator.roles.has("ORGANIZER") || operator.roles.has("TREASURER") ? "all" : "entry");
-        return { id: op.id, status: "applied" };
-      }
-      case "delivery": {
-        const r = await deliverItem(eventId, { id: op.id, itemId: op.itemId, delivered: op.delivered, method: op.method, scannedAt: correctClock(op.scannedAt, input.clientTime, now) }, operator.userId);
-        return { id: op.id, status: r.changed ? "applied" : "duplicate" };
-      }
-      case "onsiteSale": {
-        const r = await recordOnsiteSale(eventId, { ...op, scannedAt: correctClock(op.scannedAt, input.clientTime, now) }, operator.userId);
-        return { id: op.id, status: r.duplicate ? "duplicate" : "applied" };
-      }
-    }
-  }
+  const ctx: SyncContext = {
+    eventId,
+    deviceId: input.deviceId,
+    clientTime: input.clientTime,
+    now,
+    operator,
+    known: new Set(knownRows.map((p) => p.id)),
+    history: history as PassageLite[],
+    activeParticipants: new Set(participants.filter((p) => p.status === "ACTIVE").map((p) => p.id)),
+    validAssignments: new Set(assignments.map((a) => a.id)),
+    anomalies: 0,
+  };
+  const results = await inOrder(input.ops, (op) => safeApply(ctx, op));
 
   const ages = await prisma.ticketingParticipant.findMany({ where: { eventId }, select: { id: true, ageGroup: true } });
-  const counts = computePresence(history, new Map(ages.map((a) => [a.id, a.ageGroup])));
+  const counts = computePresence(ctx.history, new Map(ages.map((a) => [a.id, a.ageGroup])));
   const { notifyCapacity } = await import("./presence");
   await notifyCapacity(eventId, counts.total);
-  if (anomalies > 0) {
+  if (ctx.anomalies > 0) {
+    const plural = ctx.anomalies > 1 ? "s" : "";
     const { notifyEventTeam } = await import("./team-notify");
     await notifyEventTeam(eventId, ["ORGANIZER"], {
       type: "TICKETING_ANOMALY",
       title: "Contrôle : passage incohérent",
-      message: `${anomalies} passage${anomalies > 1 ? "s" : ""} incohérent${anomalies > 1 ? "s" : ""} (entrée déjà enregistrée, ou sortie sans entrée).`,
+      message: `${ctx.anomalies} passage${plural} incohérent${plural} (entrée déjà enregistrée, ou sortie sans entrée).`,
       link: `/billetterie/${eventId}?vue=presences`,
     });
   }

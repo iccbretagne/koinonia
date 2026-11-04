@@ -7,8 +7,7 @@ import type { FieldStatus } from "./use-field-sync";
 export default function NetworkBar({ status }: { readonly status: FieldStatus }) {
   const time = status.lastSync ? new Date(status.lastSync).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "—";
   return (
-    <div
-      role="status"
+    <output
       className={`flex flex-wrap items-center justify-between gap-2 rounded-control px-3 py-2 text-[13px] ${status.online ? "bg-success-soft text-ink" : "bg-warning-soft text-ink"}`}
     >
       <span className="flex items-center gap-2 font-semibold">
@@ -19,6 +18,6 @@ export default function NetworkBar({ status }: { readonly status: FieldStatus })
         {status.pending > 0 ? `${status.pending} en attente · ` : ""}mis à jour {time}
       </span>
       {status.error && <span className="w-full text-danger">{status.error}</span>}
-    </div>
+    </output>
   );
 }

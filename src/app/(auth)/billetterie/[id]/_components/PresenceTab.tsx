@@ -1,4 +1,5 @@
 import { Download } from "lucide-react";
+import { capacityTone } from "@/components/ticketing/format";
 import type { PresenceView } from "@/modules/ticketing";
 
 /** Présences : compteur par catégorie, jauge, mineurs non accompagnés présents, anomalies, courbe. */
@@ -7,7 +8,7 @@ export default function PresenceTab({ eventId, presence, canExport }: { readonly
   const max = Math.max(capacity, ...presence.curve.map((c) => c.total), 1);
   return (
     <div className="space-y-6">
-      <div className={`rounded-card p-4 ${level === 100 ? "bg-danger-soft" : level === 90 ? "bg-warning-soft" : "border border-line bg-surface"}`}>
+      <div className={`rounded-card p-4 ${capacityTone(level)}`}>
         <p className="text-[13px] text-ink-muted">Présents</p>
         <p className="text-4xl font-bold text-ink">
           {counts.total} <span className="text-xl text-ink-muted">/ {capacity}</span>

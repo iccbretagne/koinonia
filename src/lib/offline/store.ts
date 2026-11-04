@@ -17,7 +17,7 @@ const STORE = "kv";
 function request<T>(req: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    req.onerror = () => reject(new Error(req.error?.message ?? "Erreur IndexedDB"));
   });
 }
 
@@ -27,7 +27,7 @@ function openDb(): Promise<IDBDatabase> {
     const req = indexedDB.open(DB_NAME, 1);
     req.onupgradeneeded = () => req.result.createObjectStore(STORE);
     req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    req.onerror = () => reject(new Error(req.error?.message ?? "IndexedDB indisponible"));
   });
   return dbPromise;
 }
@@ -58,17 +58,19 @@ export const idbStore: KeyValueStore = {
 export function memoryStore(): KeyValueStore {
   const map = new Map<string, unknown>();
   return {
-    async get<T>(key: string) {
-      return map.get(key) as T | undefined;
+    get<T>(key: string) {
+      return Promise.resolve(map.get(key) as T | undefined);
     },
-    async set<T>(key: string, value: T) {
+    set<T>(key: string, value: T) {
       map.set(key, value);
+      return Promise.resolve();
     },
-    async delete(key: string) {
+    delete(key: string) {
       map.delete(key);
+      return Promise.resolve();
     },
-    async keys(prefix: string) {
-      return [...map.keys()].filter((k) => k.startsWith(prefix));
+    keys(prefix: string) {
+      return Promise.resolve([...map.keys()].filter((k) => k.startsWith(prefix)));
     },
   };
 }
@@ -87,7 +89,7 @@ export function opQueue<T extends { id: string }>(store: KeyValueStore, scope: s
       await store.set(`${prefix}${Date.now().toString().padStart(15, "0")}${String(seq).padStart(3, "0")}:${op.id}`, op);
     },
     async pending(): Promise<T[]> {
-      const keys = (await store.keys(prefix)).sort();
+      const keys = (await store.keys(prefix)).sort((a, b) => a.localeCompare(b));
       const ops: (T | undefined)[] = await Promise.all(keys.map((k) => store.get<T>(k)));
       return ops.filter((o): o is T => o !== undefined);
     },

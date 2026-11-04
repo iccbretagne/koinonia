@@ -85,15 +85,16 @@ const optionalText = (max: number) =>
     .trim()
     .max(max)
     .nullish()
-    .transform((v) => (v ? v : null));
+    .transform((v) => v || null);
 const money = z.coerce.number().min(0).max(10_000).transform((v) => Math.round(v * 100) / 100);
 const isoDate = z.coerce.date();
 const httpsUrl = z
   .string()
   .trim()
   .max(300)
-  .url()
+  .pipe(z.url())
   .refine((v) => v.startsWith("https://"), "Lien en https uniquement");
+const email = z.string().trim().toLowerCase().max(191).pipe(z.email());
 
 // ── Moyens de paiement ───────────────────────────────────────────────────────
 
@@ -287,14 +288,14 @@ export type ParticipantInput = z.infer<typeof participantInputSchema>;
 export const contactSchema = z
   .object({
     name: text(150),
-    email: z.string().trim().toLowerCase().email().max(191),
+    email,
     phone: z
       .string()
       .trim()
       .max(40)
       .regex(/^[+\d\s().-]*$/, "Numéro invalide")
       .nullish()
-      .transform((v) => (v ? v : null)),
+      .transform((v) => v || null),
   })
   .strict();
 
@@ -320,7 +321,7 @@ export type BookingCreateInput = z.infer<typeof bookingCreateSchema>;
 
 export const recoverSchema = z
   .object({
-    email: z.string().trim().toLowerCase().email().max(191),
+    email,
     turnstileToken: z.string().max(4096).optional(),
   })
   .strict();

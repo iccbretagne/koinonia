@@ -158,7 +158,8 @@ async function shareTicket(name: string, url: string) {
       // partage annulé : repli WhatsApp
     }
   }
-  window.open(`https://wa.me/?text=${encodeURIComponent(`${text} : ${url}`)}`, "_blank", "noopener");
+  const message = encodeURIComponent(`${text} : ${url}`);
+  window.open(`https://wa.me/?text=${message}`, "_blank", "noopener");
 }
 
 /** « Ma réservation » (spec 074) : récapitulatif, paiement, billets, modifications, annulation. */

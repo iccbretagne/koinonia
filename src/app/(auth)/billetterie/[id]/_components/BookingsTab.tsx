@@ -96,7 +96,7 @@ export default function BookingsTab({
                 </li>
               ))}
             </ul>
-            {b.charges.filter((c) => c.type === "item").length > 0 && (
+            {b.charges.some((c) => c.type === "item") && (
               <p className="text-[13px] text-ink-muted">
                 {b.charges.filter((c) => c.type === "item").map((c) => `${c.label} (${CHARGE_STATUS_LABEL[c.status].toLowerCase()})`).join(" · ")}
               </p>

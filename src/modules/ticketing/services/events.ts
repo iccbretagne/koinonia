@@ -175,13 +175,15 @@ export async function updateEvent(eventId: string, userId: string, input: EventU
   const updated = await prisma.$transaction(async (tx) => {
     if (tariffs) {
       await tx.ticketingTariff.deleteMany({ where: { eventId, ageGroup: { notIn: tariffs.map((t) => t.ageGroup) } } });
-      for (const t of tariffs) {
-        await tx.ticketingTariff.upsert({
-          where: { eventId_ageGroup: { eventId, ageGroup: t.ageGroup } },
-          create: { eventId, ageGroup: t.ageGroup, price: t.price },
-          update: { price: t.price },
-        });
-      }
+      await Promise.all(
+        tariffs.map((t) =>
+          tx.ticketingTariff.upsert({
+            where: { eventId_ageGroup: { eventId, ageGroup: t.ageGroup } },
+            create: { eventId, ageGroup: t.ageGroup, price: t.price },
+            update: { price: t.price },
+          })
+        )
+      );
     }
     return tx.ticketingEvent.update({ where: { id: eventId }, data });
   });

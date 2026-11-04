@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { qrPath } from "@/lib/qr";
 import PublicShell from "@/components/ticketing/PublicShell";
-import { formatDateTime } from "@/components/ticketing/format";
+import { dateAndPlace } from "@/components/ticketing/format";
 import { bookingIdFromManageToken, getBookingView, getPublicEvent } from "@/modules/ticketing";
 import ReservationClient from "./ReservationClient";
 
@@ -34,7 +34,7 @@ export default async function ReservationPage({
     <PublicShell
       eyebrow={view.event.churchName}
       title={view.event.title}
-      subtitle={`${formatDateTime(view.event.startsAt)}${view.event.location ? ` · ${view.event.location}` : ""}`}
+      subtitle={dateAndPlace(view.event.startsAt, view.event.location)}
     >
       <ReservationClient token={token} view={view} publicEvent={publicEvent} qrs={qrs} justCreated={query.nouvelle === "1"} />
     </PublicShell>

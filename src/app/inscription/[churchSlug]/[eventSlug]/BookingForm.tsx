@@ -15,14 +15,21 @@ import {
 } from "@/modules/ticketing/schemas";
 import type { TicketingAgeGroup } from "@/generated/prisma/enums";
 
+/** Contrôle léger d'email côté écran (le serveur valide vraiment) : sans expression régulière. */
+function isEmail(value: string): boolean {
+  const at = value.indexOf("@");
+  return at > 0 && value.indexOf(".", at) > at + 1 && !value.endsWith(".") && !/\s/.test(value);
+}
+
 interface ParticipantDraft {
+  uid: string;
   firstName: string;
   lastName: string;
   ageGroup: TicketingAgeGroup;
   options: Choices;
 }
 
-const emptyParticipant = (ageGroup: TicketingAgeGroup): ParticipantDraft => ({ firstName: "", lastName: "", ageGroup, options: {} });
+const emptyParticipant = (ageGroup: TicketingAgeGroup): ParticipantDraft => ({ uid: crypto.randomUUID(), firstName: "", lastName: "", ageGroup, options: {} });
 
 function RecoverModal({ event, siteKey, onClose }: { readonly event: PublicEvent; readonly siteKey: string; readonly onClose: () => void }) {
   const [email, setEmail] = useState("");
@@ -111,7 +118,7 @@ export default function BookingForm({
   function stepTwoError(): string | null {
     const missing = event.questions.find((q) => q.required && !answers[q.id]?.trim());
     if (missing) return `Réponse requise : ${missing.label}`;
-    if (!contact.name.trim() || !/^\S+@\S+\.\S+$/.test(contact.email)) return "Indiquez le nom et un email valide pour la réservation.";
+    if (!contact.name.trim() || !isEmail(contact.email)) return "Indiquez le nom et un email valide pour la réservation.";
     if (unaccompanied && (!guardian.name.trim() || guardian.phone.trim().length < 6 || !guardian.consent)) {
       return "Le responsable légal doit indiquer son nom, son téléphone et donner son autorisation.";
     }
@@ -180,7 +187,7 @@ export default function BookingForm({
       {step === 1 && (
         <section className="space-y-4" aria-label="Participants">
           {participants.map((p, i) => (
-            <fieldset key={i} className="space-y-3 rounded-card border border-line bg-surface p-4">
+            <fieldset key={p.uid} className="space-y-3 rounded-card border border-line bg-surface p-4">
               <div className="flex items-center justify-between">
                 <legend className="font-semibold text-ink">Participant {i + 1}</legend>
                 {participants.length > 1 && (
@@ -256,8 +263,8 @@ export default function BookingForm({
         <section className="space-y-4" aria-label="Récapitulatif">
           <div className="rounded-card border border-line bg-surface p-4">
             <ul className="space-y-1 text-[15px] text-ink">
-              {participants.map((p, i) => (
-                <li key={i}>
+              {participants.map((p) => (
+                <li key={p.uid}>
                   {p.firstName} {p.lastName} — {AGE_GROUP_LABEL[p.ageGroup]}
                 </li>
               ))}

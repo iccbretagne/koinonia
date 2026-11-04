@@ -21,6 +21,12 @@ interface Menu {
   variants: { id: string; label: string; description: string | null; allergens: string | null; stock: number | null; prepared: number | null; closed: boolean; used: number }[];
 }
 
+function ItemStatus({ done, paid, amountDue }: { readonly done: boolean; readonly paid: boolean; readonly amountDue: number }) {
+  if (done) return <StatusChip tone="success">Remis</StatusChip>;
+  if (paid) return <StatusChip tone="success">Payé</StatusChip>;
+  return <StatusChip tone="warning">À régler {formatEuros(amountDue)}</StatusChip>;
+}
+
 /** Fiche d'une personne ou d'une réservation : éléments à retirer, paiement, remise. */
 function Sheet({
   title,
@@ -48,7 +54,7 @@ function Sheet({
                     {i.label}
                     {i.quantity > 1 ? ` × ${i.quantity}` : ""}
                   </span>
-                  {done ? <StatusChip tone="success">Remis</StatusChip> : i.paid ? <StatusChip tone="success">Payé</StatusChip> : <StatusChip tone="warning">À régler {formatEuros(i.amountDue)}</StatusChip>}
+                  <ItemStatus done={done} paid={i.paid} amountDue={i.amountDue} />
                 </div>
                 <p className="text-[13px] text-ink-muted">
                   {i.holder}
@@ -324,7 +330,7 @@ export default function CateringClient({ eventId, menus, hasLabels }: { readonly
             />
             <Button
               type="button"
-              disabled={!(Number(sale.quantity) >= 1)}
+              disabled={Number.isNaN(Number(sale.quantity)) || Number(sale.quantity) < 1}
               onClick={async () => {
                 const [optionId, variantId] = sale.key.split(":");
                 const quantity = Number(sale.quantity);

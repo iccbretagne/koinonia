@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ScanLine, Utensils } from "lucide-react";
 import { PageHeader, StatusChip, Tabs } from "@/components/ui";
 import { buttonClasses } from "@/components/ui/button-classes";
-import { formatDateTime } from "@/components/ticketing/format";
+import { dateAndPlace } from "@/components/ticketing/format";
 import {
   canDo,
   getEventAccess,
@@ -91,7 +91,7 @@ export default async function TicketingEventPage({
       <PageHeader
         eyebrow="Billetterie"
         title={event.title}
-        description={`${formatDateTime(event.startsAt)}${event.location ? ` · ${event.location}` : ""}`}
+        description={dateAndPlace(event.startsAt, event.location)}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <StatusChip tone={event.status === "OPEN" ? "success" : "neutral"}>{EVENT_STATUS_LABEL[event.status]}</StatusChip>

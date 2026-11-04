@@ -43,7 +43,7 @@ export async function declarePayment(bookingId: string, method: TicketingPayment
     if (booking.status !== "ACTIVE") throw new ApiError(409, "Cette réservation est annulée.");
     const due = chargesOf(booking).filter((c) => c.status === "DUE");
     if (due.length === 0) throw new ApiError(409, "Rien à régler sur cette réservation.");
-    for (const c of due) await setChargeStatus(tx, c, "DECLARED");
+    await Promise.all(due.map((c) => setChargeStatus(tx, c, "DECLARED")));
     return tx.ticketingPayment.create({
       data: {
         bookingId,
@@ -85,11 +85,14 @@ export async function confirmPayment(eventId: string, paymentId: string, userId:
   await prisma.$transaction(async (tx) => {
     const booking = await loadBooking(payment.bookingId, tx);
     const charges = new Map(chargesOf(booking).map((c) => [`${c.type}:${c.id}`, c]));
-    for (const ref of readRefs(payment.chargeRefs)) {
-      const charge = charges.get(`${ref.type}:${ref.id}`);
-      if (charge?.status === "DECLARED") await setChargeStatus(tx, ref, "PAID");
-      else if (charge?.status === "CANCELLED") await setChargeStatus(tx, ref, "REFUND_DUE");
-    }
+    // Déclaré → payé ; annulé entre-temps → à rembourser (l'argent est bien arrivé).
+    const next: Partial<Record<string, TicketingChargeStatus>> = { DECLARED: "PAID", CANCELLED: "REFUND_DUE" };
+    await Promise.all(
+      readRefs(payment.chargeRefs).flatMap((ref) => {
+        const status = next[charges.get(`${ref.type}:${ref.id}`)?.status ?? ""];
+        return status ? [setChargeStatus(tx, ref, status)] : [];
+      })
+    );
     await tx.ticketingPayment.update({ where: { id: paymentId }, data: { status: "CONFIRMED", confirmedById: userId, confirmedAt: new Date() } });
   });
   const booking = await loadBooking(payment.bookingId);
@@ -107,9 +110,8 @@ export async function rejectPayment(eventId: string, paymentId: string, userId: 
   await prisma.$transaction(async (tx) => {
     const booking = await loadBooking(payment.bookingId, tx);
     const charges = new Map(chargesOf(booking).map((c) => [`${c.type}:${c.id}`, c]));
-    for (const ref of readRefs(payment.chargeRefs)) {
-      if (charges.get(`${ref.type}:${ref.id}`)?.status === "DECLARED") await setChargeStatus(tx, ref, "DUE");
-    }
+    const declared = readRefs(payment.chargeRefs).filter((ref) => charges.get(`${ref.type}:${ref.id}`)?.status === "DECLARED");
+    await Promise.all(declared.map((ref) => setChargeStatus(tx, ref, "DUE")));
     await tx.ticketingPayment.update({ where: { id: paymentId }, data: { status: "REJECTED", reason, confirmedById: userId, confirmedAt: new Date() } });
   });
   const booking = await loadBooking(payment.bookingId);
@@ -147,7 +149,7 @@ export async function recordReceipt(
     if (scope === "pickup" && picked.some((c) => c.type !== "item" || !c.pickup)) throw new Error("FORBIDDEN");
     const payable = picked.filter((c) => c.status === "DUE" || c.status === "DECLARED");
     if (payable.length === 0) throw new ApiError(409, "Ces éléments sont déjà réglés.");
-    for (const c of payable) await setChargeStatus(tx, c, "PAID");
+    await Promise.all(payable.map((c) => setChargeStatus(tx, c, "PAID")));
     return tx.ticketingPayment.create({
       data: {
         bookingId,
@@ -179,7 +181,7 @@ export async function markRefunded(
     if (booking.eventId !== eventId) throw new ApiError(404, "Réservation introuvable");
     const picked = pickCharges(chargesOf(booking), input.charges).filter((c) => c.status === "REFUND_DUE");
     if (picked.length === 0) throw new ApiError(409, "Aucun élément à rembourser parmi ceux choisis.");
-    for (const c of picked) await setChargeStatus(tx, c, "REFUNDED");
+    await Promise.all(picked.map((c) => setChargeStatus(tx, c, "REFUNDED")));
     return tx.ticketingPayment.create({
       data: {
         bookingId,

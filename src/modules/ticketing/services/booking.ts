@@ -191,6 +191,11 @@ export async function createBooking(eventId: string, input: BookingCreateInput) 
   return { bookingId: result.bookingId, reference: result.reference, manageToken: deriveToken("manage", result.bookingId, result.salt) };
 }
 
+function seatsMessage(seatsLeft: number): string {
+  if (seatsLeft <= 0) return "Toutes les places sont prises.";
+  return seatsLeft === 1 ? "Plus qu'une place disponible." : `Plus que ${seatsLeft} places disponibles.`;
+}
+
 /** Prévient les organisateurs quand les places restantes passent sous 10 % (une fois). */
 async function maybeAlertSeats(eventId: string, seatsLeft: number) {
   const prisma = await db();
@@ -202,7 +207,7 @@ async function maybeAlertSeats(eventId: string, seatsLeft: number) {
   await notifyEventTeam(eventId, ["ORGANIZER"], {
     type: "TICKETING_SEATS_LOW",
     title: `${event.title} : bientôt complet`,
-    message: seatsLeft > 0 ? `Plus que ${seatsLeft} place${seatsLeft > 1 ? "s" : ""} disponible${seatsLeft > 1 ? "s" : ""}.` : "Toutes les places sont prises.",
+    message: seatsMessage(seatsLeft),
     link: `/billetterie/${eventId}`,
   });
 }
@@ -237,7 +242,8 @@ function itemLabel(item: FullBooking["items"][number], participants: FullBooking
   const who = item.participantId ? participants.find((p) => p.id === item.participantId) : null;
   const what = item.variant ? `${item.option.label} — ${item.variant.label}` : item.option.label;
   const qty = item.quantity > 1 ? ` × ${item.quantity}` : "";
-  return `${what}${qty}${who ? ` (${who.firstName})` : ""}`;
+  const holder = who ? ` (${who.firstName})` : "";
+  return `${what}${qty}${holder}`;
 }
 
 /** Éléments payants de la réservation (entrées et options), avec leur état. */
@@ -365,9 +371,7 @@ export async function getBookingView(bookingId: string) {
       createdAt: p.createdAt.toISOString(),
     })),
     instructions: paymentInstructions(booking.reference, config),
-    remoteMethods: (["WERO", "REVOLUT", "TRANSFER"] as const).filter((m) =>
-      m === "WERO" ? !!config.wero : m === "REVOLUT" ? !!config.revolut : !!config.transfer
-    ),
+    remoteMethods: (["WERO", "REVOLUT", "TRANSFER"] as const).filter((m) => !!{ WERO: config.wero, REVOLUT: config.revolut, TRANSFER: config.transfer }[m]),
     can: {
       editOptions: active && event.status !== "ARCHIVED" && !optionDeadlinePassed && now < event.startsAt,
       addParticipant: active && closedReason(event, seatsLeft, now) === null,
@@ -386,6 +390,45 @@ function holderKey(participantId: string | null, optionId: string) {
   return `${participantId ?? "booking"}:${optionId}`;
 }
 
+type HeldItem = FullBooking["items"][number];
+type WantedItem = PlannedItem & { participantId: string | null };
+
+/** Quantités supplémentaires demandées (nouvelles options, plat changé, quantité augmentée). */
+function stockAdditions(current: Map<string, HeldItem>, wanted: Map<string, WantedItem>) {
+  const additions: { optionId: string; variantId: string | null; quantity: number }[] = [];
+  for (const [key, want] of wanted) {
+    const have = current.get(key);
+    if (!have || have.variantId !== want.variantId) {
+      additions.push({ optionId: want.optionId, variantId: want.variantId, quantity: want.quantity });
+    } else if (have.quantity < want.quantity) {
+      additions.push({ optionId: want.optionId, variantId: want.variantId, quantity: want.quantity - have.quantity });
+    }
+  }
+  return additions;
+}
+
+/** Mises à jour d'un élément existant : retrait (règles de remboursement), plat, quantité. */
+function itemChanges(have: HeldItem, want: WantedItem | undefined, option: RuleOption | undefined, now: Date) {
+  if (!want) {
+    const status = cancelledStatus(have.status, refundableNow(option?.refundable ?? false, option?.refundDeadline ?? null, now));
+    return [{ id: have.id, data: { status, cancelledAt: now, labelVersion: { increment: 1 } } satisfies Prisma.TicketingItemUncheckedUpdateInput }];
+  }
+  const data: Prisma.TicketingItemUncheckedUpdateInput = {};
+  if (have.variantId !== want.variantId) {
+    // Changement de plat : même élément (même prix), étiquette à refaire.
+    data.variantId = want.variantId;
+    data.labelVersion = { increment: 1 };
+  }
+  if (have.quantity !== want.quantity) {
+    if (have.status !== "DUE" && have.status !== "FREE") {
+      throw new ApiError(409, `« ${option?.label ?? "Option"} » est déjà réglée : sa quantité ne se modifie plus ici.`);
+    }
+    data.quantity = want.quantity;
+    data.status = chargeStatusFor(Number(have.unitPrice) * want.quantity);
+  }
+  return Object.keys(data).length > 0 ? [{ id: have.id, data }] : [];
+}
+
 /** Applique le nouveau choix d'options de la réservation, dans la limite du stock. */
 async function updateOptions(tx: Tx, booking: FullBooking, input: Extract<BookingPatchInput, { action: "updateOptions" }>) {
   const event = await lockEvent(tx, booking.eventId);
@@ -396,7 +439,7 @@ async function updateOptions(tx: Tx, booking: FullBooking, input: Extract<Bookin
   const options = ruleOptions(event);
   const activeParticipants = booking.participants.filter((p) => p.status === "ACTIVE");
   const indexOf = new Map(activeParticipants.map((p, i) => [p.id, i]));
-  const desired: (PlannedItem & { participantId: string | null })[] = [];
+  const desired: WantedItem[] = [];
   for (const entry of input.participants) {
     const index = indexOf.get(entry.participantId);
     if (index === undefined) throw new ApiError(404, "Participant introuvable");
@@ -406,45 +449,9 @@ async function updateOptions(tx: Tx, booking: FullBooking, input: Extract<Bookin
 
   const current = new Map(booking.items.filter(itemHolds).map((i) => [holderKey(i.participantId, i.optionId), i]));
   const wanted = new Map(desired.map((d) => [holderKey(d.participantId, d.optionId), d]));
-  const additions: { optionId: string; variantId: string | null; quantity: number }[] = [];
-
-  for (const [key, want] of wanted) {
-    const have = current.get(key);
-    if (!have) {
-      additions.push(want);
-    } else if (have.variantId !== want.variantId) {
-      additions.push({ optionId: want.optionId, variantId: want.variantId, quantity: want.quantity });
-    } else if (have.quantity < want.quantity) {
-      additions.push({ optionId: want.optionId, variantId: want.variantId, quantity: want.quantity - have.quantity });
-    }
-  }
-  checkStock(additions, options, await computeUsage(event.id, tx));
-
-  for (const [key, have] of current) {
-    const want = wanted.get(key);
-    const option = options.get(have.optionId);
-    if (!want) {
-      await tx.ticketingItem.update({
-        where: { id: have.id },
-        data: {
-          status: cancelledStatus(have.status, refundableNow(option?.refundable ?? false, option?.refundDeadline ?? null, now)),
-          cancelledAt: now,
-          labelVersion: { increment: 1 },
-        },
-      });
-      continue;
-    }
-    if (have.variantId !== want.variantId) {
-      // Changement de plat : même élément (même prix), étiquette à refaire.
-      await tx.ticketingItem.update({ where: { id: have.id }, data: { variantId: want.variantId, labelVersion: { increment: 1 } } });
-    }
-    if (have.quantity !== want.quantity) {
-      if (have.status !== "DUE" && have.status !== "FREE") {
-        throw new ApiError(409, `« ${option?.label ?? "Option"} » est déjà réglée : sa quantité ne se modifie plus ici.`);
-      }
-      await tx.ticketingItem.update({ where: { id: have.id }, data: { quantity: want.quantity, status: chargeStatusFor(Number(have.unitPrice) * want.quantity) } });
-    }
-  }
+  checkStock(stockAdditions(current, wanted), options, await computeUsage(event.id, tx));
+  const changes = [...current].flatMap(([key, have]) => itemChanges(have, wanted.get(key), options.get(have.optionId), now));
+  await Promise.all(changes.map(({ id, data }) => tx.ticketingItem.update({ where: { id }, data })));
   const fresh = desired.filter((d) => !current.has(holderKey(d.participantId, d.optionId)));
   const created = itemRows(booking.id, fresh.map((d) => d.participantId), fresh.map((d, i) => ({ ...d, holder: i })));
   if (created.length > 0) await tx.ticketingItem.createMany({ data: created });
@@ -485,20 +492,20 @@ async function cancelParticipants(tx: Tx, booking: FullBooking, participantIds: 
     checkMinors(remainingGroups, event.allowUnaccompaniedMinors, !!booking.guardianName);
   }
   const lastOne = remainingGroups.length === 0;
-  let keptPaid = false;
-  for (const p of booking.participants.filter((x) => ids.has(x.id) && x.status === "ACTIVE")) {
-    const entryStatus = cancelledStatus(p.entryStatus, entryRefund);
-    keptPaid ||= entryStatus === "PAID";
-    await tx.ticketingParticipant.update({ where: { id: p.id }, data: { status: "CANCELLED", cancelledAt: now, entryStatus } });
-  }
+  const entries = booking.participants
+    .filter((x) => ids.has(x.id) && x.status === "ACTIVE")
+    .map((p) => ({ id: p.id, entryStatus: cancelledStatus(p.entryStatus, entryRefund) }));
   const optionsById = new Map(event.options.map((o) => [o.id, o]));
   const touched = booking.items.filter((i) => itemHolds(i) && ((i.participantId && ids.has(i.participantId)) || (lastOne && !i.participantId)));
-  for (const item of touched) {
+  const items = touched.map((item) => {
     const option = optionsById.get(item.optionId);
-    const status = cancelledStatus(item.status, refundableNow(option?.refundable ?? false, option?.refundDeadline ?? null, now));
-    keptPaid ||= status === "PAID";
-    await tx.ticketingItem.update({ where: { id: item.id }, data: { status, cancelledAt: now, labelVersion: { increment: 1 } } });
-  }
+    return { id: item.id, status: cancelledStatus(item.status, refundableNow(option?.refundable ?? false, option?.refundDeadline ?? null, now)) };
+  });
+  const keptPaid = entries.some((e) => e.entryStatus === "PAID") || items.some((i) => i.status === "PAID");
+  await Promise.all([
+    ...entries.map((e) => tx.ticketingParticipant.update({ where: { id: e.id }, data: { status: "CANCELLED", cancelledAt: now, entryStatus: e.entryStatus } })),
+    ...items.map((i) => tx.ticketingItem.update({ where: { id: i.id }, data: { status: i.status, cancelledAt: now, labelVersion: { increment: 1 } } })),
+  ]);
   if (lastOne) await tx.ticketingBooking.update({ where: { id: booking.id }, data: { status: "CANCELLED", cancelledAt: now } });
   return { lastOne, keptPaid, pickup: touched.some((i) => optionsById.get(i.optionId)?.pickup) };
 }

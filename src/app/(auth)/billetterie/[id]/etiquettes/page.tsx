@@ -33,7 +33,8 @@ export default async function LabelsPage({
   const one = (k: string) => (typeof q[k] === "string" ? (q[k] as string) : undefined);
   const format = FORMATS[one("format") === "2x7" ? "2x7" : "3x7"];
   const variantId = one("plat");
-  const set: LabelSet = variantId ? "variant" : one("set") === "changed" ? "changed" : "all";
+  let set: LabelSet = one("set") === "changed" ? "changed" : "all";
+  if (variantId) set = "variant";
   const withQr = one("qr") === "1";
   const [event, labels] = await Promise.all([getEventDetail(id), listLabels(id, set, { variantId })]);
   const variants = event.options.filter((o) => o.namedPrep).flatMap((o) => o.variants.map((v) => ({ id: v.id, label: `${o.label} — ${v.label}` })));

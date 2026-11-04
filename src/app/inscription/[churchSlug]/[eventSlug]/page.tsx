@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { getTurnstileSiteKey } from "@/lib/turnstile";
 import PublicFormUnavailable from "@/components/PublicFormUnavailable";
 import PublicShell from "@/components/ticketing/PublicShell";
-import { formatDateTime } from "@/components/ticketing/format";
+import { dateAndPlace } from "@/components/ticketing/format";
 import { getPublicEvent } from "@/modules/ticketing";
 import BookingForm from "./BookingForm";
 
@@ -28,7 +28,7 @@ export default async function RegistrationPage({ params }: Params) {
   const prefill = session?.user ? { name: session.user.name ?? "", email: session.user.email ?? "" } : null;
 
   return (
-    <PublicShell eyebrow={event.churchName} title={event.title} subtitle={`${formatDateTime(event.startsAt)}${event.location ? ` · ${event.location}` : ""}`}>
+    <PublicShell eyebrow={event.churchName} title={event.title} subtitle={dateAndPlace(event.startsAt, event.location)}>
       <div className="space-y-6">
         {event.hasPoster && (
           // eslint-disable-next-line @next/next/no-img-element -- affiche servie par l'API publique, dimensions inconnues

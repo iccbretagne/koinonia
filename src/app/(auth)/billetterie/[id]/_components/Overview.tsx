@@ -65,7 +65,7 @@ export default function Overview({
                   </span>
                 </div>
                 {o.variants.length > 0 && (
-                  <p className="text-[13px] text-ink-muted">{o.variants.map((v) => `${v.label} ${v.used}${v.stock !== null ? `/${v.stock}` : ""}`).join(" · ")}</p>
+                  <p className="text-[13px] text-ink-muted">{o.variants.map((v) => (v.stock === null ? `${v.label} ${v.used}` : `${v.label} ${v.used}/${v.stock}`)).join(" · ")}</p>
                 )}
               </li>
             ))}

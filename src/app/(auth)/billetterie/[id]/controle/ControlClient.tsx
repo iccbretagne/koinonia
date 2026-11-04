@@ -9,6 +9,7 @@ import { startScanner } from "@/lib/offline/scanner";
 import type { ReceptionSnapshot } from "@/modules/ticketing";
 import { AGE_GROUPS, AGE_GROUP_LABEL, formatEuros, parseScannedCode } from "@/modules/ticketing/schemas";
 import type { TicketingAgeGroup } from "@/generated/prisma/enums";
+import { capacityLevel, capacityTone } from "@/components/ticketing/format";
 import NetworkBar from "../_offline/NetworkBar";
 import { useFieldSync } from "../_offline/use-field-sync";
 
@@ -84,7 +85,7 @@ export default function ControlClient({ eventId }: { readonly eventId: string })
   const inside = useMemo(() => new Set(snapshot?.inside ?? []), [snapshot]);
   const total = snapshot ? inside.size + snapshot.manual : 0;
   const capacity = snapshot?.event.capacity ?? 0;
-  const level = capacity > 0 && total >= capacity ? 100 : capacity > 0 && total >= capacity * 0.9 ? 90 : 0;
+  const level = capacityLevel(total, capacity);
 
   /** Met à jour l'état local (optimiste) puis met l'opération en file. */
   const record = useCallback(
@@ -101,7 +102,10 @@ export default function ControlClient({ eventId }: { readonly eventId: string })
     [enqueue, setSnapshot]
   );
 
-  const directionFor = (key: string): "IN" | "OUT" => (mode === "AUTO" ? (inside.has(key) ? "OUT" : "IN") : mode);
+  const directionFor = (key: string): "IN" | "OUT" => {
+    if (mode !== "AUTO") return mode;
+    return inside.has(key) ? "OUT" : "IN";
+  };
 
   async function admitParticipant(p: Participant) {
     if (!p.active) return setResult({ tone: "bad", title: "Billet annulé", detail: `${p.firstName} ${p.lastName}` });
@@ -141,7 +145,7 @@ export default function ControlClient({ eventId }: { readonly eventId: string })
     const key = `s:${badge.id}`;
     const direction = directionFor(key);
     await record(key, direction, { type: "passage", id: newOpId(), subject: "STAFF", assignmentId: badge.id, direction, scannedAt: new Date() });
-    setResult({ tone: "ok", title: direction === "IN" ? "Équipe — entrée" : "Équipe — sortie", detail: `${badge.name}${badge.postName ? ` · ${badge.postName}` : ""}` });
+    setResult({ tone: "ok", title: direction === "IN" ? "Équipe — entrée" : "Équipe — sortie", detail: [badge.name, badge.postName].filter(Boolean).join(" · ") });
   }
   const onCodeRef = useRef(onCode);
   useEffect(() => {
@@ -187,7 +191,7 @@ export default function ControlClient({ eventId }: { readonly eventId: string })
       </div>
       <NetworkBar status={status} />
 
-      <div className={`rounded-card p-4 text-center ${level === 100 ? "bg-danger-soft" : level === 90 ? "bg-warning-soft" : "bg-surface border border-line"}`}>
+      <div className={`rounded-card p-4 text-center ${capacityTone(level)}`}>
         <p className="text-[13px] text-ink-muted">Présents</p>
         <p className="text-4xl font-bold text-ink" aria-live="polite">
           {total} <span className="text-xl text-ink-muted">/ {capacity}</span>
@@ -303,9 +307,9 @@ export default function ControlClient({ eventId }: { readonly eventId: string })
               onClick={async () => {
                 const people = (index.byBooking.get(group.bookingId) ?? []).filter((p) => picked.has(p.id));
                 const direction = mode === "OUT" ? "OUT" : "IN";
-                for (const p of people) {
-                  await record(`p:${p.id}`, direction, { type: "passage", id: newOpId(), subject: "PARTICIPANT", participantId: p.id, direction, scannedAt: new Date() });
-                }
+                await Promise.all(
+                  people.map((p) => record(`p:${p.id}`, direction, { type: "passage", id: newOpId(), subject: "PARTICIPANT", participantId: p.id, direction, scannedAt: new Date() }))
+                );
                 const due = people.reduce((n, p) => n + p.entryDue, 0);
                 setResult(
                   due > 0 && direction === "IN"
@@ -377,7 +381,8 @@ function WalkInModal({
   readonly onSubmit: (people: { firstName: string; lastName: string; ageGroup: TicketingAgeGroup }[], method: "CASH" | "CHEQUE" | null) => Promise<void>;
 }) {
   const offered = AGE_GROUPS.filter((g) => tariffs.some((t) => t.ageGroup === g));
-  const [people, setPeople] = useState([{ firstName: "", lastName: "", ageGroup: (offered[0] ?? "ADULT") as TicketingAgeGroup }]);
+  const blank = () => ({ uid: newOpId(), firstName: "", lastName: "", ageGroup: (offered[0] ?? "ADULT") as TicketingAgeGroup });
+  const [people, setPeople] = useState([blank()]);
   const [method, setMethod] = useState<string>("");
   const total = people.reduce((n, p) => n + (tariffs.find((t) => t.ageGroup === p.ageGroup)?.price ?? 0), 0);
   const valid = people.every((p) => p.firstName.trim() && p.lastName.trim());
@@ -385,7 +390,7 @@ function WalkInModal({
     <Modal open onClose={onClose} title="Ajout sur place">
       <div className="space-y-3">
         {people.map((p, i) => (
-          <div key={i} className="grid gap-2 sm:grid-cols-3">
+          <div key={p.uid} className="grid gap-2 sm:grid-cols-3">
             <Input label="Prénom" value={p.firstName} onChange={(e) => setPeople((l) => l.map((x, j) => (j === i ? { ...x, firstName: e.target.value } : x)))} />
             <Input label="Nom" value={p.lastName} onChange={(e) => setPeople((l) => l.map((x, j) => (j === i ? { ...x, lastName: e.target.value } : x)))} />
             <Select
@@ -397,7 +402,7 @@ function WalkInModal({
           </div>
         ))}
         {people.length < 10 && (
-          <Button type="button" variant="ghost" size="sm" onClick={() => setPeople((l) => [...l, { firstName: "", lastName: "", ageGroup: offered[0] ?? "ADULT" }])}>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setPeople((l) => [...l, blank()])}>
             <Plus className="size-4" aria-hidden="true" /> Une personne de plus
           </Button>
         )}
@@ -418,7 +423,7 @@ function WalkInModal({
           disabled={!valid}
           onClick={() =>
             onSubmit(
-              people.map((p) => ({ ...p, firstName: p.firstName.trim(), lastName: p.lastName.trim() })),
+              people.map((p) => ({ firstName: p.firstName.trim(), lastName: p.lastName.trim(), ageGroup: p.ageGroup })),
               method === "CASH" || method === "CHEQUE" ? method : null
             )
           }

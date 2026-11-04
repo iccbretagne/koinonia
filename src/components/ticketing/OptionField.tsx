@@ -40,7 +40,7 @@ export default function OptionField({
         hint={option.description ?? undefined}
         options={option.variants.map((v) => ({
           value: v.id,
-          label: `${v.label}${v.allergens ? ` — allergènes : ${v.allergens}` : ""}${v.remaining === 0 ? " (épuisé)" : ""}`,
+          label: [v.label, v.allergens && `— allergènes : ${v.allergens}`, v.remaining === 0 && "(épuisé)"].filter(Boolean).join(" "),
         }))}
         onChange={(e) => onChange(e.target.value ? { variantId: e.target.value, quantity: 1 } : undefined)}
       />

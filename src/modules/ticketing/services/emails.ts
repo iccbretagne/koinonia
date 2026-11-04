@@ -212,13 +212,15 @@ export function cancelledEmail(m: BookingMail, what: string, refundNote: string 
 }
 
 export function recoverEmail(event: MailEvent, links: { reference: string; url: string }[]) {
+  const which = links.length > 1 ? "vos réservations" : "votre réservation";
+  const items = links.map((l) => `<li><a href="${esc(l.url)}" style="color: #5E17EB;">Réservation ${esc(l.reference)}</a></li>`).join("");
   return {
     subject: `Vos réservations — ${event.title}`,
     html: layout(
       event,
       `<p>Bonjour,</p>
-       <p>Voici le lien vers ${links.length > 1 ? "vos réservations" : "votre réservation"} :</p>
-       <ul>${links.map((l) => `<li><a href="${esc(l.url)}" style="color: #5E17EB;">Réservation ${esc(l.reference)}</a></li>`).join("")}</ul>`
+       <p>Voici le lien vers ${which} :</p>
+       <ul>${items}</ul>`
     ),
   };
 }
