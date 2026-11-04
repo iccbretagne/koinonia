@@ -41,3 +41,19 @@ export {
 } from "./services/payments";
 export { runTicketingDeadlines } from "./services/deadlines";
 export { buildTicketingExport } from "./services/exports";
+export { createWalkIn } from "./services/booking";
+export {
+  createAssignment,
+  createPost,
+  deleteAssignment,
+  deletePost,
+  listAssignmentsForUser,
+  listTeam,
+  renamePost,
+  type MyAssignment,
+  type TeamView,
+} from "./services/team";
+export { getPresence, type PresenceView } from "./services/presence";
+export { cateringSnapshot, receptionSnapshot, type CateringSnapshot, type ReceptionSnapshot } from "./services/snapshot";
+export { applyOperations, type OpResult } from "./services/sync";
+export { cateringBoard, type CateringBoard } from "./services/catering";

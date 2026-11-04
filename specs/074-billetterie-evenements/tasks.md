@@ -11,7 +11,7 @@
 
 - [x] Branche de session repartie de `main` (après la fusion de la PR #709)
 - [x] Migration Prisma générée (schéma modifié) — une seule migration `add_ticketing` porte les tables des trois lots
-- [ ] Dépendance `jsqr` (Apache-2.0) ajoutée (lot 2)
+- [x] Dépendance `jsqr` (Apache-2.0) ajoutée (lot 2)
 
 ## Lot 1 — Événement, inscriptions, paiements, billets, rôles
 
@@ -126,27 +126,27 @@ Chaque route a son `contract.ts`.
 
 ## Lot 2 — Équipe et contrôle des présences
 
-- [ ] **T33** — Modèles `TicketingPost`, `TicketingAssignment`, `TicketingPassage`, et migration
+- [x] **T33** — Modèles `TicketingPost`, `TicketingAssignment`, `TicketingPassage`, et migration
   *(fichiers : `prisma/schema.prisma`, migration `add_ticketing_presence`)*
-- [ ] **T34** — Équipe : postes, affectations (membre ou invité), badges,
+- [x] **T34** — Équipe : postes, affectations (membre ou invité), badges,
   `listAssignmentsForUser` *(fichier : `services/team.ts`)*
-- [ ] **T35** — Instantané pour l'accueil (empreintes, sans coordonnées ni montants d'options)
+- [x] **T35** — Instantané pour l'accueil (empreintes, sans coordonnées ni montants d'options)
   *(fichier : `services/snapshot.ts`)*
-- [ ] **T36** — Synchronisation idempotente : passages, comptage manuel, ajout sur place,
+- [x] **T36** — Synchronisation idempotente : passages, comptage manuel, ajout sur place,
   encaissement d'une entrée, anomalies, correction de l'horloge *(fichier : `services/sync.ts`)*
-- [ ] **T37** — Présences : catégories, mineurs, seuils de 90 % et 100 % notifiés une fois,
+- [x] **T37** — Présences : catégories, mineurs, seuils de 90 % et 100 % notifiés une fois,
   registre *(fichier : `services/presence.ts`)*
-- [ ] **T38** — API : `/posts`, `/assignments`, `/snapshot`, `/sync`, `/presence`, et l'export
+- [x] **T38** — API : `/posts`, `/assignments`, `/snapshot`, `/sync`, `/presence`, et l'export
   `passages`
-- [ ] **T39** — Client hors ligne :
+- [x] **T39** — Client hors ligne :
   - file IndexedDB, empreinte via `crypto.subtle` ;
   - boucle de synchronisation ;
   - état du réseau.
 
   *(fichiers : `src/lib/offline/` ou `…/billetterie/[id]/_offline/`)*
-- [ ] **T40** — Scanner : `BarcodeDetector`, sinon `jsqr` (caméra arrière), et décodage des
+- [x] **T40** — Scanner : `BarcodeDetector`, sinon `jsqr` (caméra arrière), et décodage des
   codes (billet, réservation, badge, étiquette) *(fichier : `…/billetterie/[id]/_scanner/`)*
-- [ ] **T41** — Écran `/billetterie/[id]/controle` :
+- [x] **T41** — Écran `/billetterie/[id]/controle` :
   - modes Entrée, Sortie et Auto ;
   - résultat en vert, orange ou rouge ;
   - code de réservation avec cases à cocher ;
@@ -155,21 +155,21 @@ Chaque route a son `contract.ts`.
   - +1 / −1 avec motif ;
   - compteur et alerte de jauge ;
   - sortie d'un mineur non accompagné.
-- [ ] **T42** — Onglets Équipe (postes, affectations, badges imprimables) et Présences
+- [x] **T42** — Onglets Équipe (postes, affectations, badges imprimables) et Présences
   (compteur, courbe, anomalies, registre) *(fichier : `…/billetterie/[id]/`)*
-- [ ] **T43** — « Mon planning » : encart des affectations de billetterie, avec le badge
+- [x] **T43** — « Mon planning » : encart des affectations de billetterie, avec le badge
   *(fichier : `src/app/(auth)/planning/…`)*
-- [ ] **T44** — Service worker : `/_next/static` en cache d'abord, cache `koinonia-v6`
+- [x] **T44** — Service worker : `/_next/static` en cache d'abord, cache `koinonia-v6`
   *(fichier : `public/sw.js`)*
-- [ ] **T45** — ADR-0026 « Écrans utilisables hors ligne », et son entrée dans l'index
+- [x] **T45** — ADR-0026 « Écrans utilisables hors ligne », et son entrée dans l'index
   *(fichiers : `docs/adr/0026-…md`, `docs/adr/README.md`)*
-- [ ] **T46** — Tests :
+- [x] **T46** — Tests :
   - `team`, `snapshot` (aucune donnée sensible pour l'accueil) ;
   - `sync` (idempotence, désordre, anomalie, ajout sur place) ;
   - `presence` (catégories, seuils) ;
   - file hors ligne et empreinte ;
   - routes du lot 2.
-- [ ] **T47** — Commit « lot 2 »
+- [x] **T47** — Commit « lot 2 »
 
 ## Lot 3 — Restauration (Agapé)
 

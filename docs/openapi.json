@@ -21567,6 +21567,138 @@
         }
       }
     },
+    "/api/ticketing/events/{id}/assignments": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Affectation à l'équipe d'un événement",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement.\n\nUn compte de l'église, quel que soit son département (400 sinon), ou un intervenant nommé sans compte ; poste et créneau facultatifs. Badge personnel créé (seule son empreinte est stockée). Le compte affecté est notifié et voit l'affectation dans « Mon planning ». Journalisée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "postId": {
+                    "type": "string",
+                    "nullable": true,
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "userId": {
+                    "type": "string",
+                    "nullable": true,
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "guestName": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 150
+                  },
+                  "startsAt": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  },
+                  "endsAt": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Affectation créée",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/assignments/{assignmentId}": {
+      "delete": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Retrait d'une affectation",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement.\n\nLe badge cesse d'être reconnu à la prochaine synchronisation. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "assignmentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ ok: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
     "/api/ticketing/events/{id}/bookings": {
       "get": {
         "tags": [
@@ -22618,6 +22750,269 @@
         }
       }
     },
+    "/api/ticketing/events/{id}/posts": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Équipe d'un événement : postes et affectations",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement.\n\nPostes, affectations (compte de l'église ou intervenant nommé) avec créneaux et code de badge à imprimer.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ posts, assignments }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Création d'un poste",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement.\n\nPorte principale, sortie de secours, parking, vestiaire… Propre à l'événement ; journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Poste créé",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/posts/{postId}": {
+      "patch": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Renommer un poste",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "postId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Poste mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Supprimer un poste",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement.\n\nSes affectations restent, sans poste. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "postId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ ok: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/presence": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Présences d'un événement",
+        "description": "**Accès** : toute personne connectée — un rôle de lecture sur l'événement.\n\nCompteur calculé à partir des passages (participants, dont mineurs ; équipe et intervenants à part ; comptage manuel), seuil de jauge (0, 90, 100), mineurs non accompagnés présents avec le téléphone du responsable, anomalies, courbe par quart d'heure.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Présences",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
     "/api/ticketing/events/{id}/roles": {
       "get": {
         "tags": [
@@ -22726,6 +23121,479 @@
         "responses": {
           "200": {
             "description": "Rôles enregistrés",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/snapshot": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Instantané hors ligne d'un écran de terrain",
+        "description": "**Accès** : toute personne connectée — accueil (`reception`) ou restauration (`catering`), organisateur.\n\n`reception` : participants (nom, tranche d'âge, entrée à régler, mineur non accompagné et téléphone du responsable), codes de réservation et badges sous forme d'**empreintes**, présences courantes — jamais d'email, de téléphone de contact ni de montant d'option. `catering` : éléments à retirer, état de paiement, codes d'étiquette en empreinte, stock par plat. Aucun jeton : un QR scanné est haché sur l'appareil.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "reception",
+                "catering"
+              ]
+            },
+            "required": true,
+            "name": "for",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Instantané",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/sync": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Synchronisation des opérations de terrain",
+        "description": "**Accès** : toute personne connectée — accueil ou restauration selon l'opération, organisateur.\n\nFile d'opérations d'un appareil (500 au plus) : passages (billet, badge), comptage manuel (+1 / −1 avec motif), ajout sur place, encaissement d'une entrée (accueil) ; remise et vente sur place (restauration). Idempotente par identifiant d'opération : rejouer ne compte rien de plus. Horloge corrigée de l'écart mesuré (`clientTime`). Un passage incohérent est gardé, marqué « anomalie » et signalé à l'organisation ; 90 % et 100 % de la jauge sont notifiés une fois. Chaque opération reçoit `applied`, `duplicate` ou `rejected`.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "deviceId": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 64,
+                    "pattern": "^[\\w-]+$"
+                  },
+                  "clientTime": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  },
+                  "ops": {
+                    "type": "array",
+                    "items": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "passage"
+                              ]
+                            },
+                            "id": {
+                              "type": "string",
+                              "minLength": 8,
+                              "maxLength": 64,
+                              "pattern": "^[\\w-]+$"
+                            },
+                            "subject": {
+                              "type": "string",
+                              "enum": [
+                                "PARTICIPANT",
+                                "STAFF"
+                              ]
+                            },
+                            "participantId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 64
+                            },
+                            "assignmentId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 64
+                            },
+                            "direction": {
+                              "type": "string",
+                              "enum": [
+                                "IN",
+                                "OUT"
+                              ]
+                            },
+                            "scannedAt": {
+                              "type": "string",
+                              "nullable": true,
+                              "format": "date-time"
+                            },
+                            "gate": {
+                              "type": "string",
+                              "maxLength": 60
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "id",
+                            "subject",
+                            "direction",
+                            "scannedAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "manual"
+                              ]
+                            },
+                            "id": {
+                              "type": "string",
+                              "minLength": 8,
+                              "maxLength": 64,
+                              "pattern": "^[\\w-]+$"
+                            },
+                            "direction": {
+                              "type": "string",
+                              "enum": [
+                                "IN",
+                                "OUT"
+                              ]
+                            },
+                            "reason": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200
+                            },
+                            "scannedAt": {
+                              "type": "string",
+                              "nullable": true,
+                              "format": "date-time"
+                            },
+                            "gate": {
+                              "type": "string",
+                              "maxLength": 60
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "id",
+                            "direction",
+                            "reason",
+                            "scannedAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "walkin"
+                              ]
+                            },
+                            "id": {
+                              "type": "string",
+                              "minLength": 8,
+                              "maxLength": 64,
+                              "pattern": "^[\\w-]+$"
+                            },
+                            "participants": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "firstName": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 80
+                                  },
+                                  "lastName": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 80
+                                  },
+                                  "ageGroup": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ADULT",
+                                      "TEEN",
+                                      "CHILD",
+                                      "INFANT"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "firstName",
+                                  "lastName",
+                                  "ageGroup"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "minItems": 1,
+                              "maxItems": 10
+                            },
+                            "phone": {
+                              "type": "string",
+                              "nullable": true,
+                              "maxLength": 40
+                            },
+                            "method": {
+                              "type": "string",
+                              "nullable": true,
+                              "enum": [
+                                "CASH",
+                                "CHEQUE",
+                                null
+                              ]
+                            },
+                            "enter": {
+                              "type": "boolean",
+                              "default": true
+                            },
+                            "scannedAt": {
+                              "type": "string",
+                              "nullable": true,
+                              "format": "date-time"
+                            },
+                            "gate": {
+                              "type": "string",
+                              "maxLength": 60
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "id",
+                            "participants",
+                            "scannedAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "receipt"
+                              ]
+                            },
+                            "id": {
+                              "type": "string",
+                              "minLength": 8,
+                              "maxLength": 64,
+                              "pattern": "^[\\w-]+$"
+                            },
+                            "bookingId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 64
+                            },
+                            "participantIds": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "minItems": 1,
+                              "maxItems": 20
+                            },
+                            "method": {
+                              "type": "string",
+                              "enum": [
+                                "CASH",
+                                "CHEQUE"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "id",
+                            "bookingId",
+                            "participantIds",
+                            "method"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "delivery"
+                              ]
+                            },
+                            "id": {
+                              "type": "string",
+                              "minLength": 8,
+                              "maxLength": 64,
+                              "pattern": "^[\\w-]+$"
+                            },
+                            "itemId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 64
+                            },
+                            "delivered": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 20
+                            },
+                            "method": {
+                              "type": "string",
+                              "nullable": true,
+                              "enum": [
+                                "CASH",
+                                "CHEQUE",
+                                null
+                              ]
+                            },
+                            "scannedAt": {
+                              "type": "string",
+                              "nullable": true,
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "id",
+                            "itemId",
+                            "delivered",
+                            "scannedAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "onsiteSale"
+                              ]
+                            },
+                            "id": {
+                              "type": "string",
+                              "minLength": 8,
+                              "maxLength": 64,
+                              "pattern": "^[\\w-]+$"
+                            },
+                            "optionId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 64
+                            },
+                            "variantId": {
+                              "type": "string",
+                              "nullable": true,
+                              "minLength": 1,
+                              "maxLength": 64
+                            },
+                            "quantity": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 50
+                            },
+                            "method": {
+                              "type": "string",
+                              "enum": [
+                                "CASH",
+                                "CHEQUE"
+                              ]
+                            },
+                            "scannedAt": {
+                              "type": "string",
+                              "nullable": true,
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "id",
+                            "optionId",
+                            "quantity",
+                            "method",
+                            "scannedAt"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "maxItems": 500
+                  }
+                },
+                "required": [
+                  "deviceId",
+                  "clientTime",
+                  "ops"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ results, counts, capacity, serverTime }`",
             "content": {
               "application/json": {
                 "schema": {}

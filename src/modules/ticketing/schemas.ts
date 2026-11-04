@@ -489,3 +489,104 @@ export function parseScannedCode(raw: string): { scope: ScannedScope; token: str
   }
   return null;
 }
+
+// ── Équipe et contrôle (lot 2) ───────────────────────────────────────────────
+
+export const postSchema = z.object({ name: text(120) }).strict();
+
+export const assignmentSchema = z
+  .object({
+    postId: z.string().min(1).max(40).nullish(),
+    userId: z.string().min(1).max(40).nullish(),
+    guestName: optionalText(150),
+    startsAt: isoDate.nullish(),
+    endsAt: isoDate.nullish(),
+  })
+  .strict()
+  .refine((d) => !!d.userId !== !!d.guestName, { message: "Un compte ou le nom d'un intervenant", path: ["userId"] });
+
+const opId = z.string().min(8).max(64).regex(/^[\w-]+$/);
+const scannedAt = z.coerce.date();
+
+export const syncOpSchema = z.discriminatedUnion("type", [
+  z
+    .object({
+      type: z.literal("passage"),
+      id: opId,
+      subject: z.enum(["PARTICIPANT", "STAFF"]),
+      participantId: z.string().min(1).max(64).optional(),
+      assignmentId: z.string().min(1).max(64).optional(),
+      direction: z.enum(["IN", "OUT"]),
+      scannedAt,
+      gate: z.string().trim().max(60).optional(),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("manual"),
+      id: opId,
+      direction: z.enum(["IN", "OUT"]),
+      reason: text(200),
+      scannedAt,
+      gate: z.string().trim().max(60).optional(),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("walkin"),
+      id: opId,
+      participants: z
+        .array(z.object({ firstName: text(80), lastName: text(80), ageGroup: z.enum(AGE_GROUPS) }).strict())
+        .min(1)
+        .max(10),
+      phone: z.string().trim().max(40).nullish(),
+      method: z.enum(DIRECT_METHODS).nullish(),
+      enter: z.boolean().default(true),
+      scannedAt,
+      gate: z.string().trim().max(60).optional(),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("receipt"),
+      id: opId,
+      bookingId: z.string().min(1).max(64),
+      participantIds: z.array(z.string().min(1).max(64)).min(1).max(20),
+      method: z.enum(DIRECT_METHODS),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("delivery"),
+      id: opId,
+      itemId: z.string().min(1).max(64),
+      /** Quantité **totale** remise après ce geste : rejouer l'opération ne compte rien de plus. */
+      delivered: z.coerce.number().int().min(1).max(20),
+      method: z.enum(DIRECT_METHODS).nullish(),
+      scannedAt,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("onsiteSale"),
+      id: opId,
+      optionId: z.string().min(1).max(64),
+      variantId: z.string().min(1).max(64).nullish(),
+      quantity: z.coerce.number().int().min(1).max(50),
+      method: z.enum(DIRECT_METHODS),
+      scannedAt,
+    })
+    .strict(),
+]);
+export type SyncOp = z.infer<typeof syncOpSchema>;
+
+export const syncSchema = z
+  .object({
+    deviceId: z.string().min(8).max(64).regex(/^[\w-]+$/),
+    clientTime: z.coerce.date(),
+    ops: z.array(syncOpSchema).max(500),
+  })
+  .strict();
+
+export const snapshotQuerySchema = z.object({ for: z.enum(["reception", "catering"]) });
+

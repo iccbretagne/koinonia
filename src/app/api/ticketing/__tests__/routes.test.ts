@@ -75,6 +75,9 @@ const ticketing = {
   createEvent: vi.fn(async () => ({ id: "ev-new" })),
   isTicketingManager: vi.fn(async () => false),
   listEvents: vi.fn(async () => []),
+  receptionSnapshot: vi.fn(async () => ({ kind: "reception" })),
+  cateringSnapshot: vi.fn(async () => ({ kind: "catering" })),
+  applyOperations: vi.fn(async () => ({ results: [] })),
 };
 vi.mock("@/modules/ticketing", () => ticketing);
 
@@ -89,6 +92,8 @@ const event = await import("../events/[id]/route");
 const bookings = await import("../events/[id]/bookings/route");
 const payment = await import("../events/[id]/payments/[paymentId]/route");
 const receipts = await import("../events/[id]/bookings/[bookingId]/receipts/route");
+const snapshot = await import("../events/[id]/snapshot/route");
+const sync = await import("../events/[id]/sync/route");
 
 const json = (url: string, body: unknown, method = "POST") =>
   new Request(url, { method, body: JSON.stringify(body), headers: { "content-type": "application/json" } });
@@ -216,5 +221,30 @@ describe("routes authentifiées de la billetterie (spec 074)", () => {
     expect(ticketing.recordReceipt).toHaveBeenCalledWith("ev-1", "bk-1", expect.anything(), "user-1", "entry");
     roles = ["OBSERVER"];
     expect((await receipts.POST(json(`${U}/events/ev-1/bookings/bk-1/receipts`, { method: "CASH", charges: [{ type: "entry", id: "p1" }] }), evBk)).status).toBe(403);
+  });
+});
+
+describe("routes de terrain de la billetterie (spec 074, lot 2)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("instantané : accueil pour `reception`, restauration pour `catering`, sinon 403 ; paramètre validé", async () => {
+    roles = ["RECEPTION"];
+    expect((await snapshot.GET(new Request(`${U}/events/ev-1/snapshot?for=reception`), ev())).status).toBe(200);
+    expect((await snapshot.GET(new Request(`${U}/events/ev-1/snapshot?for=catering`), ev())).status).toBe(403);
+    expect((await snapshot.GET(new Request(`${U}/events/ev-1/snapshot?for=tout`), ev())).status).toBe(400);
+    roles = ["TREASURER"];
+    expect((await snapshot.GET(new Request(`${U}/events/ev-1/snapshot?for=reception`), ev())).status).toBe(403);
+  });
+
+  it("synchronisation : rôle de terrain requis, opérations validées par Zod", async () => {
+    roles = ["OBSERVER"];
+    const body = { deviceId: "device-123", clientTime: new Date().toISOString(), ops: [] };
+    expect((await sync.POST(json(`${U}/events/ev-1/sync`, body), ev())).status).toBe(403);
+    roles = ["RECEPTION"];
+    expect((await sync.POST(json(`${U}/events/ev-1/sync`, { ...body, ops: [{ type: "passage", id: "x" }] }), ev())).status).toBe(400);
+    expect((await sync.POST(json(`${U}/events/ev-1/sync`, body), ev())).status).toBe(200);
+    expect(ticketing.applyOperations).toHaveBeenCalledWith("ev-1", expect.anything(), expect.objectContaining({ userId: "user-1" }));
   });
 });

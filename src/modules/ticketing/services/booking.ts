@@ -653,3 +653,76 @@ export async function listMyBookings(userId: string) {
     manageUrl: manageUrl(deriveToken("manage", b.id, b.tokenSalt)),
   }));
 }
+
+// ── Ajout sur place (accueil, lot 2) ─────────────────────────────────────────
+
+/**
+ * Réservation créée à l'entrée (source ONSITE), idempotente par l'identifiant d'opération de
+ * l'appareil : les identifiants des participants s'en déduisent (`<op>-<n>`), ce qui permet à
+ * l'appareil hors ligne de les compter présents avant la synchronisation.
+ */
+export async function createWalkIn(
+  eventId: string,
+  opId: string,
+  input: { participants: ParticipantInput[]; phone?: string | null; method?: "CASH" | "CHEQUE" | null },
+  userId: string
+) {
+  const prisma = await db();
+  const bookingId = `walkin-${opId}`;
+  const participantIds = input.participants.map((_, i) => `${opId}-${i}`);
+  const existing = await prisma.ticketingBooking.findUnique({ where: { id: bookingId }, select: { id: true } });
+  if (existing) return { bookingId, participantIds, duplicate: true };
+
+  await prisma.$transaction(async (tx) => {
+    const event = await lockEvent(tx, eventId, true);
+    if (!event.allowWalkIns) throw new ApiError(409, "L'ajout sur place n'est pas autorisé pour cet événement.");
+    if (event.status !== "OPEN" && event.status !== "CLOSED") throw new ApiError(409, "Événement non ouvert.");
+    const usage = await computeUsage(eventId, tx);
+    if (usage.seatsTaken + input.participants.length > event.capacity) throw new ApiError(409, "Jauge atteinte.");
+    const salt = newSalt();
+    const first = input.participants[0];
+    await tx.ticketingBooking.create({
+      data: {
+        id: bookingId,
+        eventId,
+        reference: formatReference(event.referencePrefix, event.nextReference - 1),
+        contactName: `${first.firstName} ${first.lastName}`,
+        contactEmail: "",
+        contactPhone: input.phone ?? null,
+        answers: {},
+        source: "ONSITE",
+        tokenSalt: salt,
+        manageTokenHash: tokenPair("manage", bookingId, salt).hash,
+        scanTokenHash: tokenPair("scan", bookingId, salt).hash,
+      },
+    });
+    const rows = participantRows(event, bookingId, salt, input.participants.map((p) => ({ ...p, options: [] }))).map((r, i) => ({
+      ...r,
+      id: participantIds[i],
+      ticketTokenHash: tokenPair("ticket", participantIds[i], salt).hash,
+    }));
+    const paid = !!input.method;
+    await tx.ticketingParticipant.createMany({
+      data: rows.map((r) => ({ ...r, entryStatus: paid && r.entryStatus === "DUE" ? "PAID" : r.entryStatus })),
+    });
+    const due = rows.filter((r) => r.entryStatus === "DUE");
+    if (paid && due.length > 0) {
+      await tx.ticketingPayment.create({
+        data: {
+          bookingId,
+          eventId,
+          kind: "RECEIPT",
+          status: "CONFIRMED",
+          method: input.method!,
+          amount: round(due.reduce((n, r) => n + r.entryPrice, 0)),
+          chargeRefs: due.map((r) => ({ type: "entry", id: r.id })),
+          opId: `${opId}-pay`,
+          recordedById: userId,
+          confirmedById: userId,
+          confirmedAt: new Date(),
+        },
+      });
+    }
+  });
+  return { bookingId, participantIds, duplicate: false };
+}

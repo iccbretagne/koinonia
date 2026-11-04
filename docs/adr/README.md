@@ -52,6 +52,7 @@ Statuts possibles : `Proposé`, `Accepté`, `Rejeté`, `Déprécié`, `Remplacé
 | [0023](0023-contrats-openapi-generes.md) | Référence d'API générée depuis des contrats colocalisés | Accepté |
 | [0024](0024-notifications-push-web-push.md) | Notifications natives par Web Push, livrées depuis les notifications de l'application | Accepté |
 | [0025](0025-email-urgent-hors-preference.md) | Email envoyé malgré la préférence pour un message système urgent | Accepté |
+| [0026](0026-ecrans-hors-ligne.md) | Écrans de terrain utilisables hors ligne | Accepté |
 
 ## Note sur les ADR 0001–0003
 
