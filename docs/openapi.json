@@ -21438,8 +21438,7 @@
                         "properties": {
                           "link": {
                             "type": "string",
-                            "maxLength": 300,
-                            "format": "uri"
+                            "maxLength": 300
                           }
                         },
                         "required": [
@@ -24208,8 +24207,7 @@
                       },
                       "email": {
                         "type": "string",
-                        "maxLength": 191,
-                        "format": "email"
+                        "maxLength": 191
                       },
                       "phone": {
                         "type": "string",
@@ -24356,8 +24354,7 @@
                 "properties": {
                   "email": {
                     "type": "string",
-                    "maxLength": 191,
-                    "format": "email"
+                    "maxLength": 191
                   },
                   "turnstileToken": {
                     "type": "string",
