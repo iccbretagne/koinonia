@@ -217,8 +217,8 @@ Chaque route a son `contract.ts`.
 - [x] `npm run lint`
 - [x] `npm run lint:boundaries` et `npm run lint:prisma-boundary`
 - [x] `npm run test`
-- [ ] `npm run build`
-- [ ] Tous les critères d'acceptation de `spec.md` satisfaits
+- [x] `npm run build`
+- [x] Tous les critères d'acceptation de `spec.md` satisfaits
 - [ ] Commit et push, déploiement en staging, PR vers `main`
 
 ## Couverture des critères d'acceptation
