@@ -590,3 +590,12 @@ export const syncSchema = z
 
 export const snapshotQuerySchema = z.object({ for: z.enum(["reception", "catering"]) });
 
+// ── Restauration (lot 3) ─────────────────────────────────────────────────────
+
+export const LABEL_SETS = ["all", "variant", "booking", "changed"] as const;
+export const labelsQuerySchema = z.object({
+  set: z.enum(LABEL_SETS).default("all"),
+  variantId: z.string().min(1).max(40).optional(),
+  bookingId: z.string().min(1).max(64).optional(),
+});
+export const markPrintedSchema = z.object({ itemIds: z.array(z.string().min(1).max(64)).min(1).max(1000) }).strict();

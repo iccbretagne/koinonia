@@ -22171,6 +22171,149 @@
         }
       }
     },
+    "/api/ticketing/events/{id}/labels": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Étiquettes de préparation nominative",
+        "description": "**Accès** : toute personne connectée — restauration ou organisateur de l'événement.\n\nOptions à préparation nominative : tout, un plat (`variantId`), une réservation (`bookingId`) ou les nouvelles et modifiées depuis la dernière impression (`changed`). Nom, plat, allergies, référence, « à régler », code d'étiquette (ouvre la distribution, refusé au contrôle d'entrée), étiquette périmée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "variant",
+                "booking",
+                "changed"
+              ],
+              "default": "all"
+            },
+            "required": false,
+            "name": "set",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            },
+            "required": false,
+            "name": "variantId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": false,
+            "name": "bookingId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Étiquettes",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Marquer des étiquettes imprimées",
+        "description": "**Accès** : toute personne connectée — restauration ou organisateur de l'événement.\n\nEnregistre la version imprimée de chaque élément : un changement ultérieur de plat, de nom ou d'état la rend « à refaire ».",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "itemIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "minItems": 1,
+                    "maxItems": 1000
+                  }
+                },
+                "required": [
+                  "itemIds"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ printed }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
     "/api/ticketing/events/{id}/options": {
       "post": {
         "tags": [
@@ -22471,6 +22614,94 @@
                 "schema": {}
               }
             }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/options/{optionId}/variants": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Ajout d'un plat au menu d'une option",
+        "description": "**Accès** : toute personne connectée — restauration ou organisateur de l'événement.\n\nPlat (variante) d'une option à choix : libellé, description, allergènes, stock. Composé par la restauration ou l'organisateur ; le prix et les règles de l'option restent à l'organisateur. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "optionId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 300
+                  },
+                  "allergens": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 200
+                  },
+                  "stock": {
+                    "type": "integer",
+                    "nullable": true,
+                    "minimum": 0,
+                    "maximum": 100000
+                  }
+                },
+                "required": [
+                  "label"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Plat créé",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
           },
           "401": {
             "description": "Session absente"
@@ -23602,6 +23833,153 @@
           },
           "400": {
             "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/variants/{variantId}": {
+      "patch": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Modification d'un plat",
+        "description": "**Accès** : toute personne connectée — restauration ou organisateur de l'événement.\n\nLibellé, description, allergènes, stock (jamais sous les quantités réservées et vendues), préparés, fermeture aux nouvelles commandes. Tout champ hors du menu (prix, règles) est refusé. Journalisé avec l'avant/après.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "variantId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 300
+                  },
+                  "allergens": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 200
+                  },
+                  "stock": {
+                    "type": "integer",
+                    "nullable": true,
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "prepared": {
+                    "type": "integer",
+                    "nullable": true,
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "closed": {
+                    "type": "boolean"
+                  },
+                  "position": {
+                    "type": "integer",
+                    "nullable": true,
+                    "minimum": 0,
+                    "maximum": 1000
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Plat mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Suppression d'un plat",
+        "description": "**Accès** : toute personne connectée — restauration ou organisateur de l'événement.\n\nPossible seulement si le plat n'a jamais été réservé ni vendu ; sinon 409 (le fermer). Journalisée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "variantId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ ok: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
           },
           "401": {
             "description": "Session absente"

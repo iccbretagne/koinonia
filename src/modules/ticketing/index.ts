@@ -57,3 +57,5 @@ export { getPresence, type PresenceView } from "./services/presence";
 export { cateringSnapshot, receptionSnapshot, type CateringSnapshot, type ReceptionSnapshot } from "./services/snapshot";
 export { applyOperations, type OpResult } from "./services/sync";
 export { cateringBoard, type CateringBoard } from "./services/catering";
+export { addVariant, deleteVariant, updateVariant } from "./services/menu";
+export { listLabels, markPrinted, type LabelRow, type LabelSet } from "./services/labels";

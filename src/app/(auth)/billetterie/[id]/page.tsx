@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
 import { qrPath } from "@/lib/qr";
 import Link from "next/link";
-import { ScanLine } from "lucide-react";
+import { ScanLine, Utensils } from "lucide-react";
 import { PageHeader, StatusChip, Tabs } from "@/components/ui";
 import { buttonClasses } from "@/components/ui/button-classes";
 import { formatDateTime } from "@/components/ticketing/format";
@@ -10,6 +10,7 @@ import {
   canDo,
   getEventAccess,
   getEventDetail,
+  cateringBoard,
   getPresence,
   listBookings,
   listTeam,
@@ -24,8 +25,9 @@ import PaymentsTab from "./_components/PaymentsTab";
 import TeamTab from "./_components/TeamTab";
 import StaffSection from "./_components/StaffSection";
 import PresenceTab from "./_components/PresenceTab";
+import CateringTab from "./_components/CateringTab";
 
-const VIEWS = ["apercu", "parametres", "inscrits", "reglements", "equipe", "presences"] as const;
+const VIEWS = ["apercu", "parametres", "inscrits", "reglements", "equipe", "presences", "restauration"] as const;
 type View = (typeof VIEWS)[number];
 
 function appUrl() {
@@ -61,23 +63,25 @@ export default async function TicketingEventPage({
     reglements: can.payments,
     equipe: can.configure,
     presences: true,
+    restauration: can.catering,
   };
   const requested = VIEWS.find((v) => v === query.vue);
   const view: View = requested && allowed[requested] ? requested : "apercu";
 
-  const [event, bookings, payments, accounts, team, presence] = await Promise.all([
+  const [event, bookings, payments, accounts, team, presence, board] = await Promise.all([
     getEventDetail(id),
     can.bookings ? listBookings(id, can.payments) : Promise.resolve(null),
     can.payments ? listPayments(id) : Promise.resolve([]),
     can.configure && view === "equipe" ? listChurchAccounts(access.churchId) : Promise.resolve([]),
     can.configure && view === "equipe" ? listTeam(id) : Promise.resolve(null),
     view === "presences" ? getPresence(id) : Promise.resolve(null),
+    view === "restauration" ? cateringBoard(id) : Promise.resolve(null),
   ]);
   const publicUrl = `${appUrl()}/inscription/${event.church.slug}/${event.slug}`;
   const pending = payments.filter((p) => p.kind === "DECLARATION" && p.status === "PENDING").length;
   const tabs = VIEWS.filter((v) => allowed[v]).map((v) => ({
     href: `/billetterie/${id}?vue=${v}`,
-    label: { apercu: "Aperçu", parametres: "Paramètres", inscrits: "Inscrits", reglements: "Règlements", equipe: "Équipe", presences: "Présences" }[v],
+    label: { apercu: "Aperçu", parametres: "Paramètres", inscrits: "Inscrits", reglements: "Règlements", equipe: "Équipe", presences: "Présences", restauration: "Restauration" }[v],
     active: v === view,
     count: v === "reglements" && pending > 0 ? pending : undefined,
   }));
@@ -96,6 +100,11 @@ export default async function TicketingEventPage({
                 <ScanLine className="size-4" aria-hidden="true" /> Contrôle
               </Link>
             )}
+            {can.catering && event.options.some((o) => o.pickup) && (
+              <Link href={`/billetterie/${id}/restauration`} className={buttonClasses("secondary", "sm")}>
+                <Utensils className="size-4" aria-hidden="true" /> Restauration
+              </Link>
+            )}
           </div>
         }
       >
@@ -112,6 +121,7 @@ export default async function TicketingEventPage({
         </div>
       )}
       {view === "presences" && presence && <PresenceTab eventId={id} presence={presence} canExport={can.reception} />}
+      {view === "restauration" && board && <CateringTab board={board} />}
     </div>
   );
 }

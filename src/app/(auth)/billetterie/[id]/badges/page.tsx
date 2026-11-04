@@ -3,7 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import { qrPath } from "@/lib/qr";
 import QrSvg from "@/components/ticketing/QrSvg";
 import { canDo, getEventAccess, getEventDetail, listTeam } from "@/modules/ticketing";
-import PrintButton from "../etiquettes/PrintButton";
+import PrintButton from "./PrintButton";
 
 /** Badges de l'équipe à imprimer (spec 074, lot 2) : nom, poste et QR, 8 par page A4. */
 export default async function BadgesPage({ params }: { readonly params: Promise<{ id: string }> }) {

@@ -18,6 +18,7 @@ const ACTIONS: Record<string, string[]> = {
   payments: ["ORGANIZER", "TREASURER"],
   reception: ["ORGANIZER", "RECEPTION"],
   catering: ["ORGANIZER", "CATERING"],
+  menu: ["ORGANIZER", "CATERING"],
   read: ["ORGANIZER", "TREASURER", "RECEPTION", "CATERING", "OBSERVER"],
 };
 async function accessFor(eventId: string) {
@@ -78,6 +79,9 @@ const ticketing = {
   receptionSnapshot: vi.fn(async () => ({ kind: "reception" })),
   cateringSnapshot: vi.fn(async () => ({ kind: "catering" })),
   applyOperations: vi.fn(async () => ({ results: [] })),
+  updateVariant: vi.fn(async () => ({ id: "chicken" })),
+  updateOption: vi.fn(async () => ({ id: "meal" })),
+  listLabels: vi.fn(async () => []),
 };
 vi.mock("@/modules/ticketing", () => ticketing);
 
@@ -94,6 +98,9 @@ const payment = await import("../events/[id]/payments/[paymentId]/route");
 const receipts = await import("../events/[id]/bookings/[bookingId]/receipts/route");
 const snapshot = await import("../events/[id]/snapshot/route");
 const sync = await import("../events/[id]/sync/route");
+const variantRoute = await import("../events/[id]/variants/[variantId]/route");
+const optionRoute = await import("../events/[id]/options/[optionId]/route");
+const labels = await import("../events/[id]/labels/route");
 
 const json = (url: string, body: unknown, method = "POST") =>
   new Request(url, { method, body: JSON.stringify(body), headers: { "content-type": "application/json" } });
@@ -246,5 +253,26 @@ describe("routes de terrain de la billetterie (spec 074, lot 2)", () => {
     expect((await sync.POST(json(`${U}/events/ev-1/sync`, { ...body, ops: [{ type: "passage", id: "x" }] }), ev())).status).toBe(400);
     expect((await sync.POST(json(`${U}/events/ev-1/sync`, body), ev())).status).toBe(200);
     expect(ticketing.applyOperations).toHaveBeenCalledWith("ev-1", expect.anything(), expect.objectContaining({ userId: "user-1" }));
+  });
+});
+
+describe("routes de la restauration (spec 074, lot 3)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    roles = ["CATERING"];
+  });
+  const variantParams = { params: Promise.resolve({ id: "ev-1", variantId: "chicken" }) };
+  const optionParams = { params: Promise.resolve({ id: "ev-1", optionId: "meal" }) };
+
+  it("la restauration compose le menu, mais ne touche ni au prix ni aux règles", async () => {
+    expect((await variantRoute.PATCH(json(`${U}/events/ev-1/variants/chicken`, { allergens: "sésame", closed: true }, "PATCH"), variantParams)).status).toBe(200);
+    expect((await variantRoute.PATCH(json(`${U}/events/ev-1/variants/chicken`, { price: 2 }, "PATCH"), variantParams)).status).toBe(400);
+    expect((await optionRoute.PATCH(json(`${U}/events/ev-1/options/meal`, { price: 2 }, "PATCH"), optionParams)).status).toBe(403);
+  });
+
+  it("étiquettes : restauration ou organisation ; l'accueil n'y a pas accès", async () => {
+    expect((await labels.GET(new Request(`${U}/events/ev-1/labels?set=changed`), ev())).status).toBe(200);
+    roles = ["RECEPTION"];
+    expect((await labels.GET(new Request(`${U}/events/ev-1/labels`), ev())).status).toBe(403);
   });
 });
