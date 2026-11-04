@@ -469,6 +469,22 @@ const FEATURES: Feature[] = [
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "edit" },
   },
   {
+    name: "Billetterie : événements et inscriptions",
+    description: "Depuis Agenda › « Billetterie », l'administration crée un événement ouvert au public (Nuit de la traversée, concert…) et en confie la conduite à une équipe : organisateur, trésorier, accueil, restauration, observateur — n'importe quel compte de l'église, STAR compris. L'organisateur règle la jauge et les places, les tarifs par âge, les options (repas, t-shirt…), les moyens de paiement (Wero, Revolut, virement sur un IBAN propre à l'événement, espèces, chèque) et les règles d'annulation, puis partage le lien public (QR code fourni). Chacun s'inscrit sans compte et reçoit ses billets par email, avec un lien pour gérer sa réservation. Le trésorier confirme les paiements déclarés (« J'ai payé »), encaisse et rembourse ; les options non réglées sont libérées à la date limite.",
+    category: "Événements",
+    screenshotTitle: "Billetterie",
+    screenshotFile: "guide-billetterie.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Billetterie : contrôle des entrées et restauration",
+    description: "Avec un rôle Accueil, l'écran « Contrôle » de l'événement scanne les billets, codes de réservation et badges (Entrée, Sortie ou Auto), cherche un nom, compte +1 / −1 avec un motif et ajoute une personne sur place : le compteur de présents suit la jauge et alerte à 90 % et 100 %. Avec un rôle Restauration, l'écran « Restauration » compose le menu (plats, allergènes, stock), distribue les repas en scannant le billet ou l'étiquette, encaisse ce qui reste à régler, vend sur place et imprime les étiquettes de préparation. Les deux écrans fonctionnent sans réseau et se synchronisent au retour de la connexion. Une affectation à l'équipe apparaît dans « Mon planning » avec son badge.",
+    category: "Événements",
+    screenshotTitle: "Contrôle des entrées",
+    screenshotFile: "guide-billetterie-controle.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "edit" },
+  },
+  {
     name: "Page de dons et slide",
     description: "Depuis « Page de dons » (/dons), paramétrez la page publique où chacun trouve comment donner : don en ligne, virement (IBAN vérifié, copiable en un geste), chèques et espèces dans l'enveloppe de l'accueil, reçu fiscal, verset. L'aperçu se met à jour en direct ; activez la page puis enregistrez. « Slide de projection » affiche le QR code vers la page : téléchargez-la en PNG ou projetez-la en plein écran (Échap pour sortir). « Message WhatsApp » prépare le message « Dîmes / Offrandes » à diffuser, prêt à copier. Tout changement de coordonnées bancaires est signalé à la comptabilité.",
     category: "Comptabilité",

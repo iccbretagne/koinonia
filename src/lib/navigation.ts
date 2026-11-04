@@ -115,6 +115,8 @@ export interface NavigationInput {
   readonly hasAccounting?: boolean;
   /** Registre de la navette (spec 073), rangé sous « Comptabilité ». */
   readonly hasShuttle?: boolean;
+  /** Billetterie (spec 074) : `ticketing:manage` ou un rôle sur un événement actif. */
+  readonly hasTicketing?: boolean;
   readonly hasJobs?: boolean;
   /** Vue pastorale active (cookie `koinonia-view-mode`). */
   readonly isPastoral?: boolean;
@@ -304,6 +306,9 @@ function agendaPagesFor(input: NavigationInput, agendaPages: NavPage[]): NavPage
     if (input.hasReports) {
       agenda.push({ href: "/admin/reports", label: "Comptes rendus", dataTour: "sidebar-reports", sidebarBlock: church });
     }
+  }
+  if (input.hasTicketing) {
+    agenda.push({ href: "/billetterie", label: "Billetterie", sidebarBlock: church });
   }
   agenda.push(...agendaPages);
   return agenda;

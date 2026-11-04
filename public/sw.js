@@ -1,4 +1,4 @@
-const CACHE_NAME = "koinonia-v5";
+const CACHE_NAME = "koinonia-v6";
 const STATIC_ASSETS = [
   "/",
   "/accueil",
@@ -36,7 +36,27 @@ self.addEventListener("fetch", (event) => {
   // API routes: network only (don't cache)
   if (url.pathname.startsWith("/api/")) return;
 
-  // Next.js internal routes: network only
+  // Fichiers statiques à empreinte (/_next/static) : cache d'abord. Immuables, ils permettent aux
+  // écrans de terrain de la billetterie de se recharger hors ligne après une première visite
+  // (spec 074, ADR-0026).
+  if (url.pathname.startsWith("/_next/static/")) {
+    event.respondWith(
+      caches.match(event.request).then(
+        (cached) =>
+          cached ||
+          fetch(event.request).then((response) => {
+            if (response.ok) {
+              const clone = response.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+            }
+            return response;
+          })
+      )
+    );
+    return;
+  }
+
+  // Autres routes internes de Next.js : réseau seulement
   if (url.pathname.startsWith("/_next/")) return;
 
   // Everything else: network first, fall back to cache

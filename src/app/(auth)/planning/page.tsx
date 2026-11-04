@@ -6,6 +6,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import { buttonClasses } from "@/components/ui/button-classes";
 import MyPlanningView from "./MyPlanningView";
 import { loadMyPlanning } from "./my-planning-data";
+import TicketingAssignments from "./TicketingAssignments";
 
 export default async function MyPlanningPage() {
   const session = await requireAuth();
@@ -22,6 +23,7 @@ export default async function MyPlanningPage() {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader title="Mon planning" />
+        <TicketingAssignments userId={session.user.id} />
         <div className="rounded-card border border-line bg-surface">
           <EmptyState
             icon={Link2}
@@ -43,6 +45,7 @@ export default async function MyPlanningPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Mon planning" description={memberName} />
+      <TicketingAssignments userId={session.user.id} />
       <MyPlanningView
         plannings={data.plannings}
         tasksByEvent={data.tasksByEvent}

@@ -32,6 +32,7 @@ const WHITELIST = new Set([
   "src/app/api/agenda/requests/[id]/schedule/route.ts", // profil pastoral sans compte, planification
   "src/app/api/integration/requests/route.ts", // confirmation de dépôt du formulaire public d'accueil
   "src/modules/giving/services/alerts.ts", // adresse institutionnelle church.accountingEmails (spec 065)
+  "src/modules/ticketing/services/emails.ts", // contact de réservation sans compte ; avec compte → createNotification (spec 074)
 ]);
 
 function walk(dir: string, acc: string[] = []): string[] {

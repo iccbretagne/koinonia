@@ -30,6 +30,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 // Entrée « Navette » (spec 073) : testée à part (navigation-shuttle.test.ts) ; ici, les
 // départements du mock ne portent pas de fonction et la lecture serait trompeuse.
 vi.mock("@/modules/shuttle/auth", () => ({ isShuttleVisible: vi.fn(async () => false) }));
+vi.mock("@/modules/ticketing/auth", () => ({ isTicketingVisible: vi.fn(async () => false) }));
 // Règle de lecture de la trame (#676) : on ne vérifie ici que son câblage dans le layout ; la
 // règle elle-même est testée dans le module planning. Lecteurs : tout rôle sauf STAR/Reporter.
 const mockCanReadAnnouncementSheet = vi.fn(async (session: { user: { isSuperAdmin: boolean; churchRoles: { role: string }[] } }) =>
