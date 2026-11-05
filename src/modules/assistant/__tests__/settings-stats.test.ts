@@ -84,3 +84,13 @@ describe("compteurs d'usage (spec 075)", () => {
     expect(stats.days).toHaveLength(2);
   });
 });
+
+describe("personnage choisi (spec 075)", () => {
+  it("Nia par défaut, Koï une fois choisi", async () => {
+    const { getPersona, setPersona } = await import("../services/persona");
+    prismaMock.user.findUnique.mockResolvedValueOnce(null);
+    expect(await getPersona("u1")).toBe("NIA");
+    await setPersona("u1", "KOI");
+    expect(prismaMock.user.update).toHaveBeenCalledWith({ where: { id: "u1" }, data: { assistantPersona: "KOI" } });
+  });
+});

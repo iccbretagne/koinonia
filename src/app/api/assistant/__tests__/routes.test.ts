@@ -15,6 +15,8 @@ const assistant = {
   setInstanceEnabled: vi.fn(async (enabled: boolean) => ({ enabled })),
   getChurchSetting: vi.fn(async () => ({ instanceEnabled: true, disabled: false })),
   setChurchDisabled: vi.fn(async () => ({ instanceEnabled: true, disabled: true })),
+  getPersona: vi.fn(async () => "NIA"),
+  setPersona: vi.fn(async (_u: string, p: string) => p),
 };
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/auth", () => auth);
@@ -81,8 +83,7 @@ describe("routes de l'assistant (spec 075)", () => {
     const put = (persona: string) => personaRoute.PUT(new Request("http://x", { method: "PUT", body: JSON.stringify({ persona }) }));
     expect((await put("TIM")).status).toBe(400);
     expect((await put("KOI")).status).toBe(200);
-    expect(prismaMock.user.update).toHaveBeenCalledWith({ where: { id: "user-1" }, data: { assistantPersona: "KOI" } });
-    prismaMock.user.findUnique.mockResolvedValue(null);
+    expect(assistant.setPersona).toHaveBeenCalledWith("user-1", "KOI");
     expect(await (await personaRoute.GET()).json()).toEqual({ persona: "NIA" });
   });
 });

@@ -33,3 +33,4 @@ export {
 } from "./services/pending";
 export { createCustomEntry, deleteCustomEntry, listAdminEntries, patchEntry, type AdminEntry } from "./services/entries";
 export { runAssistantDigest } from "./services/digest";
+export { getPersona, setPersona } from "./services/persona";
