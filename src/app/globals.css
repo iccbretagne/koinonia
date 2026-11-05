@@ -294,7 +294,26 @@ input[type="datetime-local"]:focus::-webkit-calendar-picker-indicator {
   }
 }
 
+/* Assistant (spec 075) : clignement par superposition de l'image « yeux fermés », flottement
+   léger, fondu au changement d'expression, bulle d'accueil. Aucun mouvement sous
+   prefers-reduced-motion. */
+@keyframes k-assistant-blink {
+  0%, 93% { opacity: 0; }
+  94%, 97% { opacity: 1; }
+  98%, 100% { opacity: 0; }
+}
+@keyframes k-assistant-float {
+  50% { transform: translateY(-3px); }
+}
+@keyframes k-assistant-fade {
+  from { opacity: 0; transform: scale(0.96); }
+}
+.k-assistant-blink { opacity: 0; animation: k-assistant-blink 4.8s linear infinite; }
+.k-assistant-float { animation: k-assistant-float 3.2s ease-in-out infinite; }
+.k-assistant-fade { animation: k-assistant-fade 150ms ease-out; }
+
 @media (prefers-reduced-motion: reduce) {
+  .k-assistant-blink, .k-assistant-float, .k-assistant-fade { animation: none !important; }
   *, *::before, *::after {
     animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -34,6 +34,8 @@ interface TopBarProps extends AccountActionsProps {
   readonly onOpenSearch: () => void;
   /** Classe de position collante (`top-0`, ou sous le bandeau de recette). */
   readonly stickyClassName?: string;
+  /** Bouton d'aide (assistant, spec 075, ou lien vers le guide), avant les notifications. */
+  readonly help?: ReactNode;
 }
 
 export function initials(name: string | null): string {
@@ -143,6 +145,7 @@ export default function TopBar({
   churchLogo = null,
   onOpenSearch,
   stickyClassName = "top-0",
+  help,
   ...actions
 }: TopBarProps) {
   const pathname = usePathname();
@@ -198,6 +201,7 @@ export default function TopBar({
       </button>
       <IconButton icon={Search} aria-label="Rechercher" onClick={onOpenSearch} className="md:hidden" />
 
+      {help}
       <NotificationBell />
       <AccountMenu user={user} {...actions} />
 

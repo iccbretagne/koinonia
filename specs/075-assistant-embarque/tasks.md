@@ -188,47 +188,47 @@
 
 ### 11. Personnage
 
-- [ ] **T47** — Images WebP 256 et 512 px (et icône 64 px) des 7 expressions de Nia et de Koï
+- [x] **T47** — Images WebP 256 et 512 px (et icône 64 px) des 7 expressions de Nia et de Koï
   *(dossier : `public/assistant/{nia,koi}/`)*
-- [ ] **T48** — `AssistantAvatar` (client) : `persona`, `expression`, `size` ; clignement par
+- [x] **T48** — `AssistantAvatar` (client) : `persona`, `expression`, `size` ; clignement par
   superposition repos / yeux fermés (4 à 6 s), flottement, fondu d'expression, aucune animation
   sous `prefers-reduced-motion` ; `alt` = nom + expression
   *(fichier : `src/components/assistant/AssistantAvatar.tsx`)*
 
 ### 12. Panneau et bouton
 
-- [ ] **T49** — `AssistantPanel` (client) : panneau latéral sur ordinateur, `BottomSheet` plein
+- [x] **T49** — `AssistantPanel` (client) : panneau latéral sur ordinateur, `BottomSheet` plein
   écran sur téléphone ; questions fréquentes de l'écran (`usePathname`), fil en mémoire vidé à la
   fermeture, rendu étapes / lien « Ouvrir … » / liste de données / suggestions / inconnue avec
   lien vers le guide, « Utile / Pas utile » ; expressions bonjour → réfléchit → content / désolé
   *(fichier : `src/components/assistant/AssistantPanel.tsx`)*
-- [ ] **T50** — Bouton d'aide dans `TopBar` (ordinateur et téléphone) : icône du personnage si
+- [x] **T50** — Bouton d'aide dans `TopBar` (ordinateur et téléphone) : icône du personnage si
   l'assistant est actif, sinon lien vers `/guide` ; bulle d'accueil une fois par appareil
   (`koinonia-assistant-greeted`, `try/catch`) ; état d'activation et persona passés par
   `(auth)/layout.tsx` → `AuthLayoutShell`. Rien dans `BottomNav`, `MoreSheet`, `NavPageList`
   *(fichiers : `src/components/TopBar.tsx`, `src/components/AuthLayoutShell.tsx`,
   `src/app/(auth)/layout.tsx`)*
-- [ ] **T51** [P] — Choix Nia / Koï dans « Mon profil » *(fichiers :
+- [x] **T51** [P] — Choix Nia / Koï dans « Mon profil » *(fichiers :
   `src/app/(auth)/profile/page.tsx`, `ProfileClient.tsx`)*
 
 ### 13. Administration
 
-- [ ] **T52** — `/admin/assistant` (`requireSuperAdmin`) avec onglets *Usage*, *Questions à
+- [x] **T52** — `/admin/assistant` (`requireSuperAdmin`) avec onglets *Usage*, *Questions à
   traiter* (Répondre, Rattacher à…, Hors sujet, Supprimer, rappel sur les prénoms), *Base*
   (filtres domaine / rôle, corriger, rétablir, masquer, ajouter), *Réglages* (activer)
   *(dossier : `src/app/(auth)/admin/assistant/`)*
-- [ ] **T53** [P] — Interrupteur « Assistant » dans les paramètres de l'église, visible si
+- [x] **T53** [P] — Interrupteur « Assistant » dans les paramètres de l'église, visible si
   l'instance l'a activé *(fichier : `src/app/(auth)/admin/churches/[churchId]/…`)*
 
 ### 14. Tests du lot 5
 
-- [ ] **T54** [P] — Tests `AssistantAvatar` : Nia par défaut, image de l'expression demandée,
+- [x] **T54** [P] — Tests `AssistantAvatar` : Nia par défaut, image de l'expression demandée,
   aucune animation sous `prefers-reduced-motion` *(fichier :
   `src/components/assistant/__tests__/AssistantAvatar.test.tsx`)*
-- [ ] **T55** [P] — Tests `TopBar` / layout : bouton présent, lien guide quand inactif (instance,
+- [x] **T55** [P] — Tests `TopBar` / layout : bouton présent, lien guide quand inactif (instance,
   église, module), navigation inchangée ; instantanés mis à jour
   *(fichiers : tests existants de `TopBar` et du layout)*
-- [ ] **T56** [P] — Tests `AssistantPanel` : fil vidé à la fermeture, avis envoyé, suggestions
+- [x] **T56** [P] — Tests `AssistantPanel` : fil vidé à la fermeture, avis envoyé, suggestions
   cliquables *(fichier : `src/components/assistant/__tests__/AssistantPanel.test.tsx`)*
 
 ## Lot 6 — Documentation

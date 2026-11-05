@@ -98,3 +98,7 @@ export const statsQuerySchema = z.object({
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
+
+/** Types des réponses, partagés avec l'interface (effacés à l'exécution). */
+export type { AskResponse } from "./services/ask";
+export type { SuggestionRef } from "./services/engine";

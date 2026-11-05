@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { parseEmailList } from "@/lib/email";
 import { notFound } from "next/navigation";
 import ChurchEditClient from "./ChurchEditClient";
+import ChurchAssistantToggle from "./ChurchAssistantToggle";
+import { registry } from "@/lib/registry";
 
 export default async function ChurchDetailPage({
   params,
@@ -46,6 +48,11 @@ export default async function ChurchDetailPage({
     orderBy: [{ role: "asc" }, { name: "asc" }],
   });
 
+  // Assistant (spec 075) : interrupteur proposé seulement si l'instance l'a activé.
+  const assistant = registry.has("assistant")
+    ? await import("@/modules/assistant").then(({ getChurchSetting }) => getChurchSetting(churchId)).catch(() => null)
+    : null;
+
   const roleLabel: Record<string, string> = {
     PASTEUR: "Pasteur",
     ASSISTANT_PASTEUR: "Assistant pasteur",
@@ -79,6 +86,7 @@ export default async function ChurchDetailPage({
           label: `${s.name} (${roleLabel[s.role]}) — ${s.church.name}`,
         }))}
       />
+      {assistant?.instanceEnabled && <ChurchAssistantToggle churchId={churchId} disabled={assistant.disabled} />}
     </div>
   );
 }

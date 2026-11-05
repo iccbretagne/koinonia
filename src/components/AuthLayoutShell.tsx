@@ -7,6 +7,7 @@ import Sidebar from "@/components/Sidebar";
 import BottomNav from "@/components/BottomNav";
 import MoreSheet from "@/components/MoreSheet";
 import TopBar, { type TopBarUser } from "@/components/TopBar";
+import AssistantLauncher, { type AssistantShellProps } from "@/components/assistant/AssistantLauncher";
 import GuidedTour from "@/components/GuidedTour";
 import type { ServerAction } from "@/components/AccountActions";
 import { useSidebarPref, useViewport } from "@/components/shell-state";
@@ -48,6 +49,8 @@ interface AuthLayoutShellProps extends Omit<NavigationInput, "jobsUnseenCount" |
   readonly footer: React.ReactNode;
   /** Bandeau des messages système (spec 071), sous la barre supérieure. */
   readonly banner?: React.ReactNode;
+  /** Assistant de prise en main (spec 075) ; absent ou inactif : le bouton d'aide mène au guide. */
+  readonly assistant?: AssistantShellProps;
 }
 
 /** Largeur réservée à la sidebar, lue par le `Toast` (`--k-sidebar-width`) pour se placer à côté. */
@@ -80,6 +83,7 @@ export default function AuthLayoutShell({
   children,
   footer,
   banner,
+  assistant = { enabled: false, persona: "NIA", firstName: null },
   ...navInput
 }: AuthLayoutShellProps) {
   const pathname = usePathname();
@@ -209,6 +213,7 @@ export default function AuthLayoutShell({
             setSearchOpen(true);
           }}
           stickyClassName={STAGING_BUILD_VERSION ? STAGING_BANNER_HEADER_OFFSET_CLASS : "top-0"}
+          help={<AssistantLauncher {...assistant} />}
           {...accountActions}
         />
 

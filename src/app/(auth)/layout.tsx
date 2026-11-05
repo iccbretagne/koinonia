@@ -15,6 +15,7 @@ import { churchLogoSources } from "@/modules/core/schemas";
 import { isShuttleVisible } from "@/modules/shuttle/auth";
 import { isTreasuryVisible } from "@/modules/treasury/auth";
 import { isTicketingVisible } from "@/modules/ticketing/auth";
+import { pickFirstName } from "./accueil/first-name";
 import type { Session } from "next-auth";
 
 // Liens de la section Configuration (paramétrage — pas les outils quotidiens)
@@ -38,6 +39,8 @@ const configLinksDef = [
   { href: "/admin/backups",               label: "Sauvegardes",       permissions: [], superAdminOnly: true },
   { href: "/admin/api",                   label: "API",               permissions: [], superAdminOnly: true },
   { href: "/admin/app-icon",              label: "Icône de l'application", permissions: [], superAdminOnly: true },
+  // Assistant de prise en main (spec 075) : base commune à l'instance
+  ...(registry.has("assistant") ? [{ href: "/admin/assistant", label: "Assistant", permissions: [] as string[], superAdminOnly: true }] : []),
 ];
 
 type NavLink = { href: string; label: string };
@@ -350,6 +353,26 @@ async function hasAnnouncementSheetAccess(session: Session, churchId: string | n
   return canReadAnnouncementSheet(session, churchId);
 }
 
+/**
+ * Bouton d'aide (spec 075) : assistant actif pour l'église courante (module, instance, église)
+ * et personnage choisi par le compte (Nia par défaut). Un échec de lecture laisse le lien vers le
+ * guide, sans jamais casser la page.
+ */
+async function assistantShell(session: Session, currentChurchId: string | null | undefined) {
+  const firstName = pickFirstName(session.user.displayName ?? session.user.name);
+  if (!registry.has("assistant")) return { enabled: false, persona: "NIA" as const, firstName };
+  try {
+    const { isAssistantEnabled } = await import("@/modules/assistant");
+    const [enabled, user] = await Promise.all([
+      isAssistantEnabled(currentChurchId),
+      prisma.user.findUnique({ where: { id: session.user.id! }, select: { assistantPersona: true } }),
+    ]);
+    return { enabled, persona: user?.assistantPersona ?? ("NIA" as const), firstName };
+  } catch {
+    return { enabled: false, persona: "NIA" as const, firstName };
+  }
+}
+
 async function signOutAction() {
   "use server";
   await forgetPushDeviceOnSignOut();
@@ -520,6 +543,8 @@ export default async function AuthLayout({
     redirect("/no-access");
   }
 
+  const assistant = await assistantShell(session, currentChurchId);
+
   // Messages système en cours (spec 071) : un échec de lecture ne doit jamais casser la page.
   const bannerMessages = registry.has("messages")
     ? await import("@/modules/messages")
@@ -569,6 +594,7 @@ export default async function AuthLayout({
       signOutAction={signOutAction}
       footer={footerContent}
       banner={bannerMessages.length > 0 ? <SystemMessageBanner messages={bannerMessages} /> : undefined}
+      assistant={assistant}
     >
       {children}
     </AuthLayoutShell>
