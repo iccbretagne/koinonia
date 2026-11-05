@@ -511,7 +511,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Assistant (Nia ou Koï)",
-    description: "Touchez le personnage en haut de l'écran et posez votre question avec vos mots : « je suis pas dispo dimanche », « je sers quand ? ». L'assistant répond selon votre rôle, avec un bouton qui ouvre le bon écran, et peut afficher vos propres informations (prochain service, demandes en cours…) sans jamais en montrer plus que vos écrans. Les questions fréquentes de l'écran où vous êtes sont proposées. « Utile » / « Pas utile » aide à l'améliorer ; une question sans réponse est transmise, sans votre nom, pour compléter l'aide. Rien n'est conservé à la fermeture, et aucune question ne quitte Koinonia. Choisissez Nia ou Koï dans « Mon profil ». Si l'assistant n'est pas activé pour votre église, le bouton d'aide ouvre ce guide.",
+    description: "Touchez la bulle du personnage, en bas à droite de l'écran, et posez votre question avec vos mots : « je suis pas dispo dimanche », « je sers quand ? ». L'assistant répond selon votre rôle, avec un bouton qui ouvre le bon écran, et peut afficher vos propres informations (prochain service, demandes en cours…) sans jamais en montrer plus que vos écrans. Les questions fréquentes de l'écran où vous êtes sont proposées. « Utile » / « Pas utile » aide à l'améliorer ; une question sans réponse est transmise, sans votre nom, pour compléter l'aide. Rien n'est conservé à la fermeture, et aucune question ne quitte Koinonia. Choisissez Nia ou Koï dans « Mon profil ». « × » la réduit en languette sur le bord de l'écran. Si l'assistant n'est pas activé pour votre église, ce guide reste accessible depuis le menu de votre compte.",
     category: "Profil",
     screenshotTitle: "Assistant",
     screenshotFile: "guide-assistant.png",

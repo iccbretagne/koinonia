@@ -4,7 +4,8 @@ import path from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/planning", useRouter: () => ({ refresh: vi.fn() }) }));
+let pathname = "/planning";
+vi.mock("next/navigation", () => ({ usePathname: () => pathname, useRouter: () => ({ refresh: vi.fn() }) }));
 
 const { default: AssistantAvatar, assistantImage } = await import("../AssistantAvatar");
 const { default: AssistantLauncher } = await import("../AssistantLauncher");
@@ -49,17 +50,24 @@ describe("personnage de l'assistant (spec 075)", () => {
 });
 
 describe("bouton d'aide (spec 075)", () => {
-  it("mène au guide quand l'assistant est inactif", () => {
-    const html = renderToStaticMarkup(createElement(AssistantLauncher, { enabled: false, persona: "NIA", firstName: "Marie" }));
-    expect(html).toContain('href="/guide"');
-    expect(html).not.toContain("Demander à");
+  it("n'affiche aucune bulle quand l'assistant est inactif", () => {
+    expect(renderToStaticMarkup(createElement(AssistantLauncher, { enabled: false, persona: "NIA", firstName: "Marie" }))).toBe("");
   });
 
-  it("présente le personnage choisi quand l'assistant est actif, panneau fermé", () => {
+  it("flotte en bas à droite avec le personnage choisi, au-dessus de la barre du bas, panneau fermé", () => {
+    pathname = "/planning";
     const html = renderToStaticMarkup(createElement(AssistantLauncher, { enabled: true, persona: "KOI", firstName: "Marie" }));
     expect(html).toContain("Aide : demander à Koï");
+    expect(html).toContain("Réduire Koï");
     expect(html).toContain("/assistant/koi/icone-");
+    expect(html).toMatch(/fixed right-0[^"]*bottom-\[calc\(64px\+env\(safe-area-inset-bottom\)\+16px\)\]/);
     expect(html).not.toContain("<dialog");
+  });
+
+  it("se retire des écrans de terrain de la billetterie", () => {
+    pathname = "/billetterie/evt-1/controle";
+    expect(renderToStaticMarkup(createElement(AssistantLauncher, { enabled: true, persona: "NIA", firstName: null }))).toBe("");
+    pathname = "/planning";
   });
 
   it("le panneau ne promet rien de conservé et propose le guide", () => {

@@ -428,3 +428,10 @@ Vitest, Prisma mocké, `NullEmbedder` ou faux embedder déterministe :
 - **Seuils** : calibrés sur la recherche par mots (36/36 sur le jeu d'évaluation hors formulations
   « par le sens ») ; ceux du score hybride restent à confirmer avec `npm run assistant:eval` et le
   vrai modèle, que cette session ne pouvait pas télécharger.
+- **Bulle flottante plutôt que bouton de la barre du haut** (décision du porteur après la
+  recette) : `AssistantLauncher` est une bulle en bas à droite (56 px), au-dessus de la barre du
+  bas sur téléphone et de toute barre ancrée en bas marquée `data-k-bottom-bar` (actions
+  groupées, enregistrement de « Page de dons » et des réglages de billetterie, lecteur audio) ;
+  absente des écrans de terrain de la billetterie (contrôle, restauration) ; « × » la réduit en
+  languette pour la session (`sessionStorage`). Assistant inactif : aucune bulle, le guide reste
+  dans le menu du compte.

@@ -45,6 +45,7 @@ export default function BulkActionBar({ count, onEdit, onDelete, onClear }: Bulk
   return (
     <section
       aria-label="Actions sur la sélection"
+      data-k-bottom-bar
       className="fixed bottom-[calc(64px+env(safe-area-inset-bottom)+12px)] left-1/2 z-[60] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-1
         rounded-card bg-ink py-1.5 pl-4 pr-1.5 text-bg shadow-float md:bottom-6 print:hidden"
     >

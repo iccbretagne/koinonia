@@ -49,7 +49,7 @@ interface AuthLayoutShellProps extends Omit<NavigationInput, "jobsUnseenCount" |
   readonly footer: React.ReactNode;
   /** Bandeau des messages système (spec 071), sous la barre supérieure. */
   readonly banner?: React.ReactNode;
-  /** Assistant de prise en main (spec 075) ; absent ou inactif : le bouton d'aide mène au guide. */
+  /** Assistant de prise en main (spec 075) ; absent ou inactif : aucune bulle, le guide reste au menu du compte. */
   readonly assistant?: AssistantShellProps;
 }
 
@@ -213,7 +213,6 @@ export default function AuthLayoutShell({
             setSearchOpen(true);
           }}
           stickyClassName={STAGING_BUILD_VERSION ? STAGING_BANNER_HEADER_OFFSET_CLASS : "top-0"}
-          help={<AssistantLauncher {...assistant} />}
           {...accountActions}
         />
 
@@ -230,6 +229,9 @@ export default function AuthLayoutShell({
         moreOpen={moreOpen}
         onMoreOpen={() => setMoreOpen(true)}
       />
+
+      {/* Bulle de l'assistant (spec 075), en bas à droite, au-dessus de la barre du bas */}
+      <AssistantLauncher {...assistant} />
 
       <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} spaces={spaces} active={active} {...accountActions} />
 

@@ -602,8 +602,9 @@ seule (`ENABLED_MODULES`) :
 — désactivable (`ENABLED_MODULES`), **aucune permission propre** :
 - Tout compte connecté de l'église courante pose ses questions (`/api/assistant/ask`, 30 par
   minute) si l'assistant est actif : module, instance (`assistant_settings`, Super Admin) et
-  église non coupée (`assistant_church_settings`, `church:settings`). Sinon 404, et le bouton
-  d'aide de la barre du haut mène au guide
+  église non coupée (`assistant_church_settings`, `church:settings`). Sinon 404 et aucune bulle
+  (`AssistantLauncher`, en bas à droite, au-dessus de la barre du bas et des barres marquées
+  `data-k-bottom-bar`) ; le guide reste dans le menu du compte
 - Les fiches sont filtrées **avant** classement par module actif et par audience (rôles,
   permissions, prédicats — `linkedStar`, `shuttleTeam`, `ticketing`… — calculés côté serveur par
   `src/app/api/assistant/_viewer.ts`) ; une fiche hors du rôle ne peut donner que son refus, sans
