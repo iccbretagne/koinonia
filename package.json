@@ -22,6 +22,8 @@
     "lint:prisma-boundary": "./scripts/check-prisma-boundary.sh",
     "openapi": "tsx scripts/generate-openapi.ts",
     "icons": "tsx scripts/generate-app-icons.ts",
+    "assistant:model": "node scripts/fetch-assistant-model.mjs",
+    "assistant:eval": "tsx scripts/assistant-eval.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

@@ -9,12 +9,18 @@ import { SYNONYM_PHRASES, SYNONYM_WORDS } from "../knowledge/synonyms";
 const STOPWORDS = new Set(
   (
     "a ai as au aux avec avez avoir avons c ca ce ces cet cette comment d dans de des du elle elles en est es et " +
-    "etre faire fais fait il ils j je l la le les leur leurs lui m ma mais me mes moi mon n ne ni nos notre nous " +
-    "on ont ou par pas peu peut peux plus pour qu quand que quel quelle quelles quels qui quoi s sa se ses si son " +
+    "etre faire fais fait il ils l la le les leur leurs lui mais n ne ni nos notre nous " +
+    "on ont ou par pas peu peut peux plus pour qu quand que quel quelle quelles quels quoi s sa se ses si son " +
     "sont suis sur svp t ta te tes toi ton tu un une vos votre vous y est-ce estce veux voudrais dois doit faut " +
-    "il-y ya bien bon alors donc car aussi tout tous toute toutes ici la-bas stp merci bonjour salut hello coucou"
+    "il-y ya bien bon alors donc car aussi tout tous toute toutes ici la-bas stp merci bonjour salut hello coucou koinonia"
   ).split(" ")
 );
+
+/**
+ * La personne qui parle d'elle-même (« je », « mon », « mes ») : un seul mot, pour distinguer
+ * « je ne suis pas disponible » de « qui est indisponible ».
+ */
+const FIRST_PERSON = new Set(["je", "j", "moi", "mon", "ma", "mes", "me", "m"]);
 
 /** Minuscules, sans accents ni ponctuation, espaces simples. */
 export function normalize(text: string): string {
@@ -47,14 +53,18 @@ export function applySynonyms(normalized: string): string {
 /** Mots utiles d'un texte : normalisés, synonymes appliqués, sans mots vides, racinés. */
 export function tokens(text: string): string[] {
   const words = applySynonyms(normalize(text)).split(" ");
-  const out: string[] = [];
+  const out = new Set<string>();
   for (const raw of words) {
+    if (FIRST_PERSON.has(raw)) {
+      out.add("moi");
+      continue;
+    }
     if (!raw || STOPWORDS.has(raw)) continue;
     const word = stem(SYNONYM_WORDS[raw] ?? raw);
     if (word.length < 2 || STOPWORDS.has(word)) continue;
-    out.push(word);
+    out.add(word);
   }
-  return out;
+  return [...out];
 }
 
 /** Distance d'édition bornée : renvoie `max + 1` dès qu'elle dépasse `max`. */
@@ -83,13 +93,13 @@ function commonPrefix(a: string, b: string): number {
 }
 
 /**
- * Proximité de deux mots (0–1) : identiques 1 ; une faute de frappe 0,85 ; même racine
+ * Proximité de deux mots (0–1) : identiques 1 ; une faute de frappe (mots de 5 lettres ou plus) 0,85 ; même racine
  * (« declarer » / « declaration ») 0,75 ; sinon 0.
  */
 export function wordSimilarity(a: string, b: string): number {
   if (a === b) return 1;
   const shorter = Math.min(a.length, b.length);
-  if (shorter >= 4) {
+  if (shorter >= 5) {
     const allowed = shorter >= 8 ? 2 : 1;
     if (boundedDistance(a, b, allowed) <= allowed) return 0.85;
   }

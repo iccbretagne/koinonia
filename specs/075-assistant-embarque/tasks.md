@@ -69,53 +69,53 @@
 
 ### 5. Fiches fournies
 
-- [ ] **T14** — Type `KnowledgeEntry` et `Audience` (rôles, permission, prédicat nommé),
+- [x] **T14** — Type `KnowledgeEntry` et `Audience` (rôles, permission, prédicat nommé),
   fichier des synonymes (« dispo », « indispo », « pas là », « quête » → collecte, « compta »…)
   *(fichiers : `src/modules/assistant/knowledge/types.ts`, `knowledge/synonyms.ts`)*
-- [ ] **T15** — Conversion des 60 fiches relues (KB-001 à KB-902) en fichiers par domaine :
+- [x] **T15** — Conversion des 60 fiches relues (KB-001 à KB-902) en fichiers par domaine :
   `prise-en-main.ts`, `planning.ts`, `demandes.ts`, `medias.ts`, `comptabilite.ts`,
   `billetterie.ts`, `administration.ts`, `fixed.ts` (hors sujet, refus poli)
   *(dossier : `src/modules/assistant/knowledge/`)*
-- [ ] **T16** — Fiches `data` D01 à D23 (formulations, audience, `otherwise`, clé du
+- [x] **T16** — Fiches `data` D01 à D23 (formulations, audience, `otherwise`, clé du
   fournisseur) *(fichier : `src/modules/assistant/knowledge/donnees.ts`)*
-- [ ] **T17** [P] — Jeu d'évaluation : questions de test → fiche attendue, dont formulations sans
+- [x] **T17** [P] — Jeu d'évaluation : questions de test → fiche attendue, dont formulations sans
   mot commun (« je serai pas là dimanche » → déclarer une absence)
   *(fichier : `src/modules/assistant/knowledge/eval.ts`)*
-- [ ] **T18** — `knowledge.ts` : `loadKnowledge()` (fournies ⊕ surcharges ⊕ ajouts ⊕ alias),
+- [x] **T18** — `knowledge.ts` : `loadKnowledge()` (fournies ⊕ surcharges ⊕ ajouts ⊕ alias),
   `visibleEntries(viewer)` (audience, module actif, fiche masquée)
   *(fichier : `src/modules/assistant/services/knowledge.ts`)*
 
 ### 6. Recherche par le sens
 
-- [ ] **T19** — Dépendance `@huggingface/transformers` ; `serverExternalPackages` pour
+- [x] **T19** — Dépendance `@huggingface/transformers` ; `serverExternalPackages` pour
   `@huggingface/transformers` et `onnxruntime-node` *(fichiers : `package.json`,
   `next.config.ts`)*
-- [ ] **T20** — `embedder.ts` : interface `Embedder`, `OnnxEmbedder` (chargement paresseux et
+- [x] **T20** — `embedder.ts` : interface `Embedder`, `OnnxEmbedder` (chargement paresseux et
   unique, `ASSISTANT_MODEL_DIR`, `allowRemoteModels = false`, préfixes `query:` / `passage:`,
   vecteurs normalisés), `NullEmbedder`, cache `assistant_embeddings` (SHA-256 + modèle)
   *(fichier : `src/modules/assistant/services/embedder.ts`)*
-- [ ] **T21** — `engine.ts` : interface `AnswerEngine`, type `AssistantAnswer`, `LocalEngine`
+- [x] **T21** — `engine.ts` : interface `AnswerEngine`, type `AssistantAnswer`, `LocalEngine`
   (filtrage par audience **avant** classement, score `0,65 × sens + 0,35 × lexical`, seuils
   réponse / suggestions / inconnue, hors sujet, repli lexical journalisé une fois),
   `extractParams` (dimanche, ce mois-ci, nom de mois — heure de Paris)
   *(fichier : `src/modules/assistant/services/engine.ts`)*
-- [ ] **T22** [P] — Script d'évaluation hors CI avec le vrai modèle, cible ≥ 85 % en tête
+- [x] **T22** [P] — Script d'évaluation hors CI avec le vrai modèle, cible ≥ 85 % en tête
   *(fichiers : `scripts/assistant-eval.ts`, `package.json` → `assistant:eval`)*
-- [ ] **T23** — Téléchargement du modèle `Xenova/multilingual-e5-small` (int8) au build et copie
+- [x] **T23** — Téléchargement du modèle `Xenova/multilingual-e5-small` (int8) au build et copie
   de `models/` et du binaire natif dans l'artefact *(fichiers : `.github/workflows/ci.yml`,
   `.github/workflows/deploy-staging.yml`, `.github/workflows/deploy.yml` si concerné,
   `.gitignore`, `.env.example`)*
 
 ### 7. Tests du lot 2
 
-- [ ] **T24** [P] — Tests `knowledge` : chaque `href` correspond à un `page.tsx` existant ;
+- [x] **T24** [P] — Tests `knowledge` : chaque `href` correspond à un `page.tsx` existant ;
   audience cohérente avec la permission de l'écran ; module inactif → fiche absente ; surcharge,
   masquage, alias appliqués ; fiches `data` reliées à une clé de fournisseur du catalogue
   *(fichier : `…/__tests__/knowledge.test.ts`)*
-- [ ] **T25** [P] — Tests `engine` avec faux embedder déterministe : seuils, suggestions, hors
+- [x] **T25** [P] — Tests `engine` avec faux embedder déterministe : seuils, suggestions, hors
   sujet, un STAR ne reçoit jamais une fiche réservée (mais son `otherwise`), repli lexical si
   l'embedder échoue, `extractParams` *(fichier : `…/__tests__/engine.test.ts`)*
-- [ ] **T26** [P] — Tests `embedder` : cache relu, aucun accès réseau configuré, erreur de
+- [x] **T26** [P] — Tests `embedder` : cache relu, aucun accès réseau configuré, erreur de
   chargement → repli *(fichier : `…/__tests__/embedder.test.ts`)*
 
 ## Lot 3 — Questions de données

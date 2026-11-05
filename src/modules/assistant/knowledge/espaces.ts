@@ -1,0 +1,130 @@
+import type { KnowledgeEntry } from "./types";
+
+/** 8. Discipolat, 9. Suivi pastoral et intégration, 10. Autres espaces (KB-120 à KB-144). */
+export const ESPACES: readonly KnowledgeEntry[] = [
+  {
+    key: "KB-120",
+    kind: "howto",
+    title: "Mes disciples et l'appel de présence",
+    questions: ["Faire l'appel", "présence de mes disciples", "ajouter un disciple", "mes disciples"],
+    answer:
+      "Dans « Discipolat », gérez vos relations (ajouter un disciple, changer de FD) et enregistrez la présence de vos disciples à chaque événement de discipolat. Un FD ne marque que ses propres disciples.",
+    href: "/admin/discipleship",
+    hrefLabel: "Discipolat",
+    audience: { permissions: ["discipleship:view"] },
+    screens: ["/admin/discipleship"],
+  },
+  {
+    key: "KB-130",
+    kind: "howto",
+    title: "Confier une demande de rendez-vous pastoral",
+    questions: [
+      "Affecter une demande de RDV",
+      "confier à un pasteur",
+      "rejeter une demande de rendez-vous",
+      "demandes en attente de suivi",
+    ],
+    answer:
+      "Dans « Suivi pastoral », confiez chaque demande à un profil pastoral ou à un accompagnant, avec une note, ou rejetez-la avec un motif. Une demande confiée peut être réaffectée. Je ne donne aucune information sur les demandes elles-mêmes.",
+    href: "/care",
+    hrefLabel: "Suivi pastoral",
+    audience: { permissions: ["care:qualify", "care:view"] },
+    otherwise: "Je ne donne aucune information sur les demandes pastorales : elles sont traitées par le Référent soins pastoraux et l'administration.",
+    screens: ["/care"],
+  },
+  {
+    key: "KB-131",
+    kind: "howto",
+    title: "Suivi des nouveaux convertis",
+    questions: ["Nouveaux convertis", "suivi MSDP", "appel au salut", "faire avancer un suivi"],
+    answer:
+      "L'onglet « Nouveaux convertis » de « Suivi pastoral » permet de confier le suivi puis, en tant que référent en charge, de le faire progresser (contacté, en formation, terminé) et d'ajouter des notes.",
+    href: "/care",
+    hrefLabel: "Suivi pastoral",
+    audience: { permissions: ["care:qualify", "care:view"] },
+    otherwise: "Je ne donne aucune information sur les suivis : ils sont traités par le Référent soins pastoraux et l'équipe MSDP.",
+    screens: ["/care"],
+  },
+  {
+    key: "KB-132",
+    kind: "howto",
+    title: "Demandes d'intégration des familles",
+    questions: ["Nouvelle famille", "demande d'intégration", "assigner un berger", "recontacter plus tard"],
+    answer:
+      "« Intégration » suit les demandes : assignez un berger, faites avancer le statut, mettez « À recontacter plus tard » ou transmettez au département mission. Les demandes à relancer apparaissent dans le bandeau « À relancer ».",
+    href: "/integration/requests",
+    hrefLabel: "Intégration",
+    audience: { permissions: ["integration:manage"], predicates: ["integrationTeam"] },
+    otherwise: "Les demandes d'intégration sont suivies par l'équipe Intégration et l'administration.",
+    screens: ["/integration"],
+  },
+  {
+    key: "KB-140",
+    kind: "howto",
+    title: "Réserver une salle",
+    questions: ["Réserver une salle", "salle libre jeudi", "réserver le local", "mes réservations"],
+    answer:
+      "Dans « Salles », la vue « Semaine » montre toutes les salles et leurs créneaux libres ; réservez un créneau depuis la même page. Certaines salles demandent l'accord de l'équipe de contrôle. « Mes réservations » liste les vôtres.",
+    href: "/rooms",
+    hrefLabel: "Salles",
+    audience: { permissions: ["rooms:reserve"] },
+    otherwise: "La réservation des salles est ouverte aux responsables de département, Ministres, Secrétaire et Admin : un STAR passe par son responsable.",
+    screens: ["/rooms"],
+  },
+  {
+    key: "KB-141",
+    kind: "howto",
+    title: "Réécouter un culte",
+    questions: ["Réécouter le message", "prédication de dimanche", "audio du culte", "podcast"],
+    answer:
+      "« Audio » regroupe les cultes publiés : recherche par titre, orateur ou date, lecture avec vitesse réglable et reprise, lien de partage par culte ou par séquence.",
+    href: "/audio",
+    hrefLabel: "Audio",
+    audience: { permissions: ["audio:listen"] },
+    screens: ["/audio"],
+  },
+  {
+    key: "KB-142",
+    kind: "howto",
+    title: "Offres d'emploi",
+    questions: ["Offres d'emploi", "publier une offre", "je cherche du travail", "freelance", "stage"],
+    answer:
+      "L'espace Offres a deux onglets : « Opportunités » et « Profils disponibles ». « Publier » propose les quatre sortes d'annonces ; « Mes publications » retrouve les vôtres.",
+    href: "/jobs",
+    hrefLabel: "Offres",
+    audience: { permissions: ["jobs:view"] },
+    screens: ["/jobs"],
+  },
+  {
+    key: "KB-143",
+    kind: "howto",
+    title: "Billetterie d'un événement",
+    questions: [
+      "Créer une billetterie",
+      "inscriptions à la soirée",
+      "vendre des places",
+      "scanner les billets",
+      "contrôle à l'entrée",
+    ],
+    answer:
+      "Dans « Billetterie », l'administration crée l'événement et confie les rôles. L'accueil scanne les billets depuis l'écran « Contrôle » (fonctionne sans réseau), la restauration depuis « Restauration ». Une affectation à l'équipe apparaît dans « Mon planning » avec son badge.",
+    href: "/billetterie",
+    hrefLabel: "Billetterie",
+    audience: { predicates: ["ticketing"] },
+    otherwise: "La billetterie est gérée par le Secrétaire, l'administration et l'équipe de chaque événement.",
+    screens: ["/billetterie"],
+  },
+  {
+    key: "KB-144",
+    kind: "howto",
+    title: "Publier un message système",
+    questions: ["Prévenir toute l'église", "bandeau de maintenance", "message urgent", "annoncer une nouveauté"],
+    answer:
+      "Dans « Messages système », publiez un message pour toute l'église ou certains rôles, ministères ou départements, avec sa sévérité et sa période. Les statistiques (visées, vues, fermetures) s'affichent ensuite.",
+    href: "/admin/messages",
+    hrefLabel: "Messages système",
+    audience: { permissions: ["messages:publish"] },
+    otherwise: "Les messages système sont publiés par le Secrétaire et l'administration de l'église.",
+    screens: ["/admin/messages"],
+  },
+];

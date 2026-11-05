@@ -82,6 +82,19 @@ jobs:
       - name: Prune dev dependencies
         run: npm prune --omit=dev
 
+      # Assistant (spec 075) : le modèle de sens est embarqué dans l'artefact, à côté de
+      # server.js (aucun appel réseau en production, ASSISTANT_MODEL_DIR par défaut « models »
+      # dans le dossier standalone). Seuls les binaires onnxruntime Linux sont gardés.
+      - name: Embed assistant model
+        run: |
+          node scripts/fetch-assistant-model.mjs .next/standalone/models
+          for root in node_modules .next/standalone/node_modules; do
+            [ -d "$root/onnxruntime-node" ] || continue
+            rm -rf "$root/onnxruntime-node/bin/napi-v6/darwin" "$root/onnxruntime-node/bin/napi-v6/win32"
+            rm -f "$root"/onnxruntime-node/bin/napi-v6/linux/*/libonnxruntime_providers_{cuda,tensorrt}.so
+          done
+          du -sh .next/standalone/models
+
       - name: Package artifact
         run: |
           VERSION="${{ steps.version.outputs.version }}"

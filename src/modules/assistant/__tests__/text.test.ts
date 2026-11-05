@@ -7,8 +7,9 @@ describe("texte de l'assistant (spec 075)", () => {
   });
 
   it("garde les mots utiles, applique les synonymes et le pluriel", () => {
-    expect(tokens("je suis pas dispo dimanche")).toEqual(["indisponible", "dimanche"]);
-    expect(tokens("Mes dispos")).toEqual(["disponibilite"]);
+    expect(tokens("je suis pas dispo dimanche")).toEqual(["moi", "indisponible", "dimanche"]);
+    expect(tokens("qui est indisponible dimanche")).toEqual(["qui", "indisponible", "dimanche"]);
+    expect(tokens("Mes dispos")).toEqual(["moi", "disponibilite"]);
     expect(tokens("je serai pas là ce week-end")).toContain("absent");
   });
 

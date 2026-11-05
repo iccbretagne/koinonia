@@ -43,3 +43,6 @@ prisma/scripts/migrate-audiobookshelf/.ledger.jsonl
 # prisma/scripts/build-training-fixture.ts — jamais commite.
 prisma/fixtures/training-real.*
 sonar-report/
+
+# Modèle de sens de l'assistant (spec 075), téléchargé au build : npm run assistant:model
+/models/
