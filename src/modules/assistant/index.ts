@@ -20,3 +20,4 @@ export {
 } from "./services/knowledge";
 export { getEmbedder, type Embedder } from "./services/embedder";
 export { LocalEngine, extractParams, type AnswerEngine, type AssistantAnswer, type SuggestionRef } from "./services/engine";
+export { anonymize } from "./services/text";

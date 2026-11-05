@@ -256,12 +256,12 @@ export const PLANNING_DEPARTEMENT: readonly KnowledgeEntry[] = [
     title: "Les consignes du département",
     questions: ["Consignes pour dimanche", "tenue", "heure d'arrivée", "les infos du département"],
     answer:
-      "Les consignes de votre département s'affichent avec vos services dans « Mon planning ». Les rédiger revient au responsable de département.",
-    href: "/planning",
-    hrefLabel: "Mon planning",
-    audience: { predicates: ["linkedStar"] },
-    otherwise: LINKED_STAR_OTHERWISE,
-    screens: ["/planning"],
+      "Les consignes d'un département pour un événement se rédigent et se lisent dans la vue « Planning » (semaine), sur la ligne de l'événement. Elles sont réservées au responsable de département, au Ministre et à l'administration.",
+    href: "/dashboard",
+    hrefLabel: "Planning",
+    audience: { permissions: ["planning:department"] },
+    otherwise: "Les consignes sont tenues par votre responsable de département : demandez-les-lui directement.",
+    screens: ["/dashboard"],
   },
   {
     key: "KB-047",

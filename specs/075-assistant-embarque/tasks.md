@@ -120,22 +120,22 @@
 
 ## Lot 3 — Questions de données
 
-- [ ] **T27** — Fournisseurs `planning` (D01–D07, D09, D11–D14) écrits avec ses services et
+- [x] **T27** — Fournisseurs `planning` (D01–D07, D09, D11–D14) écrits avec ses services et
   `getUserDepartmentScope` / `getUserMinistryScope`, exportés par l'index
   *(fichiers : `src/modules/planning/assistant.ts`, `src/modules/planning/index.ts`)*
-- [ ] **T28** [P] — Fournisseurs `ticketing` (D08) et `rooms` (D10)
+- [x] **T28** [P] — Fournisseurs `ticketing` (D08) et `rooms` (D10)
   *(fichiers : `src/modules/ticketing/assistant.ts`, `src/modules/rooms/assistant.ts`, index)*
-- [ ] **T29** [P] — Fournisseurs événements, comptes rendus et secrétariat (D15–D17), dans le
+- [x] **T29** [P] — Fournisseurs événements, comptes rendus et secrétariat (D15–D17), dans le
   module qui porte ces écrans *(fichiers : `src/modules/<module>/assistant.ts`, index)*
-- [ ] **T30** [P] — Fournisseurs `accounting` (D18, D19, D23), `shuttle` (D20), `treasury`
+- [x] **T30** [P] — Fournisseurs `accounting` (D18, D19, D23), `shuttle` (D20), `treasury`
   (D21, D22) *(fichiers : `src/modules/{accounting,shuttle,treasury}/assistant.ts`, index)*
-- [ ] **T31** — Composition du catalogue des modules actifs (`registry.has`) et des prédicats
+- [x] **T31** — Composition du catalogue des modules actifs (`registry.has`) et des prédicats
   d'audience (fiche STAR liée, équipe navette, billetterie visible…)
   *(fichier : `src/app/api/assistant/_data-questions.ts`)*
-- [ ] **T32** — Tests de périmètre par fournisseur : même résultat que l'écran (RD, Ministre,
+- [x] **T32** — Tests de périmètre par fournisseur : même résultat que l'écran (RD, Ministre,
   Admin), refus sans donnée pour un STAR, liste bornée à 8 + total, message « rien à montrer »,
   église courante uniquement *(fichiers : `src/modules/*/__tests__/assistant.test.ts`)*
-- [ ] **T33** — Test garde-fou : chaque fournisseur, avec des données factices, ne renvoie ni
+- [x] **T33** — Test garde-fou : chaque fournisseur, avec des données factices, ne renvoie ni
   email, ni téléphone, ni IBAN, ni champ du module `care` ; aucun fournisseur `care`
   *(fichier : `src/app/api/assistant/__tests__/data-questions.test.ts`)*
 
