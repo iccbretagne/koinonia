@@ -17,7 +17,8 @@ import {
 import { requireTreasuryAccess } from "@/modules/treasury/auth";
 import { ledgerQuerySchema, periodQuerySchema } from "@/modules/treasury/schemas";
 import AccountingNav from "../AccountingNav";
-import TreasuryClient, { TREASURY_TABS, type TreasuryTab } from "./TreasuryClient";
+import TreasuryClient from "./TreasuryClient";
+import { TREASURY_TABS, type TreasuryTab } from "./tabs";
 
 /**
  * Trésorerie de l'église (spec 076), rangée sous la comptabilité : Comptable, Admin, Super Admin.
