@@ -115,6 +115,8 @@ export interface NavigationInput {
   readonly hasAccounting?: boolean;
   /** Registre de la navette (spec 073), rangé sous « Comptabilité ». */
   readonly hasShuttle?: boolean;
+  /** Trésorerie de l'église (spec 076), rangée sous « Comptabilité » : `treasury:manage`. */
+  readonly hasTreasury?: boolean;
   /** Billetterie (spec 074) : `ticketing:manage` ou un rôle sur un événement actif. */
   readonly hasTicketing?: boolean;
   readonly hasJobs?: boolean;
@@ -330,9 +332,9 @@ const ACCOUNTING_BLOCK = "Comptabilité";
 
 function requestPagesFor(input: NavigationInput): NavPage[] {
   const requests: NavPage[] = input.requestLinks.map((l) => ({ href: l.href, label: l.label }));
-  // « Navette » se range sous « Comptabilité » (spec 073) : un bloc de sidebar les regroupe, et
-  // le préfixe plus long de la navette l'emporte sur celui de la comptabilité.
-  const accountingBlock = input.hasShuttle ? ACCOUNTING_BLOCK : undefined;
+  // « Navette » et « Trésorerie » se rangent sous « Comptabilité » (specs 073, 076) : un bloc de
+  // sidebar les regroupe, et leur préfixe plus long l'emporte sur celui de la comptabilité.
+  const accountingBlock = input.hasShuttle || input.hasTreasury ? ACCOUNTING_BLOCK : undefined;
   if (input.hasAccounting) {
     requests.push({
       href: "/accounting/requests",
@@ -344,6 +346,9 @@ function requestPagesFor(input: NavigationInput): NavPage[] {
   }
   if (input.hasShuttle) {
     requests.push({ href: "/accounting/navette", label: "Navette", sidebarBlock: accountingBlock });
+  }
+  if (input.hasTreasury) {
+    requests.push({ href: "/accounting/tresorerie", label: "Trésorerie", sidebarBlock: accountingBlock });
   }
   return requests;
 }

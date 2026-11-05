@@ -47,6 +47,8 @@ export interface LedgerLine {
   label: string | null;
   vendor: string | null;
   paymentMethod: ShuttlePaymentMethod | null;
+  /** Abondement remis depuis un compte de trésorerie (spec 076). */
+  treasuryAccountId: string | null;
   liters: number | null;
   kilometers: number | null;
   personalAdvance: boolean;
@@ -143,6 +145,7 @@ async function loadBudgetAdvanceLines(churchId: string): Promise<LedgerLine[]> {
       label: p.request.label,
       vendor: null,
       paymentMethod: null,
+      treasuryAccountId: null,
       liters: null,
       kilometers: null,
       personalAdvance: false,
@@ -208,6 +211,7 @@ function toLedgerLine(r: LedgerRow, progressById: Map<string, Progress>): Ledger
     label: r.label,
     vendor: r.vendor,
     paymentMethod: r.paymentMethod,
+    treasuryAccountId: r.treasuryAccountId,
     liters: r.liters === null ? null : Number(r.liters),
     kilometers: r.kilometers,
     personalAdvance: r.personalAdvance,

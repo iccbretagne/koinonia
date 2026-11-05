@@ -112,6 +112,7 @@ export default function ShuttleClient({
   from,
   to,
   highlightId,
+  treasuryAccounts = [],
 }: {
   readonly ledger: LedgerSummary;
   readonly rentals: RentalOption[];
@@ -122,6 +123,8 @@ export default function ShuttleClient({
   readonly from?: string;
   readonly to?: string;
   readonly highlightId?: string;
+  /** Comptes de trésorerie actifs proposés pour un abondement (spec 076). */
+  readonly treasuryAccounts?: readonly { id: string; name: string }[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -510,6 +513,7 @@ export default function ShuttleClient({
           hasOpeningBalance={ledger.hasOpeningBalance}
           rentals={rentals}
           outstandingDeposits={ledger.outstandingDeposits}
+          treasuryAccounts={treasuryAccounts}
         />
       )}
       <EntryDetail

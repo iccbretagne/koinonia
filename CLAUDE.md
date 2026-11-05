@@ -422,6 +422,8 @@ Compt = Comptable.
 | `giving:manage` | x | x | x | | | | | | | x |
 | `messages:publish` | x | x | x | | | | | | | |
 | `shuttle:manage` | x | x | | | | | | | | x |
+| `treasury:manage` | x | x | | | | | | | | x |
+| `treasury:reopen` | x | x | | | | | | | | |
 | `ticketing:manage` | x | x | x | | | | | | | |
 | `agenda:view` | x | x | x | | | | | | | |
 | `agenda:manage` | x | x | x | | | | | | | |
@@ -575,6 +577,25 @@ renommé spec 052) :
   « avance personnelle » (`createLinkedExpenseReport`, justificatif copié, ouverte à l'auteur même
   STAR), avances de budget versées au département Navette **lues** comme entrées du registre, et
   notes de frais de la Navette hors registre ajoutables par la compta
+
+**Spécificités du module trésorerie** (spec 076) — extension de la comptabilité, désactivable
+seule (`ENABLED_MODULES`) :
+- `treasury:manage` (Super Admin, Admin, Comptable) ouvre `/accounting/tresorerie` : comptes de
+  trésorerie (caisse, coffre, en ligne ; solde de départ daté, archivage), registre des entrées
+  et sorties (montant positif + sens, solde après chaque ligne, calculé à la lecture en
+  centimes), catégories et objets d'offrandes spéciales, collecte de culte (espèces par catégorie,
+  chèques un par un, deux compteurs), remise au compte commun (bordereau, chèques cochés),
+  transferts entre comptes (ni recette ni dépense), budget annuel, rapports, export. La
+  Secrétaire n'y a **aucun** accès. `treasury:reopen` (Super Admin, Admin) rouvre un mois
+  clôturé, avec un motif journalisé
+- **Mois clôturé** (`treasury_closures`) : aucune écriture datée de ce mois, y compris les
+  reprises — `assertTreasuryDateOpen` est appelé par les routes de paiement et de navette
+- **Reprises par lecture** ([ADR-0027](docs/adr/0027-reprise-par-lecture-entre-modules.md)) :
+  `FinancialPayment.treasuryAccountId` (« Payé depuis » à la remise d'un paiement) et
+  `ShuttleEntry.treasuryAccountId` (« Remis depuis » sur un abondement) sont posés et validés par
+  la couche `src/app` ; le registre les **lit** (`listTreasuryPayments` de `accounting`, table
+  `shuttle_entries` gardée par `registry.has("shuttle")`) en lecture seule. `accounting` et
+  `shuttle` n'importent jamais `treasury`. Le compte bancaire commun n'est pas suivi
 
 **Spécificités du module billetterie** (spec 074) — désactivable (`ENABLED_MODULES`) :
 - `ticketing:manage` (Super Admin, Admin, Secrétaire) ouvre `/billetterie` et la création

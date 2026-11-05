@@ -130,6 +130,14 @@ model Church {
   shuttleEntries            ShuttleEntry[]
   shuttleRentals            ShuttleRental[]
   shuttleSettings           ShuttleSettings?
+  treasuryAccounts          TreasuryAccount[]
+  treasuryCategories        TreasuryCategory[]
+  treasuryPurposes          TreasuryPurpose[]
+  treasuryEntries           TreasuryEntry[]
+  treasuryCollections       TreasuryCollection[]
+  treasuryCheques           TreasuryCheque[]
+  treasuryClosures          TreasuryClosure[]
+  treasuryBudgets           TreasuryBudget[]
   ticketingEvents           TicketingEvent[]
   // Messages système (spec 071)
   systemMessages            SystemMessage[]
@@ -504,6 +512,7 @@ model Event {
   absenceTargets            AbsenceEvent[]
   availabilityResponses     AvailabilityResponse[]
   availabilityAsks          AvailabilityAsk[]
+  treasuryCollections       TreasuryCollection[]
 
   serviceWithdrawals        ServiceWithdrawal[]
 
@@ -1839,13 +1848,17 @@ model FinancialPayment {
   releasedAmount Decimal?  @db.Decimal(10, 2) // montant effectivement remis (peut être < amount)
   releasedById   String? // comptable ayant confirmé la remise
   note           String?   @db.VarChar(500)
+  /// Compte de trésorerie d'où le paiement est sorti (spec 076) ; null = compte commun.
+  treasuryAccountId String?
 
-  request    FinancialRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  releasedBy User?            @relation("FinancialPaymentReleaser", fields: [releasedById], references: [id])
+  request         FinancialRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  releasedBy      User?            @relation("FinancialPaymentReleaser", fields: [releasedById], references: [id])
+  treasuryAccount TreasuryAccount? @relation(fields: [treasuryAccountId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
 
   @@index([requestId])
+  @@index([treasuryAccountId])
   @@map("financial_payments")
 }
 
@@ -2887,6 +2900,8 @@ model ShuttleEntry {
   reimbursementRequestId String?                 @unique
   /// Note de frais faite hors registre, ajoutée au registre par la compta.
   sourceRequestId        String?                 @unique
+  /// Abondement remis depuis un compte de trésorerie (spec 076) ; null = autre provenance.
+  treasuryAccountId      String?
   receiptKey             String?                 @db.VarChar(512)
   receiptName            String?                 @db.VarChar(255)
   receiptMime            String?                 @db.VarChar(100)
@@ -2907,6 +2922,7 @@ model ShuttleEntry {
   returnedBy           ShuttleEntry?     @relation("ShuttleDepositReturn")
   reimbursementRequest FinancialRequest? @relation("ShuttleReimbursement", fields: [reimbursementRequestId], references: [id], onDelete: SetNull)
   sourceRequest        FinancialRequest? @relation("ShuttleSourceRequest", fields: [sourceRequestId], references: [id], onDelete: SetNull)
+  treasuryAccount      TreasuryAccount?  @relation(fields: [treasuryAccountId], references: [id], onDelete: SetNull)
   createdBy            User?             @relation("ShuttleEntryCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   updatedBy            User?             @relation("ShuttleEntryUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   flaggedBy            User?             @relation("ShuttleEntryFlaggedBy", fields: [flaggedById], references: [id], onDelete: SetNull)
@@ -3384,4 +3400,213 @@ model TicketingOnsiteSale {
   @@index([optionId])
   @@index([variantId])
   @@map("ticketing_onsite_sales")
+}
+
+// ─── Module trésorerie (spec 076) ──────────────────────────────────
+
+/// Nature d'un compte de trésorerie.
+enum TreasuryAccountKind {
+  CASH
+  ONLINE
+  OTHER
+}
+
+enum TreasuryDirection {
+  IN
+  OUT
+}
+
+/// Moyen d'une entrée ou d'une sortie.
+enum TreasuryMethod {
+  CASH
+  CHEQUE
+  TRANSFER
+  CARD
+  ONLINE
+  WERO
+  OTHER
+}
+
+/// Ligne ordinaire, jambe d'un transfert entre comptes, ou remise au compte commun.
+enum TreasuryEntryKind {
+  STANDARD
+  TRANSFER
+  DEPOSIT
+}
+
+/// Catégories dont le rôle est fixé (le nom reste modifiable).
+enum TreasuryCategorySystem {
+  SPECIAL_OFFERING
+  DEPOSIT
+  EXPENSE_REPORTS
+  SHUTTLE
+}
+
+/// Compte de trésorerie de l'église (caisse, coffre, compte en ligne…). Son solde n'est jamais
+/// stocké : solde de départ + lignes non supprimées + mouvements repris (ADR-0027).
+model TreasuryAccount {
+  id             String              @id @default(cuid())
+  churchId       String
+  name           String              @db.VarChar(80)
+  kind           TreasuryAccountKind
+  openingBalance Decimal             @db.Decimal(12, 2)
+  openingDate    DateTime            @db.Date
+  archivedAt     DateTime?
+  sortOrder      Int                 @default(0)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  church         Church               @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  entries        TreasuryEntry[]
+  collections    TreasuryCollection[]
+  payments       FinancialPayment[]
+  shuttleEntries ShuttleEntry[]
+
+  @@unique([churchId, name])
+  @@map("treasury_accounts")
+}
+
+model TreasuryCategory {
+  id        String                  @id @default(cuid())
+  churchId  String
+  direction TreasuryDirection
+  name      String                  @db.VarChar(80)
+  system    TreasuryCategorySystem?
+  active    Boolean                 @default(true)
+  sortOrder Int                     @default(0)
+
+  church  Church           @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  entries TreasuryEntry[]
+  budgets TreasuryBudget[]
+
+  @@unique([churchId, direction, name])
+  @@unique([churchId, system])
+  @@map("treasury_categories")
+}
+
+/// Objet d'une offrande spéciale (missions, construction, actions de grâce…).
+model TreasuryPurpose {
+  id       String  @id @default(cuid())
+  churchId String
+  name     String  @db.VarChar(80)
+  active   Boolean @default(true)
+
+  church  Church          @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  entries TreasuryEntry[]
+
+  @@unique([churchId, name])
+  @@map("treasury_purposes")
+}
+
+/// Ligne du registre : montant toujours positif, sens porté par `direction`. Supprimée
+/// logiquement (`deletedAt`) pour rester dans l'historique.
+model TreasuryEntry {
+  id              String            @id @default(cuid())
+  churchId        String
+  accountId       String
+  kind            TreasuryEntryKind @default(STANDARD)
+  direction       TreasuryDirection
+  categoryId      String?
+  purposeId       String?
+  method          TreasuryMethod
+  amount          Decimal           @db.Decimal(12, 2)
+  date            DateTime          @db.Date
+  label           String            @db.VarChar(200)
+  thirdParty      String?           @db.VarChar(120)
+  collectionId    String?
+  transferGroupId String?           @db.VarChar(40)
+  depositRef      String?           @db.VarChar(60)
+  receiptKey      String?           @db.VarChar(512)
+  receiptName     String?           @db.VarChar(255)
+  receiptMime     String?           @db.VarChar(100)
+  receiptSize     Int?
+  createdById     String?
+  updatedById     String?
+  deletedAt       DateTime?
+  deletedById     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  church           Church              @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  account          TreasuryAccount     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category         TreasuryCategory?   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  purpose          TreasuryPurpose?    @relation(fields: [purposeId], references: [id], onDelete: Restrict)
+  collection       TreasuryCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  chequesIn        TreasuryCheque[]    @relation("TreasuryChequeCollected")
+  chequesDeposited TreasuryCheque[]    @relation("TreasuryChequeDeposited")
+
+  @@index([churchId, deletedAt, date])
+  @@index([accountId, deletedAt, date])
+  @@index([transferGroupId])
+  @@map("treasury_entries")
+}
+
+/// Collecte d'un culte, comptée par deux personnes.
+model TreasuryCollection {
+  id          String   @id @default(cuid())
+  churchId    String
+  accountId   String
+  eventId     String?
+  date        DateTime @db.Date
+  counter1    String   @db.VarChar(80)
+  counter2    String   @db.VarChar(80)
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  church  Church          @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  account TreasuryAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  event   Event?          @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  entries TreasuryEntry[]
+
+  @@index([churchId, date])
+  @@map("treasury_collections")
+}
+
+/// Chèque collecté (un par un), ou lot saisi en total (`count` > 1). `depositEntryId` nul =
+/// encore en caisse.
+model TreasuryCheque {
+  id             String  @id @default(cuid())
+  churchId       String
+  entryId        String
+  number         String? @db.VarChar(30)
+  amount         Decimal @db.Decimal(12, 2)
+  count          Int     @default(1)
+  depositEntryId String?
+
+  church       Church         @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  entry        TreasuryEntry  @relation("TreasuryChequeCollected", fields: [entryId], references: [id], onDelete: Cascade)
+  depositEntry TreasuryEntry? @relation("TreasuryChequeDeposited", fields: [depositEntryId], references: [id], onDelete: SetNull)
+
+  @@index([churchId, depositEntryId])
+  @@index([entryId])
+  @@map("treasury_cheques")
+}
+
+/// Mois clôturé (`month` = "AAAA-MM"). Rouvrir = supprimer la ligne, motif dans l'audit.
+model TreasuryClosure {
+  churchId   String
+  month      String   @db.Char(7)
+  closedAt   DateTime @default(now())
+  closedById String?
+
+  church Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  @@id([churchId, month])
+  @@map("treasury_closures")
+}
+
+/// Budget prévisionnel d'une catégorie pour un mois d'une année.
+model TreasuryBudget {
+  id         String  @id @default(cuid())
+  churchId   String
+  year       Int
+  month      Int
+  categoryId String
+  amount     Decimal @db.Decimal(12, 2)
+
+  church   Church           @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  category TreasuryCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([churchId, year, categoryId, month])
+  @@map("treasury_budgets")
 }

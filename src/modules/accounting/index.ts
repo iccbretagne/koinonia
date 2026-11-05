@@ -10,5 +10,6 @@ export {
   notifyAccountingNewRequest,
   type LinkedExpenseReportInput,
 } from "./services/requests";
+export { listTreasuryPayments } from "./services/treasury-link";
 
 export { accountingModule } from "./manifest";

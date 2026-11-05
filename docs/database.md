@@ -1458,6 +1458,30 @@ auteurs et suppression logique (`deletedAt`, `deletedById`). Le solde et le sold
 calculés à la lecture ; les avances de budget versées au département Navette n'y sont pas
 recopiées, elles sont lues dans `financial_payments`.
 
+#### `treasury_*` — trésorerie de l'église (spec 076)
+
+- `treasury_accounts` : comptes de trésorerie (`name` unique par église, `kind` `CASH` | `ONLINE` |
+  `OTHER`, `openingBalance` Decimal(12,2), `openingDate` Date, `archivedAt`, `sortOrder`). Soldes
+  jamais stockés.
+- `treasury_categories` : catégories par église et par sens (`direction` `IN` | `OUT`, `name`
+  unique par sens, `active`, `sortOrder`), `system` facultatif et unique par église
+  (`SPECIAL_OFFERING`, `DEPOSIT`, `EXPENSE_REPORTS`, `SHUTTLE`) ; créées par défaut à la première
+  ouverture. `treasury_purposes` : objets des offrandes spéciales.
+- `treasury_entries` : registre ; montant **positif** (`amount` Decimal(12,2)) et sens
+  (`direction`), `kind` `STANDARD` | `TRANSFER` (deux jambes, même `transferGroupId`) | `DEPOSIT`
+  (remise, `depositRef`), `accountId`, `categoryId` (null pour un transfert), `purposeId`,
+  `method` (`CASH`, `CHEQUE`, `TRANSFER`, `CARD`, `ONLINE`, `WERO`, `OTHER`), `date` (Date),
+  `label`, `thirdParty`, `collectionId`, justificatif (`receiptKey` sous `treasury/<churchId>/…`),
+  auteurs et suppression logique (`deletedAt`).
+- `treasury_collections` : collecte d'un culte (`eventId` facultatif, set null ; `counter1`,
+  `counter2`). `treasury_cheques` : chèques collectés (`entryId`, `number`, `amount`, `count` > 1
+  pour un lot) ; `depositEntryId` nul = encore en caisse.
+- `treasury_closures` : mois clôturés (PK `churchId` + `month` « AAAA-MM ») ; rouvrir supprime la
+  ligne, le motif est dans `audit_logs`.
+- `treasury_budgets` : budget par église, année, catégorie et mois (unique).
+- Références de reprise (ADR-0027) : `financial_payments.treasuryAccountId` et
+  `shuttle_entries.treasuryAccountId` (set null).
+
 #### `shuttle_rentals` — locations de véhicule de la navette (spec 073)
 
 `vendor`, `vehicle`, `startDate`, `endDate` (Date), `createdById` ; regroupe des lignes du

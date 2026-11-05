@@ -13,6 +13,7 @@ import { landingHref } from "@/lib/navigation";
 import { isPastoralView } from "@/lib/view-mode";
 import { churchLogoSources } from "@/modules/core/schemas";
 import { isShuttleVisible } from "@/modules/shuttle/auth";
+import { isTreasuryVisible } from "@/modules/treasury/auth";
 import { isTicketingVisible } from "@/modules/ticketing/auth";
 import type { Session } from "next-auth";
 
@@ -447,6 +448,7 @@ export default async function AuthLayout({
   const hasDiscipleship = userPermissions.has("discipleship:view");
   const hasAccounting = userPermissions.has("accounting:view");
   const hasShuttle = await isShuttleVisible(session, currentChurchId);
+  const hasTreasury = await isTreasuryVisible(session, currentChurchId).catch(() => false);
   const hasTicketing = await isTicketingVisible(session, currentChurchId);
   const hasJobs = userPermissions.has("jobs:view");
   const hasEventsAccess = userPermissions.has("events:view");
@@ -510,7 +512,7 @@ export default async function AuthLayout({
     session.user.isSuperAdmin ||
     [visibleConfigLinks, requestLinks, mediaLinks, integrationNavLinks, agendaNavLinks].some((links) => links.length > 0) ||
     [
-      hasDiscipleship, hasAccounting, hasShuttle, hasTicketing, hasJobs, hasEventsAccess, hasPlanningAccess, hasMembersAccess,
+      hasDiscipleship, hasAccounting, hasShuttle, hasTreasury, hasTicketing, hasJobs, hasEventsAccess, hasPlanningAccess, hasMembersAccess,
       hasReports, hasRooms, hasMyPlanning, showStarEvents, hasAbsences, hasAvailability,
     ].some(Boolean);
 
@@ -539,6 +541,7 @@ export default async function AuthLayout({
       hasDiscipleship={hasDiscipleship}
       hasAccounting={hasAccounting}
       hasShuttle={hasShuttle}
+      hasTreasury={hasTreasury}
       hasTicketing={hasTicketing}
       hasJobs={hasJobs}
       isPastoral={isInPastoralMode}
