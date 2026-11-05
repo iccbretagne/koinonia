@@ -118,7 +118,7 @@ export default function CollectionTab({
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-wrap items-start gap-6">
+    <form onSubmit={(e) => void submit(e)} className="flex flex-wrap items-start gap-6">
       <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-6">
         <section className="grid gap-4 rounded-card border border-line bg-surface p-5 sm:grid-cols-3">
           <Select

@@ -119,7 +119,7 @@ export async function getDashboard(churchId: string, month?: string, now = new D
     budgetVsActual(churchId, Number(target.slice(0, 4)), Number(target.slice(5, 7)), lines),
   ]);
   const closed = new Set(closures.map((c) => c.month));
-  const firstMonth = accounts.length ? accounts.map((a) => a.openingDate.slice(0, 7)).sort()[0] : null;
+  const firstMonth = accounts.length ? accounts.map((a) => a.openingDate.slice(0, 7)).sort((a, b) => a.localeCompare(b))[0] : null;
 
   return {
     month: target,

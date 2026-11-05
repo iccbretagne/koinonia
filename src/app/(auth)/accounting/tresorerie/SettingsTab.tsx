@@ -57,7 +57,7 @@ function AccountForm({ account, onDone }: { readonly account?: AccountView; read
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={(e) => void submit(e)} className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-2">
         <Input label="Nom" required maxLength={80} value={name} onChange={(e) => setName(e.target.value)} placeholder="Caisse principale" />
         <Select label="Nature" value={kind} onChange={(e) => setKind(e.target.value as TreasuryAccountKind)} options={ACCOUNT_KINDS.map((k) => ({ value: k, label: ACCOUNT_KIND_LABEL[k] }))} />
@@ -86,7 +86,7 @@ function AccountRow({ account }: { readonly account: AccountView }) {
             variant="ghost"
             size="sm"
             disabled={busy}
-            onClick={() => run(() => api(`/api/accounting/tresorerie/accounts/${account.id}`, { method: "PATCH", json: { archived: !account.archived } }), account.archived ? "Compte réactivé" : "Compte archivé")}
+            onClick={() => void run(() => api(`/api/accounting/tresorerie/accounts/${account.id}`, { method: "PATCH", json: { archived: !account.archived } }), account.archived ? "Compte réactivé" : "Compte archivé")}
           >
             {account.archived ? "Réactiver" : "Archiver"}
           </Button>
@@ -120,11 +120,11 @@ function NamedList({
             <span className={i.active ? "text-ink" : "text-ink-subtle line-through"}>{i.name}</span>
             {i.system && <StatusChip tone="info">Utilisée par Koinonia</StatusChip>}
             <div className="ml-auto flex gap-1">
-              <Button variant="ghost" size="sm" disabled={busy} onClick={() => run(() => api(`${base}/${i.id}`, { method: "PATCH", json: { active: !i.active } }), i.active ? "Désactivée" : "Réactivée")}>
+              <Button variant="ghost" size="sm" disabled={busy} onClick={() => void run(() => api(`${base}/${i.id}`, { method: "PATCH", json: { active: !i.active } }), i.active ? "Désactivée" : "Réactivée")}>
                 {i.active ? "Désactiver" : "Réactiver"}
               </Button>
               {!i.system && (
-                <Button variant="ghost" size="sm" disabled={busy} onClick={() => run(() => api(`${base}/${i.id}`, { method: "DELETE" }), "Supprimée")}>
+                <Button variant="ghost" size="sm" disabled={busy} onClick={() => void run(() => api(`${base}/${i.id}`, { method: "DELETE" }), "Supprimée")}>
                   Supprimer
                 </Button>
               )}
@@ -134,9 +134,11 @@ function NamedList({
       </ul>
       <form
         className="mt-3 flex flex-wrap items-end gap-2"
-        onSubmit={async (e) => {
+        onSubmit={(e) => {
           e.preventDefault();
-          if (await run(() => api(base, { method: "POST", json: { name, ...extra } }), "Ajoutée")) setName("");
+          void run(() => api(base, { method: "POST", json: { name, ...extra } }), "Ajoutée").then((ok) => {
+            if (ok) setName("");
+          });
         }}
       >
         <Input label="Ajouter" required maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />

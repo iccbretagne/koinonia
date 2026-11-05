@@ -149,7 +149,7 @@ export default function ClosureTab({
         confirmingLabel="Clôture…"
         variant="primary"
         confirming={busy}
-        onConfirm={close}
+        onConfirm={() => void close()}
         onCancel={() => setConfirm(false)}
       />
       {reopen && (
@@ -158,7 +158,7 @@ export default function ClosureTab({
             <Textarea label="Motif" required maxLength={300} value={reason} onChange={(e) => setReason(e.target.value)} hint="Conservé dans l'historique." />
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setReopen(null)}>Annuler</Button>
-              <Button disabled={busy || reason.trim().length < 5} onClick={doReopen}>{busy ? "Réouverture…" : "Rouvrir le mois"}</Button>
+              <Button disabled={busy || reason.trim().length < 5} onClick={() => void doReopen()}>{busy ? "Réouverture…" : "Rouvrir le mois"}</Button>
             </div>
           </div>
         </Modal>

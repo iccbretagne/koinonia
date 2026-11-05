@@ -131,7 +131,7 @@ function EntryDetail({
         {own && (
           <div>
             {history === null ? (
-              <Button variant="ghost" size="sm" onClick={loadHistory}>Voir l&apos;historique</Button>
+              <Button variant="ghost" size="sm" onClick={() => void loadHistory()}>Voir l&apos;historique</Button>
             ) : (
               <ul className="space-y-1 text-sm text-ink-muted">
                 {history.map((h) => (
@@ -158,7 +158,7 @@ function EntryDetail({
         confirmingLabel="Suppression…"
         variant="danger"
         confirming={busy}
-        onConfirm={remove}
+        onConfirm={() => void remove()}
         onCancel={() => setConfirm(false)}
       />
     </Modal>

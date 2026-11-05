@@ -27,7 +27,7 @@ describe("catégories de trésorerie (spec 076)", () => {
     await ensureDefaults("church-1");
     const data = prismaMock.treasuryCategory.createMany.mock.calls[0][0].data;
     expect(data).toHaveLength(DEFAULT_CATEGORIES.length);
-    expect(data.filter((c: { system: string | null }) => c.system).map((c: { system: string }) => c.system).sort()).toEqual([
+    expect(data.filter((c: { system: string | null }) => c.system).map((c: { system: string }) => c.system).sort((a: string, b: string) => a.localeCompare(b))).toEqual([
       "DEPOSIT",
       "EXPENSE_REPORTS",
       "SHUTTLE",

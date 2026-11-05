@@ -150,7 +150,7 @@ export default function BudgetTab({
           <Button variant="secondary" onClick={() => setCopy("budget")} disabled={busy}>Reprendre le budget {year - 1}</Button>
           <Button variant="secondary" onClick={() => setCopy("actual")} disabled={busy}>Reprendre le réalisé {year - 1}</Button>
           {editing ? (
-            <Button onClick={save} disabled={busy}>{busy ? "Enregistrement…" : "Enregistrer le budget"}</Button>
+            <Button onClick={() => void save()} disabled={busy}>{busy ? "Enregistrement…" : "Enregistrer le budget"}</Button>
           ) : (
             <Button onClick={() => setEditing(true)}>Modifier le budget</Button>
           )}
@@ -168,7 +168,9 @@ export default function BudgetTab({
         confirmingLabel="Reprise…"
         variant="primary"
         confirming={busy}
-        onConfirm={() => copy && copyFrom(copy)}
+        onConfirm={() => {
+          if (copy) void copyFrom(copy);
+        }}
         onCancel={() => setCopy(null)}
       />
     </div>
