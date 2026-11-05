@@ -77,6 +77,12 @@ async function runTicketingDeadlines() {
   return run();
 }
 
+/** Résumé hebdomadaire des questions posées à l'assistant qui attendent une réponse (spec 075). */
+async function runAssistantDigest() {
+  const { runAssistantDigest: run } = await import("@/modules/assistant");
+  return run();
+}
+
 function authorizeCron(request: Request) {
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
@@ -387,6 +393,8 @@ function cronTasks(appUrl: string): CronTask[] {
     { key: "system-messages", module: "messages", schedule: { kind: "every-run" }, run: runSystemMessages },
     // Billetterie (spec 074) : idempotente (horodatages par réservation), précision au quart d'heure.
     { key: "ticketing", module: "ticketing", schedule: { kind: "interval", minutes: 15 }, run: runTicketingDeadlines },
+    // Assistant (spec 075) : une fois par semaine, prévient les Super Admins s'il reste des questions à traiter.
+    { key: "assistant-digest", module: "assistant", schedule: { kind: "interval", minutes: 7 * 24 * 60 }, run: runAssistantDigest },
   ];
   return tasks.filter((t) => !t.module || registry.has(t.module));
 }

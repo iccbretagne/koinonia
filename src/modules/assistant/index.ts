@@ -21,3 +21,15 @@ export {
 export { getEmbedder, type Embedder } from "./services/embedder";
 export { LocalEngine, extractParams, type AnswerEngine, type AssistantAnswer, type SuggestionRef } from "./services/engine";
 export { anonymize } from "./services/text";
+export { ask, recordFeedback, getEngine, primaryRole, GUIDE_HREF, type AskResponse, type AskDeps } from "./services/ask";
+export {
+  answerPending,
+  countOpenPending,
+  deletePending,
+  linkPending,
+  listPending,
+  markOffTopic,
+  recordPending,
+} from "./services/pending";
+export { createCustomEntry, deleteCustomEntry, listAdminEntries, patchEntry, type AdminEntry } from "./services/entries";
+export { runAssistantDigest } from "./services/digest";

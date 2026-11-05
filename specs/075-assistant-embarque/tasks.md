@@ -143,45 +143,45 @@
 
 ### 8. Services
 
-- [ ] **T34** — `ask.ts` : réglages → moteur → fournisseur de données → compteurs → question
+- [x] **T34** — `ask.ts` : réglages → moteur → fournisseur de données → compteurs → question
   inconnue enregistrée ; mention de l'église courante si la personne en a plusieurs
   *(fichier : `src/modules/assistant/services/ask.ts`)*
-- [ ] **T35** — `pending.ts` : `recordPending` (anonymise, regroupe à ≥ 0,90 de similarité),
+- [x] **T35** — `pending.ts` : `recordPending` (anonymise, regroupe à ≥ 0,90 de similarité),
   `answerPending` (crée une fiche CUSTOM), `linkPending` (crée un alias), `markOffTopic`,
   `deletePending` *(fichier : `src/modules/assistant/services/pending.ts`)*
-- [ ] **T36** [P] — `entries.ts` : CRUD des fiches CUSTOM, surcharge, rétablissement et masquage
+- [x] **T36** [P] — `entries.ts` : CRUD des fiches CUSTOM, surcharge, rétablissement et masquage
   d'une fiche fournie ; invalidation de l'index en mémoire *(fichier :
   `src/modules/assistant/services/entries.ts`)*
-- [ ] **T37** [P] — `digest.ts` : tâche cron hebdomadaire `assistant-digest` (notifie les Super
+- [x] **T37** [P] — `digest.ts` : tâche cron hebdomadaire `assistant-digest` (notifie les Super
   Admins s'il reste des questions ouvertes, lien `/admin/assistant`), branchée au cron
   *(fichiers : `src/modules/assistant/services/digest.ts`, `src/app/api/cron/route.ts`)*
 
 ### 9. Route handlers (un `contract.ts` par route)
 
-- [ ] **T38** — `POST /api/assistant/ask` (`requireAuth`, église courante, `requireRateLimit`
+- [x] **T38** — `POST /api/assistant/ask` (`requireAuth`, église courante, `requireRateLimit`
   30/min, 404 si inactif) *(dossier : `src/app/api/assistant/ask/`)*
-- [ ] **T39** [P] — `GET /api/assistant/suggestions` (`?screen`, rôle) et
+- [x] **T39** [P] — `GET /api/assistant/suggestions` (`?screen`, rôle) et
   `POST /api/assistant/feedback` (compteur ; « Pas utile » → question à traiter)
   *(dossiers : `src/app/api/assistant/suggestions/`, `feedback/`)*
-- [ ] **T40** [P] — `GET/PUT /api/assistant/settings` (`requireSuperAdmin`) et
+- [x] **T40** [P] — `GET/PUT /api/assistant/settings` (`requireSuperAdmin`) et
   `GET/PUT /api/assistant/church/[churchId]` (`requireChurchPermission("church:settings")`)
   *(dossiers : `src/app/api/assistant/settings/`, `church/[churchId]/`)*
-- [ ] **T41** [P] — Administration Super Admin : `admin/stats`, `admin/pending`,
+- [x] **T41** [P] — Administration Super Admin : `admin/stats`, `admin/pending`,
   `admin/pending/[id]` (PATCH, DELETE), `admin/entries`, `admin/entries/[key]`
   *(dossier : `src/app/api/assistant/admin/`)*
-- [ ] **T42** [P] — `PUT /api/profile/assistant-persona` (`requireAuth`, Zod `NIA` | `KOI`)
+- [x] **T42** [P] — `PUT /api/profile/assistant-persona` (`requireAuth`, Zod `NIA` | `KOI`)
   *(dossier : `src/app/api/profile/assistant-persona/`)*
-- [ ] **T43** — `npm run openapi` et `docs/openapi.json` *(fichier : `docs/openapi.json`)*
+- [x] **T43** — `npm run openapi` et `docs/openapi.json` *(fichier : `docs/openapi.json`)*
 
 ### 10. Tests du lot 4
 
-- [ ] **T44** [P] — Tests `ask` : coupé (instance, église, module) → 404 ; inconnue enregistrée
+- [x] **T44** [P] — Tests `ask` : coupé (instance, église, module) → 404 ; inconnue enregistrée
   anonymisée et regroupée ; compteurs ; église courante ; aucune conversation stockée
   *(fichier : `…/__tests__/ask.test.ts`)*
-- [ ] **T45** [P] — Tests `pending` / `entries` : répondre, rattacher, hors sujet, supprimer ;
+- [x] **T45** [P] — Tests `pending` / `entries` : répondre, rattacher, hors sujet, supprimer ;
   la réponse sert dès la question suivante ; une fiche fournie mise à jour ne remplace pas une
   surcharge *(fichiers : `…/__tests__/pending.test.ts`, `entries.test.ts`)*
-- [ ] **T46** [P] — Tests des routes : accès (Super Admin, `church:settings`, compte connecté),
+- [x] **T46** [P] — Tests des routes : accès (Super Admin, `church:settings`, compte connecté),
   validation Zod, débit limité, persona *(fichiers : `src/app/api/assistant/**/__tests__/`)*
 
 ## Lot 5 — Interface
