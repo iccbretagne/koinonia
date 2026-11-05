@@ -1,7 +1,7 @@
 # Plan technique — Assistant de prise en main
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Implémenté
 - **Mis à jour le** : 2026-11-05
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
@@ -406,3 +406,25 @@ Vitest, Prisma mocké, `NullEmbedder` ou faux embedder déterministe :
   sous `prefers-reduced-motion`) ; préférence de persona (route, défaut, validation).
 - `permissions.test.ts` (aucune nouvelle permission, liste des modules), `route-exhaustiveness`,
   `openapi.test.ts`.
+
+## Écarts à l'implémentation
+
+- **Questions de données dans `src/app`** : « Mon planning » et « Mes demandes » chargent leurs
+  données dans `src/app` (`loadMyPlanning`, `loadMyRequests`), pas dans le module `planning`. Pour
+  garder exactement le périmètre de l'écran, les fournisseurs vivent dans
+  `src/app/api/assistant/_data/` et réutilisent ces chargeurs et les index des modules, au lieu
+  d'un `assistant.ts` par module. Le contrat reste `src/core/assistant.ts`.
+- **Consignes (KB-046, D06)** : elles ne s'affichent pas dans « Mon planning » mais seulement dans
+  la vue Planning des responsables ; la fiche et la question de données sont réservées à
+  `planning:department`, et leur texte libre est anonymisé avant d'être recopié.
+- **Préférence de personnage** : `PUT /api/assistant/persona` (dans le module, absente s'il est
+  désactivé) plutôt que `/api/profile/assistant-persona`.
+- **Regroupement des questions** : similarité lexicale ≥ 0,90 ou texte identique, sans le modèle de
+  sens (pas d'encodage de toutes les questions ouvertes à chaque remontée).
+- **Binaires onnxruntime** : `.npmrc` (`onnxruntime-node-install=skip`) n'installe pas les pilotes
+  CUDA ; l'empaquetage ne garde que les binaires Linux. Le build standalone ne trace pas
+  `onnxruntime-node` : il est résolu depuis le `node_modules` complet livré à la racine de la
+  release (vérifié en chargeant transformers depuis `.next/standalone`).
+- **Seuils** : calibrés sur la recherche par mots (36/36 sur le jeu d'évaluation hors formulations
+  « par le sens ») ; ceux du score hybride restent à confirmer avec `npm run assistant:eval` et le
+  vrai modèle, que cette session ne pouvait pas télécharger.

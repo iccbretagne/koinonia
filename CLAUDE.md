@@ -72,6 +72,7 @@ koinonia/
 │   │   │   └── services/
 │   │   │       └── request-executor.ts  # Executor demandes approuvees + emissions bus
 │   │   ├── discipleship/manifest.ts # Manifeste : discipleship:view/manage/export
+│   │   ├── assistant/           # Assistant de prise en main (spec 075) : fiches (knowledge/), moteur, questions à traiter
 │   │   └── audio/               # Publication (ADR-0007) + bibliotheque d'ecoute (spec 021)
 │   │       ├── manifest.ts      # Manifeste : audio:listen/view/upload/review/manage
 │   │       ├── services/        # Depot, sequences, publication, tokens, acces
@@ -596,6 +597,23 @@ seule (`ENABLED_MODULES`) :
   la couche `src/app` ; le registre les **lit** (`listTreasuryPayments` de `accounting`, table
   `shuttle_entries` gardée par `registry.has("shuttle")`) en lecture seule. `accounting` et
   `shuttle` n'importent jamais `treasury`. Le compte bancaire commun n'est pas suivi
+
+**Spécificités du module assistant** (spec 075, [ADR-0028](docs/adr/0028-assistant-moteur-interchangeable.md))
+— désactivable (`ENABLED_MODULES`), **aucune permission propre** :
+- Tout compte connecté de l'église courante pose ses questions (`/api/assistant/ask`, 30 par
+  minute) si l'assistant est actif : module, instance (`assistant_settings`, Super Admin) et
+  église non coupée (`assistant_church_settings`, `church:settings`). Sinon 404, et le bouton
+  d'aide de la barre du haut mène au guide
+- Les fiches sont filtrées **avant** classement par module actif et par audience (rôles,
+  permissions, prédicats — `linkedStar`, `shuttleTeam`, `ticketing`… — calculés côté serveur par
+  `src/app/api/assistant/_viewer.ts`) ; une fiche hors du rôle ne peut donner que son refus, sans
+  donnée
+- Questions de données : composées dans `src/app/api/assistant/_data-questions.ts`, elles relisent
+  les chargeurs et règles de périmètre des écrans (`loadMyPlanning`, `getUserDepartmentScope`,
+  `resolveRequestQueueAccess`, `getShuttleAccess`…) et revérifient le droit de l'écran ; jamais de
+  coordonnée d'autrui ni de donnée `care` (texte libre passé par `anonymize`)
+- Administration de la base (`/admin/assistant`, `/api/assistant/admin/*`, `/api/assistant/settings`) :
+  `requireSuperAdmin()` — la base et les questions remontées sont d'instance, sans compte ni église
 
 **Spécificités du module billetterie** (spec 074) — désactivable (`ENABLED_MODULES`) :
 - `ticketing:manage` (Super Admin, Admin, Secrétaire) ouvre `/billetterie` et la création

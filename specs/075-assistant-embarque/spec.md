@@ -1,7 +1,7 @@
 # Spec — Assistant de prise en main
 
 - **Numéro** : 075
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-11-04
 - **Branche suggérée** : `feat/assistant`
 

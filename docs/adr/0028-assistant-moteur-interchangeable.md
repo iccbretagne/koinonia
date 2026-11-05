@@ -1,6 +1,6 @@
 # ADR-0028 — Assistant : moteur de réponse interchangeable, données par questions déclarées
 
-- **Statut** : Proposé
+- **Statut** : Accepté
 - **Date** : 2026-11-05
 
 ## Contexte

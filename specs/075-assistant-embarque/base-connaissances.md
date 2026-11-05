@@ -1,7 +1,7 @@
 # Base de connaissances de l'assistant — premier jet
 
 - **Spec** : `./spec.md` (075)
-- **Statut** : Générée, à relire
+- **Statut** : Reprise dans le code (`src/modules/assistant/knowledge/`), à relire ; ce fichier reste la trace du premier jet
 - **Générée le** : 2026-11-05, à partir du guide intégré, de la navigation et des droits par rôle
   de la version en service (v1.33.0 + navette, billetterie, trésorerie)
 

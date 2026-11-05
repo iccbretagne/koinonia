@@ -54,7 +54,7 @@ Statuts possibles : `Proposé`, `Accepté`, `Rejeté`, `Déprécié`, `Remplacé
 | [0025](0025-email-urgent-hors-preference.md) | Email envoyé malgré la préférence pour un message système urgent | Accepté |
 | [0026](0026-ecrans-hors-ligne.md) | Écrans de terrain utilisables hors ligne | Accepté |
 | [0027](0027-reprise-par-lecture-entre-modules.md) | Reprise des mouvements entre modules par lecture, jamais par copie | Accepté |
-| [0028](0028-assistant-moteur-interchangeable.md) | Assistant : moteur de réponse interchangeable, données par questions déclarées | Proposé |
+| [0028](0028-assistant-moteur-interchangeable.md) | Assistant : moteur de réponse interchangeable, données par questions déclarées | Accepté |
 
 ## Note sur les ADR 0001–0003
 

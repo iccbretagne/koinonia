@@ -1,7 +1,7 @@
 # Tâches — Assistant de prise en main
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md` · **Base** : `./base-connaissances.md`
-- **Statut** : En cours
+- **Statut** : Terminé
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
@@ -233,11 +233,11 @@
 
 ## Lot 6 — Documentation
 
-- [ ] **T57** [P] — Section « Assistant » du guide *(fichier : `src/app/(auth)/guide/page.tsx`)*
-- [ ] **T58** [P] — `CLAUDE.md` (spécificités du module, structure), `docs/auth.md`,
+- [x] **T57** [P] — Section « Assistant » du guide *(fichier : `src/app/(auth)/guide/page.tsx`)*
+- [x] **T58** [P] — `CLAUDE.md` (spécificités du module, structure), `docs/auth.md`,
   `docs/database.md`, `CHANGELOG.md`, `.env.example` (`ASSISTANT_MODEL_DIR`) ; statut de
   l'ADR-0028 à « Accepté » ; `base-connaissances.md` archivé
-- [ ] **T59** — Statut de la spec à « Implémentée », cases du plan cochées
+- [x] **T59** — Statut de la spec à « Implémentée », cases du plan cochées
 
 ## Vérification finale
 
