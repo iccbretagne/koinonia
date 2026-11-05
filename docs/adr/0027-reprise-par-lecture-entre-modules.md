@@ -1,6 +1,6 @@
 # ADR-0027 — Reprise des mouvements entre modules par lecture, jamais par copie
 
-- **Statut** : Proposé
+- **Statut** : Accepté
 - **Date** : 2026-11-05
 
 ## Contexte

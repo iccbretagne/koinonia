@@ -1,5 +1,5 @@
 import { getCurrentChurchId, requireAuth } from "@/lib/auth";
-import { rolePermissions } from "@/lib/registry";
+import { registry, rolePermissions } from "@/lib/registry";
 import { getLedger, getShuttleSettings, listRentals } from "@/modules/shuttle";
 import { requireShuttleAccess } from "@/modules/shuttle/auth";
 import { ledgerQuerySchema } from "@/modules/shuttle/schemas";
@@ -43,6 +43,12 @@ export default async function ShuttlePage({
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
   const perms = new Set(roles.flatMap((r) => rolePermissions[r] ?? []));
   const canViewRequests = perms.has("accounting:view");
+  // Comptes de trésorerie proposés pour un abondement (spec 076), à la compta si le module est actif.
+  const treasuryAccounts =
+    access.manager && registry.has("treasury")
+      ? (await import("@/modules/treasury").then((m) => m.listAccounts(churchId, { includeArchived: false }))).map((a) => ({ id: a.id, name: a.name }))
+      : [];
+  const canViewTreasury = registry.has("treasury") && perms.has("treasury:manage");
 
   return (
     <div className="space-y-6">
@@ -50,6 +56,7 @@ export default async function ShuttlePage({
         <AccountingNav
           canViewStats={perms.has("accounting:stats")}
           canViewShuttle
+          canViewTreasury={canViewTreasury}
           active="navette"
         />
       )}
@@ -63,6 +70,7 @@ export default async function ShuttlePage({
         from={period.from}
         to={period.to}
         highlightId={one("ligne")}
+        treasuryAccounts={treasuryAccounts}
       />
     </div>
   );

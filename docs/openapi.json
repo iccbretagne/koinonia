@@ -1798,7 +1798,7 @@
           "accounting"
         ],
         "summary": "Confirmation de la remise d'un paiement",
-        "description": "**Accès** : permission `accounting:manage` — dans l'église courante.\n\nUne remise partielle crée une tranche résiduelle non confirmée. Le demandeur est notifié (domaine `accounting`, un seul email détaillé).",
+        "description": "**Accès** : permission `accounting:manage` — dans l'église courante.\n\nUne remise partielle crée une tranche résiduelle non confirmée. Le demandeur est notifié (domaine `accounting`, un seul email détaillé). `treasuryAccountId` : paiement sorti d'un compte de trésorerie de l'église (spec 076), repris automatiquement dans son registre ; le compte doit être actif et le mois de la remise ouvert dans la trésorerie ; refusé (400) si le module trésorerie est désactivé. Absent : payé depuis le compte commun, non repris.",
         "security": [
           {
             "session": []
@@ -1833,6 +1833,11 @@
                   "note": {
                     "type": "string",
                     "maxLength": 500
+                  },
+                  "treasuryAccountId": {
+                    "type": "string",
+                    "nullable": true,
+                    "minLength": 1
                   }
                 },
                 "required": [
@@ -2433,6 +2438,1798 @@
                 "schema": {}
               }
             }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie": {
+      "get": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Tableau de bord de la trésorerie",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nPour un mois (`month`, AAAA-MM ; défaut : mois courant) : solde de chaque compte et total, ouverture, entrées, sorties et clôture du mois, mêmes chiffres pour le mois précédent et le même mois de l'année précédente, derniers mouvements, chèques en caisse, mois terminés non clôturés, catégories de sortie qui dépassent ou approchent leur budget annuel, caisses passées sous zéro.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+            },
+            "required": false,
+            "name": "month",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tableau de bord",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/accounts": {
+      "get": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Comptes de trésorerie de l'église",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nCaisse, coffre, compte en ligne… avec leur solde de départ daté ; les comptes archivés sont inclus et marqués.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "responses": {
+          "200": {
+            "description": "Comptes",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Création d'un compte de trésorerie",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nNom unique dans l'église, nature (caisse, en ligne, autre), solde de départ daté (refusé dans un mois clôturé). Journalisée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "CASH",
+                      "ONLINE",
+                      "OTHER"
+                    ]
+                  },
+                  "openingBalance": {
+                    "type": "number",
+                    "minimum": -10000000,
+                    "maximum": 10000000
+                  },
+                  "openingDate": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "sortOrder": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000
+                  }
+                },
+                "required": [
+                  "name",
+                  "kind",
+                  "openingBalance",
+                  "openingDate"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Compte créé",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/accounts/{id}": {
+      "patch": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Modification ou archivage d'un compte de trésorerie",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église du compte.\n\nNom, nature, ordre, solde et date de départ (refusés si l'ancienne ou la nouvelle date tombe dans un mois clôturé, ou si des lignes précèdent la nouvelle date), `archived` pour archiver ou réactiver. Un compte archivé n'accepte plus de saisie ; son historique reste lisible. Journalisée avant/après.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "CASH",
+                      "ONLINE",
+                      "OTHER"
+                    ]
+                  },
+                  "openingBalance": {
+                    "type": "number",
+                    "minimum": -10000000,
+                    "maximum": 10000000
+                  },
+                  "openingDate": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "sortOrder": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000
+                  },
+                  "archived": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Compte",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/budget": {
+      "get": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Budget prévisionnel et réalisé",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nBudget de l'année (`year`, défaut : l'année en cours) par catégorie et par mois, et comparaison avec le réalisé du registre (transferts exclus) pour le mois courant (décembre pour une année passée) et depuis le début de l'année : montant, écart, pourcentage. Une catégorie de sortie qui dépasse son budget annuel est signalée (`overBudget`), à partir de 90 % elle est à surveiller (`warning`).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 2000,
+              "maximum": 2100
+            },
+            "required": false,
+            "name": "year",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ year, month, budget, comparison }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Saisie du budget d'une année",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nPar catégorie : un montant annuel réparti également sur les 12 mois (au centime, le reste sur décembre) ou les 12 montants mensuels. Les catégories absentes gardent leur budget. Journalisée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "year": {
+                    "type": "integer",
+                    "minimum": 2000,
+                    "maximum": 2100
+                  },
+                  "rows": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "categoryId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "annual": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 10000000
+                        },
+                        "monthly": {
+                          "type": "array",
+                          "items": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 10000000
+                          }
+                        }
+                      },
+                      "required": [
+                        "categoryId"
+                      ]
+                    },
+                    "maxItems": 200
+                  }
+                },
+                "required": [
+                  "year",
+                  "rows"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Budget de l'année",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/budget/copy": {
+      "post": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Reprise du budget de l'année précédente",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nCopie dans `year` le budget de `year − 1` (`from: \"budget\"`) ou son réalisé (`from: \"actual\"`), mois par mois, à ajuster ensuite. Remplace le budget des catégories reprises. 400 s'il n'y a rien à reprendre.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "year": {
+                    "type": "integer",
+                    "minimum": 2000,
+                    "maximum": 2100
+                  },
+                  "from": {
+                    "type": "string",
+                    "enum": [
+                      "budget",
+                      "actual"
+                    ]
+                  }
+                },
+                "required": [
+                  "year",
+                  "from"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Budget de l'année",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/categories": {
+      "get": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Catégories d'entrées et de sorties",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nCréées par défaut à la première ouverture (dîmes, offrandes, offrandes spéciales… ; remises au compte commun, loyer…). `system` marque les catégories dont Koinonia a besoin.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "responses": {
+          "200": {
+            "description": "Catégories",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Création d'une catégorie",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nNom unique par sens dans l'église. Journalisée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "direction": {
+                    "type": "string",
+                    "enum": [
+                      "IN",
+                      "OUT"
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "sortOrder": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000
+                  }
+                },
+                "required": [
+                  "direction",
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Catégorie créée",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/categories/{id}": {
+      "patch": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Modification d'une catégorie",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église de la catégorie.\n\nNom, ordre, `active` (une catégorie désactivée n'est plus proposée aux nouvelles saisies). Journalisée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "active": {
+                    "type": "boolean"
+                  },
+                  "sortOrder": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Catégorie",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Suppression d'une catégorie",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église de la catégorie.\n\n409 si la catégorie est utilisée (lignes ou budget) ou nécessaire à Koinonia : elle se désactive alors.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ deleted: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/cheques": {
+      "get": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Chèques encore en caisse",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nChèques collectés et pas encore remis au compte commun, d'un compte (`accountId`) ou de tous.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "accountId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chèques",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/closures": {
+      "get": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Mois clôturés et réouvertures",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nMois clôturés (du plus récent au plus ancien) et réouvertures passées avec leur motif, leur auteur et leur date.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "responses": {
+          "200": {
+            "description": "`{ closures, reopenings }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Clôture d'un mois",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nSeul un mois terminé se clôture. Ses lignes ne se modifient plus et ses soldes sont figés : aucune saisie, correction, suppression ni reprise datée de ce mois n'est acceptée. Journalisée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "month": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                  }
+                },
+                "required": [
+                  "month"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "`{ month }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/closures/{month}": {
+      "delete": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Réouverture d'un mois clôturé",
+        "description": "**Accès** : permission `treasury:reopen` — dans l'église courante.\n\nRéservée à l'Admin et au Super Admin. Motif obligatoire, conservé dans l'historique avec l'auteur et la date.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:reopen",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "month",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 300
+                  }
+                },
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ reopened: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/collections": {
+      "get": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Cultes proposés pour une collecte",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nÉvénements de type culte de l'église, sept jours avant et après aujourd'hui.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "responses": {
+          "200": {
+            "description": "Cultes",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Saisie de la collecte d'un culte",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nCulte (facultatif) ou date, compte (une caisse, en général), deux personnes qui ont compté (différentes), et par catégorie d'entrée : le total en espèces et les chèques un par un (montant, numéro facultatif) ou leur total (`count`). Crée en une transaction une ligne « Espèces » et une ligne « Chèque » par catégorie, et les chèques en caisse. Objet obligatoire pour une offrande spéciale. Refusée dans un mois clôturé. Journalisée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "eventId": {
+                    "type": "string",
+                    "nullable": true,
+                    "minLength": 1
+                  },
+                  "date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "counter1": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "counter2": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "lines": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "categoryId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "purposeId": {
+                          "type": "string",
+                          "nullable": true,
+                          "minLength": 1
+                        },
+                        "cash": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 10000000,
+                          "default": 0
+                        },
+                        "cheques": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "number": {
+                                "type": "string",
+                                "nullable": true,
+                                "maxLength": 30
+                              },
+                              "amount": {
+                                "type": "number",
+                                "minimum": 0,
+                                "exclusiveMinimum": true,
+                                "maximum": 10000000
+                              },
+                              "count": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 500,
+                                "default": 1
+                              }
+                            },
+                            "required": [
+                              "amount"
+                            ]
+                          },
+                          "maxItems": 500,
+                          "default": []
+                        }
+                      },
+                      "required": [
+                        "categoryId"
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 50
+                  }
+                },
+                "required": [
+                  "accountId",
+                  "date",
+                  "counter1",
+                  "counter2",
+                  "lines"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "`{ id, entryIds }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/deposits": {
+      "post": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Remise au compte commun",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nSortie du compte (caisse), catégorie « Remises au compte commun », avec la référence du bordereau : montant = espèces remises + chèques cochés. Les chèques doivent être en caisse dans ce compte et collectés au plus tard à la date de remise ; ils quittent ensuite la liste des chèques en caisse. Refusée dans un mois clôturé. Journalisée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "ref": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "cashAmount": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 10000000,
+                    "default": 0
+                  },
+                  "chequeIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "maxItems": 1000,
+                    "default": []
+                  }
+                },
+                "required": [
+                  "accountId",
+                  "date",
+                  "ref"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "`{ id, amount, cheques }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/entries": {
+      "post": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Saisie d'une entrée ou d'une sortie de trésorerie",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nMultipart : `data` (JSON : compte, sens, catégorie, objet pour une offrande spéciale, moyen, montant positif, date, libellé, tiers ; `confirmDuplicate` pour confirmer un doublon) et `file` facultatif (justificatif : photo JPEG, PNG, WebP ou PDF, 10 Mo au plus, type vérifié sur le contenu). Catégorie active et du même sens ; les remises et les catégories reprises ne se saisissent pas ici. 409 si une ligne a la même date, le même montant, le même compte et la même catégorie, sauf confirmation. 400 si le mois est clôturé, si le compte est archivé ou si la date précède son solde de départ. 411 sans Content-Length, 413 au-delà de 11 Mo. Journalisée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "requestBody": {
+          "description": "`data` (JSON de la ligne), `file` (justificatif, facultatif)",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Ligne créée",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/entries/{id}": {
+      "patch": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Correction d'une ligne de trésorerie",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église de la ligne.\n\nMultipart comme la saisie (`data` complet, `file` facultatif qui remplace le justificatif). Mêmes contrôles ; l'ancienne et la nouvelle date doivent être dans des mois ouverts. Un transfert se corrige par `PATCH /transfers/{groupId}` ; une remise ne se corrige pas (la supprimer et la refaire) ; le montant, le moyen et le compte d'une ligne de chèques suivent ses chèques. Journalisée avec les valeurs avant et après.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "description": "`data` (JSON de la ligne), `file` (justificatif, facultatif)",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ligne corrigée",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Suppression d'une ligne de trésorerie",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église de la ligne.\n\nSuppression logique : la ligne sort des soldes et reste dans l'historique. Un transfert est supprimé avec ses deux jambes ; une remise remet ses chèques en caisse ; une ligne dont des chèques ont été remis est refusée. Refusée dans un mois clôturé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ deleted: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/entries/{id}/history": {
+      "get": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Historique d'une ligne de trésorerie",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église de la ligne.\n\nCréation, corrections (avant, après) et suppression, avec leur auteur et leur date, du plus récent au plus ancien.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Historique",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/entries/{id}/receipt": {
+      "get": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Justificatif d'une ligne de trésorerie",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église de la ligne.\n\nFichier servi avec `X-Content-Type-Options: nosniff` et un cache privé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fichier (image ou PDF)",
+            "content": {
+              "application/octet-stream": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/export": {
+      "get": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Export de la trésorerie d'une période",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nZIP : `tresorerie.xlsx` (registre avec soldes, synthèse, totaux par catégorie et par objet, par moyen, par mois) et les justificatifs des lignes de la période. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "required": false,
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "required": false,
+            "name": "to",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Archive ZIP",
+            "content": {
+              "application/zip": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/ledger": {
+      "get": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Registre de la trésorerie",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nLignes d'un compte (`accountId`) ou de tous les comptes, sur une période (`from`/`to`, AAAA-MM-JJ), avec le solde après chaque ligne ; ouverture, entrées, sorties et clôture de la période, qui se recoupent (tous comptes, les transferts ne sont ni des entrées ni des sorties) ; solde de chaque compte ; alertes de caisse négative. Les paiements de demandes et les abondements de la navette payés depuis un compte de trésorerie y figurent en lecture seule, avec un lien vers leur origine (ADR-0027). `categoryId` et `method` filtrent les lignes affichées sans changer les totaux.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "accountId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "required": false,
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "required": false,
+            "name": "to",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "categoryId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CASH",
+                "CHEQUE",
+                "TRANSFER",
+                "CARD",
+                "ONLINE",
+                "WERO",
+                "OTHER"
+              ]
+            },
+            "required": false,
+            "name": "method",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Registre",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/purposes": {
+      "get": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Objets des offrandes spéciales",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nMissions, construction, actions de grâce, prémices, soutien… et ceux ajoutés par la compta.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "responses": {
+          "200": {
+            "description": "Objets",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Ajout d'un objet d'offrande spéciale",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Objet créé",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/purposes/{id}": {
+      "patch": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Modification d'un objet d'offrande spéciale",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église de l'objet.\n\nNom ou `active` (un objet désactivé n'est plus proposé). Journalisée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Objet",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Suppression d'un objet d'offrande spéciale",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église de l'objet.\n\n409 si l'objet est déjà utilisé : il se désactive alors.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ deleted: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/reports": {
+      "get": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Rapports de trésorerie d'une période",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nTotaux des entrées et des sorties par catégorie (offrandes spéciales détaillées par objet), par moyen et par mois, calculés depuis le registre (transferts exclus) : ils se recoupent avec lui.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "required": false,
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "required": false,
+            "name": "to",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rapports",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/transfers": {
+      "post": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Transfert entre deux comptes de l'église",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église courante.\n\nDeux lignes liées : sortie du compte source, entrée sur le compte cible. Le total de l'église ne change pas ; le transfert n'est ni une recette ni une dépense. Refusé dans un mois clôturé. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fromId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "toId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "amount": {
+                    "type": "number",
+                    "minimum": 0,
+                    "exclusiveMinimum": true,
+                    "maximum": 10000000
+                  },
+                  "label": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "fromId",
+                  "toId",
+                  "date",
+                  "amount"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "`{ groupId, ids }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/tresorerie/transfers/{groupId}": {
+      "patch": {
+        "tags": [
+          "treasury"
+        ],
+        "summary": "Correction d'un transfert entre comptes",
+        "description": "**Accès** : permission `treasury:manage` — dans l'église du transfert.\n\nLes deux lignes changent ensemble (comptes, date, montant, libellé). Ancienne et nouvelle date dans des mois ouverts. Journalisée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "treasury:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "groupId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fromId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "toId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "amount": {
+                    "type": "number",
+                    "minimum": 0,
+                    "exclusiveMinimum": true,
+                    "maximum": 10000000
+                  },
+                  "label": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "fromId",
+                  "toId",
+                  "date",
+                  "amount"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ groupId }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
           },
           "401": {
             "description": "Session absente"

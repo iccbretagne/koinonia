@@ -174,6 +174,19 @@ module.exports = {
         path: "^src/modules/(?!ticketing/|storage/)",
       },
     },
+    {
+      name: "no-treasury-imports-other-modules",
+      severity: "error",
+      comment:
+        "Le module treasury n'importe que accounting (son index, dependsOn) et storage ; la navette est lue sans import (ADR-0027).",
+      from: {
+        path: "^src/modules/treasury/",
+        pathNot: "/__tests__/",
+      },
+      to: {
+        path: "^src/modules/(?!treasury/|storage/|accounting/index)",
+      },
+    },
     /**
      * storage est l'infrastructure partagee (ADR-0006) : les autres modules
      * l'importent, mais lui-meme ne depend d'aucun module metier.

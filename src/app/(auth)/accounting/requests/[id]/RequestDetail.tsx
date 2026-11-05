@@ -64,6 +64,8 @@ interface Props {
   readonly request: Request;
   readonly canManage: boolean;
   readonly isOwn: boolean;
+  /** Comptes de trésorerie actifs (spec 076) ; vide si la trésorerie est désactivée ou inaccessible. */
+  readonly treasuryAccounts?: readonly { id: string; name: string }[];
 }
 
 function fmt(d: DateLike | null) {
@@ -118,7 +120,7 @@ function WorkflowBar({ status }: { readonly status: string }) {
   );
 }
 
-export default function RequestDetail({ request: initial, canManage, isOwn }: Props) {
+export default function RequestDetail({ request: initial, canManage, isOwn, treasuryAccounts = [] }: Props) {
   const router = useRouter();
   const uid = useId();
   const [req, setReq] = useState(initial);
@@ -139,6 +141,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
   const [paymentLines, setPaymentLines] = useState(() => [{ id: crypto.randomUUID(), amount: String(initial.amount), scheduledDate: "", note: "" }]);
   const [releaseDate, setReleaseDate] = useState(new Date().toISOString().slice(0, 10));
   const [releaseAmount, setReleaseAmount] = useState("");
+  const [releaseAccount, setReleaseAccount] = useState("");
 
   async function patch(body: Record<string, unknown>) {
     setLoading(true);
@@ -176,6 +179,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
         body: JSON.stringify({
           releasedAt:     new Date(releaseDate).toISOString(),
           releasedAmount: released,
+          treasuryAccountId: releaseAccount || null,
         }),
       });
       const json = await res.json();
@@ -322,6 +326,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
                       setReleasingPaymentId(p.id);
                       setReleaseDate(new Date().toISOString().slice(0, 10));
                       setReleaseAmount(String(Number(p.amount)));
+                      setReleaseAccount("");
                     }}
                     className="shrink-0 text-xs font-medium text-brand-text border border-brand/40 px-2.5 py-1 rounded-full hover:bg-brand-hover hover:text-on-brand transition-colors"
                   >
@@ -558,6 +563,17 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
                     className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-success" />
                 </div>
               </div>
+              {treasuryAccounts.length > 0 && (
+                <div>
+                  <label htmlFor={`${uid}-release-account`} className="block text-sm font-medium text-ink-muted mb-1">Payé depuis</label>
+                  <select id={`${uid}-release-account`} value={releaseAccount} onChange={(e) => setReleaseAccount(e.target.value)}
+                    className="w-full border border-control-line rounded-lg px-3 py-2 text-base bg-surface focus:outline-none focus:border-success">
+                    <option value="">Compte commun (virement)</option>
+                    {treasuryAccounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                  </select>
+                  <p className="text-xs text-ink-subtle mt-1">Payé depuis une caisse : la sortie apparaît dans la trésorerie, sans ressaisie.</p>
+                </div>
+              )}
               {isPartial && (
                 <div className="bg-warning-soft border border-warning/30 rounded-lg px-3 py-2 text-xs text-warning">
                   Remise partielle — une tranche résiduelle de <strong>{fmtAmount(remainder)}</strong> sera créée automatiquement.

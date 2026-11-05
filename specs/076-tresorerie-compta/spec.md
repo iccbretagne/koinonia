@@ -1,7 +1,7 @@
 # Spec — Trésorerie de l'église : registre des entrées et des sorties
 
 - **Numéro** : 076
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-11-04
 - **Branche suggérée** : `feat/tresorerie`
 - **Issue** : [#712](https://github.com/iccbretagne/koinonia/issues/712)

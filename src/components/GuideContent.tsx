@@ -469,6 +469,14 @@ const FEATURES: Feature[] = [
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "edit" },
   },
   {
+    name: "Trésorerie de l'église",
+    description: "Sous « Comptabilité », l'écran « Trésorerie » tient l'argent que l'église détient elle-même — caisse, coffre, compte en ligne — comme un relevé de compte : chaque entrée et chaque sortie, et le solde après chaque ligne. Après le culte, « Collecte » enregistre en une fois les dîmes, offrandes et offrandes spéciales, le total des espèces par catégorie et les chèques un par un, comptés par deux personnes. « Remise » inscrit le dépôt au compte commun avec son bordereau et sort de la caisse les chèques cochés. Les paiements de notes de frais et les abondements de la navette payés depuis une caisse s'ajoutent tout seuls. Le budget annuel par catégorie se compare au réalisé ; un dépassement est signalé. Une fois vérifié, un mois se clôture et ne se modifie plus (seul un Admin le rouvre, avec un motif). Le compte bancaire commun n'est pas suivi ici. Accès : Comptable, Admin, Super Admin.",
+    category: "Comptabilité",
+    screenshotTitle: "Trésorerie",
+    screenshotFile: "guide-tresorerie.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "edit" },
+  },
+  {
     name: "Billetterie : événements et inscriptions",
     description: "Depuis Agenda › « Billetterie », l'administration crée un événement ouvert au public (Nuit de la traversée, concert…) et en confie la conduite à une équipe : organisateur, trésorier, accueil, restauration, observateur — n'importe quel compte de l'église, STAR compris. L'organisateur règle la jauge et les places, les tarifs par âge, les options (repas, t-shirt…), les moyens de paiement (Wero, Revolut, virement sur un IBAN propre à l'événement, espèces, chèque) et les règles d'annulation, puis partage le lien public (QR code fourni). Chacun s'inscrit sans compte et reçoit ses billets par email, avec un lien pour gérer sa réservation. Le trésorier confirme les paiements déclarés (« J'ai payé »), encaisse et rembourse ; les options non réglées sont libérées à la date limite.",
     category: "Événements",

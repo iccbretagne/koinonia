@@ -1,7 +1,7 @@
 # Plan technique — Trésorerie de l'église : registre des entrées et des sorties
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-11-05
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
@@ -227,7 +227,8 @@ La Secrétaire n'a ni `treasury:*` ni accès : rien n'apparaît dans sa navigati
   - montant > 0, centimes ; catégorie active du **même sens** ; objet obligatoire pour la
     catégorie Offrandes spéciales, interdit ailleurs ; compte actif de l'église ;
   - **mois clôturé** : `assertOpen(churchId, date)` sur la date (et l'ancienne date pour une
-    modification) → 409 « Octobre 2026 est clôturé » ;
+    modification) → 400 « Octobre 2026 est clôturé : aucune écriture n'est possible dans ce
+    mois. » (409 est réservé au doublon, que l'écran sait confirmer) ;
   - **doublon** : même compte, date, sens, catégorie et montant qu'une ligne non supprimée →
     409 `{ code: "DUPLICATE", existing }`, sauf si le corps porte `confirmDuplicate: true` ;
   - les catégories système Remises / Notes de frais / Navette ne se choisissent pas à la main

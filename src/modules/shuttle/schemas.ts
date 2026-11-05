@@ -122,6 +122,8 @@ export const entryInputSchema = z.discriminatedUnion("kind", [
     kind: z.literal("FUNDING"),
     amount: positiveAmount,
     paymentMethod: z.enum(PAYMENT_METHODS),
+    /** Compte de trésorerie d'où l'abondement est remis (spec 076) ; null = autre provenance. */
+    treasuryAccountId: z.string().min(1).nullish(),
     ...base,
   }),
   z.object({

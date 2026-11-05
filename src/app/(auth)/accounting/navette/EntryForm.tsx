@@ -45,6 +45,7 @@ function initialState(seed: EntryFormSeed) {
       label: l.label ?? "",
       vendor: l.vendor ?? "",
       paymentMethod: (l.paymentMethod ?? "TRANSFER") as ShuttlePaymentMethod,
+      treasuryAccountId: l.treasuryAccountId ?? "",
       liters: l.liters === null ? "" : String(l.liters).replace(".", ","),
       kilometers: l.kilometers === null ? "" : String(l.kilometers),
       personalAdvance: l.personalAdvance,
@@ -62,6 +63,7 @@ function initialState(seed: EntryFormSeed) {
     label: "",
     vendor: returnOf?.vendor ?? DEFAULT_VENDOR,
     paymentMethod: "TRANSFER" as ShuttlePaymentMethod,
+    treasuryAccountId: "",
     liters: "",
     kilometers: "",
     personalAdvance: false,
@@ -89,7 +91,7 @@ function buildPayload(form: FormState) {
     case "OPENING_BALANCE":
       return { ...base, amount: form.negative ? -amount : amount };
     case "FUNDING":
-      return { ...base, amount, paymentMethod: form.paymentMethod };
+      return { ...base, amount, paymentMethod: form.paymentMethod, treasuryAccountId: form.treasuryAccountId || null };
     case "DEPOSIT_RETURN":
       return { ...base, amount, vendor: form.vendor || null, rentalId: form.rentalId || null, returnOfId: form.returnOfId || null };
     case "VENDOR_REFUND":
@@ -221,6 +223,7 @@ export default function EntryForm({
   hasOpeningBalance,
   rentals,
   outstandingDeposits,
+  treasuryAccounts = [],
 }: {
   readonly open: boolean;
   readonly onClose: () => void;
@@ -229,6 +232,8 @@ export default function EntryForm({
   readonly hasOpeningBalance: boolean;
   readonly rentals: readonly RentalOption[];
   readonly outstandingDeposits: readonly { id: string; date: string; amount: number; vendor: string | null }[];
+  /** Comptes de trésorerie actifs (spec 076) ; vide si la trésorerie est désactivée. */
+  readonly treasuryAccounts?: readonly { id: string; name: string }[];
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -351,6 +356,18 @@ export default function EntryForm({
             value={form.paymentMethod}
             onChange={(e) => set("paymentMethod", e.target.value as ShuttlePaymentMethod)}
             options={PAYMENT_METHODS.map((m) => ({ value: m, label: PAYMENT_METHOD_LABEL[m] }))}
+          />
+        )}
+        {form.kind === "FUNDING" && treasuryAccounts.length > 0 && (
+          <Select
+            label="Remis depuis"
+            value={form.treasuryAccountId}
+            onChange={(e) => set("treasuryAccountId", e.target.value)}
+            options={[
+              { value: "", label: "Compte commun ou autre" },
+              ...treasuryAccounts.map((a) => ({ value: a.id, label: a.name })),
+            ]}
+            hint="Remis depuis une caisse : la sortie apparaît dans la trésorerie, sans ressaisie."
           />
         )}
 

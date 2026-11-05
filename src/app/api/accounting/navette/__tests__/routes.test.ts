@@ -21,6 +21,9 @@ vi.mock("@/modules/shuttle/auth", () => ({
   },
 }));
 vi.mock("@/lib/rate-limit", () => ({ requireRateLimit: vi.fn(), RATE_LIMIT_MUTATION: {} }));
+vi.mock("@/lib/registry", () => ({ registry: { has: () => true } }));
+const treasury = { getActiveTreasuryAccount: vi.fn(), assertTreasuryDateOpen: vi.fn() };
+vi.mock("@/modules/treasury", () => treasury);
 
 const shuttle = {
   createEntry: vi.fn(async () => ({ id: "new" })),
@@ -119,5 +122,17 @@ describe("routes du registre de la navette (spec 073)", () => {
     expect((await flag.PUT(json({ note: "illisible" }), params("e1"))).status).toBe(200);
     expect((await settings.PUT(json({ lowBalanceThreshold: 50 }))).status).toBe(200);
     expect(shuttle.updateLowBalanceThreshold).toHaveBeenCalledWith("church-1", 50, "user-1");
+  });
+
+  it("abondement remis depuis une caisse : compte et mois contrôlés dans la trésorerie (spec 076)", async () => {
+    role = "manager";
+    const funding = { kind: "FUNDING", amount: 300, date: "2026-11-02", paymentMethod: "CASH", treasuryAccountId: "caisse" };
+    expect((await entries.POST(await multipart(`${URL_BASE}/entries`, funding, "POST", false))).status).toBe(201);
+    expect(treasury.getActiveTreasuryAccount).toHaveBeenCalledWith("church-1", "caisse");
+    expect(treasury.assertTreasuryDateOpen).toHaveBeenCalledWith("church-1", new Date("2026-11-02T00:00:00Z"));
+    const { ApiError } = await import("@/lib/api-utils");
+    treasury.assertTreasuryDateOpen.mockRejectedValueOnce(new ApiError(400, "Novembre 2026 est clôturé"));
+    expect((await entries.POST(await multipart(`${URL_BASE}/entries`, funding, "POST", false))).status).toBe(400);
+    expect(shuttle.createEntry).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,7 +1,7 @@
 import { ApiError } from "@/lib/api-utils";
 import { getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { requireShuttleAccess, requireShuttleManager } from "@/modules/shuttle/auth";
-import { entryInputSchema, RECEIPT_MAX_BYTES } from "@/modules/shuttle/schemas";
+import { entryInputSchema, RECEIPT_MAX_BYTES, type EntryInput } from "@/modules/shuttle/schemas";
 
 /** Corps multipart : un justificatif de 10 Mo plus les données et l'enveloppe. */
 const MAX_BODY_BYTES = 11 * 1024 * 1024;
@@ -55,4 +55,30 @@ export async function entryAccess(entryId: string, managerOnly = false) {
   if (!churchId) throw new ApiError(404, "Ligne introuvable");
   const access = managerOnly ? await requireShuttleManager(churchId) : await requireShuttleAccess(churchId);
   return { churchId, ...access };
+}
+
+/**
+ * Abondement remis depuis un compte de trésorerie (spec 076, ADR-0027) : contrôlé ici, couche
+ * qui seule importe la navette et la trésorerie. Compte actif de l'église ; mois ouvert dans la
+ * trésorerie pour la nouvelle date et, en correction ou suppression, pour l'ancienne. Refusé si
+ * la trésorerie est désactivée.
+ */
+export async function assertTreasuryLink(
+  churchId: string,
+  input: EntryInput | null,
+  existing?: { treasuryAccountId: string | null; date: Date } | null
+) {
+  const accountId = input?.kind === "FUNDING" ? input.treasuryAccountId : null;
+  const { registry } = await import("@/lib/registry");
+  if (!registry.has("treasury")) {
+    if (accountId) throw new ApiError(400, "La trésorerie n'est pas activée");
+    return;
+  }
+  if (!accountId && !existing?.treasuryAccountId) return;
+  const { assertTreasuryDateOpen, getActiveTreasuryAccount } = await import("@/modules/treasury");
+  if (accountId && input) {
+    await getActiveTreasuryAccount(churchId, accountId);
+    await assertTreasuryDateOpen(churchId, new Date(`${input.date}T00:00:00Z`));
+  }
+  if (existing?.treasuryAccountId) await assertTreasuryDateOpen(churchId, existing.date);
 }

@@ -1,5 +1,5 @@
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
-import { rolePermissions } from "@/lib/registry";
+import { registry, rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -72,6 +72,12 @@ export default async function AccountingRequestDetailPage({
     })),
   };
 
+  // Comptes de trésorerie proposés à la remise d'un paiement (spec 076), si le module est actif.
+  const treasuryAccounts =
+    canManage && registry.has("treasury")
+      ? (await import("@/modules/treasury").then((m) => m.listAccounts(churchId, { includeArchived: false }))).map((a) => ({ id: a.id, name: a.name }))
+      : [];
+
   return (
     <div>
       <div className="flex items-center gap-2 mb-6">
@@ -85,6 +91,7 @@ export default async function AccountingRequestDetailPage({
         request={serialized}
         canManage={canManage}
         isOwn={isOwn}
+        treasuryAccounts={treasuryAccounts}
       />
     </div>
   );
