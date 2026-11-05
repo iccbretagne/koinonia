@@ -1,5 +1,6 @@
 "use client";
 
+import { TREASURY_TABS, type TreasuryTab } from "./tabs";
 import { PageHeader, Tabs } from "@/components/ui";
 import type {
   AccountView,
@@ -20,8 +21,6 @@ import LedgerTab, { type LedgerFilters } from "./LedgerTab";
 import ReportsTab from "./ReportsTab";
 import SettingsTab from "./SettingsTab";
 
-export const TREASURY_TABS = ["tableau", "registre", "collecte", "remise", "budget", "rapports", "cloture", "reglages"] as const;
-export type TreasuryTab = (typeof TREASURY_TABS)[number];
 
 const TAB_LABEL: Record<TreasuryTab, string> = {
   tableau: "Tableau de bord",
