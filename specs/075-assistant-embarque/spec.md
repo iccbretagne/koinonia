@@ -218,8 +218,7 @@ Exemples de questions de données prévues dès le départ, selon le rôle :
 
 ## Questions ouvertes
 
-- Relecture de la base de connaissances générée : par qui (Super Admin, un responsable par
-  domaine) avant la mise en service ?
+Aucune.
 
 ## Décisions
 
@@ -234,3 +233,4 @@ Exemples de questions de données prévues dès le départ, selon le rôle :
 - Base de connaissances générée à partir de l'application, puis relue ; enrichie ensuite par le
   Super Admin à partir des questions remontées.
 - Préparer dès maintenant l'ajout d'une IA, sans l'activer.
+- Relecture de la base générée avant la mise en service : le porteur du projet.
