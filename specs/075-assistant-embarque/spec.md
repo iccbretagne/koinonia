@@ -43,6 +43,21 @@ Une IA (externe ou installée sur le serveur) pourra plus tard s'ajouter : l'ass
 pour qu'elle s'appuie sur la même base, les mêmes questions de données et les mêmes droits, sans
 rien changer pour les utilisateurs.
 
+## Le personnage
+
+L'assistant a un visage : **Nia** (par défaut) ou **Koï**, deux personnages dessinés aux couleurs
+de l'église. Chacun choisit le sien dans « Mon profil » ; le choix suit la personne sur tous ses
+appareils. Le personnage :
+- apparaît sur le bouton d'aide (en petit) et en tête du panneau ;
+- se présente par son nom (« Bonjour Marie ! Je suis Nia. ») ;
+- change d'expression selon la situation : au repos, bonjour (ouverture), réfléchit (pendant la
+  recherche), content (réponse jugée « Utile »), désolé (question inconnue ou réservée) ;
+- est discrètement animé (clignement des yeux, léger mouvement, passage d'une expression à
+  l'autre), et reste immobile pour une personne dont l'appareil demande de réduire les
+  animations ;
+- salue une seule fois par appareil par une bulle d'accueil près du bouton d'aide, qui disparaît
+  d'elle-même.
+
 ## Utilisateurs concernés
 
 **Tous les rôles connectés** (Super Admin, Admin, Secrétaire, Ministre, Resp. département,
@@ -161,6 +176,10 @@ Exemples de questions de données prévues dès le départ, selon le rôle :
 
 - [ ] Un bouton d'aide est accessible depuis tous les écrans connectés, sur ordinateur et sur
       téléphone.
+- [ ] L'assistant prend le visage et le nom de Nia par défaut ; une personne qui choisit Koï dans
+      « Mon profil » le retrouve sur tous ses appareils.
+- [ ] Le personnage change d'expression selon la situation (bonjour, réfléchit, content, désolé)
+      et ne s'anime pas quand l'appareil demande de réduire les animations.
 - [ ] Le panneau propose des questions fréquentes propres à l'écran courant et au rôle.
 - [ ] Une question sur l'application formulée librement, avec fautes ou mots familiers, reçoit
       la bonne réponse écrite et un lien vers l'écran concerné.
@@ -234,3 +253,4 @@ Aucune.
   Super Admin à partir des questions remontées.
 - Préparer dès maintenant l'ajout d'une IA, sans l'activer.
 - Relecture de la base générée avant la mise en service : le porteur du projet.
+- Deux personnages au choix, Nia (par défaut) et Koï ; visuels fournis par le porteur du projet.

@@ -313,6 +313,31 @@ compte). Assistant inactif pour l'église → 404 (comme une fonction absente).
 - **Guide** : section « Assistant » ; **CLAUDE.md**, `docs/auth.md`, `docs/database.md`,
   `CHANGELOG`.
 
+## Le personnage (Nia, Koï)
+
+- **Visuels** : 7 images par personnage (repos, repos yeux fermés, bonjour, réfléchit, content,
+  désolé, icône), PNG transparents fournis par le porteur, contrôlés (cadrage identique, rien ne
+  touche les bords) puis convertis en **WebP 256 et 512 px** dans
+  `public/assistant/<nia|koi>/<expression>.webp` (quelques dizaines de Ko chacune) ; l'icône aussi
+  en 64 px pour le bouton.
+- **Choix de la personne** : colonne `assistantPersona` (`NIA` par défaut, `KOI`) sur `User`
+  (préférence de compte, suit la personne sur tous ses appareils), réglée dans « Mon profil »
+  (`PUT /api/profile/assistant-persona`, Zod, `requireAuth`). Enum `AssistantPersona` dans la
+  même migration `add_assistant`.
+- **Composant `AssistantAvatar`** (client) : `persona`, `expression`, `size`. Deux images
+  superposées (repos et yeux fermés) pour le **clignement** (opacité, toutes les 4 à 6 s, durée
+  aléatoire bornée) ; **flottement** léger (`translateY`, 3 s) ; **changement d'expression** en
+  fondu (150 ms). Animations en CSS, désactivées sous `prefers-reduced-motion: reduce` ;
+  `alt` = nom du personnage et son expression.
+- **États** pilotés par le panneau : `bonjour` à l'ouverture (1,5 s puis `repos`), `réfléchit`
+  pendant l'appel à `/ask`, `content` après « Utile », `désolé` sur une réponse `unknown` ou
+  `refused`.
+- **Bulle d'accueil** : une fois par appareil (`localStorage`, clé `koinonia-assistant-greeted`,
+  lecture dans un `try/catch`), près du bouton d'aide, retirée après 6 s ou au premier clic ;
+  jamais quand l'assistant est inactif.
+- Le nom affiché vient de la persona (`Nia` / `Koï`) : les textes de l'assistant sont écrits à
+  la première personne sans genre grammatical marqué (« Je vous aide… »), pour convenir aux deux.
+
 ## Préparer une IA (sans l'activer)
 
 Formalisé dans **[ADR-0028](../../docs/adr/0028-assistant-moteur-interchangeable.md)** :
@@ -376,6 +401,8 @@ Vitest, Prisma mocké, `NullEmbedder` ou faux embedder déterministe :
 - **pending / entries / settings** : répondre, rattacher, hors sujet ; réglages d'instance et
   d'église (droits) ; audit.
 - **routes** : accès (Super Admin, `church:settings`), Zod, débit limité.
-- **UI** : snapshots de `TopBar` (bouton présent, lien guide quand inactif), navigation inchangée.
+- **UI** : snapshots de `TopBar` (bouton présent, lien guide quand inactif), navigation inchangée ;
+  `AssistantAvatar` (persona par défaut Nia, image de l'expression demandée, aucune animation
+  sous `prefers-reduced-motion`) ; préférence de persona (route, défaut, validation).
 - `permissions.test.ts` (aucune nouvelle permission, liste des modules), `route-exhaustiveness`,
   `openapi.test.ts`.
