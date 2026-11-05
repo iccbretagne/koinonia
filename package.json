@@ -33,6 +33,7 @@
     "@auth/prisma-adapter": "^2.11.3",
     "@aws-sdk/client-s3": "^3.1155.0",
     "@aws-sdk/s3-request-presigner": "^3.1155.0",
+    "@huggingface/transformers": "^4.3.2",
     "@prisma/adapter-mariadb": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "@tailwindcss/postcss": "^4.3.3",

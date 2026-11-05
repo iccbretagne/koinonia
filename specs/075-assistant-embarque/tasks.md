@@ -1,7 +1,7 @@
 # Tâches — Assistant de prise en main
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md` · **Base** : `./base-connaissances.md`
-- **Statut** : À faire
+- **Statut** : En cours
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
@@ -9,60 +9,60 @@
 
 ## Prérequis
 
-- [ ] Branche : `claude/visual-deposit-validation-process-gbyji8` (branche de session, à jour de
+- [x] Branche : `claude/visual-deposit-validation-process-gbyji8` (branche de session, à jour de
   `main`)
 - [ ] Base de connaissances relue par le porteur (`base-connaissances.md`) — bloque **T15** à
   **T17**, pas le reste
-- [ ] Images de Nia et Koï fournies (15 PNG transparents, contrôlés) — fait
+- [x] Images de Nia et Koï fournies (15 PNG transparents, contrôlés) — fait
 
 ## Lot 1 — Socle : données, module, réglages
 
 ### 1. Données & migration
 
-- [ ] **T1** — Enums `AssistantEntrySource`, `AssistantPendingStatus`, `AssistantPendingReason`,
+- [x] **T1** — Enums `AssistantEntrySource`, `AssistantPendingStatus`, `AssistantPendingReason`,
   `AssistantPersona` ; modèles `AssistantSettings`, `AssistantChurchSetting`, `AssistantEntry`,
   `AssistantPendingQuestion`, `AssistantAlias`, `AssistantDailyStat`, `AssistantEmbedding` ;
   colonne `User.assistantPersona` (`NIA` par défaut) ; relation inverse sur `Church`
   *(fichier : `prisma/schema.prisma`)*
-- [ ] **T2** — Migration `add_assistant` (`prisma migrate diff`) puis `prisma generate`
+- [x] **T2** — Migration `add_assistant` (`prisma migrate diff`) puis `prisma generate`
   *(fichier : `prisma/migrations/<horodatage>_add_assistant/migration.sql`)*
-- [ ] **T3** [P] — Mocks Prisma des nouveaux modèles *(fichier : `src/__mocks__/prisma.ts`)*
+- [x] **T3** [P] — Mocks Prisma des nouveaux modèles *(fichier : `src/__mocks__/prisma.ts`)*
 
 ### 2. Module et contrats
 
-- [ ] **T4** — Manifeste `assistant` (`dependsOn` core ; `routes` authenticated
+- [x] **T4** — Manifeste `assistant` (`dependsOn` core ; `routes` authenticated
   `/admin/assistant`, api `/api/assistant`, `/api/profile/assistant-persona` ; domaine de
   notification `assistant` avec `visibleWith: ["church:manage"]` ; aucune permission), index du
   module, ajout à `allManifests` *(fichiers : `src/modules/assistant/manifest.ts`,
   `src/modules/assistant/index.ts`, `src/lib/manifests.ts`)*
-- [ ] **T5** [P] — Règle dependency-cruiser `no-assistant-imports-other-modules` (aucun module
+- [x] **T5** [P] — Règle dependency-cruiser `no-assistant-imports-other-modules` (aucun module
   autorisé) *(fichier : `.dependency-cruiser.cjs`)*
-- [ ] **T6** [P] — Contrat pur des questions de données : `AssistantDataQuestion`, `DataAnswer`
+- [x] **T6** [P] — Contrat pur des questions de données : `AssistantDataQuestion`, `DataAnswer`
   (8 éléments au plus, libellés seulement), `Refusal`, `AssistantViewer`
   *(fichier : `src/core/assistant.ts`)*
-- [ ] **T7** [P] — Schémas Zod purs : question (1–300), avis, réglage d'instance, réglage
+- [x] **T7** [P] — Schémas Zod purs : question (1–300), avis, réglage d'instance, réglage
   d'église, fiche (CUSTOM / OVERRIDE), action sur question à traiter, persona
   *(fichier : `src/modules/assistant/schemas.ts`)*
 
 ### 3. Services de socle
 
-- [ ] **T8** — `settings.ts` : `isAssistantEnabled(churchId)` (module actif ∧ instance activée ∧
+- [x] **T8** — `settings.ts` : `isAssistantEnabled(churchId)` (module actif ∧ instance activée ∧
   église non coupée), lecture et écriture des réglages d'instance et d'église avec `logAudit`
   *(fichier : `src/modules/assistant/services/settings.ts`)*
-- [ ] **T9** [P] — `stats.ts` : incréments atomiques par jour (`upsert` + `increment`), lecture
+- [x] **T9** [P] — `stats.ts` : incréments atomiques par jour (`upsert` + `increment`), lecture
   par période *(fichier : `src/modules/assistant/services/stats.ts`)*
-- [ ] **T10** [P] — `text.ts` : normalisation (minuscules, accents, ponctuation), tokens,
+- [x] **T10** [P] — `text.ts` : normalisation (minuscules, accents, ponctuation), tokens,
   trigrammes, distance d'édition bornée, `anonymize()` (email, téléphone, IBAN, 4 chiffres ou
   plus, URL → `[…]`, 300 caractères) *(fichier : `src/modules/assistant/services/text.ts`)*
 
 ### 4. Tests du lot 1
 
-- [ ] **T11** [P] — Tests `settings` (instance, église, module inactif, audit) et `stats`
+- [x] **T11** [P] — Tests `settings` (instance, église, module inactif, audit) et `stats`
   *(fichiers : `src/modules/assistant/services/__tests__/settings.test.ts`,
   `stats.test.ts`)*
-- [ ] **T12** [P] — Tests `text` : normalisation, fautes, `anonymize()` sur email, téléphone
+- [x] **T12** [P] — Tests `text` : normalisation, fautes, `anonymize()` sur email, téléphone
   français et international, IBAN, URL *(fichier : `…/__tests__/text.test.ts`)*
-- [ ] **T13** — Matrice des permissions inchangée, liste des modules mise à jour ;
+- [x] **T13** — Matrice des permissions inchangée, liste des modules mise à jour ;
   `route-exhaustiveness` *(fichiers : `src/core/__tests__/permissions.test.ts`, tests existants)*
 
 ## Lot 2 — Base de connaissances et moteur
