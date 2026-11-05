@@ -2136,6 +2136,24 @@ Index : `[status]`, `[authorId]`
 | `ARCHIVED` | Profil archivé |
 
 
+### Module Assistant
+
+Spec 075. Les fiches fournies vivent dans le code (`src/modules/assistant/knowledge/`) ; la base
+ne garde que ce que le Super Admin ajoute ou corrige, fusionné à la lecture. Aucune conversation
+n'est stockée.
+
+| Table | Rôle |
+|---|---|
+| `assistant_settings` | Une ligne `instance` : assistant activé (désactivé par défaut) |
+| `assistant_church_settings` | Coupure par église (`disabled`) ; absence de ligne = suit l'instance |
+| `assistant_entries` | `CUSTOM` (fiche ajoutée) ou `OVERRIDE` d'une fiche fournie (`builtinKey`, texte vide = masquage seul) |
+| `assistant_aliases` | Formulation rattachée à une fiche (`entryKey`) depuis une question à traiter |
+| `assistant_pending_questions` | Question anonymisée sans réponse ou jugée « Pas utile », regroupée (`count`), **sans compte ni église** |
+| `assistant_daily_stats` | Compteurs d'instance par jour (questions, réponses, données, avis) |
+| `assistant_embeddings` | Cache des vecteurs du modèle de sens (empreinte SHA-256 + modèle) |
+
+`users.assistantPersona` (`NIA` par défaut, `KOI`) : personnage choisi dans « Mon profil ».
+
 ### Module Dons
 
 #### `giving_pages`

@@ -187,6 +187,19 @@ module.exports = {
         path: "^src/modules/(?!treasury/|storage/|accounting/index)",
       },
     },
+    {
+      name: "no-assistant-imports-other-modules",
+      severity: "error",
+      comment:
+        "Le module assistant n'importe aucun autre module : les questions de donnees sont fournies par chaque module et composees dans src/app (spec 075, ADR-0028).",
+      from: {
+        path: "^src/modules/assistant/",
+        pathNot: "/__tests__/",
+      },
+      to: {
+        path: "^src/modules/(?!assistant/)",
+      },
+    },
     /**
      * storage est l'infrastructure partagee (ADR-0006) : les autres modules
      * l'importent, mais lui-meme ne depend d'aucun module metier.

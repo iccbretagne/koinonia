@@ -227,7 +227,7 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
       </ul>
 
       {current && (
-        <div className="fixed bottom-14 md:bottom-auto inset-x-0 md:static bg-surface border-t md:border border-line md:rounded-card shadow-float md:shadow-card p-3 md:p-4 z-20">
+        <div data-k-bottom-bar className="fixed bottom-14 md:bottom-auto inset-x-0 md:static bg-surface border-t md:border border-line md:rounded-card shadow-float md:shadow-card p-3 md:p-4 z-20">
           <div className="flex items-center justify-between mb-1">
             <p className="font-medium text-ink text-sm truncate pr-2">{current.title}</p>
             <select

@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Modèle de sens de l'assistant (spec 075) : transformers.js et son binaire natif restent des
+  // modules Node chargés à l'exécution, jamais regroupés par le bundler.
+  serverExternalPackages: ["@huggingface/transformers", "onnxruntime-node"],
   turbopack: {
     root: __dirname,
   },

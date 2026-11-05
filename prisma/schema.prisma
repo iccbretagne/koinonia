@@ -123,24 +123,25 @@ model Church {
   responsible               PastoralProfile?           @relation("ChurchResponsibleProfile", fields: [responsibleProfileId], references: [id])
   supervisor                PastoralProfile?           @relation("ChurchSupervisorProfile", fields: [supervisorProfileId], references: [id])
 
-  serviceWithdrawals        ServiceWithdrawal[]
+  serviceWithdrawals  ServiceWithdrawal[]
   // Page publique « Donner » (spec 065)
-  givingPage                GivingPage?
-  logos                     ChurchLogo[]
-  shuttleEntries            ShuttleEntry[]
-  shuttleRentals            ShuttleRental[]
-  shuttleSettings           ShuttleSettings?
-  treasuryAccounts          TreasuryAccount[]
-  treasuryCategories        TreasuryCategory[]
-  treasuryPurposes          TreasuryPurpose[]
-  treasuryEntries           TreasuryEntry[]
-  treasuryCollections       TreasuryCollection[]
-  treasuryCheques           TreasuryCheque[]
-  treasuryClosures          TreasuryClosure[]
-  treasuryBudgets           TreasuryBudget[]
-  ticketingEvents           TicketingEvent[]
+  givingPage          GivingPage?
+  logos               ChurchLogo[]
+  shuttleEntries      ShuttleEntry[]
+  shuttleRentals      ShuttleRental[]
+  shuttleSettings     ShuttleSettings?
+  treasuryAccounts    TreasuryAccount[]
+  assistantSetting    AssistantChurchSetting?
+  treasuryCategories  TreasuryCategory[]
+  treasuryPurposes    TreasuryPurpose[]
+  treasuryEntries     TreasuryEntry[]
+  treasuryCollections TreasuryCollection[]
+  treasuryCheques     TreasuryCheque[]
+  treasuryClosures    TreasuryClosure[]
+  treasuryBudgets     TreasuryBudget[]
+  ticketingEvents     TicketingEvent[]
   // Messages système (spec 071)
-  systemMessages            SystemMessage[]
+  systemMessages      SystemMessage[]
 
   @@map("churches")
 }
@@ -159,16 +160,18 @@ enum Role {
 }
 
 model User {
-  id                                String                       @id @default(cuid())
-  email                             String                       @unique
+  id                                String                        @id @default(cuid())
+  email                             String                        @unique
   name                              String?
   displayName                       String?
   image                             String?
   emailVerified                     DateTime?
-  isSuperAdmin                      Boolean                      @default(false)
-  hasSeenTour                       Boolean                      @default(false)
-  createdAt                         DateTime                     @default(now())
-  updatedAt                         DateTime                     @updatedAt
+  isSuperAdmin                      Boolean                       @default(false)
+  hasSeenTour                       Boolean                       @default(false)
+  /// Personnage de l'assistant choisi dans « Mon profil » (spec 075) : Nia par défaut.
+  assistantPersona                  AssistantPersona              @default(NIA)
+  createdAt                         DateTime                      @default(now())
+  updatedAt                         DateTime                      @updatedAt
   churchRoles                       UserChurchRole[]
   accounts                          Account[]
   sessions                          Session[]
@@ -177,60 +180,60 @@ model User {
   notificationEmailPreferences      NotificationEmailPreference[]
   notificationPushPreferences       NotificationPushPreference[]
   pushSubscriptions                 PushSubscription[]
-  appIconsUpdated                   AppIconVariant[]             @relation("AppIconUpdatedBy")
-  churchLogosUpdated                ChurchLogo[]                 @relation("ChurchLogoUpdatedBy")
-  shuttleEntriesCreated             ShuttleEntry[]               @relation("ShuttleEntryCreatedBy")
-  shuttleEntriesUpdated             ShuttleEntry[]               @relation("ShuttleEntryUpdatedBy")
-  shuttleEntriesFlagged             ShuttleEntry[]               @relation("ShuttleEntryFlaggedBy")
-  shuttleEntriesDeleted             ShuttleEntry[]               @relation("ShuttleEntryDeletedBy")
-  shuttleRentalsCreated             ShuttleRental[]              @relation("ShuttleRentalCreatedBy")
-  ticketingEventsCreated            TicketingEvent[]             @relation("TicketingEventCreatedBy")
+  appIconsUpdated                   AppIconVariant[]              @relation("AppIconUpdatedBy")
+  churchLogosUpdated                ChurchLogo[]                  @relation("ChurchLogoUpdatedBy")
+  shuttleEntriesCreated             ShuttleEntry[]                @relation("ShuttleEntryCreatedBy")
+  shuttleEntriesUpdated             ShuttleEntry[]                @relation("ShuttleEntryUpdatedBy")
+  shuttleEntriesFlagged             ShuttleEntry[]                @relation("ShuttleEntryFlaggedBy")
+  shuttleEntriesDeleted             ShuttleEntry[]                @relation("ShuttleEntryDeletedBy")
+  shuttleRentalsCreated             ShuttleRental[]               @relation("ShuttleRentalCreatedBy")
+  ticketingEventsCreated            TicketingEvent[]              @relation("TicketingEventCreatedBy")
   ticketingRoles                    TicketingEventRole[]
   ticketingBookings                 TicketingBooking[]
   ticketingAssignments              TicketingAssignment[]
-  systemMessagesCreated             SystemMessage[]              @relation("SystemMessageCreatedBy")
-  systemMessagesUpdated             SystemMessage[]              @relation("SystemMessageUpdatedBy")
+  systemMessagesCreated             SystemMessage[]               @relation("SystemMessageCreatedBy")
+  systemMessagesUpdated             SystemMessage[]               @relation("SystemMessageUpdatedBy")
   systemMessageReceipts             SystemMessageReceipt[]
-  submittedAnnouncements            Announcement[]               @relation("AnnouncementSubmittedBy")
-  submittedRequests                 Request[]                    @relation("RequestSubmittedBy")
-  reviewedRequests                  Request[]                    @relation("RequestReviewedBy")
-  memberLinks                       MemberUserLink[]             @relation("UserMemberLink")
-  validatedLinks                    MemberUserLink[]             @relation("LinkValidator")
-  absencesCreated                   Absence[]                    @relation("AbsenceCreatedBy")
-  absencesCancelled                 Absence[]                    @relation("AbsenceCancelledBy")
-  memberLinkRequests                MemberLinkRequest[]          @relation("LinkRequester")
-  reviewedLinkRequests              MemberLinkRequest[]          @relation("LinkRequestReviewer")
-  eventReports                      EventReport[]                @relation("ReportAuthor")
+  submittedAnnouncements            Announcement[]                @relation("AnnouncementSubmittedBy")
+  submittedRequests                 Request[]                     @relation("RequestSubmittedBy")
+  reviewedRequests                  Request[]                     @relation("RequestReviewedBy")
+  memberLinks                       MemberUserLink[]              @relation("UserMemberLink")
+  validatedLinks                    MemberUserLink[]              @relation("LinkValidator")
+  absencesCreated                   Absence[]                     @relation("AbsenceCreatedBy")
+  absencesCancelled                 Absence[]                     @relation("AbsenceCancelledBy")
+  memberLinkRequests                MemberLinkRequest[]           @relation("LinkRequester")
+  reviewedLinkRequests              MemberLinkRequest[]           @relation("LinkRequestReviewer")
+  eventReports                      EventReport[]                 @relation("ReportAuthor")
   departmentNotices                 DepartmentNotice[]
   // Module media
-  mediaEventsCreated                MediaEvent[]                 @relation("MediaEventCreator")
-  mediaProjectsCreated              MediaProject[]               @relation("MediaProjectCreator")
-  mediaFileVersions                 MediaFileVersion[]           @relation("MediaFileVersionCreator")
-  mediaComments                     MediaComment[]               @relation("MediaCommentAuthor")
+  mediaEventsCreated                MediaEvent[]                  @relation("MediaEventCreator")
+  mediaProjectsCreated              MediaProject[]                @relation("MediaProjectCreator")
+  mediaFileVersions                 MediaFileVersion[]            @relation("MediaFileVersionCreator")
+  mediaComments                     MediaComment[]                @relation("MediaCommentAuthor")
   // Module agenda
-  pastoralProfiles                  PastoralProfile[]            @relation("UserPastoralProfile")
-  appointmentsMade                  AppointmentRequest[]         @relation("AppointmentRequester")
-  qualifiedRequests                 AppointmentRequest[]         @relation("AppointmentQualifier")
-  scheduledRequests                 AppointmentRequest[]         @relation("AppointmentScheduler")
-  updatedRequests                   AppointmentRequest[]         @relation("AppointmentUpdater")
-  appointmentsAssigned              AppointmentRequest[]         @relation("AppointmentAssignedMember")
-  appointmentsAssignedBy            AppointmentRequest[]         @relation("AppointmentAssignedBy")
-  msdpFollowUpsAssignedBy           MsdpFollowUp[]               @relation("MsdpAssignedBy")
-  agendaEntriesCreated              AgendaEntry[]                @relation("AgendaEntryCreator")
-  agendaEntriesUpdated              AgendaEntry[]                @relation("AgendaEntryUpdater")
+  pastoralProfiles                  PastoralProfile[]             @relation("UserPastoralProfile")
+  appointmentsMade                  AppointmentRequest[]          @relation("AppointmentRequester")
+  qualifiedRequests                 AppointmentRequest[]          @relation("AppointmentQualifier")
+  scheduledRequests                 AppointmentRequest[]          @relation("AppointmentScheduler")
+  updatedRequests                   AppointmentRequest[]          @relation("AppointmentUpdater")
+  appointmentsAssigned              AppointmentRequest[]          @relation("AppointmentAssignedMember")
+  appointmentsAssignedBy            AppointmentRequest[]          @relation("AppointmentAssignedBy")
+  msdpFollowUpsAssignedBy           MsdpFollowUp[]                @relation("MsdpAssignedBy")
+  agendaEntriesCreated              AgendaEntry[]                 @relation("AgendaEntryCreator")
+  agendaEntriesUpdated              AgendaEntry[]                 @relation("AgendaEntryUpdater")
   // Module intégration familles
   familyLeaderAssignments           FamilyLeaderAssignment[]
-  familyIntegrationRequestsAssigned FamilyIntegrationRequest[]   @relation("IntegrationAssignedBerger")
-  msdpFollowUpsAssigned             MsdpFollowUp[]               @relation("MsdpAssignedConseiller")
-  careCompanions                    CareCompanion[]              @relation("CareCompanionUser")
-  careCompanionsCreated             CareCompanion[]              @relation("CareCompanionCreatedBy")
-  personJourneysCreated             PersonJourney[]              @relation("PersonJourneyCreator")
+  familyIntegrationRequestsAssigned FamilyIntegrationRequest[]    @relation("IntegrationAssignedBerger")
+  msdpFollowUpsAssigned             MsdpFollowUp[]                @relation("MsdpAssignedConseiller")
+  careCompanions                    CareCompanion[]               @relation("CareCompanionUser")
+  careCompanionsCreated             CareCompanion[]               @relation("CareCompanionCreatedBy")
+  personJourneysCreated             PersonJourney[]               @relation("PersonJourneyCreator")
   // Module comptabilité
-  financialSeriesSubmitted          FinancialSeries[]            @relation("FinancialSeriesSubmitter")
-  financialRequestsSubmitted        FinancialRequest[]           @relation("FinancialRequestSubmitter")
-  financialRequestsProcessed        FinancialRequest[]           @relation("FinancialRequestProcessor")
-  financialPaymentsReleased         FinancialPayment[]           @relation("FinancialPaymentReleaser")
-  financialAttachmentsUploaded      FinancialAttachment[]        @relation("AccountingAttachmentsUploaded")
+  financialSeriesSubmitted          FinancialSeries[]             @relation("FinancialSeriesSubmitter")
+  financialRequestsSubmitted        FinancialRequest[]            @relation("FinancialRequestSubmitter")
+  financialRequestsProcessed        FinancialRequest[]            @relation("FinancialRequestProcessor")
+  financialPaymentsReleased         FinancialPayment[]            @relation("FinancialPaymentReleaser")
+  financialAttachmentsUploaded      FinancialAttachment[]         @relation("AccountingAttachmentsUploaded")
   // Module emploi
   jobOffers                         JobOffer[]
   jobSeekers                        JobSeeker[]
@@ -239,24 +242,25 @@ model User {
   freelanceMissions                 FreelanceMission[]
   freelanceProfiles                 FreelanceProfile[]
   // Module rooms (réservation de salles)
-  roomReservationsCreated           RoomReservation[]            @relation("RoomReservationCreatedBy")
-  roomReservationsCancelled         RoomReservation[]            @relation("RoomReservationCancelledBy")
-  roomChecklistsOpened              RoomChecklist[]              @relation("RoomChecklistOpenedBy")
-  roomChecklistsKeyReceivedFrom     RoomChecklist[]              @relation("RoomChecklistKeyReceivedFrom")
-  roomChecklistsClosed              RoomChecklist[]              @relation("RoomChecklistClosedBy")
-  roomChecklistsKeyReturnedTo       RoomChecklist[]              @relation("RoomChecklistKeyReturnedTo")
-  roomChecklistsValidated           RoomChecklist[]              @relation("RoomChecklistValidatedBy")
+  roomReservationsCreated           RoomReservation[]             @relation("RoomReservationCreatedBy")
+  roomReservationsCancelled         RoomReservation[]             @relation("RoomReservationCancelledBy")
+  roomChecklistsOpened              RoomChecklist[]               @relation("RoomChecklistOpenedBy")
+  roomChecklistsKeyReceivedFrom     RoomChecklist[]               @relation("RoomChecklistKeyReceivedFrom")
+  roomChecklistsClosed              RoomChecklist[]               @relation("RoomChecklistClosedBy")
+  roomChecklistsKeyReturnedTo       RoomChecklist[]               @relation("RoomChecklistKeyReturnedTo")
+  roomChecklistsValidated           RoomChecklist[]               @relation("RoomChecklistValidatedBy")
   // Page publique « Donner » (spec 065)
-  givingPagesUpdated                GivingPage[]                 @relation("GivingPageUpdatedBy")
+  givingPagesUpdated                GivingPage[]                  @relation("GivingPageUpdatedBy")
   // Feuille d'annonces d'un culte (spec 040)
-  announcementSheetsUploaded        AnnouncementSheet[]          @relation("AnnouncementSheetUploadedBy")
+  announcementSheetsUploaded        AnnouncementSheet[]           @relation("AnnouncementSheetUploadedBy")
   // Service d'ouverture/fermeture de l'église (spec 041)
-  openingClosingAssignmentsCreated  OpeningClosingAssignment[]   @relation("OpeningClosingAssignmentCreatedBy")
+  openingClosingAssignmentsCreated  OpeningClosingAssignment[]    @relation("OpeningClosingAssignmentCreatedBy")
   // Événements d'équipe (spec 044)
-  teamEventsCreated                 TeamEvent[]                  @relation("TeamEventCreatedBy")
+  teamEventsCreated                 TeamEvent[]                   @relation("TeamEventCreatedBy")
   // (relation superviseur église déplacée vers PastoralProfile)
 
-    availabilityEntries AvailabilityResponse[] @relation("AvailabilityEnteredBy")
+  availabilityEntries AvailabilityResponse[] @relation("AvailabilityEnteredBy")
+
   @@map("users")
 }
 
@@ -306,31 +310,31 @@ model Ministry {
 }
 
 model Department {
-  id                String               @id @default(cuid())
-  name              String
-  ministryId        String
-  isSystem          Boolean              @default(false)
-  function          String?
-  ministry          Ministry             @relation(fields: [ministryId], references: [id])
-  memberDepts       MemberDepartment[]
-  eventDepts        EventDepartment[]
-  userDepts         UserDepartment[]
-  tasks             Task[]
-  createdAt         DateTime             @default(now())
-  announcements     Announcement[]       @relation("AnnouncementDepartment")
-  submittedRequests Request[]            @relation("RequestDepartment")
-  assignedRequests  Request[]            @relation("RequestAssigned")
-  reportSections    EventReportSection[]
-  notices           DepartmentNotice[]
-  linkRequests      MemberLinkRequest[]  @relation("LinkRequestDept")
-  financialSeries   FinancialSeries[]
-  financialRequests FinancialRequest[]
+  id                    String                 @id @default(cuid())
+  name                  String
+  ministryId            String
+  isSystem              Boolean                @default(false)
+  function              String?
+  ministry              Ministry               @relation(fields: [ministryId], references: [id])
+  memberDepts           MemberDepartment[]
+  eventDepts            EventDepartment[]
+  userDepts             UserDepartment[]
+  tasks                 Task[]
+  createdAt             DateTime               @default(now())
+  announcements         Announcement[]         @relation("AnnouncementDepartment")
+  submittedRequests     Request[]              @relation("RequestDepartment")
+  assignedRequests      Request[]              @relation("RequestAssigned")
+  reportSections        EventReportSection[]
+  notices               DepartmentNotice[]
+  linkRequests          MemberLinkRequest[]    @relation("LinkRequestDept")
+  financialSeries       FinancialSeries[]
+  financialRequests     FinancialRequest[]
   // Événements d'équipe (spec 044)
-  teamEvents        TeamEvent[]
+  teamEvents            TeamEvent[]
   // Absence ciblée (spec 050) : départements visés quand allDepartments = false
-  absenceTargets    AbsenceDepartment[]
+  absenceTargets        AbsenceDepartment[]
   availabilityResponses AvailabilityResponse[]
-  availabilityAsks  AvailabilityAsk[]
+  availabilityAsks      AvailabilityAsk[]
 
   serviceWithdrawals ServiceWithdrawal[]
 
@@ -359,16 +363,16 @@ model Member {
   // Module intégration familles
   familyIntegrationRequests FamilyIntegrationRequest[] @relation("IntegrationMemberLink")
 
-  absences       Absence[]
+  absences              Absence[]
   availabilityResponses AvailabilityResponse[]
-  absenceBackups AbsenceBackup[]
+  absenceBackups        AbsenceBackup[]
 
   // Service d'ouverture/fermeture de l'église (spec 041)
   openingClosingAssignments OpeningClosingAssignment[]
 
   // Désistements (spec 061)
-  serviceWithdrawals    ServiceWithdrawal[] @relation("WithdrawnMember")
-  serviceReplacements   ServiceWithdrawal[] @relation("ReplacementMember")
+  serviceWithdrawals  ServiceWithdrawal[] @relation("WithdrawnMember")
+  serviceReplacements ServiceWithdrawal[] @relation("ReplacementMember")
 
   @@map("members")
 }
@@ -514,7 +518,7 @@ model Event {
   availabilityAsks          AvailabilityAsk[]
   treasuryCollections       TreasuryCollection[]
 
-  serviceWithdrawals        ServiceWithdrawal[]
+  serviceWithdrawals ServiceWithdrawal[]
 
   @@map("events")
 }
@@ -748,14 +752,14 @@ model AuditLog {
 }
 
 model Notification {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   userId     String
   type       String // PLANNING_REMINDER, PLANNING_UPDATED, etc.
   title      String
-  message    String   @db.Text
-  read       Boolean  @default(false)
+  message    String    @db.Text
+  read       Boolean   @default(false)
   link       String?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
   /// Domaine de la notification (spec 053) — déclaré par le manifeste du module émetteur,
   /// utilisé par la préférence email de l'utilisateur. Nullable : les notifications
   /// antérieures à la spec 053 sont rattachées par la migration (historique d'affichage
@@ -763,12 +767,12 @@ model Notification {
   domain     String?
   /// Objet métier dont parle la notification (spec 057, ADR-0019) — permet de l'effacer avec
   /// lui. Nullable : notifications antérieures et notifications sans objet précis.
-  entityType String?  @db.VarChar(50)
+  entityType String?   @db.VarChar(50)
   entityId   String?
   /// Livraison push (spec 068, ADR-0024) : posé quand un passage prend la notification en
   /// charge (envoyée ou écartée par préférence). Null = encore à traiter.
   pushedAt   DateTime?
-  user       User     @relation(fields: [userId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
 
   @@index([userId, read, createdAt])
   @@index([userId, domain])
@@ -1792,17 +1796,17 @@ model FinancialRequest {
   processedById    String?
   processedAt      DateTime?
 
-  church       Church                @relation(fields: [churchId], references: [id])
-  department   Department?           @relation(fields: [departmentId], references: [id])
-  submittedBy  User                  @relation("FinancialRequestSubmitter", fields: [submittedById], references: [id])
-  processedBy  User?                 @relation("FinancialRequestProcessor", fields: [processedById], references: [id])
-  series       FinancialSeries?      @relation(fields: [seriesId], references: [id])
-  correctionOf FinancialRequest?     @relation("RequestCorrections", fields: [correctionOfId], references: [id])
-  corrections  FinancialRequest[]    @relation("RequestCorrections")
-  attachments  FinancialAttachment[]
-  payments     FinancialPayment[]
-  shuttleReimbursedEntry ShuttleEntry? @relation("ShuttleReimbursement")
-  shuttleImportedEntry   ShuttleEntry? @relation("ShuttleSourceRequest")
+  church                 Church                @relation(fields: [churchId], references: [id])
+  department             Department?           @relation(fields: [departmentId], references: [id])
+  submittedBy            User                  @relation("FinancialRequestSubmitter", fields: [submittedById], references: [id])
+  processedBy            User?                 @relation("FinancialRequestProcessor", fields: [processedById], references: [id])
+  series                 FinancialSeries?      @relation(fields: [seriesId], references: [id])
+  correctionOf           FinancialRequest?     @relation("RequestCorrections", fields: [correctionOfId], references: [id])
+  corrections            FinancialRequest[]    @relation("RequestCorrections")
+  attachments            FinancialAttachment[]
+  payments               FinancialPayment[]
+  shuttleReimbursedEntry ShuttleEntry?         @relation("ShuttleReimbursement")
+  shuttleImportedEntry   ShuttleEntry?         @relation("ShuttleSourceRequest")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1840,14 +1844,14 @@ model FinancialAttachment {
 /// Tranche de paiement d'une demande validée.
 /// La compta crée 1..N tranches lors de la validation, puis confirme chaque remise.
 model FinancialPayment {
-  id             String    @id @default(cuid())
-  requestId      String
-  amount         Decimal   @db.Decimal(10, 2)
-  scheduledDate  DateTime
-  releasedAt     DateTime? // null = pas encore versé
-  releasedAmount Decimal?  @db.Decimal(10, 2) // montant effectivement remis (peut être < amount)
-  releasedById   String? // comptable ayant confirmé la remise
-  note           String?   @db.VarChar(500)
+  id                String    @id @default(cuid())
+  requestId         String
+  amount            Decimal   @db.Decimal(10, 2)
+  scheduledDate     DateTime
+  releasedAt        DateTime? // null = pas encore versé
+  releasedAmount    Decimal?  @db.Decimal(10, 2) // montant effectivement remis (peut être < amount)
+  releasedById      String? // comptable ayant confirmé la remise
+  note              String?   @db.VarChar(500)
   /// Compte de trésorerie d'où le paiement est sorti (spec 076) ; null = compte commun.
   treasuryAccountId String?
 
@@ -2526,17 +2530,17 @@ enum AvailabilityAskReason {
 
 /// Réglages de collecte par église. Absence de ligne = valeurs par défaut, collecte active.
 model AvailabilitySettings {
-  id                String   @id @default(cuid())
-  churchId          String   @unique
-  enabled           Boolean  @default(true)
-  openMonthsBefore  Int      @default(2)
-  closeDaysBefore   Int      @default(7)
-  relanceDaysBefore Int      @default(3)
+  id                         String   @id @default(cuid())
+  churchId                   String   @unique
+  enabled                    Boolean  @default(true)
+  openMonthsBefore           Int      @default(2)
+  closeDaysBefore            Int      @default(7)
+  relanceDaysBefore          Int      @default(3)
   /// Délai sans nouvelle modification avant l'envoi du récapitulatif de changements de planning (spec 060).
-  planningNoticeDelayMinutes Int @default(15)
-  church            Church   @relation(fields: [churchId], references: [id])
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  planningNoticeDelayMinutes Int      @default(15)
+  church                     Church   @relation(fields: [churchId], references: [id])
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
 
   @@map("availability_settings")
 }
@@ -2699,37 +2703,37 @@ enum GivingNameSize {
 }
 
 model GivingPage {
-  id                String   @id @default(cuid())
-  churchId          String   @unique
-  enabled           Boolean  @default(false)
-  intro             String?  @db.Text
+  id                   String         @id @default(cuid())
+  churchId             String         @unique
+  enabled              Boolean        @default(false)
+  intro                String?        @db.Text
   // Don en ligne
-  onlineEnabled     Boolean  @default(false)
-  onlineUrl         String?  @db.VarChar(500)
-  onlineDescription String?  @db.Text
-  onlineNote        String?  @db.VarChar(200)
+  onlineEnabled        Boolean        @default(false)
+  onlineUrl            String?        @db.VarChar(500)
+  onlineDescription    String?        @db.Text
+  onlineNote           String?        @db.VarChar(200)
   // Virement
-  transferEnabled   Boolean  @default(false)
-  beneficiary       String?  @db.VarChar(140)
+  transferEnabled      Boolean        @default(false)
+  beneficiary          String?        @db.VarChar(140)
   /// Normalisé : majuscules, sans espaces.
-  iban              String?  @db.VarChar(34)
-  bic               String?  @db.VarChar(11)
-  transferReference String?  @db.VarChar(140)
+  iban                 String?        @db.VarChar(34)
+  bic                  String?        @db.VarChar(11)
+  transferReference    String?        @db.VarChar(140)
   // Sur place : chèques et espèces dans l'enveloppe remise par l'accueil
-  onsiteEnabled     Boolean  @default(false)
-  checkPayee        String?  @db.VarChar(140)
-  onsiteText        String?  @db.Text
+  onsiteEnabled        Boolean        @default(false)
+  checkPayee           String?        @db.VarChar(140)
+  onsiteText           String?        @db.Text
   // Reçu fiscal — désactivé par défaut, sans texte par défaut
-  taxReceiptEnabled Boolean  @default(false)
-  taxReceiptText    String?  @db.Text
+  taxReceiptEnabled    Boolean        @default(false)
+  taxReceiptText       String?        @db.Text
   // Bas de page
-  verseText         String?  @db.Text
-  verseReference    String?  @db.VarChar(80)
-  contactEmail      String?  @db.VarChar(254)
-  address           String?  @db.VarChar(255)
-  socialHandle      String?  @db.VarChar(80)
+  verseText            String?        @db.Text
+  verseReference       String?        @db.VarChar(80)
+  contactEmail         String?        @db.VarChar(254)
+  address              String?        @db.VarChar(255)
+  socialHandle         String?        @db.VarChar(80)
   /// Adresse courte optionnelle (https), affichée sur la slide et ciblée par son QR code.
-  shortUrl          String?  @db.VarChar(255)
+  shortUrl             String?        @db.VarChar(255)
   // Nom de l'église (spec 066) : un réglage pour la page publique, un pour la slide
   pageChurchNameShown  Boolean        @default(true)
   pageChurchNameSize   GivingNameSize @default(SMALL)
@@ -2740,11 +2744,11 @@ model GivingPage {
   logoKey              String?        @db.VarChar(255)
   pageLogoShown        Boolean        @default(true)
   slideLogoShown       Boolean        @default(true)
-  updatedById       String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  church            Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
-  updatedBy         User?    @relation("GivingPageUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedById          String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  church               Church         @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  updatedBy            User?          @relation("GivingPageUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
 
   @@map("giving_pages")
 }
@@ -3100,18 +3104,18 @@ model TicketingEvent {
   createdAt                DateTime             @default(now())
   updatedAt                DateTime             @updatedAt
 
-  church        Church                @relation(fields: [churchId], references: [id], onDelete: Cascade)
-  createdBy     User?                 @relation("TicketingEventCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  tariffs       TicketingTariff[]
-  options       TicketingOption[]
-  bookings      TicketingBooking[]
-  roles         TicketingEventRole[]
-  posts         TicketingPost[]
-  assignments   TicketingAssignment[]
-  passages      TicketingPassage[]
-  onsiteSales   TicketingOnsiteSale[]
-  payments      TicketingPayment[]
-  participants  TicketingParticipant[]
+  church       Church                 @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  createdBy    User?                  @relation("TicketingEventCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  tariffs      TicketingTariff[]
+  options      TicketingOption[]
+  bookings     TicketingBooking[]
+  roles        TicketingEventRole[]
+  posts        TicketingPost[]
+  assignments  TicketingAssignment[]
+  passages     TicketingPassage[]
+  onsiteSales  TicketingOnsiteSale[]
+  payments     TicketingPayment[]
+  participants TicketingParticipant[]
 
   @@unique([churchId, slug])
   @@index([createdById])
@@ -3609,4 +3613,133 @@ model TreasuryBudget {
 
   @@unique([churchId, year, categoryId, month])
   @@map("treasury_budgets")
+}
+
+// ─── Assistant de prise en main (spec 075) ───────────────────────────────────
+// Les fiches fournies vivent dans le code du module ; la base ne garde que les ajouts et
+// corrections du Super Admin, les questions à traiter (anonymes, d'instance), les compteurs
+// journaliers et le cache des vecteurs du modèle de sens. Aucune conversation n'est stockée.
+
+enum AssistantPersona {
+  NIA
+  KOI
+}
+
+enum AssistantEntrySource {
+  CUSTOM
+  OVERRIDE
+}
+
+enum AssistantPendingStatus {
+  OPEN
+  ANSWERED
+  LINKED
+  OFF_TOPIC
+}
+
+enum AssistantPendingReason {
+  UNANSWERED
+  NOT_HELPFUL
+}
+
+/// Réglage d'instance (une ligne, id = "instance") : l'assistant est activé par le Super Admin.
+model AssistantSettings {
+  id          String   @id
+  enabled     Boolean  @default(false)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("assistant_settings")
+}
+
+/// Coupure par église (Admin d'église) ; absence de ligne = suit l'instance.
+model AssistantChurchSetting {
+  churchId    String   @id
+  disabled    Boolean  @default(true)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+  church      Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  @@map("assistant_church_settings")
+}
+
+/// Ajout du Super Admin (CUSTOM) ou correction d'une fiche fournie (OVERRIDE, `builtinKey`).
+model AssistantEntry {
+  id          String               @id @default(cuid())
+  source      AssistantEntrySource
+  builtinKey  String?              @unique @db.VarChar(40)
+  title       String               @db.VarChar(200)
+  /// string[] : formulations
+  questions   Json
+  answer      String               @db.Text
+  href        String?              @db.VarChar(200)
+  hrefLabel   String?              @db.VarChar(80)
+  /// Role[] ; [] = tous
+  roles       Json
+  module      String?              @db.VarChar(40)
+  /// Préfixes d'écran pour les questions fréquentes
+  screens     Json
+  /// Masque une fiche fournie
+  disabled    Boolean              @default(false)
+  updatedById String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@map("assistant_entries")
+}
+
+/// Question à traiter : texte anonymisé, sans compte ni église ; regroupée par proximité.
+model AssistantPendingQuestion {
+  id           String                 @id @default(cuid())
+  text         String                 @db.VarChar(300)
+  reason       AssistantPendingReason
+  screen       String?                @db.VarChar(120)
+  role         String?                @db.VarChar(40)
+  count        Int                    @default(1)
+  status       AssistantPendingStatus @default(OPEN)
+  entryKey     String?                @db.VarChar(60)
+  firstAt      DateTime               @default(now())
+  lastAt       DateTime               @default(now())
+  resolvedAt   DateTime?
+  resolvedById String?
+
+  @@index([status, lastAt])
+  @@map("assistant_pending_questions")
+}
+
+/// Formulation rattachée à une fiche (« même question, autrement dite ») : enrichit l'index.
+model AssistantAlias {
+  id        String   @id @default(cuid())
+  entryKey  String   @db.VarChar(60)
+  text      String   @db.VarChar(300)
+  createdAt DateTime @default(now())
+
+  @@index([entryKey])
+  @@map("assistant_aliases")
+}
+
+/// Compteurs d'usage par jour (instance) : aucune donnée de personne.
+model AssistantDailyStat {
+  day         DateTime @id @db.Date
+  questions   Int      @default(0)
+  answered    Int      @default(0)
+  suggested   Int      @default(0)
+  unanswered  Int      @default(0)
+  dataAnswers Int      @default(0)
+  helpful     Int      @default(0)
+  notHelpful  Int      @default(0)
+
+  @@map("assistant_daily_stats")
+}
+
+/// Cache des vecteurs du modèle de sens (empreinte du texte + nom du modèle).
+model AssistantEmbedding {
+  hash      String   @db.Char(64)
+  model     String   @db.VarChar(80)
+  /// Float32Array (384 × 4 octets)
+  vector    Bytes
+  createdAt DateTime @default(now())
+
+  @@id([hash, model])
+  @@map("assistant_embeddings")
 }

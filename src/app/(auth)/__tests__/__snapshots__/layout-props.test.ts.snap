@@ -16,6 +16,11 @@ exports[`AuthLayout — props de navigation > Admin aussi Admin d'une autre égl
       "label": "Suivi pastoral",
     },
   ],
+  "assistant": {
+    "enabled": false,
+    "firstName": "Test",
+    "persona": "NIA",
+  },
   "banner": undefined,
   "churchLogo": null,
   "churchName": "Rennes",
@@ -181,6 +186,11 @@ exports[`AuthLayout — props de navigation > Admin aussi pasteur, vue admin cho
       "label": "Suivi pastoral",
     },
   ],
+  "assistant": {
+    "enabled": false,
+    "firstName": "Test",
+    "persona": "NIA",
+  },
   "banner": undefined,
   "churchLogo": null,
   "churchName": "Rennes",
@@ -346,6 +356,11 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
       "label": "Suivi pastoral",
     },
   ],
+  "assistant": {
+    "enabled": false,
+    "firstName": "Test",
+    "persona": "NIA",
+  },
   "banner": undefined,
   "churchLogo": null,
   "churchName": "Rennes",
@@ -494,6 +509,11 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
 exports[`AuthLayout — props de navigation > Comptable 1`] = `
 {
   "agendaLinks": [],
+  "assistant": {
+    "enabled": false,
+    "firstName": "Test",
+    "persona": "NIA",
+  },
   "banner": undefined,
   "churchLogo": null,
   "churchName": "Rennes",
@@ -553,6 +573,11 @@ exports[`AuthLayout — props de navigation > Comptable 1`] = `
 exports[`AuthLayout — props de navigation > Ministre 1`] = `
 {
   "agendaLinks": [],
+  "assistant": {
+    "enabled": false,
+    "firstName": "Test",
+    "persona": "NIA",
+  },
   "banner": undefined,
   "churchLogo": null,
   "churchName": "Rennes",
@@ -639,6 +664,11 @@ exports[`AuthLayout — props de navigation > Pasteur seul (profil pastoral, vue
       "label": "Mon agenda",
     },
   ],
+  "assistant": {
+    "enabled": false,
+    "firstName": "Test",
+    "persona": "NIA",
+  },
   "banner": undefined,
   "churchLogo": null,
   "churchName": "Rennes",
@@ -693,6 +723,11 @@ exports[`AuthLayout — props de navigation > Pasteur seul (profil pastoral, vue
 exports[`AuthLayout — props de navigation > Resp. département Communication, Photos repliées sur Production Média 1`] = `
 {
   "agendaLinks": [],
+  "assistant": {
+    "enabled": false,
+    "firstName": "Test",
+    "persona": "NIA",
+  },
   "banner": undefined,
   "churchLogo": null,
   "churchName": "Rennes",
@@ -765,6 +800,11 @@ exports[`AuthLayout — props de navigation > Resp. département Communication, 
 exports[`AuthLayout — props de navigation > Resp. département Production Média et Intégration 1`] = `
 {
   "agendaLinks": [],
+  "assistant": {
+    "enabled": false,
+    "firstName": "Test",
+    "persona": "NIA",
+  },
   "banner": undefined,
   "churchLogo": null,
   "churchName": "Rennes",
@@ -867,6 +907,11 @@ exports[`AuthLayout — props de navigation > Référent soins pastoraux 1`] = `
       "label": "Suivi pastoral",
     },
   ],
+  "assistant": {
+    "enabled": false,
+    "firstName": "Test",
+    "persona": "NIA",
+  },
   "banner": undefined,
   "churchLogo": null,
   "churchName": "Rennes",
@@ -930,6 +975,11 @@ exports[`AuthLayout — props de navigation > STAR du Protocole 1`] = `
       "label": "Planification",
     },
   ],
+  "assistant": {
+    "enabled": false,
+    "firstName": "Test",
+    "persona": "NIA",
+  },
   "banner": undefined,
   "churchLogo": null,
   "churchName": "Rennes",
@@ -989,6 +1039,11 @@ exports[`AuthLayout — props de navigation > STAR du Protocole 1`] = `
 exports[`AuthLayout — props de navigation > STAR lié, berger de famille 1`] = `
 {
   "agendaLinks": [],
+  "assistant": {
+    "enabled": false,
+    "firstName": "Test",
+    "persona": "NIA",
+  },
   "banner": undefined,
   "churchLogo": null,
   "churchName": "Rennes",
@@ -1070,6 +1125,11 @@ exports[`AuthLayout — props de navigation > Secrétaire avec profil pastoral p
       "label": "Suivi pastoral",
     },
   ],
+  "assistant": {
+    "enabled": false,
+    "firstName": "Test",
+    "persona": "NIA",
+  },
   "banner": undefined,
   "churchLogo": null,
   "churchName": "Rennes",
@@ -1203,6 +1263,11 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
       "label": "Suivi pastoral",
     },
   ],
+  "assistant": {
+    "enabled": false,
+    "firstName": "Test",
+    "persona": "NIA",
+  },
   "banner": undefined,
   "churchLogo": null,
   "churchName": "Rennes",
@@ -1268,6 +1333,10 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
     {
       "href": "/admin/app-icon",
       "label": "Icône de l'application",
+    },
+    {
+      "href": "/admin/assistant",
+      "label": "Assistant",
     },
   ],
   "currentChurchId": "church-1",
@@ -1363,6 +1432,11 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
 exports[`AuthLayout — props de navigation > sans église courante, ni départements d'admin ni sections d'église 1`] = `
 {
   "agendaLinks": [],
+  "assistant": {
+    "enabled": false,
+    "firstName": "Test",
+    "persona": "NIA",
+  },
   "banner": undefined,
   "churchLogo": null,
   "churchName": "Église",
@@ -1428,6 +1502,10 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
     {
       "href": "/admin/app-icon",
       "label": "Icône de l'application",
+    },
+    {
+      "href": "/admin/assistant",
+      "label": "Assistant",
     },
   ],
   "currentChurchId": null,

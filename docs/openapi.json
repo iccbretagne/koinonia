@@ -6206,6 +6206,1122 @@
         }
       }
     },
+    "/api/assistant/admin/entries": {
+      "get": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Base de connaissances de l'assistant",
+        "description": "**Accès** : Super Admin.\n\nFiches fournies avec Koinonia (corrigées ou masquées le cas échéant) et fiches ajoutées, avec leur audience et leur module.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "responses": {
+          "200": {
+            "description": "Fiches",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Ajouter une fiche à la base de l'assistant",
+        "description": "**Accès** : Super Admin.\n\nLien interne uniquement ; audience par rôles (aucun = tous). Une mise à jour de Koinonia ne l'efface jamais. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "questions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "minItems": 1,
+                    "maxItems": 20
+                  },
+                  "answer": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4000
+                  },
+                  "href": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 200,
+                    "pattern": "^\\/(?!\\/)[^\\s]*$"
+                  },
+                  "hrefLabel": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 80
+                  },
+                  "roles": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "SUPER_ADMIN",
+                        "ADMIN",
+                        "SECRETARY",
+                        "MINISTER",
+                        "DEPARTMENT_HEAD",
+                        "DISCIPLE_MAKER",
+                        "REPORTER",
+                        "STAR",
+                        "PASTORAL_CARE_REFERENT",
+                        "ACCOUNTANT"
+                      ]
+                    },
+                    "maxItems": 10,
+                    "default": []
+                  },
+                  "module": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 40
+                  },
+                  "screens": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 120
+                    },
+                    "maxItems": 20,
+                    "default": []
+                  }
+                },
+                "required": [
+                  "title",
+                  "questions",
+                  "answer"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "{ key }",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/assistant/admin/entries/{key}": {
+      "patch": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Corriger, rétablir, masquer ou afficher une fiche de l'assistant",
+        "description": "**Accès** : Super Admin.\n\nFiche fournie : `override` remplace son texte (son audience reste celle de Koinonia), `restore` rétablit le texte fourni, `hide`/`show` la masque ou l'affiche. Fiche ajoutée : `override` la remplace. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "key",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "override"
+                        ]
+                      },
+                      "entry": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "questions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 300
+                            },
+                            "minItems": 1,
+                            "maxItems": 20
+                          },
+                          "answer": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 4000
+                          },
+                          "href": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 200,
+                            "pattern": "^\\/(?!\\/)[^\\s]*$"
+                          },
+                          "hrefLabel": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 80
+                          },
+                          "roles": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "SUPER_ADMIN",
+                                "ADMIN",
+                                "SECRETARY",
+                                "MINISTER",
+                                "DEPARTMENT_HEAD",
+                                "DISCIPLE_MAKER",
+                                "REPORTER",
+                                "STAR",
+                                "PASTORAL_CARE_REFERENT",
+                                "ACCOUNTANT"
+                              ]
+                            },
+                            "maxItems": 10,
+                            "default": []
+                          },
+                          "module": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 40
+                          },
+                          "screens": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            "maxItems": 20,
+                            "default": []
+                          }
+                        },
+                        "required": [
+                          "title",
+                          "questions",
+                          "answer"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "entry"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "restore"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "hide"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "show"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{ ok: true }",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Supprimer une fiche ajoutée",
+        "description": "**Accès** : Super Admin.\n\nAvec ses formulations rattachées. Une fiche fournie se masque, elle ne se supprime pas (400). Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "key",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ ok: true }",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/assistant/admin/pending": {
+      "get": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Questions posées à l'assistant qui attendent une réponse",
+        "description": "**Accès** : Super Admin.\n\nTexte anonymisé, regroupé, avec le nombre de fois, l'écran et le rôle — jamais le compte ni l'église.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "OPEN",
+                "ANSWERED",
+                "LINKED",
+                "OFF_TOPIC"
+              ],
+              "default": "OPEN"
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Questions",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/assistant/admin/pending/{id}": {
+      "patch": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Traiter une question posée à l'assistant",
+        "description": "**Accès** : Super Admin.\n\n`answer` crée une fiche qui y répond, `link` la rattache comme formulation d'une fiche existante, `offtopic` la classe hors sujet. La réponse sert dès la question suivante. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "answer"
+                        ]
+                      },
+                      "entry": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "questions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 300
+                            },
+                            "minItems": 1,
+                            "maxItems": 20
+                          },
+                          "answer": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 4000
+                          },
+                          "href": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 200,
+                            "pattern": "^\\/(?!\\/)[^\\s]*$"
+                          },
+                          "hrefLabel": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 80
+                          },
+                          "roles": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "SUPER_ADMIN",
+                                "ADMIN",
+                                "SECRETARY",
+                                "MINISTER",
+                                "DEPARTMENT_HEAD",
+                                "DISCIPLE_MAKER",
+                                "REPORTER",
+                                "STAR",
+                                "PASTORAL_CARE_REFERENT",
+                                "ACCOUNTANT"
+                              ]
+                            },
+                            "maxItems": 10,
+                            "default": []
+                          },
+                          "module": {
+                            "type": "string",
+                            "nullable": true,
+                            "maxLength": 40
+                          },
+                          "screens": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            "maxItems": 20,
+                            "default": []
+                          }
+                        },
+                        "required": [
+                          "title",
+                          "questions",
+                          "answer"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "entry"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "link"
+                        ]
+                      },
+                      "entryKey": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 60
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "entryKey"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "offtopic"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Question traitée",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Supprimer une question posée à l'assistant",
+        "description": "**Accès** : Super Admin.\n\nPar exemple quand l'anonymisation a laissé passer un prénom. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ ok: true }",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/assistant/admin/stats": {
+      "get": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Usage de l'assistant sur une période",
+        "description": "**Accès** : Super Admin.\n\nCompteurs journaliers d'instance (questions, réponses, suggestions, inconnues, données, avis) et part « Utile ». Aucune donnée de personne. Défaut : 30 derniers jours.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "required": false,
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "required": false,
+            "name": "to",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Compteurs, totaux et nombre de questions à traiter",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/assistant/ask": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Question posée à l'assistant",
+        "description": "**Accès** : toute personne connectée — église courante, assistant actif.\n\nRecherche la fiche de la base qui répond (sens + mots, sans service externe) parmi celles auxquelles le rôle a droit, dans les modules actifs. Réponse écrite et lien, données de la personne (même périmètre que l'écran, église courante), refus sans donnée pour un rôle qui n'a pas l'écran, suggestions, ou question inconnue — remontée alors au Super Admin, anonymisée. Aucune conversation n'est conservée. 30 questions par minute ; 404 si l'assistant est coupé pour l'église.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 300
+                  },
+                  "screen": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "pattern": "^\\/[\\w\\-/[\\]]*$"
+                  }
+                },
+                "required": [
+                  "question"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Réponse de l'assistant",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/assistant/church/{churchId}": {
+      "get": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Assistant de l'église : activé pour l'instance, coupé pour l'église",
+        "description": "**Accès** : permission `church:settings` — dans l'église visée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "church:settings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ instanceEnabled, disabled }",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Couper ou rétablir l'assistant pour l'église",
+        "description": "**Accès** : permission `church:settings` — dans l'église visée.\n\nCoupé, ses membres voient le lien vers le guide à la place. Journalisé dans l'église.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "church:settings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "disabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "disabled"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{ instanceEnabled, disabled }",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/assistant/feedback": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Avis « Utile » / « Pas utile » sur une réponse",
+        "description": "**Accès** : toute personne connectée — église courante, assistant actif.\n\nCompté sans compte ni église. « Pas utile » remonte la question au Super Admin, anonymisée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "entryKey": {
+                    "type": "string",
+                    "maxLength": 60
+                  },
+                  "question": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 300
+                  },
+                  "helpful": {
+                    "type": "boolean"
+                  },
+                  "screen": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "pattern": "^\\/[\\w\\-/[\\]]*$"
+                  }
+                },
+                "required": [
+                  "question",
+                  "helpful"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{ ok: true }",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/assistant/persona": {
+      "get": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Personnage de l'assistant choisi par le compte",
+        "description": "**Accès** : toute personne connectée.\n\nNia par défaut.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "responses": {
+          "200": {
+            "description": "{ persona: \"NIA\" | \"KOI\" }",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Choix du personnage de l'assistant",
+        "description": "**Accès** : toute personne connectée.\n\nPréférence du compte (« Mon profil »), valable sur tous ses appareils.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "persona": {
+                    "type": "string",
+                    "enum": [
+                      "NIA",
+                      "KOI"
+                    ]
+                  }
+                },
+                "required": [
+                  "persona"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{ persona }",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/assistant/settings": {
+      "get": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Activation de l'assistant pour l'instance",
+        "description": "**Accès** : Super Admin.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "responses": {
+          "200": {
+            "description": "{ enabled }",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Activer ou désactiver l'assistant pour l'instance",
+        "description": "**Accès** : Super Admin.\n\nDésactivé par défaut à la mise en service. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{ enabled }",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/assistant/suggestions": {
+      "get": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Questions fréquentes de l'écran courant",
+        "description": "**Accès** : toute personne connectée — église courante, assistant actif.\n\nTrois questions au plus, propres à l'écran (`screen`) et au rôle, complétées par des questions générales.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 120,
+              "pattern": "^\\/[\\w\\-/[\\]]*$"
+            },
+            "required": false,
+            "name": "screen",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Questions proposées",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
     "/api/audio/public/{token}": {
       "get": {
         "tags": [

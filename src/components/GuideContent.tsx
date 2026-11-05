@@ -510,6 +510,22 @@ const FEATURES: Feature[] = [
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "edit" },
   },
   {
+    name: "Assistant (Nia ou Koï)",
+    description: "Touchez la bulle du personnage, en bas à droite de l'écran, et posez votre question avec vos mots : « je suis pas dispo dimanche », « je sers quand ? ». L'assistant répond selon votre rôle, avec un bouton qui ouvre le bon écran, et peut afficher vos propres informations (prochain service, demandes en cours…) sans jamais en montrer plus que vos écrans. Les questions fréquentes de l'écran où vous êtes sont proposées. « Utile » / « Pas utile » aide à l'améliorer ; une question sans réponse est transmise, sans votre nom, pour compléter l'aide. Rien n'est conservé à la fermeture, et aucune question ne quitte Koinonia. Choisissez Nia ou Koï dans « Mon profil ». « × » la réduit en languette sur le bord de l'écran. Si l'assistant n'est pas activé pour votre église, ce guide reste accessible depuis le menu de votre compte.",
+    category: "Profil",
+    screenshotTitle: "Assistant",
+    screenshotFile: "guide-assistant.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "edit" },
+  },
+  {
+    name: "Administrer l'assistant",
+    description: "Le Super Admin active l'assistant pour toute l'instance dans « Assistant » (Configuration) et suit son usage. L'onglet « Questions à traiter » regroupe les questions restées sans réponse ou jugées « Pas utile », anonymes : « Répondre » ajoute une fiche à la base, « Rattacher à… » en fait une formulation d'une fiche existante, « Hors sujet » la classe. La réponse sert dès la question suivante. L'onglet « Base » permet de corriger, masquer ou rétablir les fiches fournies et d'en ajouter ; une mise à jour de Koinonia ne les efface pas. L'Admin d'une église peut couper l'assistant pour son église dans « Paramètres de l'église ».",
+    category: "Profil",
+    screenshotTitle: "Administration de l'assistant",
+    screenshotFile: "guide-assistant-admin.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
     name: "Messages de l'administration",
     description: "Un bandeau en haut de Koinonia affiche les messages de votre église ou de Koinonia qui vous concernent (maintenance, consigne, nouveautés). « Lire » ouvre le message complet ; la croix le ferme sur tous vos appareils (un message urgent reste affiché jusqu'à la fin de sa période). Vous les recevez aussi dans la cloche, et par email ou sur votre appareil selon « Mes notifications ».",
     category: "Profil",

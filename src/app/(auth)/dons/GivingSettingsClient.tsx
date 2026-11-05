@@ -355,7 +355,7 @@ export default function GivingSettingsClient({
           )}
 
           {/* Au-dessus de la barre du bas sur mobile (64 px + bordure, comme BulkActionBar). */}
-          <div className="sticky bottom-[calc(65px+env(safe-area-inset-bottom))] -mx-1 flex items-center justify-between gap-3 border-t border-line bg-bg px-1 py-3 md:bottom-0">
+          <div data-k-bottom-bar className="sticky bottom-[calc(65px+env(safe-area-inset-bottom))] -mx-1 flex items-center justify-between gap-3 border-t border-line bg-bg px-1 py-3 md:bottom-0">
             <p role="status" className="flex min-w-0 items-center gap-2 text-[13px] leading-[18px]">
               {dirty ? (
                 <>

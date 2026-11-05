@@ -1,7 +1,7 @@
 # Spec — Assistant de prise en main
 
 - **Numéro** : 075
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-11-04
 - **Branche suggérée** : `feat/assistant`
 
@@ -33,8 +33,30 @@ bon écran.
 
 L'assistant fonctionne **entièrement dans Koinonia, sans service externe** : aucune question ni
 donnée ne quitte l'instance, il n'y a ni abonnement ni coût à l'usage, et ses réponses sont
-prévisibles. Il comprend les questions **prévues** (sur l'application et sur les données), pas
-toute question imaginable ; ce qu'il ne sait pas faire est remonté pour enrichir l'aide.
+prévisibles. Il s'appuie sur une **base de connaissances** (questions et réponses rédigées, par
+écran et par rôle) et comprend une question **par son sens**, pas seulement par ses mots : « je
+serai pas là dimanche » et « comment déclarer une absence ? » mènent à la même réponse. Il ne
+traite que les questions couvertes par cette base et par le catalogue de questions de données ;
+ce qu'il ne sait pas faire **remonte à l'administrateur**, qui complète la base.
+
+Une IA (externe ou installée sur le serveur) pourra plus tard s'ajouter : l'assistant est conçu
+pour qu'elle s'appuie sur la même base, les mêmes questions de données et les mêmes droits, sans
+rien changer pour les utilisateurs.
+
+## Le personnage
+
+L'assistant a un visage : **Nia** (par défaut) ou **Koï**, deux personnages dessinés aux couleurs
+de l'église. Chacun choisit le sien dans « Mon profil » ; le choix suit la personne sur tous ses
+appareils. Le personnage :
+- apparaît sur le bouton d'aide (en petit) et en tête du panneau ;
+- se présente par son nom (« Bonjour Marie ! Je suis Nia. ») ;
+- change d'expression selon la situation : au repos, bonjour (ouverture), réfléchit (pendant la
+  recherche), content (réponse jugée « Utile »), désolé (question inconnue ou réservée) ;
+- est discrètement animé (clignement des yeux, léger mouvement, passage d'une expression à
+  l'autre), et reste immobile pour une personne dont l'appareil demande de réduire les
+  animations ;
+- salue une seule fois par appareil par une bulle d'accueil près du bouton d'aide, qui disparaît
+  d'elle-même.
 
 ## Utilisateurs concernés
 
@@ -46,8 +68,12 @@ Faiseur de Disciples, Reporter, STAR, Référent soins pastoraux, Comptable) :
 
 **Super Admin** :
 - active ou désactive l'assistant pour toute l'instance ;
-- voit son usage : nombre de questions, part des réponses jugées utiles, et le texte
-  **anonymisé** des questions restées sans réponse ou jugées « Pas utile », pour compléter l'aide.
+- voit son usage : nombre de questions, part des réponses jugées utiles ;
+- traite les **questions à traiter** : questions restées sans réponse ou jugées « Pas utile »,
+  **anonymisées**, regroupées quand elles se ressemblent ; pour chacune il écrit une réponse,
+  la rattache à une réponse existante (« même question, autrement dite ») ou la classe hors
+  sujet ; la base est enrichie aussitôt ;
+- relit et corrige la base de connaissances.
 
 **Admin d'église** : peut couper l'assistant pour **son** église quand l'instance l'a activé ; ses
 membres gardent alors l'accès au guide.
@@ -101,6 +127,28 @@ Exemples de questions de données prévues dès le départ, selon le rôle :
 - L'assistant ne propose **jamais** un écran que le rôle ne peut pas ouvrir, et ne montre
   **jamais** une information que l'écran correspondant ne montrerait pas à cette personne.
 
+### Scénario — une question remonte à l'administrateur
+
+1. Un Resp. département demande : « comment j'exporte la liste de mes STAR ? ». L'assistant ne
+   trouve pas de réponse assez proche : il le dit, propose les questions les plus proches et le
+   lien vers le guide.
+2. La question arrive, sans le nom de la personne, dans « Questions à traiter » côté Super Admin,
+   avec l'écran d'où elle a été posée et son rôle. Trois autres personnes ont posé presque la
+   même : elles sont regroupées (« 4 fois »).
+3. Le Super Admin écrit la réponse (étapes, lien, rôles concernés) ou la rattache à une réponse
+   existante. Dès l'enregistrement, la question suivante de ce type reçoit cette réponse.
+4. Un récapitulatif hebdomadaire signale au Super Admin les nouvelles questions à traiter.
+
+### La base de connaissances
+
+- Elle est **fournie avec Koinonia** : une réponse par geste et par écran, pour chaque rôle qui y
+  a accès, avec les formulations courantes et familières, le lien vers l'écran, et ce que les
+  autres rôles doivent faire à la place.
+- Elle suit la version en service : une réponse qui mène à un écran disparu ou inaccessible au
+  rôle visé est impossible à livrer.
+- Les ajouts du Super Admin (réponses aux questions remontées) s'y ajoutent sans être écrasés
+  par une mise à jour ; une réponse fournie corrigée par le Super Admin garde sa correction.
+
 ### Scénarios alternatifs / cas limites
 
 - **Question non reconnue** : l'assistant le dit simplement, propose les deux ou trois questions
@@ -128,6 +176,10 @@ Exemples de questions de données prévues dès le départ, selon le rôle :
 
 - [ ] Un bouton d'aide est accessible depuis tous les écrans connectés, sur ordinateur et sur
       téléphone.
+- [ ] L'assistant prend le visage et le nom de Nia par défaut ; une personne qui choisit Koï dans
+      « Mon profil » le retrouve sur tous ses appareils.
+- [ ] Le personnage change d'expression selon la situation (bonjour, réfléchit, content, désolé)
+      et ne s'anime pas quand l'appareil demande de réduire les animations.
 - [ ] Le panneau propose des questions fréquentes propres à l'écran courant et au rôle.
 - [ ] Une question sur l'application formulée librement, avec fautes ou mots familiers, reçoit
       la bonne réponse écrite et un lien vers l'écran concerné.
@@ -144,6 +196,14 @@ Exemples de questions de données prévues dès le départ, selon le rôle :
       externe.
 - [ ] Une question non reconnue reçoit des suggestions proches et le lien vers le guide ; elle
       est enregistrée sans le nom de la personne.
+- [ ] Une question formulée autrement qu'une réponse de la base, sans mot commun (« je serai pas
+      là dimanche » / « déclarer une absence »), reçoit la bonne réponse.
+- [ ] Le Super Admin voit les questions à traiter, regroupées et anonymisées, et y répond, les
+      rattache ou les classe hors sujet ; la réponse sert dès la question suivante.
+- [ ] La base de connaissances fournie couvre les écrans de chaque rôle ; chacun de ses liens
+      ouvre un écran existant, accessible au rôle visé.
+- [ ] Une mise à jour de Koinonia n'efface pas les réponses ajoutées ou corrigées par le Super
+      Admin.
 - [ ] Une question hors sujet reçoit un refus poli.
 - [ ] Une fonction d'un module désactivé n'est jamais mentionnée.
 - [ ] Chaque réponse peut être jugée « Utile » / « Pas utile ».
@@ -159,9 +219,11 @@ Exemples de questions de données prévues dès le départ, selon le rôle :
 
 ## Hors périmètre
 
-- Comprendre **n'importe quelle** question ou combiner librement les données : seules les
-  questions prévues sont traitées. Une IA (externe ou installée sur le serveur) pourra s'ajouter
-  plus tard, sur les mêmes questions et les mêmes droits ; ce n'est pas l'objet de cette spec.
+- Comprendre **n'importe quelle** question, rédiger librement une réponse ou combiner librement
+  les données : l'assistant répond par la base et le catalogue de questions de données. Brancher
+  une IA générative (externe ou installée sur le serveur) est une évolution prévue mais pas
+  l'objet de cette spec ; elle devra respecter les mêmes droits et être activée par le Super
+  Admin.
 - Agir à la place de l'utilisateur (déclarer une absence, créer un événement, valider une
   demande) : l'assistant **explique et montre**, il ne fait pas.
 - Toute donnée que la personne ne voit pas déjà dans un écran.
@@ -175,9 +237,7 @@ Exemples de questions de données prévues dès le départ, selon le rôle :
 
 ## Questions ouvertes
 
-- Le contenu (questions-réponses sur l'application, catalogue des questions de données) est à
-  rédiger. Proposition : les 10 écrans les plus utilisés et une vingtaine de questions de données
-  au premier lot, puis chaque module enrichit les siennes.
+Aucune.
 
 ## Décisions
 
@@ -188,3 +248,9 @@ Exemples de questions de données prévues dès le départ, selon le rôle :
   coordonnées personnelles d'autres personnes ; il renvoie vers l'écran concerné.
 - Conservation : aucune conversation ; compteurs, avis et texte anonymisé des questions sans
   réponse ou jugées « Pas utile » seulement.
+- Compréhension par le sens dès la première version, toujours sans service externe.
+- Base de connaissances générée à partir de l'application, puis relue ; enrichie ensuite par le
+  Super Admin à partir des questions remontées.
+- Préparer dès maintenant l'ajout d'une IA, sans l'activer.
+- Relecture de la base générée avant la mise en service : le porteur du projet.
+- Deux personnages au choix, Nia (par défaut) et Koï ; visuels fournis par le porteur du projet.

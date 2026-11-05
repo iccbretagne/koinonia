@@ -245,7 +245,7 @@ export default function SettingsTab({ event }: { readonly event: EventDetail }) 
         )}
       </Section>
 
-      <div className="sticky bottom-20 z-10 md:bottom-4">
+      <div data-k-bottom-bar className="sticky bottom-20 z-10 md:bottom-4">
         <Button type="button" onClick={save} disabled={busy}>
           {busy ? "Enregistrement…" : "Enregistrer les paramètres"}
         </Button>
