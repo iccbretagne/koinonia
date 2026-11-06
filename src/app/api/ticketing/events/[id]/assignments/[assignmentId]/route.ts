@@ -1,8 +1,22 @@
 import { successResponse, errorResponse } from "@/lib/api-utils";
-import { deleteAssignment } from "@/modules/ticketing";
+import { deleteAssignment, updateAssignment } from "@/modules/ticketing";
 import { requireEventAction } from "@/modules/ticketing/auth";
+import { assignmentUpdateSchema } from "./contract";
 
-export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string; assignmentId: string }> }) {
+type Params = { params: Promise<{ id: string; assignmentId: string }> };
+
+export async function PATCH(request: Request, { params }: Params) {
+  try {
+    const { id, assignmentId } = await params;
+    const { session } = await requireEventAction(id, "configure");
+    const input = assignmentUpdateSchema.parse(await request.json());
+    return successResponse(await updateAssignment(id, assignmentId, session.user.id, input));
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+export async function DELETE(_request: Request, { params }: Params) {
   try {
     const { id, assignmentId } = await params;
     const { session } = await requireEventAction(id, "configure");

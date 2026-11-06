@@ -453,3 +453,34 @@ d'événement actif (drapeau `hasTicketing` dans `(auth)/layout.tsx`).
   IndexedDB simulé).
 - **Exhaustivité** : `permissions.test` (`ticketing:manage`), `routes-exhaustivite`,
   `openapi.test`, liste blanche `notifications-no-direct-email`, navigation.
+
+## Évolutions après livraison (6 novembre 2026)
+
+Deux demandes de recette, ajoutées à la spec (sections « Options » et « Équipe et postes »)
+sans nouvelle spec : elles prolongent le lot 1 et le lot 2 sans toucher aux droits.
+
+**Groupes d'options au choix unique.**
+- Schéma : `ticketing_options.choiceGroup` (`VARCHAR(60)`, nullable), migration
+  `20261106130000_ticketing_option_groups`. Un libellé libre plutôt qu'une table de groupes :
+  le groupe n'a pas d'autre propriété que son nom.
+- Règle : `planSelections` (`services/rules.ts`) refuse deux options du même groupe pour un même
+  porteur ; c'est le point de passage unique de l'inscription, de l'ajout de participant et de la
+  modification des options.
+- Organisation : `checkChoiceGroup` (`services/events.ts`) refuse un groupe qui mélangerait les
+  portées, et le regroupement d'options déjà cumulées par un inscrit.
+- Interface : `OptionList` (`components/ticketing/OptionField.tsx`) réunit les options d'un groupe
+  en boutons radio (« Aucun » compris) à la place de la première ; un menu y est présélectionné
+  sur son premier plat disponible.
+
+**Planning de l'équipe.**
+- `PATCH /api/ticketing/events/[id]/assignments/[assignmentId]` (`assignmentUpdateSchema`) :
+  poste et créneau ; la personne ne change pas. `updateAssignment` journalise et prévient le
+  compte affecté si quelque chose change.
+- `listChurchAccounts` renvoie les départements de chaque compte (responsabilité via
+  `user_departments`, fiche STAR liée et validée via `member_user_links`), lus directement en
+  base sans importer `planning` ; `listChurchDepartments` alimente le filtre.
+- Interface (`StaffSection`) : un bloc par poste puis « Sans poste », poste renommable sur place
+  (route `PATCH …/posts/[postId]` existante), modale de modification, filtre par département et
+  recherche par nom.
+- Pas de besoins par poste ni de découpage en créneaux : écartés à la demande.
+

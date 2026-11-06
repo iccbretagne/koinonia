@@ -127,4 +127,30 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     otherwise: "Les messages système sont publiés par le Secrétaire et l'administration de l'église.",
     screens: ["/admin/messages"],
   },
+  {
+    key: "KB-145",
+    kind: "howto",
+    title: "Options au choix unique de la billetterie",
+    questions: ["Repas adulte ou enfant au choix", "une seule option parmi plusieurs", "options qui ne se cumulent pas", "groupe d'options"],
+    answer:
+      "Dans l'événement, onglet « Paramètres », ouvrez chaque option et donnez-leur le même « Groupe au choix unique » (par exemple « Repas »). L'inscrit n'en prend qu'une, ou aucune, par participant ou pour la réservation : elles s'affichent en boutons radio. Chaque option garde son prix et son stock.",
+    href: "/billetterie",
+    hrefLabel: "Billetterie",
+    audience: { predicates: ["ticketing"] },
+    otherwise: "Les options d'un événement sont réglées par son organisateur.",
+    screens: ["/billetterie"],
+  },
+  {
+    key: "KB-146",
+    kind: "howto",
+    title: "Planning de l'équipe d'un événement",
+    questions: ["Organiser les gens de service à la soirée", "affecter quelqu'un à un poste", "planning des bénévoles de l'événement", "changer le poste de quelqu'un"],
+    answer:
+      "Dans l'événement, onglet « Équipe » : créez les postes (porte, parking, vestiaire…), puis affectez les personnes, en les retrouvant par département ou par nom, avec des horaires si besoin. Le planning s'affiche par poste ; le crayon change le poste ou les horaires d'une personne, qui en est prévenue. Chacun voit son affectation dans « Mon planning » avec son badge.",
+    href: "/billetterie",
+    hrefLabel: "Billetterie",
+    audience: { predicates: ["ticketing"] },
+    otherwise: "L'équipe d'un événement est constituée par son organisateur.",
+    screens: ["/billetterie"],
+  },
 ];

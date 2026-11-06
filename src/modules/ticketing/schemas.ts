@@ -249,10 +249,12 @@ export const optionSchema = z
     refundDeadline: isoDate.nullable(),
     active: z.boolean(),
     position: z.coerce.number().int().min(0).max(1000),
+    /** Groupe au choix unique (« Repas ») : une seule de ses options par participant ou réservation. */
+    choiceGroup: optionalText(60),
   })
   .strict();
 export const optionCreateSchema = optionSchema
-  .partial({ description: true, stock: true, pickup: true, namedPrep: true, refundable: true, refundDeadline: true, active: true, position: true })
+  .partial({ description: true, stock: true, pickup: true, namedPrep: true, refundable: true, refundDeadline: true, active: true, position: true, choiceGroup: true })
   .extend({ variants: z.array(z.object({ label: text(120) })).max(20).optional() });
 export const optionUpdateSchema = optionSchema.partial();
 
@@ -409,6 +411,8 @@ export interface PublicOption {
   remaining: number | null;
   refundable: boolean;
   refundDeadline: string | null;
+  /** Groupe au choix unique, ou `null`. */
+  choiceGroup: string | null;
   variants: PublicVariant[];
 }
 export interface PublicEvent {
@@ -494,6 +498,16 @@ export function parseScannedCode(raw: string): { scope: ScannedScope; token: str
 // ── Équipe et contrôle (lot 2) ───────────────────────────────────────────────
 
 export const postSchema = z.object({ name: text(120) }).strict();
+
+/** Modification d'une affectation : poste et créneau (la personne ne change pas). */
+export const assignmentUpdateSchema = z
+  .object({
+    postId: z.string().min(1).max(40).nullable(),
+    startsAt: isoDate.nullable(),
+    endsAt: isoDate.nullable(),
+  })
+  .partial()
+  .strict();
 
 export const assignmentSchema = z
   .object({

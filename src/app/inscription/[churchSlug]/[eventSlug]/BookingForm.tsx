@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
-import OptionField, { optionAmount, toSelections, type Choices } from "@/components/ticketing/OptionField";
+import { OptionList, optionAmount, toSelections, type Choices } from "@/components/ticketing/OptionField";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { Alert, Button, Checkbox, Input, Modal, Select } from "@/components/ui";
 import {
@@ -206,9 +206,7 @@ export default function BookingForm({
                 options={event.tariffs.map((t) => ({ value: t.ageGroup, label: `${AGE_GROUP_LABEL[t.ageGroup]} — ${t.price > 0 ? formatEuros(t.price) : "gratuit"}` }))}
                 onChange={(e) => update(i, { ageGroup: e.target.value as TicketingAgeGroup })}
               />
-              {participantOptions.map((o) => (
-                <OptionField key={o.id} option={o} choice={p.options[o.id]} onChange={(c) => update(i, { options: { ...p.options, [o.id]: c } })} />
-              ))}
+              <OptionList options={participantOptions} choices={p.options} onChange={(c) => update(i, { options: c })} />
             </fieldset>
           ))}
           {participants.length < Math.min(20, event.seatsRemaining) && (
@@ -219,9 +217,7 @@ export default function BookingForm({
           {bookingOptions.length > 0 && (
             <fieldset className="space-y-3 rounded-card border border-line bg-surface p-4">
               <legend className="font-semibold text-ink">Pour la réservation</legend>
-              {bookingOptions.map((o) => (
-                <OptionField key={o.id} option={o} choice={booking[o.id]} onChange={(c) => setBooking((b) => ({ ...b, [o.id]: c }))} />
-              ))}
+              <OptionList options={bookingOptions} choices={booking} onChange={setBooking} />
             </fieldset>
           )}
           <p className="text-[13px] text-ink-muted">Places restantes : {event.seatsRemaining}</p>

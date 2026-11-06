@@ -73,6 +73,7 @@ function ruleOptions(event: EventWithRules): Map<string, RuleOption> {
         active: o.active,
         refundable: o.refundable,
         refundDeadline: o.refundDeadline,
+        choiceGroup: o.choiceGroup,
         variants: o.variants.map((v) => ({ id: v.id, label: v.label, stock: v.stock, closed: v.closed })),
       },
     ])

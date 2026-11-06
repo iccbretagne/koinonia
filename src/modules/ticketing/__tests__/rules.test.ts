@@ -63,6 +63,19 @@ describe("règles de la billetterie (spec 074)", () => {
         ], options)
       ).toThrow(/deux fois/);
     });
+    it("une seule option par groupe au choix unique, pour chaque porteur", () => {
+      const adult: RuleOption = { ...meal, id: "adult", label: "Repas adulte", type: "CHECKBOX", stock: null, variants: [], choiceGroup: "Repas" };
+      const child: RuleOption = { ...adult, id: "child", label: "Repas enfant", price: 5 };
+      const grouped = new Map([...options, ["adult", adult], ["child", child]]);
+      expect(() =>
+        planSelections(0, [
+          { optionId: "adult", quantity: 1 },
+          { optionId: "child", quantity: 1 },
+        ], grouped)
+      ).toThrow(/ne se cumulent pas/);
+      expect(planSelections(0, [{ optionId: "child", quantity: 1 }, { optionId: "meal", variantId: "chicken", quantity: 1 }], grouped)).toHaveLength(2);
+      expect(planSelections(1, [{ optionId: "adult", quantity: 1 }], grouped)).toHaveLength(1);
+    });
     it("une option gratuite est FREE", () => {
       expect(planSelections(null, [{ optionId: "shirt", quantity: 2 }], options)[0]).toMatchObject({ status: "FREE", quantity: 2 });
     });

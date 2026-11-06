@@ -3285,6 +3285,8 @@ model TicketingOption {
   refundDeadline DateTime?
   active         Boolean              @default(true)
   position       Int                  @default(0)
+  /// Groupe au choix unique : une seule option du groupe par participant ou par réservation.
+  choiceGroup    String?              @db.VarChar(60)
 
   event    TicketingEvent        @relation(fields: [eventId], references: [id], onDelete: Cascade)
   variants TicketingVariant[]

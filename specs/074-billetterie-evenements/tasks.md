@@ -211,6 +211,18 @@ Chaque route a son `contract.ts`.
   - guide utilisateur ;
   - `CHANGELOG.md`.
 
+## Évolutions après livraison (6 novembre 2026)
+
+- [x] **T59** — Groupes d'options au choix unique : `choiceGroup` et migration, règle dans
+  `planSelections`, contrôles d'organisation (`checkChoiceGroup`), champ dans la fiche option,
+  `OptionList` sur le formulaire public et « Ma réservation » ; tests `rules.test.ts`,
+  `option-groups.test.ts`.
+- [x] **T60** — Planning de l'équipe : `PATCH` d'une affectation (`updateAssignment`), comptes avec
+  départements et liste des départements, vue par poste, renommage de poste, filtre et recherche ;
+  test `team-planning.test.ts`.
+- [x] **T61** — Documentation : spec, plan, `docs/database.md`, guide utilisateur, fiches de
+  l'assistant (KB-145, KB-146), `CHANGELOG.md`, `docs/openapi.json`.
+
 ## Vérification finale
 
 - [x] `npm run typecheck`
