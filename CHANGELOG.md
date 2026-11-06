@@ -6,6 +6,8 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.34.0] - 2026-11-06
+
 ### Ajouté
 
 - Billetterie : planning de l'équipe d'un événement (spec 074). Dans l'onglet Équipe, les affectations s'affichent par poste, avec le nombre de personnes et leurs horaires ; on renomme un poste, on change le poste ou les horaires d'une affectation sans la recréer (la personne est prévenue), et on retrouve les gens à affecter par département et par nom.
