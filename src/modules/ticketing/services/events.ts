@@ -1,4 +1,4 @@
-import { Prisma, type TicketingEvent, type TicketingRole } from "@/generated/prisma/client";
+import { Prisma, type TicketingEvent, type TicketingOptionScope, type TicketingRole } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/errors";
 import {
   enabledMethods,
@@ -206,10 +206,44 @@ async function optionChurch(optionId: string, eventId: string) {
   return option;
 }
 
+/**
+ * Groupe au choix unique : ses options partagent la même portée (sinon l'exclusion n'aurait pas
+ * de sens), et aucun inscrit ne doit déjà cumuler deux options du groupe.
+ */
+async function checkChoiceGroup(
+  prisma: Awaited<ReturnType<typeof db>>,
+  eventId: string,
+  optionId: string | null,
+  group: string,
+  scope: TicketingOptionScope
+) {
+  const others = await prisma.ticketingOption.findMany({
+    where: { eventId, choiceGroup: group, ...(optionId ? { id: { not: optionId } } : {}) },
+    select: { id: true, scope: true },
+  });
+  if (others.some((o) => o.scope !== scope)) {
+    throw new ApiError(400, `Les options du groupe « ${group} » sont toutes par participant ou toutes par réservation`);
+  }
+  if (!optionId || others.length === 0) return;
+  const items = await prisma.ticketingItem.findMany({
+    where: { optionId: { in: [optionId, ...others.map((o) => o.id)] }, cancelledAt: null },
+    select: { bookingId: true, participantId: true, optionId: true },
+  });
+  const held = new Map<string, Set<string>>();
+  for (const i of items) {
+    const key = `${i.bookingId}:${i.participantId ?? ""}`;
+    held.set(key, (held.get(key) ?? new Set()).add(i.optionId));
+  }
+  if ([...held.values()].some((ids) => ids.has(optionId) && ids.size > 1)) {
+    throw new ApiError(400, `Des inscrits ont déjà plusieurs options du groupe « ${group} » : retirez-les avant de les grouper`);
+  }
+}
+
 export async function createOption(eventId: string, userId: string, input: z.infer<typeof optionCreateSchema>) {
   const prisma = await db();
   const event = await prisma.ticketingEvent.findUniqueOrThrow({ where: { id: eventId }, select: { churchId: true } });
   const { variants, ...fields } = input;
+  if (fields.choiceGroup) await checkChoiceGroup(prisma, eventId, null, fields.choiceGroup, fields.scope);
   // Une option à choix peut être créée sans plat : la restauration compose le menu ensuite.
   const position = fields.position ?? (await prisma.ticketingOption.count({ where: { eventId } }));
   const option = await prisma.ticketingOption.create({
@@ -235,6 +269,10 @@ export async function updateOption(eventId: string, optionId: string, userId: st
   if (input.type && input.type !== option.type) {
     const count = await prisma.ticketingItem.count({ where: { optionId } });
     if (count > 0) throw new ApiError(400, "Option déjà choisie : son type ne change plus");
+  }
+  const group = input.choiceGroup === undefined ? option.choiceGroup : input.choiceGroup;
+  if (group && (input.choiceGroup !== undefined || input.scope !== undefined)) {
+    await checkChoiceGroup(prisma, eventId, optionId, group, input.scope ?? option.scope);
   }
   const updated = await prisma.ticketingOption.update({ where: { id: optionId }, data: input });
   await audit(userId, option.event.churchId, "UPDATE", "TicketingOption", optionId, { eventId, fields: Object.keys(input) });
@@ -377,6 +415,7 @@ export async function getPublicEvent(churchSlug: string, eventSlug: string): Pro
       remaining: remaining(o.stock, usage.options.get(o.id) ?? 0),
       refundable: o.refundable,
       refundDeadline: o.refundDeadline?.toISOString() ?? null,
+      choiceGroup: o.choiceGroup,
       variants: o.variants.map((v) => ({
         id: v.id,
         label: v.label,

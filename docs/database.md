@@ -1511,7 +1511,8 @@ jeton étant dérivé à la demande d'un sel (`tokenSalt`) et d'un secret serveu
 - **`ticketing_tariffs`** : un prix par tranche d'âge (`ADULT`, `TEEN`, `CHILD`, `INFANT`).
 - **`ticketing_options`** : `type` (`CHOICE`, `QUANTITY`, `CHECKBOX`), `scope` (`PARTICIPANT`,
   `BOOKING`), `price`, `stock`, `pickup` (à retirer sur place), `namedPrep` (étiquettes),
-  `refundable`/`refundDeadline`, `active`. **`ticketing_variants`** : plats du menu, composés par
+  `refundable`/`refundDeadline`, `active`, `choiceGroup` (groupe au choix unique : une seule de
+  ses options par participant ou par réservation, options de même portée). **`ticketing_variants`** : plats du menu, composés par
   la restauration (`description`, `allergens`, `stock`, `prepared`, `closed`).
 - **`ticketing_bookings`** : `reference` (unique par événement), contact, `userId` (compte dont
   l'email correspond, set null), responsable légal d'un mineur non accompagné, `answers`,

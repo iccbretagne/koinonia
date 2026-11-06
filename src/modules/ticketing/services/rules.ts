@@ -22,6 +22,7 @@ export interface RuleOption {
   active: boolean;
   refundable: boolean;
   refundDeadline: Date | null;
+  choiceGroup?: string | null;
   variants: { id: string; label: string; stock: number | null; closed: boolean }[];
 }
 
@@ -76,12 +77,18 @@ export function planSelections(
 ): PlannedItem[] {
   const scope: TicketingOptionScope = holder === null ? "BOOKING" : "PARTICIPANT";
   const seen = new Set<string>();
+  const groups = new Map<string, string>();
   return selections.map((s) => {
     const option = options.get(s.optionId);
     if (!option?.active) throw new ApiError(400, "Option indisponible");
     if (option.scope !== scope) throw new ApiError(400, `Option « ${option.label} » mal placée`);
     if (seen.has(option.id)) throw new ApiError(400, `Option « ${option.label} » choisie deux fois`);
     seen.add(option.id);
+    if (option.choiceGroup) {
+      const other = groups.get(option.choiceGroup);
+      if (other) throw new ApiError(400, `« ${other} » et « ${option.label} » ne se cumulent pas (${option.choiceGroup} : un seul choix)`);
+      groups.set(option.choiceGroup, option.label);
+    }
     let variantId: string | null = null;
     let quantity = s.quantity;
     if (option.type === "CHOICE") {

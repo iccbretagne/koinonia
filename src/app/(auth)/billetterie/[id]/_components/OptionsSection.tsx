@@ -23,6 +23,7 @@ interface Draft {
   refundable: boolean;
   refundDeadline: string;
   active: boolean;
+  choiceGroup: string;
   variants: string;
 }
 
@@ -38,6 +39,7 @@ const emptyDraft: Draft = {
   refundable: true,
   refundDeadline: "",
   active: true,
+  choiceGroup: "",
   variants: "",
 };
 
@@ -54,6 +56,7 @@ function draftOf(o: Option): Draft {
     refundable: o.refundable,
     refundDeadline: toLocalInput(o.refundDeadline),
     active: o.active,
+    choiceGroup: o.choiceGroup ?? "",
     variants: "",
   };
 }
@@ -72,6 +75,7 @@ export default function OptionsSection({ event }: { readonly event: EventDetail 
   const { call, busy } = useApi();
   const [editing, setEditing] = useState<{ id: string | null; draft: Draft } | null>(null);
   const d = editing?.draft;
+  const groups = [...new Set(event.options.map((o) => o.choiceGroup).filter((g): g is string => !!g))];
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setEditing((e) => (e ? { ...e, draft: { ...e.draft, [key]: value } } : e));
 
@@ -90,6 +94,7 @@ export default function OptionsSection({ event }: { readonly event: EventDetail 
       refundable: x.refundable,
       refundDeadline: fromLocalInput(x.refundDeadline),
       active: x.active,
+      choiceGroup: x.choiceGroup.trim() || null,
     };
     const ok = editing.id
       ? await call(`/api/ticketing/events/${event.id}/options/${editing.id}`, "PATCH", body, "Option enregistrée")
@@ -121,7 +126,8 @@ export default function OptionsSection({ event }: { readonly event: EventDetail 
                 <p className="text-[13px] text-ink-muted">
                   {OPTION_TYPE_LABEL[o.type]} · {OPTION_SCOPE_LABEL[o.scope]}
                   {o.pickup ? " · à retirer sur place" : ""}
-                  {o.namedPrep ? " · étiquettes" : ""} · {o.used} réservé{o.used > 1 ? "s" : ""}
+                  {o.namedPrep ? " · étiquettes" : ""}
+                  {o.choiceGroup ? ` · groupe « ${o.choiceGroup} »` : ""} · {o.used} réservé{o.used > 1 ? "s" : ""}
                   {o.stock !== null ? ` / ${o.stock}` : ""}
                 </p>
                 {o.variants.length > 0 && <p className="text-[13px] text-ink-muted">Menu : {o.variants.map((v) => v.label).join(", ")}</p>}
@@ -158,6 +164,19 @@ export default function OptionsSection({ event }: { readonly event: EventDetail 
               <Input label="Prix (€)" inputMode="decimal" value={d.price} onChange={(e) => set("price", e.target.value)} />
               <Input label="Stock (vide = illimité)" type="number" min={0} value={d.stock} onChange={(e) => set("stock", e.target.value)} />
             </div>
+            <Input
+              label="Groupe au choix unique (facultatif)"
+              list={`${event.id}-groups`}
+              maxLength={60}
+              value={d.choiceGroup}
+              hint="Même groupe (par exemple « Repas ») : l'inscrit ne prend qu'une de ces options, par participant ou pour la réservation."
+              onChange={(e) => set("choiceGroup", e.target.value)}
+            />
+            <datalist id={`${event.id}-groups`}>
+              {groups.map((g) => (
+                <option key={g} value={g} />
+              ))}
+            </datalist>
             {!editing.id && d.type === "CHOICE" && (
               <label className="block space-y-1">
                 <span className="text-[13px] font-medium text-ink">Plats ou variantes (un par ligne, facultatif)</span>

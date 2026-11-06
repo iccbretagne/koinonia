@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, QrCode, Share2, UserPlus, X } from "lucide-react";
 import CopyRow from "@/app/donner/_components/CopyRow";
-import OptionField, { toSelections, type Choices } from "@/components/ticketing/OptionField";
+import { OptionList, toSelections, type Choices } from "@/components/ticketing/OptionField";
 import QrSvg from "@/components/ticketing/QrSvg";
 import { formatDateTime } from "@/components/ticketing/format";
 import { Alert, Button, ConfirmModal, Input, Modal, Select, StatusChip, useToast, type StatusTone } from "@/components/ui";
@@ -77,22 +77,13 @@ function OptionsEditor({
           <legend className="font-semibold text-ink">
             {p.firstName} {p.lastName}
           </legend>
-          {pOptions.map((o) => (
-            <OptionField
-              key={o.id}
-              option={o}
-              choice={byPerson[p.id]?.[o.id]}
-              onChange={(c) => setByPerson((all) => ({ ...all, [p.id]: { ...all[p.id], [o.id]: c } }))}
-            />
-          ))}
+          <OptionList options={pOptions} choices={byPerson[p.id] ?? {}} onChange={(c) => setByPerson((all) => ({ ...all, [p.id]: c }))} />
         </fieldset>
       ))}
       {bOptions.length > 0 && (
         <fieldset className="space-y-3">
           <legend className="font-semibold text-ink">Pour la réservation</legend>
-          {bOptions.map((o) => (
-            <OptionField key={o.id} option={o} choice={booking[o.id]} onChange={(c) => setBooking((b) => ({ ...b, [o.id]: c }))} />
-          ))}
+          <OptionList options={bOptions} choices={booking} onChange={setBooking} />
         </fieldset>
       )}
       <p className="text-[13px] text-ink-muted">Une option déjà payée que vous retirez suit les règles de remboursement de l&apos;événement.</p>
@@ -130,9 +121,7 @@ function AddParticipant({ event, onSave }: { readonly event: PublicEvent; readon
         options={event.tariffs.map((t) => ({ value: t.ageGroup, label: `${AGE_GROUP_LABEL[t.ageGroup]} — ${t.price > 0 ? formatEuros(t.price) : "gratuit"}` }))}
         onChange={(e) => setP({ ...p, ageGroup: e.target.value as TicketingAgeGroup })}
       />
-      {pOptions.map((o) => (
-        <OptionField key={o.id} option={o} choice={choices[o.id]} onChange={(c) => setChoices((x) => ({ ...x, [o.id]: c }))} />
-      ))}
+      <OptionList options={pOptions} choices={choices} onChange={setChoices} />
       <Button
         type="button"
         disabled={saving || !p.firstName.trim() || !p.lastName.trim()}

@@ -26011,6 +26011,11 @@
                     "minimum": 0,
                     "maximum": 1000
                   },
+                  "choiceGroup": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 60
+                  },
                   "variants": {
                     "type": "array",
                     "items": {
@@ -26157,6 +26162,11 @@
                     "nullable": true,
                     "minimum": 0,
                     "maximum": 1000
+                  },
+                  "choiceGroup": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 60
                   }
                 },
                 "additionalProperties": false
