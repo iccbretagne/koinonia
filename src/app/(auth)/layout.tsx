@@ -440,6 +440,18 @@ export default async function AuthLayout({
     ? await integrationLinks(churchRoles, currentChurchId, session.user.id!, userPermissions, session.user.isSuperAdmin)
     : [];
 
+  // ── Candidatures au service (spec 077) ─────────────────────────────────────
+  const servingNavLinks =
+    currentChurchId && registry.has("serving")
+      ? await import("@/modules/serving")
+          .then(async ({ hasServingAccess }) => {
+            const { servingActorFromSession } = await import("@/modules/serving/auth");
+            return hasServingAccess(await servingActorFromSession(session, currentChurchId));
+          })
+          .then((ok) => (ok ? [{ href: "/candidatures", label: "Candidatures" }] : []))
+          .catch(() => [])
+      : [];
+
   // ── Section "Agenda pastoral" ────────────────────────────────────────────────
   const agendaNavLinks = await agendaLinks(session, currentChurchId, userPermissions, isProtocoleMember);
 
@@ -533,7 +545,7 @@ export default async function AuthLayout({
   // rôle du tout.
   const hasAnyNavigation =
     session.user.isSuperAdmin ||
-    [visibleConfigLinks, requestLinks, mediaLinks, integrationNavLinks, agendaNavLinks].some((links) => links.length > 0) ||
+    [visibleConfigLinks, requestLinks, mediaLinks, integrationNavLinks, servingNavLinks, agendaNavLinks].some((links) => links.length > 0) ||
     [
       hasDiscipleship, hasAccounting, hasShuttle, hasTreasury, hasTicketing, hasJobs, hasEventsAccess, hasPlanningAccess, hasMembersAccess,
       hasReports, hasRooms, hasMyPlanning, showStarEvents, hasAbsences, hasAvailability,
@@ -562,6 +574,7 @@ export default async function AuthLayout({
       mediaLinks={mediaLinks}
       agendaLinks={agendaNavLinks}
       integrationLinks={integrationNavLinks}
+      servingLinks={servingNavLinks}
       famillesUrl={famillesUrl}
       hasDiscipleship={hasDiscipleship}
       hasAccounting={hasAccounting}

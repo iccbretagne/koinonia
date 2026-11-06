@@ -543,7 +543,7 @@ export async function requireChurchAccess(churchId: string) {
 type ChurchResourceType =
   | "event" | "department" | "member" | "request" | "memberLinkRequest" | "announcement" | "ministry"
   | "mediaEvent" | "mediaProject" | "appointmentRequest" | "agendaEntry" | "pastoralProfile" | "teamEvent"
-  | "serviceWithdrawal";
+  | "serviceWithdrawal" | "servingApplication" | "servingAssignment";
 
 const byId = (id: string) => ({ where: { id }, select: { churchId: true } }) as const;
 
@@ -585,6 +585,16 @@ const CHURCH_RESOLVERS: Record<
   serviceWithdrawal: {
     notFound: "Désistement introuvable",
     load: async (id) => (await prisma.serviceWithdrawal.findUnique(byId(id)))?.churchId,
+  },
+  servingApplication: {
+    notFound: "Candidature introuvable",
+    load: async (id) => (await prisma.servingApplication.findUnique(byId(id)))?.churchId,
+  },
+  servingAssignment: {
+    notFound: "Affectation introuvable",
+    load: async (id) =>
+      (await prisma.servingAssignment.findUnique({ where: { id }, select: { application: { select: { churchId: true } } } }))
+        ?.application.churchId,
   },
 };
 

@@ -162,6 +162,19 @@ module.exports = {
       },
     },
     {
+      name: "no-serving-imports-other-modules",
+      severity: "error",
+      comment:
+        "Le module serving ne peut importer aucun autre module, sauf storage (infrastructure partagee, ADR-0006). Les gestes sur la fiche STAR (planning) sont injectes par les routes.",
+      from: {
+        path: "^src/modules/serving/",
+        pathNot: "/__tests__/",
+      },
+      to: {
+        path: "^src/modules/(?!serving/|storage/)",
+      },
+    },
+    {
       name: "no-ticketing-imports-other-modules",
       severity: "error",
       comment:

@@ -38,6 +38,7 @@
     "@huggingface/transformers": "^4.3.2",
     "@prisma/adapter-mariadb": "^7.10.1",
     "@prisma/client": "^7.10.1",
+    "@react-pdf/renderer": "^4.9.0",
     "@tailwindcss/postcss": "^4.3.4",
     "archiver": "^7.0.1",
     "exceljs": "^4.4.0",
