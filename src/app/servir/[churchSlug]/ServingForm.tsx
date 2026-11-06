@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { Alert, Button, Input, Textarea, fieldLabelClasses } from "@/components/ui";
 import Checkbox from "@/components/ui/Checkbox";
@@ -85,7 +85,8 @@ export default function ServingForm({ churchSlug, churchName, retentionMonths, t
   const [errors, setErrors] = useState<FieldErrors>({});
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileReset, setTurnstileReset] = useState(0);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [preview, setPreview] = useState<ImageBitmap | null>(null);
+  const previewRef = useRef<HTMLCanvasElement>(null);
   const [maritalStatus, setMaritalStatus] = useState("");
   const [baptized, setBaptized] = useState("");
   const [previousChurch, setPreviousChurch] = useState("");
@@ -94,11 +95,19 @@ export default function ServingForm({ churchSlug, churchName, retentionMonths, t
   const [trainings, setTrainings] = useState<string[]>([]);
   const [consent, setConsent] = useState(false);
 
-  // Libère l'aperçu de la photo quand il change ou quand la page est quittée
+  // Aperçu de la photo dessiné sur un canvas (recadrage « cover »), libéré quand il change
+  // ou quand la page est quittée. Aucune adresse dérivée du fichier n'entre dans le DOM.
   useEffect(() => {
-    return () => {
-      if (preview) URL.revokeObjectURL(preview);
-    };
+    const canvas = previewRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (preview && canvas && ctx) {
+      const scale = Math.max(canvas.width / preview.width, canvas.height / preview.height);
+      const w = preview.width * scale;
+      const h = preview.height * scale;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(preview, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+    }
+    return () => preview?.close();
   }, [preview]);
 
   function clearError(field: string) {
@@ -114,7 +123,11 @@ export default function ServingForm({ churchSlug, churchName, retentionMonths, t
       setPreview(null);
       return;
     }
-    setPreview(file ? URL.createObjectURL(file) : null);
+    setPreview(null);
+    // HEIC n'est pas décodable par la plupart des navigateurs : pas d'aperçu, l'envoi reste possible.
+    if (file && typeof createImageBitmap === "function") {
+      createImageBitmap(file).then(setPreview, () => setPreview(null));
+    }
   }
 
   function toggleTraining(t: string) {
@@ -199,8 +212,14 @@ export default function ServingForm({ churchSlug, churchName, retentionMonths, t
           </p>
         </div>
         {preview && (
-          // eslint-disable-next-line @next/next/no-img-element -- aperçu local (blob:) avant envoi
-          <img src={preview} alt="Aperçu de la photo" className="h-40 w-32 rounded-lg border border-line object-cover" />
+          <canvas
+            ref={previewRef}
+            width={256}
+            height={320}
+            role="img"
+            aria-label="Aperçu de la photo"
+            className="h-40 w-32 rounded-lg border border-line"
+          />
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input label="Prénom *" name="firstName" required maxLength={100} autoComplete="given-name" error={errors.firstName} onChange={() => clearError("firstName")} />
