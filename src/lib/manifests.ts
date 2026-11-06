@@ -12,10 +12,14 @@ import { accountingModule } from "@/modules/accounting/manifest";
 import { jobsModule } from "@/modules/jobs/manifest";
 import { givingModule } from "@/modules/giving/manifest";
 import { messagesModule } from "@/modules/messages/manifest";
+import { shuttleModule } from "@/modules/shuttle/manifest";
+import { ticketingModule } from "@/modules/ticketing/manifest";
+import { treasuryModule } from "@/modules/treasury/manifest";
+import { assistantModule } from "@/modules/assistant/manifest";
 import { servingModule } from "@/modules/serving/manifest";
 
 /**
- * Les 15 manifestes, importés depuis `manifest.ts` (ADR-0011) et non depuis l'index du
+ * Les 19 manifestes, importés depuis `manifest.ts` (ADR-0011) et non depuis l'index du
  * module — un manifeste ne doit tirer ni Prisma, ni NextAuth, ni S3, pour rester
  * consommable par des outils qui n'ont besoin que de la déclaration (composition du
  * registry, résolution de routes, tests).
@@ -39,5 +43,9 @@ export const allManifests = [
   jobsModule,
   givingModule,
   messagesModule,
+  shuttleModule,
+  ticketingModule,
+  treasuryModule,
+  assistantModule,
   servingModule,
 ] as const;

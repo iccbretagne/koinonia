@@ -123,13 +123,26 @@ model Church {
   responsible               PastoralProfile?           @relation("ChurchResponsibleProfile", fields: [responsibleProfileId], references: [id])
   supervisor                PastoralProfile?           @relation("ChurchSupervisorProfile", fields: [supervisorProfileId], references: [id])
 
-  serviceWithdrawals        ServiceWithdrawal[]
+  serviceWithdrawals  ServiceWithdrawal[]
   // Page publique « Donner » (spec 065)
-  givingPage                GivingPage?
-  logos                     ChurchLogo[]
+  givingPage          GivingPage?
+  logos               ChurchLogo[]
+  shuttleEntries      ShuttleEntry[]
+  shuttleRentals      ShuttleRental[]
+  shuttleSettings     ShuttleSettings?
+  treasuryAccounts    TreasuryAccount[]
+  assistantSetting    AssistantChurchSetting?
+  treasuryCategories  TreasuryCategory[]
+  treasuryPurposes    TreasuryPurpose[]
+  treasuryEntries     TreasuryEntry[]
+  treasuryCollections TreasuryCollection[]
+  treasuryCheques     TreasuryCheque[]
+  treasuryClosures    TreasuryClosure[]
+  treasuryBudgets     TreasuryBudget[]
+  ticketingEvents     TicketingEvent[]
   // Messages système (spec 071)
-  systemMessages            SystemMessage[]
-  // Candidatures au service (spec 073)
+  systemMessages      SystemMessage[]
+  // Candidatures au service (spec 077)
   servingApplications ServingApplication[]
   servingSettings     ServingSettings?
 
@@ -150,16 +163,18 @@ enum Role {
 }
 
 model User {
-  id                                String                       @id @default(cuid())
-  email                             String                       @unique
+  id                                String                        @id @default(cuid())
+  email                             String                        @unique
   name                              String?
   displayName                       String?
   image                             String?
   emailVerified                     DateTime?
-  isSuperAdmin                      Boolean                      @default(false)
-  hasSeenTour                       Boolean                      @default(false)
-  createdAt                         DateTime                     @default(now())
-  updatedAt                         DateTime                     @updatedAt
+  isSuperAdmin                      Boolean                       @default(false)
+  hasSeenTour                       Boolean                       @default(false)
+  /// Personnage de l'assistant choisi dans « Mon profil » (spec 075) : Nia par défaut.
+  assistantPersona                  AssistantPersona              @default(NIA)
+  createdAt                         DateTime                      @default(now())
+  updatedAt                         DateTime                      @updatedAt
   churchRoles                       UserChurchRole[]
   accounts                          Account[]
   sessions                          Session[]
@@ -168,51 +183,60 @@ model User {
   notificationEmailPreferences      NotificationEmailPreference[]
   notificationPushPreferences       NotificationPushPreference[]
   pushSubscriptions                 PushSubscription[]
-  appIconsUpdated                   AppIconVariant[]             @relation("AppIconUpdatedBy")
-  churchLogosUpdated                ChurchLogo[]                 @relation("ChurchLogoUpdatedBy")
-  systemMessagesCreated             SystemMessage[]              @relation("SystemMessageCreatedBy")
-  systemMessagesUpdated             SystemMessage[]              @relation("SystemMessageUpdatedBy")
+  appIconsUpdated                   AppIconVariant[]              @relation("AppIconUpdatedBy")
+  churchLogosUpdated                ChurchLogo[]                  @relation("ChurchLogoUpdatedBy")
+  shuttleEntriesCreated             ShuttleEntry[]                @relation("ShuttleEntryCreatedBy")
+  shuttleEntriesUpdated             ShuttleEntry[]                @relation("ShuttleEntryUpdatedBy")
+  shuttleEntriesFlagged             ShuttleEntry[]                @relation("ShuttleEntryFlaggedBy")
+  shuttleEntriesDeleted             ShuttleEntry[]                @relation("ShuttleEntryDeletedBy")
+  shuttleRentalsCreated             ShuttleRental[]               @relation("ShuttleRentalCreatedBy")
+  ticketingEventsCreated            TicketingEvent[]              @relation("TicketingEventCreatedBy")
+  ticketingRoles                    TicketingEventRole[]
+  ticketingBookings                 TicketingBooking[]
+  ticketingAssignments              TicketingAssignment[]
+  systemMessagesCreated             SystemMessage[]               @relation("SystemMessageCreatedBy")
+  systemMessagesUpdated             SystemMessage[]               @relation("SystemMessageUpdatedBy")
   systemMessageReceipts             SystemMessageReceipt[]
-  submittedAnnouncements            Announcement[]               @relation("AnnouncementSubmittedBy")
-  submittedRequests                 Request[]                    @relation("RequestSubmittedBy")
-  reviewedRequests                  Request[]                    @relation("RequestReviewedBy")
-  memberLinks                       MemberUserLink[]             @relation("UserMemberLink")
-  validatedLinks                    MemberUserLink[]             @relation("LinkValidator")
-  absencesCreated                   Absence[]                    @relation("AbsenceCreatedBy")
-  absencesCancelled                 Absence[]                    @relation("AbsenceCancelledBy")
-  memberLinkRequests                MemberLinkRequest[]          @relation("LinkRequester")
-  reviewedLinkRequests              MemberLinkRequest[]          @relation("LinkRequestReviewer")
-  eventReports                      EventReport[]                @relation("ReportAuthor")
+  submittedAnnouncements            Announcement[]                @relation("AnnouncementSubmittedBy")
+  submittedRequests                 Request[]                     @relation("RequestSubmittedBy")
+  reviewedRequests                  Request[]                     @relation("RequestReviewedBy")
+  memberLinks                       MemberUserLink[]              @relation("UserMemberLink")
+  validatedLinks                    MemberUserLink[]              @relation("LinkValidator")
+  absencesCreated                   Absence[]                     @relation("AbsenceCreatedBy")
+  absencesCancelled                 Absence[]                     @relation("AbsenceCancelledBy")
+  memberLinkRequests                MemberLinkRequest[]           @relation("LinkRequester")
+  reviewedLinkRequests              MemberLinkRequest[]           @relation("LinkRequestReviewer")
+  eventReports                      EventReport[]                 @relation("ReportAuthor")
   departmentNotices                 DepartmentNotice[]
   // Module media
-  mediaEventsCreated                MediaEvent[]                 @relation("MediaEventCreator")
-  mediaProjectsCreated              MediaProject[]               @relation("MediaProjectCreator")
-  mediaFileVersions                 MediaFileVersion[]           @relation("MediaFileVersionCreator")
-  mediaComments                     MediaComment[]               @relation("MediaCommentAuthor")
+  mediaEventsCreated                MediaEvent[]                  @relation("MediaEventCreator")
+  mediaProjectsCreated              MediaProject[]                @relation("MediaProjectCreator")
+  mediaFileVersions                 MediaFileVersion[]            @relation("MediaFileVersionCreator")
+  mediaComments                     MediaComment[]                @relation("MediaCommentAuthor")
   // Module agenda
-  pastoralProfiles                  PastoralProfile[]            @relation("UserPastoralProfile")
-  appointmentsMade                  AppointmentRequest[]         @relation("AppointmentRequester")
-  qualifiedRequests                 AppointmentRequest[]         @relation("AppointmentQualifier")
-  scheduledRequests                 AppointmentRequest[]         @relation("AppointmentScheduler")
-  updatedRequests                   AppointmentRequest[]         @relation("AppointmentUpdater")
-  appointmentsAssigned              AppointmentRequest[]         @relation("AppointmentAssignedMember")
-  appointmentsAssignedBy            AppointmentRequest[]         @relation("AppointmentAssignedBy")
-  msdpFollowUpsAssignedBy           MsdpFollowUp[]               @relation("MsdpAssignedBy")
-  agendaEntriesCreated              AgendaEntry[]                @relation("AgendaEntryCreator")
-  agendaEntriesUpdated              AgendaEntry[]                @relation("AgendaEntryUpdater")
+  pastoralProfiles                  PastoralProfile[]             @relation("UserPastoralProfile")
+  appointmentsMade                  AppointmentRequest[]          @relation("AppointmentRequester")
+  qualifiedRequests                 AppointmentRequest[]          @relation("AppointmentQualifier")
+  scheduledRequests                 AppointmentRequest[]          @relation("AppointmentScheduler")
+  updatedRequests                   AppointmentRequest[]          @relation("AppointmentUpdater")
+  appointmentsAssigned              AppointmentRequest[]          @relation("AppointmentAssignedMember")
+  appointmentsAssignedBy            AppointmentRequest[]          @relation("AppointmentAssignedBy")
+  msdpFollowUpsAssignedBy           MsdpFollowUp[]                @relation("MsdpAssignedBy")
+  agendaEntriesCreated              AgendaEntry[]                 @relation("AgendaEntryCreator")
+  agendaEntriesUpdated              AgendaEntry[]                 @relation("AgendaEntryUpdater")
   // Module intégration familles
   familyLeaderAssignments           FamilyLeaderAssignment[]
-  familyIntegrationRequestsAssigned FamilyIntegrationRequest[]   @relation("IntegrationAssignedBerger")
-  msdpFollowUpsAssigned             MsdpFollowUp[]               @relation("MsdpAssignedConseiller")
-  careCompanions                    CareCompanion[]              @relation("CareCompanionUser")
-  careCompanionsCreated             CareCompanion[]              @relation("CareCompanionCreatedBy")
-  personJourneysCreated             PersonJourney[]              @relation("PersonJourneyCreator")
+  familyIntegrationRequestsAssigned FamilyIntegrationRequest[]    @relation("IntegrationAssignedBerger")
+  msdpFollowUpsAssigned             MsdpFollowUp[]                @relation("MsdpAssignedConseiller")
+  careCompanions                    CareCompanion[]               @relation("CareCompanionUser")
+  careCompanionsCreated             CareCompanion[]               @relation("CareCompanionCreatedBy")
+  personJourneysCreated             PersonJourney[]               @relation("PersonJourneyCreator")
   // Module comptabilité
-  financialSeriesSubmitted          FinancialSeries[]            @relation("FinancialSeriesSubmitter")
-  financialRequestsSubmitted        FinancialRequest[]           @relation("FinancialRequestSubmitter")
-  financialRequestsProcessed        FinancialRequest[]           @relation("FinancialRequestProcessor")
-  financialPaymentsReleased         FinancialPayment[]           @relation("FinancialPaymentReleaser")
-  financialAttachmentsUploaded      FinancialAttachment[]        @relation("AccountingAttachmentsUploaded")
+  financialSeriesSubmitted          FinancialSeries[]             @relation("FinancialSeriesSubmitter")
+  financialRequestsSubmitted        FinancialRequest[]            @relation("FinancialRequestSubmitter")
+  financialRequestsProcessed        FinancialRequest[]            @relation("FinancialRequestProcessor")
+  financialPaymentsReleased         FinancialPayment[]            @relation("FinancialPaymentReleaser")
+  financialAttachmentsUploaded      FinancialAttachment[]         @relation("AccountingAttachmentsUploaded")
   // Module emploi
   jobOffers                         JobOffer[]
   jobSeekers                        JobSeeker[]
@@ -221,24 +245,24 @@ model User {
   freelanceMissions                 FreelanceMission[]
   freelanceProfiles                 FreelanceProfile[]
   // Module rooms (réservation de salles)
-  roomReservationsCreated           RoomReservation[]            @relation("RoomReservationCreatedBy")
-  roomReservationsCancelled         RoomReservation[]            @relation("RoomReservationCancelledBy")
-  roomChecklistsOpened              RoomChecklist[]              @relation("RoomChecklistOpenedBy")
-  roomChecklistsKeyReceivedFrom     RoomChecklist[]              @relation("RoomChecklistKeyReceivedFrom")
-  roomChecklistsClosed              RoomChecklist[]              @relation("RoomChecklistClosedBy")
-  roomChecklistsKeyReturnedTo       RoomChecklist[]              @relation("RoomChecklistKeyReturnedTo")
-  roomChecklistsValidated           RoomChecklist[]              @relation("RoomChecklistValidatedBy")
+  roomReservationsCreated           RoomReservation[]             @relation("RoomReservationCreatedBy")
+  roomReservationsCancelled         RoomReservation[]             @relation("RoomReservationCancelledBy")
+  roomChecklistsOpened              RoomChecklist[]               @relation("RoomChecklistOpenedBy")
+  roomChecklistsKeyReceivedFrom     RoomChecklist[]               @relation("RoomChecklistKeyReceivedFrom")
+  roomChecklistsClosed              RoomChecklist[]               @relation("RoomChecklistClosedBy")
+  roomChecklistsKeyReturnedTo       RoomChecklist[]               @relation("RoomChecklistKeyReturnedTo")
+  roomChecklistsValidated           RoomChecklist[]               @relation("RoomChecklistValidatedBy")
   // Page publique « Donner » (spec 065)
-  givingPagesUpdated                GivingPage[]                 @relation("GivingPageUpdatedBy")
+  givingPagesUpdated                GivingPage[]                  @relation("GivingPageUpdatedBy")
   // Feuille d'annonces d'un culte (spec 040)
-  announcementSheetsUploaded        AnnouncementSheet[]          @relation("AnnouncementSheetUploadedBy")
+  announcementSheetsUploaded        AnnouncementSheet[]           @relation("AnnouncementSheetUploadedBy")
   // Service d'ouverture/fermeture de l'église (spec 041)
-  openingClosingAssignmentsCreated  OpeningClosingAssignment[]   @relation("OpeningClosingAssignmentCreatedBy")
+  openingClosingAssignmentsCreated  OpeningClosingAssignment[]    @relation("OpeningClosingAssignmentCreatedBy")
   // Événements d'équipe (spec 044)
-  teamEventsCreated                 TeamEvent[]                  @relation("TeamEventCreatedBy")
+  teamEventsCreated                 TeamEvent[]                   @relation("TeamEventCreatedBy")
   // (relation superviseur église déplacée vers PastoralProfile)
 
-    availabilityEntries AvailabilityResponse[] @relation("AvailabilityEnteredBy")
+  availabilityEntries AvailabilityResponse[] @relation("AvailabilityEnteredBy")
 
   @@map("users")
 }
@@ -289,33 +313,33 @@ model Ministry {
 }
 
 model Department {
-  id                String               @id @default(cuid())
-  name              String
-  ministryId        String
-  isSystem          Boolean              @default(false)
-  function          String?
-  /// Adresse de contact de l'équipe (spec 073 : boîte du PVS, en copie des candidatures)
+  id                    String                 @id @default(cuid())
+  name                  String
+  ministryId            String
+  isSystem              Boolean                @default(false)
+  function              String?
+  /// Adresse de contact de l'équipe (spec 077 : boîte du PVS, en copie des candidatures)
   contactEmail          String?                @db.VarChar(255)
-  ministry          Ministry             @relation(fields: [ministryId], references: [id])
-  memberDepts       MemberDepartment[]
-  eventDepts        EventDepartment[]
-  userDepts         UserDepartment[]
-  tasks             Task[]
-  createdAt         DateTime             @default(now())
-  announcements     Announcement[]       @relation("AnnouncementDepartment")
-  submittedRequests Request[]            @relation("RequestDepartment")
-  assignedRequests  Request[]            @relation("RequestAssigned")
-  reportSections    EventReportSection[]
-  notices           DepartmentNotice[]
-  linkRequests      MemberLinkRequest[]  @relation("LinkRequestDept")
-  financialSeries   FinancialSeries[]
-  financialRequests FinancialRequest[]
+  ministry              Ministry               @relation(fields: [ministryId], references: [id])
+  memberDepts           MemberDepartment[]
+  eventDepts            EventDepartment[]
+  userDepts             UserDepartment[]
+  tasks                 Task[]
+  createdAt             DateTime               @default(now())
+  announcements         Announcement[]         @relation("AnnouncementDepartment")
+  submittedRequests     Request[]              @relation("RequestDepartment")
+  assignedRequests      Request[]              @relation("RequestAssigned")
+  reportSections        EventReportSection[]
+  notices               DepartmentNotice[]
+  linkRequests          MemberLinkRequest[]    @relation("LinkRequestDept")
+  financialSeries       FinancialSeries[]
+  financialRequests     FinancialRequest[]
   // Événements d'équipe (spec 044)
-  teamEvents        TeamEvent[]
+  teamEvents            TeamEvent[]
   // Absence ciblée (spec 050) : départements visés quand allDepartments = false
-  absenceTargets    AbsenceDepartment[]
+  absenceTargets        AbsenceDepartment[]
   availabilityResponses AvailabilityResponse[]
-  availabilityAsks  AvailabilityAsk[]
+  availabilityAsks      AvailabilityAsk[]
 
   serviceWithdrawals ServiceWithdrawal[]
 
@@ -346,18 +370,18 @@ model Member {
   // Module intégration familles
   familyIntegrationRequests FamilyIntegrationRequest[] @relation("IntegrationMemberLink")
 
-  absences       Absence[]
+  absences              Absence[]
   availabilityResponses AvailabilityResponse[]
-  absenceBackups AbsenceBackup[]
+  absenceBackups        AbsenceBackup[]
 
   // Service d'ouverture/fermeture de l'église (spec 041)
   openingClosingAssignments OpeningClosingAssignment[]
 
   // Désistements (spec 061)
-  serviceWithdrawals    ServiceWithdrawal[] @relation("WithdrawnMember")
-  serviceReplacements   ServiceWithdrawal[] @relation("ReplacementMember")
+  serviceWithdrawals  ServiceWithdrawal[] @relation("WithdrawnMember")
+  serviceReplacements ServiceWithdrawal[] @relation("ReplacementMember")
 
-  // Candidatures au service (spec 073) : fiche STAR créée ou rattachée à l'accueil
+  // Candidatures au service (spec 077) : fiche STAR créée ou rattachée à l'accueil
   servingApplications ServingApplication[]
 
   @@map("members")
@@ -502,8 +526,9 @@ model Event {
   absenceTargets            AbsenceEvent[]
   availabilityResponses     AvailabilityResponse[]
   availabilityAsks          AvailabilityAsk[]
+  treasuryCollections       TreasuryCollection[]
 
-  serviceWithdrawals        ServiceWithdrawal[]
+  serviceWithdrawals ServiceWithdrawal[]
 
   @@map("events")
 }
@@ -737,14 +762,14 @@ model AuditLog {
 }
 
 model Notification {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   userId     String
   type       String // PLANNING_REMINDER, PLANNING_UPDATED, etc.
   title      String
-  message    String   @db.Text
-  read       Boolean  @default(false)
+  message    String    @db.Text
+  read       Boolean   @default(false)
   link       String?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
   /// Domaine de la notification (spec 053) — déclaré par le manifeste du module émetteur,
   /// utilisé par la préférence email de l'utilisateur. Nullable : les notifications
   /// antérieures à la spec 053 sont rattachées par la migration (historique d'affichage
@@ -752,12 +777,12 @@ model Notification {
   domain     String?
   /// Objet métier dont parle la notification (spec 057, ADR-0019) — permet de l'effacer avec
   /// lui. Nullable : notifications antérieures et notifications sans objet précis.
-  entityType String?  @db.VarChar(50)
+  entityType String?   @db.VarChar(50)
   entityId   String?
   /// Livraison push (spec 068, ADR-0024) : posé quand un passage prend la notification en
   /// charge (envoyée ou écartée par préférence). Null = encore à traiter.
   pushedAt   DateTime?
-  user       User     @relation(fields: [userId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
 
   @@index([userId, read, createdAt])
   @@index([userId, domain])
@@ -1781,15 +1806,17 @@ model FinancialRequest {
   processedById    String?
   processedAt      DateTime?
 
-  church       Church                @relation(fields: [churchId], references: [id])
-  department   Department?           @relation(fields: [departmentId], references: [id])
-  submittedBy  User                  @relation("FinancialRequestSubmitter", fields: [submittedById], references: [id])
-  processedBy  User?                 @relation("FinancialRequestProcessor", fields: [processedById], references: [id])
-  series       FinancialSeries?      @relation(fields: [seriesId], references: [id])
-  correctionOf FinancialRequest?     @relation("RequestCorrections", fields: [correctionOfId], references: [id])
-  corrections  FinancialRequest[]    @relation("RequestCorrections")
-  attachments  FinancialAttachment[]
-  payments     FinancialPayment[]
+  church                 Church                @relation(fields: [churchId], references: [id])
+  department             Department?           @relation(fields: [departmentId], references: [id])
+  submittedBy            User                  @relation("FinancialRequestSubmitter", fields: [submittedById], references: [id])
+  processedBy            User?                 @relation("FinancialRequestProcessor", fields: [processedById], references: [id])
+  series                 FinancialSeries?      @relation(fields: [seriesId], references: [id])
+  correctionOf           FinancialRequest?     @relation("RequestCorrections", fields: [correctionOfId], references: [id])
+  corrections            FinancialRequest[]    @relation("RequestCorrections")
+  attachments            FinancialAttachment[]
+  payments               FinancialPayment[]
+  shuttleReimbursedEntry ShuttleEntry?         @relation("ShuttleReimbursement")
+  shuttleImportedEntry   ShuttleEntry?         @relation("ShuttleSourceRequest")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1827,21 +1854,25 @@ model FinancialAttachment {
 /// Tranche de paiement d'une demande validée.
 /// La compta crée 1..N tranches lors de la validation, puis confirme chaque remise.
 model FinancialPayment {
-  id             String    @id @default(cuid())
-  requestId      String
-  amount         Decimal   @db.Decimal(10, 2)
-  scheduledDate  DateTime
-  releasedAt     DateTime? // null = pas encore versé
-  releasedAmount Decimal?  @db.Decimal(10, 2) // montant effectivement remis (peut être < amount)
-  releasedById   String? // comptable ayant confirmé la remise
-  note           String?   @db.VarChar(500)
+  id                String    @id @default(cuid())
+  requestId         String
+  amount            Decimal   @db.Decimal(10, 2)
+  scheduledDate     DateTime
+  releasedAt        DateTime? // null = pas encore versé
+  releasedAmount    Decimal?  @db.Decimal(10, 2) // montant effectivement remis (peut être < amount)
+  releasedById      String? // comptable ayant confirmé la remise
+  note              String?   @db.VarChar(500)
+  /// Compte de trésorerie d'où le paiement est sorti (spec 076) ; null = compte commun.
+  treasuryAccountId String?
 
-  request    FinancialRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  releasedBy User?            @relation("FinancialPaymentReleaser", fields: [releasedById], references: [id])
+  request         FinancialRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  releasedBy      User?            @relation("FinancialPaymentReleaser", fields: [releasedById], references: [id])
+  treasuryAccount TreasuryAccount? @relation(fields: [treasuryAccountId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
 
   @@index([requestId])
+  @@index([treasuryAccountId])
   @@map("financial_payments")
 }
 
@@ -2509,17 +2540,17 @@ enum AvailabilityAskReason {
 
 /// Réglages de collecte par église. Absence de ligne = valeurs par défaut, collecte active.
 model AvailabilitySettings {
-  id                String   @id @default(cuid())
-  churchId          String   @unique
-  enabled           Boolean  @default(true)
-  openMonthsBefore  Int      @default(2)
-  closeDaysBefore   Int      @default(7)
-  relanceDaysBefore Int      @default(3)
+  id                         String   @id @default(cuid())
+  churchId                   String   @unique
+  enabled                    Boolean  @default(true)
+  openMonthsBefore           Int      @default(2)
+  closeDaysBefore            Int      @default(7)
+  relanceDaysBefore          Int      @default(3)
   /// Délai sans nouvelle modification avant l'envoi du récapitulatif de changements de planning (spec 060).
-  planningNoticeDelayMinutes Int @default(15)
-  church            Church   @relation(fields: [churchId], references: [id])
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  planningNoticeDelayMinutes Int      @default(15)
+  church                     Church   @relation(fields: [churchId], references: [id])
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
 
   @@map("availability_settings")
 }
@@ -2682,37 +2713,37 @@ enum GivingNameSize {
 }
 
 model GivingPage {
-  id                String   @id @default(cuid())
-  churchId          String   @unique
-  enabled           Boolean  @default(false)
-  intro             String?  @db.Text
+  id                   String         @id @default(cuid())
+  churchId             String         @unique
+  enabled              Boolean        @default(false)
+  intro                String?        @db.Text
   // Don en ligne
-  onlineEnabled     Boolean  @default(false)
-  onlineUrl         String?  @db.VarChar(500)
-  onlineDescription String?  @db.Text
-  onlineNote        String?  @db.VarChar(200)
+  onlineEnabled        Boolean        @default(false)
+  onlineUrl            String?        @db.VarChar(500)
+  onlineDescription    String?        @db.Text
+  onlineNote           String?        @db.VarChar(200)
   // Virement
-  transferEnabled   Boolean  @default(false)
-  beneficiary       String?  @db.VarChar(140)
+  transferEnabled      Boolean        @default(false)
+  beneficiary          String?        @db.VarChar(140)
   /// Normalisé : majuscules, sans espaces.
-  iban              String?  @db.VarChar(34)
-  bic               String?  @db.VarChar(11)
-  transferReference String?  @db.VarChar(140)
+  iban                 String?        @db.VarChar(34)
+  bic                  String?        @db.VarChar(11)
+  transferReference    String?        @db.VarChar(140)
   // Sur place : chèques et espèces dans l'enveloppe remise par l'accueil
-  onsiteEnabled     Boolean  @default(false)
-  checkPayee        String?  @db.VarChar(140)
-  onsiteText        String?  @db.Text
+  onsiteEnabled        Boolean        @default(false)
+  checkPayee           String?        @db.VarChar(140)
+  onsiteText           String?        @db.Text
   // Reçu fiscal — désactivé par défaut, sans texte par défaut
-  taxReceiptEnabled Boolean  @default(false)
-  taxReceiptText    String?  @db.Text
+  taxReceiptEnabled    Boolean        @default(false)
+  taxReceiptText       String?        @db.Text
   // Bas de page
-  verseText         String?  @db.Text
-  verseReference    String?  @db.VarChar(80)
-  contactEmail      String?  @db.VarChar(254)
-  address           String?  @db.VarChar(255)
-  socialHandle      String?  @db.VarChar(80)
+  verseText            String?        @db.Text
+  verseReference       String?        @db.VarChar(80)
+  contactEmail         String?        @db.VarChar(254)
+  address              String?        @db.VarChar(255)
+  socialHandle         String?        @db.VarChar(80)
   /// Adresse courte optionnelle (https), affichée sur la slide et ciblée par son QR code.
-  shortUrl          String?  @db.VarChar(255)
+  shortUrl             String?        @db.VarChar(255)
   // Nom de l'église (spec 066) : un réglage pour la page publique, un pour la slide
   pageChurchNameShown  Boolean        @default(true)
   pageChurchNameSize   GivingNameSize @default(SMALL)
@@ -2723,11 +2754,11 @@ model GivingPage {
   logoKey              String?        @db.VarChar(255)
   pageLogoShown        Boolean        @default(true)
   slideLogoShown       Boolean        @default(true)
-  updatedById       String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  church            Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
-  updatedBy         User?    @relation("GivingPageUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedById          String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  church               Church         @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  updatedBy            User?          @relation("GivingPageUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
 
   @@map("giving_pages")
 }
@@ -2827,7 +2858,7 @@ model ChurchLogo {
   @@map("church_logos")
 }
 
-// ─── Candidatures au service (spec 073) ──────────────────────────────────────
+// ─── Candidatures au service (spec 077) ──────────────────────────────────────
 
 enum ServingApplicationStatus {
   RECEIVED // à traiter par le PVS
@@ -2849,7 +2880,7 @@ enum MaritalStatus {
   WIDOWED
 }
 
-/// Candidature au service (spec 073). Données personnelles sensibles : PVS/Admin avant
+/// Candidature au service (spec 077). Données personnelles sensibles : PVS/Admin avant
 /// affectation, puis Resp./Ministre des départements à affectation active ; purge automatique.
 model ServingApplication {
   id       String                   @id @default(cuid())
@@ -2949,4 +2980,900 @@ model ServingSettings {
   updatedAt         DateTime @updatedAt
 
   @@map("serving_settings")
+}
+
+// ─── Module navette (spec 073) ─────────────────────────────────────
+
+/// Nature d'une ligne du registre de la navette.
+enum ShuttleEntryKind {
+  OPENING_BALANCE // solde de départ (signé), un seul par église
+  FUNDING // abondement de l'église (+)
+  DEPOSIT_RETURN // caution restituée (+)
+  VENDOR_REFUND // remboursement du loueur (+)
+  EXPENSE // dépense (−)
+}
+
+/// Type d'une dépense de la navette.
+enum ShuttleExpenseCategory {
+  FUEL
+  MILEAGE
+  RENTAL
+  DEPOSIT
+  TOLL_PARKING
+  CLEANING
+  DAMAGE_FINE
+  INSURANCE
+  OTHER
+}
+
+/// Mode de versement d'un abondement.
+enum ShuttlePaymentMethod {
+  TRANSFER
+  CASH
+  CHURCH_CARD
+  CHEQUE
+}
+
+/// Ligne du registre de la navette : montant signé (+ entrée, − sortie). Écrite uniquement par
+/// le service du module ; supprimée logiquement (`deletedAt`) pour rester dans l'historique.
+model ShuttleEntry {
+  id                     String                  @id @default(cuid())
+  churchId               String
+  kind                   ShuttleEntryKind
+  category               ShuttleExpenseCategory?
+  amount                 Decimal                 @db.Decimal(10, 2)
+  date                   DateTime                @db.Date
+  label                  String?                 @db.VarChar(200)
+  vendor                 String?                 @db.VarChar(120)
+  paymentMethod          ShuttlePaymentMethod?
+  liters                 Decimal?                @db.Decimal(7, 2)
+  kilometers             Int?
+  personalAdvance        Boolean                 @default(false)
+  rentalId               String?
+  /// Restitution : la caution (dépense DEPOSIT) qu'elle solde.
+  returnOfId             String?                 @unique
+  depositRetainedAt      DateTime?
+  depositRetainedNote    String?                 @db.VarChar(300)
+  /// Note de frais de remboursement créée depuis cette ligne (avance personnelle).
+  reimbursementRequestId String?                 @unique
+  /// Note de frais faite hors registre, ajoutée au registre par la compta.
+  sourceRequestId        String?                 @unique
+  /// Abondement remis depuis un compte de trésorerie (spec 076) ; null = autre provenance.
+  treasuryAccountId      String?
+  receiptKey             String?                 @db.VarChar(512)
+  receiptName            String?                 @db.VarChar(255)
+  receiptMime            String?                 @db.VarChar(100)
+  receiptSize            Int?
+  flagNote               String?                 @db.VarChar(300)
+  flaggedAt              DateTime?
+  flaggedById            String?
+  createdById            String?
+  updatedById            String?
+  deletedAt              DateTime?
+  deletedById            String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+
+  church               Church            @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  rental               ShuttleRental?    @relation(fields: [rentalId], references: [id], onDelete: SetNull)
+  returnOf             ShuttleEntry?     @relation("ShuttleDepositReturn", fields: [returnOfId], references: [id], onDelete: SetNull)
+  returnedBy           ShuttleEntry?     @relation("ShuttleDepositReturn")
+  reimbursementRequest FinancialRequest? @relation("ShuttleReimbursement", fields: [reimbursementRequestId], references: [id], onDelete: SetNull)
+  sourceRequest        FinancialRequest? @relation("ShuttleSourceRequest", fields: [sourceRequestId], references: [id], onDelete: SetNull)
+  treasuryAccount      TreasuryAccount?  @relation(fields: [treasuryAccountId], references: [id], onDelete: SetNull)
+  createdBy            User?             @relation("ShuttleEntryCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy            User?             @relation("ShuttleEntryUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  flaggedBy            User?             @relation("ShuttleEntryFlaggedBy", fields: [flaggedById], references: [id], onDelete: SetNull)
+  deletedBy            User?             @relation("ShuttleEntryDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull)
+
+  @@index([churchId, deletedAt, date])
+  @@index([rentalId])
+  @@index([createdById])
+  @@index([updatedById])
+  @@index([flaggedById])
+  @@index([deletedById])
+  @@map("shuttle_entries")
+}
+
+/// Location de véhicule de la navette, qui regroupe ses dépenses.
+model ShuttleRental {
+  id          String    @id @default(cuid())
+  churchId    String
+  vendor      String    @db.VarChar(120)
+  vehicle     String?   @db.VarChar(120)
+  startDate   DateTime  @db.Date
+  endDate     DateTime? @db.Date
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  church    Church         @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  createdBy User?          @relation("ShuttleRentalCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  entries   ShuttleEntry[]
+
+  @@index([churchId, startDate])
+  @@index([createdById])
+  @@map("shuttle_rentals")
+}
+
+/// Réglages de la navette par église (seuil d'alerte de solde bas ; null = désactivée).
+model ShuttleSettings {
+  churchId            String   @id
+  lowBalanceThreshold Decimal? @db.Decimal(10, 2)
+  updatedById         String?
+  updatedAt           DateTime @updatedAt
+
+  church Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  @@map("shuttle_settings")
+}
+
+// ─── Module billetterie (spec 074) ─────────────────────────────────
+
+enum TicketingEventStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+/// Tranche d'âge d'un participant : adulte, 12–17 ans, enfant, moins de 3 ans.
+enum TicketingAgeGroup {
+  ADULT
+  TEEN
+  CHILD
+  INFANT
+}
+
+enum TicketingOptionType {
+  CHOICE
+  QUANTITY
+  CHECKBOX
+}
+
+enum TicketingOptionScope {
+  PARTICIPANT
+  BOOKING
+}
+
+/// État de paiement d'un élément payant (entrée d'un participant ou option choisie).
+enum TicketingChargeStatus {
+  FREE
+  DUE
+  DECLARED
+  PAID
+  REFUND_DUE
+  REFUNDED
+  RELEASED
+  CANCELLED
+}
+
+enum TicketingRole {
+  ORGANIZER
+  TREASURER
+  RECEPTION
+  CATERING
+  OBSERVER
+}
+
+enum TicketingPaymentKind {
+  DECLARATION
+  RECEIPT
+  REFUND
+}
+
+enum TicketingPaymentStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+}
+
+enum TicketingPaymentMethod {
+  WERO
+  REVOLUT
+  TRANSFER
+  CASH
+  CHEQUE
+}
+
+enum TicketingRecordStatus {
+  ACTIVE
+  CANCELLED
+}
+
+enum TicketingBookingSource {
+  ONLINE
+  ONSITE
+}
+
+enum TicketingPassageSubject {
+  PARTICIPANT
+  STAFF
+  MANUAL
+}
+
+enum TicketingDirection {
+  IN
+  OUT
+}
+
+/// Événement de billetterie : inscriptions, paiements, équipe et présences.
+model TicketingEvent {
+  id                       String               @id @default(cuid())
+  churchId                 String
+  slug                     String               @db.VarChar(80)
+  title                    String               @db.VarChar(150)
+  description              String?              @db.Text
+  location                 String?              @db.VarChar(200)
+  posterKey                String?              @db.VarChar(512)
+  startsAt                 DateTime
+  endsAt                   DateTime
+  registrationDeadline     DateTime?
+  /// Jauge réglementaire : personnes présentes au maximum, équipe comprise.
+  capacity                 Int
+  /// Places ouvertes à l'inscription.
+  seatsOpen                Int
+  status                   TicketingEventStatus @default(DRAFT)
+  /// Moyens de paiement et instructions : { wero?, revolut?, transfer?, onsite }.
+  paymentMethods           Json
+  optionPaymentDeadline    DateTime?
+  reminderDaysBefore       Int                  @default(3)
+  allowOnsitePayment       Boolean              @default(false)
+  allowUnaccompaniedMinors Boolean              @default(false)
+  allowWalkIns             Boolean              @default(false)
+  /// Remboursement de l'entrée payante en cas d'annulation, et sa date limite.
+  entryRefundable          Boolean              @default(true)
+  entryRefundDeadline      DateTime?
+  /// Questions supplémentaires : [{ id, label, required }].
+  questions                Json
+  referencePrefix          String               @db.VarChar(8)
+  nextReference            Int                  @default(1)
+  retentionDays            Int                  @default(90)
+  /// Dernier seuil de jauge notifié (0, 90, 100).
+  capacityAlertLevel       Int                  @default(0)
+  seatsAlertSent           Boolean              @default(false)
+  closedAt                 DateTime?
+  purgedAt                 DateTime?
+  createdById              String?
+  createdAt                DateTime             @default(now())
+  updatedAt                DateTime             @updatedAt
+
+  church       Church                 @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  createdBy    User?                  @relation("TicketingEventCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  tariffs      TicketingTariff[]
+  options      TicketingOption[]
+  bookings     TicketingBooking[]
+  roles        TicketingEventRole[]
+  posts        TicketingPost[]
+  assignments  TicketingAssignment[]
+  passages     TicketingPassage[]
+  onsiteSales  TicketingOnsiteSale[]
+  payments     TicketingPayment[]
+  participants TicketingParticipant[]
+
+  @@unique([churchId, slug])
+  @@index([createdById])
+  @@map("ticketing_events")
+}
+
+model TicketingTariff {
+  id       String            @id @default(cuid())
+  eventId  String
+  ageGroup TicketingAgeGroup
+  price    Decimal           @db.Decimal(10, 2)
+
+  event TicketingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, ageGroup])
+  @@map("ticketing_tariffs")
+}
+
+/// Option d'un événement (repas, t-shirt, navette…) ; « à retirer sur place » pour Agapé.
+model TicketingOption {
+  id             String               @id @default(cuid())
+  eventId        String
+  label          String               @db.VarChar(120)
+  description    String?              @db.VarChar(500)
+  type           TicketingOptionType
+  scope          TicketingOptionScope
+  price          Decimal              @db.Decimal(10, 2)
+  stock          Int?
+  pickup         Boolean              @default(false)
+  /// Préparation nominative : une étiquette par repas.
+  namedPrep      Boolean              @default(false)
+  refundable     Boolean              @default(true)
+  refundDeadline DateTime?
+  active         Boolean              @default(true)
+  position       Int                  @default(0)
+
+  event    TicketingEvent        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  variants TicketingVariant[]
+  items    TicketingItem[]
+  sales    TicketingOnsiteSale[]
+
+  @@index([eventId])
+  @@map("ticketing_options")
+}
+
+/// Variante d'une option à choix (plat du menu), composée par la restauration.
+model TicketingVariant {
+  id          String  @id @default(cuid())
+  optionId    String
+  label       String  @db.VarChar(120)
+  description String? @db.VarChar(300)
+  allergens   String? @db.VarChar(200)
+  stock       Int?
+  /// Repas préparés, saisis par la restauration.
+  prepared    Int?
+  /// Fermé aux nouvelles commandes (un plat réservé ne se supprime pas).
+  closed      Boolean @default(false)
+  position    Int     @default(0)
+
+  option TicketingOption       @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  items  TicketingItem[]
+  sales  TicketingOnsiteSale[]
+
+  @@index([optionId])
+  @@map("ticketing_variants")
+}
+
+/// Réservation : un contact, un ou plusieurs participants, des options. Accès sans compte par
+/// jetons dérivés (seules leurs empreintes sont stockées).
+model TicketingBooking {
+  id                String                 @id @default(cuid())
+  eventId           String
+  reference         String                 @db.VarChar(20)
+  contactName       String                 @db.VarChar(150)
+  contactEmail      String                 @db.VarChar(191)
+  contactPhone      String?                @db.VarChar(40)
+  userId            String?
+  guardianName      String?                @db.VarChar(150)
+  guardianPhone     String?                @db.VarChar(40)
+  guardianConsentAt DateTime?
+  answers           Json
+  source            TicketingBookingSource @default(ONLINE)
+  /// Sel des jetons dérivés : le changer révoque les anciens liens.
+  tokenSalt         String                 @db.VarChar(32)
+  manageTokenHash   String                 @unique @db.Char(64)
+  scanTokenHash     String                 @unique @db.Char(64)
+  status            TicketingRecordStatus  @default(ACTIVE)
+  reminderSentAt    DateTime?
+  dayBeforeSentAt   DateTime?
+  cancelledAt       DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  event        TicketingEvent         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user         User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  participants TicketingParticipant[]
+  items        TicketingItem[]
+  payments     TicketingPayment[]
+
+  @@unique([eventId, reference])
+  @@index([eventId, contactEmail])
+  @@index([userId])
+  @@map("ticketing_bookings")
+}
+
+model TicketingParticipant {
+  id              String                @id @default(cuid())
+  bookingId       String
+  eventId         String
+  firstName       String                @db.VarChar(80)
+  lastName        String                @db.VarChar(80)
+  ageGroup        TicketingAgeGroup
+  ticketTokenHash String                @unique @db.Char(64)
+  status          TicketingRecordStatus @default(ACTIVE)
+  entryPrice      Decimal               @db.Decimal(10, 2)
+  entryStatus     TicketingChargeStatus
+  cancelledAt     DateTime?
+  createdAt       DateTime              @default(now())
+
+  booking  TicketingBooking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  event    TicketingEvent     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  items    TicketingItem[]
+  passages TicketingPassage[]
+
+  @@index([bookingId])
+  @@index([eventId])
+  @@map("ticketing_participants")
+}
+
+/// Option choisie, pour un participant ou pour la réservation.
+model TicketingItem {
+  id                  String                @id @default(cuid())
+  bookingId           String
+  participantId       String?
+  optionId            String
+  variantId           String?
+  quantity            Int
+  unitPrice           Decimal               @db.Decimal(10, 2)
+  status              TicketingChargeStatus
+  deliveredQty        Int                   @default(0)
+  deliveredAt         DateTime?
+  deliveredById       String?
+  /// Option retirée de la réservation (annulation, changement) ; l'état dit s'il reste à rembourser.
+  cancelledAt         DateTime?
+  /// Version de l'étiquette : change avec le plat, le nom ou l'état ; comparée à la version imprimée.
+  labelVersion        Int                   @default(1)
+  labelPrintedVersion Int?
+  labelPrintedAt      DateTime?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  booking     TicketingBooking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  participant TicketingParticipant? @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  option      TicketingOption       @relation(fields: [optionId], references: [id], onDelete: Restrict)
+  variant     TicketingVariant?     @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  @@index([bookingId])
+  @@index([optionId])
+  @@index([variantId])
+  @@index([participantId])
+  @@map("ticketing_items")
+}
+
+/// Déclaration « J'ai payé », encaissement direct ou remboursement.
+model TicketingPayment {
+  id            String                 @id @default(cuid())
+  bookingId     String
+  eventId       String
+  kind          TicketingPaymentKind
+  status        TicketingPaymentStatus
+  method        TicketingPaymentMethod
+  amount        Decimal                @db.Decimal(10, 2)
+  /// Éléments couverts : [{ type: "entry" | "item", id }].
+  chargeRefs    Json
+  reason        String?                @db.VarChar(300)
+  /// Identifiant d'opération hors ligne (idempotence).
+  opId          String?                @unique @db.VarChar(64)
+  recordedById  String?
+  confirmedById String?
+  confirmedAt   DateTime?
+  createdAt     DateTime               @default(now())
+
+  booking TicketingBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  event   TicketingEvent   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([eventId, kind, status])
+  @@map("ticketing_payments")
+}
+
+model TicketingEventRole {
+  id      String        @id @default(cuid())
+  eventId String
+  userId  String
+  role    TicketingRole
+
+  event TicketingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId, role])
+  @@index([userId])
+  @@map("ticketing_event_roles")
+}
+
+model TicketingPost {
+  id       String @id @default(cuid())
+  eventId  String
+  name     String @db.VarChar(120)
+  position Int    @default(0)
+
+  event       TicketingEvent        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  assignments TicketingAssignment[]
+
+  @@index([eventId])
+  @@map("ticketing_posts")
+}
+
+/// Affectation à l'équipe de l'événement : membre de l'église ou intervenant nommé ; badge.
+model TicketingAssignment {
+  id             String    @id @default(cuid())
+  eventId        String
+  postId         String?
+  userId         String?
+  guestName      String?   @db.VarChar(150)
+  startsAt       DateTime?
+  endsAt         DateTime?
+  tokenSalt      String    @db.VarChar(32)
+  badgeTokenHash String    @unique @db.Char(64)
+  createdAt      DateTime  @default(now())
+
+  event    TicketingEvent     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  post     TicketingPost?     @relation(fields: [postId], references: [id], onDelete: SetNull)
+  user     User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  passages TicketingPassage[]
+
+  @@index([eventId])
+  @@index([postId])
+  @@index([userId])
+  @@map("ticketing_assignments")
+}
+
+/// Passage au contrôle (entrée, sortie, comptage manuel). Identifiant généré par l'appareil.
+model TicketingPassage {
+  id            String                  @id @db.VarChar(64)
+  eventId       String
+  subject       TicketingPassageSubject
+  participantId String?
+  assignmentId  String?
+  direction     TicketingDirection
+  delta         Int                     @default(1)
+  reason        String?                 @db.VarChar(200)
+  deviceId      String                  @db.VarChar(64)
+  operatorId    String?
+  gate          String?                 @db.VarChar(60)
+  scannedAt     DateTime
+  receivedAt    DateTime                @default(now())
+  anomaly       Boolean                 @default(false)
+
+  event       TicketingEvent        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participant TicketingParticipant? @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  assignment  TicketingAssignment?  @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, scannedAt])
+  @@index([participantId])
+  @@index([assignmentId])
+  @@map("ticketing_passages")
+}
+
+/// Vente sur place d'une option à retirer (repas). Identifiant généré par l'appareil.
+model TicketingOnsiteSale {
+  id        String                 @id @db.VarChar(64)
+  eventId   String
+  optionId  String
+  variantId String?
+  quantity  Int
+  amount    Decimal                @db.Decimal(10, 2)
+  method    TicketingPaymentMethod
+  soldById  String?
+  soldAt    DateTime
+
+  event   TicketingEvent    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  option  TicketingOption   @relation(fields: [optionId], references: [id], onDelete: Restrict)
+  variant TicketingVariant? @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  @@index([eventId])
+  @@index([optionId])
+  @@index([variantId])
+  @@map("ticketing_onsite_sales")
+}
+
+// ─── Module trésorerie (spec 076) ──────────────────────────────────
+
+/// Nature d'un compte de trésorerie.
+enum TreasuryAccountKind {
+  CASH
+  ONLINE
+  OTHER
+}
+
+enum TreasuryDirection {
+  IN
+  OUT
+}
+
+/// Moyen d'une entrée ou d'une sortie.
+enum TreasuryMethod {
+  CASH
+  CHEQUE
+  TRANSFER
+  CARD
+  ONLINE
+  WERO
+  OTHER
+}
+
+/// Ligne ordinaire, jambe d'un transfert entre comptes, ou remise au compte commun.
+enum TreasuryEntryKind {
+  STANDARD
+  TRANSFER
+  DEPOSIT
+}
+
+/// Catégories dont le rôle est fixé (le nom reste modifiable).
+enum TreasuryCategorySystem {
+  SPECIAL_OFFERING
+  DEPOSIT
+  EXPENSE_REPORTS
+  SHUTTLE
+}
+
+/// Compte de trésorerie de l'église (caisse, coffre, compte en ligne…). Son solde n'est jamais
+/// stocké : solde de départ + lignes non supprimées + mouvements repris (ADR-0027).
+model TreasuryAccount {
+  id             String              @id @default(cuid())
+  churchId       String
+  name           String              @db.VarChar(80)
+  kind           TreasuryAccountKind
+  openingBalance Decimal             @db.Decimal(12, 2)
+  openingDate    DateTime            @db.Date
+  archivedAt     DateTime?
+  sortOrder      Int                 @default(0)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  church         Church               @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  entries        TreasuryEntry[]
+  collections    TreasuryCollection[]
+  payments       FinancialPayment[]
+  shuttleEntries ShuttleEntry[]
+
+  @@unique([churchId, name])
+  @@map("treasury_accounts")
+}
+
+model TreasuryCategory {
+  id        String                  @id @default(cuid())
+  churchId  String
+  direction TreasuryDirection
+  name      String                  @db.VarChar(80)
+  system    TreasuryCategorySystem?
+  active    Boolean                 @default(true)
+  sortOrder Int                     @default(0)
+
+  church  Church           @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  entries TreasuryEntry[]
+  budgets TreasuryBudget[]
+
+  @@unique([churchId, direction, name])
+  @@unique([churchId, system])
+  @@map("treasury_categories")
+}
+
+/// Objet d'une offrande spéciale (missions, construction, actions de grâce…).
+model TreasuryPurpose {
+  id       String  @id @default(cuid())
+  churchId String
+  name     String  @db.VarChar(80)
+  active   Boolean @default(true)
+
+  church  Church          @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  entries TreasuryEntry[]
+
+  @@unique([churchId, name])
+  @@map("treasury_purposes")
+}
+
+/// Ligne du registre : montant toujours positif, sens porté par `direction`. Supprimée
+/// logiquement (`deletedAt`) pour rester dans l'historique.
+model TreasuryEntry {
+  id              String            @id @default(cuid())
+  churchId        String
+  accountId       String
+  kind            TreasuryEntryKind @default(STANDARD)
+  direction       TreasuryDirection
+  categoryId      String?
+  purposeId       String?
+  method          TreasuryMethod
+  amount          Decimal           @db.Decimal(12, 2)
+  date            DateTime          @db.Date
+  label           String            @db.VarChar(200)
+  thirdParty      String?           @db.VarChar(120)
+  collectionId    String?
+  transferGroupId String?           @db.VarChar(40)
+  depositRef      String?           @db.VarChar(60)
+  receiptKey      String?           @db.VarChar(512)
+  receiptName     String?           @db.VarChar(255)
+  receiptMime     String?           @db.VarChar(100)
+  receiptSize     Int?
+  createdById     String?
+  updatedById     String?
+  deletedAt       DateTime?
+  deletedById     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  church           Church              @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  account          TreasuryAccount     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category         TreasuryCategory?   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  purpose          TreasuryPurpose?    @relation(fields: [purposeId], references: [id], onDelete: Restrict)
+  collection       TreasuryCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  chequesIn        TreasuryCheque[]    @relation("TreasuryChequeCollected")
+  chequesDeposited TreasuryCheque[]    @relation("TreasuryChequeDeposited")
+
+  @@index([churchId, deletedAt, date])
+  @@index([accountId, deletedAt, date])
+  @@index([transferGroupId])
+  @@map("treasury_entries")
+}
+
+/// Collecte d'un culte, comptée par deux personnes.
+model TreasuryCollection {
+  id          String   @id @default(cuid())
+  churchId    String
+  accountId   String
+  eventId     String?
+  date        DateTime @db.Date
+  counter1    String   @db.VarChar(80)
+  counter2    String   @db.VarChar(80)
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  church  Church          @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  account TreasuryAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  event   Event?          @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  entries TreasuryEntry[]
+
+  @@index([churchId, date])
+  @@map("treasury_collections")
+}
+
+/// Chèque collecté (un par un), ou lot saisi en total (`count` > 1). `depositEntryId` nul =
+/// encore en caisse.
+model TreasuryCheque {
+  id             String  @id @default(cuid())
+  churchId       String
+  entryId        String
+  number         String? @db.VarChar(30)
+  amount         Decimal @db.Decimal(12, 2)
+  count          Int     @default(1)
+  depositEntryId String?
+
+  church       Church         @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  entry        TreasuryEntry  @relation("TreasuryChequeCollected", fields: [entryId], references: [id], onDelete: Cascade)
+  depositEntry TreasuryEntry? @relation("TreasuryChequeDeposited", fields: [depositEntryId], references: [id], onDelete: SetNull)
+
+  @@index([churchId, depositEntryId])
+  @@index([entryId])
+  @@map("treasury_cheques")
+}
+
+/// Mois clôturé (`month` = "AAAA-MM"). Rouvrir = supprimer la ligne, motif dans l'audit.
+model TreasuryClosure {
+  churchId   String
+  month      String   @db.Char(7)
+  closedAt   DateTime @default(now())
+  closedById String?
+
+  church Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  @@id([churchId, month])
+  @@map("treasury_closures")
+}
+
+/// Budget prévisionnel d'une catégorie pour un mois d'une année.
+model TreasuryBudget {
+  id         String  @id @default(cuid())
+  churchId   String
+  year       Int
+  month      Int
+  categoryId String
+  amount     Decimal @db.Decimal(12, 2)
+
+  church   Church           @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  category TreasuryCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([churchId, year, categoryId, month])
+  @@map("treasury_budgets")
+}
+
+// ─── Assistant de prise en main (spec 075) ───────────────────────────────────
+// Les fiches fournies vivent dans le code du module ; la base ne garde que les ajouts et
+// corrections du Super Admin, les questions à traiter (anonymes, d'instance), les compteurs
+// journaliers et le cache des vecteurs du modèle de sens. Aucune conversation n'est stockée.
+
+enum AssistantPersona {
+  NIA
+  KOI
+}
+
+enum AssistantEntrySource {
+  CUSTOM
+  OVERRIDE
+}
+
+enum AssistantPendingStatus {
+  OPEN
+  ANSWERED
+  LINKED
+  OFF_TOPIC
+}
+
+enum AssistantPendingReason {
+  UNANSWERED
+  NOT_HELPFUL
+}
+
+/// Réglage d'instance (une ligne, id = "instance") : l'assistant est activé par le Super Admin.
+model AssistantSettings {
+  id          String   @id
+  enabled     Boolean  @default(false)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("assistant_settings")
+}
+
+/// Coupure par église (Admin d'église) ; absence de ligne = suit l'instance.
+model AssistantChurchSetting {
+  churchId    String   @id
+  disabled    Boolean  @default(true)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+  church      Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  @@map("assistant_church_settings")
+}
+
+/// Ajout du Super Admin (CUSTOM) ou correction d'une fiche fournie (OVERRIDE, `builtinKey`).
+model AssistantEntry {
+  id          String               @id @default(cuid())
+  source      AssistantEntrySource
+  builtinKey  String?              @unique @db.VarChar(40)
+  title       String               @db.VarChar(200)
+  /// string[] : formulations
+  questions   Json
+  answer      String               @db.Text
+  href        String?              @db.VarChar(200)
+  hrefLabel   String?              @db.VarChar(80)
+  /// Role[] ; [] = tous
+  roles       Json
+  module      String?              @db.VarChar(40)
+  /// Préfixes d'écran pour les questions fréquentes
+  screens     Json
+  /// Masque une fiche fournie
+  disabled    Boolean              @default(false)
+  updatedById String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@map("assistant_entries")
+}
+
+/// Question à traiter : texte anonymisé, sans compte ni église ; regroupée par proximité.
+model AssistantPendingQuestion {
+  id           String                 @id @default(cuid())
+  text         String                 @db.VarChar(300)
+  reason       AssistantPendingReason
+  screen       String?                @db.VarChar(120)
+  role         String?                @db.VarChar(40)
+  count        Int                    @default(1)
+  status       AssistantPendingStatus @default(OPEN)
+  entryKey     String?                @db.VarChar(60)
+  firstAt      DateTime               @default(now())
+  lastAt       DateTime               @default(now())
+  resolvedAt   DateTime?
+  resolvedById String?
+
+  @@index([status, lastAt])
+  @@map("assistant_pending_questions")
+}
+
+/// Formulation rattachée à une fiche (« même question, autrement dite ») : enrichit l'index.
+model AssistantAlias {
+  id        String   @id @default(cuid())
+  entryKey  String   @db.VarChar(60)
+  text      String   @db.VarChar(300)
+  createdAt DateTime @default(now())
+
+  @@index([entryKey])
+  @@map("assistant_aliases")
+}
+
+/// Compteurs d'usage par jour (instance) : aucune donnée de personne.
+model AssistantDailyStat {
+  day         DateTime @id @db.Date
+  questions   Int      @default(0)
+  answered    Int      @default(0)
+  suggested   Int      @default(0)
+  unanswered  Int      @default(0)
+  dataAnswers Int      @default(0)
+  helpful     Int      @default(0)
+  notHelpful  Int      @default(0)
+
+  @@map("assistant_daily_stats")
+}
+
+/// Cache des vecteurs du modèle de sens (empreinte du texte + nom du modèle).
+model AssistantEmbedding {
+  hash      String   @db.Char(64)
+  model     String   @db.VarChar(80)
+  /// Float32Array (384 × 4 octets)
+  vector    Bytes
+  createdAt DateTime @default(now())
+
+  @@id([hash, model])
+  @@map("assistant_embeddings")
 }

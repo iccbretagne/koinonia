@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Schémas purs du module serving (spec 073) : importables par les contrats d'API, les routes et
+ * Schémas purs du module serving (spec 077) : importables par les contrats d'API, les routes et
  * les composants client, sans dépendance serveur.
  */
 

@@ -1,7 +1,7 @@
 import type { ServingApplicationStatus, ServingAssignmentStatus } from "@/generated/prisma/client";
 
 /**
- * Règles pures du cycle de vie d'une candidature (spec 073) : transitions d'une affectation,
+ * Règles pures du cycle de vie d'une candidature (spec 077) : transitions d'une affectation,
  * candidatures à traiter par le PVS, fin d'observation et échéance de conservation.
  */
 

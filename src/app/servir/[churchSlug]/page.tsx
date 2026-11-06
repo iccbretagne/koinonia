@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * Formulaire public de candidature au service (spec 073). Église inconnue ou sans département
+ * Formulaire public de candidature au service (spec 077). Église inconnue ou sans département
  * Vie des STAR : « formulaire non disponible », sans distinguer les deux cas.
  */
 export default async function ServirPublicPage({ params }: { readonly params: Promise<{ churchSlug: string }> }) {

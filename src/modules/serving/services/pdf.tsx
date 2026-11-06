@@ -3,7 +3,7 @@ import { Document, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@
 import { MARITAL_STATUS_LABEL } from "../schemas";
 
 /**
- * Fiche de candidature en PDF (spec 073), reprise de la mise en page proposée par Jenny
+ * Fiche de candidature en PDF (spec 077), reprise de la mise en page proposée par Jenny
  * (`FichePDF`). Générée à la demande depuis la plateforme, jamais envoyée en pièce jointe.
  */
 

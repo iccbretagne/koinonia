@@ -4,7 +4,7 @@ import { notifyUsers } from "@/lib/notifications";
 import { buildGenericNotificationEmail, sendEmail } from "@/lib/email";
 
 /**
- * Notifications des candidatures (spec 073), domaine `serving`. Elles ne portent jamais de donnée
+ * Notifications des candidatures (spec 077), domaine `serving`. Elles ne portent jamais de donnée
  * de la fiche au-delà du prénom et du nom (texte visible sur un écran verrouillé, spec 068) ni de
  * pièce jointe : un lien vers Koinonia suffit.
  */

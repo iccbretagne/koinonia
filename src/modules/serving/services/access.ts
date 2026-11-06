@@ -2,7 +2,7 @@ import type { Role, ServingAssignmentStatus } from "@/generated/prisma/client";
 import { ACTIVE_ASSIGNMENT_STATUSES, WELCOMED_ASSIGNMENT_STATUSES } from "./state";
 
 /**
- * Règles d'accès pures des candidatures (spec 073). Les gardes de `../auth.ts` chargent les
+ * Règles d'accès pures des candidatures (spec 077). Les gardes de `../auth.ts` chargent les
  * données (départements PVS, fiches STAR liées) puis appellent ces fonctions — testées sur des
  * sessions fabriquées.
  *

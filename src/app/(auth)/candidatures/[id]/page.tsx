@@ -14,7 +14,7 @@ import AssignModal from "./AssignModal";
 import AssignmentActions from "./AssignmentActions";
 
 /**
- * Fiche de candidature (spec 073). L'église qui fait foi est celle de la candidature ; chaque
+ * Fiche de candidature (spec 077). L'église qui fait foi est celle de la candidature ; chaque
  * ouverture est journalisée (`VIEW`).
  */
 export default async function CandidaturePage({ params }: { readonly params: Promise<{ id: string }> }) {

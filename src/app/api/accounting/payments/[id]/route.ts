@@ -1,10 +1,24 @@
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { rolePermissions } from "@/lib/registry";
+import { registry, rolePermissions } from "@/lib/registry";
 import { buildAccountingPaymentEmail } from "@/lib/email";
 import { createNotification } from "@/lib/notifications";
 import { releaseSchema } from "./contract";
+
+/**
+ * Compte de trésorerie d'où sort le paiement (spec 076, ADR-0027) : validé ici, couche qui seule
+ * importe la comptabilité et la trésorerie. Compte actif de l'église, mois ouvert ; refusé si la
+ * trésorerie est désactivée. `null` = compte commun (non repris).
+ */
+async function resolveTreasuryAccount(churchId: string, accountId: string | null | undefined, releasedAt: Date) {
+  if (!accountId) return null;
+  if (!registry.has("treasury")) throw new ApiError(400, "La trésorerie n'est pas activée");
+  const { assertTreasuryDateOpen, getActiveTreasuryAccount } = await import("@/modules/treasury");
+  await getActiveTreasuryAccount(churchId, accountId);
+  await assertTreasuryDateOpen(churchId, releasedAt);
+  return accountId;
+}
 
 export async function PATCH(
   request: Request,
@@ -35,6 +49,8 @@ export async function PATCH(
       throw new ApiError(400, `Le montant remis (${released} €) ne peut pas dépasser le montant prévu (${planned} €)`);
     }
 
+    const treasuryAccountId = await resolveTreasuryAccount(churchId, body.treasuryAccountId, new Date(body.releasedAt));
+
     const isPartial = released < planned;
     const remainder = Number((planned - released).toFixed(2));
 
@@ -46,6 +62,7 @@ export async function PATCH(
           releasedAmount: released,
           releasedById:   session.user.id!,
           note:           body.note ?? payment.note,
+          treasuryAccountId,
         },
       });
 

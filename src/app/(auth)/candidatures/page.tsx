@@ -8,7 +8,7 @@ import { requireServingActor } from "@/modules/serving/auth";
 import ApplicationsClient, { type ApplicationsTab } from "./ApplicationsClient";
 
 /**
- * Candidatures au service (spec 073). Le PVS (et l'Admin) voit toutes les candidatures de
+ * Candidatures au service (spec 077). Le PVS (et l'Admin) voit toutes les candidatures de
  * l'église ; un responsable ou un Ministre voit celles affectées à ses départements.
  */
 export default async function CandidaturesPage({

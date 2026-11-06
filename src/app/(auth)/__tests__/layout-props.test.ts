@@ -27,7 +27,11 @@ vi.mock("@/lib/auth", () => ({
   getCurrentChurchId: (...args: unknown[]) => mockGetCurrentChurchId(...args),
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
-// Candidatures (spec 073) : seul le câblage du lien est vérifié ici ; les règles d'accès sont
+// Entrée « Navette » (spec 073) : testée à part (navigation-shuttle.test.ts) ; ici, les
+// départements du mock ne portent pas de fonction et la lecture serait trompeuse.
+vi.mock("@/modules/shuttle/auth", () => ({ isShuttleVisible: vi.fn(async () => false) }));
+vi.mock("@/modules/ticketing/auth", () => ({ isTicketingVisible: vi.fn(async () => false) }));
+// Candidatures (spec 077) : seul le câblage du lien est vérifié ici ; les règles d'accès sont
 // testées dans le module serving. Gestionnaires : Super Admin et Admin.
 vi.mock("@/modules/serving/auth", () => ({
   servingActorFromSession: async (session: { user: { isSuperAdmin: boolean; churchRoles: { role: string }[] } }) => ({

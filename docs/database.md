@@ -160,7 +160,7 @@ Départements d'un ministère (Choristes, Musiciens, Son...).
 | `name` | String | Nom du département |
 | `ministryId` | String | Ref vers `ministries` |
 | `function` | String? | Fonction spéciale : `SECRETARIAT`, `COMMUNICATION`, `PRODUCTION_MEDIA`, ou valeur personnalisée (nullable) |
-| `contactEmail` | String? | Adresse d'équipe du département (spec 073) : pour un département `VIE_DES_STAR`, reçoit une copie des nouvelles candidatures et des renvois (lien seul) |
+| `contactEmail` | String? | Adresse d'équipe du département (spec 077) : pour un département `VIE_DES_STAR`, reçoit une copie des nouvelles candidatures et des renvois (lien seul) |
 
 #### `members`
 
@@ -1445,6 +1445,97 @@ dans `public/brand/`. Le fichier déposé n'est pas conservé.
 | `updatedById` | String? | Ref vers `users` (set null) |
 | `updatedAt` | DateTime | Dernière modification |
 
+#### `shuttle_entries` — registre de la navette (spec 073)
+
+Une ligne par mouvement : montant **signé** (`amount`, Decimal(10,2) : + entrée, − sortie).
+`kind` : `OPENING_BALANCE` (un seul par église, peut être négatif), `FUNDING` (abondement, avec
+`paymentMethod`), `DEPOSIT_RETURN` (caution restituée, `returnOfId` unique vers la caution),
+`VENDOR_REFUND`, `EXPENSE` (avec `category` : `FUEL`, `MILEAGE`, `RENTAL`, `DEPOSIT`,
+`TOLL_PARKING`, `CLEANING`, `DAMAGE_FINE`, `INSURANCE`, `OTHER`). Champs : `date` (Date), `label`,
+`vendor`, `liters`, `kilometers`, `personalAdvance`, `rentalId`, `depositRetainedAt`/`Note`,
+justificatif (`receiptKey`, stockage `shuttle/<churchId>/…`, `receiptName`, `receiptMime`,
+`receiptSize`), signalement (`flagNote`, `flaggedAt`, `flaggedById`), liens comptables
+`reimbursementRequestId` et `sourceRequestId` (uniques, vers `financial_requests`, set null),
+auteurs et suppression logique (`deletedAt`, `deletedById`). Le solde et le solde courant sont
+calculés à la lecture ; les avances de budget versées au département Navette n'y sont pas
+recopiées, elles sont lues dans `financial_payments`.
+
+#### `treasury_*` — trésorerie de l'église (spec 076)
+
+- `treasury_accounts` : comptes de trésorerie (`name` unique par église, `kind` `CASH` | `ONLINE` |
+  `OTHER`, `openingBalance` Decimal(12,2), `openingDate` Date, `archivedAt`, `sortOrder`). Soldes
+  jamais stockés.
+- `treasury_categories` : catégories par église et par sens (`direction` `IN` | `OUT`, `name`
+  unique par sens, `active`, `sortOrder`), `system` facultatif et unique par église
+  (`SPECIAL_OFFERING`, `DEPOSIT`, `EXPENSE_REPORTS`, `SHUTTLE`) ; créées par défaut à la première
+  ouverture. `treasury_purposes` : objets des offrandes spéciales.
+- `treasury_entries` : registre ; montant **positif** (`amount` Decimal(12,2)) et sens
+  (`direction`), `kind` `STANDARD` | `TRANSFER` (deux jambes, même `transferGroupId`) | `DEPOSIT`
+  (remise, `depositRef`), `accountId`, `categoryId` (null pour un transfert), `purposeId`,
+  `method` (`CASH`, `CHEQUE`, `TRANSFER`, `CARD`, `ONLINE`, `WERO`, `OTHER`), `date` (Date),
+  `label`, `thirdParty`, `collectionId`, justificatif (`receiptKey` sous `treasury/<churchId>/…`),
+  auteurs et suppression logique (`deletedAt`).
+- `treasury_collections` : collecte d'un culte (`eventId` facultatif, set null ; `counter1`,
+  `counter2`). `treasury_cheques` : chèques collectés (`entryId`, `number`, `amount`, `count` > 1
+  pour un lot) ; `depositEntryId` nul = encore en caisse.
+- `treasury_closures` : mois clôturés (PK `churchId` + `month` « AAAA-MM ») ; rouvrir supprime la
+  ligne, le motif est dans `audit_logs`.
+- `treasury_budgets` : budget par église, année, catégorie et mois (unique).
+- Références de reprise (ADR-0027) : `financial_payments.treasuryAccountId` et
+  `shuttle_entries.treasuryAccountId` (set null).
+
+#### `shuttle_rentals` — locations de véhicule de la navette (spec 073)
+
+`vendor`, `vehicle`, `startDate`, `endDate` (Date), `createdById` ; regroupe des lignes du
+registre (`shuttle_entries.rentalId`, set null).
+
+#### `shuttle_settings` — réglages de la navette (spec 073)
+
+Une ligne par église (`churchId` PK) : `lowBalanceThreshold` (null = pas d'alerte),
+`updatedById`. Sert aussi de verrou pour l'unicité du solde de départ.
+
+#### Billetterie (spec 074) — `ticketing_*`
+
+Montants en `Decimal(10,2)`. Toutes les tables portent `eventId` (cascade), l'événement porte
+`churchId`. Aucun jeton n'est stocké : seulement leur empreinte SHA-256 (`Char(64)`, unique), le
+jeton étant dérivé à la demande d'un sel (`tokenSalt`) et d'un secret serveur.
+
+- **`ticketing_events`** : `slug` (unique par église), titre, description, lieu, `posterKey`,
+  `startsAt`/`endsAt`, `registrationDeadline`, `capacity` (jauge, équipe comprise), `seatsOpen`,
+  `status` (`DRAFT`, `OPEN`, `CLOSED`, `ARCHIVED` ; « complet » est calculé), `paymentMethods`
+  (JSON : Wero, Revolut, IBAN propre à l'événement, espèces, chèque), `optionPaymentDeadline`,
+  `reminderDaysBefore`, `allowOnsitePayment`, `allowUnaccompaniedMinors`, `allowWalkIns`,
+  `entryRefundable`/`entryRefundDeadline`, `questions` (JSON), `referencePrefix` et
+  `nextReference` (compteur, verrou de l'inscription), `retentionDays`, `capacityAlertLevel` et
+  `seatsAlertSent` (alertes envoyées une fois), `closedAt`, `purgedAt`, `createdById`.
+- **`ticketing_tariffs`** : un prix par tranche d'âge (`ADULT`, `TEEN`, `CHILD`, `INFANT`).
+- **`ticketing_options`** : `type` (`CHOICE`, `QUANTITY`, `CHECKBOX`), `scope` (`PARTICIPANT`,
+  `BOOKING`), `price`, `stock`, `pickup` (à retirer sur place), `namedPrep` (étiquettes),
+  `refundable`/`refundDeadline`, `active`. **`ticketing_variants`** : plats du menu, composés par
+  la restauration (`description`, `allergens`, `stock`, `prepared`, `closed`).
+- **`ticketing_bookings`** : `reference` (unique par événement), contact, `userId` (compte dont
+  l'email correspond, set null), responsable légal d'un mineur non accompagné, `answers`,
+  `source` (`ONLINE`, `ONSITE`), `manageTokenHash`, `scanTokenHash`, `status`, horodatages de
+  relance (`reminderSentAt`, `dayBeforeSentAt`).
+- **`ticketing_participants`** : nom, tranche d'âge, `ticketTokenHash`, `status`, prix d'entrée
+  figé et son état (`entryStatus`). **`ticketing_items`** : option choisie (par participant ou
+  par réservation), prix figé, `status` (`FREE`, `DUE`, `DECLARED`, `PAID`, `REFUND_DUE`,
+  `REFUNDED`, `RELEASED`, `CANCELLED`), `cancelledAt`, remise (`deliveredQty`, `deliveredAt`),
+  versions d'étiquette (`labelVersion`, `labelPrintedVersion`).
+- **`ticketing_payments`** : `kind` (`DECLARATION`, `RECEIPT`, `REFUND`), `status`, `method`,
+  `amount`, `chargeRefs` (éléments couverts), `reason`, `opId` (unique, opération hors ligne).
+- **`ticketing_event_roles`** : (`eventId`, `userId`, `role`) unique — `ORGANIZER`, `TREASURER`,
+  `RECEPTION`, `CATERING`, `OBSERVER`.
+- **`ticketing_posts`**, **`ticketing_assignments`** : équipe propre à l'événement (compte ou
+  `guestName`, créneau, `badgeTokenHash`).
+- **`ticketing_passages`** : identifiant généré par l'appareil (idempotence), `subject`
+  (`PARTICIPANT`, `STAFF`, `MANUAL`), `direction`, `delta`, `reason`, `deviceId`, `scannedAt`
+  (horloge corrigée), `receivedAt`, `anomaly`. Les présences sont calculées à partir de cette
+  table, jamais stockées. **`ticketing_onsite_sales`** : ventes sur place de la restauration.
+
+Purge après `closedAt + retentionDays` : noms, contacts, réponses et motifs anonymisés, compteurs
+et montants gardés.
+
 #### `church_logos` — logo de l'église dans l'interface (spec 072)
 
 Logo déposé par l'Admin de l'église (`church:settings`), une ligne par fond (clé
@@ -2047,6 +2138,24 @@ Index : `[status]`, `[authorId]`
 | `ARCHIVED` | Profil archivé |
 
 
+### Module Assistant
+
+Spec 075. Les fiches fournies vivent dans le code (`src/modules/assistant/knowledge/`) ; la base
+ne garde que ce que le Super Admin ajoute ou corrige, fusionné à la lecture. Aucune conversation
+n'est stockée.
+
+| Table | Rôle |
+|---|---|
+| `assistant_settings` | Une ligne `instance` : assistant activé (désactivé par défaut) |
+| `assistant_church_settings` | Coupure par église (`disabled`) ; absence de ligne = suit l'instance |
+| `assistant_entries` | `CUSTOM` (fiche ajoutée) ou `OVERRIDE` d'une fiche fournie (`builtinKey`, texte vide = masquage seul) |
+| `assistant_aliases` | Formulation rattachée à une fiche (`entryKey`) depuis une question à traiter |
+| `assistant_pending_questions` | Question anonymisée sans réponse ou jugée « Pas utile », regroupée (`count`), **sans compte ni église** |
+| `assistant_daily_stats` | Compteurs d'instance par jour (questions, réponses, données, avis) |
+| `assistant_embeddings` | Cache des vecteurs du modèle de sens (empreinte SHA-256 + modèle) |
+
+`users.assistantPersona` (`NIA` par défaut, `KOI`) : personnage choisi dans « Mon profil ».
+
 ### Module Dons
 
 #### `giving_pages`
@@ -2083,7 +2192,7 @@ domaine de notification `giving`).
 
 ### Module Candidatures au service (`serving`)
 
-Spec 073. Une candidature reçue du formulaire public `/servir/<slug>` est étudiée par le Pôle Vie
+Spec 077. Une candidature reçue du formulaire public `/servir/<slug>` est étudiée par le Pôle Vie
 des STAR (départements de fonction `VIE_DES_STAR`), puis orientée vers un ou plusieurs
 départements, chacun suivant sa propre affectation.
 

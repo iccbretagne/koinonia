@@ -4,7 +4,7 @@ import type { ServingActor } from "../auth";
 import { loadApplication } from "./applications";
 
 /**
- * Fiches STAR existantes qui pourraient correspondre à la personne (spec 073), pour éviter un
+ * Fiches STAR existantes qui pourraient correspondre à la personne (spec 077), pour éviter un
  * doublon à l'accueil : même nom (recherche de l'annuaire, injectée par la route — le module ne
  * peut pas importer `planning`) ou même adresse email dans l'église.
  */

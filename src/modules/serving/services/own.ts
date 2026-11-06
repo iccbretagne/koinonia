@@ -4,7 +4,7 @@ import { WELCOMED_ASSIGNMENT_STATUSES } from "./state";
 import type { ApplicationRecord } from "./applications";
 
 /**
- * Vue du STAR sur sa propre fiche (spec 073, D8) : lecture seule, une fois accueilli par au
+ * Vue du STAR sur sa propre fiche (spec 077, D8) : lecture seule, une fois accueilli par au
  * moins un département. Aucune information interne : ni motif, ni département qui a renvoyé, ni
  * notion d'observation « échue ».
  */

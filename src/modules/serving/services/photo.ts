@@ -8,7 +8,7 @@ const MAX_INPUT_PIXELS = 50_000_000;
 const ACCEPTED_FORMATS = new Set(["jpeg", "png", "webp", "heif"]);
 
 /**
- * Contrôle et réencode la photo d'identité (spec 073) : le format **décodé** fait foi (le type
+ * Contrôle et réencode la photo d'identité (spec 077) : le format **décodé** fait foi (le type
  * déclaré est ignoré), l'orientation EXIF est appliquée, puis l'image est recadrée en 600×800 et
  * réencodée en JPEG — ce qui retire toutes les métadonnées (position GPS comprise).
  */

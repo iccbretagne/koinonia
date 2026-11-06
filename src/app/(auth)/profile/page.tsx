@@ -5,11 +5,12 @@ import { excludeChurchesAlreadyReached } from "@/lib/onboarding";
 import Link from "next/link";
 import ProfileClient from "./ProfileClient";
 import ThemeSelector from "@/components/ThemeSelector";
+import PersonaSelector from "@/components/assistant/PersonaSelector";
+import { registry } from "@/lib/registry";
 import Alert from "@/components/ui/Alert";
 import PageHeader from "@/components/ui/PageHeader";
 import StatusChip from "@/components/ui/StatusChip";
 import { Bell, ChevronRight, Clock, FileText, Link2 } from "lucide-react";
-import { registry } from "@/lib/registry";
 import { getOwnApplication } from "@/modules/serving";
 
 /** Section de la page profil : titre `title-md` puis contenu sur une carte. */
@@ -36,6 +37,11 @@ function ProfileSection({
 export default async function ProfilePage() {
   const session = await auth();
   if (!session?.user) redirect("/");
+
+  // Personnage de l'assistant : seulement si le module est actif sur l'instance.
+  const assistantPersona = registry.has("assistant")
+    ? ((await prisma.user.findUnique({ where: { id: session.user.id! }, select: { assistantPersona: true } }))?.assistantPersona ?? "NIA")
+    : null;
 
   // Liens STAR existants
   const links = await prisma.memberUserLink.findMany({
@@ -101,7 +107,7 @@ export default async function ProfilePage() {
     orderBy: { name: "asc" },
   });
 
-  // Fiche de candidature du STAR accueilli (spec 073, D8), une par église liée
+  // Fiche de candidature du STAR accueilli (spec 077, D8), une par église liée
   const ownApplications = registry.has("serving")
     ? (
         await Promise.all(
@@ -159,6 +165,13 @@ export default async function ProfilePage() {
       >
         <ThemeSelector />
       </ProfileSection>
+
+      {/* Personnage de l'assistant (spec 075) — préférence du compte, sur tous ses appareils */}
+      {assistantPersona && (
+        <ProfileSection title="Assistant" description="Le personnage qui vous répond quand vous touchez le bouton d'aide.">
+          <PersonaSelector initial={assistantPersona} />
+        </ProfileSection>
+      )}
 
       <ProfileSection title="Fiche STAR liée">
         {links.length === 0 && pendingRequests.length === 0 ? (

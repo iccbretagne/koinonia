@@ -11,7 +11,7 @@ import { getServingDurations } from "./settings";
 import { notifyAssigned, notifyConfirmed, notifySentBack, SERVING_ENTITY } from "./notifications";
 
 /**
- * Affectations d'une candidature (spec 073) : le PVS oriente vers un ou plusieurs départements,
+ * Affectations d'une candidature (spec 077) : le PVS oriente vers un ou plusieurs départements,
  * chaque département accueille (début d'observation), confirme ou renvoie au PVS.
  *
  * Le module ne peut pas importer `planning` : l'ajout et le retrait de la fiche STAR dans le

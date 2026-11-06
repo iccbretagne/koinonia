@@ -7,7 +7,7 @@ import ApplicationAnswers from "../ApplicationAnswers";
 import { formatDay } from "../AssignmentChip";
 
 /**
- * Ma fiche de candidature (spec 073, D8) : le STAR accueilli relit ses réponses, en lecture seule,
+ * Ma fiche de candidature (spec 077, D8) : le STAR accueilli relit ses réponses, en lecture seule,
  * sans information interne (ni motif, ni département qui l'a renvoyé, ni observation « échue »).
  */
 export default async function MyApplicationPage({

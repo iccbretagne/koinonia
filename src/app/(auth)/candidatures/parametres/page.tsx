@@ -5,7 +5,7 @@ import { getServingSettings } from "@/modules/serving";
 import { requireServingActor } from "@/modules/serving/auth";
 import ServingSettingsForm from "./ServingSettingsForm";
 
-/** Réglages des candidatures (spec 073) : Super Admin, Admin, responsable du PVS. */
+/** Réglages des candidatures (spec 077) : Super Admin, Admin, responsable du PVS. */
 export default async function CandidaturesParametresPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);

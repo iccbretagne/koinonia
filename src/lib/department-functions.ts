@@ -20,6 +20,7 @@ export const DEPT_FN = {
   MODERATION: "MODERATION",
   CAPTATION_AUDIO: "CAPTATION_AUDIO",
   PHOTOS: "PHOTOS",
+  NAVETTE: "NAVETTE",
   VIE_DES_STAR: "VIE_DES_STAR",
 } as const;
 
@@ -41,6 +42,7 @@ export const DEPT_FN_LABEL: Record<DeptFunction, string> = {
   MODERATION: "Modération",
   CAPTATION_AUDIO: "Captation Audio",
   PHOTOS: "Photos",
+  NAVETTE: "Navette",
   VIE_DES_STAR: "Vie des STAR (PVS)",
 };
 

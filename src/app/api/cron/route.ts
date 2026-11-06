@@ -47,7 +47,7 @@ async function runJobsLifecycleTask(appUrl: string) {
   return runJobOffersLifecycle(appUrl);
 }
 
-/** Candidatures au service (spec 073) : rappels de fin d'observation, relances, effacement. */
+/** Candidatures au service (spec 077) : rappels de fin d'observation, relances, effacement. */
 async function runServingTasks() {
   if (!registry.has("serving")) return null;
   const { runServingTasks: run } = await import("@/modules/serving");
@@ -76,6 +76,18 @@ async function runWithdrawalRelances() {
 async function runSystemMessages() {
   const { dispatchDueMessages } = await import("@/modules/messages");
   return dispatchDueMessages();
+}
+
+/** Échéances de la billetterie (spec 074) : relances, libérations, rappels, clôture, purge. */
+async function runTicketingDeadlines() {
+  const { runTicketingDeadlines: run } = await import("@/modules/ticketing");
+  return run();
+}
+
+/** Résumé hebdomadaire des questions posées à l'assistant qui attendent une réponse (spec 075). */
+async function runAssistantDigest() {
+  const { runAssistantDigest: run } = await import("@/modules/assistant");
+  return run();
 }
 
 function authorizeCron(request: Request) {
@@ -388,6 +400,10 @@ function cronTasks(appUrl: string): CronTask[] {
     { key: "push-delivery", schedule: { kind: "every-run" }, run: () => runPushCatchUp() },
     // Messages système programmés, et rattrapage d'un envoi immédiat interrompu (spec 071).
     { key: "system-messages", module: "messages", schedule: { kind: "every-run" }, run: runSystemMessages },
+    // Billetterie (spec 074) : idempotente (horodatages par réservation), précision au quart d'heure.
+    { key: "ticketing", module: "ticketing", schedule: { kind: "interval", minutes: 15 }, run: runTicketingDeadlines },
+    // Assistant (spec 075) : une fois par semaine, prévient les Super Admins s'il reste des questions à traiter.
+    { key: "assistant-digest", module: "assistant", schedule: { kind: "interval", minutes: 7 * 24 * 60 }, run: runAssistantDigest },
   ];
   return tasks.filter((t) => !t.module || registry.has(t.module));
 }

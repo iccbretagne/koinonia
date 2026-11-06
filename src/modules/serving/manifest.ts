@@ -1,7 +1,7 @@
 import { defineModule } from "@/core/module-registry";
 
 /**
- * Module serving — candidatures au service (fiche STAR, spec 073).
+ * Module serving — candidatures au service (fiche STAR, spec 077).
  *
  * Périmètre :
  *   - Formulaire public par église `/servir/<slug>` (fiche + photo), sans compte

@@ -97,7 +97,7 @@ export interface NavigationInput {
   readonly mediaLinks: readonly Link[];
   readonly agendaLinks?: readonly Link[];
   readonly integrationLinks?: readonly Link[];
-  /** Candidatures au service (spec 073) : équipe PVS, Admin, ou département qui en suit une. */
+  /** Candidatures au service (spec 077) : équipe PVS, Admin, ou département qui en suit une. */
   readonly servingLinks?: readonly Link[];
   readonly famillesUrl?: string | null;
   readonly hasDiscipleship?: boolean;
@@ -115,6 +115,12 @@ export interface NavigationInput {
   readonly hasAvailability?: boolean;
   readonly hasRooms?: boolean;
   readonly hasAccounting?: boolean;
+  /** Registre de la navette (spec 073), rangé sous « Comptabilité ». */
+  readonly hasShuttle?: boolean;
+  /** Trésorerie de l'église (spec 076), rangée sous « Comptabilité » : `treasury:manage`. */
+  readonly hasTreasury?: boolean;
+  /** Billetterie (spec 074) : `ticketing:manage` ou un rôle sur un événement actif. */
+  readonly hasTicketing?: boolean;
   readonly hasJobs?: boolean;
   /** Vue pastorale active (cookie `koinonia-view-mode`). */
   readonly isPastoral?: boolean;
@@ -305,6 +311,9 @@ function agendaPagesFor(input: NavigationInput, agendaPages: NavPage[]): NavPage
       agenda.push({ href: "/admin/reports", label: "Comptes rendus", dataTour: "sidebar-reports", sidebarBlock: church });
     }
   }
+  if (input.hasTicketing) {
+    agenda.push({ href: "/billetterie", label: "Billetterie", sidebarBlock: church });
+  }
   agenda.push(...agendaPages);
   return agenda;
 }
@@ -322,10 +331,27 @@ function peoplePagesFor(input: NavigationInput, carePages: NavPage[]): NavPage[]
   return people;
 }
 
+const ACCOUNTING_BLOCK = "Comptabilité";
+
 function requestPagesFor(input: NavigationInput): NavPage[] {
   const requests: NavPage[] = input.requestLinks.map((l) => ({ href: l.href, label: l.label }));
+  // « Navette » et « Trésorerie » se rangent sous « Comptabilité » (specs 073, 076) : un bloc de
+  // sidebar les regroupe, et leur préfixe plus long l'emporte sur celui de la comptabilité.
+  const accountingBlock = input.hasShuttle || input.hasTreasury ? ACCOUNTING_BLOCK : undefined;
   if (input.hasAccounting) {
-    requests.push({ href: "/accounting/requests", label: "Comptabilité", matchPrefixes: ["/accounting"] });
+    requests.push({
+      href: "/accounting/requests",
+      label: "Comptabilité",
+      matchPrefixes: ["/accounting"],
+      sidebarBlock: accountingBlock,
+      sidebarLabel: accountingBlock ? "Demandes" : undefined,
+    });
+  }
+  if (input.hasShuttle) {
+    requests.push({ href: "/accounting/navette", label: "Navette", sidebarBlock: accountingBlock });
+  }
+  if (input.hasTreasury) {
+    requests.push({ href: "/accounting/tresorerie", label: "Trésorerie", sidebarBlock: accountingBlock });
   }
   return requests;
 }

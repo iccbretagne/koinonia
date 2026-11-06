@@ -106,7 +106,7 @@ export default async function MembersPage() {
     orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
   });
 
-  // Badge « En observation » (candidatures au service, spec 073)
+  // Badge « En observation » (candidatures au service, spec 077)
   const observation = registry.has("serving") ? await listObservationMemberIds(churchId) : [];
 
   return (

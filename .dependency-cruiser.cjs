@@ -174,6 +174,45 @@ module.exports = {
         path: "^src/modules/(?!serving/|storage/)",
       },
     },
+    {
+      name: "no-ticketing-imports-other-modules",
+      severity: "error",
+      comment:
+        "Le module ticketing ne peut importer aucun autre module, sauf storage (infrastructure partagee, ADR-0006).",
+      from: {
+        path: "^src/modules/ticketing/",
+        pathNot: "/__tests__/",
+      },
+      to: {
+        path: "^src/modules/(?!ticketing/|storage/)",
+      },
+    },
+    {
+      name: "no-treasury-imports-other-modules",
+      severity: "error",
+      comment:
+        "Le module treasury n'importe que accounting (son index, dependsOn) et storage ; la navette est lue sans import (ADR-0027).",
+      from: {
+        path: "^src/modules/treasury/",
+        pathNot: "/__tests__/",
+      },
+      to: {
+        path: "^src/modules/(?!treasury/|storage/|accounting/index)",
+      },
+    },
+    {
+      name: "no-assistant-imports-other-modules",
+      severity: "error",
+      comment:
+        "Le module assistant n'importe aucun autre module : les questions de donnees sont fournies par chaque module et composees dans src/app (spec 075, ADR-0028).",
+      from: {
+        path: "^src/modules/assistant/",
+        pathNot: "/__tests__/",
+      },
+      to: {
+        path: "^src/modules/(?!assistant/)",
+      },
+    },
     /**
      * storage est l'infrastructure partagee (ADR-0006) : les autres modules
      * l'importent, mais lui-meme ne depend d'aucun module metier.

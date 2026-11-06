@@ -15,7 +15,7 @@ import {
 } from "./state";
 
 /**
- * Cycle de vie des candidatures (spec 073), tâche cron horaire `serving`. Idempotente : chaque
+ * Cycle de vie des candidatures (spec 077), tâche cron horaire `serving`. Idempotente : chaque
  * envoi est « réservé » par un horodatage pris de façon atomique (`updateMany` conditionnel)
  * avant de partir, si bien que deux passages concurrents n'envoient jamais deux fois.
  *

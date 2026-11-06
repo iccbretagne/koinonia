@@ -7,7 +7,7 @@ import Checkbox from "@/components/ui/Checkbox";
 import { MARITAL_STATUSES, MARITAL_STATUS_LABEL, PCNC_TRAININGS, PHOTO_MAX_BYTES } from "@/modules/serving/schemas";
 
 /**
- * Fiche de candidature au service (spec 073), reprise du formulaire proposé par Jenny
+ * Fiche de candidature au service (spec 077), reprise du formulaire proposé par Jenny
  * (`FicheForm`) et recâblée sur les composants du design system.
  */
 

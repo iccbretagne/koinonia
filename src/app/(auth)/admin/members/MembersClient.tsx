@@ -26,7 +26,7 @@ interface Member {
   primaryDepartment: { id: string; name: string; ministry: { id: string; name: string } } | null;
   allDepartments: DeptRef[];
   userLink: { userId: string; userName: string | null; userEmail: string } | null;
-  /** Départements où le STAR est en période d'observation (candidatures, spec 073). */
+  /** Départements où le STAR est en période d'observation (candidatures, spec 077). */
   observationDeptIds?: string[];
 }
 

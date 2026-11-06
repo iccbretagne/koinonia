@@ -72,6 +72,7 @@ koinonia/
 │   │   │   └── services/
 │   │   │       └── request-executor.ts  # Executor demandes approuvees + emissions bus
 │   │   ├── discipleship/manifest.ts # Manifeste : discipleship:view/manage/export
+│   │   ├── assistant/           # Assistant de prise en main (spec 075) : fiches (knowledge/), moteur, questions à traiter
 │   │   └── audio/               # Publication (ADR-0007) + bibliotheque d'ecoute (spec 021)
 │   │       ├── manifest.ts      # Manifeste : audio:listen/view/upload/review/manage
 │   │       ├── services/        # Depot, sequences, publication, tokens, acces
@@ -421,6 +422,10 @@ Compt = Comptable.
 | `accounting:stats` | x | x | x | | | | | | | x |
 | `giving:manage` | x | x | x | | | | | | | x |
 | `messages:publish` | x | x | x | | | | | | | |
+| `shuttle:manage` | x | x | | | | | | | | x |
+| `treasury:manage` | x | x | | | | | | | | x |
+| `treasury:reopen` | x | x | | | | | | | | |
+| `ticketing:manage` | x | x | x | | | | | | | |
 | `agenda:view` | x | x | x | | | | | | | |
 | `agenda:manage` | x | x | x | | | | | | | |
 | `care:qualify` | x | x | | | | | | | x | |
@@ -553,6 +558,96 @@ renommé spec 052) :
   contenu → slide. Modifications non enregistrées signalées dans la barre collante, garde à la
   sortie (lien interne, fermeture, rechargement ; ni bouton « Précédent » ni palette ⌘K)
 
+**Spécificités du module navette** (spec 073) — extension de la comptabilité, désactivable seule
+(`ENABLED_MODULES`) :
+- `shuttle:manage` (Super Admin, Admin, Comptable) : registre complet de la navette sous
+  `/accounting/navette` — solde de départ, abondements, correction ou suppression de n'importe
+  quelle ligne à tout moment, signalements, cautions non restituées, seuil de solde bas, export
+- **Équipe navette** = membres d'un département de fonction `NAVETTE` (fiche liée), ses
+  responsables et adjoints (`user_departments`) et le Ministre de son ministère
+  (`getShuttleAccess`, `@/modules/shuttle/auth`), quel que soit le rôle, STAR compris. Droits
+  d'écriture énumérés (ADR-0014, règle 5) : déclarer dépenses, restitutions de caution et
+  remboursements du loueur avec justificatif (photo ou document, type vérifié sur le contenu),
+  gérer les locations, corriger ou supprimer **ses** lignes pendant 48 h, demander le
+  remboursement de **ses** avances personnelles. Composer ce département est une décision de
+  sécurité
+- Déclaratif, sans approbation : registre à montants signés (`shuttle_entries`), solde et solde
+  courant calculés à la lecture, suppression logique, historique par `logAudit` (avant/après).
+  Toute mutation par l'équipe notifie la compta (domaine `shuttle` : Comptables, à défaut
+  Admins) ; le franchissement du seuil de solde bas alerte aussi les responsables
+- Liens avec `accounting` (via son index, jamais l'inverse) : note de frais créée depuis une ligne
+  « avance personnelle » (`createLinkedExpenseReport`, justificatif copié, ouverte à l'auteur même
+  STAR), avances de budget versées au département Navette **lues** comme entrées du registre, et
+  notes de frais de la Navette hors registre ajoutables par la compta
+
+**Spécificités du module trésorerie** (spec 076) — extension de la comptabilité, désactivable
+seule (`ENABLED_MODULES`) :
+- `treasury:manage` (Super Admin, Admin, Comptable) ouvre `/accounting/tresorerie` : comptes de
+  trésorerie (caisse, coffre, en ligne ; solde de départ daté, archivage), registre des entrées
+  et sorties (montant positif + sens, solde après chaque ligne, calculé à la lecture en
+  centimes), catégories et objets d'offrandes spéciales, collecte de culte (espèces par catégorie,
+  chèques un par un, deux compteurs), remise au compte commun (bordereau, chèques cochés),
+  transferts entre comptes (ni recette ni dépense), budget annuel, rapports, export. La
+  Secrétaire n'y a **aucun** accès. `treasury:reopen` (Super Admin, Admin) rouvre un mois
+  clôturé, avec un motif journalisé
+- **Mois clôturé** (`treasury_closures`) : aucune écriture datée de ce mois, y compris les
+  reprises — `assertTreasuryDateOpen` est appelé par les routes de paiement et de navette
+- **Reprises par lecture** ([ADR-0027](docs/adr/0027-reprise-par-lecture-entre-modules.md)) :
+  `FinancialPayment.treasuryAccountId` (« Payé depuis » à la remise d'un paiement) et
+  `ShuttleEntry.treasuryAccountId` (« Remis depuis » sur un abondement) sont posés et validés par
+  la couche `src/app` ; le registre les **lit** (`listTreasuryPayments` de `accounting`, table
+  `shuttle_entries` gardée par `registry.has("shuttle")`) en lecture seule. `accounting` et
+  `shuttle` n'importent jamais `treasury`. Le compte bancaire commun n'est pas suivi
+
+**Spécificités du module assistant** (spec 075, [ADR-0028](docs/adr/0028-assistant-moteur-interchangeable.md))
+— désactivable (`ENABLED_MODULES`), **aucune permission propre** :
+- Tout compte connecté de l'église courante pose ses questions (`/api/assistant/ask`, 30 par
+  minute) si l'assistant est actif : module, instance (`assistant_settings`, Super Admin) et
+  église non coupée (`assistant_church_settings`, `church:settings`). Sinon 404 et aucune bulle
+  (`AssistantLauncher`, en bas à droite, au-dessus de la barre du bas et des barres marquées
+  `data-k-bottom-bar`) ; le guide reste dans le menu du compte
+- Les fiches sont filtrées **avant** classement par module actif et par audience (rôles,
+  permissions, prédicats — `linkedStar`, `shuttleTeam`, `ticketing`… — calculés côté serveur par
+  `src/app/api/assistant/_viewer.ts`) ; une fiche hors du rôle ne peut donner que son refus, sans
+  donnée
+- Questions de données : composées dans `src/app/api/assistant/_data-questions.ts`, elles relisent
+  les chargeurs et règles de périmètre des écrans (`loadMyPlanning`, `getUserDepartmentScope`,
+  `resolveRequestQueueAccess`, `getShuttleAccess`…) et revérifient le droit de l'écran ; jamais de
+  coordonnée d'autrui ni de donnée `care` (texte libre passé par `anonymize`)
+- Administration de la base (`/admin/assistant`, `/api/assistant/admin/*`, `/api/assistant/settings`) :
+  `requireSuperAdmin()` — la base et les questions remontées sont d'instance, sans compte ni église
+
+**Spécificités du module billetterie** (spec 074) — désactivable (`ENABLED_MODULES`) :
+- `ticketing:manage` (Super Admin, Admin, Secrétaire) ouvre `/billetterie` et la création
+  d'événements ; son détenteur est **organisateur implicite** de tous les événements de son
+  église
+- **Rôles d'événement** (`ticketing_event_roles`) : Organisateur, Trésorier, Accueil / sécurité,
+  Restauration, Observateur, cumulables, attribués à n'importe quel compte de l'église (STAR
+  compris) et éteints à la clôture. Ce sont des **données** vérifiées objet par objet
+  (`getEventAccess`/`requireEventAction`, `@/modules/ticketing/auth`, matrice `EVENT_ACTIONS`) ;
+  l'église qui fait foi est celle de l'événement (autre église : 404). L'accueil ne reçoit jamais
+  l'email, le téléphone du contact ni les montants d'option ; la restauration compose le menu
+  (plats, allergènes, stock, fermeture) mais pas le prix ni les règles de l'option
+- **Public sans compte** (`routes.public`) : `/inscription/<église>/<événement>` (Turnstile, débit
+  limité), `/reservation/<jeton>` (gestion), `/billet/<jeton>` (ce billet seul). Jetons dérivés
+  (HMAC de `TICKETING_TOKEN_SECRET`, à défaut `AUTH_SECRET`), seule leur **empreinte** SHA-256
+  est stockée ; QR : billet = URL, réservation `KOINONIA-RESA:`, badge `KOINONIA-BADGE:`,
+  étiquette `KOINONIA-REPAS:` (jamais accepté au contrôle d'entrée)
+- Koinonia n'encaisse rien : Wero, Revolut, virement sur un IBAN **propre à l'événement** (jamais
+  celui de l'église), espèces, chèque. État de paiement **par élément** (entrée, option) ;
+  « J'ai payé » → déclaré → confirmé ou refusé par le trésorier ; encaissement direct borné par
+  rôle ; annulation libre, remboursement selon les règles de chaque élément
+- Emails au contact : `sendEmail` direct s'il n'a pas de compte (liste blanche), sinon
+  `createNotification` (domaine `ticketing`). Tâche cron `ticketing` (15 min) : relance avant la
+  date limite des options, libération des options non réglées (sauf paiement sur place), rappel
+  de la veille, clôture 24 h après la fin, purge des données nominatives après la durée de
+  conservation
+- Écrans de terrain **hors ligne** ([ADR-0026](docs/adr/0026-ecrans-hors-ligne.md)) :
+  `/billetterie/[id]/controle` (accueil) et `/billetterie/[id]/restauration` — instantané
+  d'empreintes, file IndexedDB, synchronisation idempotente (`…/sync`), présences **calculées** à
+  partir des passages, seuils de jauge 90 % et 100 % notifiés une fois. L'équipe (postes,
+  affectations, badges) est propre à l'événement ; « Mon planning » la lit seulement
+
 **Spécificités du module messages** (spec 071) :
 - `messages:publish` (Super Admin, Admin, Secrétaire) ouvre `/admin/messages` : publier, programmer,
   corriger et retirer un **message système** dans son église. Un message pour **toute l'instance**
@@ -574,7 +669,7 @@ renommé spec 052) :
   ([ADR-0025](docs/adr/0025-email-urgent-hors-preference.md)) — seul usage autorisé de cette
   option ; la notification native suit toujours la préférence
 
-**Spécificités du module candidatures** (spec 073) :
+**Spécificités du module candidatures** (spec 077) :
 - `serving:manage` (Super Admin, Admin) ne fait que l'administration : l'accès réel passe par
   l'équipe **Vie des STAR** (fonction de département `VIE_DES_STAR`), résolue objet par objet
   dans `@/modules/serving/auth` — Secrétaire exclu. Avant affectation, seuls le PVS et l'Admin

@@ -6,7 +6,7 @@ import { getFunctionDepartmentIds } from "@/lib/function-departments";
 import { canEditSettings, canManageApplications, type ServingUser } from "./services/access";
 
 /**
- * Contexte d'un appelant authentifié dans une église, pour le module serving (spec 073). La
+ * Contexte d'un appelant authentifié dans une église, pour le module serving (spec 077). La
  * décision objet par objet se fait dans les services, avec les règles pures de `access.ts`.
  */
 export type ServingActor = {

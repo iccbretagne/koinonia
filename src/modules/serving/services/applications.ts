@@ -13,7 +13,7 @@ import { renderApplicationPdf } from "./pdf";
 import { notifyNewApplication, SERVING_ENTITY } from "./notifications";
 
 /**
- * Candidatures au service (spec 073) : dépôt public, listes PVS et département, consultation
+ * Candidatures au service (spec 077) : dépôt public, listes PVS et département, consultation
  * journalisée, non-retenue et rattachement à une fiche STAR existante.
  */
 

@@ -1,5 +1,5 @@
 /**
- * API publique du module serving — candidatures au service (spec 073).
+ * API publique du module serving — candidatures au service (spec 077).
  */
 export { servingModule } from "./manifest";
 export {

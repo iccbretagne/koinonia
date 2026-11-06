@@ -15,11 +15,15 @@ import { accountingModule } from "@/modules/accounting/manifest";
 import { jobsModule } from "@/modules/jobs/manifest";
 import { givingModule } from "@/modules/giving/manifest";
 import { messagesModule } from "@/modules/messages/manifest";
+import { shuttleModule } from "@/modules/shuttle/manifest";
+import { ticketingModule } from "@/modules/ticketing/manifest";
+import { treasuryModule } from "@/modules/treasury/manifest";
+import { assistantModule } from "@/modules/assistant/manifest";
 import { servingModule } from "@/modules/serving/manifest";
 import type { Role } from "@/generated/prisma/client";
 
 /**
- * Les 15 modules du registry (`src/lib/registry.ts`), importés par leur manifeste et non par
+ * Les 19 modules du registry (`src/lib/registry.ts`), importés par leur manifeste et non par
  * leur index : un index re-exporte les services du module, donc Prisma, NextAuth et le client
  * S3 — indisponibles dans l'environnement de test `node`. Le manifeste, lui, ne dépend que de
  * `defineModule`.
@@ -39,6 +43,10 @@ const ALL_MODULES = [
   jobsModule,
   givingModule,
   messagesModule,
+  shuttleModule,
+  ticketingModule,
+  treasuryModule,
+  assistantModule,
   servingModule,
 ];
 
@@ -122,6 +130,10 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "rooms:reserve",
     "rooms:view",
     "serving:manage",
+    "shuttle:manage",
+    "ticketing:manage",
+    "treasury:manage",
+    "treasury:reopen",
     "users:manage",
   ],
   ADMIN: [
@@ -176,6 +188,10 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "rooms:reserve",
     "rooms:view",
     "serving:manage",
+    "shuttle:manage",
+    "ticketing:manage",
+    "treasury:manage",
+    "treasury:reopen",
     "users:manage",
   ],
   SECRETARY: [
@@ -213,6 +229,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "reports:view",
     "rooms:reserve",
     "rooms:view",
+    "ticketing:manage",
   ],
   MINISTER: [
     "absences:manage",
@@ -304,6 +321,8 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "jobs:post",
     "jobs:seek",
     "jobs:view",
+    "shuttle:manage",
+    "treasury:manage",
   ],
 };
 
@@ -314,10 +333,11 @@ function buildFullRegistry() {
 }
 
 describe("buildRolePermissions", () => {
-  it("couvre les 15 modules du registry", () => {
+  it("couvre les 19 modules du registry", () => {
     expect(ALL_MODULES.map((m) => m.name).sort()).toEqual([
       "accounting",
       "agenda",
+      "assistant",
       "audio",
       "care",
       "core",
@@ -330,7 +350,10 @@ describe("buildRolePermissions", () => {
       "planning",
       "rooms",
       "serving",
+      "shuttle",
       "storage",
+      "ticketing",
+      "treasury",
     ]);
   });
 

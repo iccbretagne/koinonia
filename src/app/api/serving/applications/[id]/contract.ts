@@ -7,7 +7,7 @@ export const contract = defineContract({
   GET: {
     summary: "Fiche de candidature",
     description:
-      "Spec 073. Église déterminée par la candidature. Chaque consultation est journalisée (`VIEW`). Hors équipe PVS : ni motif de non-retenue, ni fiche STAR rattachée, ni affectations des autres départements. Un département qui a renvoyé n'y a plus accès (403).",
+      "Spec 077. Église déterminée par la candidature. Chaque consultation est journalisée (`VIEW`). Hors équipe PVS : ni motif de non-retenue, ni fiche STAR rattachée, ni affectations des autres départements. Un département qui a renvoyé n'y a plus accès (403).",
     access: "session",
     accessNote: "équipe PVS, `serving:manage`, ou responsable/Ministre d'un département dont l'affectation est en attente, en observation ou confirmée",
     response: "Fiche complète, affectations visibles et droits de l'appelant",
