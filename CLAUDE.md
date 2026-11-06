@@ -633,6 +633,9 @@ seule (`ENABLED_MODULES`) :
   (HMAC de `TICKETING_TOKEN_SECRET`, à défaut `AUTH_SECRET`), seule leur **empreinte** SHA-256
   est stockée ; QR : billet = URL, réservation `KOINONIA-RESA:`, badge `KOINONIA-BADGE:`,
   étiquette `KOINONIA-REPAS:` (jamais accepté au contrôle d'entrée)
+- Options : un **groupe au choix unique** (`choiceGroup`, libellé libre) n'autorise qu'une de ses
+  options par participant ou par réservation, règle tenue par `planSelections` ; les options d'un
+  groupe ont la même portée
 - Koinonia n'encaisse rien : Wero, Revolut, virement sur un IBAN **propre à l'événement** (jamais
   celui de l'église), espèces, chèque. État de paiement **par élément** (entrée, option) ;
   « J'ai payé » → déclaré → confirmé ou refusé par le trésorier ; encaissement direct borné par
@@ -647,6 +650,9 @@ seule (`ENABLED_MODULES`) :
   d'empreintes, file IndexedDB, synchronisation idempotente (`…/sync`), présences **calculées** à
   partir des passages, seuils de jauge 90 % et 100 % notifiés une fois. L'équipe (postes,
   affectations, badges) est propre à l'événement ; « Mon planning » la lit seulement
+- Planning de l'équipe (onglet Équipe) : vue par poste, affectation modifiable (poste, créneau ;
+  la personne est prévenue), comptes filtrés par département (responsabilité ou fiche STAR liée,
+  lus en base sans importer `planning`) — aide à la recherche, jamais une restriction
 
 **Spécificités du module messages** (spec 071) :
 - `messages:publish` (Super Admin, Admin, Secrétaire) ouvre `/admin/messages` : publier, programmer,
