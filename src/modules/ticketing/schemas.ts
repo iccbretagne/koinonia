@@ -499,6 +499,16 @@ export function parseScannedCode(raw: string): { scope: ScannedScope; token: str
 
 export const postSchema = z.object({ name: text(120) }).strict();
 
+/** Modification d'une affectation : poste et créneau (la personne ne change pas). */
+export const assignmentUpdateSchema = z
+  .object({
+    postId: z.string().min(1).max(40).nullable(),
+    startsAt: isoDate.nullable(),
+    endsAt: isoDate.nullable(),
+  })
+  .partial()
+  .strict();
+
 export const assignmentSchema = z
   .object({
     postId: z.string().min(1).max(40).nullish(),

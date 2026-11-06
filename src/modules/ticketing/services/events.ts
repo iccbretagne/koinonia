@@ -343,14 +343,47 @@ export async function setRoles(eventId: string, userId: string, roles: { userId:
 }
 
 /** Comptes de l'église, pour le choix des rôles et de l'équipe. */
+/**
+ * Comptes de l'église, avec leurs départements pour les retrouver : ceux dont ils sont
+ * responsables et ceux de leur fiche STAR liée (lien validé). Les départements aident seulement à
+ * chercher : n'importe quel compte reste affectable.
+ */
 export async function listChurchAccounts(churchId: string) {
   const prisma = await db();
-  const rows = await prisma.userChurchRole.findMany({
-    where: { churchId },
-    select: { user: { select: { id: true, name: true, email: true } } },
+  const [rows, links] = await Promise.all([
+    prisma.userChurchRole.findMany({
+      where: { churchId },
+      select: { user: { select: { id: true, name: true, email: true } }, departments: { select: { departmentId: true } } },
+    }),
+    prisma.memberUserLink.findMany({
+      where: { churchId, validatedAt: { not: null } },
+      select: { userId: true, member: { select: { departments: { select: { departmentId: true } } } } },
+    }),
+  ]);
+  const accounts = new Map<string, { id: string; name: string | null; email: string; departmentIds: Set<string> }>();
+  for (const r of rows) {
+    const account = accounts.get(r.user.id) ?? { ...r.user, departmentIds: new Set<string>() };
+    for (const d of r.departments) account.departmentIds.add(d.departmentId);
+    accounts.set(r.user.id, account);
+  }
+  for (const l of links) {
+    for (const d of l.member.departments) accounts.get(l.userId)?.departmentIds.add(d.departmentId);
+  }
+  return [...accounts.values()]
+    .map((a) => ({ id: a.id, name: a.name, email: a.email, departmentIds: [...a.departmentIds] }))
+    .sort((a, b) => (a.name ?? a.email).localeCompare(b.name ?? b.email, "fr"));
+}
+export type ChurchAccount = Awaited<ReturnType<typeof listChurchAccounts>>[number];
+
+/** Départements de l'église, pour filtrer les comptes à affecter. */
+export async function listChurchDepartments(churchId: string) {
+  const prisma = await db();
+  const rows = await prisma.department.findMany({
+    where: { ministry: { churchId } },
+    select: { id: true, name: true, ministry: { select: { name: true } } },
+    orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
   });
-  const unique = new Map(rows.map((r) => [r.user.id, r.user]));
-  return [...unique.values()].sort((a, b) => (a.name ?? a.email).localeCompare(b.name ?? b.email, "fr"));
+  return rows.map((d) => ({ id: d.id, name: d.name, ministry: d.ministry.name }));
 }
 
 // ── Lecture publique ─────────────────────────────────────────────────────────

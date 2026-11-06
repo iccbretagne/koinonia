@@ -292,6 +292,13 @@ L'équipe est prévenue dans Koinonia :
 Cette organisation est **propre à l'événement** : elle ne modifie pas le planning des
 départements.
 
+**Planning de l'équipe** (ajout du 6 novembre 2026). L'onglet Équipe présente les affectations
+**par poste** : un bloc par poste avec le nombre de personnes, leurs horaires (ou « Tout
+l'événement »), puis les personnes sans poste. L'organisateur peut **renommer** un poste et
+**modifier** une affectation (poste, horaires) sans la recréer ; la personne en est prévenue.
+Pour affecter quelqu'un, il **filtre par département** (départements dont la personne est
+responsable ou membre par sa fiche STAR liée) et **cherche par nom**.
+
 #### Contrôle des entrées et sorties
 
 L'écran de contrôle sert à l'équipe d'accueil et de sécurité, sur téléphone.

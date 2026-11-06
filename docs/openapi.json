@@ -25259,6 +25259,84 @@
       }
     },
     "/api/ticketing/events/{id}/assignments/{assignmentId}": {
+      "patch": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Modifier une affectation",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement.\n\nChange le poste (`null` : sans poste, sinon un poste de l'événement) ou le créneau (fin après le début) ; la personne affectée reste la même. Un compte affecté est prévenu du changement. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "assignmentId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "postId": {
+                    "type": "string",
+                    "nullable": true,
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "startsAt": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  },
+                  "endsAt": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Affectation mise à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
       "delete": {
         "tags": [
           "ticketing"

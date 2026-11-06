@@ -113,6 +113,48 @@ export async function createAssignment(eventId: string, actorId: string, input: 
   return assignment;
 }
 
+/** Change le poste ou le créneau d'une affectation ; la personne en est prévenue. */
+export async function updateAssignment(
+  eventId: string,
+  assignmentId: string,
+  actorId: string,
+  input: Pick<AssignmentInput, "postId" | "startsAt" | "endsAt">
+) {
+  const prisma = await db();
+  const current = await prisma.ticketingAssignment.findUnique({ where: { id: assignmentId } });
+  if (current?.eventId !== eventId) throw new ApiError(404, "Affectation introuvable");
+  if (input.postId) await postOf(eventId, input.postId);
+  const startsAt = input.startsAt === undefined ? current.startsAt : input.startsAt;
+  const endsAt = input.endsAt === undefined ? current.endsAt : input.endsAt;
+  if (startsAt && endsAt && endsAt <= startsAt) throw new ApiError(400, "La fin du créneau doit suivre son début");
+  const event = await eventChurch(eventId);
+  const updated = await prisma.ticketingAssignment.update({
+    where: { id: assignmentId },
+    data: { postId: input.postId === undefined ? undefined : input.postId, startsAt, endsAt },
+    include: { post: { select: { name: true } } },
+  });
+  await audit(actorId, event.churchId, "UPDATE", "TicketingAssignment", assignmentId, {
+    eventId,
+    postId: updated.postId,
+    startsAt: startsAt?.toISOString() ?? null,
+    endsAt: endsAt?.toISOString() ?? null,
+  });
+  const changed =
+    updated.postId !== current.postId || startsAt?.getTime() !== current.startsAt?.getTime() || endsAt?.getTime() !== current.endsAt?.getTime();
+  if (changed && current.userId && current.userId !== actorId) {
+    const { createNotification } = await import("@/lib/notifications");
+    await createNotification({
+      userId: current.userId,
+      domain: "ticketing",
+      type: "TICKETING_ASSIGNMENT",
+      title: `${event.title} : votre affectation a changé`,
+      message: updated.post ? `Poste : ${updated.post.name}.` : "Vous n'avez plus de poste précis.",
+      link: "/planning",
+    }).catch(() => undefined);
+  }
+  return updated;
+}
+
 export async function deleteAssignment(eventId: string, assignmentId: string, actorId: string) {
   const prisma = await db();
   const assignment = await prisma.ticketingAssignment.findUnique({ where: { id: assignmentId } });

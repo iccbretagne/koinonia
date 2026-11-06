@@ -15,6 +15,7 @@ import {
   listBookings,
   listTeam,
   listChurchAccounts,
+  listChurchDepartments,
   listPayments,
 } from "@/modules/ticketing";
 import { EVENT_STATUS_LABEL } from "@/modules/ticketing/schemas";
@@ -68,11 +69,12 @@ export default async function TicketingEventPage({
   const requested = VIEWS.find((v) => v === query.vue);
   const view: View = requested && allowed[requested] ? requested : "apercu";
 
-  const [event, bookings, payments, accounts, team, presence, board] = await Promise.all([
+  const [event, bookings, payments, accounts, departments, team, presence, board] = await Promise.all([
     getEventDetail(id),
     can.bookings ? listBookings(id, can.payments) : Promise.resolve(null),
     can.payments ? listPayments(id) : Promise.resolve([]),
     can.configure && view === "equipe" ? listChurchAccounts(access.churchId) : Promise.resolve([]),
+    can.configure && view === "equipe" ? listChurchDepartments(access.churchId) : Promise.resolve([]),
     can.configure && view === "equipe" ? listTeam(id) : Promise.resolve(null),
     view === "presences" ? getPresence(id) : Promise.resolve(null),
     view === "restauration" ? cateringBoard(id) : Promise.resolve(null),
@@ -117,7 +119,7 @@ export default async function TicketingEventPage({
       {view === "equipe" && (
         <div className="space-y-8">
           <TeamTab eventId={id} roles={event.roles} accounts={accounts} />
-          {team && <StaffSection eventId={id} team={team} accounts={accounts} />}
+          {team && <StaffSection eventId={id} team={team} accounts={accounts} departments={departments} />}
         </div>
       )}
       {view === "presences" && presence && <PresenceTab eventId={id} presence={presence} canExport={can.reception} />}
