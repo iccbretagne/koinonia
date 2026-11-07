@@ -2,6 +2,8 @@ import CopyRow from "@/app/donner/_components/CopyRow";
 import QrSvg from "@/components/ticketing/QrSvg";
 import type { BookingRow, EventDetail } from "@/modules/ticketing";
 import { AGE_GROUP_LABEL, formatEuros } from "@/modules/ticketing/schemas";
+import OpeningChecklist from "./OpeningChecklist";
+import { readinessChecks } from "./readiness";
 
 function Stat({ label, value, hint }: { readonly label: string; readonly value: string; readonly hint?: string }) {
   return (
@@ -19,7 +21,9 @@ export default function Overview({
   bookings,
   publicUrl,
   publicQr,
+  canConfigure = false,
 }: {
+  readonly canConfigure?: boolean;
   readonly event: EventDetail;
   readonly bookings: BookingRow[] | null;
   readonly publicUrl: string;
@@ -37,6 +41,7 @@ export default function Overview({
 
   return (
     <div className="space-y-6">
+      {canConfigure && <OpeningChecklist eventId={event.id} status={event.status} checks={readinessChecks(event)} />}
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat label="Inscrits" value={`${event.seatsTaken} / ${event.seatsOpen}`} hint={`${remaining} place${remaining > 1 ? "s" : ""} restante${remaining > 1 ? "s" : ""} · jauge ${event.capacity}`} />
         {bookings && <Stat label="Encaissé" value={formatEuros(totals.paid)} hint={`Déclaré ${formatEuros(totals.declared)} · attendu ${formatEuros(totals.due)}`} />}

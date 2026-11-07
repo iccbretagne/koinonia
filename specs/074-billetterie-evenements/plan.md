@@ -484,3 +484,14 @@ sans nouvelle spec : elles prolongent le lot 1 et le lot 2 sans toucher aux droi
   recherche par nom.
 - Pas de besoins par poste ni de découpage en créneaux : écartés à la demande.
 
+**Ergonomie de la préparation (7 novembre 2026)** — interface seule, sans route ni droit nouveau.
+- Onglet `options` (`OptionsTab`, réservé à `configure`) à la place de `OptionsSection` en bas
+  des paramètres ; plats gérés par `DishList`, partagé avec l'écran Restauration (routes
+  existantes `…/options/[optionId]/variants` et `…/variants/[variantId]`, action `menu` ouverte à
+  l'organisateur et à la restauration).
+- `readinessChecks` (`readiness.ts`, pur et testé) calcule la liste « Prêt à ouvrir ? » ;
+  `OpeningChecklist` change l'état par `PATCH /api/ticketing/events/[id]` (`{ status }`, schéma
+  déjà partiel). Le bouton reste désactivé tant qu'un point bloquant manque ; le serveur
+  n'impose pas ces points (l'état reste aussi modifiable dans les paramètres).
+- Paramètres : blocs `<details>` repliables, informations, jauge, tarifs et paiement ouverts.
+

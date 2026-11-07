@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Camera, CameraOff, Printer, Trash2 } from "lucide-react";
-import { Alert, Button, Checkbox, Input, Modal, SearchInput, Select, StatusChip } from "@/components/ui";
+import { Camera, CameraOff, Printer } from "lucide-react";
+import { Alert, Button, Input, Modal, SearchInput, Select, StatusChip } from "@/components/ui";
 import { newOpId, sha256Hex } from "@/lib/offline/hash";
 import { startScanner } from "@/lib/offline/scanner";
 import type { CateringSnapshot } from "@/modules/ticketing";
 import { formatEuros, parseScannedCode } from "@/modules/ticketing/schemas";
-import { useApi } from "../../use-api";
+import DishList from "../_components/DishList";
 import NetworkBar from "../_offline/NetworkBar";
 import { useFieldSync } from "../_offline/use-field-sync";
 
@@ -85,79 +85,18 @@ function Sheet({
   );
 }
 
+/** Menus « à retirer sur place » : plats en liste compacte, modifiés au toucher. */
 function MenuEditor({ eventId, menus }: { readonly eventId: string; readonly menus: Menu[] }) {
-  const { call, busy } = useApi();
-  const [drafts, setDrafts] = useState<Record<string, Menu["variants"][number]>>({});
-  const [adding, setAdding] = useState<Record<string, string>>({});
-  if (menus.length === 0) return <p className="text-ink-muted">Aucune option à choix « à retirer sur place ». L&apos;organisateur la crée dans les paramètres.</p>;
-  const num = (v: string) => (v === "" ? null : Number(v));
+  if (menus.length === 0) {
+    return <p className="text-ink-muted">Aucun menu « à retirer sur place ». L&apos;organisateur le crée dans l&apos;onglet Options de l&apos;événement.</p>;
+  }
   return (
     <div className="space-y-6">
       <p className="text-[13px] text-ink-muted">Vous composez les plats ; le prix, la date limite de paiement et le remboursement restent à l&apos;organisateur.</p>
       {menus.map((m) => (
-        <section key={m.id} className="space-y-3">
+        <section key={m.id} className="space-y-2">
           <h2 className="text-lg font-bold text-ink">{m.label}</h2>
-          {m.variants.map((v) => {
-            const d = drafts[v.id] ?? v;
-            const set = (patch: Partial<Menu["variants"][number]>) => setDrafts((all) => ({ ...all, [v.id]: { ...d, ...patch } }));
-            return (
-              <div key={v.id} className="space-y-2 rounded-card border border-line bg-surface p-3">
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <Input label="Plat" value={d.label} onChange={(e) => set({ label: e.target.value })} />
-                  <Input label="Allergènes" value={d.allergens ?? ""} onChange={(e) => set({ allergens: e.target.value || null })} />
-                  <Input label="Description" value={d.description ?? ""} onChange={(e) => set({ description: e.target.value || null })} />
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input label={`Stock (réservés ${v.used})`} type="number" min={0} value={d.stock ?? ""} onChange={(e) => set({ stock: num(e.target.value) })} />
-                    <Input label="Préparés" type="number" min={0} value={d.prepared ?? ""} onChange={(e) => set({ prepared: num(e.target.value) })} />
-                  </div>
-                </div>
-                <label className="flex min-h-11 items-center gap-3">
-                  <Checkbox checked={d.closed} onChange={(e) => set({ closed: e.target.checked })} />
-                  <span className="text-[15px] text-ink">Fermé aux nouvelles commandes</span>
-                </label>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={busy || !drafts[v.id]}
-                    onClick={async () => {
-                      const ok = await call(`/api/ticketing/events/${eventId}/variants/${v.id}`, "PATCH", {
-                        label: d.label,
-                        description: d.description,
-                        allergens: d.allergens,
-                        stock: d.stock,
-                        prepared: d.prepared,
-                        closed: d.closed,
-                      }, "Plat enregistré");
-                      if (ok) setDrafts(({ [v.id]: _, ...rest }) => rest);
-                    }}
-                  >
-                    Enregistrer
-                  </Button>
-                  {v.used === 0 && (
-                    <Button type="button" size="sm" variant="ghost" aria-label={`Supprimer ${v.label}`} onClick={() => call(`/api/ticketing/events/${eventId}/variants/${v.id}`, "DELETE", undefined, "Plat supprimé")}>
-                      <Trash2 className="size-4" aria-hidden="true" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-          <div className="flex flex-wrap items-end gap-2">
-            <div className="min-w-48 flex-1">
-              <Input label="Nouveau plat" value={adding[m.id] ?? ""} onChange={(e) => setAdding({ ...adding, [m.id]: e.target.value })} />
-            </div>
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={busy || !adding[m.id]?.trim()}
-              onClick={async () => {
-                if (await call(`/api/ticketing/events/${eventId}/options/${m.id}/variants`, "POST", { label: adding[m.id].trim() }, "Plat ajouté")) setAdding({ ...adding, [m.id]: "" });
-              }}
-            >
-              Ajouter
-            </Button>
-          </div>
+          <DishList eventId={eventId} optionId={m.id} dishes={m.variants} showPrepared />
         </section>
       ))}
     </div>
