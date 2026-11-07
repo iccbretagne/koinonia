@@ -21,6 +21,7 @@ import {
 import { EVENT_STATUS_LABEL } from "@/modules/ticketing/schemas";
 import Overview from "./_components/Overview";
 import SettingsTab from "./_components/SettingsTab";
+import OptionsTab from "./_components/OptionsTab";
 import BookingsTab from "./_components/BookingsTab";
 import PaymentsTab from "./_components/PaymentsTab";
 import TeamTab from "./_components/TeamTab";
@@ -28,7 +29,7 @@ import StaffSection from "./_components/StaffSection";
 import PresenceTab from "./_components/PresenceTab";
 import CateringTab from "./_components/CateringTab";
 
-const VIEWS = ["apercu", "parametres", "inscrits", "reglements", "equipe", "presences", "restauration"] as const;
+const VIEWS = ["apercu", "parametres", "options", "inscrits", "reglements", "equipe", "presences", "restauration"] as const;
 type View = (typeof VIEWS)[number];
 
 function appUrl() {
@@ -60,6 +61,7 @@ export default async function TicketingEventPage({
   const allowed: Record<View, boolean> = {
     apercu: true,
     parametres: can.configure,
+    options: can.configure,
     inscrits: can.bookings,
     reglements: can.payments,
     equipe: can.configure,
@@ -83,7 +85,7 @@ export default async function TicketingEventPage({
   const pending = payments.filter((p) => p.kind === "DECLARATION" && p.status === "PENDING").length;
   const tabs = VIEWS.filter((v) => allowed[v]).map((v) => ({
     href: `/billetterie/${id}?vue=${v}`,
-    label: { apercu: "Aperçu", parametres: "Paramètres", inscrits: "Inscrits", reglements: "Règlements", equipe: "Équipe", presences: "Présences", restauration: "Restauration" }[v],
+    label: { apercu: "Aperçu", parametres: "Paramètres", options: "Options", inscrits: "Inscrits", reglements: "Règlements", equipe: "Équipe", presences: "Présences", restauration: "Restauration" }[v],
     active: v === view,
     count: v === "reglements" && pending > 0 ? pending : undefined,
   }));
@@ -112,8 +114,9 @@ export default async function TicketingEventPage({
       >
         <Tabs tabs={tabs} ariaLabel="Événement" />
       </PageHeader>
-      {view === "apercu" && <Overview event={event} bookings={bookings} publicUrl={publicUrl} publicQr={qrPath(publicUrl)} />}
+      {view === "apercu" && <Overview event={event} bookings={bookings} publicUrl={publicUrl} publicQr={qrPath(publicUrl)} canConfigure={can.configure} />}
       {view === "parametres" && <SettingsTab event={event} />}
+      {view === "options" && <OptionsTab event={event} />}
       {view === "inscrits" && bookings && <BookingsTab eventId={id} bookings={bookings} canManage={can.payments} questions={event.questions} />}
       {view === "reglements" && bookings && <PaymentsTab eventId={id} bookings={bookings} payments={payments} />}
       {view === "equipe" && (

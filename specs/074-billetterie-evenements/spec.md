@@ -292,6 +292,15 @@ L'équipe est prévenue dans Koinonia :
 Cette organisation est **propre à l'événement** : elle ne modifie pas le planning des
 départements.
 
+**Ergonomie de la préparation** (ajout du 7 novembre 2026). Les options ont leur onglet : une
+carte par option, ses plats juste dessous et modifiables sur place (ajouter, renommer, fermer,
+supprimer un plat jamais réservé), aussi après la création de l'option. Le type et la portée
+d'une option se choisissent sur des exemples. L'Aperçu indique ce qu'il reste à régler avant
+d'ouvrir (bloquant : tarifs, places, moyen de paiement si quelque chose est payant, au moins un
+plat ouvert par menu proposé ; conseillé : date limite de paiement des options, lieu, équipe,
+affiche) et ouvre, ferme ou rouvre les inscriptions d'un bouton. La restauration voit les plats
+en liste compacte. Aucun droit ne change.
+
 **Planning de l'équipe** (ajout du 6 novembre 2026). L'onglet Équipe présente les affectations
 **par poste** : un bloc par poste avec le nombre de personnes, leurs horaires (ou « Tout
 l'événement »), puis les personnes sans poste. L'organisateur peut **renommer** un poste et

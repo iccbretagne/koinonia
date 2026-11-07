@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button, Checkbox, Input, Select, Textarea, useToast } from "@/components/ui";
 import type { EventDetail } from "@/modules/ticketing";
 import { AGE_GROUPS, AGE_GROUP_LABEL, EVENT_STATUSES, EVENT_STATUS_LABEL } from "@/modules/ticketing/schemas";
 import type { TicketingAgeGroup } from "@/generated/prisma/enums";
 import { useApi } from "../../use-api";
-import OptionsSection from "./OptionsSection";
 
 /** `Date` ou ISO → valeur d'un champ `datetime-local` (heure locale). */
 export function toLocalInput(value: Date | string | null | undefined): string {
@@ -19,12 +18,29 @@ export function toLocalInput(value: Date | string | null | undefined): string {
 }
 export const fromLocalInput = (value: string) => (value ? new Date(value).toISOString() : null);
 
-function Section({ title, children }: { readonly title: string; readonly children: ReactNode }) {
+/** Bloc repliable : l'essentiel s'ouvre par défaut, le reste se déplie à la demande. */
+function Section({
+  title,
+  summary,
+  open = false,
+  children,
+}: {
+  readonly title: string;
+  readonly summary?: string;
+  readonly open?: boolean;
+  readonly children: ReactNode;
+}) {
   return (
-    <fieldset className="space-y-3 rounded-card border border-line bg-surface p-4">
-      <legend className="px-1 font-semibold text-ink">{title}</legend>
-      {children}
-    </fieldset>
+    <details open={open} className="group rounded-card border border-line bg-surface">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+        <span>
+          <span className="block font-semibold text-ink">{title}</span>
+          {summary && <span className="block text-[13px] text-ink-muted">{summary}</span>}
+        </span>
+        <ChevronDown aria-hidden="true" className="size-5 shrink-0 text-ink-muted transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="space-y-3 border-t border-line px-4 pb-4 pt-3">{children}</div>
+    </details>
   );
 }
 
@@ -40,7 +56,7 @@ function Toggle({ label, checked, onChange, hint }: { readonly label: string; re
   );
 }
 
-/** Paramètres de l'événement (organisateur) : infos, jauge, tarifs, paiements, règles, questions, options. */
+/** Paramètres de l'événement (organisateur) : infos, jauge, tarifs, paiements, règles, questions. Les options ont leur onglet. */
 export default function SettingsTab({ event }: { readonly event: EventDetail }) {
   const { call, busy } = useApi();
   const toast = useToast();
@@ -131,7 +147,7 @@ export default function SettingsTab({ event }: { readonly event: EventDetail }) 
 
   return (
     <div className="space-y-5">
-      <Section title="Informations">
+      <Section title="Informations" summary="Titre, dates, lieu, affiche, état" open>
         <Input label="Titre" value={f.title} onChange={(e) => set("title", e.target.value)} />
         <Textarea label="Description" rows={4} value={f.description} onChange={(e) => set("description", e.target.value)} />
         <Input label="Lieu" value={f.location} onChange={(e) => set("location", e.target.value)} />
@@ -158,14 +174,14 @@ export default function SettingsTab({ event }: { readonly event: EventDetail }) 
         </div>
       </Section>
 
-      <Section title="Jauge et places">
+      <Section title="Jauge et places" summary={`${f.seatsOpen} places ouvertes · jauge ${f.capacity}`} open>
         <div className="grid gap-3 sm:grid-cols-2">
           <Input label="Jauge réglementaire" hint="Personnes dans le bâtiment, équipe comprise." type="number" min={1} value={f.capacity} onChange={(e) => set("capacity", e.target.value)} />
           <Input label="Places ouvertes à l'inscription" hint="Inférieures à la jauge : marge pour l'équipe." type="number" min={0} value={f.seatsOpen} onChange={(e) => set("seatsOpen", e.target.value)} />
         </div>
       </Section>
 
-      <Section title="Tarifs par participant">
+      <Section title="Tarifs par participant" summary="Prix de l'entrée par tranche d'âge" open>
         {AGE_GROUPS.map((g) => (
           <div key={g} className="flex items-center gap-3">
             <label className="flex min-h-11 w-44 items-center gap-3">
@@ -183,7 +199,7 @@ export default function SettingsTab({ event }: { readonly event: EventDetail }) 
         <p className="text-[13px] text-ink-muted">0 = gratuit. Une tranche non cochée n&apos;est pas proposée.</p>
       </Section>
 
-      <Section title="Moyens de paiement">
+      <Section title="Moyens de paiement" summary="Wero, Revolut, virement, espèces, chèque" open>
         <p className="text-[13px] text-ink-muted">Jamais les coordonnées bancaires de l&apos;église : seulement celles du bénéficiaire de l&apos;événement.</p>
         <Input label="Wero — téléphone ou email du bénéficiaire" value={f.wero} onChange={(e) => set("wero", e.target.value)} />
         <Input label="Revolut — lien de paiement (https)" value={f.revolut} onChange={(e) => set("revolut", e.target.value)} />
@@ -195,7 +211,7 @@ export default function SettingsTab({ event }: { readonly event: EventDetail }) 
         <Toggle label="Chèque sur place" checked={f.cheque} onChange={(v) => set("cheque", v)} />
       </Section>
 
-      <Section title="Paiement et annulation">
+      <Section title="Paiement et annulation" summary="Date limite, relance, remboursement">
         <div className="grid gap-3 sm:grid-cols-2">
           <Input label="Date limite de paiement des options" type="datetime-local" value={f.optionPaymentDeadline} onChange={(e) => set("optionPaymentDeadline", e.target.value)} />
           <Input label="Relance (jours avant)" type="number" min={0} max={30} value={f.reminderDaysBefore} onChange={(e) => set("reminderDaysBefore", e.target.value)} />
@@ -212,7 +228,7 @@ export default function SettingsTab({ event }: { readonly event: EventDetail }) 
         )}
       </Section>
 
-      <Section title="Règles">
+      <Section title="Règles" summary="Mineurs, ajout sur place, références, conservation">
         <Toggle
           label="Mineurs non accompagnés autorisés"
           hint="Un responsable légal (nom, téléphone, autorisation) est alors exigé."
@@ -226,7 +242,7 @@ export default function SettingsTab({ event }: { readonly event: EventDetail }) 
         </div>
       </Section>
 
-      <Section title="Questions supplémentaires">
+      <Section title="Questions supplémentaires" summary={questions.length ? `${questions.length} question${questions.length > 1 ? "s" : ""}` : "Aucune"}>
         {questions.map((q, i) => (
           <div key={q.id} className="flex flex-wrap items-end gap-3">
             <div className="min-w-48 flex-1">
@@ -250,8 +266,6 @@ export default function SettingsTab({ event }: { readonly event: EventDetail }) 
           {busy ? "Enregistrement…" : "Enregistrer les paramètres"}
         </Button>
       </div>
-
-      <OptionsSection event={event} />
     </div>
   );
 }

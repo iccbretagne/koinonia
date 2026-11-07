@@ -223,6 +223,11 @@ Chaque route a son `contract.ts`.
 - [x] **T61** — Documentation : spec, plan, `docs/database.md`, guide utilisateur, fiches de
   l'assistant (KB-145, KB-146), `CHANGELOG.md`, `docs/openapi.json`.
 
+- [x] **T62** — Ergonomie de la préparation : onglet Options et `DishList`, fenêtre d'option à
+  exemples, checklist d'ouverture (`readiness.ts`, test `readiness.test.ts`), paramètres
+  repliables, menu compact côté restauration ; documentation (spec, plan, fiche KB-145,
+  `CHANGELOG.md`).
+
 ## Vérification finale
 
 - [x] `npm run typecheck`

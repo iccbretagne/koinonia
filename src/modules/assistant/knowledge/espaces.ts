@@ -133,7 +133,7 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     title: "Options au choix unique de la billetterie",
     questions: ["Repas adulte ou enfant au choix", "une seule option parmi plusieurs", "options qui ne se cumulent pas", "groupe d'options"],
     answer:
-      "Dans l'événement, onglet « Paramètres », ouvrez chaque option et donnez-leur le même « Groupe au choix unique » (par exemple « Repas »). L'inscrit n'en prend qu'une, ou aucune, par participant ou pour la réservation : elles s'affichent en boutons radio. Chaque option garde son prix et son stock.",
+      "Dans l'événement, onglet « Options », ouvrez chaque option (crayon) et donnez-leur, dans « Réglages avancés », le même « Groupe au choix unique » (par exemple « Repas »). L'inscrit n'en prend qu'une, ou aucune, par participant ou pour la réservation : elles s'affichent en boutons radio. Chaque option garde son prix et son stock.",
     href: "/billetterie",
     hrefLabel: "Billetterie",
     audience: { predicates: ["ticketing"] },
