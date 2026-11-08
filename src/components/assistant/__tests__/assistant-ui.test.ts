@@ -80,3 +80,15 @@ describe("bouton d'aide (spec 075)", () => {
     expect(html).toContain('href="/guide"');
   });
 });
+
+describe("panneau de l'assistant et clavier virtuel", () => {
+  it("sans clavier : rien à corriger", async () => {
+    const { keyboardBox } = await import("../keyboard-box");
+    expect(keyboardBox({ height: 844, offsetTop: 0 }, 844)).toBeNull();
+  });
+  it("clavier ouvert : hauteur visible et décalage du défilement", async () => {
+    const { keyboardBox } = await import("../keyboard-box");
+    expect(keyboardBox({ height: 508.4, offsetTop: 0 }, 844)).toEqual({ height: 508, top: 0 });
+    expect(keyboardBox({ height: 508, offsetTop: 290.6 }, 844)).toEqual({ height: 508, top: 291 });
+  });
+});
