@@ -6,6 +6,10 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Corrigé
+
+- Assistant : sur téléphone, l'en-tête du panneau reste visible quand le clavier s'ouvre pour écrire une question (il sortait de l'écran sur iPhone).
+
 ## [v1.34.0] - 2026-11-06
 
 ### Ajouté
