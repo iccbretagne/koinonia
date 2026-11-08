@@ -176,10 +176,22 @@ la justification couvrent l'achat).
   `returnTreasuryAccountId`, lues par `src/modules/treasury/services/reprises.ts` comme lignes
   **IN** de la catégorie système des notes de frais, lien vers la demande, en lecture seule —
   même mécanisme que `listTreasuryPayments` (ADR-0027).
-- **Statistiques** (`stats.ts`) : `effectiveAmount(request)` = montant de la demande, sauf demande
-  couverte par une justification `SETTLED` : part du montant dépensé (ou retenu) au prorata du
-  remis de chaque demande de la justification. Utilisé par le total engagé, la répartition par
-  département et par type. Compteurs ajoutés : justifications en attente, en retard, reliquats dus.
+- **Statistiques** (`stats.ts` + règle pure `fund-tracking.ts`) : les indicateurs existants ne
+  changent pas. Nouveau bloc `fundTracking` calculé par `classifyReleased(payment, context)` qui
+  range **chaque versement confirmé** dans une seule case — `justified`, `returned`, `returnDue`,
+  `toJustify`, `shuttle`, `beforeTracking` — selon sa demande :
+  - note de frais avec pièce, note liée à un dépassement → `justified` ;
+  - département de fonction `NAVETTE` → `shuttle` ;
+  - versement antérieur à la mise en service (aucune justification et versé avant la date de la
+    migration, constante `TRACKING_STARTED_AT`) → `beforeTracking` ;
+  - sinon d'après sa justification : `AWAITING`/`SUBMITTED` → `toJustify` ; `RETURN_DUE`/`SETTLED`
+    → répartition du **montant de la justification** entre `justified` (min(dépensé, versé)),
+    `returned` et `returnDue` (reliquat). Pour une justification qui couvre plusieurs versements
+    (série du mois), la répartition se fait au niveau de la justification, attribuée au mois de
+    versement (un seul mois par justification) et au département de la série : **aucun prorata**.
+  Agrégats par mois de versement et par département ; test d'invariant « versé = somme des
+  cases » sur des jeux construits (partiel, dépassement, série, navette, antérieur, dispense).
+  Chaque case expose les identifiants des demandes pour ouvrir la liste.
 
 Cron : tâche `accounting-justifications` (`module: "accounting"`, `interval` 60 min) dans
 `src/app/api/cron/route.ts`, plus l'entrée de son contrat.
@@ -216,8 +228,11 @@ Cron : tâche `accounting-justifications` (`module: "accounting"`, `interval` 60
   depuis », pas d'écriture dupliquée, modification à l'origine seulement.
 - **Écarté** : complément par une tranche ajoutée à l'avance — *Raison* : choix de la compta, la
   note de frais liée garde la validation habituelle.
-- **Choix** : statistiques au prorata pour une série — *Pourquoi* : une facture mensuelle couvre
-  plusieurs occurrences ; le prorata du remis répartit sans nouvelle saisie.
+- **Choix** : statistiques en cases exclusives (« versé = somme des cases »), indicateurs existants
+  inchangés — *Pourquoi* : exigence de cohérence et de lisibilité de la compta ; chaque chiffre se
+  vérifie par addition et s'ouvre sur ses demandes.
+- **Écarté** : remplacer le montant engagé par un « montant effectif » au prorata — *Raison* :
+  change le sens d'un chiffre connu, et le prorata d'une série n'est ni vérifiable ni explicable.
 - **Choix** : responsables et Ministre lus en base dans `accounting` — *Pourquoi* : `accounting`
   dépend déjà de `planning` dans son manifeste, mais l'import d'un service ne sert qu'à deux
   requêtes ; la lecture directe suit le motif de `messages`.
@@ -247,7 +262,9 @@ Cron : tâche `accounting-justifications` (`module: "accounting"`, `interval` 60
   par un autre que le demandeur refusé ; acceptation avec et sans reliquat ; refus avec motif ;
   dispense ; restitution avec compte (ligne lue par la trésorerie) et sans ; relances idempotentes
   et escalade à la 3e ; demandeur sans rôle.
-- `stats.test.ts` : montant effectif d'une demande soldée, prorata d'une série.
+- `fund-tracking.test.ts` : chaque cas rangé dans sa case ; invariant « versé = somme des cases »
+  sur l'ensemble des cas, par mois et par département ; dépassement non compté deux fois ;
+  indicateurs existants de `computeAccountingStats` inchangés (non-régression).
 - Routes (`src/app/api/accounting/__tests__`) : 403/404 hors périmètre ou autre église, Zod,
   restitution sur mois clôturé refusée.
 - `reprises` de la trésorerie : restitution reprise en entrée.

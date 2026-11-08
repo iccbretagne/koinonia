@@ -54,8 +54,8 @@ sont justifiées par ce registre.
 - **Ministre, Resp. département** qui consultent les demandes de leur périmètre : voient l'état
   de justification de ces demandes, sans agir à la place du demandeur ; sont prévenus quand une
   demande de leur département reste en retard après la troisième relance.
-- **Secrétaire** : voit les statistiques comptables, qui tiennent désormais compte du montant
-  réellement dépensé ; aucun geste nouveau.
+- **Secrétaire** : voit les statistiques comptables, enrichies du suivi de l'argent versé ;
+  aucun geste nouveau.
 - **STAR, Faiseur de Disciples, Reporter, Référent soins pastoraux** : non concernés, sauf un
   STAR auteur d'une note de frais issue de la navette, qui n'est pas relancé (voir hors
   périmètre).
@@ -77,8 +77,8 @@ sont justifiées par ce registre.
 6. La compta ouvre les factures, les **accepte**, puis confirme le **retour des 31,60 €** en
    espèces, **rendus sur** la caisse de l'église.
 7. La demande est **soldée**. Le registre de la trésorerie montre l'entrée de 31,60 € dans la
-   caisse, rattachée à la demande. Les statistiques du département Louange comptent
-   **268,40 €** dépensés, et non plus 300 €.
+   caisse, rattachée à la demande. Dans les statistiques du département Louange, les 300 €
+   versés en mars se répartissent en **268,40 € justifiés** et **31,60 € rendus**.
 
 ### Scénarios alternatifs / cas limites
 
@@ -131,6 +131,33 @@ sont justifiées par ce registre.
   la compta, qui peut dispenser ou relancer autrement ; aucune relance n'est envoyée dans le
   vide.
 
+## Statistiques : suivi de l'argent versé
+
+Les statistiques comptables gardent leurs indicateurs actuels (montant **demandé**, montant
+**versé**, demandes par statut, retards de paiement), sans changer leur sens. Elles ajoutent un
+bloc **« Suivi de l'argent versé »** fondé sur une règle unique : **chaque euro versé est rangé
+dans une seule case**, et les cases s'additionnent exactement au montant versé.
+
+| Case | Ce qu'elle contient |
+|---|---|
+| **Justifié** | Dépense couverte par des factures acceptées (ou retenue par une dispense), plafonnée au montant versé ; notes de frais payées avec leur pièce ; notes de frais liées à un dépassement |
+| **Rendu** | Reliquats restitués |
+| **À rendre** | Reliquats attendus, pas encore restitués |
+| **À justifier** | Versements dont les factures ne sont pas encore acceptées (attendues ou à vérifier) |
+| **Navette** | Avances versées au département Navette : leur justification est dans son registre |
+| **Avant le suivi** | Versements antérieurs à la mise en service, jamais relancés |
+
+**Versé = Justifié + Rendu + À rendre + À justifier + Navette + Avant le suivi.**
+
+- Les montants sont rattachés au **mois où l'argent a été versé** : « en mars, 300 € versés,
+  dont 268,40 € justifiés et 31,60 € rendus ». Une justification déposée en avril fait évoluer les
+  cases de mars ; elle ne crée pas de montant en avril.
+- Par **département**, la même égalité vaut ligne par ligne, avec le taux de justification
+  (Justifié ÷ (Versé − Navette − Avant le suivi)).
+- Une case vide n'est pas affichée ; chaque montant ouvre la liste des demandes qu'il contient.
+- Un **dépassement** n'est jamais compté deux fois : l'avance compte au plus son montant versé en
+  « Justifié », et la note de frais liée compte son propre versement.
+
 ## Critères d'acceptation
 
 - [ ] Une avance de budget dont la dernière tranche est remise passe à « Justificatifs
@@ -166,8 +193,10 @@ sont justifiées par ce registre.
   pièce est soldée au paiement.
 - [ ] La compta dispose d'une liste des demandes en attente de justification, avec les retards
   et les reliquats attendus en évidence.
-- [ ] Une fois une demande soldée, les statistiques et le total engagé comptent le montant
-  réellement dépensé (ou retenu), et non le montant avancé.
+- [ ] Les statistiques présentent le suivi de l'argent versé selon la règle ci-dessous, pour la
+  période et par département, et l'égalité « versé = somme des cases » est toujours exacte.
+- [ ] Les indicateurs existants (montant demandé, montant versé, taux de validation, retards de
+  paiement) gardent exactement leur définition actuelle.
 - [ ] Les avances versées au département Navette et les notes de frais issues de la navette ne
   sont jamais relancées.
 - [ ] Les demandes entièrement payées avant la mise en service ne sont pas relancées.
