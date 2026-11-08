@@ -2,15 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Briefcase, Copy, Laptop, SearchX, UserRoundSearch, Wrench, type LucideIcon } from "lucide-react";
+import { Briefcase, Laptop, SearchX, UserRoundSearch, Wrench, type LucideIcon } from "lucide-react";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import FilterChip from "@/components/ui/FilterChip";
-import Modal from "@/components/ui/Modal";
+import WhatsAppShare from "@/components/WhatsAppShare";
 import SearchInput from "@/components/ui/SearchInput";
 import StatusChip from "@/components/ui/StatusChip";
 import Tabs from "@/components/ui/Tabs";
-import { useToast } from "@/components/ui/Toast";
 import ListDetailLayout from "@/components/ListDetailLayout";
 import type { Publication, PublicationKind } from "@/modules/jobs";
 import PublicationDetail from "./PublicationDetail";
@@ -75,13 +74,11 @@ export default function JobsBoard({
   readonly initialChips: readonly TypeChip[];
 }) {
   const router = useRouter();
-  const toast = useToast();
   const [query, setQuery] = useState("");
   const [chips, setChips] = useState<readonly TypeChip[]>(initialChips);
   const [mine, setMine] = useState(false);
   const [stateFilter, setStateFilter] = useState<StateFilter>("active");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [fallbackText, setFallbackText] = useState<string | null>(null);
   // Date de dernière visite figée au chargement : voir `isNewSince`.
   const [seenAt] = useState(lastSeenAt);
   const now = new Date(nowMs);
@@ -122,8 +119,8 @@ export default function JobsBoard({
 
   const recapItems = visible.filter((p) => p.state === "active");
 
-  async function copyRecap() {
-    const text = buildWhatsAppRecap(
+  function recapText() {
+    return buildWhatsAppRecap(
       recapItems.map((p) => ({
         id: p.id,
         title: p.title,
@@ -135,15 +132,6 @@ export default function JobsBoard({
       chips.filter((c): c is RecapJobType => c !== "FREELANCE"),
       window.location.origin
     );
-    try {
-      // En contexte non sécurisé, `navigator.clipboard` est absent : repli sur la copie manuelle.
-      if (!navigator.clipboard) throw new Error("presse-papier indisponible");
-      await navigator.clipboard.writeText(text);
-      const n = recapItems.length;
-      toast.success(`Message copié : ${n} opportunité${n > 1 ? "s" : ""}`);
-    } catch {
-      setFallbackText(text);
-    }
   }
 
   const tabs = (["opportunites", "profils"] as const).map((key) => ({
@@ -261,10 +249,10 @@ export default function JobsBoard({
               <span />
             )}
             {tab === "opportunites" && recapItems.length > 0 && (
-              <Button variant="secondary" onClick={() => void copyRecap()}>
-                <Copy aria-hidden="true" className="size-4" />
-                Copier pour WhatsApp
-              </Button>
+              <WhatsAppShare
+                getText={recapText}
+                copiedMessage={`Message copié : ${recapItems.length} opportunité${recapItems.length > 1 ? "s" : ""}`}
+              />
             )}
           </div>
         )}
@@ -293,25 +281,6 @@ export default function JobsBoard({
         placeholder={{ title: "Aucune publication sélectionnée", description: "Choisissez une publication dans la liste pour la consulter." }}
       />
 
-      <Modal open={fallbackText !== null} onClose={() => setFallbackText(null)} title="Copier le message">
-        <p className="mb-3 text-sm text-ink-muted">
-          La copie automatique n&apos;a pas fonctionné. Sélectionnez le texte ci-dessous et copiez-le manuellement.
-        </p>
-        <textarea
-          readOnly
-          autoFocus
-          onFocus={(e) => e.currentTarget.select()}
-          value={fallbackText ?? ""}
-          rows={12}
-          aria-label="Message à copier"
-          className="w-full rounded-control border border-control-line bg-surface p-2 font-mono text-xs text-ink focus:border-brand focus:outline-none"
-        />
-        <div className="mt-4 flex justify-end">
-          <Button variant="secondary" onClick={() => setFallbackText(null)}>
-            Fermer
-          </Button>
-        </div>
-      </Modal>
     </div>
   );
 }

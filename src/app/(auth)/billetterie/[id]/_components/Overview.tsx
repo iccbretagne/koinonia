@@ -1,5 +1,6 @@
 import CopyRow from "@/app/donner/_components/CopyRow";
 import QrSvg from "@/components/ticketing/QrSvg";
+import WhatsAppShare from "@/components/WhatsAppShare";
 import type { BookingRow, EventDetail } from "@/modules/ticketing";
 import { AGE_GROUP_LABEL, formatEuros } from "@/modules/ticketing/schemas";
 import OpeningChecklist from "./OpeningChecklist";
@@ -82,10 +83,21 @@ export default function Overview({
         <h2 className="text-lg font-bold text-ink">Lien public</h2>
         {event.status === "DRAFT" && <p className="text-[13px] text-warning">Brouillon : la page publique sera visible une fois les inscriptions ouvertes.</p>}
         <CopyRow label="Adresse à partager (WhatsApp, affiche…)" display={publicUrl} value={publicUrl} />
+        <div className="flex justify-end">
+          <WhatsAppShare text={invitation(event, publicUrl)} copiedMessage="Invitation copiée" />
+        </div>
         <div className="flex justify-center">
           <QrSvg qr={publicQr} label="QR code de la page d'inscription" className="size-48" />
         </div>
       </section>
     </div>
   );
+}
+
+/** Court message d'invitation à partager sur WhatsApp : titre, date, lieu, lien d'inscription. */
+function invitation(event: EventDetail, publicUrl: string): string {
+  const date = event.startsAt.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Paris" });
+  const time = event.startsAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" });
+  const when = `📅 ${date} à ${time}${event.location ? `\n📍 ${event.location}` : ""}`;
+  return `*${event.title}*\n${when}\n\nInscriptions : ${publicUrl}`;
 }

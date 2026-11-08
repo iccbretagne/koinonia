@@ -56,7 +56,4 @@ export function buildWhatsAppMessage(
   return blocks.join("\n\n");
 }
 
-/** Lien de partage WhatsApp (choix du destinataire dans l'application). */
-export function whatsAppShareUrl(message: string): string {
-  return `https://wa.me/?text=${encodeURIComponent(message)}`;
-}
+export { whatsAppShareUrl } from "@/lib/whatsapp";
