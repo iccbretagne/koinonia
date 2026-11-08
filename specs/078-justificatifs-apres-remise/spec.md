@@ -1,7 +1,7 @@
 # Spec — Justificatifs après la remise des fonds
 
 - **Numéro** : 078
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-11-08
 - **Branche suggérée** : `feat/justificatifs-apres-remise`
 

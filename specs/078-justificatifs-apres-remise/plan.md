@@ -269,3 +269,17 @@ Cron : tâche `accounting-justifications` (`module: "accounting"`, `interval` 60
   restitution sur mois clôturé refusée.
 - `reprises` de la trésorerie : restitution reprise en entrée.
 - Exhaustivité : `route-exhaustiveness`, `openapi.test`, contrat du cron, seuil Prisma des routes.
+
+## Écarts à l'implémentation
+
+- **Période des statistiques** : le suivi de l'argent versé porte sur les mêmes demandes que la
+  vue d'ensemble existante (demandes créées dans la période), pour que son « versé » soit
+  exactement le « Montant versé » affiché à côté. Pas d'agrégat par mois de versement.
+- **« Avant le suivi »** : sans constante `TRACKING_STARTED_AT`. Une demande éligible entièrement
+  versée et sans justification n'a pu l'être qu'avant la mise en service (une justification
+  s'ouvre sinon au dernier versement) ; une demande encore en cours de versement va dans
+  « À justifier ». `releasedMonth` reste stocké sur la justification.
+- **Classement par demande** (`classifyRequest`), et non par versement : une justification
+  couvrant plusieurs demandes est répartie dans l'ordre des demandes, au centime, sans prorata.
+- **Pièces d'une justification** : retirables par leur auteur seulement tant que la justification
+  attend ses factures (y compris après un renvoi), jamais après acceptation.

@@ -36,6 +36,20 @@ Chaque tranche est ensuite confirmée au moment où l'argent est effectivement r
 
 Une demande n'est donc réellement terminée qu'une fois la dernière tranche remise — pas au moment de la validation.
 
+### Après la remise : les justificatifs (spec 078)
+
+Une **avance de budget**, ou une **note de frais payée sans pièce**, n'est pas finie à la remise des fonds : à la confirmation de la **dernière** tranche, Koinonia attend les factures.
+
+> Justificatifs attendus → À vérifier → Soldée (ou Reliquat à rendre → Soldée)
+
+- Le demandeur dépose ses factures et le **montant total dépensé** dans le bloc « Justificatifs » de la demande. Il voit tout de suite le **reliquat** à rendre (versé − dépensé) ou le **dépassement**.
+- Le comptable **accepte**, ou **renvoie** avec un motif (les relances reprennent). Il peut aussi **dispenser** (facture perdue…) avec un motif et le montant retenu.
+- Un reliquat reste « à rendre » jusqu'à ce que le comptable **confirme la restitution**, avec sa date et « Rendu sur » : une caisse de la trésorerie (l'entrée y apparaît seule) ou le compte commun.
+- Un **dépassement** se règle par « Demander le complément » : une note de frais liée, préremplie, déjà justifiée par les factures de l'avance.
+- **Relances** : 7 jours après la dernière remise, puis tous les 7 jours (délais réglables par la compta, carte « Relances des justificatifs »), tant que les factures manquent ou que le reliquat n'est pas rendu. Dès la **3e relance**, les responsables du département (principal et adjoints) et le Ministre sont prévenus.
+- Une **avance récurrente** se justifie **par mois** : les versements d'un même mois forment une seule justification.
+- Jamais de relance pour la **Navette** (registre déjà justifié), une note issue de la navette, une note de frais avec pièce, ni pour une demande payée avant la mise en service.
+
 ## Où ça se passe
 
 | Pour… | Aller à… |
@@ -43,6 +57,8 @@ Une demande n'est donc réellement terminée qu'une fois la dernière tranche re
 | Déposer une demande | Demandes → Mes demandes → Nouvelle demande, ou Demandes → Comptabilité |
 | Suivre ses propres demandes | Demandes → **Comptabilité** (ou le bouton *Demandes comptables* de « Mes demandes ») |
 | Traiter, valider et payer | Demandes → **Comptabilité** |
+| Déposer ses factures après une avance | La demande, bloc **Justificatifs** |
+| Voir ce qui reste à justifier | Demandes → Comptabilité, compteur **À justifier** |
 | Mesurer | Comptabilité, onglet **Statistiques** |
 
 L'écran de traitement affiche les compteurs en tête — en attente, en traitement, validées, rejetées, paiements dus — puis la file à traiter, et enfin la liste complète filtrable par statut et par type, avec le total engagé.
@@ -68,3 +84,4 @@ L'écran de traitement affiche les compteurs en tête — en attente, en traitem
 - La dépense est remboursée ou avancée, avec la trace de qui a demandé, qui a validé, et quand chaque tranche a été remise.
 - Le justificatif reste attaché à la demande.
 - Le montant vient alimenter les statistiques et le total engagé de son département.
+- Dans les statistiques, le **suivi de l'argent versé** range chaque euro versé dans une seule case — Justifié, Rendu, À rendre, À justifier, Navette, Avant le suivi — et les cases s'additionnent exactement au montant versé, globalement et par département, avec un taux de justification (justifié ÷ versé, hors Navette et hors « avant le suivi »). Chaque montant ouvre la liste de ses demandes.

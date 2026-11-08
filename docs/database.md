@@ -1775,7 +1775,9 @@ Demande financière : note de frais (dépense déjà effectuée) ou avance de bu
 | `processedAt` | DateTime? | Date de traitement |
 | `createdAt` / `updatedAt` | DateTime | Horodatages |
 
-Relations : `corrections`, `attachments`, `payments`
+Relations : `corrections`, `attachments`, `payments`, `justification`, `overageOf`
+
+Champs ajoutés par la spec 078 : `justificationId` (String?, ref vers `financial_justifications` : justificatifs attendus après la remise) et `overageOfJustificationId` (String?, ref vers `financial_justifications` : note de frais qui complète un dépassement).
 
 Index : `[churchId, status]`, `[churchId, departmentId, status]`, `[submittedById]`, `[seriesId]`
 
@@ -1787,6 +1789,7 @@ Pièce jointe (justificatif) stockée sur S3, déposée par un utilisateur, éve
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
 | `requestId` | String? | Ref vers `financial_requests` (cascade delete) ; null tant que non rattachée |
+| `justificationId` | String? | Ref vers `financial_justifications` (cascade delete) : facture déposée après la remise (spec 078) |
 | `uploadedById` | String? | Ref vers `users` |
 | `churchId` | String | Ref vers `churches` (église de dépôt) |
 | `s3Key` | String (VarChar 512) | Clé de l'objet S3 |
@@ -1814,6 +1817,32 @@ Index : `[requestId]`, `[churchId]`
 | `createdAt` | DateTime | Date de création |
 
 Index : `[requestId]`
+
+#### `financial_justifications`
+
+Justificatifs attendus après la remise des fonds (spec 078) : ouverte à la confirmation de la dernière tranche d'une avance ou d'une note de frais sans pièce ; une avance récurrente en ouvre une par mois (`seriesId` + `period`). Relancée par la tâche cron `accounting-justifications`.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `seriesId` / `period` | String? / Char(7)? | Série et mois « AAAA-MM » d'une avance récurrente |
+| `status` | `FinancialJustificationStatus` | `AWAITING` (défaut) \| `SUBMITTED` \| `RETURN_DUE` \| `SETTLED` |
+| `releasedAmount` | Decimal(10,2) | Versé couvert (cumul des demandes rattachées) |
+| `releasedMonth` | Char(7) | Mois du dernier versement |
+| `spentAmount` | Decimal(10,2)? | Dépensé déclaré, ou montant retenu d'une dispense |
+| `dueAt` / `nextReminderAt` / `reminderCount` | DateTime / DateTime / Int | Échéance, prochaine relance, nombre de relances |
+| `submittedAt`, `rejectionReason`, `waiverReason` | | Dépôt, motif de renvoi, motif de dispense |
+| `decidedById` / `decidedAt` | String? / DateTime? | Décision de la compta |
+| `returnedAmount` / `returnedAt` / `returnedById` | | Restitution du reliquat |
+| `returnTreasuryAccountId` | String? | « Rendu sur » : compte de trésorerie, null = compte commun (lu par la trésorerie, ADR-0027) |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+Relations : `requests`, `overages`, `attachments`, `returnTreasuryAccount`
+
+#### `financial_justification_settings`
+
+Délais de relance par église (`churchId` clé primaire) : `firstReminderDays` (défaut 7) et `reminderIntervalDays` (défaut 7).
 
 ### Enums comptabilité
 

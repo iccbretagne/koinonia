@@ -691,6 +691,16 @@ seule (`ENABLED_MODULES`) :
   (validation, rejet, saisie des paiements)
 - A aussi `accounting:view` (consultation globale, comme Ministre/Resp. département sur leur
   périmètre) et `accounting:stats`
+- **Justificatifs après la remise** (spec 078) : à la dernière tranche confirmée d'une avance ou
+  d'une note de frais sans pièce, `openJustificationIfDue` (dans la transaction du versement)
+  ouvre une `FinancialJustification` (une par mois pour une série). Le demandeur seul dépose
+  factures et dépensé ; la compta (`accounting:manage`) accepte, renvoie, dispense, confirme la
+  restitution (« Rendu sur » validé par `src/app/api/accounting/_treasury.ts`, lu par la
+  trésorerie via `listTreasuryReturns`, ADR-0027). Relances par la tâche cron
+  `accounting-justifications` (prise atomique sur `nextReminderAt`), escalade dès la 3e aux
+  responsables et au Ministre. Jamais de relance pour la Navette, une note issue de la navette ou
+  une note liée (`overageOfJustificationId`). Les statistiques rangent chaque euro versé dans une
+  seule case (`fund-tracking.ts`, versé = somme des cases) sans toucher aux indicateurs existants
 - Pas d'accès au planning, aux membres, aux événements, au discipolat ni à la section admin
 - Conserve `audio:listen` et les permissions transverses du module emploi (`jobs:*`, hors
   `jobs:manage`)
