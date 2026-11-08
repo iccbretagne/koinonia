@@ -10,6 +10,26 @@ export {
   notifyAccountingNewRequest,
   type LinkedExpenseReportInput,
 } from "./services/requests";
-export { listTreasuryPayments } from "./services/treasury-link";
+export { listTreasuryPayments, listTreasuryReturns } from "./services/treasury-link";
+export {
+  assertOverageAllowed,
+  countOpenJustifications,
+  getJustification,
+  getJustificationSettings,
+  getRequestJustification,
+  listJustifications,
+  notifyJustificationOpened,
+  openJustificationIfDue,
+  recordReturn,
+  reviewJustification,
+  runJustificationReminders,
+  submitJustification,
+  updateJustificationSettings,
+  waiveJustification,
+  type JustificationView,
+  type OpenedJustification,
+  type Viewer as JustificationViewer,
+} from "./services/justifications";
+export { FUND_BOXES, type FundBox, type FundTracking } from "./services/fund-tracking";
 
 export { accountingModule } from "./manifest";

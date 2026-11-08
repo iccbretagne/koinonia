@@ -52,76 +52,78 @@ model VerificationToken {
 // ─── Domain models ─────────────────────────────────────────────────
 
 model Church {
-  id                        String                     @id @default(cuid())
-  name                      String
-  slug                      String                     @unique
-  secretariatEmails         String?                    @db.Text
-  accountingEmails          String?                    @db.Text
-  primaryColor              String                     @default("#5E17EB")
-  reminderLastSentAt        DateTime?
-  planningDigestLastSentAt  DateTime?
-  createdAt                 DateTime                   @default(now())
-  updatedAt                 DateTime                   @updatedAt
-  users                     UserChurchRole[]
-  ministries                Ministry[]
-  events                    Event[]
-  auditLogs                 AuditLog[]
-  announcements             Announcement[]
-  requests                  Request[]
-  memberUserLinks           MemberUserLink[]
-  memberLinkRequests        MemberLinkRequest[]
-  discipleships             Discipleship[]
-  eventReports              EventReport[]
-  absences                  Absence[]
-  availabilitySettings      AvailabilitySettings?
-  availabilityCollections   AvailabilityCollection[]
-  availabilityResponses     AvailabilityResponse[]
-  availabilityAsks          AvailabilityAsk[]
+  id                             String                          @id @default(cuid())
+  name                           String
+  slug                           String                          @unique
+  secretariatEmails              String?                         @db.Text
+  accountingEmails               String?                         @db.Text
+  primaryColor                   String                          @default("#5E17EB")
+  reminderLastSentAt             DateTime?
+  planningDigestLastSentAt       DateTime?
+  createdAt                      DateTime                        @default(now())
+  updatedAt                      DateTime                        @updatedAt
+  users                          UserChurchRole[]
+  ministries                     Ministry[]
+  events                         Event[]
+  auditLogs                      AuditLog[]
+  announcements                  Announcement[]
+  requests                       Request[]
+  memberUserLinks                MemberUserLink[]
+  memberLinkRequests             MemberLinkRequest[]
+  discipleships                  Discipleship[]
+  eventReports                   EventReport[]
+  absences                       Absence[]
+  availabilitySettings           AvailabilitySettings?
+  availabilityCollections        AvailabilityCollection[]
+  availabilityResponses          AvailabilityResponse[]
+  availabilityAsks               AvailabilityAsk[]
   // Module media
-  mediaEvents               MediaEvent[]
-  mediaProjects             MediaProject[]
-  mediaSettings             MediaSettings?
-  mediaShareTokens          MediaShareToken[]
+  mediaEvents                    MediaEvent[]
+  mediaProjects                  MediaProject[]
+  mediaSettings                  MediaSettings?
+  mediaShareTokens               MediaShareToken[]
   // Module agenda
-  pastoralProfiles          PastoralProfile[]          @relation("ChurchPastoralProfiles")
-  appointmentRequests       AppointmentRequest[]
-  agendaEntries             AgendaEntry[]
-  careSettings              CareSettings?
+  pastoralProfiles               PastoralProfile[]               @relation("ChurchPastoralProfiles")
+  appointmentRequests            AppointmentRequest[]
+  agendaEntries                  AgendaEntry[]
+  careSettings                   CareSettings?
   // Module intégration familles
-  familyIntegrationRequests FamilyIntegrationRequest[]
-  familyLeaderAssignments   FamilyLeaderAssignment[]
-  msdpFollowUps             MsdpFollowUp[]
-  personJourneys            PersonJourney[]
-  careCompanions            CareCompanion[]
+  familyIntegrationRequests      FamilyIntegrationRequest[]
+  familyLeaderAssignments        FamilyLeaderAssignment[]
+  msdpFollowUps                  MsdpFollowUp[]
+  personJourneys                 PersonJourney[]
+  careCompanions                 CareCompanion[]
   // Module comptabilité
-  financialSeries           FinancialSeries[]
-  financialRequests         FinancialRequest[]
-  financialAttachments      FinancialAttachment[]
+  financialSeries                FinancialSeries[]
+  financialRequests              FinancialRequest[]
+  financialAttachments           FinancialAttachment[]
+  financialJustifications        FinancialJustification[]
+  financialJustificationSettings FinancialJustificationSettings?
   // Module service d'accueil
-  welcomeDutyFamilies       WelcomeDutyFamily[]
-  welcomeDutyAssignments    WelcomeDutyAssignment[]
+  welcomeDutyFamilies            WelcomeDutyFamily[]
+  welcomeDutyAssignments         WelcomeDutyAssignment[]
   // Service d'ouverture/fermeture de l'église (spec 041)
-  openingClosingAssignments OpeningClosingAssignment[]
+  openingClosingAssignments      OpeningClosingAssignment[]
   // Événements d'équipe (spec 044)
-  teamEvents                TeamEvent[]
+  teamEvents                     TeamEvent[]
   // Module rooms (réservation de salles)
-  rooms                     Room[]
-  roomAccesses              RoomAccess[]
-  roomReservations          RoomReservation[]
+  rooms                          Room[]
+  roomAccesses                   RoomAccess[]
+  roomReservations               RoomReservation[]
   // Feuille d'annonces d'un culte (spec 040)
-  announcementSheets        AnnouncementSheet[]
+  announcementSheets             AnnouncementSheet[]
   // Module audio
-  audioSettings             AudioSettings?
-  integrationSettings       IntegrationSettings?
-  audioServices             AudioService[]
-  audioServiceTemplates     AudioServiceTemplate[]
-  audioSharesGranted        AudioLibraryShare[]        @relation("AudioSharesGranted")
-  audioSharesReceived       AudioLibraryShare[]        @relation("AudioSharesReceived")
+  audioSettings                  AudioSettings?
+  integrationSettings            IntegrationSettings?
+  audioServices                  AudioService[]
+  audioServiceTemplates          AudioServiceTemplate[]
+  audioSharesGranted             AudioLibraryShare[]             @relation("AudioSharesGranted")
+  audioSharesReceived            AudioLibraryShare[]             @relation("AudioSharesReceived")
   // Module pastoral
-  responsibleProfileId      String?                    @unique
-  supervisorProfileId       String?
-  responsible               PastoralProfile?           @relation("ChurchResponsibleProfile", fields: [responsibleProfileId], references: [id])
-  supervisor                PastoralProfile?           @relation("ChurchSupervisorProfile", fields: [supervisorProfileId], references: [id])
+  responsibleProfileId           String?                         @unique
+  supervisorProfileId            String?
+  responsible                    PastoralProfile?                @relation("ChurchResponsibleProfile", fields: [responsibleProfileId], references: [id])
+  supervisor                     PastoralProfile?                @relation("ChurchSupervisorProfile", fields: [supervisorProfileId], references: [id])
 
   serviceWithdrawals  ServiceWithdrawal[]
   // Page publique « Donner » (spec 065)
@@ -1773,10 +1775,11 @@ model FinancialSeries {
   status             SeriesStatus         @default(ACTIVE)
   nextOccurrenceDate DateTime
 
-  church      Church             @relation(fields: [churchId], references: [id])
-  department  Department         @relation(fields: [departmentId], references: [id])
-  submittedBy User               @relation("FinancialSeriesSubmitter", fields: [submittedById], references: [id])
-  requests    FinancialRequest[]
+  church         Church                   @relation(fields: [churchId], references: [id])
+  department     Department               @relation(fields: [departmentId], references: [id])
+  submittedBy    User                     @relation("FinancialSeriesSubmitter", fields: [submittedById], references: [id])
+  requests       FinancialRequest[]
+  justifications FinancialJustification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1788,35 +1791,41 @@ model FinancialSeries {
 
 /// Demande financière individuelle (note de frais ou occurrence d'avance).
 model FinancialRequest {
-  id               String                 @id @default(cuid())
-  churchId         String
-  departmentId     String? // null = note de frais personnelle (sans département)
-  submittedById    String
-  seriesId         String? // null si demande one-shot
-  occurrenceNumber Int? // rang dans la série
-  correctionOfId   String? // référence à la demande rejetée corrigée
-  type             FinancialRequestType
-  label            String                 @db.VarChar(200)
-  description      String?                @db.Text
-  amount           Decimal                @db.Decimal(10, 2)
-  status           FinancialRequestStatus @default(SUBMITTED)
-  priority         FinancialPriority?
-  priorityNote     String?                @db.VarChar(500)
-  rejectionReason  String?                @db.Text
-  processedById    String?
-  processedAt      DateTime?
+  id                       String                 @id @default(cuid())
+  churchId                 String
+  departmentId             String? // null = note de frais personnelle (sans département)
+  submittedById            String
+  seriesId                 String? // null si demande one-shot
+  occurrenceNumber         Int? // rang dans la série
+  correctionOfId           String? // référence à la demande rejetée corrigée
+  type                     FinancialRequestType
+  label                    String                 @db.VarChar(200)
+  description              String?                @db.Text
+  amount                   Decimal                @db.Decimal(10, 2)
+  status                   FinancialRequestStatus @default(SUBMITTED)
+  priority                 FinancialPriority?
+  priorityNote             String?                @db.VarChar(500)
+  rejectionReason          String?                @db.Text
+  processedById            String?
+  processedAt              DateTime?
+  /// Justification qui couvre cette demande après la remise des fonds (spec 078).
+  justificationId          String?
+  /// Note de frais liée : complément d'un dépassement (spec 078).
+  overageOfJustificationId String?
 
-  church                 Church                @relation(fields: [churchId], references: [id])
-  department             Department?           @relation(fields: [departmentId], references: [id])
-  submittedBy            User                  @relation("FinancialRequestSubmitter", fields: [submittedById], references: [id])
-  processedBy            User?                 @relation("FinancialRequestProcessor", fields: [processedById], references: [id])
-  series                 FinancialSeries?      @relation(fields: [seriesId], references: [id])
-  correctionOf           FinancialRequest?     @relation("RequestCorrections", fields: [correctionOfId], references: [id])
-  corrections            FinancialRequest[]    @relation("RequestCorrections")
+  church                 Church                  @relation(fields: [churchId], references: [id])
+  justification          FinancialJustification? @relation("RequestJustification", fields: [justificationId], references: [id], onDelete: SetNull)
+  overageOf              FinancialJustification? @relation("JustificationOverage", fields: [overageOfJustificationId], references: [id], onDelete: SetNull)
+  department             Department?             @relation(fields: [departmentId], references: [id])
+  submittedBy            User                    @relation("FinancialRequestSubmitter", fields: [submittedById], references: [id])
+  processedBy            User?                   @relation("FinancialRequestProcessor", fields: [processedById], references: [id])
+  series                 FinancialSeries?        @relation(fields: [seriesId], references: [id])
+  correctionOf           FinancialRequest?       @relation("RequestCorrections", fields: [correctionOfId], references: [id])
+  corrections            FinancialRequest[]      @relation("RequestCorrections")
   attachments            FinancialAttachment[]
   payments               FinancialPayment[]
-  shuttleReimbursedEntry ShuttleEntry?         @relation("ShuttleReimbursement")
-  shuttleImportedEntry   ShuttleEntry?         @relation("ShuttleSourceRequest")
+  shuttleReimbursedEntry ShuttleEntry?           @relation("ShuttleReimbursement")
+  shuttleImportedEntry   ShuttleEntry?           @relation("ShuttleSourceRequest")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1825,6 +1834,8 @@ model FinancialRequest {
   @@index([churchId, departmentId, status])
   @@index([submittedById])
   @@index([seriesId])
+  @@index([justificationId])
+  @@index([overageOfJustificationId])
   @@map("financial_requests")
 }
 
@@ -1841,13 +1852,18 @@ model FinancialAttachment {
   mimeType     String  @db.VarChar(100)
   size         Int
 
-  request    FinancialRequest? @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  uploadedBy User?             @relation("AccountingAttachmentsUploaded", fields: [uploadedById], references: [id])
-  church     Church            @relation(fields: [churchId], references: [id])
-  uploadedAt DateTime          @default(now())
+  /// Facture déposée après la remise des fonds (spec 078).
+  justificationId String?
+
+  request       FinancialRequest?       @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  justification FinancialJustification? @relation(fields: [justificationId], references: [id], onDelete: Cascade)
+  uploadedBy    User?                   @relation("AccountingAttachmentsUploaded", fields: [uploadedById], references: [id])
+  church        Church                  @relation(fields: [churchId], references: [id])
+  uploadedAt    DateTime                @default(now())
 
   @@index([requestId])
   @@index([churchId])
+  @@index([justificationId])
   @@map("financial_attachments")
 }
 
@@ -1874,6 +1890,72 @@ model FinancialPayment {
   @@index([requestId])
   @@index([treasuryAccountId])
   @@map("financial_payments")
+}
+
+// ─── Justificatifs après la remise des fonds (spec 078) ──────────────────────
+
+enum FinancialJustificationStatus {
+  AWAITING // justificatifs attendus (relancés)
+  SUBMITTED // déposés, à vérifier par la compta
+  RETURN_DUE // acceptés (ou dispensés), reliquat à rendre
+  SETTLED // soldée
+}
+
+/// Ce qui suit la remise des fonds : factures, montant dépensé, décision, reliquat. Une par
+/// demande ponctuelle ; une par série et par mois pour une avance récurrente.
+model FinancialJustification {
+  id                      String                       @id @default(cuid())
+  churchId                String
+  seriesId                String?
+  /// Mois des versements regroupés (« 2026-11 ») pour une série ; null sinon.
+  period                  String?                      @db.Char(7)
+  status                  FinancialJustificationStatus @default(AWAITING)
+  /// Total versé sur les demandes couvertes.
+  releasedAmount          Decimal                      @db.Decimal(10, 2)
+  /// Mois du versement auquel rattacher les statistiques (« 2026-11 »).
+  releasedMonth           String                       @db.Char(7)
+  /// Déclaré par le demandeur, ou retenu par la compta en cas de dispense.
+  spentAmount             Decimal?                     @db.Decimal(10, 2)
+  dueAt                   DateTime
+  nextReminderAt          DateTime
+  reminderCount           Int                          @default(0)
+  submittedAt             DateTime?
+  rejectionReason         String?                      @db.VarChar(500)
+  waiverReason            String?                      @db.VarChar(500)
+  decidedById             String?
+  decidedAt               DateTime?
+  returnedAmount          Decimal?                     @db.Decimal(10, 2)
+  returnedAt              DateTime?
+  returnedById            String?
+  /// Compte de trésorerie où le reliquat est rendu ; null = compte commun (non suivi).
+  returnTreasuryAccountId String?
+  createdAt               DateTime                     @default(now())
+  updatedAt               DateTime                     @updatedAt
+
+  church                Church                @relation(fields: [churchId], references: [id])
+  series                FinancialSeries?      @relation(fields: [seriesId], references: [id])
+  requests              FinancialRequest[]    @relation("RequestJustification")
+  overages              FinancialRequest[]    @relation("JustificationOverage")
+  attachments           FinancialAttachment[]
+  returnTreasuryAccount TreasuryAccount?      @relation(fields: [returnTreasuryAccountId], references: [id], onDelete: SetNull)
+
+  @@index([churchId, status])
+  @@index([status, nextReminderAt])
+  @@index([seriesId, period])
+  @@index([returnTreasuryAccountId])
+  @@map("financial_justifications")
+}
+
+/// Délais de relance des justificatifs, par église (défauts : 7 jours, puis tous les 7 jours).
+model FinancialJustificationSettings {
+  churchId             String   @id
+  firstReminderDays    Int      @default(7)
+  reminderIntervalDays Int      @default(7)
+  updatedAt            DateTime @updatedAt
+
+  church Church @relation(fields: [churchId], references: [id])
+
+  @@map("financial_justification_settings")
 }
 
 // ─── Module service d'accueil ──────────────────────────────────────
@@ -3596,11 +3678,12 @@ model TreasuryAccount {
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
 
-  church         Church               @relation(fields: [churchId], references: [id], onDelete: Cascade)
-  entries        TreasuryEntry[]
-  collections    TreasuryCollection[]
-  payments       FinancialPayment[]
-  shuttleEntries ShuttleEntry[]
+  church               Church                   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  entries              TreasuryEntry[]
+  collections          TreasuryCollection[]
+  payments             FinancialPayment[]
+  justificationReturns FinancialJustification[]
+  shuttleEntries       ShuttleEntry[]
 
   @@unique([churchId, name])
   @@map("treasury_accounts")
