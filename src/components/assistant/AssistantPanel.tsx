@@ -9,6 +9,7 @@ import { controlClasses } from "@/components/ui/field-classes";
 import { useModalDialog } from "@/components/ui/use-modal-dialog";
 import { PERSONA_NAME, QUESTION_MAX, type AskResponse, type AssistantExpression, type SuggestionRef } from "@/modules/assistant/schemas";
 import AssistantAvatar, { type AssistantPersonaKey } from "./AssistantAvatar";
+import { useKeyboardBox } from "./keyboard-box";
 
 type Message =
   | { id: number; from: "me"; text: string }
@@ -129,6 +130,8 @@ export default function AssistantPanel({
   readonly onClose: () => void;
 }) {
   const dialogRef = useModalDialog(true, onClose);
+  // Clavier ouvert sur téléphone : le panneau se cale sur la zone visible, en-tête compris.
+  const keyboard = useKeyboardBox();
   const name = PERSONA_NAME[persona];
   const [messages, setMessages] = useState<Message[]>([]);
   const [suggestions, setSuggestions] = useState<SuggestionRef[]>([]);
@@ -188,6 +191,7 @@ export default function AssistantPanel({
       ref={dialogRef}
       onClose={onClose}
       aria-label={`Assistant ${name}`}
+      style={keyboard ? { height: keyboard.height, transform: `translateY(${keyboard.top}px)` } : undefined}
       className="m-0 ml-auto h-dvh max-h-none w-full max-w-none border-0 bg-bg p-0 text-ink shadow-overlay backdrop:bg-scrim
         md:w-[440px] md:border-l md:border-line"
     >
