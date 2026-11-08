@@ -2,6 +2,7 @@ import { requireCurrentChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import {
+  assertOverageAllowed,
   assertAttachmentsAssignable,
   getAccountingDepartmentScope,
   accountingScopeWhere,
@@ -71,6 +72,15 @@ export async function POST(request: Request) {
       if (!original) throw new ApiError(404, "Demande à corriger introuvable");
     }
 
+    // Complément d'un dépassement : note de frais du demandeur de l'avance, dans la limite du
+    // dépassement non encore demandé ; les factures de la justification la couvrent (spec 078).
+    if (body.overageOfJustificationId) {
+      if (body.type !== "EXPENSE_REPORT") throw new ApiError(400, "Un complément est une note de frais");
+      const viewer = { userId: session.user.id!, churchId, manage: false, scope: [] as string[] };
+      const { remaining } = await assertOverageAllowed(body.overageOfJustificationId, viewer);
+      if (body.amount > remaining) throw new ApiError(400, `Le complément ne dépasse pas ${remaining.toFixed(2).replace(".", ",")} €`);
+    }
+
     const req = await prisma.$transaction(async (tx) => {
       if (body.attachmentIds?.length) {
         await assertAttachmentsAssignable(
@@ -91,6 +101,7 @@ export async function POST(request: Request) {
           amount:      body.amount,
           status:      "SUBMITTED",
           correctionOfId: body.correctionOfId,
+          overageOfJustificationId: body.overageOfJustificationId,
           ...(body.attachmentIds?.length
             ? { attachments: { connect: body.attachmentIds.map((id) => ({ id })) } }
             : {}),

@@ -121,6 +121,8 @@ export const prismaMock = {
   financialRequest: createModelMock(),
   financialAttachment: createModelMock(),
   financialPayment: createModelMock(),
+  financialJustification: createModelMock(),
+  financialJustificationSettings: createModelMock(),
   shuttleEntry: createModelMock(),
   shuttleRental: createModelMock(),
   shuttleSettings: createModelMock(),

@@ -852,6 +852,368 @@
         }
       }
     },
+    "/api/accounting/justifications": {
+      "get": {
+        "tags": [
+          "accounting"
+        ],
+        "summary": "Justificatifs après la remise des fonds",
+        "description": "**Accès** : toute personne connectée — accounting:view, accounting:submit ou accounting:manage dans l'église courante.\n\nJustifications des demandes versées (spec 078) : attendues, à vérifier, reliquat à rendre ou soldées. La compta voit toutes celles de l'église ; les autres comptes voient celles de leurs demandes et de leur périmètre comptable. `open=1` : toutes sauf soldées.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "AWAITING",
+                "SUBMITTED",
+                "RETURN_DUE",
+                "SETTLED"
+              ]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            },
+            "required": false,
+            "name": "open",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`JustificationView[]`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/justifications/{id}": {
+      "get": {
+        "tags": [
+          "accounting"
+        ],
+        "summary": "Détail d'une justification",
+        "description": "**Accès** : toute personne connectée — compta, demandeur, ou périmètre comptable.\n\nDemandes couvertes, factures, montant dépensé, reliquat ou complément, décision. L'église de la justification fait foi (sinon 404).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`JustificationView`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "accounting"
+        ],
+        "summary": "Geste sur une justification",
+        "description": "**Accès** : toute personne connectée — demandeur pour `submit`, accounting:manage pour les autres actions.\n\n`submit` (demandeur seul) : factures cumulées (déposées par `/api/accounting/attachments`) et montant total dépensé (imposé au montant d'une note de frais). `accept`, `reject` (motif), `waive` (motif et montant retenu ≤ versé), `return` (date ; `treasuryAccountId` : compte de trésorerie actif, mois ouvert, sinon compte commun) : compta. Chaque geste est journalisé et prévient le demandeur ; un état incompatible répond 400.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "submit"
+                        ]
+                      },
+                      "spentAmount": {
+                        "type": "number",
+                        "nullable": true,
+                        "minimum": 0,
+                        "maximum": 1000000
+                      },
+                      "attachmentIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40
+                        },
+                        "maxItems": 20,
+                        "default": []
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "spentAmount"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "accept"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "reject"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 500
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "reason"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "waive"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 500
+                      },
+                      "retainedAmount": {
+                        "type": "number",
+                        "nullable": true,
+                        "minimum": 0,
+                        "maximum": 1000000
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "reason",
+                      "retainedAmount"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "return"
+                        ]
+                      },
+                      "returnedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "treasuryAccountId": {
+                        "type": "string",
+                        "nullable": true,
+                        "minLength": 1,
+                        "maxLength": 40
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "returnedAt"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`JustificationView`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/justifications/settings": {
+      "get": {
+        "tags": [
+          "accounting"
+        ],
+        "summary": "Délais de relance des justificatifs",
+        "description": "**Accès** : permission `accounting:manage` — dans l'église courante.\n\nJours entre la remise des fonds et la première relance, puis entre deux relances (défauts : 7 et 7).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "accounting:manage",
+        "responses": {
+          "200": {
+            "description": "`{ firstReminderDays, reminderIntervalDays }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "accounting"
+        ],
+        "summary": "Régler les délais de relance des justificatifs",
+        "description": "**Accès** : permission `accounting:manage` — dans l'église courante.\n\nS'applique aux relances suivantes de toutes les justifications en cours. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "accounting:manage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstReminderDays": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 60
+                  },
+                  "reminderIntervalDays": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 30
+                  }
+                },
+                "required": [
+                  "firstReminderDays",
+                  "reminderIntervalDays"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ firstReminderDays, reminderIntervalDays }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
     "/api/accounting/navette": {
       "get": {
         "tags": [
@@ -1976,6 +2338,11 @@
                   "correctionOfId": {
                     "type": "string",
                     "minLength": 1
+                  },
+                  "overageOfJustificationId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
                   }
                 },
                 "required": [
@@ -2053,7 +2420,7 @@
           "accounting"
         ],
         "summary": "Action sur une demande financière",
-        "description": "**Accès** : toute personne connectée — `cancel` : le demandeur, demande `SUBMITTED` ; `process`, `approve`, `reject` : `accounting:manage`.\n\nCycle SUBMITTED → PROCESSING → APPROVED/REJECTED. Approuver une demande récurrente crée l'occurrence suivante. Le demandeur est notifié à chaque étape.",
+        "description": "**Accès** : toute personne connectée — `cancel` : le demandeur, demande `SUBMITTED` ; `process`, `approve`, `reject`, `claimJustification` : `accounting:manage`.\n\nCycle SUBMITTED → PROCESSING → APPROVED/REJECTED. Approuver une demande récurrente crée l'occurrence suivante. Le demandeur est notifié à chaque étape. `claimJustification` (spec 078) réclame les justificatifs d'une demande entièrement versée avant la mise en service du suivi : relances comme après une remise, première échéance comptée à partir d'aujourd'hui ; 400 si la demande n'en attend pas ou en a déjà.",
         "security": [
           {
             "session": []
@@ -2168,6 +2535,20 @@
                         "type": "string",
                         "enum": [
                           "cancel"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "claimJustification"
                         ]
                       }
                     },
@@ -10646,7 +11027,7 @@
           "noyau"
         ],
         "summary": "Exécution des tâches planifiées",
-        "description": "**Accès** : tâche planifiée (`Authorization: Bearer $CRON_SECRET`) — en-tête `Authorization: Bearer <CRON_SECRET>` (401 sinon).\n\nAppelée toutes les 5 minutes par le minuteur système ; chaque tâche ne s'exécute que lorsqu'elle est due (ADR-0021). Tâches : rappels de service J-1 et J-3, récapitulatif des changements au secrétariat, relances d'intégration et de soins pastoraux, cycle de vie des offres d'emploi, collecte des disponibilités (spec 058), récapitulatifs de changements de planning (spec 060), relance des services à remplacer (spec 061) et cycle de vie des candidatures au service (spec 077 : rappels de fin d'observation, relances, effacement). Les tâches d'un module désactivé ne sont pas exécutées.",
+        "description": "**Accès** : tâche planifiée (`Authorization: Bearer $CRON_SECRET`) — en-tête `Authorization: Bearer <CRON_SECRET>` (401 sinon).\n\nAppelée toutes les 5 minutes par le minuteur système ; chaque tâche ne s'exécute que lorsqu'elle est due (ADR-0021). Tâches : rappels de service J-1 et J-3, récapitulatif des changements au secrétariat, relances d'intégration et de soins pastoraux, cycle de vie des offres d'emploi, collecte des disponibilités (spec 058), récapitulatifs de changements de planning (spec 060), relance des services à remplacer (spec 061) cycle de vie des candidatures au service (spec 077 : rappels de fin d'observation, relances, effacement) et relances des justificatifs après la remise des fonds (spec 078). Les tâches d'un module désactivé ne sont pas exécutées.",
         "security": [
           {
             "cron": []

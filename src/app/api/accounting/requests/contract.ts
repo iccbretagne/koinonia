@@ -9,6 +9,8 @@ export const createSchema = z.object({
   departmentId:  z.string().min(1).optional(), // null/omis = note de frais personnelle
   attachmentIds: z.array(z.string()).optional(),
   correctionOfId: z.string().min(1).optional(), // demande rejetée que celle-ci corrige
+  /** Note de frais liée : complément du dépassement d'une avance justifiée (spec 078). */
+  overageOfJustificationId: z.string().min(1).max(40).optional(),
 });
 
 export const contract = defineContract({

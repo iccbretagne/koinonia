@@ -3,6 +3,7 @@ import { registry, rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { getAccountingDepartmentScope, getRequestJustification, isJustificationClaimable } from "@/modules/accounting";
 import RequestDetail from "./RequestDetail";
 
 export default async function AccountingRequestDetailPage({
@@ -25,7 +26,7 @@ export default async function AccountingRequestDetailPage({
   const req = await prisma.financialRequest.findUnique({
     where: { id },
     include: {
-      department:   { select: { id: true, name: true, ministry: { select: { name: true } } } },
+      department:   { select: { id: true, name: true, function: true, ministry: { select: { name: true } } } },
       submittedBy:  { select: { id: true, name: true, email: true } },
       processedBy:  { select: { id: true, name: true } },
       payments:     { orderBy: { scheduledDate: "asc" }, include: { releasedBy: { select: { id: true, name: true } } } },
@@ -33,6 +34,8 @@ export default async function AccountingRequestDetailPage({
       series:       { select: { id: true, label: true, recurrenceEvery: true, recurrenceUnit: true, status: true } },
       correctionOf: { select: { id: true, label: true, status: true } },
       corrections:  { select: { id: true, label: true, status: true, createdAt: true }, orderBy: { createdAt: "desc" } },
+      shuttleReimbursedEntry: { select: { id: true } },
+      shuttleImportedEntry:   { select: { id: true } },
     },
   });
 
@@ -78,6 +81,14 @@ export default async function AccountingRequestDetailPage({
       ? (await import("@/modules/treasury").then((m) => m.listAccounts(churchId, { includeArchived: false }))).map((a) => ({ id: a.id, name: a.name }))
       : [];
 
+  // Justificatifs après la remise des fonds (spec 078), avec le périmètre de la compta.
+  const justification = await getRequestJustification(req.id, {
+    userId: session.user.id!,
+    churchId,
+    manage: canManage,
+    scope: await getAccountingDepartmentScope(session, churchId),
+  });
+
   return (
     <div>
       <div className="flex items-center gap-2 mb-6">
@@ -92,6 +103,17 @@ export default async function AccountingRequestDetailPage({
         canManage={canManage}
         isOwn={isOwn}
         treasuryAccounts={treasuryAccounts}
+        justification={justification}
+        claimable={
+          canManage &&
+          isJustificationClaimable({
+            ...req,
+            hasAttachment: req.attachments.length > 0,
+            departmentFunction: req.department?.function ?? null,
+            fromShuttle: !!(req.shuttleReimbursedEntry || req.shuttleImportedEntry),
+            isOverage: !!req.overageOfJustificationId,
+          })
+        }
       />
     </div>
   );

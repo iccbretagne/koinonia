@@ -22,6 +22,9 @@ export const patchSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("cancel"),
   }),
+  z.object({
+    action: z.literal("claimJustification"),
+  }),
 ]);
 
 export const contract = defineContract({
@@ -33,9 +36,9 @@ export const contract = defineContract({
   },
   PATCH: {
     summary: "Action sur une demande financière",
-    description: "Cycle SUBMITTED → PROCESSING → APPROVED/REJECTED. Approuver une demande récurrente crée l'occurrence suivante. Le demandeur est notifié à chaque étape.",
+    description: "Cycle SUBMITTED → PROCESSING → APPROVED/REJECTED. Approuver une demande récurrente crée l'occurrence suivante. Le demandeur est notifié à chaque étape. `claimJustification` (spec 078) réclame les justificatifs d'une demande entièrement versée avant la mise en service du suivi : relances comme après une remise, première échéance comptée à partir d'aujourd'hui ; 400 si la demande n'en attend pas ou en a déjà.",
     access: "session",
-    accessNote: "`cancel` : le demandeur, demande `SUBMITTED` ; `process`, `approve`, `reject` : `accounting:manage`",
+    accessNote: "`cancel` : le demandeur, demande `SUBMITTED` ; `process`, `approve`, `reject`, `claimJustification` : `accounting:manage`",
     body: patchSchema,
     response: "Demande mise à jour",
   },

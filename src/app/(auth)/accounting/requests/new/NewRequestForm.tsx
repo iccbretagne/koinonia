@@ -21,8 +21,17 @@ export interface CorrectionSource {
   attachmentCount: number;
 }
 
+/** Complément d'un dépassement (spec 078) : note de frais liée aux factures d'une avance. */
+export interface ComplementSource {
+  justificationId: string;
+  label: string;
+  departmentId: string | null;
+  remaining: number;
+}
+
 interface Props {
   readonly departments: Department[];
+  readonly complement?: ComplementSource | null;
   /** Demande rejetée à corriger : pré-remplit le formulaire et lie la nouvelle demande. */
   readonly correction?: CorrectionSource | null;
   /** Page de retour après soumission (spec 043 : "/requests" si on vient de Mes demandes). */
@@ -31,7 +40,7 @@ interface Props {
 
 type RequestMode = "one_shot" | "recurring";
 
-export default function NewRequestForm({ departments, correction, redirectTo = "/accounting/requests" }: Props) {
+export default function NewRequestForm({ departments, correction, complement, redirectTo = "/accounting/requests" }: Props) {
   const router = useRouter();
   const id = useId();
   const [mode, setMode] = useState<RequestMode>("one_shot");
@@ -42,10 +51,10 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
 
   const [form, setForm] = useState({
     // Correction : "" = demande personnelle (sans département), comme dans le sélecteur
-    departmentId: correction ? (correction.departmentId ?? "") : (departments[0]?.id ?? ""),
-    label:        correction?.label ?? "",
+    departmentId: correction ? (correction.departmentId ?? "") : complement ? (complement.departmentId ?? "") : (departments[0]?.id ?? ""),
+    label:        correction?.label ?? (complement ? `Complément — ${complement.label}` : ""),
     description:  correction?.description ?? "",
-    amount:       correction?.amount ?? "",
+    amount:       correction?.amount ?? (complement ? String(complement.remaining) : ""),
   });
   const [recurrence, setRecurrence] = useState({
     every:     "1",
@@ -95,6 +104,7 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
             amount,
             attachmentIds: attachments.map((a) => a.id),
             correctionOfId: correction?.id,
+            overageOfJustificationId: complement?.justificationId,
           }),
         });
       }
@@ -128,7 +138,16 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
         </div>
       )}
 
+      {complement && (
+        <div className="bg-info-soft border border-info/30 rounded-lg px-3 py-2 text-sm text-info">
+          Complément de <span className="font-medium">&ldquo;{complement.label}&rdquo;</span> : jusqu&apos;à{" "}
+          {complement.remaining.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}. Les factures déjà déposées
+          le justifient, inutile de les joindre à nouveau.
+        </div>
+      )}
+
       {/* Mode */}
+      {!complement && (
       <fieldset className="space-y-2 min-w-0">
         <legend className="block text-sm font-medium text-ink-muted">Type de demande</legend>
         <div className="flex flex-wrap gap-2">
@@ -158,6 +177,7 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
           })}
         </div>
       </fieldset>
+      )}
 
       {/* Département */}
       <div className="space-y-1">

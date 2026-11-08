@@ -3,6 +3,7 @@ import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { assertOverageAllowed } from "@/modules/accounting";
 import NewRequestForm from "./NewRequestForm";
 
 type SelectableDepartment = { id: string; name: string; ministry: { name: string } };
@@ -93,10 +94,23 @@ async function loadCorrection(correctionOf: string | undefined, churchId: string
   };
 }
 
+/** « Demander le complément » (spec 078) : seulement le demandeur, et s'il reste un dépassement. */
+async function loadComplement(justificationId: string | undefined, churchId: string, userId: string) {
+  if (!justificationId) return null;
+  try {
+    const { justification, remaining } = await assertOverageAllowed(justificationId, { userId, churchId, manage: false, scope: [] });
+    if (remaining <= 0) return null;
+    const first = justification.requests[0];
+    return { justificationId, label: first?.label ?? "Avance", departmentId: first?.departmentId ?? null, remaining };
+  } catch {
+    return null;
+  }
+}
+
 export default async function NewAccountingRequestPage({
   searchParams,
 }: {
-  readonly searchParams: Promise<{ correctionOf?: string; from?: string }>;
+  readonly searchParams: Promise<{ correctionOf?: string; from?: string; complement?: string }>;
 }) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
@@ -119,6 +133,7 @@ export default async function NewAccountingRequestPage({
   const departments = await selectableDepartments(session.user.id!, churchId, isAdmin, roles.includes("MINISTER"));
   const { correctionOf } = await searchParams;
   const correction = await loadCorrection(correctionOf, churchId, session.user.id!);
+  const complement = await loadComplement((await searchParams).complement, churchId, session.user.id!);
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -137,6 +152,7 @@ export default async function NewAccountingRequestPage({
       <NewRequestForm
         departments={departments}
         correction={correction}
+        complement={correction ? null : complement}
         redirectTo={fromRequests ? "/requests" : "/accounting/requests"}
       />
     </div>

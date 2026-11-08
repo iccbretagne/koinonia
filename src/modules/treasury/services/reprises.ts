@@ -96,6 +96,44 @@ async function shuttleLines(churchId: string, names: Map<string, string>): Promi
   });
 }
 
+/** Reliquats d'avances rendus sur un compte de trésorerie (spec 078) : entrées, lecture seule. */
+async function returnLines(churchId: string, names: Map<string, string>): Promise<RawLine[]> {
+  const { listTreasuryReturns } = await import("@/modules/accounting");
+  const returns = await listTreasuryReturns(churchId);
+  if (returns.length === 0) return [];
+  const expenses = await getSystemCategory(churchId, "EXPENSE_REPORTS");
+  return returns.flatMap((r) => {
+    const accountId = r.treasuryAccountId;
+    if (!accountId || !r.returnedAt || !names.has(accountId) || r.amount <= 0) return [];
+    return [
+      {
+        id: `return:${r.id}`,
+        source: "accounting" as const,
+        kind: "STANDARD" as const,
+        accountId,
+        accountName: names.get(accountId) ?? "",
+        direction: "IN" as const,
+        categoryId: expenses.id,
+        categoryName: expenses.name,
+        categorySystem: expenses.system,
+        purposeId: null,
+        purposeName: null,
+        method: "CASH" as const,
+        amount: r.amount,
+        date: toIsoDate(r.returnedAt),
+        label: `Reliquat rendu · ${r.label}`,
+        thirdParty: null,
+        depositRef: null,
+        collectionId: null,
+        transferGroupId: null,
+        hasReceipt: false,
+        link: r.requestId ? `/accounting/requests/${r.requestId}` : null,
+        createdAt: r.returnedAt.toISOString(),
+      },
+    ];
+  });
+}
+
 function methodOf(m: string | null) {
   if (m === "CHEQUE") return "CHEQUE" as const;
   if (m === "TRANSFER") return "TRANSFER" as const;
@@ -105,6 +143,10 @@ function methodOf(m: string | null) {
 
 export async function loadRepriseLines(churchId: string, accounts: AccountView[]): Promise<RawLine[]> {
   const names = new Map(accounts.map((a) => [a.id, a.name]));
-  const [payments, shuttle] = await Promise.all([paymentLines(churchId, names), shuttleLines(churchId, names)]);
-  return [...payments, ...shuttle];
+  // Lectures successives : deux imports concurrents du module comptable ne partagent pas toujours
+  // la même instance sous Vitest (module simulé), et l'ordre n'a pas d'importance ici.
+  const payments = await paymentLines(churchId, names);
+  const returns = await returnLines(churchId, names);
+  const shuttle = await shuttleLines(churchId, names);
+  return [...payments, ...shuttle, ...returns];
 }
