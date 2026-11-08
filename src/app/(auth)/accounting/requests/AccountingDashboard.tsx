@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const TYPE_LABELS: Record<string, string> = {
   EXPENSE_REPORT: "Note de frais",
@@ -38,6 +39,8 @@ interface Request {
   _count: { attachments: number };
   /** Justificatifs encore ouverts (spec 078), sinon `null`. */
   justification: { status: string; late: boolean } | null;
+  /** Arriéré : versée avant le suivi, justificatifs jamais demandés (compta seulement). */
+  claimable?: boolean;
 }
 
 interface Stats {
@@ -58,8 +61,10 @@ interface Props {
 }
 
 /** Pastille des justificatifs (spec 078). */
-function JustificationPill({ j }: { readonly j: Request["justification"] }) {
-  if (!j) return null;
+function JustificationPill({ j, claimable }: { readonly j: Request["justification"]; readonly claimable?: boolean }) {
+  if (!j) {
+    return claimable ? <span className="inline-flex text-xs font-medium px-1.5 py-0.5 rounded bg-surface-sunken text-ink-muted">Justificatifs non demandés</span> : null;
+  }
   let label = "Justificatifs attendus";
   let cls = "bg-warning-soft text-warning";
   if (j.late) { label = "Justificatifs en retard"; cls = "bg-danger-soft text-danger"; }
@@ -99,6 +104,28 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [search, setSearch] = useState("");
+  const router = useRouter();
+  const [claiming, setClaiming] = useState<string | null>(null);
+  const arrears = useMemo(() => requests.filter((r) => r.claimable), [requests]);
+
+  /** Réclame les justificatifs de tout l'arriéré, une demande après l'autre (spec 078). */
+  async function claimAll() {
+    let done = 0;
+    let failed = 0;
+    for (const r of arrears) {
+      setClaiming(`${done + failed + 1} / ${arrears.length}`);
+      const res = await fetch(`/api/accounting/requests/${r.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "claimJustification" }),
+      }).catch(() => null);
+      if (res?.ok) done++;
+      else failed++;
+    }
+    setClaiming(failed ? `${done} réclamée(s), ${failed} en échec` : null);
+    setStatusFilter("JUSTIFY");
+    router.refresh();
+  }
 
   const actionable = useMemo(
     () => canManage ? requests.filter((r) => r.status === "SUBMITTED" || r.status === "PROCESSING") : [],
@@ -109,6 +136,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
     const q = search.trim().toLowerCase();
     const list = requests.filter((r) => {
       if (statusFilter === "JUSTIFY") { if (!r.justification) return false; }
+      else if (statusFilter === "ARREARS") { if (!r.claimable) return false; }
       else if (statusFilter && r.status !== statusFilter) return false;
       if (typeFilter && r.type !== typeFilter) return false;
       if (q) {
@@ -187,7 +215,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
       <div className="flex items-center gap-4">
         <div className="flex flex-col gap-2 flex-1">
           <div className="flex flex-wrap gap-2">
-            {STATUS_FILTERS.map((f) => (
+            {[...STATUS_FILTERS, ...(arrears.length > 0 ? [{ value: "ARREARS", label: `Arriéré (${arrears.length})` }] : [])].map((f) => (
               <button
                 key={f.value}
                 onClick={() => setStatusFilter(f.value)}
@@ -226,6 +254,24 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
         />
       </div>
 
+      {statusFilter === "ARREARS" && arrears.length > 0 && (
+        <div className="bg-warning-soft border border-warning/30 rounded-xl p-4 space-y-2">
+          <p className="text-sm text-ink-muted">
+            Ces demandes ont été versées avant la mise en service du suivi : aucun justificatif n&apos;a été demandé.
+            En les réclamant, chaque demandeur est prévenu, puis relancé chaque semaine.
+          </p>
+          <button
+            type="button"
+            onClick={claimAll}
+            disabled={claiming !== null && claiming.includes("/")}
+            className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+          >
+            {claiming?.includes("/") ? `Envoi ${claiming}…` : `Réclamer les justificatifs (${arrears.length})`}
+          </button>
+          {claiming && !claiming.includes("/") && <p className="text-xs text-danger">{claiming}</p>}
+        </div>
+      )}
+
       {/* Liste */}
       {filtered.length === 0 ? (
         <div className="bg-surface rounded-xl border border-line p-8 text-center text-ink-subtle text-sm">
@@ -263,7 +309,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
                           {isOwn && (
                             <span className="text-xs text-brand-text bg-brand-soft px-1.5 py-0.5 rounded font-medium">Vous</span>
                           )}
-                          <JustificationPill j={r.justification} />
+                          <JustificationPill j={r.justification} claimable={r.claimable} />
                           {r._count.attachments > 0 && (
                             <span className="text-xs text-ink-subtle">📎 {r._count.attachments}</span>
                           )}
@@ -312,7 +358,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
                         </span>
                         <span className="text-xs text-ink-muted">{fmtAmount(r.amount)}</span>
                         <span className="text-xs text-ink-subtle">{r.department?.name ?? "Personnel"}</span>
-                        <JustificationPill j={r.justification} />
+                        <JustificationPill j={r.justification} claimable={r.claimable} />
                       </div>
                     </div>
                     <span className={`text-xs shrink-0 mt-0.5 ${days >= 7 ? "text-warning font-semibold" : "text-ink-subtle"}`}>{days}j</span>

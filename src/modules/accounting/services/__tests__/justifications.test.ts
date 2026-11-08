@@ -255,3 +255,32 @@ describe("assertOverageAllowed", () => {
     expect((await svc.assertOverageAllowed("j-1", submitter)).remaining).toBe(30);
   });
 });
+
+describe("claimJustification (arriéré)", () => {
+  it("ouvre la justification avec une échéance comptée à partir d'aujourd'hui et prévient le demandeur", async () => {
+    prismaMock.financialRequest.findUnique
+      .mockResolvedValueOnce({ churchId: "church-1", justificationId: null })
+      .mockResolvedValueOnce(request({ payments: [{ amount: 300, releasedAt: new Date("2025-01-10T10:00:00Z"), releasedAmount: 300 }] }));
+    prismaMock.financialJustification.create.mockResolvedValue({ id: "j-new" });
+    const before = Date.now();
+    const opened = await svc.claimJustification("req-1", accountant);
+    expect(opened.id).toBe("j-new");
+    expect(opened.dueAt.getTime()).toBeGreaterThanOrEqual(before + 7 * 86_400_000 - 1000);
+    expect(prismaMock.financialJustification.create.mock.calls[0][0].data.releasedMonth).toBe("2025-01");
+    expect(createNotification).toHaveBeenCalledWith(expect.objectContaining({ type: "ACCOUNTING_JUSTIFICATION_DUE", userId: "user-1" }));
+    expect(logAudit).toHaveBeenCalledWith(expect.objectContaining({ details: { action: "claim", requestId: "req-1" } }));
+  });
+
+  it("compta seule ; autre église 404 ; déjà demandée ou non éligible 400", async () => {
+    await expect(svc.claimJustification("req-1", submitter)).rejects.toMatchObject({ statusCode: 403 });
+    prismaMock.financialRequest.findUnique.mockResolvedValueOnce({ churchId: "church-2", justificationId: null });
+    await expect(svc.claimJustification("req-1", accountant)).rejects.toMatchObject({ statusCode: 404 });
+    prismaMock.financialRequest.findUnique.mockResolvedValueOnce({ churchId: "church-1", justificationId: "j-1" });
+    await expect(svc.claimJustification("req-1", accountant)).rejects.toMatchObject({ statusCode: 400 });
+    prismaMock.financialRequest.findUnique
+      .mockResolvedValueOnce({ churchId: "church-1", justificationId: null })
+      .mockResolvedValueOnce(request({ department: { function: "NAVETTE" } }));
+    await expect(svc.claimJustification("req-1", accountant)).rejects.toMatchObject({ statusCode: 400 });
+    expect(prismaMock.financialJustification.create).not.toHaveBeenCalled();
+  });
+});

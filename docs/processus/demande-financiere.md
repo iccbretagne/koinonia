@@ -48,7 +48,8 @@ Une **avance de budget**, ou une **note de frais payée sans pièce**, n'est pas
 - Un **dépassement** se règle par « Demander le complément » : une note de frais liée, préremplie, déjà justifiée par les factures de l'avance.
 - **Relances** : 7 jours après la dernière remise, puis tous les 7 jours (délais réglables par la compta, carte « Relances des justificatifs »), tant que les factures manquent ou que le reliquat n'est pas rendu. Dès la **3e relance**, les responsables du département (principal et adjoints) et le Ministre sont prévenus.
 - Une **avance récurrente** se justifie **par mois** : les versements d'un même mois forment une seule justification.
-- Jamais de relance pour la **Navette** (registre déjà justifié), une note issue de la navette, une note de frais avec pièce, ni pour une demande payée avant la mise en service.
+- Jamais de relance pour la **Navette** (registre déjà justifié), une note issue de la navette ou une note de frais avec pièce.
+- **Arriéré** : une demande payée avant la mise en service n'est pas relancée d'office. Le comptable **réclame les justificatifs** sur la demande, ou pour toutes d'un coup depuis le filtre « Arriéré » de la liste : la première échéance part alors du jour de la réclamation.
 
 ## Où ça se passe
 

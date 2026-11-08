@@ -13,6 +13,7 @@ export {
 export { listTreasuryPayments, listTreasuryReturns } from "./services/treasury-link";
 export {
   assertOverageAllowed,
+  claimJustification,
   countOpenJustifications,
   getJustification,
   getJustificationSettings,
@@ -33,3 +34,4 @@ export {
 export { FUND_BOXES, type FundBox, type FundTracking } from "./services/fund-tracking";
 
 export { accountingModule } from "./manifest";
+export { isJustificationClaimable } from "./services/justification-rules";

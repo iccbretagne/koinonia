@@ -446,7 +446,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Traiter les demandes financières",
-    description: "Consultez et traitez les notes de frais et avances de budget depuis /accounting/requests : confirmez le paiement ou refusez avec un motif. Le compteur « À justifier » liste ensuite les avances en attente de factures : acceptez, renvoyez avec un motif, dispensez, puis confirmez la restitution d'un reliquat (« Rendu sur » une caisse l'ajoute à la trésorerie). Les délais de relance se règlent en bas de la liste. Les Ministres et Resp. département voient leurs propres demandes en lecture seule.",
+    description: "Consultez et traitez les notes de frais et avances de budget depuis /accounting/requests : confirmez le paiement ou refusez avec un motif. Le compteur « À justifier » liste ensuite les avances en attente de factures : acceptez, renvoyez avec un motif, dispensez, puis confirmez la restitution d'un reliquat (« Rendu sur » une caisse l'ajoute à la trésorerie). Les délais de relance se règlent en bas de la liste ; le filtre « Arriéré » réclame les justificatifs des avances versées avant la mise en service. Les Ministres et Resp. département voient leurs propres demandes en lecture seule.",
     category: "Comptabilité",
     screenshotTitle: "Gestion des demandes financières",
     screenshotFile: "guide-comptabilite-gestion.png",

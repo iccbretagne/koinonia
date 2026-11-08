@@ -72,9 +72,10 @@ export const FINANCES: readonly KnowledgeEntry[] = [
       "confirmer un reliquat rendu",
       "dispenser de justificatif",
       "délai de relance des justificatifs",
+      "réclamer les justificatifs des anciennes avances",
     ],
     answer:
-      "Dans « Comptabilité », le compteur « À justifier » liste les retards, les factures à vérifier et les reliquats. Sur la demande, acceptez, renvoyez avec un motif, ou dispensez avec le montant retenu ; confirmez la restitution d'un reliquat avec « Rendu sur » (une caisse l'ajoute à la trésorerie). Les délais de relance se règlent en bas de la liste.",
+      "Dans « Comptabilité », le compteur « À justifier » liste les retards, les factures à vérifier et les reliquats. Sur la demande, acceptez, renvoyez avec un motif, ou dispensez avec le montant retenu ; confirmez la restitution d'un reliquat avec « Rendu sur » (une caisse l'ajoute à la trésorerie). Les délais de relance se règlent en bas de la liste. Pour une avance versée avant la mise en service, le filtre « Arriéré » permet de réclamer les justificatifs.",
     href: "/accounting/requests",
     hrefLabel: "Comptabilité",
     audience: { permissions: ["accounting:manage"] },

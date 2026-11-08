@@ -699,7 +699,7 @@ seule (`ENABLED_MODULES`) :
   trésorerie via `listTreasuryReturns`, ADR-0027). Relances par la tâche cron
   `accounting-justifications` (prise atomique sur `nextReminderAt`), escalade dès la 3e aux
   responsables et au Ministre. Jamais de relance pour la Navette, une note issue de la navette ou
-  une note liée (`overageOfJustificationId`). Les statistiques rangent chaque euro versé dans une
+  une note liée (`overageOfJustificationId`) ; l'arriéré (payé avant la mise en service) se réclame par la compta (`claimJustification`, action `claimJustification` de `PATCH /api/accounting/requests/[id]`). Les statistiques rangent chaque euro versé dans une
   seule case (`fund-tracking.ts`, versé = somme des cases) sans toucher aux indicateurs existants
 - Pas d'accès au planning, aux membres, aux événements, au discipolat ni à la section admin
 - Conserve `audio:listen` et les permissions transverses du module emploi (`jobs:*`, hors

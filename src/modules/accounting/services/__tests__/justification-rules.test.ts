@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { addDays, monthOf, needsJustification, nextStatus, overageOf, remainderOf } from "../justification-rules";
+import { addDays, isJustificationClaimable, monthOf, needsJustification, nextStatus, overageOf, remainderOf } from "../justification-rules";
 
 const base = { type: "BUDGET_ADVANCE" as const, hasAttachment: true, departmentFunction: null, fromShuttle: false, isOverage: false };
 
@@ -44,5 +44,29 @@ describe("justificatifs après la remise des fonds — règles (spec 078)", () =
     expect(addDays(new Date("2026-03-03T10:00:00Z"), 7).toISOString()).toBe("2026-03-10T10:00:00.000Z");
     expect(monthOf(new Date(2026, 2, 31))).toBe("2026-03");
     expect(monthOf(new Date(2026, 3, 1))).toBe("2026-04");
+  });
+});
+
+describe("isJustificationClaimable (arriéré)", () => {
+  const claimable = {
+    type: "BUDGET_ADVANCE" as const,
+    hasAttachment: false,
+    departmentFunction: null,
+    fromShuttle: false,
+    isOverage: false,
+    justificationId: null,
+    status: "APPROVED",
+    payments: [{ releasedAt: new Date() }],
+  };
+  it("avance entièrement versée, sans justification : réclamable", () => {
+    expect(isJustificationClaimable(claimable)).toBe(true);
+  });
+  it("jamais si déjà demandée, pas entièrement versée, non validée, Navette ou note avec pièce", () => {
+    expect(isJustificationClaimable({ ...claimable, justificationId: "j" })).toBe(false);
+    expect(isJustificationClaimable({ ...claimable, payments: [{ releasedAt: new Date() }, { releasedAt: null }] })).toBe(false);
+    expect(isJustificationClaimable({ ...claimable, payments: [] })).toBe(false);
+    expect(isJustificationClaimable({ ...claimable, status: "PROCESSING" })).toBe(false);
+    expect(isJustificationClaimable({ ...claimable, departmentFunction: "NAVETTE" })).toBe(false);
+    expect(isJustificationClaimable({ ...claimable, type: "EXPENSE_REPORT", hasAttachment: true })).toBe(false);
   });
 });

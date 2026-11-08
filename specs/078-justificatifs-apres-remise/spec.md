@@ -115,7 +115,9 @@ sont justifiées par ce registre.
   dernier paiement, comme une avance ; le montant dépensé est celui de la note, sans reliquat
   ni complément possible.
 - **Demande antérieure à la mise en service** : les demandes déjà entièrement payées avant la
-  mise en service ne sont pas relancées rétroactivement.
+  mise en service ne sont pas relancées rétroactivement. La comptabilité peut en **réclamer les
+  justificatifs** quand elle le décide, une à une ou toutes d'un coup (« Arriéré ») : le demandeur
+  est prévenu, et les relances partent du jour de la réclamation.
 - **Changement des délais** : il s'applique aux relances suivantes de toutes les demandes en
   cours ; il ne réécrit pas les relances déjà envoyées.
 - **Avance récurrente** (virements réguliers planifiés, par exemple le budget mensuel d'un
@@ -145,7 +147,7 @@ dans une seule case**, et les cases s'additionnent exactement au montant versé.
 | **À rendre** | Reliquats attendus, pas encore restitués |
 | **À justifier** | Versements dont les factures ne sont pas encore acceptées (attendues ou à vérifier) |
 | **Navette** | Avances versées au département Navette : leur justification est dans son registre |
-| **Avant le suivi** | Versements antérieurs à la mise en service, jamais relancés |
+| **Avant le suivi** | Versements antérieurs à la mise en service, dont les justificatifs n'ont pas été réclamés |
 
 **Versé = Justifié + Rendu + À rendre + À justifier + Navette + Avant le suivi.**
 
@@ -199,7 +201,8 @@ dans une seule case**, et les cases s'additionnent exactement au montant versé.
   paiement) gardent exactement leur définition actuelle.
 - [ ] Les avances versées au département Navette et les notes de frais issues de la navette ne
   sont jamais relancées.
-- [ ] Les demandes entièrement payées avant la mise en service ne sont pas relancées.
+- [ ] Les demandes entièrement payées avant la mise en service ne sont pas relancées d'office ;
+  la comptabilité peut en réclamer les justificatifs, une à une ou toutes d'un coup.
 - [ ] Chaque dépôt, acceptation, refus, dispense et restitution est inscrit dans l'historique.
 - [ ] Un demandeur ne voit et ne justifie que ses propres demandes ; un Ministre ou Resp.
   département voit l'état de celles de son périmètre sans pouvoir agir ; une autre église ne

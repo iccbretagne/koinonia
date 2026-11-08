@@ -6,7 +6,7 @@ import AccountingDashboard from "./AccountingDashboard";
 import { isShuttleVisible } from "@/modules/shuttle/auth";
 import { isTreasuryVisible } from "@/modules/treasury/auth";
 import AccountingNav from "../AccountingNav";
-import { getJustificationSettings } from "@/modules/accounting";
+import { getJustificationSettings, isJustificationClaimable } from "@/modules/accounting";
 import JustificationSettingsCard from "./JustificationSettingsCard";
 
 export default async function AccountingRequestsPage() {
@@ -64,9 +64,11 @@ export default async function AccountingRequestsPage() {
       ...scopeCondition,
     },
     include: {
-      department:  { select: { id: true, name: true } },
+      department:  { select: { id: true, name: true, function: true } },
       submittedBy: { select: { id: true, name: true } },
       payments:    { select: { id: true, amount: true, scheduledDate: true, releasedAt: true } },
+      shuttleReimbursedEntry: { select: { id: true } },
+      shuttleImportedEntry:   { select: { id: true } },
       _count:      { select: { attachments: true } },
       justification: { select: { id: true, status: true, dueAt: true } },
     },
@@ -124,6 +126,14 @@ export default async function AccountingRequestsPage() {
           amount: r.amount.toString(),
           payments: r.payments.map((p) => ({ ...p, amount: p.amount.toString() })),
           justification: justificationOf(r.justification),
+          claimable: canManage && isJustificationClaimable({
+            ...r,
+            justificationId: r.justification?.id ?? null,
+            hasAttachment: r._count.attachments > 0,
+            departmentFunction: r.department?.function ?? null,
+            fromShuttle: !!(r.shuttleReimbursedEntry || r.shuttleImportedEntry),
+            isOverage: !!r.overageOfJustificationId,
+          }),
         }))}
         stats={stats}
         canManage={canManage}

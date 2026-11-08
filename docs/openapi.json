@@ -2420,7 +2420,7 @@
           "accounting"
         ],
         "summary": "Action sur une demande financière",
-        "description": "**Accès** : toute personne connectée — `cancel` : le demandeur, demande `SUBMITTED` ; `process`, `approve`, `reject` : `accounting:manage`.\n\nCycle SUBMITTED → PROCESSING → APPROVED/REJECTED. Approuver une demande récurrente crée l'occurrence suivante. Le demandeur est notifié à chaque étape.",
+        "description": "**Accès** : toute personne connectée — `cancel` : le demandeur, demande `SUBMITTED` ; `process`, `approve`, `reject`, `claimJustification` : `accounting:manage`.\n\nCycle SUBMITTED → PROCESSING → APPROVED/REJECTED. Approuver une demande récurrente crée l'occurrence suivante. Le demandeur est notifié à chaque étape. `claimJustification` (spec 078) réclame les justificatifs d'une demande entièrement versée avant la mise en service du suivi : relances comme après une remise, première échéance comptée à partir d'aujourd'hui ; 400 si la demande n'en attend pas ou en a déjà.",
         "security": [
           {
             "session": []
@@ -2535,6 +2535,20 @@
                         "type": "string",
                         "enum": [
                           "cancel"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "claimJustification"
                         ]
                       }
                     },

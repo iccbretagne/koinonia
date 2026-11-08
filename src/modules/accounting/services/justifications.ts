@@ -73,7 +73,12 @@ export interface OpenedJustification {
  * ouvre la justification de la demande (ou rejoint celle de sa série pour le même mois). Renvoie
  * de quoi prévenir le demandeur après la transaction, ou `null` si rien n'est attendu.
  */
-export async function openJustificationIfDue(requestId: string, tx: Tx): Promise<OpenedJustification | null> {
+export async function openJustificationIfDue(
+  requestId: string,
+  tx: Tx,
+  /** Réclamation de l'arriéré : l'échéance part de cette date, pas du dernier versement. */
+  opts: { claimedAt?: Date } = {}
+): Promise<OpenedJustification | null> {
   const request = await tx.financialRequest.findUnique({
     where: { id: requestId },
     select: {
@@ -106,7 +111,7 @@ export async function openJustificationIfDue(requestId: string, tx: Tx): Promise
   const released = cents(request.payments.reduce((s, p) => s + Number(p.releasedAmount ?? p.amount), 0));
   const lastRelease = new Date(Math.max(...request.payments.map((p) => p.releasedAt!.getTime())));
   const settings = await getJustificationSettings(request.churchId, tx);
-  const dueAt = addDays(lastRelease, settings.firstReminderDays);
+  const dueAt = addDays(opts.claimedAt ?? lastRelease, settings.firstReminderDays);
   const month = monthOf(lastRelease);
 
   if (request.seriesId) {
@@ -141,6 +146,26 @@ export async function openJustificationIfDue(requestId: string, tx: Tx): Promise
     },
   });
   return { id: created.id, submittedById: request.submittedById, requestId: request.id, label: request.label, dueAt };
+}
+
+/**
+ * La compta réclame les justificatifs d'une demande versée avant la mise en service du suivi
+ * (arriéré) : même ouverture qu'au dernier versement, échéance comptée à partir d'aujourd'hui.
+ */
+export async function claimJustification(requestId: string, v: Viewer): Promise<OpenedJustification> {
+  if (!v.manage) throw new ApiError(403, "Accès refusé");
+  const prisma = await db();
+  const opened = await prisma.$transaction(async (tx) => {
+    const request = await tx.financialRequest.findUnique({ where: { id: requestId }, select: { churchId: true, justificationId: true } });
+    if (request?.churchId !== v.churchId) throw new ApiError(404, "Demande introuvable");
+    if (request.justificationId) throw new ApiError(400, "Les justificatifs de cette demande sont déjà demandés");
+    const result = await openJustificationIfDue(requestId, tx, { claimedAt: new Date() });
+    if (!result) throw new ApiError(400, "Cette demande n'attend pas de justificatif (pas entièrement versée, Navette, ou pièce déjà jointe)");
+    return result;
+  });
+  await audit(v.userId, v.churchId, opened.id, { action: "claim", requestId });
+  await notifyJustificationOpened(opened);
+  return opened;
 }
 
 /** Prévient le demandeur que ses justificatifs sont attendus (hors transaction). */

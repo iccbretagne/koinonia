@@ -4,7 +4,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rolePermissions } from "@/lib/registry";
 import { buildAccountingStatusEmail } from "@/lib/email";
 import { createNotification } from "@/lib/notifications";
-import { getAccountingDepartmentScope } from "@/modules/accounting";
+import { claimJustification, getAccountingDepartmentScope } from "@/modules/accounting";
 import type { z } from "zod";
 import { patchSchema } from "./contract";
 
@@ -154,6 +154,9 @@ function manageAction(context: ActionContext, body: Exclude<PatchBody, { action:
       return approveRequest(context, body);
     case "reject":
       return rejectRequest(context, body);
+    case "claimJustification":
+      // Arriéré (spec 078) : la compta voit toute l'église.
+      return claimJustification(context.id, { userId: context.userId, churchId: context.churchId, manage: true, scope: null });
   }
 }
 

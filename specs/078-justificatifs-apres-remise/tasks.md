@@ -127,6 +127,13 @@
   clôturé refusée, note liée refusée sans dépassement
   *(fichier : `src/app/api/accounting/__tests__/justifications-routes.test.ts`)*
 
+### 5 bis. Arriéré (ajout après recette)
+
+- [x] **T31** — Réclamer les justificatifs d'une demande payée avant la mise en service :
+  `claimJustification`, `isJustificationClaimable`, action `claimJustification` de
+  `PATCH /api/accounting/requests/[id]`, bouton sur la demande, filtre « Arriéré » avec réclamation
+  groupée ; tests
+
 ### 6. Documentation
 
 - [x] **T30** — `docs/processus/demande-financiere.md` (nouvelle étape et suivi de l'argent

@@ -36,6 +36,18 @@ export function needsJustification(r: EligibilityInput): boolean {
   return !r.hasAttachment;
 }
 
+/**
+ * Arriéré : demande éligible, entièrement versée, sans justification — versée avant la mise en
+ * service du suivi. La compta peut alors en réclamer les justificatifs.
+ */
+export function isJustificationClaimable(
+  r: EligibilityInput & { justificationId: string | null; status: string; payments: { releasedAt: Date | string | null }[] }
+): boolean {
+  if (r.justificationId || r.status !== "APPROVED" || r.payments.length === 0) return false;
+  if (r.payments.some((p) => p.releasedAt === null)) return false;
+  return needsJustification(r);
+}
+
 export type JustificationAction = "submit" | "accept" | "reject" | "waive" | "return";
 
 /** Reliquat à rendre : versé − dépensé, jamais négatif. */
