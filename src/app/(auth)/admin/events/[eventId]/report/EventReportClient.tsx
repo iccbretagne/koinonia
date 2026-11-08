@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect, useId } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import WhatsAppShare from "@/components/WhatsAppShare";
 import { formatReportWhatsApp, generateReportPDF, type ReportExportData } from "@/lib/report-export";
 
 interface Dept { id: string; name: string; ministryName: string }
@@ -160,7 +161,6 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
   const [sections, setSections] = useState<Section[]>(initSections);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   // Refs pour accéder aux valeurs les plus récentes dans le callback debounced
   const speakerRef = useRef(speaker);
@@ -277,13 +277,6 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
     };
   }
 
-  async function handleCopyWhatsApp() {
-    const text = formatReportWhatsApp(buildExportData());
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  }
-
   function handleExportPDF() {
     generateReportPDF(buildExportData());
   }
@@ -337,24 +330,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
           </svg>
           PDF
         </button>
-        <button
-          type="button"
-          onClick={handleCopyWhatsApp}
-          className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-colors ${
-            copied
-              ? "text-success bg-success-soft border-success/30"
-              : "text-success bg-success-soft border-success/30 hover:bg-success-soft"
-          }`}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {copied ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-            )}
-          </svg>
-          {copied ? "Copié !" : "WhatsApp"}
-        </button>
+        <WhatsAppShare getText={() => formatReportWhatsApp(buildExportData())} copiedMessage="Compte rendu copié" size="sm" />
       </div>
 
       {/* Orateur et titre du message */}

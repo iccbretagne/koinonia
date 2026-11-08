@@ -645,7 +645,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Récapitulatif WhatsApp",
-    description: "Dans l'onglet « Opportunités », le bouton « Copier pour WhatsApp » compose un message texte résumant les offres et missions affichées (pastilles de type et recherche respectées) et le place dans le presse-papier, prêt à coller dans un groupe. Les coordonnées de contact déposées par l'auteur n'y figurent pas : le message renvoie vers l'application.",
+    description: "Dans l'onglet « Opportunités », le bouton « WhatsApp » compose un message texte résumant les offres et missions affichées (pastilles de type et recherche respectées) et ouvre WhatsApp avec ce message, prêt à envoyer dans un groupe ; l'icône voisine le copie à la place. Les coordonnées de contact déposées par l'auteur n'y figurent pas : le message renvoie vers l'application.",
     category: "Emplois",
     screenshotTitle: "Récapitulatif WhatsApp des offres",
     screenshotFile: "guide-emplois-whatsapp.png",
