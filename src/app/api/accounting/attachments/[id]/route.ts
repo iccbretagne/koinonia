@@ -38,16 +38,21 @@ export async function DELETE(
 
     const attachment = await prisma.financialAttachment.findUnique({
       where: { id },
-      include: { request: { select: { submittedById: true, status: true } } },
+      include: {
+        request: { select: { submittedById: true, status: true } },
+        justification: { select: { status: true } },
+      },
     });
     if (!attachment) throw new ApiError(404, "Pièce jointe introuvable");
 
-    const isOrphan = !attachment.request;
     const isSubmitter = attachment.uploadedById === session.user.id!;
     const isRequestSubmitter = attachment.request?.submittedById === session.user.id!;
-    const canDelete = isOrphan
-      ? isSubmitter
-      : isRequestSubmitter && attachment.request?.status === "SUBMITTED";
+    // Facture d'une justification (spec 078) : retirable par son auteur tant qu'elle n'a pas été
+    // remise à la compta, ou après un renvoi — jamais une fois acceptée.
+    let canDelete: boolean;
+    if (attachment.justification) canDelete = isSubmitter && attachment.justification.status === "AWAITING";
+    else if (!attachment.request) canDelete = isSubmitter;
+    else canDelete = isRequestSubmitter && attachment.request.status === "SUBMITTED";
 
     if (!canDelete) throw new ApiError(403, "Impossible de supprimer cette pièce jointe");
 

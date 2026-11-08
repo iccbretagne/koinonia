@@ -36,6 +36,8 @@ interface Request {
   submittedBy: { id: string; name: string | null };
   payments: { id: string; amount: number | string; scheduledDate: string | Date; releasedAt: string | Date | null }[];
   _count: { attachments: number };
+  /** Justificatifs encore ouverts (spec 078), sinon `null`. */
+  justification: { status: string; late: boolean } | null;
 }
 
 interface Stats {
@@ -45,6 +47,7 @@ interface Stats {
   rejected: number;
   totalAmount: number;
   pendingPayments: number;
+  toJustify: number;
 }
 
 interface Props {
@@ -52,6 +55,26 @@ interface Props {
   readonly stats: Stats;
   readonly canManage: boolean;
   readonly currentUserId: string;
+}
+
+/** Pastille des justificatifs (spec 078). */
+function JustificationPill({ j }: { readonly j: Request["justification"] }) {
+  if (!j) return null;
+  let label = "Justificatifs attendus";
+  let cls = "bg-warning-soft text-warning";
+  if (j.late) { label = "Justificatifs en retard"; cls = "bg-danger-soft text-danger"; }
+  else if (j.status === "SUBMITTED") { label = "Justificatifs à vérifier"; cls = "bg-info-soft text-info"; }
+  else if (j.status === "RETURN_DUE") label = "Reliquat à rendre";
+  return <span className={`inline-flex text-xs font-medium px-1.5 py-0.5 rounded ${cls}`}>{label}</span>;
+}
+
+/** Ordre du filtre « À justifier » : retards, à vérifier, reliquats, puis le reste. */
+function justifyRank(j: Request["justification"]) {
+  if (!j) return 9;
+  if (j.late) return 0;
+  if (j.status === "SUBMITTED") return 1;
+  if (j.status === "RETURN_DUE") return 2;
+  return 3;
 }
 
 function daysSince(d: Date | string) {
@@ -69,6 +92,7 @@ const STATUS_FILTERS = [
   { value: "APPROVED",   label: "Validées" },
   { value: "REJECTED",   label: "Rejetées" },
   { value: "CANCELLED",  label: "Annulées" },
+  { value: "JUSTIFY",    label: "À justifier" },
 ];
 
 export default function AccountingDashboard({ requests, stats, canManage, currentUserId }: Props) {
@@ -83,8 +107,9 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return requests.filter((r) => {
-      if (statusFilter && r.status !== statusFilter) return false;
+    const list = requests.filter((r) => {
+      if (statusFilter === "JUSTIFY") { if (!r.justification) return false; }
+      else if (statusFilter && r.status !== statusFilter) return false;
       if (typeFilter && r.type !== typeFilter) return false;
       if (q) {
         const hay = `${r.label} ${r.department?.name ?? ""} ${r.submittedBy.name ?? ""}`.toLowerCase();
@@ -92,20 +117,28 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
       }
       return true;
     });
+    return statusFilter === "JUSTIFY" ? list.sort((a, b) => justifyRank(a.justification) - justifyRank(b.justification)) : list;
   }, [requests, statusFilter, typeFilter, search]);
 
   return (
     <div className="space-y-5">
 
       {/* Statistiques */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
           { label: "En attente",     value: stats.submitted,       color: "text-warning" },
           { label: "En traitement",  value: stats.processing,      color: "text-info" },
           { label: "Validées",       value: stats.approved,        color: "text-success" },
           { label: "Rejetées",       value: stats.rejected,        color: "text-danger" },
           { label: "Paiements dus",  value: stats.pendingPayments, color: "text-brand-text" },
-        ].map((s) => (
+          { label: "À justifier",    value: stats.toJustify,       color: "text-warning", filter: "JUSTIFY" },
+        ].map((s) => s.filter ? (
+          <button key={s.label} type="button" onClick={() => setStatusFilter(s.filter)}
+            className="text-left bg-surface rounded-xl border border-line px-4 py-3 hover:border-brand/40 transition-colors">
+            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+            <p className="text-xs text-ink-muted mt-0.5">{s.label}</p>
+          </button>
+        ) : (
           <div key={s.label} className="bg-surface rounded-xl border border-line px-4 py-3">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
             <p className="text-xs text-ink-muted mt-0.5">{s.label}</p>
@@ -230,6 +263,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
                           {isOwn && (
                             <span className="text-xs text-brand-text bg-brand-soft px-1.5 py-0.5 rounded font-medium">Vous</span>
                           )}
+                          <JustificationPill j={r.justification} />
                           {r._count.attachments > 0 && (
                             <span className="text-xs text-ink-subtle">📎 {r._count.attachments}</span>
                           )}
@@ -278,6 +312,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
                         </span>
                         <span className="text-xs text-ink-muted">{fmtAmount(r.amount)}</span>
                         <span className="text-xs text-ink-subtle">{r.department?.name ?? "Personnel"}</span>
+                        <JustificationPill j={r.justification} />
                       </div>
                     </div>
                     <span className={`text-xs shrink-0 mt-0.5 ${days >= 7 ? "text-warning font-semibold" : "text-ink-subtle"}`}>{days}j</span>

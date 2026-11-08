@@ -3,6 +3,7 @@ import { registry, rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { getAccountingDepartmentScope, getRequestJustification } from "@/modules/accounting";
 import RequestDetail from "./RequestDetail";
 
 export default async function AccountingRequestDetailPage({
@@ -78,6 +79,14 @@ export default async function AccountingRequestDetailPage({
       ? (await import("@/modules/treasury").then((m) => m.listAccounts(churchId, { includeArchived: false }))).map((a) => ({ id: a.id, name: a.name }))
       : [];
 
+  // Justificatifs après la remise des fonds (spec 078), avec le périmètre de la compta.
+  const justification = await getRequestJustification(req.id, {
+    userId: session.user.id!,
+    churchId,
+    manage: canManage,
+    scope: await getAccountingDepartmentScope(session, churchId),
+  });
+
   return (
     <div>
       <div className="flex items-center gap-2 mb-6">
@@ -92,6 +101,7 @@ export default async function AccountingRequestDetailPage({
         canManage={canManage}
         isOwn={isOwn}
         treasuryAccounts={treasuryAccounts}
+        justification={justification}
       />
     </div>
   );

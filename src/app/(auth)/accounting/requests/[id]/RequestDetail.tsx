@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Modal from "@/components/ui/Modal";
 import AttachmentManager from "@/app/(auth)/accounting/components/AttachmentManager";
+import JustificationPanel, { type Justification } from "./JustificationPanel";
 
 type DateLike = string | Date;
 
@@ -66,6 +67,8 @@ interface Props {
   readonly isOwn: boolean;
   /** Comptes de trésorerie actifs (spec 076) ; vide si la trésorerie est désactivée ou inaccessible. */
   readonly treasuryAccounts?: readonly { id: string; name: string }[];
+  /** Justificatifs après la remise des fonds (spec 078), si la demande en attend. */
+  readonly justification?: Justification | null;
 }
 
 function fmt(d: DateLike | null) {
@@ -120,7 +123,7 @@ function WorkflowBar({ status }: { readonly status: string }) {
   );
 }
 
-export default function RequestDetail({ request: initial, canManage, isOwn, treasuryAccounts = [] }: Props) {
+export default function RequestDetail({ request: initial, canManage, isOwn, treasuryAccounts = [], justification = null }: Props) {
   const router = useRouter();
   const uid = useId();
   const [req, setReq] = useState(initial);
@@ -360,6 +363,8 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
           </div>
         </div>
       )}
+
+      {justification && <JustificationPanel key={`${justification.id}-${justification.status}-${justification.releasedAmount}`} justification={justification} requestId={req.id} treasuryAccounts={treasuryAccounts} />}
 
       {/* Corrections liées */}
       {req.corrections.length > 0 && (

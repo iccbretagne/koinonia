@@ -6,6 +6,8 @@ import AccountingDashboard from "./AccountingDashboard";
 import { isShuttleVisible } from "@/modules/shuttle/auth";
 import { isTreasuryVisible } from "@/modules/treasury/auth";
 import AccountingNav from "../AccountingNav";
+import { getJustificationSettings } from "@/modules/accounting";
+import JustificationSettingsCard from "./JustificationSettingsCard";
 
 export default async function AccountingRequestsPage() {
   const session = await requireAuth();
@@ -66,9 +68,16 @@ export default async function AccountingRequestsPage() {
       submittedBy: { select: { id: true, name: true } },
       payments:    { select: { id: true, amount: true, scheduledDate: true, releasedAt: true } },
       _count:      { select: { attachments: true } },
+      justification: { select: { id: true, status: true, dueAt: true } },
     },
     orderBy: { createdAt: "desc" },
   });
+
+  // Justificatifs (spec 078) : en retard = attendus après l'échéance.
+  const now = new Date();
+  const justificationOf = (j: { status: string; dueAt: Date } | null) =>
+    j && j.status !== "SETTLED" ? { status: j.status, late: j.status === "AWAITING" && j.dueAt <= now } : null;
+  const settings = canManage ? await getJustificationSettings(churchId) : null;
 
   // Statistiques simplifiées
   const stats = {
@@ -82,6 +91,7 @@ export default async function AccountingRequestsPage() {
     pendingPayments: requests
       .flatMap((r) => r.payments)
       .filter((p) => !p.releasedAt).length,
+    toJustify: requests.filter((r) => justificationOf(r.justification)).length,
   };
 
   return (
@@ -113,11 +123,14 @@ export default async function AccountingRequestsPage() {
           ...r,
           amount: r.amount.toString(),
           payments: r.payments.map((p) => ({ ...p, amount: p.amount.toString() })),
+          justification: justificationOf(r.justification),
         }))}
         stats={stats}
         canManage={canManage}
         currentUserId={session.user.id!}
       />
+
+      {settings && <JustificationSettingsCard initial={settings} />}
     </div>
   );
 }

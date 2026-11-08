@@ -226,6 +226,7 @@ function view(j: JustificationRow, v: Viewer, now = new Date()) {
       type: r.type,
       amount: Number(r.amount),
       occurrenceNumber: r.occurrenceNumber,
+      departmentId: r.departmentId,
       department: r.department?.name ?? null,
       submitter: r.submittedBy.name ?? r.submittedBy.email ?? "",
     })),

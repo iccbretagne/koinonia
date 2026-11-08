@@ -207,6 +207,7 @@ export async function computeAccountingStats(churchId: string, period: Period = 
     scheduledDate: p.scheduledDate.toISOString(),
   }));
 
+  const trackedIds = new Set(Object.values(fundTracking.requestIds).flat());
   return {
     period,
     dateRange: { from: from.toISOString(), to: to.toISOString() },
@@ -216,6 +217,12 @@ export async function computeAccountingStats(churchId: string, period: Period = 
     byDepartment: byDepartment(requests),
     byMonth: monthlyTrend(trendSince, trendRequests, trendPayments),
     overduePayments,
-    fundTracking,
+    fundTracking: {
+      ...fundTracking,
+      /** Libellés des demandes rangées dans une case, pour ouvrir la liste depuis un montant. */
+      labels: Object.fromEntries(
+        requests.filter((r) => trackedIds.has(r.id)).map((r) => [r.id, r.label])
+      ) as Record<string, string>,
+    },
   };
 }
