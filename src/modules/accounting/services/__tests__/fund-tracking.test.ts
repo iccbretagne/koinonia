@@ -23,7 +23,7 @@ const just = (id: string, status: TrackedJustification["status"], spent: number 
   spentAmount: spent,
   requests: requests.map((r) => ({ id: r.id, createdAt: r.createdAt, released: r.released })),
 });
-const sumBoxes = (t: Record<string, number>) => Math.round(FUND_BOXES.reduce((s, b) => s + t[b], 0) * 100) / 100;
+const sumBoxes = (t: Record<(typeof FUND_BOXES)[number], number>) => Math.round(FUND_BOXES.reduce((s, b) => s + t[b], 0) * 100) / 100;
 
 describe("suivi de l'argent versé (spec 078)", () => {
   it("range chaque cas dans sa case et respecte « versé = somme des cases » partout", () => {
