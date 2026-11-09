@@ -9,7 +9,8 @@ vi.mock("@/lib/audit", () => ({ logAudit: (...a: unknown[]) => logAudit(...a) })
 let shuttleEnabled = true;
 vi.mock("@/lib/registry", () => ({ registry: { has: (m: string) => m !== "shuttle" || shuttleEnabled } }));
 const listTreasuryPayments = vi.fn();
-vi.mock("@/modules/accounting", () => ({ listTreasuryPayments: (...a: unknown[]) => listTreasuryPayments(...a) }));
+const listTreasuryReturns = vi.fn();
+vi.mock("@/modules/accounting", () => ({ listTreasuryPayments: (...a: unknown[]) => listTreasuryPayments(...a), listTreasuryReturns: (...a: unknown[]) => listTreasuryReturns(...a) }));
 
 const { loadRepriseLines } = await import("../services/reprises");
 const { compareBudget, splitAnnual, actualByCategory, setBudget } = await import("../services/budget");
@@ -31,6 +32,26 @@ describe("reprises par lecture (spec 076, ADR-0027)", () => {
       { id: "p1", treasuryAccountId: "caisse", releasedAt: new Date("2026-10-09T00:00:00Z"), releasedAmount: 84.9, amount: 90, request: { id: "r1", label: "Câbles sono", type: "EXPENSE_REPORT", department: { function: null } } },
       { id: "p2", treasuryAccountId: "caisse", releasedAt: new Date("2026-10-10T00:00:00Z"), releasedAmount: null, amount: 200, request: { id: "r2", label: "Carburant", type: "BUDGET_ADVANCE", department: { function: "NAVETTE" } } },
     ]);
+    listTreasuryReturns.mockResolvedValue([]);
+  });
+
+  it("un reliquat d'avance rendu sur une caisse est une entrée reprise, liée à sa demande (spec 078)", async () => {
+    listTreasuryReturns.mockResolvedValue([
+      { id: "j1", treasuryAccountId: "caisse", returnedAt: new Date("2026-10-20T00:00:00Z"), amount: 31.6, requestId: "r3", label: "Micros" },
+      { id: "j2", treasuryAccountId: "ailleurs", returnedAt: new Date("2026-10-21T00:00:00Z"), amount: 10, requestId: "r4", label: "Autre église" },
+    ]);
+    const lines = await loadRepriseLines("church-1", accounts);
+    expect(lines.find((l) => l.id === "return:j1")).toMatchObject({
+      source: "accounting",
+      direction: "IN",
+      amount: 31.6,
+      date: "2026-10-20",
+      categoryId: "ndf",
+      label: "Reliquat rendu · Micros",
+      link: "/accounting/requests/r3",
+    });
+    expect(lines.some((l) => l.id === "return:j2")).toBe(false);
+    expect(listTreasuryReturns).toHaveBeenCalledWith("church-1");
   });
 
   it("un paiement versé depuis une caisse est une sortie reprise, en lecture seule, avec son origine", async () => {

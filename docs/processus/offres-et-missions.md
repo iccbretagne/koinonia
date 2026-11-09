@@ -42,7 +42,7 @@ Chaque type d'objet a son propre cycle, ce qui est logique puisqu'ils ne se term
 | Pour… | Aller à… |
 |---|---|
 | Consulter et publier | Ressources → **Offres** |
-| Diffuser une offre à l'extérieur | Le bouton **Copier pour WhatsApp** |
+| Diffuser une offre à l'extérieur | Le bouton **WhatsApp** (ouvre WhatsApp avec le récapitulatif ; l'icône voisine le copie) |
 | Modérer | Ressources → **Offres**, filtre d'état « Retirées » ou « Toutes » |
 
 L'espace se partage en deux onglets : **Opportunités** (offres d'emploi, de stage, d'alternance et missions freelance) et **Profils disponibles** (personnes en recherche et freelances). Des pastilles filtrent par type, une recherche porte sur le métier, l'entreprise, la ville et la description, et « Mes publications » rassemble ses propres annonces, quel que soit leur état. Une publication s'ouvre dans un panneau de détail ; son lien direct reste partageable. Le point **Nouveau** signale les opportunités parues depuis la dernière visite, et la pastille du menu les compte.

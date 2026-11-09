@@ -15,8 +15,24 @@ function get(query: string) {
   return GET(new Request(`http://localhost/api/accounting/stats${query}`));
 }
 
+let seq = 0;
 function request(status: string, type: string, amount: number, dept: { id: string; name: string } | null, payments: object[] = []) {
-  return { status, type, amount, departmentId: dept?.id ?? null, department: dept, payments };
+  seq++;
+  return {
+    id: `req-${seq}`,
+    createdAt: new Date(2026, 2, seq),
+    status,
+    type,
+    amount,
+    departmentId: dept?.id ?? null,
+    department: dept ? { ...dept, function: null } : null,
+    payments,
+    justificationId: null,
+    overageOfJustificationId: null,
+    _count: { attachments: 0 },
+    shuttleReimbursedEntry: null,
+    shuttleImportedEntry: null,
+  };
 }
 
 const louange = { id: "dept-1", name: "Louange" };
@@ -87,6 +103,10 @@ describe("GET /api/accounting/stats", () => {
       { name: "Louange", count: 2, amount: 120, released: 50 },
       { name: "Personnel", count: 3, amount: 45, released: 0 },
     ]);
+    // Suivi de l'argent versé (spec 078) : même « versé » que la vue d'ensemble ; une tranche
+    // reste à verser, les 50 € sont donc « à justifier ».
+    expect(body.fundTracking.totals).toEqual({ released: 50, justified: 0, returned: 0, returnDue: 0, toJustify: 50, shuttle: 0, beforeTracking: 0 });
+    expect(body.fundTracking.totals.released).toBe(body.overview.releasedAmount);
   });
 
   it("n'a pas de taux d'approbation sans demande éligible", async () => {

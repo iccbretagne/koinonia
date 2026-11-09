@@ -29,6 +29,7 @@ export async function assertAttachmentsAssignable(
       id: { in: uniqueIds },
       uploadedById: params.userId,
       requestId: null,
+      justificationId: null,
       churchId: params.churchId,
     },
   });

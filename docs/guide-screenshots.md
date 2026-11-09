@@ -202,7 +202,7 @@ fenêtre parasite.
 | 52 | `guide-emplois-liste.png` | Offres, recherches d'emploi & freelance | `star` | `/jobs` | clic « Création d'un site vitrine » |
 | 53 | `guide-emplois-moderation.png` | Modération des annonces | `admin` | `/jobs` | clic « Toutes », clic « Alternance assistant comptable » |
 | 54 | `guide-emplois-relance.png` | Cycle de vie des offres | `admin` | `/jobs` | clic « Développeur web (H/F) » |
-| 55 | `guide-emplois-whatsapp.png` | Récapitulatif WhatsApp | `star` | `/jobs` | clic « Copier pour WhatsApp » |
+| 55 | `guide-emplois-whatsapp.png` | Récapitulatif WhatsApp | `star` | `/jobs` | clic « WhatsApp » |
 
 ### Intégration (6)
 

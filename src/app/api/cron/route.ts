@@ -90,6 +90,12 @@ async function runAssistantDigest() {
   return run();
 }
 
+/** Relances des justificatifs après la remise des fonds, escalade dès la 3e (spec 078). */
+async function runJustificationReminders() {
+  const { runJustificationReminders: run } = await import("@/modules/accounting");
+  return run();
+}
+
 function authorizeCron(request: Request) {
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
@@ -404,6 +410,8 @@ function cronTasks(appUrl: string): CronTask[] {
     { key: "ticketing", module: "ticketing", schedule: { kind: "interval", minutes: 15 }, run: runTicketingDeadlines },
     // Assistant (spec 075) : une fois par semaine, prévient les Super Admins s'il reste des questions à traiter.
     { key: "assistant-digest", module: "assistant", schedule: { kind: "interval", minutes: 7 * 24 * 60 }, run: runAssistantDigest },
+    // Justificatifs après la remise des fonds (spec 078) : idempotente (échéance prise de façon atomique).
+    { key: "accounting-justifications", module: "accounting", schedule: { kind: "interval", minutes: 60 }, run: runJustificationReminders },
   ];
   return tasks.filter((t) => !t.module || registry.has(t.module));
 }

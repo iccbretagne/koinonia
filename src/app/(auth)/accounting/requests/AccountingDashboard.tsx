@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const TYPE_LABELS: Record<string, string> = {
   EXPENSE_REPORT: "Note de frais",
@@ -36,6 +37,10 @@ interface Request {
   submittedBy: { id: string; name: string | null };
   payments: { id: string; amount: number | string; scheduledDate: string | Date; releasedAt: string | Date | null }[];
   _count: { attachments: number };
+  /** Justificatifs encore ouverts (spec 078), sinon `null`. */
+  justification: { status: string; late: boolean } | null;
+  /** Arriéré : versée avant le suivi, justificatifs jamais demandés (compta seulement). */
+  claimable?: boolean;
 }
 
 interface Stats {
@@ -45,6 +50,7 @@ interface Stats {
   rejected: number;
   totalAmount: number;
   pendingPayments: number;
+  toJustify: number;
 }
 
 interface Props {
@@ -52,6 +58,28 @@ interface Props {
   readonly stats: Stats;
   readonly canManage: boolean;
   readonly currentUserId: string;
+}
+
+/** Pastille des justificatifs (spec 078). */
+function JustificationPill({ j, claimable }: { readonly j: Request["justification"]; readonly claimable?: boolean }) {
+  if (!j) {
+    return claimable ? <span className="inline-flex text-xs font-medium px-1.5 py-0.5 rounded bg-surface-sunken text-ink-muted">Justificatifs non demandés</span> : null;
+  }
+  let label = "Justificatifs attendus";
+  let cls = "bg-warning-soft text-warning";
+  if (j.late) { label = "Justificatifs en retard"; cls = "bg-danger-soft text-danger"; }
+  else if (j.status === "SUBMITTED") { label = "Justificatifs à vérifier"; cls = "bg-info-soft text-info"; }
+  else if (j.status === "RETURN_DUE") label = "Reliquat à rendre";
+  return <span className={`inline-flex text-xs font-medium px-1.5 py-0.5 rounded ${cls}`}>{label}</span>;
+}
+
+/** Ordre du filtre « À justifier » : retards, à vérifier, reliquats, puis le reste. */
+function justifyRank(j: Request["justification"]) {
+  if (!j) return 9;
+  if (j.late) return 0;
+  if (j.status === "SUBMITTED") return 1;
+  if (j.status === "RETURN_DUE") return 2;
+  return 3;
 }
 
 function daysSince(d: Date | string) {
@@ -69,12 +97,35 @@ const STATUS_FILTERS = [
   { value: "APPROVED",   label: "Validées" },
   { value: "REJECTED",   label: "Rejetées" },
   { value: "CANCELLED",  label: "Annulées" },
+  { value: "JUSTIFY",    label: "À justifier" },
 ];
 
 export default function AccountingDashboard({ requests, stats, canManage, currentUserId }: Props) {
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [search, setSearch] = useState("");
+  const router = useRouter();
+  const [claiming, setClaiming] = useState<string | null>(null);
+  const arrears = useMemo(() => requests.filter((r) => r.claimable), [requests]);
+
+  /** Réclame les justificatifs de tout l'arriéré, une demande après l'autre (spec 078). */
+  async function claimAll() {
+    let done = 0;
+    let failed = 0;
+    for (const r of arrears) {
+      setClaiming(`${done + failed + 1} / ${arrears.length}`);
+      const res = await fetch(`/api/accounting/requests/${r.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "claimJustification" }),
+      }).catch(() => null);
+      if (res?.ok) done++;
+      else failed++;
+    }
+    setClaiming(failed ? `${done} réclamée(s), ${failed} en échec` : null);
+    setStatusFilter("JUSTIFY");
+    router.refresh();
+  }
 
   const actionable = useMemo(
     () => canManage ? requests.filter((r) => r.status === "SUBMITTED" || r.status === "PROCESSING") : [],
@@ -83,8 +134,10 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return requests.filter((r) => {
-      if (statusFilter && r.status !== statusFilter) return false;
+    const list = requests.filter((r) => {
+      if (statusFilter === "JUSTIFY") { if (!r.justification) return false; }
+      else if (statusFilter === "ARREARS") { if (!r.claimable) return false; }
+      else if (statusFilter && r.status !== statusFilter) return false;
       if (typeFilter && r.type !== typeFilter) return false;
       if (q) {
         const hay = `${r.label} ${r.department?.name ?? ""} ${r.submittedBy.name ?? ""}`.toLowerCase();
@@ -92,20 +145,28 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
       }
       return true;
     });
+    return statusFilter === "JUSTIFY" ? list.sort((a, b) => justifyRank(a.justification) - justifyRank(b.justification)) : list;
   }, [requests, statusFilter, typeFilter, search]);
 
   return (
     <div className="space-y-5">
 
       {/* Statistiques */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
           { label: "En attente",     value: stats.submitted,       color: "text-warning" },
           { label: "En traitement",  value: stats.processing,      color: "text-info" },
           { label: "Validées",       value: stats.approved,        color: "text-success" },
           { label: "Rejetées",       value: stats.rejected,        color: "text-danger" },
           { label: "Paiements dus",  value: stats.pendingPayments, color: "text-brand-text" },
-        ].map((s) => (
+          { label: "À justifier",    value: stats.toJustify,       color: "text-warning", filter: "JUSTIFY" },
+        ].map((s) => s.filter ? (
+          <button key={s.label} type="button" onClick={() => setStatusFilter(s.filter)}
+            className="text-left bg-surface rounded-xl border border-line px-4 py-3 hover:border-brand/40 transition-colors">
+            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+            <p className="text-xs text-ink-muted mt-0.5">{s.label}</p>
+          </button>
+        ) : (
           <div key={s.label} className="bg-surface rounded-xl border border-line px-4 py-3">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
             <p className="text-xs text-ink-muted mt-0.5">{s.label}</p>
@@ -154,7 +215,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
       <div className="flex items-center gap-4">
         <div className="flex flex-col gap-2 flex-1">
           <div className="flex flex-wrap gap-2">
-            {STATUS_FILTERS.map((f) => (
+            {[...STATUS_FILTERS, ...(arrears.length > 0 ? [{ value: "ARREARS", label: `Arriéré (${arrears.length})` }] : [])].map((f) => (
               <button
                 key={f.value}
                 onClick={() => setStatusFilter(f.value)}
@@ -193,6 +254,24 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
         />
       </div>
 
+      {statusFilter === "ARREARS" && arrears.length > 0 && (
+        <div className="bg-warning-soft border border-warning/30 rounded-xl p-4 space-y-2">
+          <p className="text-sm text-ink-muted">
+            Ces demandes ont été versées avant la mise en service du suivi : aucun justificatif n&apos;a été demandé.
+            En les réclamant, chaque demandeur est prévenu, puis relancé chaque semaine.
+          </p>
+          <button
+            type="button"
+            onClick={claimAll}
+            disabled={claiming !== null && claiming.includes("/")}
+            className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+          >
+            {claiming?.includes("/") ? `Envoi ${claiming}…` : `Réclamer les justificatifs (${arrears.length})`}
+          </button>
+          {claiming && !claiming.includes("/") && <p className="text-xs text-danger">{claiming}</p>}
+        </div>
+      )}
+
       {/* Liste */}
       {filtered.length === 0 ? (
         <div className="bg-surface rounded-xl border border-line p-8 text-center text-ink-subtle text-sm">
@@ -230,6 +309,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
                           {isOwn && (
                             <span className="text-xs text-brand-text bg-brand-soft px-1.5 py-0.5 rounded font-medium">Vous</span>
                           )}
+                          <JustificationPill j={r.justification} claimable={r.claimable} />
                           {r._count.attachments > 0 && (
                             <span className="text-xs text-ink-subtle">📎 {r._count.attachments}</span>
                           )}
@@ -278,6 +358,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
                         </span>
                         <span className="text-xs text-ink-muted">{fmtAmount(r.amount)}</span>
                         <span className="text-xs text-ink-subtle">{r.department?.name ?? "Personnel"}</span>
+                        <JustificationPill j={r.justification} claimable={r.claimable} />
                       </div>
                     </div>
                     <span className={`text-xs shrink-0 mt-0.5 ${days >= 7 ? "text-warning font-semibold" : "text-ink-subtle"}`}>{days}j</span>

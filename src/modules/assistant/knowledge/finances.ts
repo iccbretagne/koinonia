@@ -2,7 +2,7 @@ import { ALL, type KnowledgeEntry } from "./types";
 
 const TREASURY_OTHERWISE = "La trésorerie est réservée au Comptable et à l'administration de l'église.";
 
-/** 7. Comptabilité, navette, trésorerie, dons (KB-100 à KB-107). */
+/** 7. Comptabilité, navette, trésorerie, dons (KB-100 à KB-109). */
 export const FINANCES: readonly KnowledgeEntry[] = [
   {
     key: "KB-100",
@@ -40,6 +40,46 @@ export const FINANCES: readonly KnowledgeEntry[] = [
     hrefLabel: "Comptabilité",
     audience: { permissions: ["accounting:manage"] },
     otherwise: "Le traitement des demandes financières revient au Comptable.",
+    screens: ["/accounting"],
+  },
+  {
+    key: "KB-108",
+    kind: "howto",
+    title: "Déposer les factures d'une avance",
+    questions: [
+      "justifier une avance",
+      "envoyer mes factures",
+      "justificatifs attendus",
+      "rendre le reliquat",
+      "j'ai dépensé plus que l'avance",
+      "relance justificatifs",
+    ],
+    answer:
+      "Après la remise d'une avance (ou d'une note de frais payée sans pièce), ouvrez la demande : dans « Justificatifs », déposez vos factures et le montant total dépensé. S'il reste de l'argent, rendez le reliquat à la comptabilité ; si vous avez dépensé plus, « Demander le complément » prépare la note de frais. Vous êtes relancé chaque semaine tant que les factures manquent, et vos responsables sont prévenus à la 3e relance.",
+    href: "/accounting/requests",
+    hrefLabel: "Mes demandes comptables",
+    audience: { permissions: ["accounting:submit"], predicates: ["pastoral"] },
+    otherwise: "Les justificatifs sont déposés par la personne qui a demandé l'avance.",
+    screens: ["/accounting"],
+  },
+  {
+    key: "KB-109",
+    kind: "howto",
+    title: "Vérifier les justificatifs et les reliquats",
+    questions: [
+      "accepter les factures",
+      "avances non justifiées",
+      "confirmer un reliquat rendu",
+      "dispenser de justificatif",
+      "délai de relance des justificatifs",
+      "réclamer les justificatifs des anciennes avances",
+    ],
+    answer:
+      "Dans « Comptabilité », le compteur « À justifier » liste les retards, les factures à vérifier et les reliquats. Sur la demande, acceptez, renvoyez avec un motif, ou dispensez avec le montant retenu ; confirmez la restitution d'un reliquat avec « Rendu sur » (une caisse l'ajoute à la trésorerie). Les délais de relance se règlent en bas de la liste. Pour une avance versée avant la mise en service, le filtre « Arriéré » permet de réclamer les justificatifs.",
+    href: "/accounting/requests",
+    hrefLabel: "Comptabilité",
+    audience: { permissions: ["accounting:manage"] },
+    otherwise: "La vérification des justificatifs revient au Comptable.",
     screens: ["/accounting"],
   },
   {

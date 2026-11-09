@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Modal from "@/components/ui/Modal";
 import AttachmentManager from "@/app/(auth)/accounting/components/AttachmentManager";
+import JustificationPanel, { type Justification } from "./JustificationPanel";
 
 type DateLike = string | Date;
 
@@ -66,6 +67,10 @@ interface Props {
   readonly isOwn: boolean;
   /** Comptes de trésorerie actifs (spec 076) ; vide si la trésorerie est désactivée ou inaccessible. */
   readonly treasuryAccounts?: readonly { id: string; name: string }[];
+  /** Justificatifs après la remise des fonds (spec 078), si la demande en attend. */
+  readonly justification?: Justification | null;
+  /** Arriéré : versée avant le suivi, la compta peut réclamer les justificatifs (spec 078). */
+  readonly claimable?: boolean;
 }
 
 function fmt(d: DateLike | null) {
@@ -120,7 +125,7 @@ function WorkflowBar({ status }: { readonly status: string }) {
   );
 }
 
-export default function RequestDetail({ request: initial, canManage, isOwn, treasuryAccounts = [] }: Props) {
+export default function RequestDetail({ request: initial, canManage, isOwn, treasuryAccounts = [], justification = null, claimable = false }: Props) {
   const router = useRouter();
   const uid = useId();
   const [req, setReq] = useState(initial);
@@ -191,6 +196,22 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
       router.refresh();
     } catch { setError("Erreur réseau"); }
     finally { setLoading(false); setReleasingPaymentId(null); }
+  }
+
+  async function claim() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/accounting/requests/${req.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "claimJustification" }),
+      });
+      const json = await res.json();
+      if (!res.ok) setError(json.error ?? "Erreur");
+      else router.refresh();
+    } catch { setError("Erreur réseau"); }
+    finally { setLoading(false); }
   }
 
   const totalPayments = req.payments.reduce((s, p) => s + Number(p.amount), 0);
@@ -360,6 +381,22 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
           </div>
         </div>
       )}
+
+      {!justification && claimable && (
+        <div className="bg-surface rounded-xl border border-line p-4 md:p-5 space-y-3">
+          <h2 className="text-sm font-semibold text-ink-muted">Justificatifs</h2>
+          <p className="text-sm text-ink-muted">
+            Versée avant la mise en service du suivi : aucun justificatif n&apos;a été demandé. En les réclamant, le
+            demandeur est prévenu et relancé comme après une remise.
+          </p>
+          <button onClick={claim} disabled={loading}
+            className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
+            {loading ? "Envoi…" : "Réclamer les justificatifs"}
+          </button>
+        </div>
+      )}
+
+      {justification && <JustificationPanel key={`${justification.id}-${justification.status}-${justification.releasedAmount}`} justification={justification} requestId={req.id} treasuryAccounts={treasuryAccounts} />}
 
       {/* Corrections liées */}
       {req.corrections.length > 0 && (

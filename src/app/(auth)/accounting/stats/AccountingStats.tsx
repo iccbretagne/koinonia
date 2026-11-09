@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import FundTrackingSection, { type FundTrackingData } from "./FundTrackingSection";
 
 const MONTH_NAMES = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
 
@@ -51,6 +52,7 @@ interface StatsData {
   byDepartment: { name: string; count: number; amount: number; released: number }[];
   byMonth: { month: string; submitted: number; released: number }[];
   overduePayments: { id: string; requestId: string; requestLabel: string; amount: number; scheduledDate: string }[];
+  fundTracking?: FundTrackingData;
 }
 
 function fmt(amount: number) {
@@ -295,6 +297,8 @@ export default function AccountingStats({
           )}
         </Section>
       </div>
+
+      {data.fundTracking && <FundTrackingSection data={data.fundTracking} />}
 
       {/* Tendance mensuelle */}
       <Section title={`Tendance — montants soumis vs versés (€) · ${PERIOD_LABELS[period].toLowerCase()}`}>

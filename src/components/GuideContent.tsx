@@ -438,7 +438,7 @@ const FEATURES: Feature[] = [
   // ── Comptabilité ─────────────────────────────────────────────────────────
   {
     name: "Soumettre une demande financière",
-    description: "Déposez une note de frais ou une demande d'avance de budget depuis /accounting/requests/new. Un titulaire de profil pastoral peut également soumettre, indépendamment de son rôle global.",
+    description: "Déposez une note de frais ou une demande d'avance de budget depuis /accounting/requests/new. Un titulaire de profil pastoral peut également soumettre, indépendamment de son rôle global. Après la remise d'une avance (ou d'une note de frais payée sans pièce), déposez vos factures et le montant dépensé dans le bloc « Justificatifs » de la demande : rendez le reliquat, ou « Demandez le complément » si vous avez dépensé plus. Des relances partent chaque semaine tant que les factures manquent.",
     category: "Comptabilité",
     screenshotTitle: "Nouvelle demande financière",
     screenshotFile: "guide-comptabilite-demande.png",
@@ -446,7 +446,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Traiter les demandes financières",
-    description: "Consultez et traitez les notes de frais et avances de budget depuis /accounting/requests : confirmez le paiement ou refusez avec un motif. Les Ministres et Resp. département voient leurs propres demandes en lecture seule.",
+    description: "Consultez et traitez les notes de frais et avances de budget depuis /accounting/requests : confirmez le paiement ou refusez avec un motif. Le compteur « À justifier » liste ensuite les avances en attente de factures : acceptez, renvoyez avec un motif, dispensez, puis confirmez la restitution d'un reliquat (« Rendu sur » une caisse l'ajoute à la trésorerie). Les délais de relance se règlent en bas de la liste ; le filtre « Arriéré » réclame les justificatifs des avances versées avant la mise en service. Les Ministres et Resp. département voient leurs propres demandes en lecture seule.",
     category: "Comptabilité",
     screenshotTitle: "Gestion des demandes financières",
     screenshotFile: "guide-comptabilite-gestion.png",
@@ -454,7 +454,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Statistiques comptables",
-    description: "Visualisez le total des demandes financières sur l'année en cours depuis /accounting/stats, par statut et par département.",
+    description: "Visualisez le total des demandes financières sur l'année en cours depuis /accounting/stats, par statut et par département. Le « Suivi de l'argent versé » range chaque euro versé dans une seule case (justifié, rendu, à rendre, à justifier, Navette, avant le suivi) : les cases s'additionnent au montant versé, avec un taux de justification par département.",
     category: "Comptabilité",
     screenshotTitle: "Statistiques comptables",
     screenshotFile: "guide-comptabilite-stats.png",
@@ -645,7 +645,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Récapitulatif WhatsApp",
-    description: "Dans l'onglet « Opportunités », le bouton « Copier pour WhatsApp » compose un message texte résumant les offres et missions affichées (pastilles de type et recherche respectées) et le place dans le presse-papier, prêt à coller dans un groupe. Les coordonnées de contact déposées par l'auteur n'y figurent pas : le message renvoie vers l'application.",
+    description: "Dans l'onglet « Opportunités », le bouton « WhatsApp » compose un message texte résumant les offres et missions affichées (pastilles de type et recherche respectées) et ouvre WhatsApp avec ce message, prêt à envoyer dans un groupe ; l'icône voisine le copie à la place. Les coordonnées de contact déposées par l'auteur n'y figurent pas : le message renvoie vers l'application.",
     category: "Emplois",
     screenshotTitle: "Récapitulatif WhatsApp des offres",
     screenshotFile: "guide-emplois-whatsapp.png",

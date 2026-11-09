@@ -32,6 +32,7 @@ describe("assertAttachmentsAssignable", () => {
         id: { in: ["att-1", "att-2"] },
         uploadedById: "user-1",
         requestId: null,
+        justificationId: null,
         churchId: "church-1",
       },
     });

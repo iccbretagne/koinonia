@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { computeFundTracking, type TrackedJustification } from "./fund-tracking";
 
 /**
  * Statistiques comptables d'une église (spec comptabilité) : vue d'ensemble, répartition par
@@ -121,12 +122,52 @@ export async function computeAccountingStats(churchId: string, period: Period = 
   const requests = await prisma.financialRequest.findMany({
     where: { churchId, createdAt: { gte: from, lte: to } },
     include: {
-      department: { select: { id: true, name: true } },
+      department: { select: { id: true, name: true, function: true } },
       payments: {
         select: { amount: true, releasedAt: true, releasedAmount: true, scheduledDate: true },
       },
+      _count: { select: { attachments: true } },
+      shuttleReimbursedEntry: { select: { id: true } },
+      shuttleImportedEntry: { select: { id: true } },
     },
   });
+
+  // ── Suivi de l'argent versé (spec 078) : mêmes demandes que la vue d'ensemble ──
+  const justificationIds = [...new Set(requests.map((r) => r.justificationId).filter((id): id is string => !!id))];
+  const justificationRows = justificationIds.length
+    ? await prisma.financialJustification.findMany({
+        where: { id: { in: justificationIds }, churchId },
+        select: {
+          id: true,
+          status: true,
+          spentAmount: true,
+          requests: { select: { id: true, createdAt: true, payments: { select: { amount: true, releasedAt: true, releasedAmount: true } } } },
+        },
+      })
+    : [];
+  const trackedJustifications: TrackedJustification[] = justificationRows.map((j) => ({
+    id: j.id,
+    status: j.status,
+    spentAmount: j.spentAmount === null ? null : Number(j.spentAmount),
+    requests: j.requests.map((r) => ({ id: r.id, createdAt: r.createdAt, released: releasedTotal(r.payments) })),
+  }));
+  const fundTracking = computeFundTracking(
+    requests.map((r) => ({
+      id: r.id,
+      createdAt: r.createdAt,
+      type: r.type,
+      departmentId: r.departmentId,
+      departmentName: r.department?.name ?? null,
+      departmentFunction: r.department?.function ?? null,
+      released: releasedTotal(r.payments),
+      pendingPayment: r.payments.some((p) => p.releasedAt === null),
+      hasAttachment: r._count.attachments > 0,
+      fromShuttle: !!(r.shuttleReimbursedEntry || r.shuttleImportedEntry),
+      isOverage: !!r.overageOfJustificationId,
+      justificationId: r.justificationId,
+    })),
+    trackedJustifications
+  );
 
   // ── Tendance mensuelle (12 derniers mois, indépendant de la période) ──────
   const trendSince = new Date();
@@ -166,6 +207,7 @@ export async function computeAccountingStats(churchId: string, period: Period = 
     scheduledDate: p.scheduledDate.toISOString(),
   }));
 
+  const trackedIds = new Set(Object.values(fundTracking.requestIds).flat());
   return {
     period,
     dateRange: { from: from.toISOString(), to: to.toISOString() },
@@ -175,5 +217,12 @@ export async function computeAccountingStats(churchId: string, period: Period = 
     byDepartment: byDepartment(requests),
     byMonth: monthlyTrend(trendSince, trendRequests, trendPayments),
     overduePayments,
+    fundTracking: {
+      ...fundTracking,
+      /** Libellés des demandes rangées dans une case, pour ouvrir la liste depuis un montant. */
+      labels: Object.fromEntries(
+        requests.filter((r) => trackedIds.has(r.id)).map((r) => [r.id, r.label])
+      ) as Record<string, string>,
+    },
   };
 }
