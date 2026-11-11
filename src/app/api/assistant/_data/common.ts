@@ -1,6 +1,7 @@
 import type { Session } from "next-auth";
 import { z } from "zod";
 import type { AssistantDataParams, AssistantDataQuestion, AssistantViewer, DataRefusal } from "@/core/assistant";
+import { getEventTypeLabel } from "@/lib/event-types";
 import { dayKey } from "@/lib/paris-days";
 
 /**
@@ -67,3 +68,12 @@ export const SERVICE_STATUS_LABEL: Record<string, string> = {
   INDISPONIBLE: "Indisponible",
   REMPLACANT: "Remplaçant",
 };
+
+/**
+ * Type d'un événement en clair (« Culte », jamais l'énumération « CULTE »), omis quand le titre
+ * commence déjà par lui (« Culte du 13/09 ») pour ne pas le répéter.
+ */
+export function typeDetail(title: string, type: string): string | undefined {
+  const label = getEventTypeLabel(type);
+  return title.trim().toLowerCase().startsWith(label.toLowerCase()) ? undefined : label;
+}

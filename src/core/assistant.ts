@@ -86,13 +86,24 @@ export function isDataRefusal(result: DataResult): result is DataRefusal {
   return "refused" in result && result.refused === true;
 }
 
-/** Borne une liste à `DATA_ANSWER_MAX_ITEMS` lignes en gardant le total. */
-export function boundedAnswer(
-  answer: Omit<DataAnswer, "items" | "total"> & { items: DataAnswerItem[]; total?: number }
-): DataAnswer {
-  return {
-    ...answer,
-    items: answer.items.slice(0, DATA_ANSWER_MAX_ITEMS),
-    total: answer.total ?? answer.items.length,
-  };
+/** Texte d'une ligne : espaces de bord retirés, espaces multiples réduits. */
+export const cleanText = (text: string | null | undefined) => (text ?? "").replace(/\s+/g, " ").trim();
+
+/**
+ * Réponse complète d'une question : libellés et détails nettoyés (un détail vide disparaît, pour
+ * ne jamais laisser un séparateur seul), total = nombre de lignes. Aucune troncature ici :
+ * chaque consommateur borne à sa façon (`pageAnswer`).
+ */
+export function boundedAnswer(answer: Omit<DataAnswer, "items" | "total"> & { items: DataAnswerItem[] }): DataAnswer {
+  const items = answer.items.map(({ label, detail, href }) => {
+    const clean = cleanText(detail);
+    return { label: cleanText(label), ...(clean ? { detail: clean } : {}), ...(href ? { href } : {}) };
+  });
+  return { ...answer, items, total: items.length };
+}
+
+/** Une page de la réponse (`offset`, `limit`), le total restant celui de la liste complète. */
+export function pageAnswer(answer: DataAnswer, page: { offset?: number; limit: number }): DataAnswer {
+  const offset = page.offset ?? 0;
+  return { ...answer, items: answer.items.slice(offset, offset + page.limit) };
 }

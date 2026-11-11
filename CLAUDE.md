@@ -632,7 +632,10 @@ seule (`ENABLED_MODULES`) :
 - Outils = **questions de données de l'assistant** (`src/app/api/assistant/_data/*`), filtrés par
   la liste blanche `MCP_TOOLS` (`src/app/api/mcp/_tools.ts` : jamais `treasury.*`, jamais `care`)
   et par l'audience des fiches ; refus = même réponse qu'une absence ; `guide_search` en plus.
-  Toute nouvelle question n'entre côté MCP que par cette liste blanche
+  Toute nouvelle question n'entre côté MCP que par cette liste blanche. Une question renvoie sa
+  liste **complète** (`boundedAnswer` nettoie les libellés, ne coupe pas) : la bulle de
+  l'assistant borne à 8 lignes (`dataRunner`), le serveur MCP pagine (`limit` ≤ 100, `offset`,
+  `total` et `nextOffset` toujours rendus). Tous les outils sont en lecture seule
 - Journal sans contenu (`mcp_calls`), 60 appels/min/compte ; révocation par la personne
   (`/profile/assistants`) ou l'Admin d'église ; purge quotidienne (`mcp-maintenance`)
 

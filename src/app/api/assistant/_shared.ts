@@ -1,5 +1,5 @@
 import type { Session } from "next-auth";
-import type { AssistantDataParams, AssistantViewer, DataResult } from "@/core/assistant";
+import { DATA_ANSWER_MAX_ITEMS, isDataRefusal, pageAnswer, type AssistantDataParams, type AssistantViewer, type DataResult } from "@/core/assistant";
 import { ApiError } from "@/lib/api-utils";
 import { getCurrentChurchId, requireAuth, requireSuperAdmin } from "@/lib/auth";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
@@ -19,13 +19,17 @@ export async function currentAssistant() {
   return { session, churchId, viewer };
 }
 
-/** Exécute une question de données des modules actifs ; `null` si elle n'existe pas. */
+/**
+ * Exécute une question de données des modules actifs ; `null` si elle n'existe pas. La bulle
+ * montre au plus `DATA_ANSWER_MAX_ITEMS` lignes, avec le total et le lien vers l'écran complet.
+ */
 export function dataRunner(session: Session, churchId: string, viewer: AssistantViewer) {
   const catalog = dataCatalog();
   return async (key: string, params: AssistantDataParams): Promise<DataResult | null> => {
     const question = catalog.get(key);
     if (!question) return null;
-    return question.run({ session, churchId, viewer, params: question.params.parse(params) });
+    const result = await question.run({ session, churchId, viewer, params: question.params.parse(params) });
+    return isDataRefusal(result) ? result : pageAnswer(result, { limit: DATA_ANSWER_MAX_ITEMS });
   };
 }
 

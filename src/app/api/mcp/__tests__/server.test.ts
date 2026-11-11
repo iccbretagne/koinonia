@@ -10,7 +10,8 @@ vi.mock("@/modules/mcp", () => ({
   recordMcpCall: (...a: unknown[]) => recordMcpCall(...a),
   publicOrigin: () => "https://koinonia.test",
 }));
-vi.mock("@/lib/auth", () => ({ buildSessionForUser: vi.fn(async () => null) }));
+const buildSessionForUser = vi.fn(async (): Promise<unknown> => null);
+vi.mock("@/lib/auth", () => ({ buildSessionForUser: () => buildSessionForUser() }));
 vi.mock("../../assistant/_viewer", () => ({ buildViewer: vi.fn() }));
 vi.mock("../_tools", () => ({
   GUIDE_TOOL: "guide_search",
@@ -66,5 +67,25 @@ describe("serveur MCP", () => {
   it("GET et DELETE : 405 (serveur sans état)", async () => {
     expect(route.GET().status).toBe(405);
     expect(route.DELETE().status).toBe(405);
+  });
+
+  it("instructions : tous les outils en lecture seule, pagination annoncée ; outils marqués readOnlyHint", async () => {
+    verifyAccessToken.mockResolvedValue({ grantId: "g1", userId: "u-ro", churchId: "c1" });
+    buildSessionForUser.mockResolvedValue({ user: { id: "u-ro" } });
+    const rpc = (id: number, method: string, params: Record<string, unknown> = {}) =>
+      route.POST(
+        new Request("https://koinonia.test/api/mcp/server", {
+          method: "POST",
+          headers: { "content-type": "application/json", accept: "application/json, text/event-stream", authorization: "Bearer t" },
+          body: JSON.stringify({ jsonrpc: "2.0", id, method, params }),
+        })
+      );
+    const init = await (
+      await rpc(1, "initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "test", version: "1" } })
+    ).json();
+    expect(init.result.instructions).toContain("Tous les outils sont en lecture seule");
+    expect(init.result.instructions).toContain("nextOffset");
+    const list = await (await rpc(2, "tools/list")).json();
+    for (const tool of list.result.tools) expect(tool.annotations.readOnlyHint, tool.name).toBe(true);
   });
 });

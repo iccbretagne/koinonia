@@ -1,6 +1,6 @@
 import type { Session } from "next-auth";
 import { z } from "zod";
-import { isDataRefusal, type AssistantViewer, type DataAnswer, type DataResult } from "@/core/assistant";
+import { isDataRefusal, pageAnswer, type AssistantViewer, type DataAnswer, type DataResult } from "@/core/assistant";
 import { BUILTIN_ENTRIES, getEngine, inAudience, loadKnowledge } from "@/modules/assistant";
 import { publicOrigin } from "@/modules/mcp";
 import { dataCatalog } from "../assistant/_data-questions";
@@ -37,6 +37,7 @@ export const MCP_TOOLS: Readonly<Record<string, { permissions?: string[] } | nul
   "shuttle.balance": null,
   "audio.recentSermons": { permissions: ["audio:listen"] },
   "reports.recent": { permissions: ["reports:view"] },
+  "reports.get": { permissions: ["reports:view"] },
 };
 
 /** Nom d'outil MCP d'une clé de question : « planning.myNextService » → « planning_myNextService ». */
@@ -44,10 +45,16 @@ export const toolName = (key: string) => key.replace(".", "_");
 
 export const GUIDE_TOOL = "guide_search";
 
+/** Lignes par appel : 50 par défaut, 100 au plus. */
+export const DEFAULT_LIMIT = 50;
+export const MAX_LIMIT = 100;
+
 /** Paramètres communs exposés aux assistants (les questions ignorent ceux qui ne les concernent pas). */
 export const toolInput = z.object({
   day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("Jour visé, AAAA-MM-JJ (heure de Paris)"),
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional().describe("Mois visé, AAAA-MM"),
+  limit: z.number().int().min(1).max(MAX_LIMIT).optional().describe(`Nombre de lignes, ${DEFAULT_LIMIT} par défaut, ${MAX_LIMIT} au plus`),
+  offset: z.number().int().min(0).optional().describe("Lignes à sauter, pour la suite d'une liste (nextOffset du résultat précédent)"),
 });
 
 export const guideInput = z.object({
@@ -78,20 +85,36 @@ export function toolsFor(viewer: AssistantViewer, isActive?: (module: string) =>
 
 export const NO_DATA = "Aucune donnée disponible pour ce compte.";
 
-/** Résultat d'une question en texte lisible + données structurées. Refus = même réponse qu'une absence. */
-export function renderResult(result: DataResult | null): { text: string; structured: Record<string, unknown> } {
+/**
+ * Résultat d'une question en texte lisible + données structurées, une page à la fois (`offset`,
+ * `limit`) avec toujours le total. Refus = même réponse qu'une absence.
+ */
+export function renderResult(
+  result: DataResult | null,
+  page: { offset?: number; limit?: number } = {}
+): { text: string; structured: Record<string, unknown> } {
   if (!result || isDataRefusal(result)) return { text: NO_DATA, structured: { items: [], total: 0 } };
-  const answer = result as DataAnswer;
+  const offset = page.offset ?? 0;
+  const answer: DataAnswer = pageAnswer(result as DataAnswer, { offset, limit: page.limit ?? DEFAULT_LIMIT });
   const link = `${publicOrigin()}${answer.href}`;
+  const end = offset + answer.items.length;
+  const nextOffset = end < answer.total ? end : null;
   const lines = answer.items.map((i) => `- ${i.label}${i.detail ? ` — ${i.detail}` : ""}`);
-  const more = answer.total > answer.items.length ? `\n(${answer.total - answer.items.length} de plus dans Koinonia)` : "";
-  const body = lines.length > 0 ? lines.join("\n") + more : (answer.empty ?? "Rien à afficher.");
+  const partial = answer.items.length > 0 && (offset > 0 || nextOffset !== null);
+  const suite = nextOffset === null ? "." : ` ; suite avec offset=${nextOffset}.`;
+  const range = partial ? `\nLignes ${offset + 1} à ${end} sur ${answer.total}${suite}` : "";
+  let body: string;
+  if (lines.length > 0) body = lines.join("\n") + range;
+  else if (offset > 0 && answer.total > 0) body = `Plus de ligne après la ${answer.total}e (total : ${answer.total}).`;
+  else body = answer.empty ?? "Rien à afficher.";
   return {
     text: `${answer.title}\n${body}\nVoir dans Koinonia : ${link}`,
     structured: {
       title: answer.title,
       items: answer.items.map((i) => ({ label: i.label, detail: i.detail ?? null })),
       total: answer.total,
+      offset,
+      nextOffset,
       link,
     },
   };
@@ -106,7 +129,8 @@ export async function runTool(
   if (!(key in MCP_TOOLS) || !visibleFor(key, ctx.viewer)) return null;
   const question = dataCatalog().get(key);
   if (!question) return null;
-  return question.run({ ...ctx, params: question.params.parse(params) });
+  const { day, month } = params;
+  return question.run({ ...ctx, params: question.params.parse({ day, month }) });
 }
 
 /** Recherche dans le guide : fiches de l'assistant filtrées par audience, sans statistique. */

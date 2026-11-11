@@ -16,6 +16,8 @@ export const runtime = "nodejs";
 const INSTRUCTIONS =
   "Koinonia est l'outil de gestion d'une église (planning de service, événements, demandes, comptabilité). " +
   "Les outils renvoient uniquement ce que la personne connectée voit déjà dans l'application, pour l'église choisie à la connexion. " +
+  "Tous les outils sont en lecture seule : aucun ne modifie Koinonia (déclarer une absence, répondre à un service ou faire une demande se fait dans l'application). " +
+  "Les listes sont paginées : chaque résultat donne le total, et nextOffset s'il reste des lignes (à repasser en offset). " +
   "Réponds en français ; les dates et heures sont à l'heure de Paris. " +
   `Quand un outil répond « ${NO_DATA} », dis-le simplement : n'invente jamais une donnée absente.`;
 
@@ -55,7 +57,7 @@ async function buildServer(caller: McpCaller) {
       async (args) => {
         try {
           const result = await runTool(tool.key, args, ctx);
-          const rendered = renderResult(result);
+          const rendered = renderResult(result, args);
           await log(tool.name, rendered.text === NO_DATA ? "refused" : "answered");
           return { content: [{ type: "text" as const, text: rendered.text }], structuredContent: rendered.structured };
         } catch {

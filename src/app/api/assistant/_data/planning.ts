@@ -30,6 +30,7 @@ import {
   paramsSchema,
   startOfToday,
   today,
+  typeDetail,
   type DataQuestion,
 } from "./common";
 
@@ -441,7 +442,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
   },
   {
     key: "planning.eventsThisWeek",
-    description: "Événements de l'église des 7 prochains jours.",
+    description: "Événements de l'église des 7 prochains jours : date, heure, titre et type (Culte, Prière, Réunion…) quand le titre ne le dit pas déjà.",
     params: paramsSchema,
     async run({ viewer, churchId }) {
       if (!can(viewer, "events:view")) return REFUSED;
@@ -452,7 +453,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
         select: { title: true, date: true, type: true },
         orderBy: { date: "asc" },
       });
-      const items = events.map((e) => ({ label: `${formatDay(e.date)} ${formatTime(e.date)} · ${e.title}`, detail: e.type }));
+      const items = events.map((e) => ({ label: `${formatDay(e.date)} ${formatTime(e.date)} · ${e.title}`, detail: typeDetail(e.title, e.type) }));
       return boundedAnswer({
         title: "Événements de la semaine",
         href: "/events",
@@ -485,19 +486,19 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
           label: `${REQUEST_TYPE_LABEL[type] ?? type} : ${row.count}`,
           detail: row.late > 0 ? `${row.late} en retard` : "Aucune en retard",
         }));
+      // Une ligne par type : le nombre de demandes est dans le titre, pas dans le total des lignes.
       return boundedAnswer({
-        title: "Demandes à traiter",
+        title: queue.open.length > 0 ? `Demandes à traiter (${queue.open.length})` : "Demandes à traiter",
         href: "/secretariat/requests",
         hrefLabel: "Traitement des demandes",
         items,
-        total: queue.open.length,
         empty: "Aucune demande en attente.",
       });
     },
   },
   {
     key: "planning.missingReports",
-    description: "Événements passés des 90 derniers jours, ouverts aux comptes rendus, sans compte rendu.",
+    description: "Événements passés des 90 derniers jours, ouverts aux comptes rendus, sans compte rendu : date et titre, du plus récent au plus ancien.",
     params: paramsSchema,
     async run({ viewer, churchId }) {
       if (!can(viewer, "reports:view")) return REFUSED;

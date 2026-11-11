@@ -169,6 +169,7 @@ Exclus : `treasury.*` (comptes de trésorerie, exclus par la spec).
 Ajoutés (dans `src/app/api/assistant/_data/`, donc aussi disponibles pour l'assistant) :
 `audio.recentSermons` (cultes publiés :
 titre, date, orateur — `audio:listen`), `reports.recent` (comptes rendus récents, `reports:view`),
+`reports.get` (contenu d'un compte rendu, `reports:view` — ajouté après la recette),
 et l'outil `guide_search` (fiches de l'assistant filtrées par audience, via le moteur existant).
 
 ### Outils du lot 2 (écriture, confirmation)
@@ -267,6 +268,35 @@ Chaque route a son `contract.ts` ; `npm run openapi`.
   peut pas se faire passer pour un autre par son seul nom) ; purge des assistants enregistrés
   sans connexion après 7 jours (`mcp-maintenance`).
 - **Questions ajoutées** dans `src/app/api/assistant/_data/audio-reports.ts` :
-  `audio.recentSermons`, `reports.recent` (jamais les notes ni les décisions d'un compte rendu).
-- Les réponses sont bornées à 8 lignes par question (même limite que l'assistant), avec le total
-  et le lien vers l'écran.
+  `audio.recentSermons`, `reports.recent` (événement, orateur, titre du message).
+
+## Retours de recette (lot 1)
+
+Constats faits en connectant Claude à la recette, vérifiés dans le code :
+
+1. **`reports_recent` sans orateur ni titre** (« dim. 25 oct. · Culte » suivi d'un espace) : la
+   requête lit bien `speaker` et `messageTitle` ; ils étaient vides en base. Le détail dit
+   désormais « Orateur et titre du message non renseignés » (ou le champ manquant seul).
+2. **Contenu d'un compte rendu** : nouvelle question `reports.get` (outil `reports_get`,
+   `reports:view`, comme l'écran) — le compte rendu du jour `day`, sinon le plus récent :
+   orateur, message, une ligne par département (statistiques via `src/lib/report-stats.ts`,
+   extrait de l'export pour être utilisable sans jsPDF, et remarques), observations générales,
+   décisions. Texte libre passé par `anonymize`. Seuls les événements `reportEnabled` comptent,
+   comme l'écran.
+3. **Listes tronquées à 8** : `boundedAnswer` coupait toutes les questions. Il ne coupe plus ; la
+   bulle de l'assistant borne à 8 (`dataRunner`), le serveur MCP pagine (`limit` 50 par défaut,
+   100 au plus, `offset`) et renvoie toujours `total` et `nextOffset`. La file du secrétariat
+   donnait un « total » de demandes pour des lignes par type (faux « N de plus ») : le nombre de
+   demandes passe dans le titre.
+4. **Mise en forme** : « Culte  » venait du titre saisi avec un espace final, « CULTE » de
+   l'énumération brute `Event.type`. `boundedAnswer` nettoie désormais chaque libellé et détail
+   (espaces de bord et multiples) et retire un détail vide ; le type est affiché en clair
+   (`getEventTypeLabel`), et omis quand le titre commence déjà par lui. « Culte du 13/09/2026 »
+   est un titre saisi tel quel.
+5. **Lecture seule** : les instructions du serveur l'énoncent explicitement, comme
+   `readOnlyHint` sur chaque outil.
+
+**Candidats à l'écriture** (lot 2, non implémentés, toujours en deux temps aperçu → confirmation) :
+déclarer une indisponibilité (absence sur une période ou des événements), répondre à un service
+(disponible / indisponible), créer une demande en brouillon. Pistes notées pour plus tard, hors
+spec actuelle : signaler un retrait de service, saisir l'orateur et le titre d'un compte rendu.

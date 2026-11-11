@@ -123,6 +123,18 @@
       enregistrement → autorisation (Playwright) → `tools/list` → `tools/call`
 - [x] **T34** — Revue de sécurité du lot 1 (OAuth, fuites, CSRF, redirections) et corrections
 
+### 8. Retours de recette
+
+- [x] **T34b** — `reports.recent` : « non renseigné » pour un orateur ou un titre vide
+- [x] **T34c** — `reports.get` / outil `reports_get` (`reports:view`, jour ou plus récent,
+      sections via `src/lib/report-stats.ts`, `anonymize`)
+- [x] **T34d** — Plus de troncature dans `boundedAnswer` : 8 lignes dans la bulle, pagination
+      `limit`/`offset` côté MCP avec `total` et `nextOffset`
+- [x] **T34e** — Libellés nettoyés, type d'événement en clair, total juste pour la file du
+      secrétariat
+- [x] **T34f** — Instructions du serveur : lecture seule et pagination ; candidats à l'écriture
+      listés dans `plan.md`
+
 ## Lot 2 — actions avec confirmation (après validation du lot 1)
 
 - [ ] **T35** — Jeton de confirmation (5 min, usage unique, lié au compte, à l'église et aux
