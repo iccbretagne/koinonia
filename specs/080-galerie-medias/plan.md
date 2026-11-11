@@ -1,7 +1,7 @@
 # Plan technique — Galerie médias
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-11-11
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
@@ -207,8 +207,7 @@ Intégration :
 - **Choix** : visuels = `APPROVED` **et** `FINAL_APPROVED` (`APPROVED_FILE_STATUSES`). —
   *Pourquoi* : c'est la définition de « visuel validé » déjà appliquée par tous les partages
   (collection, téléchargement) ; un visuel approuvé par le lien de validation (`APPROVED`)
-  sans passage en finale serait sinon partageable mais absent de la galerie. **Écart avec la
-  spec** (« approuvés définitivement ») à valider.
+  sans passage en finale serait sinon partageable mais absent de la galerie. Validé le 2026-11-11, spec amendée.
 - **Choix** : accès nominatif dans une table dédiée, pas un rôle. — *Pourquoi* : la spec veut
   un accès à une seule fonction, daté, donné par un Ministre ; un rôle d'église serait trop
   large et hors de portée du Ministre (`canGrantRole`).

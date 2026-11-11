@@ -71,8 +71,8 @@ retire sans lien à entretenir.
 ### Ce qui apparaît dans la galerie
 
 - **Photos** approuvées, quel que soit l'événement (y compris archivé).
-- **Visuels** approuvés définitivement, quel que soit le projet ou l'événement, dans leur
-  **dernière version**.
+- **Visuels** validés (approuvés, ou approuvés définitivement — la même définition que les
+  liens de partage), quel que soit le projet ou l'événement, dans leur **dernière version**.
 - Jamais : une photo en attente, pré-validée, écartée ou rejetée ; un visuel en brouillon, en
   révision ou rejeté. Ces médias restent dans les écrans de l'événement ou du projet.
 - Un média supprimé, ou dont l'événement ou le projet est supprimé, disparaît de la galerie.
@@ -111,7 +111,7 @@ retire sans lien à entretenir.
       Photos, Production Média, Communication, leur Ministre, Admin, Secrétaire, Super Admin et
       les personnes ayant un accès nominatif valide — et pour personne d'autre.
 - [ ] L'adresse directe de la galerie est refusée à toute personne sans droit.
-- [ ] La galerie ne montre que les photos approuvées et les visuels approuvés définitivement
+- [ ] La galerie ne montre que les photos approuvées et les visuels validés (approuvés ou approuvés définitivement)
       (dernière version) de l'église courante.
 - [ ] La grille est regroupée par mois, triable par date dans les deux sens, et se charge au
       défilement.
@@ -145,4 +145,5 @@ Tranchées le 2026-11-11 :
 
 - Date d'un visuel pour le tri et les filtres : date de **dépôt** de sa dernière version.
 - Équipes réparties dans plusieurs ministères : **chacun** de leurs Ministres donne l'accès.
+- Visuels : « validés » = approuvés **ou** approuvés définitivement, comme les partages.
 - Accès nominatif : **téléchargement** autorisé (haute définition et archive), sans partage.
