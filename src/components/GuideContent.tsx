@@ -210,7 +210,7 @@ const FEATURES: Feature[] = [
   // ── Absences ─────────────────────────────────────────────────────────────
   {
     name: "Photos et visuels (Communication & Production)",
-    description: "L'espace « Communication & Production » regroupe les photos d'événements, les projets de visuels et leurs demandes, et les demandes réseaux sociaux, selon votre équipe. « Partager une sélection » crée un lien de partage ; le bouton « Partages » liste les liens actifs et permet de les révoquer.",
+    description: "L'espace « Communication & Production » regroupe les photos d'événements, les projets de visuels et leurs demandes, et les demandes réseaux sociaux, selon votre équipe. « Partager une sélection » crée un lien de partage ; le bouton « Partages » liste les liens actifs et permet de les révoquer. La carte « Galerie » rassemble toutes les photos et tous les visuels validés, par mois, avec des filtres (type, période, événement ou projet, recherche), une visionneuse et le téléchargement d'une sélection ; l'Admin ou le Ministre des équipes média peut y donner accès à une personne précise (« Accès »), en lecture et téléchargement, avec une date de fin facultative.",
     category: "Demandes",
     screenshotTitle: "Communication & Production",
     screenshotFile: "guide-media.png",

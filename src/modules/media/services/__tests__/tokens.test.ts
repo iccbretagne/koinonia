@@ -42,6 +42,21 @@ describe("collectionPhotoWhere", () => {
   it("retourne {} (aucun filtre) quand includeAllPhotos vaut true", () => {
     expect(collectionPhotoWhere({ ...baseConfig, includeAllPhotos: true })).toEqual({});
   });
+
+  it("sélection fine (spec 080) : limite aux photos choisies", () => {
+    expect(collectionPhotoWhere({ ...baseConfig, photoIds: ["p-1"] })).toEqual({ status: "APPROVED", id: { in: ["p-1"] } });
+  });
+});
+
+describe("resolveCollectionData — sélection fine (spec 080)", () => {
+  it("les visuels sont limités à `fileIds` quand la collection en a", async () => {
+    prismaMock.mediaProject.findMany.mockResolvedValue([] as never);
+    await resolveCollectionData({ id: "t", type: "COLLECTION", label: null, config: { scope: "files", eventIds: [], projectIds: ["prj-1"], fileIds: ["f-1"] } } as never);
+    expect(prismaMock.mediaProject.findMany.mock.calls.at(-1)?.[0].include.files.where).toEqual({
+      status: { in: ["APPROVED", "FINAL_APPROVED"] },
+      id: { in: ["f-1"] },
+    });
+  });
 });
 
 function projectFile(id: string, status: string) {

@@ -1,7 +1,7 @@
 # Spec — Galerie médias
 
 - **Numéro** : 080
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-11-11
 - **Branche suggérée** : `feat/galerie-medias`
 

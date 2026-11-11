@@ -48,6 +48,16 @@ export async function POST(request: Request) {
       }
     }
 
+    // Sélection fine (spec 080) : chaque élément doit appartenir aux sources fournies.
+    if (data.photoIds?.length) {
+      const n = await prisma.mediaPhoto.count({ where: { id: { in: data.photoIds }, mediaEventId: { in: data.eventIds } } });
+      if (n !== new Set(data.photoIds).size) throw new ApiError(400, "Certaines photos sont hors des événements choisis");
+    }
+    if (data.fileIds?.length) {
+      const n = await prisma.mediaFile.count({ where: { id: { in: data.fileIds }, mediaProjectId: { in: data.projectIds } } });
+      if (n !== new Set(data.fileIds).size) throw new ApiError(400, "Certains visuels sont hors des projets choisis");
+    }
+
     const token = await createMediaShareToken({
       churchId: data.churchId,
       type: "COLLECTION",
@@ -58,6 +68,8 @@ export async function POST(request: Request) {
         eventIds: data.eventIds,
         projectIds: data.projectIds,
         includeAllPhotos: data.includeAllPhotos,
+        ...(data.photoIds ? { photoIds: data.photoIds } : {}),
+        ...(data.fileIds ? { fileIds: data.fileIds } : {}),
       },
     });
 
@@ -73,6 +85,8 @@ export async function POST(request: Request) {
         eventIds: data.eventIds,
         projectIds: data.projectIds,
         includeAllPhotos: data.includeAllPhotos ?? false,
+        ...(data.photoIds ? { photoCount: data.photoIds.length } : {}),
+        ...(data.fileIds ? { fileCount: data.fileIds.length } : {}),
       },
     });
 

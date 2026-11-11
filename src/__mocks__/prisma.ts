@@ -71,6 +71,7 @@ export const prismaMock = {
   mediaFile: createModelMock(),
   mediaFileVersion: createModelMock(),
   mediaPhoto: createModelMock(),
+  mediaGalleryGrant: createModelMock(),
   mediaShareToken: createModelMock(),
   mediaSettings: createModelMock(),
   msdpFollowUp: createModelMock(),

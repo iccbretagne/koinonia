@@ -588,6 +588,7 @@ const SUBPAGE_LABELS: Record<string, string> = {
   production: "Production",
   events: "Photos",
   projects: "Projets",
+  galerie: "Galerie",
   requests: "Demandes",
   notifications: "Notifications",
   functions: "Fonctions",

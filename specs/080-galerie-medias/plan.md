@@ -269,3 +269,17 @@ Vitest, mocks Prisma comme les tests média existants :
 - `media-space.test.ts` : carte Galerie en 4e position, redirection si seule carte.
 - Vérification manuelle (Playwright, script de scratchpad) : mobile 390 px clair/sombre,
   défilement, visionneuse au doigt, sélection + ZIP, accès nominatif de bout en bout.
+
+## Écarts à l'implémentation
+
+- **Recherche de comptes** pour l'accès nominatif : route dédiée
+  `GET /api/media/library/grants/users` (même garde que les accès), plutôt qu'une route de
+  recherche existante — aucune n'était limitée aux comptes de l'église sans droit plus large.
+- **Visuels rangés dans un événement** : visibles et téléchargeables dans la galerie, mais pas
+  partageables par lien (les collections ne portent que des visuels de projet) ; l'écran de
+  partage le signale et les retire du lien.
+- **Visionneuse partagée** : elle n'ajoute pas de piège de focus complet ; le focus va au
+  bouton Fermer à l'ouverture, Échap ferme, ← → naviguent (comme la visionneuse existante).
+- **Navigation** : le libellé « Galerie » est ajouté aux sous-pages du fil d'Ariane
+  (`SUBPAGE_LABELS`, `src/lib/navigation.ts`).
+- **Assistant** : prédicat `mediaGallery` (même règle que la garde) et fiche KB-110.

@@ -868,10 +868,26 @@ Tokens de partage sans authentification. Donne accès à un événement ou un pr
 | `mediaEventId` | String? | Ref vers `media_events` (exclusif avec `mediaProjectId`, cascade delete) |
 | `mediaProjectId` | String? | Ref vers `media_projects` (exclusif avec `mediaEventId`, cascade delete) |
 | `expiresAt` | DateTime? | Expiration (null = illimité) |
-| `config` | Json? | Paramètres du partage (sélection, sources d'une collection) |
+| `config` | Json? | Paramètres du partage (sélection, sources d'une collection ; `photoIds`/`fileIds` facultatifs limitent une collection aux médias choisis dans la galerie, spec 080) |
 | `lastUsedAt` | DateTime? | Dernière utilisation |
 | `usageCount` | Int | Nombre d'utilisations (default: 0) |
 | `createdAt` | DateTime | Date de création |
+
+#### `media_gallery_grants`
+
+Accès nominatifs à la galerie médias (spec 080) : parcourir et télécharger, sans partager.
+Donnés par un Admin ou un Ministre d'un ministère qui porte une équipe Photos, Production Média
+ou Communication ; valides tant que `expiresAt` est nul ou futur (évalué à la lecture, sans
+tâche planifiée). Historique dans `audit_logs` (`entityType: "MediaGalleryGrant"`).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` (cascade delete) |
+| `userId` | String | Ref vers `users`, personne autorisée (cascade delete) ; unique avec `churchId` |
+| `grantedById` | String? | Ref vers `users`, dernière personne ayant donné ou prolongé l'accès (set null) |
+| `expiresAt` | DateTime? | Fin de l'accès (null = sans date de fin) |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
 
 #### `media_zip_jobs`
 

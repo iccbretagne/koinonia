@@ -162,7 +162,7 @@ async function serviceTeamLinks(
       function: { in: ["SECRETARIAT", "COMMUNICATION", "PRODUCTION_MEDIA", "PROTOCOLE", "PHOTOS"] },
       ministry: { churchId: currentChurchId },
     },
-    select: { id: true, function: true },
+    select: { id: true, function: true, ministryId: true },
   });
   const userDeptIds = currentDepartmentIds(churchRoles, currentChurchId);
   const isInTeam = (fn: string) => serviceDepts.some((d) => d.function === fn && userDeptIds.has(d.id));
@@ -181,12 +181,20 @@ async function serviceTeamLinks(
   const isPhotoMember = hasPhotoDepts ? isMemberOf("PHOTOS") : isMemberOf("PRODUCTION_MEDIA");
   const isVisualMember = isMemberOf("PRODUCTION_MEDIA");
   const isCommMember = isMemberOf("COMMUNICATION");
+  // Ministre d'un ministère qui porte une équipe média (spec 080, même règle que `isMediaMinister`).
+  const ministerMinistryIds = new Set(
+    churchRoles.filter((r) => r.churchId === currentChurchId && r.role === "MINISTER" && r.ministryId).map((r) => r.ministryId)
+  );
+  const isMediaMinister = serviceDepts.some(
+    (d) => ["PHOTOS", "PRODUCTION_MEDIA", "COMMUNICATION"].includes(d.function ?? "") && ministerMinistryIds.has(d.ministryId)
+  );
   const mediaSpaceAccess: MediaSpaceAccess = {
     photos: userPermissions.has("media:view") || isPhotoMember || isCommMember,
     visuals: userPermissions.has("media:view") || isVisualMember || isCommMember,
     visualRequests: isGlobalManager || isVisualMember,
     social: isGlobalManager || isCommMember,
     share: userPermissions.has("media:manage") || isPhotoMember || isVisualMember || isCommMember,
+    gallery: userPermissions.has("media:view") || isPhotoMember || isVisualMember || isCommMember || isMediaMinister,
   };
   if (buildMediaSpaceCards(mediaSpaceAccess).length > 0) {
     mediaLinks.push({
@@ -228,7 +236,8 @@ async function requestAndMediaLinks(
   churchRoles: ChurchRoles,
   currentChurchId: string | null | undefined,
   userPermissions: Set<string>,
-  isSuperAdmin: boolean
+  isSuperAdmin: boolean,
+  userId: string
 ) {
   const requestLinks: NavLink[] = [];
   const mediaLinks: (NavLink & { matchPrefixes?: string[] })[] = [];
@@ -242,6 +251,18 @@ async function requestAndMediaLinks(
     requestLinks.push(...teamLinks.requestLinks);
     mediaLinks.push(...teamLinks.mediaLinks);
     isProtocoleMember = teamLinks.isProtocoleMember;
+  }
+  // Accès nominatif à la galerie (spec 080) : seule voie vers l'espace pour un compte sans
+  // équipe média — une requête, seulement si le lien n'est pas déjà là.
+  const hasChurchRole = churchRoles.some((r) => r.churchId === currentChurchId);
+  if (currentChurchId && hasChurchRole && !mediaLinks.some((l) => l.href === "/media")) {
+    const grant = await prisma.mediaGalleryGrant.findUnique({
+      where: { churchId_userId: { churchId: currentChurchId, userId } },
+      select: { expiresAt: true },
+    });
+    if (grant && (grant.expiresAt === null || grant.expiresAt > new Date())) {
+      mediaLinks.unshift({ href: "/media", label: "Communication & Production", matchPrefixes: ["/media", "/communication"] });
+    }
   }
   // Lien "Audio" (spec 021 : un seul lien, onglets à droits distincts derrière)
   if (currentChurchId && userPermissions.has("audio:listen")) {
@@ -432,7 +453,8 @@ export default async function AuthLayout({
     churchRoles,
     currentChurchId,
     userPermissions,
-    session.user.isSuperAdmin
+    session.user.isSuperAdmin,
+    session.user.id
   );
 
   // ── Section "Intégration familles" ──────────────────────────────────────────

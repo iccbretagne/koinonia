@@ -118,5 +118,37 @@ describe("routes ZIP des partages", () => {
       const res = await collectionZip(post(), { params });
       await expect(readBody(res)).rejects.toThrow("finalize failed");
     });
+
+    it("sélection fine (spec 080) : visuels limités à `fileIds`, en plus de ceux demandés", async () => {
+      mockValidateMediaShareToken.mockResolvedValue({
+        type: "COLLECTION",
+        label: "Sélection",
+        config: { scope: "files", eventIds: [], projectIds: ["prj-1"], fileIds: ["f-1", "f-2"] },
+      });
+      prismaMock.mediaProject.findMany.mockResolvedValue([
+        { id: "prj-1", name: "Affiches", files: [{ filename: "f1.png", versions: [{ originalKey: "k/f1" }] }] },
+      ] as never);
+      const res = await collectionZip(new Request("http://localhost", { method: "POST", body: JSON.stringify({ fileIds: ["f-1"] }) }), { params });
+      await readBody(res);
+      const where = prismaMock.mediaProject.findMany.mock.calls[0][0].select.files.where;
+      expect(where.AND).toEqual([
+        { status: { in: ["APPROVED", "FINAL_APPROVED"] } },
+        { id: { in: ["f-1", "f-2"] } },
+        { id: { in: ["f-1"] } },
+      ]);
+      expect(appended).toEqual(["Affiches/f1.png"]);
+    });
+
+    it("sans sélection fine : comportement inchangé (statut seul)", async () => {
+      mockValidateMediaShareToken.mockResolvedValue({
+        type: "COLLECTION",
+        label: "Tout",
+        config: { scope: "files", eventIds: [], projectIds: ["prj-1"] },
+      });
+      prismaMock.mediaProject.findMany.mockResolvedValue([] as never);
+      await collectionZip(post(), { params });
+      const where = prismaMock.mediaProject.findMany.mock.calls[0][0].select.files.where;
+      expect(where.AND).toEqual([{ status: { in: ["APPROVED", "FINAL_APPROVED"] } }]);
+    });
   });
 });

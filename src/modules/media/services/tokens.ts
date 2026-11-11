@@ -21,11 +21,25 @@ export interface CollectionConfig {
   projectIds: string[];
   /** Défaut absent = faux = photos validées uniquement. */
   includeAllPhotos?: boolean;
+  /**
+   * Sélection fine (spec 080, partage depuis la galerie) : si présente, seules ces photos /
+   * ces visuels sont visibles et téléchargeables. Absente = événements et projets entiers.
+   */
+  photoIds?: string[];
+  fileIds?: string[];
 }
 
 /** Filtre Prisma des photos d'une collection selon son périmètre. */
 export function collectionPhotoWhere(config: CollectionConfig): Prisma.MediaPhotoWhereInput {
-  return config.includeAllPhotos ? {} : { status: "APPROVED" };
+  return {
+    ...(config.includeAllPhotos ? {} : { status: "APPROVED" as const }),
+    ...(config.photoIds ? { id: { in: config.photoIds } } : {}),
+  };
+}
+
+/** Vrai si un visuel fait partie de la sélection fine de la collection (ou s'il n'y en a pas). */
+export function isCollectionFileSelected(config: CollectionConfig, fileId: string): boolean {
+  return !config.fileIds || config.fileIds.includes(fileId);
 }
 
 interface CreateTokenOptions {
@@ -269,7 +283,10 @@ export async function resolveCollectionData(
       orderBy: { createdAt: "desc" },
       include: {
         files: {
-          where: { status: { in: ["APPROVED", "FINAL_APPROVED"] } },
+          where: {
+            status: { in: ["APPROVED", "FINAL_APPROVED"] },
+            ...(config.fileIds ? { id: { in: config.fileIds } } : {}),
+          },
           orderBy: { createdAt: "asc" },
           select: {
             id: true,
