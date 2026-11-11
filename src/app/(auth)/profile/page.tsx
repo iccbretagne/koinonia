@@ -10,7 +10,7 @@ import { registry } from "@/lib/registry";
 import Alert from "@/components/ui/Alert";
 import PageHeader from "@/components/ui/PageHeader";
 import StatusChip from "@/components/ui/StatusChip";
-import { Bell, ChevronRight, Clock, FileText, Link2 } from "lucide-react";
+import { Bell, Bot, ChevronRight, Clock, FileText, Link2 } from "lucide-react";
 import { getOwnApplication } from "@/modules/serving";
 
 /** Section de la page profil : titre `title-md` puis contenu sur une carte. */
@@ -156,6 +156,16 @@ export default async function ProfilePage() {
           <span className="flex-1">Mes notifications</span>
           <ChevronRight aria-hidden="true" className="size-4 text-ink-subtle" strokeWidth={1.75} />
         </Link>
+        {registry.has("mcp") && (
+          <Link
+            href="/profile/assistants"
+            className="-mx-2 flex min-h-11 items-center gap-3 rounded-control px-2 text-[15px] font-semibold text-ink transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-focus"
+          >
+            <Bot aria-hidden="true" className="size-5 text-ink-subtle" strokeWidth={1.75} />
+            <span className="flex-1">Assistants IA connectés</span>
+            <ChevronRight aria-hidden="true" className="size-4 text-ink-subtle" strokeWidth={1.75} />
+          </Link>
+        )}
       </ProfileSection>
 
       {/* Apparence (spec 055) — préférence stockée dans le navigateur */}

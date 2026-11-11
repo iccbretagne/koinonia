@@ -165,6 +165,7 @@ fenêtre parasite.
 | # | Fichier | Fonction | Compte | URL | Avant la capture |
 |---|---|---|---|---|---|
 | 37 | `guide-profile.png` | Profil & liaison STAR | `star` | `/profile` | — |
+| 37b | `guide-assistants.png` | Connecter mon assistant IA (MCP) | `star` | `/profile/assistants` | fonction activée pour l'instance et l'église |
 
 ### Salles (2)
 

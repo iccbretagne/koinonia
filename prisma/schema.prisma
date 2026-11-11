@@ -83,6 +83,8 @@ model Church {
   mediaSettings                  MediaSettings?
   mediaShareTokens               MediaShareToken[]
   mediaGalleryGrants             MediaGalleryGrant[]
+  mcpGrants                      McpGrant[]
+  mcpSettings                    McpChurchSettings?
   // Module agenda
   pastoralProfiles               PastoralProfile[]               @relation("ChurchPastoralProfiles")
   appointmentRequests            AppointmentRequest[]
@@ -216,6 +218,7 @@ model User {
   mediaProjectsCreated              MediaProject[]                @relation("MediaProjectCreator")
   mediaGalleryGrants                MediaGalleryGrant[]           @relation("MediaGalleryGrantee")
   mediaGalleryGrantsGiven           MediaGalleryGrant[]           @relation("MediaGalleryGrantor")
+  mcpGrants                         McpGrant[]                    @relation("McpGrantUser")
   mediaFileVersions                 MediaFileVersion[]            @relation("MediaFileVersionCreator")
   mediaComments                     MediaComment[]                @relation("MediaCommentAuthor")
   // Module agenda
@@ -3984,4 +3987,102 @@ model AssistantEmbedding {
 
   @@id([hash, model])
   @@map("assistant_embeddings")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MODULE MCP — connexion des assistants IA (spec 081, ADR-0029)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum McpTokenKind {
+  CODE
+  ACCESS
+  REFRESH
+}
+
+/// Client OAuth enregistré dynamiquement (RFC 7591) : un assistant IA. Client public, sans secret.
+model McpClient {
+  id           String     @id @default(cuid())
+  clientId     String     @unique @db.VarChar(64)
+  name         String     @db.VarChar(200)
+  /// URI de redirection exactes (https, ou boucle locale).
+  redirectUris Json
+  createdAt    DateTime   @default(now())
+  grants       McpGrant[]
+
+  @@map("mcp_clients")
+}
+
+/// Connexion d'un assistant : un compte, une église, un client. Révoquée = `revokedAt` posé.
+model McpGrant {
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation("McpGrantUser", fields: [userId], references: [id], onDelete: Cascade)
+  churchId    String
+  church      Church     @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  clientId    String
+  client      McpClient  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  scope       String     @db.VarChar(100)
+  createdAt   DateTime   @default(now())
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+  revokedById String?
+  tokens      McpToken[]
+
+  @@index([userId])
+  @@index([churchId])
+  @@index([clientId])
+  @@map("mcp_grants")
+}
+
+/// Code d'autorisation, jeton d'accès ou de rafraîchissement : seule l'empreinte SHA-256 est stockée.
+model McpToken {
+  id            String       @id @default(cuid())
+  grantId       String
+  grant         McpGrant     @relation(fields: [grantId], references: [id], onDelete: Cascade)
+  kind          McpTokenKind
+  hash          String       @unique @db.Char(64)
+  codeChallenge String?      @db.VarChar(128)
+  redirectUri   String?      @db.VarChar(500)
+  expiresAt     DateTime
+  usedAt        DateTime?
+  createdAt     DateTime     @default(now())
+
+  @@index([grantId])
+  @@index([expiresAt])
+  @@map("mcp_tokens")
+}
+
+/// Interrupteur d'instance (Super Admin) : ligne unique `singleton`, absente = coupé.
+model McpSettings {
+  id        String   @id @default("singleton")
+  enabled   Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+
+  @@map("mcp_settings")
+}
+
+/// Interrupteur par église (Admin d'église) : absent = coupé (spec 081).
+model McpChurchSettings {
+  churchId  String   @id
+  church    Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  enabled   Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+
+  @@map("mcp_church_settings")
+}
+
+/// Journal des appels d'outils, sans contenu (compte, église, outil, issue, date).
+model McpCall {
+  id        String   @id @default(cuid())
+  grantId   String
+  userId    String
+  churchId  String
+  tool      String   @db.VarChar(100)
+  outcome   String   @db.VarChar(20)
+  createdAt DateTime @default(now())
+
+  @@index([churchId, createdAt])
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@map("mcp_calls")
 }

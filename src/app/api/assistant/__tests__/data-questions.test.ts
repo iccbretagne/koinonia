@@ -42,6 +42,9 @@ vi.mock("@/modules/planning", () => ({
   resolveRequestQueueAccess: vi.fn(async () => ({ allowed: true })),
 }));
 vi.mock("@/modules/ticketing", () => ({ listAssignmentsForUser: vi.fn(async () => []) }));
+vi.mock("@/modules/audio", () => ({
+  listPublishedServices: vi.fn(async () => [{ title: "Culte de rentrée", serviceDate: new Date("2026-11-01T10:00:00Z"), speaker: "Pasteur A", series: null }]),
+}));
 vi.mock("@/modules/shuttle", () => ({
   getShuttleAccess: vi.fn(async () => ({ manager: false, member: false })),
   currentBalance: vi.fn(async () => 120),
@@ -82,6 +85,7 @@ function stubDatabase() {
     { label: `Achat ${SECRET}`, amount: 40, status: "SUBMITTED", department: { name: "Son" }, payments: [] },
   ]);
   prismaMock.financialPayment.findMany.mockResolvedValue([{ amount: 40, scheduledDate: future, request: { label: `Achat ${SECRET}` } }]);
+  prismaMock.eventReport.findMany.mockResolvedValue([{ speaker: "Pasteur A", messageTitle: "La paix", event: { title: "Culte", date: future } }]);
 }
 
 const FULL = viewerFor("SUPER_ADMIN", { predicates: ["linkedStar", "pastoral"] });
@@ -110,10 +114,21 @@ describe("catalogue des questions de données (spec 075)", () => {
   it("refuse sans aucune donnée à un compte qui n'a pas l'écran", async () => {
     const star = viewerFor("STAR");
     for (const key of catalog.keys()) {
-      if (key === "ticketing.myAssignments" || key === "planning.secretariatPending") continue;
+      // Ouvertes au STAR : ses propres affectations, la file du secrétariat (prédicat),
+      // la bibliothèque d'écoute (`audio:listen`, tous les rôles).
+      if (key === "ticketing.myAssignments" || key === "planning.secretariatPending" || key === "audio.recentSermons") continue;
       const result = await run(key, star);
       expect(isDataRefusal(result), key).toBe(true);
     }
+  });
+
+  it("cultes publiés et comptes rendus : refusés sans le droit de l'écran (spec 081)", async () => {
+    const nobody = { ...viewerFor("STAR"), permissions: [] };
+    expect(isDataRefusal(await run("audio.recentSermons", nobody))).toBe(true);
+    expect(isDataRefusal(await run("reports.recent", nobody))).toBe(true);
+    const reports = await run("reports.recent", FULL);
+    expect(JSON.stringify(reports)).toContain("La paix");
+    expect(prismaMock.eventReport.findMany.mock.calls[0][0].select).not.toHaveProperty("notes");
   });
 
   it("ne recopie jamais un email, un téléphone, un IBAN ni un lien", async () => {

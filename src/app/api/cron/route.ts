@@ -96,6 +96,12 @@ async function runJustificationReminders() {
   return run();
 }
 
+/** Assistants IA (spec 081) : purge des jetons expirés et du journal de plus de 12 mois. */
+async function runMcpMaintenance() {
+  const { runMcpMaintenance: run } = await import("@/modules/mcp");
+  return run();
+}
+
 function authorizeCron(request: Request) {
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
@@ -412,6 +418,8 @@ function cronTasks(appUrl: string): CronTask[] {
     { key: "assistant-digest", module: "assistant", schedule: { kind: "interval", minutes: 7 * 24 * 60 }, run: runAssistantDigest },
     // Justificatifs après la remise des fonds (spec 078) : idempotente (échéance prise de façon atomique).
     { key: "accounting-justifications", module: "accounting", schedule: { kind: "interval", minutes: 60 }, run: runJustificationReminders },
+    // Assistants IA (spec 081) : jetons expirés et journal ancien, une fois par jour.
+    { key: "mcp-maintenance", module: "mcp", schedule: { kind: "daily", hour: 3 }, run: runMcpMaintenance },
   ];
   return tasks.filter((t) => !t.module || registry.has(t.module));
 }

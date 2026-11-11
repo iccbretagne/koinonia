@@ -1,7 +1,7 @@
 # Plan technique — Connecter un assistant IA à Koinonia (serveur MCP)
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-11-11
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
@@ -250,3 +250,23 @@ Chaque route a son `contract.ts` ; `npm run openapi`.
 - Écrans : révocation par le propriétaire et par l'Admin d'église (autre église : 404).
 - Bout en bout : client MCP de la bibliothèque officielle contre le serveur local
   (découverte → enregistrement → autorisation via Playwright → appel d'outil).
+
+## Écarts à l'implémentation (lot 1)
+
+- **Adresse du serveur** : `/api/mcp/server` (et non `/api/mcp`) : `/api/mcp` reste le préfixe
+  des routes internes à session (connexions, réglages) ; le serveur et les points d'entrée OAuth
+  (`/api/mcp/oauth/*`) sont des préfixes publics, authentifiés dans le route handler.
+- **Décision d'autorisation en `fetch`** : un formulaire classique est bloqué par la règle CSP
+  `form-action` au moment de la redirection vers l'assistant ; l'écran envoie la décision en
+  arrière-plan (même origine, en-tête `Origin` obligatoire) et navigue vers l'adresse renvoyée.
+- **Retour après connexion** : la page de connexion accepte `?next=` seulement vers
+  `/mcp/autoriser?…` ; l'autorisation sans session y renvoie.
+- **Session reconstruite** : `buildSessionForUser` (nom final) partage `fillSessionUser` avec le
+  callback NextAuth.
+- **Écran d'autorisation** : affiche l'hôte de l'adresse de retour (un assistant malveillant ne
+  peut pas se faire passer pour un autre par son seul nom) ; purge des assistants enregistrés
+  sans connexion après 7 jours (`mcp-maintenance`).
+- **Questions ajoutées** dans `src/app/api/assistant/_data/audio-reports.ts` :
+  `audio.recentSermons`, `reports.recent` (jamais les notes ni les décisions d'un compte rendu).
+- Les réponses sont bornées à 8 lignes par question (même limite que l'assistant), avec le total
+  et le lien vers l'écran.

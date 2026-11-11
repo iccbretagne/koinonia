@@ -873,6 +873,20 @@ Tokens de partage sans authentification. Donne accès à un événement ou un pr
 | `usageCount` | Int | Nombre d'utilisations (default: 0) |
 | `createdAt` | DateTime | Date de création |
 
+#### Module MCP — assistants IA (spec 081, ADR-0029)
+
+Koinonia est serveur d'autorisation OAuth 2.1 pour ses propres connexions MCP. Aucun jeton n'est
+stocké en clair : seule son empreinte SHA-256.
+
+| Table | Rôle |
+|---|---|
+| `mcp_clients` | Assistants enregistrés dynamiquement (RFC 7591) : `clientId`, nom déclaré, `redirectUris` exactes (https ou boucle locale). Clients publics, sans secret ; supprimés après 7 jours s'ils n'ont aucune connexion |
+| `mcp_grants` | Connexion = un compte (`userId`), une église (`churchId`), un client ; `scope` (`read`), `lastUsedAt`, `revokedAt`/`revokedById` |
+| `mcp_tokens` | `kind` `CODE` (5 min, PKCE `codeChallenge`, `redirectUri`), `ACCESS` (1 h) ou `REFRESH` (90 jours, rotation) ; `hash` unique, `usedAt` pour l'usage unique (rejeu ⇒ connexion révoquée) |
+| `mcp_settings` | Interrupteur d'instance (ligne `singleton`, absente = coupé) |
+| `mcp_church_settings` | Interrupteur par église (absent = coupé) |
+| `mcp_calls` | Journal sans contenu : connexion, compte, église, outil, issue (`answered`, `refused`, `error`, `limited`), date ; purgé après 12 mois (tâche `mcp-maintenance`) |
+
 #### `media_gallery_grants`
 
 Accès nominatifs à la galerie médias (spec 080) : parcourir et télécharger, sans partager.

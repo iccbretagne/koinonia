@@ -1,6 +1,6 @@
 # ADR-0029 — Koinonia serveur d'autorisation OAuth pour ses connexions MCP
 
-- **Statut** : Proposé
+- **Statut** : Accepté
 - **Date** : 2026-11-11
 
 ## Contexte
@@ -15,7 +15,7 @@ dans le navigateur.
 ## Décision
 
 Koinonia joue lui-même le rôle de **serveur d'autorisation OAuth 2.1** pour une seule
-ressource, son serveur MCP (`/api/mcp`) :
+ressource, son serveur MCP (`/api/mcp/server`) :
 
 - clients **publics** enregistrés dynamiquement, PKCE S256 obligatoire, URI de redirection
   exactes (https, ou boucle locale) ;
@@ -26,7 +26,7 @@ ressource, son serveur MCP (`/api/mcp`) :
 - chaque appel reconstruit la session depuis la base et passe par les **questions de données**
   de l'assistant (ADR-0028), qui revérifient le droit de chaque écran.
 
-Ces jetons n'ouvrent **que** `/api/mcp` : aucune autre route de Koinonia ne les accepte.
+Ces jetons n'ouvrent **que** `/api/mcp/server` : aucune autre route de Koinonia ne les accepte.
 
 ## Alternatives considérées
 

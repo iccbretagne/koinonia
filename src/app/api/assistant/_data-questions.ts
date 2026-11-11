@@ -8,6 +8,7 @@ import {
   TREASURY_QUESTIONS,
 } from "./_data/finances-autres";
 import { PLANNING_QUESTIONS } from "./_data/planning";
+import { AUDIO_QUESTIONS, REPORTS_QUESTIONS } from "./_data/audio-reports";
 
 /**
  * Catalogue des questions de données (spec 075, ADR-0028), composé ici — seul endroit qui voit
@@ -16,6 +17,8 @@ import { PLANNING_QUESTIONS } from "./_data/planning";
  */
 export const DATA_QUESTION_SOURCES: readonly { module: string; questions: readonly DataQuestion[] }[] = [
   { module: "planning", questions: PLANNING_QUESTIONS },
+  { module: "planning", questions: REPORTS_QUESTIONS },
+  { module: "audio", questions: AUDIO_QUESTIONS },
   { module: "ticketing", questions: TICKETING_QUESTIONS },
   { module: "rooms", questions: ROOMS_QUESTIONS },
   { module: "accounting", questions: ACCOUNTING_QUESTIONS },

@@ -149,4 +149,22 @@ export const PRISE_EN_MAIN: readonly KnowledgeEntry[] = [
     hrefLabel: "Guide d'utilisation",
     audience: ALL,
   },
+  {
+    key: "KB-111",
+    kind: "howto",
+    title: "Connecter mon assistant IA",
+    questions: [
+      "Connecter Claude à Koinonia",
+      "utiliser ChatGPT avec Koinonia",
+      "serveur MCP",
+      "mon assistant IA peut-il lire mon planning",
+      "révoquer un assistant",
+    ],
+    answer:
+      "Dans « Mon profil › Assistants IA connectés », copiez l'adresse du serveur et ajoutez-la comme connecteur dans votre assistant (Claude, ChatGPT…). Il vous renvoie vers Koinonia : choisissez l'église et autorisez. Il lit seulement ce que vous voyez déjà, sans rien modifier ; vous pouvez révoquer l'accès à tout moment. L'administrateur de l'église doit d'abord activer la fonction.",
+    href: "/profile/assistants",
+    hrefLabel: "Assistants connectés",
+    audience: ALL,
+    module: "mcp",
+  },
 ];

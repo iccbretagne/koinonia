@@ -4,6 +4,7 @@ import { parseEmailList } from "@/lib/email";
 import { notFound } from "next/navigation";
 import ChurchEditClient from "./ChurchEditClient";
 import ChurchAssistantToggle from "./ChurchAssistantToggle";
+import ChurchMcpCard from "./ChurchMcpCard";
 import { registry } from "@/lib/registry";
 
 export default async function ChurchDetailPage({
@@ -53,6 +54,17 @@ export default async function ChurchDetailPage({
     ? await import("@/modules/assistant").then(({ getChurchSetting }) => getChurchSetting(churchId)).catch(() => null)
     : null;
 
+  // Assistants IA (spec 081) : carte proposée seulement si l'instance a activé la fonction.
+  const mcp = registry.has("mcp")
+    ? await import("@/modules/mcp")
+        .then(async (m) =>
+          (await m.getMcpInstanceSettings()).enabled
+            ? { enabled: await m.getMcpChurchEnabled(churchId), connections: await m.listChurchConnections(churchId) }
+            : null
+        )
+        .catch(() => null)
+    : null;
+
   const roleLabel: Record<string, string> = {
     PASTEUR: "Pasteur",
     ASSISTANT_PASTEUR: "Assistant pasteur",
@@ -87,6 +99,7 @@ export default async function ChurchDetailPage({
         }))}
       />
       {assistant?.instanceEnabled && <ChurchAssistantToggle churchId={churchId} disabled={assistant.disabled} />}
+      {mcp && <ChurchMcpCard churchId={churchId} enabled={mcp.enabled} connections={mcp.connections} />}
     </div>
   );
 }
