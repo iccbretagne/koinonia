@@ -157,7 +157,8 @@ async function loadVisuals(churchId: string, f: GalleryFilters): Promise<VisualR
       source: { type: file.mediaProject ? "project" : "event", id: container.id, name: container.name },
     });
   }
-  return rows.sort((a, b) => compareKeys(a.key, b.key));
+  rows.sort((a, b) => compareKeys(a.key, b.key));
+  return rows;
 }
 
 /** Une page de la galerie : fusion des photos (paginées en base) et des visuels. */
