@@ -35,7 +35,7 @@ terme d'une durée de conservation.
 | Rôle | Ce qu'il peut faire |
 |---|---|
 | **Super Admin, Admin, Secrétaire** | Créer, modifier, publier, fermer, dupliquer et supprimer les formulaires de leur église ; consulter les réponses, les exporter ; gérer les places et la liste d'attente ; noter les présences |
-| **Intervenant désigné** (ex. formateur PCNC), n'importe quel compte de l'église | Pour **un formulaire donné**, désigné par le secrétariat : consulter la liste des réponses et noter les présences. Ne modifie ni le formulaire ni les réponses, n'exporte pas ; son accès s'éteint à la fermeture du formulaire ou quand le secrétariat le retire |
+| **Intervenants désignés** (ex. formateurs PCNC), n'importe quels comptes de l'église — **plusieurs par formulaire** | Pour **un formulaire donné**, désignés par le secrétariat, chacun sur tout le formulaire ou seulement sur certaines sessions et certains niveaux : consulter la liste des réponses et noter les présences **de son périmètre**. Ne modifie ni le formulaire ni les réponses, n'exporte pas ; son accès s'éteint à la fermeture du formulaire ou quand le secrétariat le retire |
 | **Tout compte connecté de l'église** (Ministre, Resp. département, STAR, Comptable…) | Répondre à un formulaire réservé aux comptes connectés ; retrouver et modifier ou annuler sa propre réponse tant que le formulaire est ouvert |
 | **Personne sans compte** | Répondre à un formulaire public par son lien ; recevoir un accusé de réception ; gérer sa réponse par le lien reçu |
 
@@ -52,7 +52,7 @@ ne voit que les résultats regroupés.
    places par niveau. Le niveau **001** est le niveau d'entrée, sans prérequis.
 3. Elle ajoute ses questions : nom, prénom, téléphone, email, « Église d'origine » (liste), consentement au traitement des données.
 4. Elle fixe la date de fermeture, active la **liste d'attente**, garde la durée de conservation
-   par défaut (12 mois), désigne le formateur comme intervenant, puis publie. Elle copie le lien et le partage.
+   par défaut (12 mois), désigne les formateurs comme intervenants (ex. un formateur par niveau), puis publie. Elle copie le lien et le partage.
 5. Une personne ouvre le lien sur son téléphone, choisit sa session et son niveau (les places
    restantes sont affichées, un niveau complet est signalé). Pour tout niveau autre que 001, on
    lui demande si elle a suivi le niveau précédent (oui/non). Elle répond et envoie.
@@ -60,7 +60,7 @@ ne voit que les résultats regroupés.
    modifier ou annuler son inscription.
 7. La secrétaire voit les inscrits par session et par niveau, avec le décompte des places, et
    reçoit une notification à chaque nouvelle inscription (réglable).
-8. Le jour J, elle ou le **formateur désigné** ouvre la **feuille de présence** de la session et
+8. Le jour J, elle ou **chaque formateur désigné** ouvre la **feuille de présence** de la session et
    coche chaque inscrit **matin** et **après-midi**, pour chaque jour de la session.
 9. Après la formation, elle exporte la liste des inscrits avec leurs présences.
 10. Au terme de la durée de conservation, les réponses nominatives sont effacées ; restent les
@@ -130,6 +130,11 @@ ne voit que les résultats regroupés.
   fois, mais le lien entre le compte et sa réponse n'est jamais visible ni exportable.
 - **Quand un inscrit est absent une demi-journée**, la feuille de présence le montre ; les
   présences sont modifiables par le secrétariat jusqu'à la purge.
+- **Quand plusieurs formateurs notent la présence en même temps** sur la même session, chacun voit
+  les coches des autres ; une même case modifiée par deux personnes garde la dernière saisie, et
+  l'historique indique qui a coché quoi.
+- **Un formateur limité à un niveau** ne voit ni les inscrits ni la feuille de présence des
+  autres niveaux.
 - **Durée de conservation** : 12 mois par défaut après la fermeture, réglable par formulaire
   jusqu'à **24 mois au plus**. [Durée maximale proposée, à confirmer au plan.]
 - **Quand la durée de conservation est écoulée**, les réponses nominatives et les présences sont
@@ -151,7 +156,9 @@ ne voit que les résultats regroupés.
       proposition passe à la suivante.
 - [ ] Le prérequis entre niveaux n'empêche jamais l'inscription ; « niveau précédent suivi »
       est affiché pour tout niveau autre que 001.
-- [ ] Un intervenant désigné voit les réponses et note les présences de ce formulaire seulement,
+- [ ] Plusieurs intervenants peuvent être désignés sur un même formulaire, chacun sur tout le
+      formulaire ou sur certaines sessions et niveaux ; un intervenant voit les réponses et note
+      les présences de son périmètre seulement,
       sans pouvoir modifier ni exporter ; son accès s'éteint à la fermeture ou au retrait.
 - [ ] La feuille de présence permet de noter matin et après-midi pour chaque jour d'une session,
       et l'export inclut ces présences.
@@ -188,7 +195,8 @@ ne voit que les résultats regroupés.
 
 Tranchées le 2026-11-11 :
 
-- Intervenant désigné par formulaire (formateur PCNC) : **oui**, consultation et présences.
+- Intervenants désignés par formulaire (formateurs PCNC) : **oui, plusieurs**, chacun limitable à
+  des sessions et niveaux ; consultation et présences.
 - Liste d'attente : **proposition à confirmer** dans un délai (48 h par défaut).
 - Niveau 001 = niveau d'entrée, sans prérequis ; « niveau précédent suivi : oui / non » affiché.
 - Durée de conservation : **maximum** fixé (24 mois proposé), 12 mois par défaut.
