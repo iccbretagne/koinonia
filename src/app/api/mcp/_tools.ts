@@ -99,7 +99,12 @@ export function renderResult(
   const link = `${publicOrigin()}${answer.href}`;
   const end = offset + answer.items.length;
   const nextOffset = end < answer.total ? end : null;
-  const lines = answer.items.map((i) => `- ${i.label}${i.detail ? ` — ${i.detail}` : ""}`);
+  const origin = publicOrigin();
+  const lines = answer.items.map((i) => {
+    const detail = i.detail ? ` — ${i.detail}` : "";
+    const itemLink = i.href ? ` : ${origin}${i.href}` : "";
+    return `- ${i.label}${detail}${itemLink}`;
+  });
   const partial = answer.items.length > 0 && (offset > 0 || nextOffset !== null);
   const suite = nextOffset === null ? "." : ` ; suite avec offset=${nextOffset}.`;
   const range = partial ? `\nLignes ${offset + 1} à ${end} sur ${answer.total}${suite}` : "";
@@ -111,7 +116,7 @@ export function renderResult(
     text: `${answer.title}\n${body}\nVoir dans Koinonia : ${link}`,
     structured: {
       title: answer.title,
-      items: answer.items.map((i) => ({ label: i.label, detail: i.detail ?? null })),
+      items: answer.items.map((i) => ({ label: i.label, detail: i.detail ?? null, link: i.href ? `${origin}${i.href}` : null })),
       total: answer.total,
       offset,
       nextOffset,

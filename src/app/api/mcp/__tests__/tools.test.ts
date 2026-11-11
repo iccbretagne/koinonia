@@ -81,6 +81,16 @@ describe("outils MCP — lot 1", () => {
     expect(renderResult(answer, { offset: 500 }).text).toContain("Plus de ligne après la 120e");
   });
 
+  it("lien direct par ligne quand la question en donne un, en texte et en données", () => {
+    const out = renderResult({ title: "T", items: [{ label: "dim. 25 oct. · Culte", href: "/admin/events/e25/report" }, { label: "sans lien" }], total: 2, href: "/admin/reports", hrefLabel: "R" });
+    expect(out.text).toContain("- dim. 25 oct. · Culte : https://koinonia.test/admin/events/e25/report");
+    expect(out.text).toContain("- sans lien\n");
+    expect(out.structured.items).toEqual([
+      { label: "dim. 25 oct. · Culte", detail: null, link: "https://koinonia.test/admin/events/e25/report" },
+      { label: "sans lien", detail: null, link: null },
+    ]);
+  });
+
   it("schéma d'entrée : limit borné à 100, offset positif", () => {
     expect(toolInput.safeParse({ limit: 101 }).success).toBe(false);
     expect(toolInput.safeParse({ limit: 0 }).success).toBe(false);

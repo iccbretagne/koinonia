@@ -498,7 +498,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
   },
   {
     key: "planning.missingReports",
-    description: "Événements passés des 90 derniers jours, ouverts aux comptes rendus, sans compte rendu : date et titre, du plus récent au plus ancien.",
+    description: "Événements passés des 90 derniers jours, ouverts aux comptes rendus, sans compte rendu : date, titre et lien direct vers la saisie, du plus récent au plus ancien.",
     params: paramsSchema,
     async run({ viewer, churchId }) {
       if (!can(viewer, "reports:view")) return REFUSED;
@@ -510,10 +510,11 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
           report: null,
           date: { lt: now, gte: new Date(now.getTime() - 90 * 86_400_000) },
         },
-        select: { title: true, date: true },
+        select: { id: true, title: true, date: true },
         orderBy: { date: "desc" },
       });
-      const items = events.map((e) => ({ label: `${formatDay(e.date)} · ${e.title}` }));
+      // Lien direct vers la saisie du compte rendu de chaque événement.
+      const items = events.map((e) => ({ label: `${formatDay(e.date)} · ${e.title}`, href: `/admin/events/${e.id}/report` }));
       return boundedAnswer({
         title: "Comptes rendus manquants",
         href: "/admin/reports",

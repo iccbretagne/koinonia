@@ -45,19 +45,20 @@ export const REPORTS_QUESTIONS: DataQuestion[] = [
     key: "reports.recent",
     description:
       "Comptes rendus des 90 derniers jours, du plus récent au plus ancien : date et événement, puis orateur et titre du message " +
-      "(« non renseigné » quand le champ est vide). Le contenu d'un compte rendu s'obtient avec reports_get et sa date.",
+      "(« non renseigné » quand le champ est vide), et le lien direct de chaque compte rendu. Le contenu d'un compte rendu s'obtient avec reports_get et sa date.",
     params: paramsSchema,
     async run({ viewer, churchId }) {
       if (!can(viewer, "reports:view")) return REFUSED;
       const since = new Date(Date.now() - 90 * 86_400_000);
       const reports = await prisma.eventReport.findMany({
         where: { churchId, event: { reportEnabled: true, date: { gte: since } } },
-        select: { speaker: true, messageTitle: true, event: { select: { title: true, date: true } } },
+        select: { speaker: true, messageTitle: true, event: { select: { id: true, title: true, date: true } } },
         orderBy: { event: { date: "desc" } },
       });
       const items = reports.map((r) => ({
         label: `${formatDay(r.event.date)} · ${r.event.title}`,
         detail: speakerAndTitle(r.speaker, r.messageTitle),
+        href: reportHref(r.event.id),
       }));
       return boundedAnswer({
         title: "Comptes rendus récents",
@@ -120,7 +121,7 @@ export const REPORTS_QUESTIONS: DataQuestion[] = [
       const first = reports[0]?.event;
       return boundedAnswer({
         title: reportTitle(first, several),
-        href: first && !several ? `/admin/events/${first.id}/report` : "/admin/reports",
+        href: first && !several ? reportHref(first.id) : "/admin/reports",
         hrefLabel: "Compte rendu",
         items,
         empty: params.day ? "Aucun compte rendu pour ce jour." : "Aucun compte rendu.",
@@ -128,6 +129,9 @@ export const REPORTS_QUESTIONS: DataQuestion[] = [
     },
   },
 ];
+
+/** Écran d'un compte rendu (lecture et saisie). */
+export const reportHref = (eventId: string) => `/admin/events/${eventId}/report`;
 
 /** « Orateur · Titre », avec « non renseigné » pour un champ vide (jamais un séparateur seul). */
 function speakerAndTitle(speaker: string | null, messageTitle: string | null): string {

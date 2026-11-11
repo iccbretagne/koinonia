@@ -173,9 +173,10 @@ describe("catalogue des questions de données (spec 075)", () => {
     expect(week.items[1].detail).toBe("Prière");
     expect(JSON.stringify(week)).not.toContain("CULTE");
 
-    prismaMock.event.findMany.mockResolvedValue([{ title: "Culte  ", date: new Date(Date.now() - 86_400_000) }]);
+    prismaMock.event.findMany.mockResolvedValue([{ id: "e8", title: "Culte  ", date: new Date(Date.now() - 86_400_000) }]);
     const missing = (await run("planning.missingReports", FULL)) as DataAnswer;
     expect(missing.items[0].label).toMatch(/· Culte$/);
+    expect(missing.items[0].href).toBe("/admin/events/e8/report");
   });
 
   it("file du secrétariat : le total compte les lignes, le nombre de demandes est dans le titre", async () => {
@@ -186,11 +187,11 @@ describe("catalogue des questions de données (spec 075)", () => {
 
   it("comptes rendus récents : orateur et titre vides annoncés « non renseignés »", async () => {
     prismaMock.eventReport.findMany.mockResolvedValue([
-      { speaker: null, messageTitle: "  ", event: { title: "Culte ", date: new Date("2026-10-25T10:00:00Z") } },
+      { speaker: null, messageTitle: "  ", event: { id: "e25", title: "Culte ", date: new Date("2026-10-25T10:00:00Z") } },
       { speaker: "Pasteur A", messageTitle: null, event: { title: "Culte", date: new Date("2026-10-18T10:00:00Z") } },
     ]);
     const result = (await run("reports.recent", FULL)) as DataAnswer;
-    expect(result.items[0]).toEqual({ label: "dim. 25 oct. · Culte", detail: "Orateur et titre du message non renseignés" });
+    expect(result.items[0]).toEqual({ label: "dim. 25 oct. · Culte", detail: "Orateur et titre du message non renseignés", href: "/admin/events/e25/report" });
     expect(result.items[1].detail).toBe("Pasteur A · Titre non renseigné");
   });
 
