@@ -1,7 +1,7 @@
 # Spec — Galerie médias
 
 - **Numéro** : 080
-- **Statut** : Brouillon
+- **Statut** : Validée
 - **Créée le** : 2026-11-11
 - **Branche suggérée** : `feat/galerie-medias`
 
@@ -30,9 +30,9 @@ retire sans lien à entretenir.
 |---|---|
 | **Super Admin, Admin, Secrétaire** | Parcourir la galerie, télécharger, partager une sélection (selon leurs droits de partage actuels) |
 | **Membres des équipes Photos, Production Média, Communication** | Parcourir la galerie, télécharger, partager une sélection si leur équipe a déjà ce droit aujourd'hui |
-| **Ministre du ministère qui porte ces équipes** (« Ministre de la communication ») | Parcourir la galerie ; **donner et retirer un accès nominatif** |
+| **Ministre de chaque ministère qui porte l'une de ces équipes** (« Ministre de la communication » ; s'il y en a plusieurs, chacun) | Parcourir la galerie ; **donner et retirer un accès nominatif** |
 | **Admin** (et Super Admin) | **Donner et retirer un accès nominatif** |
-| **Personne ayant un accès nominatif** (n'importe quel compte de l'église : Ministre, Resp. département, STAR…) | Parcourir la galerie et télécharger, **en lecture seule** : ni partage, ni modification |
+| **Personne ayant un accès nominatif** (n'importe quel compte de l'église : Ministre, Resp. département, STAR…) | Parcourir la galerie et télécharger, **en lecture seule** : parcourir et télécharger (haute définition et archive), ni partage, ni modification |
 | **Tous les autres** | Aucun accès : la carte n'apparaît pas, l'adresse directe est refusée |
 
 ## Comportement attendu
@@ -62,7 +62,8 @@ retire sans lien à entretenir.
    « Pasteur X », avec une date de fin au 31 décembre (facultative).
 2. Le pasteur reçoit une notification « Vous avez accès à la galerie médias » avec le lien.
 3. Dans son menu, l'espace « Communication & Production » apparaît avec **la seule carte
-   Galerie**. Il parcourt et télécharge, sans bouton de partage ni de sélection pour partage.
+   Galerie**. Il parcourt et télécharge (photo en haute définition ou sélection en archive),
+   sans bouton de partage.
 4. Le 1er janvier, son accès s'éteint : la carte disparaît, l'adresse directe est refusée.
 5. Un Admin peut retirer l'accès avant la date ; l'ajout, la modification et le retrait sont
    journalisés (qui, pour qui, quand).
@@ -83,8 +84,7 @@ retire sans lien à entretenir.
 - **Événement ou projet** : liste avec recherche.
 - **Recherche** par nom (de fichier, d'événement, de projet).
 - **Tri** : plus récent d'abord (par défaut) ou plus ancien d'abord. La date d'une photo est
-  celle de son événement ; celle d'un visuel, la date de son approbation. [À CLARIFIER: date
-  de référence d'un visuel — approbation ou dépôt ?]
+  celle de son événement ; celle d'un visuel, la date de **dépôt** de sa dernière version.
 
 ### Scénarios alternatifs / cas limites
 
@@ -121,10 +121,10 @@ retire sans lien à entretenir.
       et de rejoindre l'événement ou le projet d'origine (si l'utilisateur y a accès).
 - [ ] La sélection multiple permet de télécharger une archive ; « Partager une sélection » n'est
       proposé qu'à ceux qui ont déjà le droit de partager.
-- [ ] Un Admin ou le Ministre de la communication donne et retire un accès nominatif, avec une
+- [ ] Un Admin ou un Ministre d'un ministère portant l'une des équipes donne et retire un accès nominatif, avec une
       date de fin facultative ; la personne est notifiée à l'ajout.
-- [ ] Un accès nominatif est en lecture seule (parcourir, télécharger) et s'éteint à sa date de
-      fin.
+- [ ] Un accès nominatif est en lecture seule (parcourir, télécharger en haute définition et en
+      archive, sans partage) et s'éteint à sa date de fin.
 - [ ] Ajout, modification et retrait d'un accès nominatif sont journalisés.
 - [ ] La galerie respecte la charte (couleurs du design system, thème clair et sombre) et est
       utilisable sur téléphone.
@@ -141,10 +141,8 @@ retire sans lien à entretenir.
 
 ## Questions ouvertes
 
-- [À CLARIFIER: date de référence d'un visuel pour le tri et les filtres — date d'approbation
-  ou date de dépôt ?]
-- [À CLARIFIER: le « Ministre de la communication » est le Ministre du ministère qui contient
-  un département Photos, Production Média ou Communication. Si ces équipes sont dans des
-  ministères différents, chacun de ces Ministres peut-il donner l'accès ?]
-- [À CLARIFIER: un accès nominatif permet-il le téléchargement en haute définition et
-  l'archive, ou seulement la consultation ?]
+Tranchées le 2026-11-11 :
+
+- Date d'un visuel pour le tri et les filtres : date de **dépôt** de sa dernière version.
+- Équipes réparties dans plusieurs ministères : **chacun** de leurs Ministres donne l'accès.
+- Accès nominatif : **téléchargement** autorisé (haute définition et archive), sans partage.

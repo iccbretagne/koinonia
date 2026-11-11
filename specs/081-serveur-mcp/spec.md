@@ -1,7 +1,7 @@
 # Spec — Connecter un assistant IA à Koinonia (serveur MCP)
 
 - **Numéro** : 081
-- **Statut** : Brouillon
+- **Statut** : Validée
 - **Créée le** : 2026-11-11
 - **Branche suggérée** : `feat/serveur-mcp`
 
@@ -31,7 +31,7 @@ moins — et, dans un second lot, effectue quelques actions simples après confi
 |---|---|
 | **Tout compte connecté** (tous rôles, STAR compris) | Connecter un assistant IA à son compte pour **une** église ; l'assistant lit ce que ce compte voit dans cette église ; voir et révoquer ses connexions |
 | **Super Admin** | Activer ou couper la fonctionnalité pour toute l'instance ; voir l'activité globale (nombre de connexions, d'appels), sans contenu |
-| **Admin d'église** | Activer ou couper la fonctionnalité pour son église ; voir l'activité de son église (connexions actives, par compte), sans contenu des échanges |
+| **Admin d'église** | Activer ou couper la fonctionnalité pour son église (**coupée par défaut**) ; voir la **liste des comptes connectés** de son église (compte, assistant, date, dernière utilisation) et révoquer une connexion, sans jamais voir le contenu des échanges |
 
 ## Comportement attendu
 
@@ -73,8 +73,9 @@ Toujours dans la limite des droits du compte, dans l'église choisie :
 
 ### Second lot — actions avec confirmation
 
-[À CLARIFIER: liste exacte du second lot.] Proposition : déclarer une absence, répondre à un
-service (disponible/indisponible), créer une demande en brouillon. Toute action est
+Trois actions : **déclarer une absence**, **répondre à un service** (disponible ou
+indisponible), **créer une demande en brouillon** (que la personne complète et envoie ensuite
+dans l'application). Toute action est
 **présentée puis confirmée** par la personne dans son assistant avant d'être faite, et
 apparaît dans l'historique comme faite « via l'assistant IA ».
 
@@ -85,7 +86,7 @@ apparaît dans l'historique comme faite « via l'assistant IA ».
 - **Le compte perd tout rôle dans l'église choisie**, ou est désactivé : la connexion cesse de
   fonctionner ; l'assistant reçoit un refus.
 - **Révocation** dans « Mon profil » : effet immédiat ; l'assistant doit refaire la connexion.
-- **Inactivité** : une connexion inutilisée pendant [À CLARIFIER: 90 jours ?] expire d'elle-même.
+- **Inactivité** : une connexion inutilisée pendant **90 jours** expire d'elle-même.
 - **Fonction coupée** par le Super Admin ou l'Admin d'église : toutes les connexions concernées
   cessent de fonctionner ; la section « Assistants connectés » l'indique. Réactiver la
   fonction ne réactive pas les connexions révoquées.
@@ -110,7 +111,13 @@ apparaît dans l'historique comme faite « via l'assistant IA ».
 - [ ] Une connexion révoquée, expirée, ou dont la fonction est coupée cesse de fonctionner
       immédiatement.
 - [ ] « Mon profil » liste les assistants connectés et permet de révoquer chacun.
-- [ ] Le Super Admin coupe la fonction pour l'instance ; l'Admin d'église pour son église.
+- [ ] Le Super Admin coupe la fonction pour l'instance ; l'Admin d'église l'active (coupée par
+      défaut) ou la coupe pour son église.
+- [ ] L'Admin d'église voit la liste des comptes connectés de son église et peut révoquer une
+      connexion.
+- [ ] Une connexion inutilisée 90 jours expire.
+- [ ] Au second lot, chacune des trois actions est présentée puis confirmée avant d'être faite,
+      et journalisée « via l'assistant IA ».
 - [ ] Chaque appel de l'assistant est journalisé (compte, église, type de donnée, date), sans
       le contenu de la conversation.
 - [ ] Le nombre d'appels par compte est limité.
@@ -121,15 +128,16 @@ apparaît dans l'historique comme faite « via l'assistant IA ».
 - Un assistant IA fourni ou payé par l'église (chacun utilise le sien).
 - L'accès sans compte Koinonia, ou par une clé partagée entre plusieurs personnes.
 - La lecture de fichiers (photos, visuels, audio) : seules les informations sont lues.
-- Les actions du second lot tant qu'elles ne sont pas listées et validées.
+- Toute autre action que les trois du second lot.
 - Toute modification de l'assistant intégré (spec 075).
 - Les intégrations automatiques sans personne derrière (robots, synchronisations).
 
 ## Questions ouvertes
 
-- [À CLARIFIER: durée d'inactivité avant expiration d'une connexion (90 jours proposé) ?]
-- [À CLARIFIER: contenu du second lot (actions avec confirmation) ?]
-- [À CLARIFIER: la fonction est-elle active par défaut dans chaque église, ou à activer par
-  l'Admin d'église ?]
-- [À CLARIFIER: l'Admin d'église voit-il la liste nominative des comptes connectés, ou
-  seulement leur nombre ?]
+Tranchées le 2026-11-11 :
+
+- Expiration après **90 jours** d'inactivité.
+- Second lot : déclarer une absence, répondre à un service, créer une demande en brouillon.
+- L'Admin d'église voit la **liste des comptes connectés** (et peut révoquer).
+- Activation par église : **coupée par défaut**, activée par l'Admin d'église — choix par
+  prudence, à confirmer (question laissée sans réponse).
