@@ -1,7 +1,7 @@
 /**
  * Tests — outils MCP (spec 081) : liste blanche, filtrage par rôle, refus = absence.
  */
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 import { viewerFor } from "../../assistant/__tests__/viewers";
 
@@ -14,6 +14,11 @@ const { MCP_TOOLS, toolsFor, renderResult, runTool, NO_DATA, toolName, toolInput
 const names = (role: string, predicates: string[] = []) => toolsFor(viewerFor(role, { predicates }), () => true).map((t) => t.key);
 
 describe("outils MCP — lot 1", () => {
+  // Origine publique fixée pour tout le fichier : chaque test de rendu reste indépendant de l'ordre.
+  beforeAll(() => {
+    process.env.APP_URL = "https://koinonia.test";
+  });
+
   it("liste blanche : jamais la trésorerie ni le suivi pastoral", () => {
     const keys = Object.keys(MCP_TOOLS);
     expect(keys.some((k) => k.startsWith("treasury."))).toBe(false);
@@ -58,7 +63,6 @@ describe("outils MCP — lot 1", () => {
   });
 
   it("rendu : lignes nettoyées, lien absolu, pas de reste ni de pagination quand tout tient", () => {
-    process.env.APP_URL = "https://koinonia.test";
     const items = Array.from({ length: 9 }, (_, i) => ({ label: `l${i}`, ...(i === 0 ? { detail: "b" } : {}) }));
     const out = renderResult({ title: "T", items, total: 9, href: "/planning", hrefLabel: "P" });
     expect(out.text).toContain("- l0 — b");
