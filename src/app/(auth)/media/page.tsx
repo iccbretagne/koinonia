@@ -9,6 +9,10 @@ function pendingStats(title: string, counters: Awaited<ReturnType<typeof getMedi
   if (title === "Photos") count = counters.photos;
   else if (title === "Visuels") count = counters.visuals;
   else if (title === "Réseaux sociaux") count = counters.social;
+  else if (title === "Galerie") {
+    const n = counters.gallery;
+    return n === undefined ? undefined : [`${n} média${n > 1 ? "s" : ""}`];
+  }
   return count === undefined ? undefined : [`${count} en attente`];
 }
 

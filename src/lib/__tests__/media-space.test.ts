@@ -13,7 +13,7 @@ const { buildMediaSpaceCards, buildVisualsTabs } = await import("@/lib/media-spa
 type MediaSpaceAccess = Parameters<typeof buildMediaSpaceCards>[0];
 
 function access(overrides: Partial<MediaSpaceAccess> = {}): MediaSpaceAccess {
-  return { photos: false, visuals: false, visualRequests: false, social: false, share: false, ...overrides };
+  return { photos: false, visuals: false, visualRequests: false, social: false, share: false, gallery: false, ...overrides };
 }
 
 describe("buildMediaSpaceCards", () => {
@@ -48,6 +48,16 @@ describe("buildMediaSpaceCards", () => {
 
   it("aucun droit : liste vide", () => {
     expect(buildMediaSpaceCards(access())).toEqual([]);
+  });
+
+  it("galerie (spec 080) : 4e carte, après Réseaux sociaux", () => {
+    const cards = buildMediaSpaceCards(access({ photos: true, visuals: true, social: true, gallery: true }));
+    expect(cards.map((c) => c.title)).toEqual(["Photos", "Visuels", "Réseaux sociaux", "Galerie"]);
+    expect(cards[3].href).toBe("/media/galerie");
+  });
+
+  it("accès nominatif seul : la seule carte Galerie", () => {
+    expect(buildMediaSpaceCards(access({ gallery: true })).map((c) => c.title)).toEqual(["Galerie"]);
   });
 });
 

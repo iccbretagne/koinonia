@@ -798,6 +798,72 @@ export async function getMediaShareScope(
   };
 }
 
+/** Fonctions des départements qui portent la galerie médias (spec 080). */
+const MEDIA_GALLERY_FUNCTIONS = [DEPT_FN.PHOTOS, DEPT_FN.PRODUCTION_MEDIA, DEPT_FN.COMMUNICATION];
+
+/**
+ * Vrai si l'utilisateur est Ministre d'un ministère qui porte un département Photos,
+ * Production Média ou Communication dans cette église (« Ministre de la communication »,
+ * spec 080) — il y en a autant que de ministères concernés.
+ */
+export async function isMediaMinister(session: Session, churchId: string): Promise<boolean> {
+  const ministryIds = session.user.churchRoles
+    .filter((r) => r.churchId === churchId && r.role === "MINISTER" && r.ministryId)
+    .map((r) => r.ministryId as string);
+  if (ministryIds.length === 0) return false;
+  const count = await prisma.department.count({
+    where: { function: { in: MEDIA_GALLERY_FUNCTIONS }, ministryId: { in: ministryIds }, ministry: { churchId } },
+  });
+  return count > 0;
+}
+
+/** Accès nominatif à la galerie, valide (sans date de fin ou date future), dans cette église. */
+export async function hasValidGalleryGrant(userId: string, churchId: string): Promise<boolean> {
+  const grant = await prisma.mediaGalleryGrant.findUnique({
+    where: { churchId_userId: { churchId, userId } },
+    select: { expiresAt: true },
+  });
+  return !!grant && (grant.expiresAt === null || grant.expiresAt > new Date());
+}
+
+/**
+ * Accès à la galerie médias (spec 080) : `media:view`, équipes Photos / Production Média /
+ * Communication, Ministre de ces équipes, ou accès nominatif valide. `grantOnly` est vrai
+ * quand seul l'accès nominatif s'applique : lecture et téléchargement, jamais de partage.
+ */
+export async function requireMediaGalleryAccess(churchId: string): Promise<{ session: Session; grantOnly: boolean }> {
+  const session = await requireAuth();
+  if (session.user.isSuperAdmin) return { session, grantOnly: false };
+
+  // Sans rôle dans l'église, aucun accès — pas même nominatif (compte sorti de l'église).
+  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  if (roles.length === 0) throw new Error("FORBIDDEN");
+  const { rolePermissions } = await import("./registry");
+  const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
+  if (userPerms.has("media:view")) return { session, grantOnly: false };
+  const team =
+    (await isMediaTeamMember(session, churchId, "PHOTOS")) ||
+    (await isMediaTeamMember(session, churchId, "VISUELS")) ||
+    (await isCommunicationMember(session, churchId)) ||
+    (await isMediaMinister(session, churchId));
+  if (team) return { session, grantOnly: false };
+  if (await hasValidGalleryGrant(session.user.id, churchId)) return { session, grantOnly: true };
+  throw new Error("FORBIDDEN");
+}
+
+/**
+ * Gérer les accès nominatifs à la galerie (spec 080) : Super Admin, Admin de l'église, ou
+ * Ministre d'un ministère qui porte une équipe média.
+ */
+export async function requireMediaGalleryGrantAccess(churchId: string): Promise<Session> {
+  const session = await requireAuth();
+  if (session.user.isSuperAdmin) return session;
+  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  if (roles.some((r) => r.role === "ADMIN")) return session;
+  if (await isMediaMinister(session, churchId)) return session;
+  throw new Error("FORBIDDEN");
+}
+
 // Contexte d'AFFICHAGE, jamais une autorisation : la valeur peut provenir d'un cookie
 // posé par le client. Elle ne fait que sélectionner, parmi les églises où la session a
 // un rattachement (rôle ou supervision pastorale), laquelle regarder — elle ne confère

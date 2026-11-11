@@ -786,6 +786,17 @@ même pattern d'accueil à cartes que l'espace Audio ci-dessus) :
   `listActiveShares`/`countActiveShares`/`revokeShare`, filtrés au périmètre de l'appelant via
   `getMediaShareScope`) — une collection mixte photos+visuels reste masquée à une équipe qui n'a
   que l'un des deux périmètres
+- **Galerie** (spec 080, `/media/galerie`, 4e carte) : vue de lecture sur les médias validés de
+  l'église (photos `APPROVED`, visuels `VISUAL` `APPROVED`/`FINAL_APPROVED` en dernière version),
+  service `listLibraryItems` (`@/modules/media`, pagination par curseur `date|type|id`). Accès :
+  `requireMediaGalleryAccess` (`src/lib/auth.ts`) — `media:view`, équipes Photos / Production
+  Média / Communication, `isMediaMinister` (Ministre d'un ministère qui porte l'une de ces
+  équipes) ou **accès nominatif** valide (`media_gallery_grants`, `grantOnly` : lecture et
+  téléchargement, jamais de partage). Les accès nominatifs se gèrent par
+  `requireMediaGalleryGrantAccess` (Admin de l'église, Ministre média, Super Admin), journalisés
+  et notifiés. Le partage d'une sélection réutilise les collections (`photoIds`/`fileIds` dans
+  leur config) ; le préfixe `/api/media/gallery` étant public (liens par jeton), l'API de la
+  galerie vit sous `/api/media/library`
 - Le lien « Audio » reste séparé : équipe et permissions différentes (`audio:listen` ouvert à
   tous les rôles, contrairement aux permissions média réservées aux équipes Photos/Production
   Média/Communication)

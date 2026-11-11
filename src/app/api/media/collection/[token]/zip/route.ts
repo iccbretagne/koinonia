@@ -5,15 +5,12 @@
  */
 import { prisma } from "@/lib/prisma";
 import { errorResponse, ApiError } from "@/lib/api-utils";
-import { validateMediaShareToken, getS3ObjectStream, collectionPhotoWhere } from "@/modules/media";
+import { validateMediaShareToken, collectionPhotoWhere } from "@/modules/media";
 import type { CollectionConfig } from "@/modules/media";
-import archiver from "archiver";
-import { PassThrough } from "node:stream";
+import { streamZip, type ZipEntry } from "../../../_zip";
 import { bodySchema } from "./contract";
 
 export const runtime = "nodejs";
-
-type ZipEntry = { filename: string; originalKey: string; folder: string };
 
 const safeFolderName = (name: string) => name.replace(/[^a-z0-9\-_]/gi, "_").slice(0, 50);
 
@@ -27,8 +24,7 @@ async function photoZipEntries(config: CollectionConfig, eventIds: string[], pho
       name: true,
       photos: {
         where: {
-          ...collectionPhotoWhere(config),
-          ...(photoIds?.length ? { id: { in: photoIds } } : {}),
+          AND: [collectionPhotoWhere(config), ...(photoIds?.length ? [{ id: { in: photoIds } }] : [])],
         },
         select: { filename: true, originalKey: true },
       },
@@ -40,7 +36,7 @@ async function photoZipEntries(config: CollectionConfig, eventIds: string[], pho
 }
 
 /** Dernière version des visuels approuvés, rangés par projet (ou seulement ceux choisis). */
-async function fileZipEntries(projectIds: string[], fileIds?: string[]): Promise<ZipEntry[]> {
+async function fileZipEntries(config: CollectionConfig, projectIds: string[], fileIds?: string[]): Promise<ZipEntry[]> {
   if (projectIds.length === 0) return [];
   const projects = await prisma.mediaProject.findMany({
     where: { id: { in: projectIds } },
@@ -49,8 +45,11 @@ async function fileZipEntries(projectIds: string[], fileIds?: string[]): Promise
       name: true,
       files: {
         where: {
-          status: { in: ["APPROVED", "FINAL_APPROVED"] },
-          ...(fileIds?.length ? { id: { in: fileIds } } : {}),
+          AND: [
+            { status: { in: ["APPROVED", "FINAL_APPROVED"] } },
+            ...(config.fileIds ? [{ id: { in: config.fileIds } }] : []),
+            ...(fileIds?.length ? [{ id: { in: fileIds } }] : []),
+          ],
         },
         select: {
           filename: true,
@@ -71,33 +70,6 @@ async function fileZipEntries(projectIds: string[], fileIds?: string[]): Promise
   );
 }
 
-/** ZIP en flux : un fichier absent du stockage est ignoré sans interrompre l'archive. */
-function streamZip(entries: ZipEntry[]): ReadableStream {
-  const archive = archiver("zip", { zlib: { level: 1 } });
-  const passthrough = new PassThrough();
-  archive.pipe(passthrough);
-
-  (async () => {
-    for (const entry of entries) {
-      try {
-        const stream = await getS3ObjectStream(entry.originalKey);
-        archive.append(stream, { name: `${entry.folder}/${entry.filename}` });
-      } catch {
-        // Fichier manquant en S3 — skip sans planter le ZIP
-      }
-    }
-    await archive.finalize();
-  })().catch((err) => passthrough.destroy(err));
-
-  return new ReadableStream({
-    start(controller) {
-      passthrough.on("data", (chunk) => controller.enqueue(chunk));
-      passthrough.on("end", () => controller.close());
-      passthrough.on("error", (err) => controller.error(err));
-    },
-  });
-}
-
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ token: string }> }
@@ -112,7 +84,7 @@ export async function POST(
     const { scope, eventIds, projectIds } = config;
 
     const photoEntries = scope === "photos" || scope === "both" ? await photoZipEntries(config, eventIds, body.photoIds) : [];
-    const fileEntries = scope === "files" || scope === "both" ? await fileZipEntries(projectIds, body.fileIds) : [];
+    const fileEntries = scope === "files" || scope === "both" ? await fileZipEntries(config, projectIds, body.fileIds) : [];
 
     const totalEntries = photoEntries.length + fileEntries.length;
     if (totalEntries === 0) throw new ApiError(404, "Aucun fichier disponible");

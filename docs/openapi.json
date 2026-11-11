@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "API Koinonia",
-    "version": "1.34.0",
+    "version": "1.35.0",
     "description": "API interne de Koinonia, appelée par l'application (session NextAuth, même origine). Générée depuis les contrats `contract.ts` des routes — voir `docs/api.md` (conventions) et ADR-0023."
   },
   "components": {
@@ -5381,7 +5381,7 @@
           "media"
         ],
         "summary": "Création d'un lien de partage multi-sources",
-        "description": "**Accès** : permission `media:manage` — ou équipe Photos, Production Média ou Communication de l'église ; une équipe ne partage que son activité (spec 049).\n\nAu moins un événement photo ou un projet visuel, tous de l'église. Journalisé.",
+        "description": "**Accès** : permission `media:manage` — ou équipe Photos, Production Média ou Communication de l'église ; une équipe ne partage que son activité (spec 049).\n\nAu moins un événement photo ou un projet visuel, tous de l'église. `photoIds`/`fileIds` (facultatifs, spec 080) limitent la collection à ces éléments, qui doivent appartenir aux événements et projets fournis (400 sinon). Journalisé.",
         "security": [
           {
             "session": []
@@ -5431,6 +5431,20 @@
                   },
                   "includeAllPhotos": {
                     "type": "boolean"
+                  },
+                  "photoIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 1000
+                  },
+                  "fileIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 1000
                   }
                 },
                 "required": [
@@ -19974,6 +19988,518 @@
                 "schema": {}
               }
             }
+          }
+        }
+      }
+    },
+    "/api/media/library": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Galerie médias : une page de médias validés",
+        "description": "**Accès** : permission `media:view` — ou équipe Photos, Production Média, Communication, Ministre de ces équipes, ou accès nominatif à la galerie (spec 080).\n\nPhotos approuvées et visuels validés (approuvés ou approuvés définitivement, dernière version) de l'église courante, triés par date (date de l'événement pour une photo, dépôt de la dernière version pour un visuel). Pagination par curseur ; `total` compte tous les résultats des filtres.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "media:view",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "photos",
+                "visuals"
+              ],
+              "default": "all",
+              "description": "Type de média"
+            },
+            "required": false,
+            "description": "Type de média",
+            "name": "type",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "Début de période (incluse)"
+            },
+            "required": false,
+            "description": "Début de période (incluse)",
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "Fin de période (incluse)"
+            },
+            "required": false,
+            "description": "Fin de période (incluse)",
+            "name": "to",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(event|project):[\\w-]+$",
+              "description": "Événement ou projet d'origine, `event:<id>` ou `project:<id>`"
+            },
+            "required": false,
+            "description": "Événement ou projet d'origine, `event:<id>` ou `project:<id>`",
+            "name": "source",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "description": "Recherche par nom de fichier, d'événement ou de projet"
+            },
+            "required": false,
+            "description": "Recherche par nom de fichier, d'événement ou de projet",
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "desc",
+                "asc"
+              ],
+              "default": "desc",
+              "description": "Tri par date"
+            },
+            "required": false,
+            "description": "Tri par date",
+            "name": "order",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "description": "Curseur de la page suivante"
+            },
+            "required": false,
+            "description": "Curseur de la page suivante",
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60,
+              "default": 60,
+              "description": "Taille de page"
+            },
+            "required": false,
+            "description": "Taille de page",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ items, nextCursor, total }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/media/library/{kind}/{id}/download": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Galerie médias : téléchargement d'un original",
+        "description": "**Accès** : permission `media:view` — même accès que la galerie, accès nominatif compris (spec 080).\n\n`kind` vaut `photo` ou `file`. Le média doit appartenir à l'église courante et être validé (404 sinon). Redirige vers une adresse de téléchargement signée et temporaire.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "media:view",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "kind",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirection vers l'original haute définition"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/media/library/grants": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Galerie médias : accès nominatifs de l'église",
+        "description": "**Accès** : permission `media:manage` — Admin de l'église, ou Ministre d'un ministère qui porte une équipe Photos, Production Média ou Communication (spec 080).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "media:manage",
+        "responses": {
+          "200": {
+            "description": "Liste des accès (personne, date de fin, expiré ou non, accordé par)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Galerie médias : donner (ou prolonger) un accès nominatif",
+        "description": "**Accès** : permission `media:manage` — Admin de l'église, ou Ministre d'un ministère qui porte une équipe média (spec 080).\n\nLe compte doit avoir un rôle dans l'église (400 sinon) ; date de fin future ou absente (400 sinon). La personne est notifiée à l'ouverture de l'accès. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "media:manage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "expiresAt": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time",
+                    "default": null,
+                    "description": "Date de fin (future) ou `null` : sans date de fin"
+                  }
+                },
+                "required": [
+                  "userId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Accès créé ou mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/media/library/grants/{id}": {
+      "patch": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Galerie médias : modifier la date de fin d'un accès nominatif",
+        "description": "**Accès** : permission `media:manage` — Admin de l'église, ou Ministre d'un ministère qui porte une équipe média (spec 080).\n\nAccès d'une autre église : 404. Date passée : 400. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "media:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expiresAt": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time",
+                    "description": "Nouvelle date de fin (future) ou `null`"
+                  }
+                },
+                "required": [
+                  "expiresAt"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accès mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Galerie médias : retirer un accès nominatif",
+        "description": "**Accès** : permission `media:manage` — Admin de l'église, ou Ministre d'un ministère qui porte une équipe média (spec 080).\n\nEffet immédiat. Accès d'une autre église : 404. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "media:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Aucun contenu"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/media/library/grants/users": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Galerie médias : comptes de l'église à qui donner un accès",
+        "description": "**Accès** : permission `media:manage` — Admin de l'église, ou Ministre d'un ministère qui porte une équipe média (spec 080).\n\n10 comptes au plus, ayant un rôle dans l'église courante.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "media:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 100,
+              "description": "Nom ou email (2 caractères au moins)"
+            },
+            "required": true,
+            "description": "Nom ou email (2 caractères au moins)",
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste `{ id, name, email }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/media/library/sources": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Galerie médias : événements et projets ayant des médias validés",
+        "description": "**Accès** : permission `media:view` — même accès que la galerie (spec 080).\n\nAlimente le filtre « Événement ou projet » (50 de chaque au plus, les plus récents d'abord).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "media:view",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "description": "Recherche par nom"
+            },
+            "required": false,
+            "description": "Recherche par nom",
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste `{ type, id, name }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/media/library/zip": {
+      "post": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Galerie médias : archive ZIP d'une sélection",
+        "description": "**Accès** : permission `media:view` — même accès que la galerie, accès nominatif compris (spec 080).\n\n200 médias au plus. Seuls les médias validés de l'église courante sont inclus (les autres identifiants sont ignorés), rangés par événement ou projet. Aucun média valide : 404.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "media:view",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "photoIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "default": []
+                  },
+                  "fileIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "default": []
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Archive ZIP en flux",
+            "content": {
+              "application/zip": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
           }
         }
       }

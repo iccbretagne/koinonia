@@ -1,5 +1,5 @@
 import type { Session } from "next-auth";
-import { isMediaTeamMember, isCommunicationMember } from "./auth";
+import { isMediaTeamMember, isCommunicationMember, isMediaMinister, hasValidGalleryGrant } from "./auth";
 import { rolePermissions } from "./registry";
 import { prisma } from "./prisma";
 
@@ -21,6 +21,8 @@ export interface MediaSpaceAccess {
   social: boolean;
   /** Partages (bouton sur l'accueil) — même condition que `requireMediaCollectionAccess`. */
   share: boolean;
+  /** Galerie (`/media/galerie`, spec 080) — même condition que `requireMediaGalleryAccess`. */
+  gallery: boolean;
 }
 
 export interface SpaceCard {
@@ -47,6 +49,7 @@ export function buildMediaSpaceCards(access: MediaSpaceAccess): SpaceCard[] {
     cards.push({ href: access.visuals ? "/media/projects" : "/media/requests", title: "Visuels" });
   }
   if (access.social) cards.push({ href: "/communication/requests", title: "Réseaux sociaux" });
+  if (access.gallery) cards.push({ href: "/media/galerie", title: "Galerie" });
   return cards;
 }
 
@@ -69,7 +72,7 @@ export function buildVisualsTabs(access: MediaSpaceAccess): SpaceTab[] {
  */
 export async function resolveMediaSpaceAccess(session: Session, churchId: string): Promise<MediaSpaceAccess> {
   if (session.user.isSuperAdmin) {
-    return { photos: true, visuals: true, visualRequests: true, social: true, share: true };
+    return { photos: true, visuals: true, visualRequests: true, social: true, share: true, gallery: true };
   }
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
@@ -88,13 +91,23 @@ export async function resolveMediaSpaceAccess(session: Session, churchId: string
     visualRequests: canManage || isVisualMember,
     social: canManage || isCommMember,
     share: userPermissions.has("media:manage") || isPhotoMember || isVisualMember || isCommMember,
+    gallery: await resolveGalleryAccess(session, churchId, roles.length > 0, userPermissions.has("media:view") || isPhotoMember || isVisualMember || isCommMember),
   };
+}
+
+/** Galerie (spec 080) : accès d'équipe, sinon Ministre média, sinon accès nominatif valide. */
+async function resolveGalleryAccess(session: Session, churchId: string, hasRole: boolean, viaTeam: boolean): Promise<boolean> {
+  if (!hasRole) return false;
+  if (viaTeam) return true;
+  if (await isMediaMinister(session, churchId)) return true;
+  return hasValidGalleryGrant(session.user.id, churchId);
 }
 
 export interface MediaSpaceCounters {
   photos?: number;
   visuals?: number;
   social?: number;
+  gallery?: number;
 }
 
 /**
@@ -135,6 +148,21 @@ export async function getMediaSpaceCounters(
       prisma.request
         .count({ where: { churchId, type: "RESEAUX_SOCIAUX", status: "EN_ATTENTE" } })
         .then((n) => { counters.social = n; })
+    );
+  }
+
+  if (access.gallery) {
+    queries.push(
+      Promise.all([
+        prisma.mediaPhoto.count({ where: { mediaEvent: { churchId }, status: "APPROVED" } }),
+        prisma.mediaFile.count({
+          where: {
+            type: "VISUAL",
+            status: { in: ["APPROVED", "FINAL_APPROVED"] },
+            OR: [{ mediaProject: { churchId } }, { mediaEvent: { churchId } }],
+          },
+        }),
+      ]).then(([photos, files]) => { counters.gallery = photos + files; })
     );
   }
 

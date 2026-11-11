@@ -13,6 +13,7 @@
  * - `secretariatTeam`, `mediaTeam`, `integrationTeam` : membre d'un département de fonction
  * - `pastoral` : profil pastoral dans l'église courante
  * - `announcementSheet` : lecture de la trame des annonces (`canReadAnnouncementSheet`)
+ * - `mediaGallery` : accès à la galerie médias (`requireMediaGalleryAccess`, spec 080)
  */
 export const PREDICATES = [
   "linkedStar",
@@ -23,6 +24,7 @@ export const PREDICATES = [
   "integrationTeam",
   "pastoral",
   "announcementSheet",
+  "mediaGallery",
 ] as const;
 export type Predicate = (typeof PREDICATES)[number];
 

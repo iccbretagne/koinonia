@@ -43,6 +43,7 @@ export default function CollectionBuilder({
   initialEventIds,
   initialProjectIds,
   lockedScope,
+  selection,
   onCreated,
 }: {
   readonly churchId: string;
@@ -53,6 +54,11 @@ export default function CollectionBuilder({
   readonly initialProjectIds?: string[];
   /** Verrouille le contenu à un seul type — masque le sélecteur (partage depuis une seule activité). */
   readonly lockedScope?: Scope;
+  /**
+   * Sélection fine depuis la galerie (spec 080) : médias choisis un à un. Les listes
+   * d'événements et de projets sont alors masquées ; le lien ne couvre que ces médias.
+   */
+  readonly selection?: { photoIds: string[]; fileIds: string[]; eventIds: string[]; projectIds: string[] };
   readonly onCreated?: (result: { url: string; label: string | null }) => void;
 }) {
   const uid = useId();
@@ -123,8 +129,14 @@ export default function CollectionBuilder({
   const canCreate =
     !creating &&
     label.trim().length > 0 &&
-    ((showEvents   && selectedEvents.size > 0)   ||
-     (showProjects && selectedProjects.size > 0));
+    (selection
+      ? selection.photoIds.length + selection.fileIds.length > 0
+      : (showEvents && selectedEvents.size > 0) || (showProjects && selectedProjects.size > 0));
+
+  function selectionScope(sel: NonNullable<typeof selection>): Scope {
+    if (sel.photoIds.length > 0 && sel.fileIds.length > 0) return "both";
+    return sel.photoIds.length > 0 ? "photos" : "files";
+  }
 
   async function createCollection() {
     setCreating(true);
@@ -135,15 +147,28 @@ export default function CollectionBuilder({
       const res = await fetch("/api/admin/media/collections", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          churchId,
-          label: label.trim(),
-          scope,
-          eventIds:   showEvents   ? Array.from(selectedEvents)   : [],
-          projectIds: showProjects ? Array.from(selectedProjects) : [],
-          expiresInDays: expiresInDays !== "" ? expiresInDays : undefined,
-          includeAllPhotos: showEvents ? includeAllPhotos : undefined,
-        }),
+        body: JSON.stringify(
+          selection
+            ? {
+                churchId,
+                label: label.trim(),
+                scope: selectionScope(selection),
+                eventIds: selection.eventIds,
+                projectIds: selection.projectIds,
+                photoIds: selection.photoIds,
+                fileIds: selection.fileIds,
+                expiresInDays: expiresInDays !== "" ? expiresInDays : undefined,
+              }
+            : {
+                churchId,
+                label: label.trim(),
+                scope,
+                eventIds:   showEvents   ? Array.from(selectedEvents)   : [],
+                projectIds: showProjects ? Array.from(selectedProjects) : [],
+                expiresInDays: expiresInDays !== "" ? expiresInDays : undefined,
+                includeAllPhotos: showEvents ? includeAllPhotos : undefined,
+              }
+        ),
       });
 
       const json = await res.json().catch(() => ({}));
@@ -168,6 +193,15 @@ export default function CollectionBuilder({
 
   return (
     <div className="space-y-5 max-w-3xl">
+      {selection && (
+        <div className="bg-surface rounded-2xl border border-line shadow-card p-5">
+          <h2 className="text-sm font-semibold text-ink">Contenu du lien</h2>
+          <p className="text-sm text-ink-muted mt-1">
+            {selection.photoIds.length + selection.fileIds.length} média{selection.photoIds.length + selection.fileIds.length > 1 ? "s" : ""} sélectionné{selection.photoIds.length + selection.fileIds.length > 1 ? "s" : ""} dans la galerie : seuls ces médias seront visibles par le lien.
+          </p>
+        </div>
+      )}
+      {!selection && (<>
       {/* ── Scope ─────────────────────────────────────────────────────────── */}
       <div className="bg-surface rounded-2xl border border-line shadow-card p-5 space-y-3">
         <h2 className="text-sm font-semibold text-ink">Contenu à inclure</h2>
@@ -340,6 +374,8 @@ export default function CollectionBuilder({
           )}
         </div>
       )}
+
+      </>)}
 
       {/* ── Options ────────────────────────────────────────────────────────── */}
       <div className="bg-surface rounded-2xl border border-line shadow-card p-5 space-y-4">

@@ -82,6 +82,7 @@ model Church {
   mediaProjects                  MediaProject[]
   mediaSettings                  MediaSettings?
   mediaShareTokens               MediaShareToken[]
+  mediaGalleryGrants             MediaGalleryGrant[]
   // Module agenda
   pastoralProfiles               PastoralProfile[]               @relation("ChurchPastoralProfiles")
   appointmentRequests            AppointmentRequest[]
@@ -213,6 +214,8 @@ model User {
   // Module media
   mediaEventsCreated                MediaEvent[]                  @relation("MediaEventCreator")
   mediaProjectsCreated              MediaProject[]                @relation("MediaProjectCreator")
+  mediaGalleryGrants                MediaGalleryGrant[]           @relation("MediaGalleryGrantee")
+  mediaGalleryGrantsGiven           MediaGalleryGrant[]           @relation("MediaGalleryGrantor")
   mediaFileVersions                 MediaFileVersion[]            @relation("MediaFileVersionCreator")
   mediaComments                     MediaComment[]                @relation("MediaCommentAuthor")
   // Module agenda
@@ -1230,6 +1233,26 @@ model MediaShareToken {
   @@index([mediaEventId])
   @@index([mediaProjectId])
   @@map("media_share_tokens")
+}
+
+/// Accès nominatif à la galerie médias (spec 080) : parcourir et télécharger, sans partage.
+/// Valide tant que `expiresAt` est nul ou dans le futur (évalué à la lecture).
+model MediaGalleryGrant {
+  id          String    @id @default(cuid())
+  churchId    String
+  church      Church    @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation("MediaGalleryGrantee", fields: [userId], references: [id], onDelete: Cascade)
+  grantedById String?
+  grantedBy   User?     @relation("MediaGalleryGrantor", fields: [grantedById], references: [id], onDelete: SetNull)
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([churchId, userId])
+  @@index([userId])
+  @@index([grantedById])
+  @@map("media_gallery_grants")
 }
 
 /// Job de génération ZIP asynchrone.

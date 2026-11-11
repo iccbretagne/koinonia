@@ -60,6 +60,16 @@ export async function buildViewer(session: Session, churchId: string): Promise<A
     if (await canReadAnnouncementSheet(session, churchId).catch(() => false)) predicates.push("announcementSheet");
   }
 
+  if (registry.has("media") && churchRoles.length > 0) {
+    // Même règle que `requireMediaGalleryAccess` : media:view, équipe média, Ministre média,
+    // ou accès nominatif valide (spec 080).
+    const { isMediaMinister, hasValidGalleryGrant } = await import("@/lib/auth");
+    const viaTeam = permissions.includes("media:view") || teams.includes("mediaTeam");
+    if (viaTeam || (await isMediaMinister(session, churchId)) || (await hasValidGalleryGrant(session.user.id!, churchId))) {
+      predicates.push("mediaGallery");
+    }
+  }
+
   const churchIds = new Set([...session.user.churchRoles.map((r) => r.churchId), ...(session.user.pastoralChurchIds ?? [])]);
   return {
     userId: session.user.id!,

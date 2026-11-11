@@ -4,7 +4,7 @@
  */
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { validateMediaShareToken, getSignedDownloadUrl } from "@/modules/media";
+import { validateMediaShareToken, getSignedDownloadUrl, isCollectionFileSelected } from "@/modules/media";
 import type { CollectionConfig } from "@/modules/media";
 
 export async function GET(
@@ -33,7 +33,7 @@ export async function GET(
     });
 
     if (!file) throw new ApiError(404, "Fichier introuvable");
-    if (!file.mediaProjectId || !config.projectIds.includes(file.mediaProjectId)) {
+    if (!file.mediaProjectId || !config.projectIds.includes(file.mediaProjectId) || !isCollectionFileSelected(config, file.id)) {
       throw new ApiError(403, "Fichier hors périmètre");
     }
     if (!["APPROVED", "FINAL_APPROVED"].includes(file.status)) {

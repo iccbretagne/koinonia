@@ -6,6 +6,10 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+
+- Galerie médias (spec 080). Dans « Communication & Production », une carte « Galerie » rassemble toutes les photos approuvées et tous les visuels validés de l'église, quel que soit l'événement ou le projet, regroupés par mois et chargés au fil du défilement. Filtres par type (photos, visuels), période, événement ou projet, recherche par nom, tri du plus récent au plus ancien ou l'inverse ; les filtres restent dans l'adresse, qu'on peut partager. Une visionneuse plein écran permet de passer d'un média à l'autre (au doigt ou au clavier), de télécharger l'original et de rejoindre l'événement ou le projet. « Sélectionner » télécharge jusqu'à 200 médias en une archive, ou crée un lien de partage limité aux médias choisis. La galerie est ouverte aux équipes Photos, Production Média et Communication, à leur Ministre et à l'administration ; l'Admin ou le Ministre peut aussi l'ouvrir à une personne précise (« Accès »), en lecture et téléchargement, avec une date de fin facultative — la personne est prévenue, et chaque ajout ou retrait est journalisé.
+
 ## [v1.35.0] - 2026-11-09
 
 ### Ajouté
