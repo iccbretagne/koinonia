@@ -92,12 +92,14 @@ export default function MediaLightbox<T extends LightboxItem>({
       <div
         role="none"
         className="flex-1 flex items-center justify-center relative overflow-hidden p-4"
-        onTouchStart={(e) => { touchX.current = e.touches[0]?.clientX ?? null; }}
+        onTouchStart={(e) => {
+          touchX.current = e.touches.length > 0 ? e.touches[0].clientX : null;
+        }}
         onTouchEnd={(e) => {
           const start = touchX.current;
           touchX.current = null;
-          const end = e.changedTouches[0]?.clientX;
-          if (start === null || end === undefined) return;
+          if (start === null || e.changedTouches.length === 0) return;
+          const end = e.changedTouches[0].clientX;
           if (end - start > 50) go(-1);
           else if (start - end > 50) go(1);
         }}

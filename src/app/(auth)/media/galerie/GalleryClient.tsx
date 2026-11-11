@@ -307,7 +307,12 @@ export default function GalleryClient({
               <button
                 key={c.key}
                 type="button"
-                onClick={() => { if (c.key === "q") setSearch(""); apply(c.clear); }}
+                onClick={() => {
+                  if (c.key === "q") {
+                    setSearch("");
+                  }
+                  apply(c.clear);
+                }}
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-soft text-brand-text text-xs font-medium"
                 aria-label={`Retirer le filtre ${c.label}`}
               >
