@@ -1,7 +1,7 @@
 # Spec — Formulaires (inscriptions, participation, sondages)
 
 - **Numéro** : 079
-- **Statut** : Brouillon
+- **Statut** : Validée
 - **Créée le** : 2026-11-11
 - **Branche suggérée** : `feat/formulaires`
 
@@ -35,12 +35,12 @@ terme d'une durée de conservation.
 | Rôle | Ce qu'il peut faire |
 |---|---|
 | **Super Admin, Admin, Secrétaire** | Créer, modifier, publier, fermer, dupliquer et supprimer les formulaires de leur église ; consulter les réponses, les exporter ; gérer les places et la liste d'attente ; noter les présences |
+| **Intervenant désigné** (ex. formateur PCNC), n'importe quel compte de l'église | Pour **un formulaire donné**, désigné par le secrétariat : consulter la liste des réponses et noter les présences. Ne modifie ni le formulaire ni les réponses, n'exporte pas ; son accès s'éteint à la fermeture du formulaire ou quand le secrétariat le retire |
 | **Tout compte connecté de l'église** (Ministre, Resp. département, STAR, Comptable…) | Répondre à un formulaire réservé aux comptes connectés ; retrouver et modifier ou annuler sa propre réponse tant que le formulaire est ouvert |
 | **Personne sans compte** | Répondre à un formulaire public par son lien ; recevoir un accusé de réception ; gérer sa réponse par le lien reçu |
 
-Aucun autre rôle ne voit les réponses d'autrui. [À CLARIFIER: faut-il pouvoir confier, par
-formulaire, la consultation des réponses et la saisie des présences à une personne précise
-(ex. le formateur PCNC), sans lui donner les droits du secrétariat ?]
+Aucun autre rôle ne voit les réponses d'autrui. Dans un sondage anonyme, l'intervenant désigné
+ne voit que les résultats regroupés.
 
 ## Comportement attendu
 
@@ -49,18 +49,18 @@ formulaire, la consultation des réponses et la saisie des présences à une per
 1. La secrétaire crée un formulaire « PCNC — novembre », de type **Inscription**, **public**.
 2. Elle déclare les **sessions** : « Samedi 22 novembre » (1 jour) et « 29-30 novembre »
    (2 jours), et pour chacune les **niveaux** proposés (001, 101, 201…) avec un nombre de
-   places par niveau.
-3. Elle ajoute ses questions : nom, prénom, téléphone, email, « Avez-vous déjà suivi le niveau
-   précédent ? » (oui/non), « Église d'origine » (liste), consentement au traitement des données.
-4. Elle fixe la date de fermeture, active la **liste d'attente** et une durée de conservation de
-   12 mois, puis publie. Elle copie le lien et le partage.
+   places par niveau. Le niveau **001** est le niveau d'entrée, sans prérequis.
+3. Elle ajoute ses questions : nom, prénom, téléphone, email, « Église d'origine » (liste), consentement au traitement des données.
+4. Elle fixe la date de fermeture, active la **liste d'attente**, garde la durée de conservation
+   par défaut (12 mois), désigne le formateur comme intervenant, puis publie. Elle copie le lien et le partage.
 5. Une personne ouvre le lien sur son téléphone, choisit sa session et son niveau (les places
-   restantes sont affichées, un niveau complet est signalé), répond et envoie.
+   restantes sont affichées, un niveau complet est signalé). Pour tout niveau autre que 001, on
+   lui demande si elle a suivi le niveau précédent (oui/non). Elle répond et envoie.
 6. Elle reçoit un **accusé de réception** par email avec un récapitulatif et un lien pour
    modifier ou annuler son inscription.
 7. La secrétaire voit les inscrits par session et par niveau, avec le décompte des places, et
    reçoit une notification à chaque nouvelle inscription (réglable).
-8. Le jour J, elle (ou la personne désignée) ouvre la **feuille de présence** de la session et
+8. Le jour J, elle ou le **formateur désigné** ouvre la **feuille de présence** de la session et
    coche chaque inscrit **matin** et **après-midi**, pour chaque jour de la session.
 9. Après la formation, elle exporte la liste des inscrits avec leurs présences.
 10. Au terme de la durée de conservation, les réponses nominatives sont effacées ; restent les
@@ -69,7 +69,8 @@ formulaire, la consultation des réponses et la saisie des présences à une per
 ### Scénario — participation à un événement
 
 1. La secrétaire crée un formulaire de type **Participation**, réservé aux **comptes connectés**,
-   rattaché à un événement existant de l'église.
+   rattaché à un événement existant de l'église — événement d'église ou événement de la
+   billetterie.
 2. Les questions : « Je viens » (oui/non), « Nombre d'accompagnants » (nombre, 0 à 5),
    « Atelier » (choix unique, 20 places par atelier).
 3. Un STAR connecté répond ; son nom et son email sont déjà connus, il ne les ressaisit pas.
@@ -111,13 +112,14 @@ formulaire, la consultation des réponses et la saisie des présences à une per
 
 - **Si deux personnes prennent la dernière place en même temps**, une seule l'obtient ; l'autre
   est prévenue que le niveau est complet (et proposée en liste d'attente si elle est active).
-- **Quand une place se libère** (annulation), la première personne de la liste d'attente est
-  inscrite et prévenue par email ou notification. [À CLARIFIER: inscription automatique, ou
-  proposition à confirmer dans un délai ?]
+- **Quand une place se libère** (annulation, place réduite par le secrétariat), la place est
+  **proposée** à la première personne de la liste d'attente, prévenue par email ou notification.
+  Elle confirme dans le délai fixé par le formulaire (48 h par défaut) ; sans confirmation, la
+  proposition expire et passe à la suivante. Elle peut aussi décliner, ce qui la retire de la
+  liste.
 - **Si le répondant n'a pas suivi le niveau précédent**, l'inscription est quand même acceptée :
-  le prérequis est **indicatif**, jamais bloquant. La secrétaire voit l'information dans la
-  liste. [À CLARIFIER: le niveau 001 est-il le seul sans prérequis, ou la réponse « 001 »
-  signifie-t-elle autre chose ?]
+  le prérequis est **indicatif**, jamais bloquant. La liste des inscrits affiche « niveau
+  précédent suivi : oui / non » ; la question n'est pas posée pour le niveau 001.
 - **Si la même personne s'inscrit deux fois** au même formulaire (même email, ou même compte),
   la seconde réponse est refusée avec un lien vers la première pour la modifier.
 - **Si la secrétaire modifie un formulaire qui a déjà des réponses**, elle peut corriger les
@@ -128,6 +130,8 @@ formulaire, la consultation des réponses et la saisie des présences à une per
   fois, mais le lien entre le compte et sa réponse n'est jamais visible ni exportable.
 - **Quand un inscrit est absent une demi-journée**, la feuille de présence le montre ; les
   présences sont modifiables par le secrétariat jusqu'à la purge.
+- **Durée de conservation** : 12 mois par défaut après la fermeture, réglable par formulaire
+  jusqu'à **24 mois au plus**. [Durée maximale proposée, à confirmer au plan.]
 - **Quand la durée de conservation est écoulée**, les réponses nominatives et les présences sont
   effacées sans retour possible ; les totaux restent consultables.
 - **Une personne d'une autre église** (compte connecté ailleurs) ne voit pas un formulaire
@@ -142,8 +146,13 @@ formulaire, la consultation des réponses et la saisie des présences à une per
       débit ; un formulaire réservé refuse toute personne non connectée à l'église.
 - [ ] Une inscription PCNC propose des sessions d'un ou deux jours et des niveaux avec places ;
       les places restantes sont affichées et jamais dépassées, même en cas de réponses simultanées.
-- [ ] La liste d'attente prend le relais quand un niveau ou un choix est complet.
-- [ ] Le prérequis entre niveaux n'empêche jamais l'inscription.
+- [ ] La liste d'attente prend le relais quand un niveau ou un choix est complet ; une place
+      libérée est proposée à la première personne, qui confirme dans le délai, sinon la
+      proposition passe à la suivante.
+- [ ] Le prérequis entre niveaux n'empêche jamais l'inscription ; « niveau précédent suivi »
+      est affiché pour tout niveau autre que 001.
+- [ ] Un intervenant désigné voit les réponses et note les présences de ce formulaire seulement,
+      sans pouvoir modifier ni exporter ; son accès s'éteint à la fermeture ou au retrait.
 - [ ] La feuille de présence permet de noter matin et après-midi pour chaque jour d'une session,
       et l'export inclut ces présences.
 - [ ] Le répondant reçoit un accusé de réception et peut modifier ou annuler sa réponse tant que
@@ -154,9 +163,10 @@ formulaire, la consultation des réponses et la saisie des présences à une per
 - [ ] L'affichage conditionnel masque et ignore une question dont la condition n'est pas remplie.
 - [ ] Les réponses sont exportables par le secrétariat.
 - [ ] Le secrétariat est notifié des nouvelles réponses selon sa préférence de notifications.
-- [ ] Un formulaire de participation peut être rattaché à un événement et s'y retrouve.
-- [ ] Les réponses nominatives sont effacées au terme de la durée de conservation ; les totaux
-      restent.
+- [ ] Un formulaire de participation peut être rattaché à un événement d'église ou de la
+      billetterie, et s'y retrouve.
+- [ ] Les réponses nominatives sont effacées au terme de la durée de conservation (12 mois par
+      défaut, 24 mois au plus) ; les totaux restent.
 - [ ] Un formulaire indisponible donne le même message quelle que soit la raison.
 - [ ] Toute création, modification, publication, fermeture, suppression et tout export sont
       journalisés.
@@ -176,12 +186,10 @@ formulaire, la consultation des réponses et la saisie des présences à une per
 
 ## Questions ouvertes
 
-- [À CLARIFIER: confier par formulaire la consultation des réponses et la feuille de présence à
-  une personne précise (ex. formateur PCNC) ?]
-- [À CLARIFIER: liste d'attente — inscription automatique à la libération d'une place, ou
-  proposition à confirmer dans un délai ?]
-- [À CLARIFIER: prérequis — que signifie « 001 » : le niveau d'entrée, seul sans prérequis ?
-  Faut-il seulement afficher « niveau précédent suivi : oui/non » à la secrétaire ?]
-- [À CLARIFIER: durée de conservation par défaut (12 mois proposé) et durée maximale ?]
-- [À CLARIFIER: participation à un événement — événements d'église seulement, ou aussi
-  événements de la billetterie ?]
+Tranchées le 2026-11-11 :
+
+- Intervenant désigné par formulaire (formateur PCNC) : **oui**, consultation et présences.
+- Liste d'attente : **proposition à confirmer** dans un délai (48 h par défaut).
+- Niveau 001 = niveau d'entrée, sans prérequis ; « niveau précédent suivi : oui / non » affiché.
+- Durée de conservation : **maximum** fixé (24 mois proposé), 12 mois par défaut.
+- Participation : événements d'église **et** de la billetterie.
