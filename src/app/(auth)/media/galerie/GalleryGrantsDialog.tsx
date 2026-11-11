@@ -51,7 +51,7 @@ export default function GalleryGrantsDialog({ open, onClose }: { readonly open: 
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- chargement à l'ouverture
-    if (open) reload();
+    if (open) void reload();
   }, [open]);
 
   useEffect(() => {
@@ -96,12 +96,12 @@ export default function GalleryGrantsDialog({ open, onClose }: { readonly open: 
       setPicked(null);
       setQ("");
       setUntil("");
-      reload();
+      void reload();
     }
   }
 
   async function changeEnd(g: Grant, day: string) {
-    if (await save({ userId: g.userId, expiresAt: endOfDay(day) }, "PATCH", g.id)) reload();
+    if (await save({ userId: g.userId, expiresAt: endOfDay(day) }, "PATCH", g.id)) await reload();
   }
 
   async function remove() {
@@ -112,7 +112,7 @@ export default function GalleryGrantsDialog({ open, onClose }: { readonly open: 
     if (res.ok) toast.success("Accès retiré");
     else toast.error("Retrait impossible");
     setRemoving(null);
-    reload();
+    await reload();
   }
 
   const input = "w-full border border-control-line rounded-lg px-3 py-2 text-base bg-surface text-ink focus:outline-none focus:border-brand";
@@ -189,7 +189,9 @@ export default function GalleryGrantsDialog({ open, onClose }: { readonly open: 
                       type="date"
                       min={tomorrow()}
                       defaultValue={g.expired ? "" : toDayInput(g.expiresAt)}
-                      onChange={(e) => { if (e.target.value) changeEnd(g, e.target.value); }}
+                      onChange={(e) => {
+                        if (e.target.value) void changeEnd(g, e.target.value);
+                      }}
                       className="border border-control-line rounded-lg px-2 py-1.5 text-sm bg-surface text-ink"
                     />
                     {g.expiresAt !== null && !g.expired && (

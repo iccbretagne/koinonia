@@ -149,7 +149,7 @@ export default function GalleryClient({
     const el = sentinel.current;
     if (!el || !cursor || typeof IntersectionObserver === "undefined") return;
     const io = new IntersectionObserver((entries) => {
-      if (entries.some((e) => e.isIntersecting)) loadMore();
+      if (entries.some((e) => e.isIntersecting)) void loadMore();
     }, { rootMargin: "600px" });
     io.observe(el);
     return () => io.disconnect();
@@ -424,7 +424,9 @@ export default function GalleryClient({
           items={items.map((i) => ({ ...i, src: i.thumbnailUrl || null, alt: i.filename }))}
           initialIndex={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
-          onIndexChange={(i) => { if (i >= items.length - 5) loadMore(); }}
+          onIndexChange={(i) => {
+            if (i >= items.length - 5) void loadMore();
+          }}
           header={(item) => (
             <div className="min-w-0">
               {/* eslint-disable-next-line no-restricted-syntax -- visionneuse plein écran toujours sombre */}
