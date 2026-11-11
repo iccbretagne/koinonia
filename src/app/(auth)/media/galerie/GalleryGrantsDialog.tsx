@@ -143,7 +143,7 @@ export default function GalleryGrantsDialog({ open, onClose }: { readonly open: 
                       <li key={c.id}>
                         <button type="button" onClick={() => setPicked(c)} className="w-full text-left px-3 py-2 text-sm hover:bg-surface-sunken">
                           <span className="text-ink">{c.name ?? c.email}</span>
-                          {c.name && c.email && <span className="block text-xs text-ink-subtle">{c.email}</span>}
+                          {c.name !== null && c.email !== null && <span className="block text-xs text-ink-subtle">{c.email}</span>}
                         </button>
                       </li>
                     ))}
@@ -192,7 +192,7 @@ export default function GalleryGrantsDialog({ open, onClose }: { readonly open: 
                       onChange={(e) => { if (e.target.value) changeEnd(g, e.target.value); }}
                       className="border border-control-line rounded-lg px-2 py-1.5 text-sm bg-surface text-ink"
                     />
-                    {g.expiresAt && !g.expired && (
+                    {g.expiresAt !== null && !g.expired && (
                       <Button variant="ghost" size="sm" onClick={() => changeEnd(g, "")} disabled={busy}>Sans fin</Button>
                     )}
                     <Button variant="danger" size="sm" onClick={() => setRemoving(g)} disabled={busy}>Retirer</Button>

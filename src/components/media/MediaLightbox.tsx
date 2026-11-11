@@ -72,9 +72,7 @@ export default function MediaLightbox<T extends LightboxItem>({
     <div
       // eslint-disable-next-line no-restricted-syntax -- visionneuse plein écran toujours sombre
       className="fixed inset-0 z-[60] bg-black/95 flex flex-col"
-      role="dialog"
-      aria-modal="true"
-      aria-label={item.alt}
+      role="none"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="flex items-center justify-between px-5 py-3 bg-scrim backdrop-blur-sm shrink-0">
@@ -92,6 +90,7 @@ export default function MediaLightbox<T extends LightboxItem>({
       </div>
 
       <div
+        role="none"
         className="flex-1 flex items-center justify-center relative overflow-hidden p-4"
         onTouchStart={(e) => { touchX.current = e.touches[0]?.clientX ?? null; }}
         onTouchEnd={(e) => {
@@ -133,13 +132,13 @@ export default function MediaLightbox<T extends LightboxItem>({
         )}
       </div>
 
-      {footer && (
+      {footer ? (
         <div className="shrink-0 flex flex-wrap items-center justify-center gap-4 py-4 px-5 bg-scrim backdrop-blur-sm">
           {footer(item)}
           {/* eslint-disable-next-line no-restricted-syntax -- visionneuse plein écran toujours sombre */}
           <span className="text-xs text-white/30 hidden sm:block">← → naviguer · Échap fermer</span>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

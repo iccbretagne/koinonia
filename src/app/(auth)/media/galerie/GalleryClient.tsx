@@ -231,10 +231,12 @@ export default function GalleryClient({
     router.replace(filters.order === "asc" ? `${pathname}?order=asc` : pathname, { scroll: false });
   }
 
-  const originHref = (item: Item) =>
-    item.source.type === "event"
-      ? item.kind === "photo" ? (originAccess.photos ? `/media/events/${item.source.id}` : null) : null
-      : originAccess.visuals ? `/media/projects/${item.source.id}` : null;
+  /** Lien vers l'origine, seulement si l'écran correspondant est accessible. */
+  function originHref(item: Item): string | null {
+    if (item.source.type === "project") return originAccess.visuals ? `/media/projects/${item.source.id}` : null;
+    if (item.kind === "photo" && originAccess.photos) return `/media/events/${item.source.id}`;
+    return null;
+  }
 
   return (
     <div className={selecting ? "pb-24" : ""}>
@@ -378,7 +380,7 @@ export default function GalleryClient({
             </section>
           ))}
           <div ref={sentinel} />
-          {cursor && (
+          {cursor !== null && (
             <div className="flex justify-center py-4">
               <Button variant="secondary" onClick={loadMore} disabled={loading}>
                 {loading ? "Chargement…" : loadError ? "Réessayer" : "Charger plus"}
@@ -436,7 +438,7 @@ export default function GalleryClient({
                 >
                   <Download className="w-4 h-4" aria-hidden="true" /> Télécharger
                 </a>
-                {href && (
+                {href !== null && (
                   // eslint-disable-next-line no-restricted-syntax -- visionneuse plein écran toujours sombre
                   <Link href={href} className="text-sm text-white/80 underline hover:text-white">
                     {item.source.type === "event" ? "Voir dans l'événement" : "Voir dans le projet"}
