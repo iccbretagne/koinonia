@@ -43,6 +43,12 @@ export const dayStart = (d: string) => new Date(`${d}T00:00:00.000Z`);
 export const previewText = (lines: string[], token: string) =>
   `Aperçu — rien n'est encore enregistré.\n${lines.join("\n")}\n\n${CONFIRM_HINT}\nJeton : ${token}`;
 
+/** Tri de textes stable et indépendant de la langue du serveur. */
+export const byText = (a: string, b: string) => a.localeCompare(b, "en");
+
+/** Tri de paires [identifiant, valeur] par identifiant. */
+export const byKey = (a: readonly unknown[], b: readonly unknown[]) => byText(String(a[0]), String(b[0]));
+
 /**
  * Empreinte d'un état lu à l'aperçu (lot 3) : SHA-256 d'une sérialisation à clés triées. Recalculée
  * à la confirmation ; différente ⇒ les données ont changé, rien n'est fait.
@@ -52,7 +58,7 @@ export function fingerprint(value: unknown): string {
     if (v instanceof Date) return v.toISOString();
     if (Array.isArray(v)) return v.map(sorted);
     if (v && typeof v === "object") {
-      return Object.fromEntries(Object.keys(v as object).sort().map((k) => [k, sorted((v as Record<string, unknown>)[k])]));
+      return Object.fromEntries(Object.keys(v as object).sort(byText).map((k) => [k, sorted((v as Record<string, unknown>)[k])]));
     }
     return v;
   };

@@ -18,6 +18,7 @@ import { formatDay, formatTime, startOfToday } from "../../assistant/_data/commo
 import {
   CHANGED,
   EXPIRED,
+  byKey,
   confirmInput,
   fingerprint,
   hasPermission,
@@ -231,7 +232,7 @@ async function fillState(churchId: string, event: { id: string; date: Date }, de
     const a = av.members.get(m);
     return [m, a?.state ?? null, a?.source ?? null, a?.busyElsewhere ?? []];
   });
-  return { grid, av, fp: fingerprint({ grid: [...grid.entries()].sort(), availability }) };
+  return { grid, av, fp: fingerprint({ grid: [...grid.entries()].sort(byKey), availability }) };
 }
 
 export async function previewFillPlanning(input: z.infer<typeof fillPlanningInput>, ctx: ActionContext): Promise<ActionResult> {
@@ -335,8 +336,8 @@ async function copyPlan(ctx: ActionContext, sourceEventId: string, targetEventId
   const targetDepts = new Map(target.eventDepts.map((d) => [d.departmentId, d]));
   const shared = source.eventDepts.filter((d) => targetDepts.has(d.departmentId) && d.plannings.length > 0);
   const fp = fingerprint({
-    source: shared.map((d) => [d.departmentId, d.plannings.map((p) => [p.memberId, p.status]).sort()]),
-    target: shared.map((d) => [d.departmentId, targetDepts.get(d.departmentId)!.plannings.map((p) => [p.memberId, p.status]).sort()]),
+    source: shared.map((d) => [d.departmentId, d.plannings.map((p) => [p.memberId, p.status]).sort(byKey)]),
+    target: shared.map((d) => [d.departmentId, targetDepts.get(d.departmentId)!.plannings.map((p) => [p.memberId, p.status]).sort(byKey)]),
   });
   return { source, target, shared, fp };
 }
