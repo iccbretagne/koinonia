@@ -96,13 +96,29 @@ cochée à la connexion.
 | **Publier les consignes** d'un département pour un événement (« arrivée 8 h 30, tenue noire ») | Responsable du département, Ministre | Le texte, l'événement, le département ; la consigne existante remplacée |
 | **Réserver une salle** | Réservation de salles | La salle, le créneau, les conflits éventuels |
 | **Remplir le compte rendu** d'un événement : orateur, titre du message, statistiques et remarques par département, observations, décisions | Comptes rendus (Admin, Secrétaire, Reporter) | Chaque rubrique saisie, et ce qu'elle remplace si le compte rendu existe déjà |
+| **Déclarer une absence pour un STAR** de son périmètre | Gestion des absences (Admin, Secrétaire, Ministre, Resp. département), STAR dans son périmètre | Le STAR, la période, les services qu'il quitte, les responsables prévenus |
+| **Répondre pour un STAR** à une demande de disponibilité | Modification du planning (Admin, Ministre, Resp. département), départements de son périmètre seulement | « Réponse saisie pour … », les départements concernés, un éventuel désistement |
+
+**Remplir le planning : ce que l'assistant sait, et ce qu'il ne sait pas.** Il tient compte de
+tout ce que la grille de planning connaît : absences déclarées (celles qui déclenchent les
+notifications aux responsables), réponses de disponibilité, désistements en attente, STAR déjà
+en service dans un autre département le même jour, date limite de planification. Il donne aussi,
+pour chaque STAR, son nombre de services des deux derniers mois, pour aider à répartir.
+Koinonia ne connaît pas les compétences (qui chante, qui joue), l'effectif nécessaire ni les
+contraintes personnelles : le responsable les donne en langage courant à son assistant (« deux
+claviers, un lead, pas Paul deux dimanches de suite »), qui les applique en plus. L'aperçu
+indique, pour chaque STAR proposé, ce que Koinonia en dit, et signale ce que l'assistant n'a pas
+pu vérifier. Enregistrer compétences ou effectifs par département est hors de ce lot.
 
 Cas limites propres à ce lot :
 
 - **Droits changés entre l'aperçu et la confirmation** (département retiré, rôle perdu) : la
   confirmation est refusée, rien n'est fait.
 - **Données changées entre-temps** (planning modifié par quelqu'un d'autre, salle réservée,
-  événement supprimé) : la confirmation est refusée avec la raison ; l'assistant refait l'aperçu.
+  événement supprimé, **absence déclarée par un STAR proposé**) : la confirmation est refusée
+  avec la raison ; l'assistant refait l'aperçu.
+- **Action pour un tiers** : le STAR doit être dans le périmètre du compte au moment de la
+  confirmation ; la grille de planning montre, comme aujourd'hui, une réponse saisie par un tiers.
 - **Série d'événements** : bornée (au plus 12 événements par confirmation) ; aucun événement
   créé si l'un d'eux est invalide.
 - **Notifications** : les mêmes que lorsque la personne fait l'action dans l'application (STAR
@@ -151,7 +167,7 @@ Cas limites propres à ce lot :
       le contenu de la conversation.
 - [ ] Le nombre d'appels par compte est limité.
 - [ ] Le premier lot ne permet aucune modification.
-- [ ] Au troisième lot, chacune des sept actions n'est proposée qu'aux comptes qui peuvent la
+- [ ] Au troisième lot, chacune des neuf actions n'est proposée qu'aux comptes qui peuvent la
       faire dans l'application, dans leur périmètre, et n'est faite qu'après aperçu et confirmation.
 - [ ] Une confirmation dont les droits ou les données ont changé depuis l'aperçu est refusée sans
       rien faire.
@@ -161,7 +177,7 @@ Cas limites propres à ce lot :
 - Un assistant IA fourni ou payé par l'église (chacun utilise le sien).
 - L'accès sans compte Koinonia, ou par une clé partagée entre plusieurs personnes.
 - La lecture de fichiers (photos, visuels, audio) : seules les informations sont lues.
-- Toute autre action que les trois du second lot et les sept du troisième (pas de remplacement
+- Toute autre action que les trois du second lot et les neuf du troisième (pas de remplacement
   automatique d'un STAR désisté, pas de suppression d'événement, pas d'action financière).
 - Toute modification de l'assistant intégré (spec 075).
 - Les intégrations automatiques sans personne derrière (robots, synchronisations).
@@ -178,4 +194,6 @@ Tranchées le 2026-11-11 :
 
 Ajoutées le 2026-11-12 (lot 3) : actions retenues par le porteur — créer des événements, remplir
 et recopier un planning, relancer les sans-réponse, publier des consignes, réserver une salle,
-remplir le compte rendu. Le remplacement d'un STAR désisté n'est pas retenu.
+remplir le compte rendu ; puis déclarer une absence et répondre aux disponibilités pour un STAR
+de son périmètre. Le remplacement d'un STAR désisté n'est pas retenu. Compétences et effectifs
+requis : hors périmètre, donnés par le responsable dans la conversation.
