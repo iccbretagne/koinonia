@@ -479,3 +479,15 @@ recopier, relancer, consignes) ; **3b** pour un STAR (absence, réponse) et comp
   tâches citées en une seule `$transaction` ; la route l'appelle avec une tâche.
 - **STAR nommé** : la route garde son message générique (« Ce STAR n'est pas en service… ») ;
   l'assistant vérifie avant, avec `findNotServing`, et nomme chaque STAR concerné.
+
+## Écarts à l'implémentation (lot 3, compte rendu complet)
+
+- **Même grille que l'écran** : un nouveau compte rendu part d'une section par département de
+  l'événement, comme la page de saisie ; l'assistant peut ajouter un département de l'église ou
+  une section libre, renommer ou supprimer une section.
+- **Statistiques de l'écran seulement** : les champs par type de section (Accueil, Sainte-Cène,
+  Intégration, Navette) sortent de la page dans `src/lib/report-stats.ts` et sont partagés ; une
+  clé inconnue, une section sans statistiques ou un événement sans statistiques ⇒ refus explicite
+  avec les clés attendues. Les valeurs fournies sont fusionnées clé par clé (`null` efface).
+- **Entrée renommée** : `sections[].department` devient `sections[].label` (section existante ou
+  département), avec `free`, `rename`, `remove`.

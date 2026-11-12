@@ -1,6 +1,6 @@
 /**
- * Tests — actions pour un STAR et compte rendu (spec 081, lot 3b) : droits et périmètre de
- * l'écran, aperçu sans écriture, code de l'écran à la confirmation, compte rendu modifié ⇒ refus.
+ * Tests — actions pour un STAR (spec 081, lot 3b) : droits et périmètre de l'écran, aperçu sans
+ * écriture, code de l'écran à la confirmation.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
@@ -33,12 +33,8 @@ vi.mock("@/app/api/availability/_core", () => ({
   resolveAvailabilityTarget: (...a: unknown[]) => resolveAvailabilityTarget(...a),
   answerFor: (...a: unknown[]) => answerFor(...a),
 }));
-const saveReport = vi.fn();
-vi.mock("@/app/api/events/[eventId]/report/_core", () => ({ saveReport: (...a: unknown[]) => saveReport(...a) }));
 
 const d = await import("../_actions/delegate");
-const r = await import("../_actions/report");
-const { CHANGED } = await import("../_actions/common");
 const { ApiError } = await import("@/lib/api-utils");
 
 const ctx = { session: { user: { id: "u1", churchRoles: [] } } as never, churchId: "c1", viewer: viewerFor("DEPARTMENT_HEAD"), grantId: "g1" };
@@ -116,68 +112,5 @@ describe("pour un STAR", () => {
     resolveAvailabilityTarget.mockRejectedValue(new ApiError(403, "Ce STAR est hors de votre périmètre"));
     expect((await d.previewAnswerFor({ memberId: "m9", day: FUTURE, answer: "AVAILABLE" }, ctx)).text).toBe("Ce STAR est hors de votre périmètre");
     expect(mcp.createConfirmation).not.toHaveBeenCalled();
-  });
-});
-
-describe("compte rendu", () => {
-  const EVENT = { id: "e1", churchId: "c1", title: "Culte ", date: new Date("2099-03-14T09:00:00Z"), reportEnabled: true };
-  const EXISTING = {
-    speaker: null,
-    messageTitle: null,
-    notes: "Belle louange",
-    decisions: null,
-    updatedAt: new Date("2099-03-14T12:00:00Z"),
-    sections: [{ departmentId: "dA", label: "Accueil", position: 0, stats: { hommes: 10, femmes: 12, enfants: 3 }, notes: null }],
-  };
-
-  beforeEach(() => {
-    prismaMock.event.findUnique.mockResolvedValue(EVENT);
-    prismaMock.eventReport.findUnique.mockResolvedValue(EXISTING);
-    prismaMock.department.findMany.mockResolvedValue([{ id: "dA", name: "Accueil" }, { id: "dS", name: "Sainte-Cène" }]);
-  });
-
-  it("proposé avec reports:edit ou events:manage (Reporter, Secrétaire), pas au Resp. département", () => {
-    const has = (role: string) => r.REPORT_ACTIONS[0].available(viewerFor(role));
-    expect(has("REPORTER")).toBe(true);
-    expect(has("SECRETARY")).toBe(true);
-    expect(has("DEPARTMENT_HEAD")).toBe(false);
-  });
-
-  it("aperçu : rubriques fournies et ce qu'elles remplacent ; les autres sont gardées", async () => {
-    perms.add("reports:edit");
-    const out = await r.previewReport(
-      { eventId: "e1", speaker: "Pasteur A", sections: [{ department: "accueil", stats: { hommes: 40, femmes: 50, enfants: 10 } }, { department: "Sainte-Cène", stats: { supportsUtilises: 80 } }] },
-      ctx
-    );
-    expect(out.text).toContain("- Orateur : « Pasteur A » (avant : vide)");
-    expect(out.text).toContain("- Accueil : hommes 40, femmes 50, enfants 10 (avant : hommes 10, femmes 12, enfants 3)");
-    expect(out.text).toContain("- Sainte-Cène : supportsUtilises 80");
-    const payload = (mcp.createConfirmation.mock.calls[0] as unknown[])[2] as { data: { notes: string; sections: { label: string; departmentId: string }[] } };
-    expect(payload.data.notes).toBe("Belle louange");
-    expect(payload.data.sections.map((s) => [s.label, s.departmentId])).toEqual([["Accueil", "dA"], ["Sainte-Cène", "dS"]]);
-    expect(saveReport).not.toHaveBeenCalled();
-  });
-
-  it("refus : sans droit, comptes rendus désactivés, département inconnu, plusieurs événements le même jour", async () => {
-    expect((await r.previewReport({ eventId: "e1", speaker: "X" }, ctx)).text).toContain("ne pouvez pas");
-    perms.add("reports:edit");
-    prismaMock.event.findUnique.mockResolvedValueOnce({ ...EVENT, reportEnabled: false });
-    expect((await r.previewReport({ eventId: "e1", speaker: "X" }, ctx)).text).toContain("pas activés");
-    expect((await r.previewReport({ eventId: "e1", sections: [{ department: "Fanfare", stats: {} }] }, ctx)).text).toContain("Département inconnu");
-    prismaMock.event.findMany.mockResolvedValue([EVENT, { ...EVENT, id: "e2", title: "Baptêmes" }]);
-    expect((await r.previewReport({ day: FUTURE, speaker: "X" }, ctx)).text).toContain("[eventId e2]");
-    expect(mcp.createConfirmation).not.toHaveBeenCalled();
-  });
-
-  it("confirmation : compte rendu modifié entre-temps ⇒ refus ; sinon code de l'écran via mcp", async () => {
-    perms.add("reports:edit");
-    await r.previewReport({ eventId: "e1", speaker: "Pasteur A" }, ctx);
-    const payload = (mcp.createConfirmation.mock.calls[0] as unknown[])[2];
-    mcp.consumeConfirmation.mockResolvedValue(payload);
-    prismaMock.eventReport.findUnique.mockResolvedValueOnce({ ...EXISTING, notes: "Modifié par la Secrétaire" });
-    expect((await r.confirmReport({ confirmation: "kmx_tok" }, ctx)).text).toBe(CHANGED);
-    expect(saveReport).not.toHaveBeenCalled();
-    await r.confirmReport({ confirmation: "kmx_tok" }, ctx);
-    expect(saveReport).toHaveBeenCalledWith(ctx.session, EVENT, expect.objectContaining({ speaker: "Pasteur A", notes: "Belle louange" }), { via: "mcp" });
   });
 });

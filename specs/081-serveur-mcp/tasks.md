@@ -232,6 +232,17 @@
 - [x] **T66** — Tests du service et des outils (`task-assignment.service.test.ts`,
       `task-actions.test.ts`)
 
+### Lot 3 — compte rendu complet (constat de recette)
+
+- [x] **T67** — Statistiques par type de section partagées (`REPORT_STAT_FIELDS`,
+      `reportSectionType`, `reportStatFields` dans `src/lib/report-stats.ts`), utilisées par la
+      page de saisie et par l'assistant
+- [x] **T68** — Lecture `report_form` ; `fill_report_preview` : sections d'office pour un
+      nouveau compte rendu, section libre (`free`), renommage, suppression, statistiques
+      fusionnées clé par clé et refusées hors de l'écran (clé inconnue, section sans
+      statistiques, statistiques désactivées), totaux calculés dans l'aperçu
+- [x] **T69** — Tests (`report-actions.test.ts`)
+
 ### Documentation (à chaque PR)
 
 - [x] **T63** — `CLAUDE.md`, `docs/auth.md`, guide et fiche de l'assistant, écran
@@ -265,5 +276,5 @@
 | Chaque appel journalisé sans contenu | T9, T19, T30 |
 | Débit limité par compte | T19, T30 |
 | Lot 1 sans aucune modification | T13, T31 |
-| Lot 3 : chaque action réservée aux comptes qui la font dans l'application, aperçu puis confirmation | T41, T45–T62, T65 |
+| Lot 3 : chaque action réservée aux comptes qui la font dans l'application, aperçu puis confirmation | T41, T45–T62, T65, T68 |
 | Lot 3 : droits ou données changés depuis l'aperçu ⇒ refus | T42, T49–T52, T56, T57, T61 |

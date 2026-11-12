@@ -656,7 +656,10 @@ seule (`ENABLED_MODULES`) :
   à la confirmation : données changées ⇒ refus. Lot 3b : pour un STAR du périmètre, absence
   (`absences:manage`, `declareAbsenceFor`) et réponse de disponibilité (`planning:edit`,
   `answerFor`), lecture `stars_inScope` ; compte rendu complet (`reports:edit` ou
-  `events:manage`, `saveReport`, rubriques non fournies gardées). Le contrôle de permission est
+  `events:manage`, `saveReport`, rubriques non fournies gardées) : lecture `report_form`,
+  sections d'office (départements de l'événement), sections libres, renommage, suppression,
+  statistiques fusionnées clé par clé et limitées à celles de l'écran (`REPORT_STAT_FIELDS`,
+  `@/lib/report-stats`, partagé avec la page de saisie). Le contrôle de permission est
   **injecté** dans le code partagé (`requireChurchPermission` pour l'écran, variante à session
   pour l'assistant), ce qui garde les routes et leurs tests inchangés. Lot 3c : créer 1 à 12
   événements datés (`events:manage`, `createEvent` + `addEventDepartment`, heure de Paris via

@@ -10,10 +10,10 @@ export interface ReportSectionData {
   notes: string | null;
 }
 
+/** Type d'une section de compte rendu, déduit de son libellé : il fixe ses statistiques. */
+export type ReportSectionType = "accueil" | "sainte-cene" | "integration" | "navette";
 
-type DeptType = "accueil" | "sainte-cene" | "integration" | null;
-
-function normalizeDeptName(s: string): string {
+export function normalizeSectionLabel(s: string): string {
   return s
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -21,12 +21,49 @@ function normalizeDeptName(s: string): string {
     .trim();
 }
 
-function getDeptType(label: string): DeptType {
-  const n = normalizeDeptName(label);
+export function reportSectionType(label: string): ReportSectionType | null {
+  const n = normalizeSectionLabel(label);
   if (n === "accueil") return "accueil";
   if (n.includes("sainte") && n.includes("cene")) return "sainte-cene";
   if (n === "integration" || n.startsWith("integration")) return "integration";
+  if (n.includes("navette")) return "navette";
   return null;
+}
+
+export type ReportStatField = { key: string; label: string };
+
+/**
+ * Statistiques saisissables par type de section (écran de saisie et assistant IA, spec 081) ;
+ * les autres sections n'ont que des observations. Les totaux se calculent, ils ne se saisissent pas.
+ */
+export const REPORT_STAT_FIELDS: Record<ReportSectionType, ReportStatField[]> = {
+  accueil: [
+    { key: "hommes", label: "Hommes" },
+    { key: "femmes", label: "Femmes" },
+    { key: "enfants", label: "Enfants" },
+  ],
+  "sainte-cene": [
+    { key: "supportsUtilises", label: "Supports utilisés" },
+    { key: "supportsRestants", label: "Supports restants" },
+  ],
+  integration: [
+    { key: "hommes", label: "Nouveaux arrivants (H)" },
+    { key: "femmes", label: "Nouveaux arrivants (F)" },
+    { key: "passage", label: "De passage" },
+    { key: "convertis", label: "Nouveaux convertis" },
+    { key: "voeux", label: "Renouvellement de vœux" },
+  ],
+  navette: [
+    { key: "hommes", label: "Hommes" },
+    { key: "femmes", label: "Femmes" },
+    { key: "enfants", label: "Enfants" },
+  ],
+};
+
+/** Statistiques d'une section d'après son libellé, ou null si elle n'en a pas. */
+export function reportStatFields(label: string): ReportStatField[] | null {
+  const type = reportSectionType(label);
+  return type ? REPORT_STAT_FIELDS[type] : null;
 }
 
 export function statDisplay(value: number | null): string {
@@ -50,7 +87,7 @@ function statRows(label: string, stats: Record<string, number | null>): StatItem
   const stat = (key: string) => stats[key] ?? null;
   const item = (short: string, value: number | null, long = short): StatItem => ({ short, long, value });
 
-  switch (getDeptType(label)) {
+  switch (reportSectionType(label)) {
     case "accueil": {
       const totalAdultes = sum(stat("hommes"), stat("femmes"));
       return [
