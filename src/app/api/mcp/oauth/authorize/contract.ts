@@ -16,6 +16,8 @@ export const authorizeQuerySchema = z.object({
 export const decisionSchema = authorizeQuerySchema.extend({
   church_id: z.string().max(100).optional(),
   decision: z.enum(["allow", "deny"]),
+  /** Case « actions confirmées » cochée (spec 081, lot 2). */
+  allow_write: z.enum(["on"]).optional(),
 });
 
 export const contract = defineContract({
@@ -31,7 +33,7 @@ export const contract = defineContract({
   POST: {
     summary: "MCP : décision de la personne sur l'écran d'autorisation",
     description:
-      "Envoyé par l'écran `/mcp/autoriser`, session requise, même origine (en-tête `Origin` obligatoire). « Autoriser » crée (ou réutilise) la connexion pour l'église choisie — fonction active et rôle dans l'église exigés — avec un code à usage unique ; « Refuser » donne `error=access_denied`. L'écran navigue ensuite vers l'adresse renvoyée.",
+      "Envoyé par l'écran `/mcp/autoriser`, session requise, même origine (en-tête `Origin` obligatoire). « Autoriser » crée (ou réutilise) la connexion pour l'église choisie, en lecture seule ou, si la case `allow_write` est cochée, avec les actions confirmées — fonction active et rôle dans l'église exigés — avec un code à usage unique ; « Refuser » donne `error=access_denied`. L'écran navigue ensuite vers l'adresse renvoyée.",
     access: "session",
     body: decisionSchema,
     response: "`{ redirectTo }` : adresse de retour de l'assistant, avec `code` et `state` (ou `error`)",

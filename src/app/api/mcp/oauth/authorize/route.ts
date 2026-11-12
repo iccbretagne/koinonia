@@ -67,7 +67,7 @@ export async function POST(request: Request) {
 
   if (p.decision === "deny" || !p.church_id) return back(redirectWith(req.redirectUri, { error: "access_denied", state: req.state }));
   try {
-    const code = await createAuthorization(session.user.id, p.church_id, req);
+    const code = await createAuthorization(session.user.id, p.church_id, req, p.allow_write === "on");
     return back(redirectWith(req.redirectUri, { code, state: req.state, iss: publicOrigin() }));
   } catch (error) {
     if (error instanceof OAuthError) return back(redirectWith(req.redirectUri, { error: error.error, state: req.state }));

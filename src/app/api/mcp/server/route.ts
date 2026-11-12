@@ -7,19 +7,30 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { buildSessionForUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
-import { publicOrigin, recordMcpCall, verifyAccessToken, type McpCaller } from "@/modules/mcp";
+import { canWrite, publicOrigin, recordMcpCall, verifyAccessToken, type McpCaller } from "@/modules/mcp";
 import { buildViewer } from "../../assistant/_viewer";
+import { DRAFT_REQUEST_TOOL, actionsFor, canDraftRequest, draftRequest } from "../_actions";
 import { GUIDE_TOOL, NO_DATA, guideInput, renderResult, runTool, searchGuide, toolInput, toolsFor } from "../_tools";
 
 export const runtime = "nodejs";
 
-const INSTRUCTIONS =
+const BASE_INSTRUCTIONS =
   "Koinonia est l'outil de gestion d'une église (planning de service, événements, demandes, comptabilité). " +
   "Les outils renvoient uniquement ce que la personne connectée voit déjà dans l'application, pour l'église choisie à la connexion. " +
-  "Tous les outils sont en lecture seule : aucun ne modifie Koinonia (déclarer une absence, répondre à un service ou faire une demande se fait dans l'application). " +
   "Les listes sont paginées : chaque résultat donne le total, et nextOffset s'il reste des lignes (à repasser en offset). " +
   "Réponds en français ; les dates et heures sont à l'heure de Paris. " +
   `Quand un outil répond « ${NO_DATA} », dis-le simplement : n'invente jamais une donnée absente.`;
+
+const READ_ONLY =
+  " Tous les outils sont en lecture seule : aucun ne modifie Koinonia (déclarer une absence ou répondre à un service se fait dans l'application ; draft_request prépare seulement un lien vers le formulaire de demande, que la personne envoie elle-même).";
+
+const WITH_ACTIONS =
+  " Les outils de lecture et draft_request (lien vers un formulaire prérempli) ne modifient rien. Seules deux actions modifient Koinonia, pour la personne elle-même : déclarer une absence et répondre à une demande de disponibilité. " +
+  "Chacune se fait en deux temps : l'outil …_preview n'enregistre rien et renvoie un résumé et un jeton ; montre ce résumé, attends l'accord explicite de la personne, " +
+  "puis appelle …_confirm avec ce jeton. N'appelle jamais …_confirm sans cet accord.";
+
+/** Instructions selon la connexion : lecture seule, ou actions confirmées autorisées par la personne. */
+const instructionsFor = (actions: boolean) => BASE_INSTRUCTIONS + (actions ? WITH_ACTIONS : READ_ONLY);
 
 /** Débit par compte : 60 appels par minute. */
 const RATE = { windowMs: 60_000, max: 60 };
@@ -48,7 +59,8 @@ async function buildServer(caller: McpCaller) {
   const log = (tool: string, outcome: "answered" | "refused" | "error") =>
     recordMcpCall({ grantId: caller.grantId, userId: caller.userId, churchId: caller.churchId, tool, outcome });
 
-  const server = new McpServer({ name: "koinonia", version: "1.0.0" }, { instructions: INSTRUCTIONS });
+  const actions = actionsFor(viewer, canWrite(caller.scope));
+  const server = new McpServer({ name: "koinonia", version: "1.0.0" }, { instructions: instructionsFor(actions.length > 0) });
 
   for (const tool of toolsFor(viewer)) {
     server.registerTool(
@@ -64,6 +76,47 @@ async function buildServer(caller: McpCaller) {
           await log(tool.name, "error");
           return { content: [{ type: "text" as const, text: "Koinonia n'a pas pu répondre. Réessayez plus tard." }], isError: true };
         }
+      }
+    );
+  }
+
+  // Lot 2 : aperçu (ne modifie rien) puis confirmation (modifie, après accord de la personne).
+  const actionCtx = { ...ctx, grantId: caller.grantId };
+  for (const action of actions) {
+    const confirm = action.kind === "confirm";
+    server.registerTool(
+      action.name,
+      {
+        description: action.description,
+        inputSchema: action.input,
+        annotations: { readOnlyHint: !confirm, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+      },
+      async (args) => {
+        try {
+          const result = await action.run(args as never, actionCtx);
+          await log(action.name, result.structured.reason ? "refused" : "answered");
+          return { content: [{ type: "text" as const, text: result.text }], structuredContent: result.structured };
+        } catch {
+          await log(action.name, "error");
+          return { content: [{ type: "text" as const, text: "Koinonia n'a pas pu enregistrer cette action. Réessayez plus tard." }], isError: true };
+        }
+      }
+    );
+  }
+
+  // Brouillon de demande : un lien prérempli, rien n'est enregistré (lecture seule).
+  if (canDraftRequest(viewer)) {
+    server.registerTool(
+      DRAFT_REQUEST_TOOL.name,
+      {
+        description: DRAFT_REQUEST_TOOL.description,
+        inputSchema: DRAFT_REQUEST_TOOL.input,
+        annotations: { readOnlyHint: true, openWorldHint: false },
+      },
+      async (args) => {
+        const result = await draftRequest(args);
+        await log(DRAFT_REQUEST_TOOL.name, "answered");
+        return { content: [{ type: "text" as const, text: result.text }], structuredContent: result.structured };
       }
     );
   }

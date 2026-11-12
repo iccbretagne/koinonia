@@ -300,3 +300,122 @@ Constats faits en connectant Claude à la recette, vérifiés dans le code :
 déclarer une indisponibilité (absence sur une période ou des événements), répondre à un service
 (disponible / indisponible), créer une demande en brouillon. Pistes notées pour plus tard, hors
 spec actuelle : signaler un retrait de service, saisir l'orateur et le titre d'un compte rendu.
+
+## Écarts à l'implémentation (lot 2)
+
+- **Portée `write` accordée par la personne** : case « actions confirmées » sur `/mcp/autoriser`,
+  décochée par défaut. Un assistant peut demander `write` (déclaré dans `scopes_supported`), mais
+  seule la case l'accorde ; reconnecter le même assistant met à jour la portée de la connexion.
+  « Mon profil » et les paramètres de l'église affichent « lecture seule » ou « lecture et
+  actions ».
+- **Confirmation par jeton seul** : `…_confirm` ne reçoit que le jeton ; ce qui est exécuté est le
+  résumé figé à l'aperçu (`mcp_confirmations.payload`). Un assistant ne peut donc pas confirmer
+  d'autres paramètres que ceux montrés à la personne.
+- **Périmètre** : la fiche STAR liée au compte (`listLinkedMemberIds`), jamais un tiers ; outils
+  absents sans fiche liée (prédicat `linkedStar`). Absence = période, tous les départements
+  (comme le formulaire par défaut, dates à minuit UTC) ; réponse = tous les événements de ses
+  départements le jour donné, pour un mois proposé dans « Mes disponibilités ».
+- **Brouillon de demande (T38) = lien prérempli** (décision du 2026-11-12) : aucune demande
+  n'a d'état brouillon, et en ajouter un toucherait toutes les files de traitement. L'outil
+  `draft_request` renvoie un lien vers `/requests/new` prérempli (`src/app/(auth)/requests/prefill.ts` :
+  annonce, visuel, ajout d'événement ; texte et dates seulement, jamais d'identifiant). Rien n'est
+  enregistré : pas de confirmation, outil en lecture, proposé à qui ouvre le formulaire
+  (`members:view`), même sans la case des actions.
+
+## Lot 3 — actions des responsables (plan)
+
+### Principe : un seul code métier pour l'écran et l'assistant
+
+Les routes concernées font aujourd'hui leurs contrôles et leur écriture dans le route handler,
+avec `requireChurchPermission` (qui relit la session NextAuth). Le serveur MCP a déjà une
+session reconstruite (`buildSessionForUser`). Pour ne pas dupliquer de règle, chaque écriture est
+**extraite** du route handler dans un module voisin `_core.ts` (couche `src/app`, comme
+`_shared.ts`) : une fonction `(session, churchId, entrée validée) → résultat` qui fait **tous**
+les contrôles qui ne dépendent pas de la requête HTTP (périmètre de département, date limite,
+appartenance à l'église, doublons, conflits) puis l'écriture, la journalisation et les
+notifications. Les contrôles de permission passent par les variantes à session existantes
+(`hasChurchPermission(session, …)`, `getUserDepartmentScope`, `requireDepartmentAccess`). Le route
+handler garde l'authentification, le débit et l'analyse du corps, puis appelle le cœur ; son
+comportement HTTP est inchangé (tests existants à l'identique).
+
+| Action | Route d'origine | Cœur extrait |
+|---|---|---|
+| Créer des événements | `POST /api/events` (+ `POST /api/events/[id]/departments`) | `src/app/api/events/_core.ts` : `createEvents` |
+| Remplir le planning | `PUT /api/events/[id]/departments/[deptId]/planning` | `…/planning/_core.ts` : `savePlanning` |
+| Recopier un planning | `POST /api/events/[id]/duplicate-planning` | `…/duplicate-planning/_core.ts` : `duplicatePlanning` |
+| Relancer les sans-réponse | `POST …/departments/[deptId]/availability` | service existant `manualRelance` (`@/modules/planning`) |
+| Publier des consignes | `PUT /api/departments/[id]/notices` | `…/notices/_core.ts` : `saveNotice` |
+| Réserver une salle | `POST /api/room-reservations` | service existant `createReservation` (`@/modules/rooms`) |
+| Remplir le compte rendu | `PUT /api/events/[id]/report` | `…/report/_core.ts` : `saveReport` |
+| Absence pour un STAR | `POST /api/absences` | `src/app/api/absences/_core.ts` : `declareAbsenceAs` |
+| Répondre pour un STAR | `PUT /api/availability` | `src/app/api/availability/_core.ts` : `answerAs` |
+
+### Outils MCP
+
+Même mécanique qu'au lot 2 (`…_preview` / `…_confirm`, jeton `kmx_`, résumé figé dans
+`mcp_confirmations.payload`, `logAudit` `via: "mcp"`), dans `src/app/api/mcp/_actions/` (un
+fichier par domaine, catalogue commun). Chaque outil n'est proposé que si le compte peut faire
+l'action dans l'application (même permission que la route ; périmètre vérifié à chaque appel).
+
+Pour désigner sans ambiguïté, les aperçus prennent des **identifiants** (événement,
+département, STAR, salle), fournis par des outils de lecture dédiés, sans coordonnée :
+
+- `planning_eventsToStaff` : événements à venir de son périmètre, avec départements et état de
+  la grille (identifiants) ;
+- `planning_candidates(eventId, departmentId)` : STAR du département avec, pour chacun, l'état
+  de la grille (disponible, si besoin, pas disponible, absent, sans réponse), désistement en
+  attente, service dans un autre département ce jour-là, statut actuel, et **nombre de services
+  des 60 derniers jours** — les données de la grille (`getPlanningAvailability`), rien de plus ;
+- `rooms_available(day, start, end)` : salles autorisées et libres sur le créneau ;
+- `reports_get` existant (contenu actuel d'un compte rendu, avant de le remplir).
+
+### Détection des changements entre aperçu et confirmation
+
+Le résumé figé contient une **empreinte de l'état lu** à l'aperçu (SHA-256 d'une sérialisation
+triée) : grille du département pour l'événement (planning, recopie), consigne existante,
+compte rendu existant, absences et réponses des STAR proposés. `…_confirm` recalcule
+l'empreinte : différente ⇒ refus « Les données ont changé depuis l'aperçu », rien n'est fait.
+Les conflits de salle et la date limite sont revérifiés par le cœur lui-même.
+
+### Règles par action
+
+- **Événements** : 1 à 12 occurrences par confirmation (date et heure explicites ou règle
+  hebdomadaire / mensuelle bornée), départements en service ; aperçu = liste, doublons
+  (même jour, même titre) signalés ; tout dans une transaction, rien si une date est invalide.
+- **Remplir le planning** : l'assistant fournit `[{memberId, status}]` ; le cœur exige que chaque
+  STAR appartienne au département (règle existante). L'aperçu signale, pour chaque STAR
+  proposé, absent / pas disponible / déjà en service ailleurs, sans bloquer (la grille ne bloque
+  pas non plus) ; il liste ce qui remplace la grille actuelle.
+- **Recopie** : source et cible du même périmètre ; l'aperçu marque les STAR recopiés devenus
+  absents ou pas disponibles pour la cible.
+- **Relance** : une fois par jour et par événement (règle de `manualRelance`) ; aperçu = nombre
+  de STAR relancés par département, jamais de nom.
+- **Consignes** : texte ≤ 2 000 caractères, remplace la consigne existante (montrée dans l'aperçu).
+- **Salle** : `rooms:reserve`, salle autorisée pour l'église, conflit = refus.
+- **Compte rendu** : `reports:edit` (ou `events:manage`), comptes rendus activés pour
+  l'événement ; sections par département reprises du compte rendu existant ou des départements en
+  service ; l'aperçu montre chaque rubrique et ce qu'elle remplace.
+- **Pour un STAR** : absence = `absences:manage` + STAR dans le périmètre ; réponse =
+  `planning:edit` + départements du périmètre ; `enteredById` = le responsable (la grille le
+  montre déjà comme saisi par un tiers).
+
+### Instructions et écran
+
+Instructions du serveur : liste des actions disponibles pour ce compte, rappel du deux-temps et
+de l'accord explicite ; pour le planning, « Koinonia ne connaît ni les compétences ni l'effectif
+nécessaire : demande-les au responsable et applique ses contraintes ». L'écran d'autorisation
+liste les actions possibles selon le rôle (même case « actions confirmées »).
+
+### Tests
+
+Pour chaque cœur extrait : tests de route existants inchangés + test du cœur appelé avec une
+session (périmètre, date limite). Pour chaque outil : aperçu sans écriture, confirmation
+unique, refus hors périmètre, refus si l'empreinte a changé, journalisation `via: "mcp"`,
+outil absent sans la permission. Série d'événements : 13 dates refusées, transaction annulée
+si une date est invalide.
+
+### Découpage proposé
+
+Trois PR successives, chacune utilisable seule : **3a** planning (candidats, remplir,
+recopier, relancer, consignes) ; **3b** pour un STAR (absence, réponse) et compte rendu ;
+**3c** événements et salles.

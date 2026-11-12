@@ -6,7 +6,7 @@ export function GET() {
   return oauthJson({
     resource: resourceUrl(),
     authorization_servers: [publicOrigin()],
-    scopes_supported: ["read"],
+    scopes_supported: ["read", "write"],
     bearer_methods_supported: ["header"],
     resource_name: "Koinonia",
   });

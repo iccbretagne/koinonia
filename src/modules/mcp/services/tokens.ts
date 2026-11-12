@@ -6,7 +6,7 @@ export const ACCESS_TTL_MS = 60 * 60 * 1000;
 export const REFRESH_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
 /** Jeton opaque : 256 bits d'aléa, préfixé pour être reconnaissable dans un journal. */
-export function newToken(prefix: "kmc" | "kma" | "kmr"): string {
+export function newToken(prefix: "kmc" | "kma" | "kmr" | "kmx"): string {
   return `${prefix}_${randomBytes(32).toString("base64url")}`;
 }
 

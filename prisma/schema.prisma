@@ -4025,13 +4025,33 @@ model McpGrant {
   createdAt   DateTime   @default(now())
   lastUsedAt  DateTime?
   revokedAt   DateTime?
-  revokedById String?
-  tokens      McpToken[]
+  revokedById   String?
+  tokens        McpToken[]
+  confirmations McpConfirmation[]
 
   @@index([userId])
   @@index([churchId])
   @@index([clientId])
   @@map("mcp_grants")
+}
+
+/// Action d'un assistant IA en attente de l'accord de la personne (spec 081, lot 2) : jeton de
+/// confirmation à usage unique (empreinte SHA-256 seule), 5 minutes, lié à la connexion et à
+/// l'outil ; `payload` = ce qui sera exécuté, figé à l'aperçu.
+model McpConfirmation {
+  id        String    @id @default(cuid())
+  grantId   String
+  grant     McpGrant  @relation(fields: [grantId], references: [id], onDelete: Cascade)
+  action    String    @db.VarChar(60)
+  hash      String    @unique @db.Char(64)
+  payload   Json
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([grantId])
+  @@index([expiresAt])
+  @@map("mcp_confirmations")
 }
 
 /// Code d'autorisation, jeton d'accès ou de rafraîchissement : seule l'empreinte SHA-256 est stockée.

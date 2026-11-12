@@ -15,7 +15,7 @@ export default async function McpAdminPage() {
       <PageHeader
         eyebrow="Administration · Plateforme"
         title="Assistants IA (MCP)"
-        description="Connexion des assistants IA des membres à Koinonia, en lecture seule. Chaque église l'active ensuite dans ses paramètres."
+        description="Connexion des assistants IA des membres à Koinonia : lecture, et deux actions confirmées par la personne si elle les autorise. Chaque église l'active ensuite dans ses paramètres."
       />
       <McpAdminClient enabled={settings.enabled} usage={usage} />
     </div>

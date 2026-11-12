@@ -10,6 +10,7 @@ interface Connection {
   user: { name: string | null; email: string | null };
   createdAt: string;
   lastUsedAt: string | null;
+  actions: boolean;
 }
 
 const dayFmt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric", timeZone: "Europe/Paris" });
@@ -74,7 +75,8 @@ export default function ChurchMcpCard({
       </div>
       <p className="text-[15px] text-ink-muted">
         Permet à chaque membre de connecter son propre assistant IA (Claude, ChatGPT…) pour lire ce qu&apos;il voit déjà dans
-        Koinonia, sans rien modifier. Jamais de suivi pastoral, de coordonnées bancaires ni de coordonnées d&apos;autrui. Couper
+        Koinonia ; s&apos;il l&apos;autorise, l&apos;assistant peut aussi déclarer ses absences et répondre aux demandes de
+        disponibilité, toujours après sa confirmation. Jamais de suivi pastoral, de coordonnées bancaires ni de coordonnées d&apos;autrui. Couper
         rend aussitôt toutes les connexions de l&apos;église inutilisables.
       </p>
       <div>
@@ -89,7 +91,8 @@ export default function ChurchMcpCard({
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm text-ink">{c.user.name ?? c.user.email}</p>
                 <p className="text-xs text-ink-subtle">
-                  {c.client} · depuis le {dayFmt.format(new Date(c.createdAt))}
+                  {c.client} · {c.actions ? "lecture et actions" : "lecture seule"} · depuis le{" "}
+                  {dayFmt.format(new Date(c.createdAt))}
                   {c.lastUsedAt === null ? "" : ` · utilisé le ${dayFmt.format(new Date(c.lastUsedAt))}`}
                 </p>
               </div>

@@ -21,6 +21,7 @@ import { controlClasses, fieldLabelClasses, textareaClasses } from "@/components
 import { REQUEST_TYPE_ICON } from "../request-display";
 import { EVENT_TYPES, EVENT_TYPE_LABELS } from "@/lib/event-types";
 import { ROLE_LABELS } from "@/lib/roles";
+import type { RequestPrefill } from "../prefill";
 
 type RequestCategory = "announcement" | "visual" | "demand" | null;
 type DemandType =
@@ -60,6 +61,8 @@ interface Props {
   readonly users: { id: string; label: string }[];
   readonly ministries: { id: string; name: string }[];
   readonly editData?: EditData;
+  /** Préremplissage par l'adresse (assistant IA, spec 081) ; ignoré en modification. */
+  readonly prefill?: RequestPrefill;
 }
 
 const DEMAND_TYPES: { key: DemandType; label: string; icon: LucideIcon }[] = [
@@ -176,6 +179,52 @@ const ROLES_FOR_ACCESS = (["MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER", "REP
   (value) => ({ value, label: ROLE_LABELS[value] })
 );
 
+type FormInit = ReturnType<typeof initFromEditData>;
+
+/** Formulaire prérempli : annonce, visuel ou demande d'ajout d'événement, champs simples seulement. */
+function initFromPrefill(p: RequestPrefill): FormInit {
+  const empty: FormInit = {
+    category: null,
+    demandType: null,
+    annTitle: "",
+    annContent: "",
+    annEventDate: "",
+    annIsUrgent: false,
+    annChannelInterne: true,
+    annChannelExterne: false,
+    annTargetEventIds: [],
+    eventTitle: "",
+    eventType: "CULTE",
+    eventDate: "",
+    planningDeadline: "",
+    deadlineOffset: "",
+    eventDeptIds: [],
+    recurrenceRule: "",
+    recurrenceEnd: "",
+    selectedEventId: "",
+    reason: "",
+    planningDeptIds: [],
+    targetUserId: "",
+    targetRole: "MINISTER",
+    targetMinistryId: "",
+    targetDeptIds: [],
+  };
+  if (p.type === "annonce") {
+    return { ...empty, category: "announcement", annTitle: p.titre ?? "", annContent: p.texte ?? "", annEventDate: p.date ?? "" };
+  }
+  if (p.type === "evenement") {
+    return {
+      ...empty,
+      category: "demand",
+      demandType: "AJOUT_EVENEMENT",
+      eventTitle: p.titre ?? "",
+      eventType: p.typeEvenement ?? "CULTE",
+      eventDate: p.date ? `${p.date}T${p.heure ?? "10:00"}` : "",
+    };
+  }
+  return { ...empty, category: "visual" };
+}
+
 function initFromEditData(editData: EditData): {
   category: RequestCategory;
   demandType: DemandType | null;
@@ -255,13 +304,15 @@ export default function RequestForm({
   users,
   ministries,
   editData,
+  prefill,
 }: Props) {
   const router = useRouter();
   const formId = useId();
   const toast = useToast();
   const isEditMode = !!editData;
 
-  const init = editData ? initFromEditData(editData) : null;
+  const init = editData ? initFromEditData(editData) : prefill ? initFromPrefill(prefill) : null;
+  const visualPrefill = !editData && prefill?.type === "visuel" ? prefill : null;
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -270,10 +321,10 @@ export default function RequestForm({
   const [demandType, setDemandType] = useState<DemandType | null>(init?.demandType ?? null);
 
   // Visual fields
-  const [visualTitle, setVisualTitle] = useState("");
-  const [visualBrief, setVisualBrief] = useState("");
+  const [visualTitle, setVisualTitle] = useState(visualPrefill?.titre ?? "");
+  const [visualBrief, setVisualBrief] = useState(visualPrefill?.texte ?? "");
   const [visualFormat, setVisualFormat] = useState("");
-  const [visualDeadline, setVisualDeadline] = useState("");
+  const [visualDeadline, setVisualDeadline] = useState(visualPrefill?.date ?? "");
   const [visualSourceId, setVisualSourceId] = useState(sourceOptions[0]?.id ?? "");
 
   // Announcement fields

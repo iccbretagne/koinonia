@@ -881,8 +881,9 @@ stocké en clair : seule son empreinte SHA-256.
 | Table | Rôle |
 |---|---|
 | `mcp_clients` | Assistants enregistrés dynamiquement (RFC 7591) : `clientId`, nom déclaré, `redirectUris` exactes (https ou boucle locale). Clients publics, sans secret ; supprimés après 7 jours s'ils n'ont aucune connexion |
-| `mcp_grants` | Connexion = un compte (`userId`), une église (`churchId`), un client ; `scope` (`read`), `lastUsedAt`, `revokedAt`/`revokedById` |
+| `mcp_grants` | Connexion = un compte (`userId`), une église (`churchId`), un client ; `scope` (`read`, ou `read write` si la personne a coché les actions confirmées — lot 2), `lastUsedAt`, `revokedAt`/`revokedById` |
 | `mcp_tokens` | `kind` `CODE` (5 min, PKCE `codeChallenge`, `redirectUri`), `ACCESS` (1 h) ou `REFRESH` (90 jours, rotation) ; `hash` unique, `usedAt` pour l'usage unique (rejeu ⇒ connexion révoquée) |
+| `mcp_confirmations` | Action en attente de l'accord de la personne (lot 2) : `grantId`, `action` (`declare_unavailability`, `answer_service`), `hash` unique du jeton `kmx_` (empreinte seule), `payload` (ce qui sera exécuté, figé à l'aperçu), `expiresAt` (5 min), `usedAt` (usage unique, prise atomique) ; purgé par `mcp-maintenance` |
 | `mcp_settings` | Interrupteur d'instance (ligne `singleton`, absente = coupé) |
 | `mcp_church_settings` | Interrupteur par église (absent = coupé) |
 | `mcp_calls` | Journal sans contenu : connexion, compte, église, outil, issue (`answered`, `refused`, `error`, `limited`), date ; purgé après 12 mois (tâche `mcp-maintenance`) |

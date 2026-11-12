@@ -86,8 +86,10 @@ describe("maintenance", () => {
     prismaMock.mcpToken.deleteMany.mockResolvedValue({ count: 4 });
     prismaMock.mcpCall.deleteMany.mockResolvedValue({ count: 2 });
     prismaMock.mcpClient.deleteMany.mockResolvedValue({ count: 1 });
+    prismaMock.mcpConfirmation.deleteMany.mockResolvedValue({ count: 3 });
     const now = new Date("2026-11-11T03:00:00Z");
-    expect(await runMcpMaintenance(now)).toEqual({ tokensDeleted: 4, callsDeleted: 2, clientsDeleted: 1 });
+    expect(await runMcpMaintenance(now)).toEqual({ tokensDeleted: 4, confirmationsDeleted: 3, callsDeleted: 2, clientsDeleted: 1 });
+    expect(prismaMock.mcpConfirmation.deleteMany.mock.calls[0][0].where.expiresAt.lt).toEqual(new Date("2026-11-10T03:00:00Z"));
     expect(prismaMock.mcpClient.deleteMany.mock.calls[0][0].where).toMatchObject({ grants: { none: {} } });
     expect(prismaMock.mcpToken.deleteMany.mock.calls[0][0].where.expiresAt.lt).toEqual(new Date("2026-11-10T03:00:00Z"));
   });
