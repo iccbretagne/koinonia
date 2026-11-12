@@ -1,7 +1,7 @@
 # Plan technique — Formulaires (inscriptions, participation, sondages)
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-11-12
 - **ADR** : [ADR-0030](../../docs/adr/0030-moteur-de-formulaires.md) (moteur de formulaires et
   anonymat des sondages, Proposé)
@@ -231,8 +231,8 @@ rattachement historique.
 ## UI / composants
 
 - **`/formulaires`** (`forms:manage`, ou intervenant pour ses formulaires) : liste avec état,
-  réponses / places, actions (dupliquer, fermer). Entrée dans l'espace « Demandes » ou
-  « Personnes » de `navigation.ts` selon l'avis du produit (à trancher aux tâches).
+  réponses / places, actions (dupliquer, fermer). Entrée dans l'espace « Agenda » de
+  `navigation.ts`, à côté de « Billetterie ».
 - **`/formulaires/[id]`** à onglets (`Tabs`) : **Construction** (questions réordonnables par
   boutons haut/bas, choix et places, condition d'affichage, sessions et niveaux), **Réglages**
   (accès, dates, liste d'attente, délai, conservation, intervenants), **Aperçu**, **Réponses**
@@ -268,7 +268,7 @@ rattachement historique.
   le lendemain de la dernière session pour une inscription) — *Pourquoi* : dans la spec, les
   inscriptions PCNC ferment avant la formation, alors que les formateurs doivent noter la
   présence le jour J ; leur accès s'éteint à la **clôture**, et la conservation court à partir
-  d'elle. **À valider.**
+  d'elle. Validé le 2026-11-12.
 - **Choix** : conservation **12 mois par défaut, 24 mois au plus**, à compter de la clôture
   (tranche le point laissé ouvert par la spec).
 - **Choix** : doublon sur un formulaire public ⇒ le lien de gestion est renvoyé à l'adresse
