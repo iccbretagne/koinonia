@@ -202,7 +202,7 @@ describe("catalogue des questions de données (spec 075)", () => {
         messageTitle: null,
         notes: `Belle louange, ${SECRET}`,
         decisions: null,
-        event: { id: "e9", title: "Culte", date: new Date("2026-10-25T09:00:00Z") },
+        event: { id: "e9", title: "Culte ", date: new Date("2026-10-25T09:00:00Z") },
         sections: [
           { label: "Son", position: 2, stats: null, notes: "Micro HS" },
           { label: "Accueil", position: 1, stats: { hommes: 40, femmes: 50, enfants: 10 }, notes: null },

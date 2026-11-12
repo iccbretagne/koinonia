@@ -90,7 +90,7 @@ export function isDataRefusal(result: DataResult): result is DataRefusal {
 export const cleanText = (text: string | null | undefined) => (text ?? "").replace(/\s+/g, " ").trim();
 
 /**
- * Réponse complète d'une question : libellés et détails nettoyés (un détail vide disparaît, pour
+ * Réponse complète d'une question : titre, libellés et détails nettoyés (un détail vide disparaît, pour
  * ne jamais laisser un séparateur seul), total = nombre de lignes. Aucune troncature ici :
  * chaque consommateur borne à sa façon (`pageAnswer`).
  */
@@ -99,7 +99,7 @@ export function boundedAnswer(answer: Omit<DataAnswer, "items" | "total"> & { it
     const clean = cleanText(detail);
     return { label: cleanText(label), ...(clean ? { detail: clean } : {}), ...(href ? { href } : {}) };
   });
-  return { ...answer, items, total: items.length };
+  return { ...answer, title: cleanText(answer.title), items, total: items.length };
 }
 
 /** Une page de la réponse (`offset`, `limit`), le total restant celui de la liste complète. */
