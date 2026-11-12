@@ -151,3 +151,17 @@ describe("répondre à une demande de disponibilité", () => {
     expect(logAudit).not.toHaveBeenCalled();
   });
 });
+
+describe("préparer une demande", () => {
+  it("lien prérempli vers le formulaire, rien d'enregistré ni de confirmation", async () => {
+    const out = await actions.draftRequest({ type: "visuel", titre: "Affiche Noël", texte: "Format A3", date: "2099-12-01" });
+    expect(out.structured.link).toBe("https://koinonia.test/requests/new?type=visuel&titre=Affiche+No%C3%ABl&texte=Format+A3&date=2099-12-01");
+    expect(out.text).toContain("rien n'est encore envoyé");
+    expect(mcp.createConfirmation).not.toHaveBeenCalled();
+  });
+
+  it("proposé seulement à qui ouvre le formulaire (members:view)", () => {
+    expect(actions.canDraftRequest(viewerFor("STAR"))).toBe(false);
+    expect(actions.canDraftRequest(viewerFor("DEPARTMENT_HEAD"))).toBe(true);
+  });
+});

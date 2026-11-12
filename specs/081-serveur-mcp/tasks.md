@@ -1,7 +1,7 @@
 # Tâches — Connecter un assistant IA à Koinonia (serveur MCP)
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md` · **ADR** : `docs/adr/0029-serveur-autorisation-oauth-mcp.md`
-- **Statut** : Lot 1 terminé ; lot 2 terminé sauf T38 (brouillon de demande, en attente de décision)
+- **Statut** : Lots 1 et 2 terminés
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
@@ -142,7 +142,7 @@
 - [x] **T36** — `declare_unavailability_preview` / `_confirm` (service existant de
       `@/modules/planning`, `logAudit` `via: "mcp"`)
 - [x] **T37** — `answer_service_preview` / `_confirm`
-- [ ] **T38** — `draft_request_preview` / `_confirm` (brouillon seulement) — **bloquée** : aucune demande de l'application n'a d'état « brouillon » (voir `plan.md`, « Écarts du lot 2 »)
+- [x] **T38** — `draft_request` : lien vers « Nouvelle demande » prérempli (annonce, visuel, ajout d'événement), sans écriture — décision du 2026-11-12, voir `plan.md`
 - [x] **T39** — Portée `write` à l'autorisation (case explicite sur l'écran), outils d'écriture
       masqués sans elle
 - [x] **T40** — Tests du lot 2 : confirmation obligatoire, jeton rejoué/expiré/autres

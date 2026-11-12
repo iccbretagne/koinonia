@@ -19,7 +19,12 @@ const actionsFor = vi.fn((_viewer: unknown, write: boolean) =>
       ]
     : []
 );
-vi.mock("../_actions", () => ({ actionsFor: (v: unknown, w: boolean) => actionsFor(v, w) }));
+vi.mock("../_actions", () => ({
+  actionsFor: (v: unknown, w: boolean) => actionsFor(v, w),
+  canDraftRequest: () => true,
+  draftRequest: vi.fn(),
+  DRAFT_REQUEST_TOOL: { name: "draft_request", description: "lien", input: {} },
+}));
 const buildSessionForUser = vi.fn(async (): Promise<unknown> => null);
 vi.mock("@/lib/auth", () => ({ buildSessionForUser: () => buildSessionForUser() }));
 vi.mock("../../assistant/_viewer", () => ({ buildViewer: vi.fn() }));
@@ -100,7 +105,10 @@ describe("serveur MCP", () => {
     expect(init.result.instructions).toContain("nextOffset");
     const list = await (await rpc(2, "tools/list")).json();
     for (const tool of list.result.tools) expect(tool.annotations.readOnlyHint, tool.name).toBe(true);
-    expect(list.result.tools.map((t: { name: string }) => t.name)).not.toContain("declare_unavailability_confirm");
+    const names = list.result.tools.map((t: { name: string }) => t.name);
+    expect(names).not.toContain("declare_unavailability_confirm");
+    // Le brouillon de demande n'est qu'un lien : proposé même en lecture seule.
+    expect(names).toContain("draft_request");
   });
 
   it("connexion avec actions : deux temps et accord explicite exigés ; seule la confirmation modifie", async () => {

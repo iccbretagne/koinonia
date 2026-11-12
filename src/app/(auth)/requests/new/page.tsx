@@ -5,8 +5,13 @@ import EmptyState from "@/components/ui/EmptyState";
 import PageHeader from "@/components/ui/PageHeader";
 import RequestForm from "./RequestForm";
 import { loadRequestFormData } from "../request-form-options";
+import { parseRequestPrefill } from "../prefill";
 
-export default async function NewRequestPage() {
+export default async function NewRequestPage({
+  searchParams,
+}: {
+  readonly searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) {
@@ -34,6 +39,7 @@ export default async function NewRequestPage() {
         showCareTile={showCareTile}
         showAccountingTile={showAccountingTile}
         {...formOptions}
+        prefill={parseRequestPrefill((await searchParams) ?? {})}
       />
     </div>
   );

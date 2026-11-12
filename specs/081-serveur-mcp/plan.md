@@ -315,6 +315,9 @@ spec actuelle : signaler un retrait de service, saisir l'orateur et le titre d'u
   absents sans fiche liée (prédicat `linkedStar`). Absence = période, tous les départements
   (comme le formulaire par défaut, dates à minuit UTC) ; réponse = tous les événements de ses
   départements le jour donné, pour un mois proposé dans « Mes disponibilités ».
-- **Brouillon de demande (T38) non livré** : aucun type de demande (`Request`, `FinancialRequest`)
-  n'a d'état brouillon ; en ajouter un touche les files de traitement et leurs écrans. Décision
-  attendue : nouvel état brouillon, ou lien vers le formulaire prérempli (sans écriture).
+- **Brouillon de demande (T38) = lien prérempli** (décision du 2026-11-12) : aucune demande
+  n'a d'état brouillon, et en ajouter un toucherait toutes les files de traitement. L'outil
+  `draft_request` renvoie un lien vers `/requests/new` prérempli (`src/app/(auth)/requests/prefill.ts` :
+  annonce, visuel, ajout d'événement ; texte et dates seulement, jamais d'identifiant). Rien n'est
+  enregistré : pas de confirmation, outil en lecture, proposé à qui ouvre le formulaire
+  (`members:view`), même sans la case des actions.

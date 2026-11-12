@@ -642,7 +642,9 @@ seule (`ENABLED_MODULES`) :
   appels : `…_preview` (ne modifie rien, jeton `kmx_` 5 min à usage unique dans
   `mcp_confirmations`, lié à la connexion et à l'action, résumé figé) puis `…_confirm` (droits
   revérifiés, services de `planning`, `logAudit` `via: "mcp"`). Les instructions du serveur
-  exigent l'accord explicite de la personne entre les deux
+  exigent l'accord explicite de la personne entre les deux. `draft_request` n'écrit rien : lien
+  vers `/requests/new` prérempli par l'adresse (`src/app/(auth)/requests/prefill.ts`, texte et
+  dates seulement), proposé avec `members:view`
 - Journal sans contenu (`mcp_calls`), 60 appels/min/compte ; révocation par la personne
   (`/profile/assistants`) ou l'Admin d'église ; purge quotidienne (`mcp-maintenance`)
 

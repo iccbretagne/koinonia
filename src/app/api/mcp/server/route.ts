@@ -9,7 +9,7 @@ import { buildSessionForUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { canWrite, publicOrigin, recordMcpCall, verifyAccessToken, type McpCaller } from "@/modules/mcp";
 import { buildViewer } from "../../assistant/_viewer";
-import { actionsFor } from "../_actions";
+import { DRAFT_REQUEST_TOOL, actionsFor, canDraftRequest, draftRequest } from "../_actions";
 import { GUIDE_TOOL, NO_DATA, guideInput, renderResult, runTool, searchGuide, toolInput, toolsFor } from "../_tools";
 
 export const runtime = "nodejs";
@@ -22,10 +22,10 @@ const BASE_INSTRUCTIONS =
   `Quand un outil répond « ${NO_DATA} », dis-le simplement : n'invente jamais une donnée absente.`;
 
 const READ_ONLY =
-  " Tous les outils sont en lecture seule : aucun ne modifie Koinonia (déclarer une absence, répondre à un service ou faire une demande se fait dans l'application).";
+  " Tous les outils sont en lecture seule : aucun ne modifie Koinonia (déclarer une absence ou répondre à un service se fait dans l'application ; draft_request prépare seulement un lien vers le formulaire de demande, que la personne envoie elle-même).";
 
 const WITH_ACTIONS =
-  " Les outils de lecture ne modifient rien. Seules deux actions modifient Koinonia, pour la personne elle-même : déclarer une absence et répondre à une demande de disponibilité. " +
+  " Les outils de lecture et draft_request (lien vers un formulaire prérempli) ne modifient rien. Seules deux actions modifient Koinonia, pour la personne elle-même : déclarer une absence et répondre à une demande de disponibilité. " +
   "Chacune se fait en deux temps : l'outil …_preview n'enregistre rien et renvoie un résumé et un jeton ; montre ce résumé, attends l'accord explicite de la personne, " +
   "puis appelle …_confirm avec ce jeton. N'appelle jamais …_confirm sans cet accord.";
 
@@ -100,6 +100,23 @@ async function buildServer(caller: McpCaller) {
           await log(action.name, "error");
           return { content: [{ type: "text" as const, text: "Koinonia n'a pas pu enregistrer cette action. Réessayez plus tard." }], isError: true };
         }
+      }
+    );
+  }
+
+  // Brouillon de demande : un lien prérempli, rien n'est enregistré (lecture seule).
+  if (canDraftRequest(viewer)) {
+    server.registerTool(
+      DRAFT_REQUEST_TOOL.name,
+      {
+        description: DRAFT_REQUEST_TOOL.description,
+        inputSchema: DRAFT_REQUEST_TOOL.input,
+        annotations: { readOnlyHint: true, openWorldHint: false },
+      },
+      async (args) => {
+        const result = await draftRequest(args);
+        await log(DRAFT_REQUEST_TOOL.name, "answered");
+        return { content: [{ type: "text" as const, text: result.text }], structuredContent: result.structured };
       }
     );
   }
