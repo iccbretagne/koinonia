@@ -311,7 +311,9 @@ export default function RequestForm({
   const toast = useToast();
   const isEditMode = !!editData;
 
-  const init = editData ? initFromEditData(editData) : prefill ? initFromPrefill(prefill) : null;
+  let init: FormInit | null = null;
+  if (editData) init = initFromEditData(editData);
+  else if (prefill) init = initFromPrefill(prefill);
   const visualPrefill = !editData && prefill?.type === "visuel" ? prefill : null;
 
   const [submitting, setSubmitting] = useState(false);

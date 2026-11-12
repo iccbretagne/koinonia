@@ -419,3 +419,21 @@ si une date est invalide.
 Trois PR successives, chacune utilisable seule : **3a** planning (candidats, remplir,
 recopier, relancer, consignes) ; **3b** pour un STAR (absence, réponse) et compte rendu ;
 **3c** événements et salles.
+
+## Écarts à l'implémentation (lot 3a)
+
+- **Lectures de planning dans la couche des actions**, pas dans le catalogue de l'assistant :
+  `planning_eventsToStaff` et `planning_candidates` renvoient des identifiants, inutiles à la
+  bulle de l'assistant intégré ; elles sont proposées avec les actions (case cochée,
+  `planning:edit`). Fichier `src/app/api/mcp/_actions/planning.ts` (et non
+  `assistant/_data/planning-staff.ts`).
+- **Cœurs extraits sans contrôle de permission** : la route garde `requireChurchPermission` et
+  `requireDepartmentAccess` ; l'assistant les refait avec la session (`hasChurchPermission`,
+  `requireDepartmentAccess`). Le cœur porte tout le reste (date limite, appartenance, débrief
+  unique, journal, désistements, notifications). Paramètre `details` ajouté au journal
+  (`via: "mcp"`) ; la route n'en passe pas, son journal est inchangé.
+- **Recopie** : la route n'écrivait pas de journal ; l'assistant en écrit un (`via: "mcp"`).
+- **Relance** : pas d'empreinte (la règle « une fois par jour » de `manualRelance` suffit).
+- **Remplir le planning** : même sémantique que la grille — seuls les STAR listés changent,
+  `null` retire un STAR ; les alertes (absent, pas disponible, en service ailleurs) sont
+  signalées sans bloquer, comme dans la grille.

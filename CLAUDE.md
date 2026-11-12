@@ -636,15 +636,22 @@ seule (`ENABLED_MODULES`) :
   liste **complète** (`boundedAnswer` nettoie les libellés, ne coupe pas) : la bulle de
   l'assistant borne à 8 lignes (`dataRunner`), le serveur MCP pagine (`limit` ≤ 100, `offset`,
   `total` et `nextOffset` toujours rendus). Ces outils sont en lecture seule
-- **Actions confirmées** (lot 2, `src/app/api/mcp/_actions.ts`) : seulement si la personne a coché
-  la case sur `/mcp/autoriser` (portée `write`, `canWrite`) et a une fiche STAR liée ; jamais pour
-  un tiers. Déclarer une absence et répondre à une demande de disponibilité, chacune en deux
+- **Actions confirmées** (lots 2 et 3, `src/app/api/mcp/_actions/`) : seulement si la personne a
+  coché la case sur `/mcp/autoriser` (portée `write`, `canWrite`), et chacune selon le droit de
+  l'écran (`available(viewer)`, revérifié à l'appel). Lot 2 (fiche STAR liée, jamais un tiers) :
+  déclarer une absence et répondre à une demande de disponibilité, chacune en deux
   appels : `…_preview` (ne modifie rien, jeton `kmx_` 5 min à usage unique dans
   `mcp_confirmations`, lié à la connexion et à l'action, résumé figé) puis `…_confirm` (droits
   revérifiés, services de `planning`, `logAudit` `via: "mcp"`). Les instructions du serveur
   exigent l'accord explicite de la personne entre les deux. `draft_request` n'écrit rien : lien
   vers `/requests/new` prérempli par l'adresse (`src/app/(auth)/requests/prefill.ts`, texte et
-  dates seulement), proposé avec `members:view`
+  dates seulement), proposé avec `members:view`. Lot 3a (`planning:edit` + périmètre) :
+  lectures `planning_eventsToStaff`/`planning_candidates` (identifiants, état de la grille,
+  services sur 60 jours, sans coordonnée), remplir, recopier, relancer, consignes. Le code
+  métier de l'écran est **partagé** : `_core.ts` à côté de la route (`savePlanning`,
+  `duplicatePlanning`, `saveNotice`), appelé par la route et par l'assistant — une règle ne
+  s'écrit qu'une fois. Une **empreinte** (`fingerprint`) de l'état lu à l'aperçu est revérifiée
+  à la confirmation : données changées ⇒ refus
 - Journal sans contenu (`mcp_calls`), 60 appels/min/compte ; révocation par la personne
   (`/profile/assistants`) ou l'Admin d'église ; purge quotidienne (`mcp-maintenance`)
 

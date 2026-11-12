@@ -1,6 +1,4 @@
-import type { Session } from "next-auth";
 import { z } from "zod";
-import type { AssistantViewer } from "@/core/assistant";
 import { ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { consumeConfirmation, createConfirmation, publicOrigin } from "@/modules/mcp";
@@ -11,30 +9,25 @@ import {
   listMemberAvailability,
   saveResponses,
 } from "@/modules/planning";
-import { requestPrefillHref, requestPrefillSchema } from "@/app/(auth)/requests/prefill";
-import { formatDay, formatTime, isOnDay, today } from "../assistant/_data/common";
+import { formatDay, formatTime, isOnDay, today } from "../../assistant/_data/common";
+import {
+  CONFIRM_HINT,
+  EXPIRED,
+  confirmInput,
+  day,
+  dayStart,
+  refusal,
+  type ActionContext,
+  type ActionResult,
+  type McpActionDef,
+} from "./common";
 
 /**
- * Actions du lot 2 (spec 081) : toujours en deux appels. `…_preview` vérifie, résume et fige ce
- * qui sera fait derrière un jeton de confirmation (5 min, usage unique, lié à la connexion et à
- * l'action) ; `…_confirm` exécute ce résumé figé, après revérification des droits, par les
- * services de l'application, et journalise « via l'assistant IA ». Seulement pour la fiche STAR
- * liée au compte : jamais pour un tiers.
+ * Actions du lot 2 (spec 081) pour la fiche STAR liée au compte, jamais pour un tiers :
+ * déclarer une absence, répondre à une demande de disponibilité.
  */
 
-export interface ActionContext {
-  session: Session;
-  churchId: string;
-  viewer: AssistantViewer;
-  grantId: string;
-}
-
-export interface ActionResult {
-  text: string;
-  structured: Record<string, unknown>;
-}
-
-const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const linkedStar = (viewer: ActionContext["viewer"]) => viewer.predicates.includes("linkedStar");
 
 export const unavailabilityInput = z.object({
   startDate: day.describe("Premier jour d'absence, AAAA-MM-JJ (heure de Paris)"),
@@ -50,14 +43,8 @@ export const serviceAnswerInput = z.object({
   answer: z.enum(["AVAILABLE", "IF_NEEDED", "UNAVAILABLE"]).describe("AVAILABLE = disponible, IF_NEEDED = si besoin, UNAVAILABLE = pas disponible"),
 });
 
-export const confirmInput = z.object({
-  confirmation: z.string().min(10).max(100).describe("Jeton renvoyé par l'aperçu, après l'accord explicite de la personne"),
-});
 
-const CONFIRM_HINT =
-  "Montrez ce résumé à la personne et attendez son accord explicite avant d'appeler l'outil de confirmation avec ce jeton (valable 5 minutes).";
 
-const refusal = (text: string): ActionResult => ({ text, structured: { done: false, reason: text } });
 
 /** Fiche STAR liée au compte dans cette église ; une seule attendue, comme « Mes disponibilités ». */
 async function ownMemberId(ctx: ActionContext): Promise<string | null> {
@@ -66,10 +53,7 @@ async function ownMemberId(ctx: ActionContext): Promise<string | null> {
 }
 
 const NO_STAR = "Aucune fiche STAR n'est liée à votre compte dans cette église : cette action se fait par votre responsable.";
-const EXPIRED = "Confirmation invalide ou expirée : refaites l'aperçu puis confirmez dans les 5 minutes.";
 
-/** Bornes d'une période, telles que le formulaire de l'application les envoie (minuit UTC). */
-const dayStart = (d: string) => new Date(`${d}T00:00:00.000Z`);
 
 // ─── Déclarer une absence ────────────────────────────────────────────────────
 
@@ -229,58 +213,7 @@ export async function confirmServiceAnswer(input: z.infer<typeof confirmInput>, 
   }
 }
 
-// ─── Préparer une demande (lien prérempli, rien n'est enregistré) ─────────────
-
-export const draftRequestInput = requestPrefillSchema.extend({
-  type: requestPrefillSchema.shape.type.describe("annonce, visuel ou evenement (demande d'ajout d'un événement)"),
-  titre: requestPrefillSchema.shape.titre.describe("Titre de l'annonce, du visuel ou de l'événement"),
-  texte: requestPrefillSchema.shape.texte.describe("Texte de l'annonce ou brief du visuel (ignoré pour un événement)"),
-  date: requestPrefillSchema.shape.date.describe("AAAA-MM-JJ : date de l'événement annoncé, date limite du visuel ou date de l'événement à ajouter"),
-  heure: requestPrefillSchema.shape.heure.describe("HH:MM, heure de l'événement à ajouter (10:00 par défaut)"),
-  typeEvenement: requestPrefillSchema.shape.typeEvenement.describe("Type de l'événement à ajouter"),
-});
-
-const KIND_LABEL = { annonce: "annonce", visuel: "demande de visuel", evenement: "demande d'ajout d'événement" } as const;
-
-/**
- * Brouillon de demande (spec 081, T38) : un lien vers « Nouvelle demande » prérempli. Rien n'est
- * enregistré ; la personne complète (départements, canaux…) et envoie elle-même dans Koinonia.
- */
-export async function draftRequest(input: z.infer<typeof draftRequestInput>): Promise<ActionResult> {
-  const link = `${publicOrigin()}${requestPrefillHref(input)}`;
-  return {
-    text:
-      `Brouillon de ${KIND_LABEL[input.type]} prêt — rien n'est encore envoyé.
-` +
-      `La personne ouvre ce lien, complète le formulaire si besoin et l'envoie elle-même :
-${link}`,
-    structured: { done: false, action: "draft_request", link },
-  };
-}
-
-/** Le formulaire « Nouvelle demande » exige `members:view` (même garde que la page). */
-export const canDraftRequest = (viewer: AssistantViewer) => viewer.permissions.includes("members:view");
-
-export const DRAFT_REQUEST_TOOL = {
-  name: "draft_request",
-  description:
-    "Prépare une annonce, une demande de visuel ou une demande d'ajout d'événement sous forme de lien vers le formulaire de Koinonia prérempli. N'enregistre et n'envoie rien : la personne relit, complète et envoie elle-même.",
-  input: draftRequestInput,
-} as const;
-
-// ─── Catalogue ───────────────────────────────────────────────────────────────
-
-export interface McpActionDef {
-  name: string;
-  /** Clé journalisée et liée au jeton de confirmation. */
-  action: string;
-  kind: "preview" | "confirm";
-  description: string;
-  input: z.ZodObject<z.ZodRawShape>;
-  run: (input: never, ctx: ActionContext) => Promise<ActionResult>;
-}
-
-export const MCP_ACTIONS: McpActionDef[] = [
+export const PERSONAL_ACTIONS: McpActionDef[] = [
   {
     name: "declare_unavailability_preview",
     action: "declare_unavailability",
@@ -288,6 +221,7 @@ export const MCP_ACTIONS: McpActionDef[] = [
     description:
       "Prépare la déclaration d'une absence de la personne sur une période (tous ses départements). N'enregistre rien : renvoie un résumé (services quittés, responsables prévenus) et un jeton. Montrez le résumé et attendez l'accord explicite de la personne avant declare_unavailability_confirm.",
     input: unavailabilityInput,
+    available: linkedStar,
     run: previewUnavailability as McpActionDef["run"],
   },
   {
@@ -297,6 +231,7 @@ export const MCP_ACTIONS: McpActionDef[] = [
     description:
       "Enregistre l'absence préparée par declare_unavailability_preview, avec son jeton. À appeler seulement après l'accord explicite de la personne sur le résumé.",
     input: confirmInput,
+    available: linkedStar,
     run: confirmUnavailability as McpActionDef["run"],
   },
   {
@@ -306,6 +241,7 @@ export const MCP_ACTIONS: McpActionDef[] = [
     description:
       "Prépare la réponse de la personne à une demande de disponibilité pour les événements d'un jour (Disponible, Si besoin, Pas disponible). N'enregistre rien : renvoie un résumé (dont un éventuel désistement) et un jeton. Montrez le résumé et attendez l'accord explicite de la personne avant answer_service_confirm.",
     input: serviceAnswerInput,
+    available: linkedStar,
     run: previewServiceAnswer as McpActionDef["run"],
   },
   {
@@ -315,11 +251,9 @@ export const MCP_ACTIONS: McpActionDef[] = [
     description:
       "Enregistre la réponse préparée par answer_service_preview, avec son jeton. À appeler seulement après l'accord explicite de la personne sur le résumé.",
     input: confirmInput,
+    available: linkedStar,
     run: confirmServiceAnswer as McpActionDef["run"],
   },
 ];
 
 /** Actions proposées : connexion autorisée aux actions, et fiche STAR liée au compte. */
-export function actionsFor(viewer: AssistantViewer, write: boolean): McpActionDef[] {
-  return write && viewer.predicates.includes("linkedStar") ? MCP_ACTIONS : [];
-}

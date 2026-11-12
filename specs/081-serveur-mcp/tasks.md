@@ -1,7 +1,7 @@
 # Tâches — Connecter un assistant IA à Koinonia (serveur MCP)
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md` · **ADR** : `docs/adr/0029-serveur-autorisation-oauth-mcp.md`
-- **Statut** : Lots 1 et 2 terminés ; lot 3 découpé (3a, 3b, 3c)
+- **Statut** : Lots 1 et 2 terminés ; lot 3a terminé, 3b et 3c à faire
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
@@ -157,41 +157,41 @@
 
 ### Socle (avec 3a)
 
-- [ ] **T41** — Catalogue des actions en dossier `src/app/api/mcp/_actions/` (`index.ts` :
+- [x] **T41** — Catalogue des actions en dossier `src/app/api/mcp/_actions/` (`index.ts` :
       catalogue, `actionsFor(viewer, session, write)` par permission ; `personal.ts` : actions du
       lot 2 déplacées sans changement ; `draft.ts` : `draft_request`)
-- [ ] **T42** — Empreinte d'état : `fingerprint(value)` (SHA-256 d'une sérialisation triée) et
+- [x] **T42** — Empreinte d'état : `fingerprint(value)` (SHA-256 d'une sérialisation triée) et
       refus commun « Les données ont changé depuis l'aperçu » *(fichier :
       `src/app/api/mcp/_actions/common.ts`)*
-- [ ] **T43** — Instructions du serveur listant les actions disponibles pour ce compte et la
+- [x] **T43** — Instructions du serveur listant les actions disponibles pour ce compte et la
       consigne planning (« ni compétences ni effectif : demande-les au responsable »)
       *(fichier : `src/app/api/mcp/server/route.ts`)*
-- [ ] **T44** [P] — Corriger les 3 remarques SonarCloud reportées du lot 2 (ternaire imbriqué de
+- [x] **T44** [P] — Corriger les 3 remarques SonarCloud reportées du lot 2 (ternaire imbriqué de
       `RequestForm.tsx`, `draftRequest` sans `await`, espacement JSX de `/mcp/autoriser`)
 
 ### 3a — Planning
 
-- [ ] **T45** — Extraire `savePlanning(session, eventId, departmentId, plannings)` de
+- [x] **T45** — Extraire `savePlanning(session, eventId, departmentId, plannings)` de
       `PUT …/departments/[deptId]/planning` *(fichier : `…/planning/_core.ts`, route allégée)*
-- [ ] **T46** — Extraire `duplicatePlanning(session, sourceEventId, targetEventId)` de
+- [x] **T46** — Extraire `duplicatePlanning(session, sourceEventId, targetEventId)` de
       `POST …/duplicate-planning` *(fichier : `…/duplicate-planning/_core.ts`)*
-- [ ] **T47** — Extraire `saveNotice(session, departmentId, eventId, content)` de
+- [x] **T47** — Extraire `saveNotice(session, departmentId, eventId, content)` de
       `PUT /api/departments/[id]/notices` *(fichier : `…/notices/_core.ts`)*
-- [ ] **T48** — Lectures : `planning_eventsToStaff` (événements à venir du périmètre,
+- [x] **T48** — Lectures : `planning_eventsToStaff` (événements à venir du périmètre,
       départements, état de la grille, identifiants) et `planning_candidates(eventId,
       departmentId)` (état par STAR depuis `getPlanningAvailability`, désistement en attente,
       service ailleurs le même jour, statut actuel, services des 60 derniers jours ; sans
       coordonnée) *(fichiers : `src/app/api/assistant/_data/planning-staff.ts`, `MCP_TOOLS`)*
-- [ ] **T49** — `fill_planning_preview` / `_confirm` : signalements par STAR (absent, pas
+- [x] **T49** — `fill_planning_preview` / `_confirm` : signalements par STAR (absent, pas
       disponible, en service ailleurs), différence avec la grille actuelle, empreinte de la
       grille et des absences/réponses des STAR proposés
-- [ ] **T50** — `copy_planning_preview` / `_confirm` : ce qui est recopié par département, STAR
+- [x] **T50** — `copy_planning_preview` / `_confirm` : ce qui est recopié par département, STAR
       devenus absents ou pas disponibles signalés, empreinte de la grille cible
-- [ ] **T51** — `remind_unanswered_preview` / `_confirm` : nombre de STAR relancés par
+- [x] **T51** — `remind_unanswered_preview` / `_confirm` : nombre de STAR relancés par
       département (sans nom), règle « une fois par jour » de `manualRelance`
-- [ ] **T52** — `publish_notice_preview` / `_confirm` : consigne remplacée montrée, ≤ 2 000
+- [x] **T52** — `publish_notice_preview` / `_confirm` : consigne remplacée montrée, ≤ 2 000
       caractères, empreinte de la consigne existante
-- [ ] **T53** — Tests 3a : cœurs (session, périmètre, date limite), routes inchangées, outils
+- [x] **T53** — Tests 3a : cœurs (session, périmètre, date limite), routes inchangées, outils
       (aperçu sans écriture, confirmation unique, hors périmètre, empreinte changée, outil
       absent sans `planning:edit`), lectures sans coordonnée
 

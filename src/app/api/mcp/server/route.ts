@@ -24,13 +24,34 @@ const BASE_INSTRUCTIONS =
 const READ_ONLY =
   " Tous les outils sont en lecture seule : aucun ne modifie Koinonia (déclarer une absence ou répondre à un service se fait dans l'application ; draft_request prépare seulement un lien vers le formulaire de demande, que la personne envoie elle-même).";
 
-const WITH_ACTIONS =
-  " Les outils de lecture et draft_request (lien vers un formulaire prérempli) ne modifient rien. Seules deux actions modifient Koinonia, pour la personne elle-même : déclarer une absence et répondre à une demande de disponibilité. " +
-  "Chacune se fait en deux temps : l'outil …_preview n'enregistre rien et renvoie un résumé et un jeton ; montre ce résumé, attends l'accord explicite de la personne, " +
-  "puis appelle …_confirm avec ce jeton. N'appelle jamais …_confirm sans cet accord.";
+/** Libellé des actions, pour annoncer à l'assistant celles que ce compte peut faire. */
+const ACTION_LABELS: Record<string, string> = {
+  declare_unavailability: "déclarer une absence pour soi",
+  answer_service: "répondre à une demande de disponibilité pour soi",
+  fill_planning: "remplir le planning d'un département",
+  copy_planning: "recopier un planning",
+  remind_unanswered: "relancer les STAR sans réponse",
+  publish_notice: "publier les consignes d'un département",
+};
 
-/** Instructions selon la connexion : lecture seule, ou actions confirmées autorisées par la personne. */
-const instructionsFor = (actions: boolean) => BASE_INSTRUCTIONS + (actions ? WITH_ACTIONS : READ_ONLY);
+const PLANNING_HINT =
+  " Pour un planning, Koinonia ne connaît ni les compétences ni l'effectif nécessaire : demande-les au responsable, applique ses contraintes, et signale ce que tu n'as pas pu vérifier.";
+
+/**
+ * Instructions selon la connexion : lecture seule, ou les actions confirmées que ce compte peut
+ * faire (la personne les a autorisées et en a le droit dans l'application).
+ */
+function instructionsFor(actions: string[]): string {
+  if (actions.length === 0) return BASE_INSTRUCTIONS + READ_ONLY;
+  const labels = [...new Set(actions)].flatMap((a) => (ACTION_LABELS[a] ? [ACTION_LABELS[a]] : []));
+  return (
+    BASE_INSTRUCTIONS +
+    ` Les outils de lecture et draft_request (lien vers un formulaire prérempli) ne modifient rien. Seules ces actions modifient Koinonia : ${labels.join(" ; ")}. ` +
+    "Chacune se fait en deux temps : l'outil …_preview n'enregistre rien et renvoie un résumé et un jeton ; montre ce résumé, attends l'accord explicite de la personne, " +
+    "puis appelle …_confirm avec ce jeton. N'appelle jamais …_confirm sans cet accord." +
+    (actions.includes("fill_planning") ? PLANNING_HINT : "")
+  );
+}
 
 /** Débit par compte : 60 appels par minute. */
 const RATE = { windowMs: 60_000, max: 60 };
@@ -60,7 +81,7 @@ async function buildServer(caller: McpCaller) {
     recordMcpCall({ grantId: caller.grantId, userId: caller.userId, churchId: caller.churchId, tool, outcome });
 
   const actions = actionsFor(viewer, canWrite(caller.scope));
-  const server = new McpServer({ name: "koinonia", version: "1.0.0" }, { instructions: instructionsFor(actions.length > 0) });
+  const server = new McpServer({ name: "koinonia", version: "1.0.0" }, { instructions: instructionsFor(actions.filter((a) => a.kind !== "read").map((a) => a.action)) });
 
   for (const tool of toolsFor(viewer)) {
     server.registerTool(
@@ -114,7 +135,7 @@ async function buildServer(caller: McpCaller) {
         annotations: { readOnlyHint: true, openWorldHint: false },
       },
       async (args) => {
-        const result = await draftRequest(args);
+        const result = draftRequest(args);
         await log(DRAFT_REQUEST_TOOL.name, "answered");
         return { content: [{ type: "text" as const, text: result.text }], structuredContent: result.structured };
       }

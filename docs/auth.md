@@ -199,6 +199,12 @@ d'autre n'accepte ce jeton.
   appels : `…_preview` ne modifie rien et fige l'action derrière un jeton à usage unique (5 min,
   lié à la connexion et à l'action, `mcp_confirmations`) ; `…_confirm` revérifie la fiche puis
   exécute par le service de l'application, avec `logAudit` (`details.via = "mcp"`).
+- **Actions des responsables** (lot 3a) : avec la même case, et seulement avec `planning:edit`
+  dans l'église et le département dans le périmètre (`requireDepartmentAccess`), revérifiés à
+  l'aperçu et à la confirmation : remplir ou recopier un planning, relancer les sans-réponse,
+  publier une consigne. Exécutées par le code de l'écran (`_core.ts` voisin de la route) ; la
+  date limite de planification s'applique comme dans la grille. Une empreinte de l'état lu à
+  l'aperçu (grille, disponibilités, consigne) doit être identique à la confirmation.
 - Révocation : par la personne (« Mon profil › Assistants connectés »), par l'Admin de l'église
   (`church:settings`), ou en coupant la fonction (Super Admin pour l'instance, Admin pour l'église).
 
