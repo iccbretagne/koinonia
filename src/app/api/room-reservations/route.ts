@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { createReservation, isRoomAuthorizedForChurch } from "@/modules/rooms";
-import { logAudit } from "@/lib/audit";
+import { isRoomAuthorizedForChurch } from "@/modules/rooms";
 import { createSchema } from "./contract";
+import { reserveRoom } from "./_core";
 
 /**
  * GET /api/room-reservations?churchId=...&roomId?=&from?=&to?=
@@ -106,30 +106,7 @@ export async function POST(request: Request) {
     const data = createSchema.parse(await request.json());
     const session = await requireChurchPermission("rooms:reserve", data.churchId);
 
-    const result = await createReservation({
-      churchId: data.churchId,
-      roomId: data.roomId,
-      eventId: data.eventId ?? null,
-      title: data.title,
-      startAt: new Date(data.startAt),
-      endAt: new Date(data.endAt),
-      recurrenceRule: data.recurrenceRule ?? null,
-      recurrenceEnd: data.recurrenceEnd ? new Date(data.recurrenceEnd) : null,
-      createdById: session.user.id,
-    });
-
-    if (result.reservations.length === 0) {
-      throw new ApiError(409, "Salle déjà réservée sur ce créneau");
-    }
-
-    await logAudit({
-      userId: session.user.id,
-      churchId: data.churchId,
-      action: "CREATE",
-      entityType: "RoomReservation",
-      entityId: result.reservations[0].id,
-      details: { roomId: data.roomId, title: data.title, occurrences: result.reservations.length },
-    });
+    const result = await reserveRoom(session, data);
 
     return successResponse(
       {

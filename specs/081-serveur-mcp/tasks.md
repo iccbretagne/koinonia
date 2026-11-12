@@ -1,7 +1,7 @@
 # Tâches — Connecter un assistant IA à Koinonia (serveur MCP)
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md` · **ADR** : `docs/adr/0029-serveur-autorisation-oauth-mcp.md`
-- **Statut** : Lots 1 et 2 terminés ; lots 3a et 3b terminés, 3c à faire
+- **Statut** : Lots 1, 2 et 3 terminés
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
@@ -211,18 +211,18 @@
 
 ### 3c — Événements et salles
 
-- [ ] **T59** — Extraire `createEvents(session, churchId, occurrences, departmentIds)` de
+- [x] **T59** — Extraire `createEvents(session, churchId, occurrences, departmentIds)` de
       `POST /api/events` (+ rattachement des départements) *(fichier : `src/app/api/events/_core.ts`)*
-- [ ] **T60** — `rooms_available(day, start, end)` (salles autorisées et libres)
-- [ ] **T61** — `create_events_preview` / `_confirm` : 1 à 12 occurrences, doublons signalés,
+- [x] **T60** — `rooms_available(day, start, end)` (salles autorisées et libres)
+- [x] **T61** — `create_events_preview` / `_confirm` : 1 à 12 occurrences, doublons signalés,
       transaction unique ; `reserve_room_preview` / `_confirm` (`createReservation`, conflit =
       refus)
-- [ ] **T62** — Tests 3c (13 dates refusées, date invalide ⇒ rien de créé, conflit de salle,
+- [x] **T62** — Tests 3c (13 dates refusées, date invalide ⇒ rien de créé, conflit de salle,
       `events:manage` / `rooms:reserve` requis)
 
 ### Documentation (à chaque PR)
 
-- [ ] **T63** — `CLAUDE.md`, `docs/auth.md`, guide et fiche de l'assistant, écran
+- [x] **T63** — `CLAUDE.md`, `docs/auth.md`, guide et fiche de l'assistant, écran
       d'autorisation (actions possibles selon le rôle), `CHANGELOG.md`, `npm run openapi`
 
 ## Vérification finale

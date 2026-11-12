@@ -161,7 +161,7 @@ export const PRISE_EN_MAIN: readonly KnowledgeEntry[] = [
       "révoquer un assistant",
     ],
     answer:
-      "Dans « Mon profil › Assistants IA connectés », copiez l'adresse du serveur et ajoutez-la comme connecteur dans votre assistant (Claude, ChatGPT…). Il vous renvoie vers Koinonia : choisissez l'église et autorisez. Il lit seulement ce que vous voyez déjà. Si vous cochez la case des actions, il peut aussi déclarer une absence ou répondre à une demande de disponibilité pour vous, toujours après votre confirmation dans la conversation (et, si vous êtes responsable, remplir ou recopier un planning, relancer les sans-réponse, publier des consignes) ; vous pouvez révoquer l'accès à tout moment. L'administrateur de l'église doit d'abord activer la fonction.",
+      "Dans « Mon profil › Assistants IA connectés », copiez l'adresse du serveur et ajoutez-la comme connecteur dans votre assistant (Claude, ChatGPT…). Il vous renvoie vers Koinonia : choisissez l'église et autorisez. Il lit seulement ce que vous voyez déjà. Si vous cochez la case des actions, il peut aussi déclarer une absence ou répondre à une demande de disponibilité pour vous, toujours après votre confirmation dans la conversation (et, si vous êtes responsable, remplir ou recopier un planning, relancer les sans-réponse, publier des consignes, saisir pour un STAR, remplir un compte rendu, créer des événements ou réserver une salle, selon vos droits) ; vous pouvez révoquer l'accès à tout moment. L'administrateur de l'église doit d'abord activer la fonction.",
     href: "/profile/assistants",
     hrefLabel: "Assistants connectés",
     audience: ALL,

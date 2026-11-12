@@ -35,6 +35,8 @@ const ACTION_LABELS: Record<string, string> = {
   declare_unavailability_for: "déclarer une absence pour un STAR de son périmètre",
   answer_service_for: "répondre pour un STAR de son périmètre à une demande de disponibilité",
   fill_report: "remplir le compte rendu d'un événement",
+  create_events: "créer des événements",
+  reserve_room: "réserver une salle",
 };
 
 const PLANNING_HINT =

@@ -10,8 +10,8 @@ import {
   sendEventChangeNotices,
   emptyEventChangeNotices,
 } from "@/modules/planning";
-import { generateRecurrenceDates, MAX_RECURRENCE_OCCURRENCES } from "@/lib/recurrence";
 import { bulkSchema, createSchema } from "./contract";
+import { createEvent } from "./_core";
 
 export async function GET(request: Request) {
   try {
@@ -123,22 +123,6 @@ export async function PATCH(request: Request) {
   }
 }
 
-function computeDeadlineFromOffset(eventDate: Date, offset: string): Date {
-  const result = new Date(eventDate);
-  const match = /^(\d+)([hd])$/.exec(offset);
-  if (!match) return result;
-
-  const value = Number.parseInt(match[1], 10);
-  const unit = match[2];
-
-  if (unit === "h") {
-    result.setHours(result.getHours() - value);
-  } else if (unit === "d") {
-    result.setDate(result.getDate() - value);
-  }
-
-  return result;
-}
 
 export async function POST(request: Request) {
   try {
@@ -147,146 +131,8 @@ export async function POST(request: Request) {
     const session = await requireChurchPermission("events:manage", data.churchId);
     requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
-    const useOffset = data.deadlineOffset && !data.planningDeadline;
-    let deadline: Date | null = null;
-    if (useOffset) {
-      deadline = computeDeadlineFromOffset(new Date(data.date), data.deadlineOffset!);
-    } else if (data.planningDeadline) {
-      deadline = new Date(data.planningDeadline);
-    }
-
-    // If recurrence is set, create parent + children in a transaction
-    if (data.recurrenceRule && data.recurrenceEnd) {
-      const startDate = new Date(data.date);
-      const endDate = new Date(data.recurrenceEnd);
-      const { dates: childDates, truncated: recurrenceTruncated } = generateRecurrenceDates(
-        startDate,
-        data.recurrenceRule,
-        endDate
-      );
-
-      const result = await prisma.$transaction(async (tx) => {
-        // Create parent event
-        const parent = await tx.event.create({
-          data: {
-            title: data.title,
-            type: data.type,
-            date: startDate,
-            churchId: data.churchId,
-            planningDeadline: deadline,
-            recurrenceRule: data.recurrenceRule,
-            isRecurrenceParent: true,
-          },
-        });
-
-        // Create child events linked by seriesId
-        for (const childDate of childDates) {
-          const childDeadline = useOffset
-            ? computeDeadlineFromOffset(childDate, data.deadlineOffset!)
-            : deadline;
-
-          await tx.event.create({
-            data: {
-              title: data.title,
-              type: data.type,
-              date: childDate,
-              churchId: data.churchId,
-              planningDeadline: childDeadline,
-              recurrenceRule: data.recurrenceRule,
-              seriesId: parent.id,
-            },
-          });
-        }
-
-        await planningBus.emit(
-          "planning:event:created",
-          { tx, churchId: data.churchId, userId: session.user.id },
-          {
-            eventId: parent.id,
-            churchId: data.churchId,
-            title: data.title,
-            type: data.type,
-            createdById: session.user.id,
-            isRecurrenceParent: true,
-            childCount: childDates.length,
-          }
-        );
-
-        // Return parent with includes
-        return tx.event.findUnique({
-          where: { id: parent.id },
-          include: {
-            church: { select: { id: true, name: true } },
-            eventDepts: {
-              include: { department: { select: { id: true, name: true } } },
-            },
-          },
-        });
-      });
-
-      await logAudit({
-        userId: session.user.id,
-        churchId: data.churchId,
-        action: "CREATE",
-        entityType: "Event",
-        entityId: result!.id,
-        details: { recurrence: data.recurrenceRule, children: childDates.length },
-      });
-
-      return successResponse(
-        {
-          ...result,
-          childrenCreated: childDates.length,
-          ...(recurrenceTruncated ? { recurrenceTruncated: true, maxOccurrences: MAX_RECURRENCE_OCCURRENCES } : {}),
-        },
-        201
-      );
-    }
-
-    // Single event creation
-    const event = await prisma.$transaction(async (tx) => {
-      const created = await tx.event.create({
-        data: {
-          title: data.title,
-          type: data.type,
-          date: new Date(data.date),
-          churchId: data.churchId,
-          planningDeadline: deadline,
-        },
-        include: {
-          church: { select: { id: true, name: true } },
-          eventDepts: {
-            include: { department: { select: { id: true, name: true } } },
-          },
-        },
-      });
-
-      await planningBus.emit(
-        "planning:event:created",
-        { tx, churchId: data.churchId, userId: session.user.id },
-        {
-          eventId: created.id,
-          churchId: data.churchId,
-          title: data.title,
-          type: data.type,
-          createdById: session.user.id,
-          isRecurrenceParent: false,
-        }
-      );
-
-      return created;
-    });
-
-    await logAudit({
-      userId: session.user.id,
-      churchId: data.churchId,
-      action: "CREATE",
-      entityType: "Event",
-      entityId: event.id,
-      details: { title: data.title },
-    });
-
-    return successResponse(event, 201);
+    const result = await createEvent(session, data);
+    return successResponse(result, 201);
   } catch (error) {
     return errorResponse(error);
   }

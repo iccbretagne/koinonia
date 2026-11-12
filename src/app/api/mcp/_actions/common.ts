@@ -73,3 +73,33 @@ export interface McpActionDef {
 }
 
 export const hasPermission = (permission: string) => (viewer: AssistantViewer) => viewer.permissions.includes(permission);
+
+/** Décalage de Paris (ms) à un instant donné. */
+function parisOffset(at: number): number {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "Europe/Paris",
+      hourCycle: "h23",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })
+      .formatToParts(new Date(at))
+      .map((p) => [p.type, p.value])
+  );
+  return Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second) - at;
+}
+
+/** Jour et heure à Paris (« 2026-12-06 », « 10:00 ») → instant, changement d'heure compris. */
+export function parisDateTime(dayKey: string, time: string): Date {
+  const [y, m, d] = dayKey.split("-").map(Number);
+  const [hh, mm] = time.split(":").map(Number);
+  const local = Date.UTC(y, m - 1, d, hh, mm);
+  const first = local - parisOffset(local);
+  return new Date(local - parisOffset(first));
+}
+
+export const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);

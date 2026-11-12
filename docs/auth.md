@@ -210,6 +210,9 @@ d'autre n'accepte ce jeton.
   périmètre seulement, saisie marquée « par un tiers »), compte rendu (`reports:edit` ou
   `events:manage`, comptes rendus activés). Mêmes fonctions que les écrans (`declareAbsenceFor`,
   `answerFor`, `saveReport`), qui revérifient permission et périmètre à la confirmation.
+- **Événements et salles** (lot 3c) : créer 1 à 12 événements (`events:manage`) avec leurs
+  départements ; réserver une salle (`rooms:reserve`, salle autorisée pour l'église, créneau
+  revérifié par `reserveRoom`).
 - Révocation : par la personne (« Mon profil › Assistants connectés »), par l'Admin de l'église
   (`church:settings`), ou en coupant la fonction (Super Admin pour l'instance, Admin pour l'église).
 

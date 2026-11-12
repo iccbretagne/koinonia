@@ -451,3 +451,18 @@ recopier, relancer, consignes) ; **3b** pour un STAR (absence, réponse) et comp
 - **Compte rendu par jour** : `fill_report_preview` accepte `eventId` ou `day` ; plusieurs
   événements ce jour-là ⇒ refus listant les identifiants. Sections désignées par **nom de
   département** (accents et casse ignorés), clés de statistiques rappelées dans la description.
+
+## Écarts à l'implémentation (lot 3c)
+
+- **Dates explicites** plutôt qu'une règle de récurrence : l'assistant calcule les dates (« tous
+  les dimanches de décembre ») et l'aperçu les liste une à une ; chaque date crée un événement
+  simple par `createEvent` (pas de série « parent + enfants »), ce qui garde l'aperçu exact.
+- **Vérifications avant écriture, pas une transaction unique** : toutes les dates (futures,
+  distinctes), les départements et le droit sont vérifiés à l'aperçu puis à la confirmation
+  avant la première création ; seule une erreur de base en cours de route peut laisser une partie
+  créée, et le message le dit.
+- **Rattachement des départements** : `addEventDepartment` extrait de
+  `POST /api/events/[id]/departments` (`_core.ts`), avec `verifyDepartmentChurch` et
+  `getSeriesEventIds` ; réservation : `reserveRoom` extrait de `POST /api/room-reservations`.
+- **Heure de Paris** : `parisDateTime(jour, heure)` (changement d'heure compris), comme le
+  formulaire qui envoie l'heure locale du navigateur.
