@@ -1,7 +1,7 @@
 # Spec — Connecter un assistant IA à Koinonia (serveur MCP)
 
 - **Numéro** : 081
-- **Statut** : Implémentée (lot 1) — lot 2 à faire
+- **Statut** : Implémentée (lot 1) — lot 2 implémenté sauf le brouillon de demande
 - **Créée le** : 2026-11-11
 - **Branche suggérée** : `feat/serveur-mcp`
 

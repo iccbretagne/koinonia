@@ -192,6 +192,13 @@ d'autre n'accepte ce jeton.
   compte toujours membre de l'église ; la session est reconstruite depuis la base
   (`buildSessionForUser`, même code que le callback NextAuth) puis passe par les questions de
   données de l'assistant, qui revérifient le droit de chaque écran. 60 appels/min/compte.
+- **Actions confirmées** (lot 2) : portée `write`, accordée **seulement** par la case cochée
+  par la personne sur l'écran d'autorisation (un assistant qui demande `write` ne l'obtient pas
+  seul). Deux actions, pour sa propre fiche STAR (`listLinkedMemberIds`) : déclarer une absence
+  (`declareAbsence`) et répondre à une demande de disponibilité (`saveResponses`). Chacune en deux
+  appels : `…_preview` ne modifie rien et fige l'action derrière un jeton à usage unique (5 min,
+  lié à la connexion et à l'action, `mcp_confirmations`) ; `…_confirm` revérifie la fiche puis
+  exécute par le service de l'application, avec `logAudit` (`details.via = "mcp"`).
 - Révocation : par la personne (« Mon profil › Assistants connectés »), par l'Admin de l'église
   (`church:settings`), ou en coupant la fonction (Super Admin pour l'instance, Admin pour l'église).
 

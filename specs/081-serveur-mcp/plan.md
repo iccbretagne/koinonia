@@ -300,3 +300,21 @@ Constats faits en connectant Claude à la recette, vérifiés dans le code :
 déclarer une indisponibilité (absence sur une période ou des événements), répondre à un service
 (disponible / indisponible), créer une demande en brouillon. Pistes notées pour plus tard, hors
 spec actuelle : signaler un retrait de service, saisir l'orateur et le titre d'un compte rendu.
+
+## Écarts à l'implémentation (lot 2)
+
+- **Portée `write` accordée par la personne** : case « actions confirmées » sur `/mcp/autoriser`,
+  décochée par défaut. Un assistant peut demander `write` (déclaré dans `scopes_supported`), mais
+  seule la case l'accorde ; reconnecter le même assistant met à jour la portée de la connexion.
+  « Mon profil » et les paramètres de l'église affichent « lecture seule » ou « lecture et
+  actions ».
+- **Confirmation par jeton seul** : `…_confirm` ne reçoit que le jeton ; ce qui est exécuté est le
+  résumé figé à l'aperçu (`mcp_confirmations.payload`). Un assistant ne peut donc pas confirmer
+  d'autres paramètres que ceux montrés à la personne.
+- **Périmètre** : la fiche STAR liée au compte (`listLinkedMemberIds`), jamais un tiers ; outils
+  absents sans fiche liée (prédicat `linkedStar`). Absence = période, tous les départements
+  (comme le formulaire par défaut, dates à minuit UTC) ; réponse = tous les événements de ses
+  départements le jour donné, pour un mois proposé dans « Mes disponibilités ».
+- **Brouillon de demande (T38) non livré** : aucun type de demande (`Request`, `FinancialRequest`)
+  n'a d'état brouillon ; en ajouter un touche les files de traitement et leurs écrans. Décision
+  attendue : nouvel état brouillon, ou lien vers le formulaire prérempli (sans écriture).

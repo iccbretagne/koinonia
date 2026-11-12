@@ -76,7 +76,9 @@ describe("demande d'autorisation", () => {
   it("PKCE S256 obligatoire, ressource et portée vérifiées", async () => {
     await expect(validateAuthorizationRequest({ ...base, codeChallengeMethod: "plain" })).rejects.toMatchObject({ error: "invalid_request" });
     await expect(validateAuthorizationRequest({ ...base, resource: "https://ailleurs.example/mcp" })).rejects.toMatchObject({ error: "invalid_target" });
-    await expect(validateAuthorizationRequest({ ...base, scope: "write" })).rejects.toMatchObject({ error: "invalid_scope" });
+    await expect(validateAuthorizationRequest({ ...base, scope: "admin" })).rejects.toMatchObject({ error: "invalid_scope" });
+    // `write` demandé par l'assistant ne suffit pas : seule la case de la personne l'accorde.
+    await expect(validateAuthorizationRequest({ ...base, scope: "read write" })).resolves.toMatchObject({ scope: "read" });
     await expect(validateAuthorizationRequest(base)).resolves.toMatchObject({ scope: "read" });
   });
 
@@ -100,6 +102,23 @@ describe("demande d'autorisation", () => {
     expect(data).toMatchObject({ grantId: "g1", kind: "CODE", codeChallenge: CHALLENGE, redirectUri: REDIRECT });
     expect(data.hash).toBe(hashToken(code));
     expect(JSON.stringify(data)).not.toContain(code);
+    expect(prismaMock.mcpGrant.create.mock.calls[0][0].data.scope).toBe("read");
+  });
+
+  it("actions confirmées : accordées seulement par la case de la personne, portée mise à jour à la reconnexion", async () => {
+    const req = await validateAuthorizationRequest({ ...base, scope: "read write" });
+    prismaMock.mcpClient.findUniqueOrThrow.mockResolvedValue({ id: "client-row" });
+    prismaMock.mcpGrant.findFirst.mockResolvedValue(null);
+    prismaMock.mcpGrant.create.mockResolvedValue({ id: "g1" });
+    await createAuthorization("u1", "c1", req);
+    expect(prismaMock.mcpGrant.create.mock.calls[0][0].data.scope).toBe("read");
+
+    await createAuthorization("u1", "c1", req, true);
+    expect(prismaMock.mcpGrant.create.mock.calls[1][0].data.scope).toBe("read write");
+
+    prismaMock.mcpGrant.findFirst.mockResolvedValue({ id: "g1", scope: "read write" });
+    await createAuthorization("u1", "c1", req, false);
+    expect(prismaMock.mcpGrant.update).toHaveBeenCalledWith({ where: { id: "g1" }, data: { scope: "read" } });
   });
 });
 

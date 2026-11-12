@@ -10,6 +10,7 @@ interface Connection {
   churchName: string;
   createdAt: string;
   lastUsedAt: string | null;
+  actions: boolean;
 }
 
 const dayFmt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Paris" });
@@ -85,7 +86,8 @@ export default function AssistantsClient({ serverUrl, initial }: { readonly serv
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-ink truncate">{c.client}</p>
                   <p className="text-xs text-ink-subtle">
-                    {c.churchName} · depuis le {dayFmt.format(new Date(c.createdAt))}
+                    {c.churchName} · {c.actions ? "lecture et actions confirmées" : "lecture seule"} · depuis le{" "}
+                    {dayFmt.format(new Date(c.createdAt))}
                     {c.lastUsedAt === null ? " · jamais utilisé" : ` · utilisé le ${dayFmt.format(new Date(c.lastUsedAt))}`}
                   </p>
                 </div>

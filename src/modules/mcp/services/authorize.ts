@@ -5,8 +5,11 @@ import { isMcpEnabled } from "./settings";
 import { resourceUrl } from "./origin";
 import { CODE_TTL_MS, hashToken, newToken } from "./tokens";
 
-/** Portées du lot 1 : lecture seule. */
-export const SUPPORTED_SCOPES = ["read"] as const;
+/**
+ * Portées : lecture (lot 1) et actions confirmées (lot 2). Un assistant peut demander `write`,
+ * mais seule la case cochée par la personne sur l'écran d'autorisation l'accorde.
+ */
+export const SUPPORTED_SCOPES = ["read", "write"] as const;
 
 export interface AuthorizationRequest {
   clientId: string;
@@ -53,20 +56,32 @@ export async function validateAuthorizationRequest(req: AuthorizationRequest): P
 
 /**
  * La personne autorise : connexion (réutilisée si elle existe déjà pour ce compte, cette église et
- * ce client) et code d'autorisation à usage unique.
+ * ce client, avec la portée de cette nouvelle décision) et code d'autorisation à usage unique.
+ * `allowWrite` = case « actions confirmées » cochée par la personne.
  */
-export async function createAuthorization(userId: string, churchId: string, req: ValidatedRequest): Promise<string> {
+export async function createAuthorization(
+  userId: string,
+  churchId: string,
+  req: ValidatedRequest,
+  allowWrite = false
+): Promise<string> {
   if (!(await isMcpEnabled(churchId))) throw new OAuthError("access_denied", "Fonction coupée pour cette église", 403);
   const member = await prisma.userChurchRole.findFirst({ where: { userId, churchId }, select: { id: true } });
   if (!member) throw new OAuthError("access_denied", "Aucun rôle dans cette église", 403);
 
   const clientRow = await prisma.mcpClient.findUniqueOrThrow({ where: { clientId: req.client.clientId }, select: { id: true } });
+  const scope = allowWrite ? "read write" : "read";
   const existing = await prisma.mcpGrant.findFirst({
     where: { userId, churchId, clientId: clientRow.id, revokedAt: null },
-    select: { id: true },
+    select: { id: true, scope: true },
   });
-  const grant =
-    existing ?? (await prisma.mcpGrant.create({ data: { userId, churchId, clientId: clientRow.id, scope: req.scope }, select: { id: true } }));
+  let grant: { id: string };
+  if (!existing) {
+    grant = await prisma.mcpGrant.create({ data: { userId, churchId, clientId: clientRow.id, scope }, select: { id: true } });
+  } else {
+    grant = existing;
+    if (existing.scope !== scope) await prisma.mcpGrant.update({ where: { id: existing.id }, data: { scope } });
+  }
 
   const code = newToken("kmc");
   await prisma.mcpToken.create({

@@ -5,7 +5,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import Alert from "@/components/ui/Alert";
 import AuthorizeForm from "./AuthorizeForm";
 
-/** Ce qu'un assistant connecté peut lire (lot 1, lecture seule — spec 081). */
+/** Ce qu'un assistant connecté peut lire (spec 081) ; les actions sont une case à part (lot 2). */
 const READS = [
   "votre planning, vos services et vos absences",
   "les événements à venir et ceux de vos équipes",
@@ -108,9 +108,24 @@ export default async function AuthorizeAssistantPage({
               ))}
             </ul>
             <p>
-              Il ne pourra rien modifier. Jamais de suivi pastoral, de coordonnées bancaires ni de coordonnées
-              d&apos;autres personnes.
+              Jamais de suivi pastoral, de coordonnées bancaires ni de coordonnées d&apos;autres personnes.
             </p>
+          </div>
+
+          <label className="flex items-start gap-2 rounded-lg border border-line p-3 text-sm text-ink">
+            <input type="checkbox" name="allow_write" className="mt-1" />
+            <span>
+              Autoriser aussi des actions simples, <strong>toujours confirmées par vous</strong> dans
+              l&apos;assistant : déclarer une absence et répondre à une demande de disponibilité, pour votre
+              fiche STAR uniquement.
+              <span className="block text-xs text-ink-subtle mt-1">
+                Sans cette case, l&apos;assistant ne peut rien modifier. Chaque action est journalisée
+                « via l&apos;assistant IA ».
+              </span>
+            </span>
+          </label>
+
+          <div className="text-sm text-ink-muted space-y-1">
             <p>
               Ce qu&apos;il lit est envoyé au fournisseur de cet assistant IA. Vous pourrez retirer l&apos;accès à tout
               moment dans « Mon profil › Assistants connectés ».

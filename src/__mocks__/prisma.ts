@@ -75,6 +75,7 @@ export const prismaMock = {
   mcpClient: createModelMock(),
   mcpGrant: createModelMock(),
   mcpToken: createModelMock(),
+  mcpConfirmation: createModelMock(),
   mcpSettings: createModelMock(),
   mcpChurchSettings: createModelMock(),
   mcpCall: createModelMock(),

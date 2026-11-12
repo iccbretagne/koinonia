@@ -24,6 +24,7 @@ export default function AuthorizeForm({
     setError(null);
     const form = new FormData(event.currentTarget);
     const body = new URLSearchParams({ ...params, decision, church_id: String(form.get("church_id") ?? "") });
+    if (form.get("allow_write") === "on") body.set("allow_write", "on");
     try {
       const res = await fetch("/api/mcp/oauth/authorize", {
         method: "POST",

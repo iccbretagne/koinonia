@@ -618,7 +618,7 @@ seule (`ENABLED_MODULES`) :
   `requireSuperAdmin()` — la base et les questions remontées sont d'instance, sans compte ni église
 
 **Spécificités du module mcp** (spec 081, [ADR-0029](docs/adr/0029-serveur-autorisation-oauth-mcp.md))
-— connexion des assistants IA des membres, lecture seule, désactivable (`ENABLED_MODULES`),
+— connexion des assistants IA des membres, lecture et deux actions confirmées, désactivable (`ENABLED_MODULES`),
 **aucune permission propre** :
 - Koinonia est **serveur d'autorisation OAuth 2.1** pour son seul serveur MCP
   (`/api/mcp/server`, transport Streamable HTTP sans état, `@modelcontextprotocol/sdk`) :
@@ -635,7 +635,14 @@ seule (`ENABLED_MODULES`) :
   Toute nouvelle question n'entre côté MCP que par cette liste blanche. Une question renvoie sa
   liste **complète** (`boundedAnswer` nettoie les libellés, ne coupe pas) : la bulle de
   l'assistant borne à 8 lignes (`dataRunner`), le serveur MCP pagine (`limit` ≤ 100, `offset`,
-  `total` et `nextOffset` toujours rendus). Tous les outils sont en lecture seule
+  `total` et `nextOffset` toujours rendus). Ces outils sont en lecture seule
+- **Actions confirmées** (lot 2, `src/app/api/mcp/_actions.ts`) : seulement si la personne a coché
+  la case sur `/mcp/autoriser` (portée `write`, `canWrite`) et a une fiche STAR liée ; jamais pour
+  un tiers. Déclarer une absence et répondre à une demande de disponibilité, chacune en deux
+  appels : `…_preview` (ne modifie rien, jeton `kmx_` 5 min à usage unique dans
+  `mcp_confirmations`, lié à la connexion et à l'action, résumé figé) puis `…_confirm` (droits
+  revérifiés, services de `planning`, `logAudit` `via: "mcp"`). Les instructions du serveur
+  exigent l'accord explicite de la personne entre les deux
 - Journal sans contenu (`mcp_calls`), 60 appels/min/compte ; révocation par la personne
   (`/profile/assistants`) ou l'Admin d'église ; purge quotidienne (`mcp-maintenance`)
 

@@ -24,3 +24,4 @@ export {
   enabledChurchesFor,
 } from "./services/settings";
 export { runMcpMaintenance } from "./services/maintenance";
+export { createConfirmation, consumeConfirmation, canWrite, WRITE_SCOPE, CONFIRMATION_TTL_MS } from "./services/confirmations";

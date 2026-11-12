@@ -9,7 +9,17 @@ vi.mock("@/modules/mcp", () => ({
   verifyAccessToken: (...a: unknown[]) => verifyAccessToken(...a),
   recordMcpCall: (...a: unknown[]) => recordMcpCall(...a),
   publicOrigin: () => "https://koinonia.test",
+  canWrite: (scope: string) => scope.split(" ").includes("write"),
 }));
+const actionsFor = vi.fn((_viewer: unknown, write: boolean) =>
+  write
+    ? [
+        { name: "declare_unavailability_preview", kind: "preview", description: "aperçu", input: {}, run: vi.fn() },
+        { name: "declare_unavailability_confirm", kind: "confirm", description: "confirme", input: {}, run: vi.fn() },
+      ]
+    : []
+);
+vi.mock("../_actions", () => ({ actionsFor: (v: unknown, w: boolean) => actionsFor(v, w) }));
 const buildSessionForUser = vi.fn(async (): Promise<unknown> => null);
 vi.mock("@/lib/auth", () => ({ buildSessionForUser: () => buildSessionForUser() }));
 vi.mock("../../assistant/_viewer", () => ({ buildViewer: vi.fn() }));
@@ -69,10 +79,10 @@ describe("serveur MCP", () => {
     expect(route.DELETE().status).toBe(405);
   });
 
-  it("instructions : tous les outils en lecture seule, pagination annoncée ; outils marqués readOnlyHint", async () => {
-    verifyAccessToken.mockResolvedValue({ grantId: "g1", userId: "u-ro", churchId: "c1" });
-    buildSessionForUser.mockResolvedValue({ user: { id: "u-ro" } });
-    const rpc = (id: number, method: string, params: Record<string, unknown> = {}) =>
+  const rpcAs = (scope: string) => {
+    verifyAccessToken.mockResolvedValue({ grantId: "g1", userId: `u-${scope}`, churchId: "c1", scope });
+    buildSessionForUser.mockResolvedValue({ user: { id: `u-${scope}` } });
+    return (id: number, method: string, params: Record<string, unknown> = {}) =>
       route.POST(
         new Request("https://koinonia.test/api/mcp/server", {
           method: "POST",
@@ -80,12 +90,27 @@ describe("serveur MCP", () => {
           body: JSON.stringify({ jsonrpc: "2.0", id, method, params }),
         })
       );
-    const init = await (
-      await rpc(1, "initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "test", version: "1" } })
-    ).json();
+  };
+  const INIT = { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "test", version: "1" } };
+
+  it("connexion en lecture : instructions « lecture seule », aucun outil d'action, tous readOnlyHint", async () => {
+    const rpc = rpcAs("read");
+    const init = await (await rpc(1, "initialize", INIT)).json();
     expect(init.result.instructions).toContain("Tous les outils sont en lecture seule");
     expect(init.result.instructions).toContain("nextOffset");
     const list = await (await rpc(2, "tools/list")).json();
     for (const tool of list.result.tools) expect(tool.annotations.readOnlyHint, tool.name).toBe(true);
+    expect(list.result.tools.map((t: { name: string }) => t.name)).not.toContain("declare_unavailability_confirm");
+  });
+
+  it("connexion avec actions : deux temps et accord explicite exigés ; seule la confirmation modifie", async () => {
+    const rpc = rpcAs("read write");
+    const init = await (await rpc(1, "initialize", INIT)).json();
+    expect(init.result.instructions).toContain("attends l'accord explicite de la personne");
+    expect(init.result.instructions).not.toContain("Tous les outils sont en lecture seule");
+    const tools = (await (await rpc(2, "tools/list")).json()).result.tools as { name: string; annotations: { readOnlyHint: boolean } }[];
+    const hint = (name: string) => tools.find((t) => t.name === name)?.annotations.readOnlyHint;
+    expect(hint("declare_unavailability_preview")).toBe(true);
+    expect(hint("declare_unavailability_confirm")).toBe(false);
   });
 });

@@ -15,7 +15,7 @@ export default async function ConnectedAssistantsPage() {
       <PageHeader
         eyebrow="Mon profil"
         title="Assistants connectés"
-        description="Connectez votre assistant IA (Claude, ChatGPT…) : il pourra lire ce que vous voyez déjà dans Koinonia, sans rien modifier."
+        description="Connectez votre assistant IA (Claude, ChatGPT…) : il pourra lire ce que vous voyez déjà dans Koinonia et, si vous l'autorisez, déclarer une absence ou répondre à une demande de disponibilité, toujours après votre confirmation."
       />
       <AssistantsClient serverUrl={resourceUrl()} initial={connections} />
     </div>

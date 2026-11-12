@@ -1,3 +1,4 @@
+import { canWrite } from "./confirmations";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
@@ -11,6 +12,8 @@ export interface McpConnectionView {
   user: { id: string; name: string | null; email: string | null };
   createdAt: string;
   lastUsedAt: string | null;
+  /** Actions confirmées autorisées (spec 081, lot 2), sinon lecture seule. */
+  actions: boolean;
 }
 
 /** Une connexion active : non révoquée et avec un jeton de rafraîchissement encore valable. */
@@ -24,6 +27,7 @@ const select = {
   churchId: true,
   createdAt: true,
   lastUsedAt: true,
+  scope: true,
   client: { select: { name: true } },
   church: { select: { name: true } },
   user: { select: { id: true, name: true, displayName: true, email: true } },
@@ -34,6 +38,7 @@ type Row = {
   churchId: string;
   createdAt: Date;
   lastUsedAt: Date | null;
+  scope: string;
   client: { name: string };
   church: { name: string };
   user: { id: string; name: string | null; displayName: string | null; email: string | null };
@@ -47,6 +52,7 @@ const toView = (g: Row): McpConnectionView => ({
   user: { id: g.user.id, name: g.user.displayName ?? g.user.name, email: g.user.email },
   createdAt: g.createdAt.toISOString(),
   lastUsedAt: g.lastUsedAt?.toISOString() ?? null,
+  actions: canWrite(g.scope),
 });
 
 export async function listUserConnections(userId: string, now = new Date()): Promise<McpConnectionView[]> {
