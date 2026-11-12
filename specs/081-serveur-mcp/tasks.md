@@ -1,7 +1,7 @@
 # Tâches — Connecter un assistant IA à Koinonia (serveur MCP)
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md` · **ADR** : `docs/adr/0029-serveur-autorisation-oauth-mcp.md`
-- **Statut** : Lots 1 et 2 terminés
+- **Statut** : Lots 1 et 2 terminés ; lot 3 découpé (3a, 3b, 3c)
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
@@ -148,6 +148,83 @@
 - [x] **T40** — Tests du lot 2 : confirmation obligatoire, jeton rejoué/expiré/autres
       paramètres refusés, droits revérifiés, journalisation « via l'assistant IA »
 
+## Lot 3 — actions des responsables (3 PR successives)
+
+> Même mécanique qu'au lot 2 (`…_preview` / `…_confirm`, jeton `kmx_`, résumé figé,
+> `logAudit` `via: "mcp"`), plus une **empreinte de l'état lu** revérifiée à la confirmation.
+> Chaque cœur extrait garde le comportement HTTP de sa route : ses tests existants passent sans
+> modification.
+
+### Socle (avec 3a)
+
+- [ ] **T41** — Catalogue des actions en dossier `src/app/api/mcp/_actions/` (`index.ts` :
+      catalogue, `actionsFor(viewer, session, write)` par permission ; `personal.ts` : actions du
+      lot 2 déplacées sans changement ; `draft.ts` : `draft_request`)
+- [ ] **T42** — Empreinte d'état : `fingerprint(value)` (SHA-256 d'une sérialisation triée) et
+      refus commun « Les données ont changé depuis l'aperçu » *(fichier :
+      `src/app/api/mcp/_actions/common.ts`)*
+- [ ] **T43** — Instructions du serveur listant les actions disponibles pour ce compte et la
+      consigne planning (« ni compétences ni effectif : demande-les au responsable »)
+      *(fichier : `src/app/api/mcp/server/route.ts`)*
+- [ ] **T44** [P] — Corriger les 3 remarques SonarCloud reportées du lot 2 (ternaire imbriqué de
+      `RequestForm.tsx`, `draftRequest` sans `await`, espacement JSX de `/mcp/autoriser`)
+
+### 3a — Planning
+
+- [ ] **T45** — Extraire `savePlanning(session, eventId, departmentId, plannings)` de
+      `PUT …/departments/[deptId]/planning` *(fichier : `…/planning/_core.ts`, route allégée)*
+- [ ] **T46** — Extraire `duplicatePlanning(session, sourceEventId, targetEventId)` de
+      `POST …/duplicate-planning` *(fichier : `…/duplicate-planning/_core.ts`)*
+- [ ] **T47** — Extraire `saveNotice(session, departmentId, eventId, content)` de
+      `PUT /api/departments/[id]/notices` *(fichier : `…/notices/_core.ts`)*
+- [ ] **T48** — Lectures : `planning_eventsToStaff` (événements à venir du périmètre,
+      départements, état de la grille, identifiants) et `planning_candidates(eventId,
+      departmentId)` (état par STAR depuis `getPlanningAvailability`, désistement en attente,
+      service ailleurs le même jour, statut actuel, services des 60 derniers jours ; sans
+      coordonnée) *(fichiers : `src/app/api/assistant/_data/planning-staff.ts`, `MCP_TOOLS`)*
+- [ ] **T49** — `fill_planning_preview` / `_confirm` : signalements par STAR (absent, pas
+      disponible, en service ailleurs), différence avec la grille actuelle, empreinte de la
+      grille et des absences/réponses des STAR proposés
+- [ ] **T50** — `copy_planning_preview` / `_confirm` : ce qui est recopié par département, STAR
+      devenus absents ou pas disponibles signalés, empreinte de la grille cible
+- [ ] **T51** — `remind_unanswered_preview` / `_confirm` : nombre de STAR relancés par
+      département (sans nom), règle « une fois par jour » de `manualRelance`
+- [ ] **T52** — `publish_notice_preview` / `_confirm` : consigne remplacée montrée, ≤ 2 000
+      caractères, empreinte de la consigne existante
+- [ ] **T53** — Tests 3a : cœurs (session, périmètre, date limite), routes inchangées, outils
+      (aperçu sans écriture, confirmation unique, hors périmètre, empreinte changée, outil
+      absent sans `planning:edit`), lectures sans coordonnée
+
+### 3b — Pour un STAR et compte rendu
+
+- [ ] **T54** — Extraire `declareAbsenceAs(session, churchId, input)` de `POST /api/absences`
+      et `answerAs(session, churchId, memberId, answers)` de `PUT /api/availability`
+      *(fichiers : `src/app/api/absences/_core.ts`, `src/app/api/availability/_core.ts`)*
+- [ ] **T55** — Extraire `saveReport(session, eventId, input)` de `PUT /api/events/[id]/report`
+      *(fichier : `…/report/_core.ts`)*
+- [ ] **T56** — `declare_unavailability_for_preview` / `_confirm` et `answer_service_for_preview`
+      / `_confirm` (`absences:manage` / `planning:edit`, STAR du périmètre, « saisi pour … »)
+- [ ] **T57** — `fill_report_preview` / `_confirm` : rubriques saisies et remplacées, sections
+      reprises du compte rendu existant ou des départements en service, empreinte du compte rendu
+- [ ] **T58** — Tests 3b (mêmes cas qu'en T53, plus : STAR sorti du périmètre entre aperçu et
+      confirmation, comptes rendus désactivés)
+
+### 3c — Événements et salles
+
+- [ ] **T59** — Extraire `createEvents(session, churchId, occurrences, departmentIds)` de
+      `POST /api/events` (+ rattachement des départements) *(fichier : `src/app/api/events/_core.ts`)*
+- [ ] **T60** — `rooms_available(day, start, end)` (salles autorisées et libres)
+- [ ] **T61** — `create_events_preview` / `_confirm` : 1 à 12 occurrences, doublons signalés,
+      transaction unique ; `reserve_room_preview` / `_confirm` (`createReservation`, conflit =
+      refus)
+- [ ] **T62** — Tests 3c (13 dates refusées, date invalide ⇒ rien de créé, conflit de salle,
+      `events:manage` / `rooms:reserve` requis)
+
+### Documentation (à chaque PR)
+
+- [ ] **T63** — `CLAUDE.md`, `docs/auth.md`, guide et fiche de l'assistant, écran
+      d'autorisation (actions possibles selon le rôle), `CHANGELOG.md`, `npm run openapi`
+
 ## Vérification finale
 
 - [ ] `npm run typecheck`
@@ -176,3 +253,5 @@
 | Chaque appel journalisé sans contenu | T9, T19, T30 |
 | Débit limité par compte | T19, T30 |
 | Lot 1 sans aucune modification | T13, T31 |
+| Lot 3 : chaque action réservée aux comptes qui la font dans l'application, aperçu puis confirmation | T41, T45–T62 |
+| Lot 3 : droits ou données changés depuis l'aperçu ⇒ refus | T42, T49–T52, T56, T57, T61 |
