@@ -140,36 +140,58 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // Google for authentication, not for API access.
     async session({ session, user }) {
       session.user.id = user.id;
-
-      const dbUser = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { displayName: true, isSuperAdmin: true, hasSeenTour: true },
-      });
-      session.user.displayName = dbUser?.displayName ?? null;
-      session.user.isSuperAdmin = dbUser?.isSuperAdmin || isBootstrapSuperAdminEmail(user.email ?? "");
-      session.user.hasSeenTour = dbUser?.hasSeenTour ?? false;
-
-      const churchRoles = await loadChurchRoles(user.id);
-      const ministerDeptMap = await loadMinisterDepartments(churchRoles);
-      const { starDeptMap, secretariatChurchIds } = await loadLinkedDepartments(user.id, churchRoles);
-
-      const pastoral = await loadPastoralAccess(user.id, user.email);
-      session.user.pastoralProfileId = pastoral.pastoralProfileId;
-      session.user.pastoralChurchIds = pastoral.pastoralChurchIds;
-
-      session.user.churchRoles = churchRoles.map((cr) => ({
-        ...cr,
-        ministryId: cr.ministry?.id ?? null,
-        departments: withExtraDepartments(cr.departments, ministerDeptMap.get(cr.id) ?? starDeptMap.get(cr.id)),
-      }));
-      addVirtualSecretaryRoles(session.user.churchRoles, churchRoles, secretariatChurchIds);
-
+      await fillSessionUser(session.user, user.id, user.email);
       return session;
     },
   },
 });
 
 // ── Construction de la session (callback `session` ci-dessus) ─────────────────
+
+/**
+ * Remplit les champs Koinonia d'une session (rôles par église, départements, accès pastoral).
+ * Seule construction de la session : le callback NextAuth et le serveur MCP (spec 081), qui
+ * reconstruit la session d'un compte à chaque appel, passent tous deux par ici.
+ */
+async function fillSessionUser(target: Session["user"], userId: string, email: string | null | undefined) {
+  const dbUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { displayName: true, isSuperAdmin: true, hasSeenTour: true },
+  });
+  target.displayName = dbUser?.displayName ?? null;
+  target.isSuperAdmin = dbUser?.isSuperAdmin || isBootstrapSuperAdminEmail(email ?? "");
+  target.hasSeenTour = dbUser?.hasSeenTour ?? false;
+
+  const churchRoles = await loadChurchRoles(userId);
+  const ministerDeptMap = await loadMinisterDepartments(churchRoles);
+  const { starDeptMap, secretariatChurchIds } = await loadLinkedDepartments(userId, churchRoles);
+
+  const pastoral = await loadPastoralAccess(userId, email);
+  target.pastoralProfileId = pastoral.pastoralProfileId;
+  target.pastoralChurchIds = pastoral.pastoralChurchIds;
+
+  target.churchRoles = churchRoles.map((cr) => ({
+    ...cr,
+    ministryId: cr.ministry?.id ?? null,
+    departments: withExtraDepartments(cr.departments, ministerDeptMap.get(cr.id) ?? starDeptMap.get(cr.id)),
+  }));
+  addVirtualSecretaryRoles(target.churchRoles, churchRoles, secretariatChurchIds);
+}
+
+/**
+ * Session d'un compte reconstruite depuis la base, hors navigateur (serveur MCP, spec 081) :
+ * mêmes rôles et départements que la session NextAuth. `null` si le compte n'existe plus.
+ */
+export async function buildSessionForUser(userId: string): Promise<Session | null> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, name: true, image: true } });
+  if (!user) return null;
+  const session = {
+    user: { id: user.id, email: user.email, name: user.name, image: user.image },
+    expires: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+  } as Session;
+  await fillSessionUser(session.user, user.id, user.email);
+  return session;
+}
 
 type SessionDept = { id: string; name: string };
 

@@ -1365,6 +1365,10 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
       "href": "/admin/assistant",
       "label": "Assistant",
     },
+    {
+      "href": "/admin/mcp",
+      "label": "Assistants IA (MCP)",
+    },
   ],
   "currentChurchId": "church-1",
   "departments": [
@@ -1539,6 +1543,10 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
     {
       "href": "/admin/assistant",
       "label": "Assistant",
+    },
+    {
+      "href": "/admin/mcp",
+      "label": "Assistants IA (MCP)",
     },
   ],
   "currentChurchId": null,

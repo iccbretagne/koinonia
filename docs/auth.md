@@ -172,6 +172,31 @@ propriétaire :
 
 ---
 
+### Connexion des assistants IA (MCP, spec 081, ADR-0029)
+
+Seule exception à « la session NextAuth est la seule authentification » : le serveur MCP
+(`/api/mcp/server`) accepte un **jeton d'accès OAuth** délivré par Koinonia lui-même, et rien
+d'autre n'accepte ce jeton.
+
+- Découverte : `/.well-known/oauth-protected-resource` (RFC 9728) et
+  `/.well-known/oauth-authorization-server` (RFC 8414) ; enregistrement dynamique
+  `/api/mcp/oauth/register` (clients publics, adresses de redirection exactes en https ou en
+  boucle locale) ; autorisation `/api/mcp/oauth/authorize` → écran `/mcp/autoriser` (session
+  NextAuth, choix d'**une** église où la fonction est active) ; jetons `/api/mcp/oauth/token`
+  (code + PKCE S256, rafraîchissement avec rotation ; un code ou un refresh rejoué révoque la
+  connexion) ; révocation `/api/mcp/oauth/revoke`.
+- La page de connexion accepte `?next=` **uniquement** vers `/mcp/autoriser?…` (pas de
+  redirection ouverte). La décision part en `fetch` même origine (`Origin` obligatoire) : un
+  formulaire classique serait bloqué par `form-action` au moment de revenir vers l'assistant.
+- À chaque appel : jeton valide, connexion non révoquée, fonction active (instance et église),
+  compte toujours membre de l'église ; la session est reconstruite depuis la base
+  (`buildSessionForUser`, même code que le callback NextAuth) puis passe par les questions de
+  données de l'assistant, qui revérifient le droit de chaque écran. 60 appels/min/compte.
+- Révocation : par la personne (« Mon profil › Assistants connectés »), par l'Admin de l'église
+  (`church:settings`), ou en coupant la fonction (Super Admin pour l'instance, Admin pour l'église).
+
+---
+
 ### Gardes propres au module audio (`@/modules/audio/auth`)
 
 Ces trois gardes sont des règles du domaine audio, pas de l'infrastructure d'authentification :

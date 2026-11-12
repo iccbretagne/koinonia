@@ -41,6 +41,7 @@ const configLinksDef = [
   { href: "/admin/app-icon",              label: "Icône de l'application", permissions: [], superAdminOnly: true },
   // Assistant de prise en main (spec 075) : base commune à l'instance
   ...(registry.has("assistant") ? [{ href: "/admin/assistant", label: "Assistant", permissions: [] as string[], superAdminOnly: true }] : []),
+  ...(registry.has("mcp") ? [{ href: "/admin/mcp", label: "Assistants IA (MCP)", permissions: [] as string[], superAdminOnly: true }] : []),
 ];
 
 type NavLink = { href: string; label: string };

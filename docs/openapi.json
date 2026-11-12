@@ -17915,6 +17915,640 @@
         }
       }
     },
+    "/api/mcp/church/{churchId}": {
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP : réglage et assistants connectés d'une église",
+        "description": "**Accès** : permission `church:settings`.\n\nInterrupteur de l'église (coupé par défaut), état de l'interrupteur d'instance, et liste des comptes connectés, sans contenu.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "church:settings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ enabled, instanceEnabled, connections }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP : activer ou couper la connexion des assistants IA dans l'église",
+        "description": "**Accès** : permission `church:settings`.\n\nCouper rend aussitôt inutilisables les connexions de l'église ; réactiver ne restaure pas les connexions révoquées. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "church:settings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ enabled }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/mcp/connections": {
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP : mes assistants connectés",
+        "description": "**Accès** : toute personne connectée.\n\nConnexions actives du compte, toutes églises confondues (assistant, église, date, dernière utilisation).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "responses": {
+          "200": {
+            "description": "Liste des connexions",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/mcp/connections/{id}": {
+      "delete": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP : révoquer une connexion d'assistant",
+        "description": "**Accès** : toute personne connectée — propriétaire de la connexion, ou `church:settings` dans l'église de la connexion.\n\nPar la personne connectée elle-même, ou par un administrateur de l'église de la connexion (`church:settings`). Effet immédiat ; journalisé. Autre cas : 404.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Aucun contenu"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/mcp/oauth/authorize": {
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP : demande d'autorisation d'un assistant IA",
+        "description": "**Accès** : public, sans session.\n\nPoint d'entrée OAuth : renvoie vers l'écran d'autorisation de Koinonia (après connexion si besoin). Les paramètres sont revérifiés sur l'écran et à la décision.",
+        "security": [],
+        "x-access": "public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "required": true,
+            "name": "client_id",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "required": true,
+            "name": "redirect_uri",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 20
+            },
+            "required": true,
+            "name": "response_type",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 128
+            },
+            "required": true,
+            "name": "code_challenge",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 10
+            },
+            "required": true,
+            "name": "code_challenge_method",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 500
+            },
+            "required": false,
+            "name": "state",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "scope",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 500
+            },
+            "required": false,
+            "name": "resource",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirection vers l'écran d'autorisation ou la page de connexion"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP : décision de la personne sur l'écran d'autorisation",
+        "description": "**Accès** : toute personne connectée.\n\nEnvoyé par l'écran `/mcp/autoriser`, session requise, même origine (en-tête `Origin` obligatoire). « Autoriser » crée (ou réutilise) la connexion pour l'église choisie — fonction active et rôle dans l'église exigés — avec un code à usage unique ; « Refuser » donne `error=access_denied`. L'écran navigue ensuite vers l'adresse renvoyée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "client_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "redirect_uri": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "response_type": {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  "code_challenge": {
+                    "type": "string",
+                    "maxLength": 128
+                  },
+                  "code_challenge_method": {
+                    "type": "string",
+                    "maxLength": 10
+                  },
+                  "state": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "scope": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "resource": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "church_id": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "decision": {
+                    "type": "string",
+                    "enum": [
+                      "allow",
+                      "deny"
+                    ]
+                  }
+                },
+                "required": [
+                  "client_id",
+                  "redirect_uri",
+                  "response_type",
+                  "code_challenge",
+                  "code_challenge_method",
+                  "decision"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ redirectTo }` : adresse de retour de l'assistant, avec `code` et `state` (ou `error`)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/mcp/oauth/register": {
+      "post": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP : enregistrement dynamique d'un assistant IA (RFC 7591)",
+        "description": "**Accès** : public, sans session.\n\nClient public, sans secret ; PKCE obligatoire ensuite. Adresses de redirection en https, ou en boucle locale (http://localhost, 127.0.0.1), sans fragment. 10 enregistrements par minute et par adresse IP.",
+        "security": [],
+        "x-access": "public",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "client_name": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "redirect_uris": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 10
+                  },
+                  "grant_types": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "response_types": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "token_endpoint_auth_method": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "redirect_uris"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "`client_id` et métadonnées du client enregistré",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          }
+        }
+      }
+    },
+    "/api/mcp/oauth/revoke": {
+      "post": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP : révocation d'un jeton par l'assistant (RFC 7009)",
+        "description": "**Accès** : public, sans session.\n\nRévoque toute la connexion du jeton présenté. Répond 200 même si le jeton est inconnu.",
+        "security": [],
+        "x-access": "public",
+        "requestBody": {
+          "description": "`token`, `client_id` facultatif",
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Vide",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mcp/oauth/token": {
+      "post": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP : jetons d'accès (code d'autorisation ou rafraîchissement)",
+        "description": "**Accès** : public, sans session.\n\nCorps `application/x-www-form-urlencoded` (ou JSON). Code à usage unique, PKCE S256 vérifié, `redirect_uri` identique à l'autorisation ; un code ou un jeton de rafraîchissement rejoué révoque la connexion. Accès 1 h, rafraîchissement 90 jours glissants avec rotation. Erreurs au format OAuth (`invalid_grant`…).",
+        "security": [],
+        "x-access": "public",
+        "requestBody": {
+          "description": "Paramètres OAuth 2.1 (`grant_type`, `code`, `code_verifier`, `redirect_uri`, `client_id` ou `refresh_token`)",
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`access_token`, `refresh_token`, `expires_in`, `token_type`, `scope`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mcp/server": {
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP : non pris en charge (serveur sans état)",
+        "description": "**Accès** : public, sans session.",
+        "security": [],
+        "x-access": "public",
+        "responses": {
+          "200": {
+            "description": "405 : méthode non prise en charge",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP : serveur des assistants IA (Streamable HTTP, sans état)",
+        "description": "**Accès** : jeton de partage dans l'adresse — jeton d'accès OAuth de Koinonia (spec 081), jamais la session du navigateur.\n\nMessages JSON-RPC du protocole MCP (`initialize`, `tools/list`, `tools/call`…). Jeton porteur OAuth requis : sans lui, 401 avec `WWW-Authenticate` qui désigne les métadonnées de la ressource. Outils en lecture seule, filtrés par les droits du compte dans l'église de la connexion ; 60 appels par minute et par compte (429). Chaque appel d'outil est journalisé sans contenu.",
+        "security": [],
+        "x-access": "token",
+        "requestBody": {
+          "description": "Message JSON-RPC 2.0 du protocole MCP",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Réponse JSON-RPC",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP : non pris en charge (serveur sans état)",
+        "description": "**Accès** : public, sans session.",
+        "security": [],
+        "x-access": "public",
+        "responses": {
+          "200": {
+            "description": "405 : méthode non prise en charge",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mcp/settings": {
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP : réglage d'instance et activité",
+        "description": "**Accès** : Super Admin.\n\nInterrupteur d'instance et, par église, connexions actives et appels des 30 derniers jours — jamais de contenu.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "responses": {
+          "200": {
+            "description": "`{ enabled, usage }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "MCP : activer ou couper la connexion des assistants IA pour toute l'instance",
+        "description": "**Accès** : Super Admin.\n\nCouper rend aussitôt inutilisables toutes les connexions. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ enabled }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
     "/api/media-events": {
       "get": {
         "tags": [

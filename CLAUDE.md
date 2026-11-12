@@ -617,6 +617,28 @@ seule (`ENABLED_MODULES`) :
 - Administration de la base (`/admin/assistant`, `/api/assistant/admin/*`, `/api/assistant/settings`) :
   `requireSuperAdmin()` — la base et les questions remontées sont d'instance, sans compte ni église
 
+**Spécificités du module mcp** (spec 081, [ADR-0029](docs/adr/0029-serveur-autorisation-oauth-mcp.md))
+— connexion des assistants IA des membres, lecture seule, désactivable (`ENABLED_MODULES`),
+**aucune permission propre** :
+- Koinonia est **serveur d'autorisation OAuth 2.1** pour son seul serveur MCP
+  (`/api/mcp/server`, transport Streamable HTTP sans état, `@modelcontextprotocol/sdk`) :
+  découverte `/.well-known/*`, enregistrement dynamique, code + PKCE S256, jetons opaques
+  (empreinte SHA-256 seule en base), refresh 90 jours avec rotation, rejeu ⇒ connexion révoquée.
+  Ces jetons n'ouvrent aucune autre route
+- Une connexion = un compte + **une** église (`mcp_grants`), choisie sur `/mcp/autoriser` ;
+  à chaque appel : fonction active (instance `mcp_settings` par le Super Admin, église
+  `mcp_church_settings` par `church:settings`, **coupée par défaut**), compte toujours membre,
+  session reconstruite par `buildSessionForUser` (`src/lib/auth.ts`, même code que NextAuth)
+- Outils = **questions de données de l'assistant** (`src/app/api/assistant/_data/*`), filtrés par
+  la liste blanche `MCP_TOOLS` (`src/app/api/mcp/_tools.ts` : jamais `treasury.*`, jamais `care`)
+  et par l'audience des fiches ; refus = même réponse qu'une absence ; `guide_search` en plus.
+  Toute nouvelle question n'entre côté MCP que par cette liste blanche. Une question renvoie sa
+  liste **complète** (`boundedAnswer` nettoie les libellés, ne coupe pas) : la bulle de
+  l'assistant borne à 8 lignes (`dataRunner`), le serveur MCP pagine (`limit` ≤ 100, `offset`,
+  `total` et `nextOffset` toujours rendus). Tous les outils sont en lecture seule
+- Journal sans contenu (`mcp_calls`), 60 appels/min/compte ; révocation par la personne
+  (`/profile/assistants`) ou l'Admin d'église ; purge quotidienne (`mcp-maintenance`)
+
 **Spécificités du module billetterie** (spec 074) — désactivable (`ENABLED_MODULES`) :
 - `ticketing:manage` (Super Admin, Admin, Secrétaire) ouvre `/billetterie` et la création
   d'événements ; son détenteur est **organisateur implicite** de tous les événements de son

@@ -209,6 +209,14 @@ const FEATURES: Feature[] = [
 
   // ── Absences ─────────────────────────────────────────────────────────────
   {
+    name: "Connecter mon assistant IA (MCP)",
+    description: "Depuis « Mon profil › Assistants IA connectés », copiez l'adresse du serveur et ajoutez-la comme connecteur dans votre assistant IA (Claude, ChatGPT, Claude Code). Il vous renvoie vers Koinonia : choisissez l'église et autorisez. L'assistant lit uniquement ce que vous voyez déjà (planning, événements, demandes, comptes rendus, audio, guide), sans rien modifier, et jamais le suivi pastoral, les coordonnées bancaires ni les coordonnées d'autrui. Vous révoquez l'accès d'un clic ; une connexion inutilisée 90 jours expire. L'administrateur de l'église active la fonction dans les paramètres de l'église, où il voit aussi la liste des comptes connectés.",
+    category: "Profil",
+    screenshotTitle: "Assistants connectés",
+    screenshotFile: "guide-assistants.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "edit" },
+  },
+  {
     name: "Photos et visuels (Communication & Production)",
     description: "L'espace « Communication & Production » regroupe les photos d'événements, les projets de visuels et leurs demandes, et les demandes réseaux sociaux, selon votre équipe. « Partager une sélection » crée un lien de partage ; le bouton « Partages » liste les liens actifs et permet de les révoquer. La carte « Galerie » rassemble toutes les photos et tous les visuels validés, par mois, avec des filtres (type, période, événement ou projet, recherche), une visionneuse et le téléchargement d'une sélection ; l'Admin ou le Ministre des équipes média peut y donner accès à une personne précise (« Accès »), en lecture et téléchargement, avec une date de fin facultative.",
     category: "Demandes",

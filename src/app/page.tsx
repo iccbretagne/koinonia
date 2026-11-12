@@ -18,11 +18,25 @@ async function defaultLandingPage(session: Session) {
   return hasChurchRole ? "/accueil" : "/profile";
 }
 
-export default async function LoginPage() {
+/**
+ * Retour après connexion : seulement l'écran d'autorisation d'un assistant IA (spec 081), en
+ * adresse relative — jamais une adresse arbitraire (redirection ouverte).
+ */
+function safeNext(next: string | string[] | undefined): string | null {
+  if (typeof next !== "string") return null;
+  return next.startsWith("/mcp/autoriser?") && !next.includes("//") && !next.includes("\\") ? next : null;
+}
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  readonly searchParams?: Promise<Record<string, string | string[] | undefined>>;
+} = {}) {
   const session = await auth();
+  const next = safeNext((await searchParams)?.next);
 
   if (session?.user) {
-    redirect(await defaultLandingPage(session));
+    redirect(next ?? (await defaultLandingPage(session)));
   }
 
   // Pas de session, mais des cookies Auth.js quand même présents : session
@@ -63,7 +77,7 @@ export default async function LoginPage() {
             // redirectTo pointe vers "/" (pas "/dashboard") : au moment de l'appel, la
             // session n'existe pas encore, donc le rôle est inconnu ici. "/" recalculera
             // la destination via defaultLandingPage() une fois la session posée.
-            await signIn("google", { redirectTo: "/" });
+            await signIn("google", { redirectTo: next ?? "/" });
           }}
         >
           <button

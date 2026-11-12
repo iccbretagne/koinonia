@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Session } from "next-auth";
 import { prismaMock } from "@/__mocks__/prisma";
-import { isDataRefusal, type DataAnswer } from "@/core/assistant";
+import { DATA_ANSWER_MAX_ITEMS, isDataRefusal, pageAnswer, type DataAnswer } from "@/core/assistant";
 import { viewerFor } from "./viewers";
 
 const SECRET = "jean.dupont@exemple.fr 06 12 34 56 78 FR76 3000 6000 0112 3456 7890 189 https://exemple.fr";
@@ -42,6 +42,9 @@ vi.mock("@/modules/planning", () => ({
   resolveRequestQueueAccess: vi.fn(async () => ({ allowed: true })),
 }));
 vi.mock("@/modules/ticketing", () => ({ listAssignmentsForUser: vi.fn(async () => []) }));
+vi.mock("@/modules/audio", () => ({
+  listPublishedServices: vi.fn(async () => [{ title: "Culte de rentrée", serviceDate: new Date("2026-11-01T10:00:00Z"), speaker: "Pasteur A", series: null }]),
+}));
 vi.mock("@/modules/shuttle", () => ({
   getShuttleAccess: vi.fn(async () => ({ manager: false, member: false })),
   currentBalance: vi.fn(async () => 120),
@@ -82,6 +85,16 @@ function stubDatabase() {
     { label: `Achat ${SECRET}`, amount: 40, status: "SUBMITTED", department: { name: "Son" }, payments: [] },
   ]);
   prismaMock.financialPayment.findMany.mockResolvedValue([{ amount: 40, scheduledDate: future, request: { label: `Achat ${SECRET}` } }]);
+  prismaMock.eventReport.findMany.mockResolvedValue([
+    {
+      speaker: "Pasteur A",
+      messageTitle: "La paix",
+      notes: `Bilan ${SECRET}`,
+      decisions: `Appeler ${SECRET}`,
+      event: { id: "e1", title: "Culte", date: future },
+      sections: [{ label: "Son", position: 1, stats: null, notes: `Câble ${SECRET}` }],
+    },
+  ]);
 }
 
 const FULL = viewerFor("SUPER_ADMIN", { predicates: ["linkedStar", "pastoral"] });
@@ -110,10 +123,21 @@ describe("catalogue des questions de données (spec 075)", () => {
   it("refuse sans aucune donnée à un compte qui n'a pas l'écran", async () => {
     const star = viewerFor("STAR");
     for (const key of catalog.keys()) {
-      if (key === "ticketing.myAssignments" || key === "planning.secretariatPending") continue;
+      // Ouvertes au STAR : ses propres affectations, la file du secrétariat (prédicat),
+      // la bibliothèque d'écoute (`audio:listen`, tous les rôles).
+      if (key === "ticketing.myAssignments" || key === "planning.secretariatPending" || key === "audio.recentSermons") continue;
       const result = await run(key, star);
       expect(isDataRefusal(result), key).toBe(true);
     }
+  });
+
+  it("cultes publiés et comptes rendus : refusés sans le droit de l'écran (spec 081)", async () => {
+    const nobody = { ...viewerFor("STAR"), permissions: [] };
+    expect(isDataRefusal(await run("audio.recentSermons", nobody))).toBe(true);
+    expect(isDataRefusal(await run("reports.recent", nobody))).toBe(true);
+    const reports = await run("reports.recent", FULL);
+    expect(JSON.stringify(reports)).toContain("La paix");
+    expect(prismaMock.eventReport.findMany.mock.calls[0][0].select).not.toHaveProperty("notes");
   });
 
   it("ne recopie jamais un email, un téléphone, un IBAN ni un lien", async () => {
@@ -123,14 +147,90 @@ describe("catalogue des questions de données (spec 075)", () => {
     }
   });
 
-  it("borne chaque liste à 8 lignes en gardant le total", async () => {
+  it("garde toute la liste et son total : la bulle et le serveur MCP bornent chacun à leur façon", async () => {
     const future = new Date(Date.now() + 86_400_000);
     prismaMock.serviceWithdrawal.findMany.mockResolvedValue(
       Array.from({ length: 12 }, (_, i) => ({ status: "PENDING", event: { title: `Culte ${i}`, date: future }, department: { name: "Son" }, member: { firstName: "A", lastName: `${i}` } }))
     );
     const result = (await run("planning.toReplace", viewerFor("ADMIN"))) as DataAnswer;
-    expect(result.items).toHaveLength(8);
+    expect(result.items).toHaveLength(12);
     expect(result.total).toBe(12);
+    const bubble = pageAnswer(result, { limit: DATA_ANSWER_MAX_ITEMS });
+    expect(bubble.items).toHaveLength(8);
+    expect(bubble.total).toBe(12);
+  });
+
+  it("libellés nettoyés : espaces de bord retirés, détail vide supprimé, type d'événement en clair", async () => {
+    const date = new Date(Date.now() + 86_400_000);
+    prismaMock.event.findMany.mockResolvedValue([
+      { title: "Culte ", date, type: "CULTE" },
+      { title: "Soirée  louange", date, type: "PRIERE" },
+    ]);
+    const week = (await run("planning.eventsThisWeek", FULL)) as DataAnswer;
+    expect(week.items[0].label).toMatch(/· Culte$/);
+    expect(week.items[0]).not.toHaveProperty("detail");
+    expect(week.items[1].label).toMatch(/· Soirée louange$/);
+    expect(week.items[1].detail).toBe("Prière");
+    expect(JSON.stringify(week)).not.toContain("CULTE");
+
+    prismaMock.event.findMany.mockResolvedValue([{ id: "e8", title: "Culte  ", date: new Date(Date.now() - 86_400_000) }]);
+    const missing = (await run("planning.missingReports", FULL)) as DataAnswer;
+    expect(missing.items[0].label).toMatch(/· Culte$/);
+    expect(missing.items[0].href).toBe("/admin/events/e8/report");
+  });
+
+  it("file du secrétariat : le total compte les lignes, le nombre de demandes est dans le titre", async () => {
+    const result = (await run("planning.secretariatPending", FULL)) as DataAnswer;
+    expect(result.total).toBe(result.items.length);
+    expect(result.title).toBe("Demandes à traiter (1)");
+  });
+
+  it("comptes rendus récents : orateur et titre vides annoncés « non renseignés »", async () => {
+    prismaMock.eventReport.findMany.mockResolvedValue([
+      { speaker: null, messageTitle: "  ", event: { id: "e25", title: "Culte ", date: new Date("2026-10-25T10:00:00Z") } },
+      { speaker: "Pasteur A", messageTitle: null, event: { title: "Culte", date: new Date("2026-10-18T10:00:00Z") } },
+    ]);
+    const result = (await run("reports.recent", FULL)) as DataAnswer;
+    expect(result.items[0]).toEqual({ label: "dim. 25 oct. · Culte", detail: "Orateur et titre du message non renseignés", href: "/admin/events/e25/report" });
+    expect(result.items[1].detail).toBe("Pasteur A · Titre non renseigné");
+  });
+
+  it("compte rendu d'un jour : orateur, message, départements, observations, décisions (spec 081)", async () => {
+    prismaMock.eventReport.findMany.mockResolvedValue([
+      {
+        speaker: "Pasteur A",
+        messageTitle: null,
+        notes: `Belle louange, ${SECRET}`,
+        decisions: null,
+        event: { id: "e9", title: "Culte ", date: new Date("2026-10-25T09:00:00Z") },
+        sections: [
+          { label: "Son", position: 2, stats: null, notes: "Micro HS" },
+          { label: "Accueil", position: 1, stats: { hommes: 40, femmes: 50, enfants: 10 }, notes: null },
+          { label: "Vide", position: 3, stats: null, notes: null },
+        ],
+      },
+    ]);
+    const result = (await run("reports.get", FULL, { day: "2026-10-25" })) as DataAnswer;
+    expect(result.title).toBe("Compte rendu — dim. 25 oct. · Culte");
+    expect(result.href).toBe("/admin/events/e9/report");
+    expect(result.items.map((i) => i.label)).toEqual(["Orateur", "Message", "Accueil", "Son", "Observations générales", "Décisions / actions"]);
+    expect(result.items[1].detail).toBe("non renseigné");
+    expect(result.items[2].detail).toBe("Hommes : 40 | Femmes : 50 | Enfants : 10 · Total adultes : 90 | Total général : 100");
+    expect(result.items[3].detail).toBe("Micro HS");
+    expect(result.items[4].detail).toContain("Belle louange");
+    expect(JSON.stringify(result)).not.toMatch(SENSITIVE);
+    const where = prismaMock.eventReport.findMany.mock.calls[0][0].where;
+    expect(where).toMatchObject({ churchId: "church-1", event: { reportEnabled: true } });
+  });
+
+  it("compte rendu : refusé sans reports:view ; sans jour, le plus récent ; jour sans compte rendu", async () => {
+    expect(isDataRefusal(await run("reports.get", { ...viewerFor("STAR"), permissions: [] }))).toBe(true);
+    prismaMock.eventReport.findMany.mockResolvedValue([]);
+    const none = (await run("reports.get", FULL, { day: "2026-10-25" })) as DataAnswer;
+    expect(none.items).toEqual([]);
+    expect(none.empty).toBe("Aucun compte rendu pour ce jour.");
+    await run("reports.get", FULL);
+    expect(prismaMock.eventReport.findMany.mock.calls.at(-1)![0]).toMatchObject({ take: 1, orderBy: { event: { date: "desc" } } });
   });
 });
 
