@@ -59,10 +59,11 @@ beforeEach(() => {
 });
 
 describe("outils proposés", () => {
-  it("seulement avec planning:edit (Resp. département oui, Secrétaire et STAR non)", () => {
+  it("seulement avec planning:edit (Resp. département oui, Secrétaire et STAR non) ; lecture des tâches avec planning:department", () => {
     const names = (role: string) => p.PLANNING_ACTIONS.filter((a) => a.available(viewerFor(role))).map((a) => a.name);
     expect(names("DEPARTMENT_HEAD")).toContain("fill_planning_confirm");
-    expect(names("SECRETARY")).toEqual([]);
+    expect(names("DEPARTMENT_HEAD")).toContain("assign_tasks_confirm");
+    expect(names("SECRETARY")).toEqual(["planning_tasks"]);
     expect(names("STAR")).toEqual([]);
   });
 });

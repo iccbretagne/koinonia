@@ -117,7 +117,7 @@ export default async function AuthorizeAssistantPage({
             <span>
               Autoriser aussi des actions, <strong>toujours confirmées par vous</strong>{" "}
               dans l&apos;assistant, selon vos droits dans Koinonia : déclarer une absence et répondre à une
-              demande de disponibilité pour vous ; et, si vous êtes responsable, remplir ou recopier un planning,
+              demande de disponibilité pour vous ; et, si vous êtes responsable, remplir ou recopier un planning, attribuer les tâches du département,
               relancer les sans-réponse, publier des consignes, saisir une absence ou une réponse pour un STAR de
               votre périmètre, remplir un compte rendu, créer des événements, réserver une salle.
               <span className="block text-xs text-ink-subtle mt-1">

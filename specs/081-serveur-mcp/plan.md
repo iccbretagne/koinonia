@@ -466,3 +466,16 @@ recopier, relancer, consignes) ; **3b** pour un STAR (absence, réponse) et comp
   `getSeriesEventIds` ; réservation : `reserveRoom` extrait de `POST /api/room-reservations`.
 - **Heure de Paris** : `parisDateTime(jour, heure)` (changement d'heure compris), comme le
   formulaire qui envoie l'heure locale du navigateur.
+
+## Écarts à l'implémentation (lot 3, tâches du département)
+
+- **Ajout après la recette** : un responsable met des STAR en service par `fill_planning` puis
+  veut leur attribuer les tâches du département (`Task` / `TaskAssignment`). Lecture
+  `planning_tasks` et action `assign_tasks`, sur le modèle des autres actions du lot 3.
+- **Service plutôt que `_core.ts`** : la logique ne dépend ni de la session ni d'un contrôle de
+  permission, elle vit donc dans le module planning (`task-assignment.service.ts`), appelée par la
+  route et par l'assistant ; les droits restent chez l'appelant.
+- **Plusieurs tâches en une transaction** : `assignEventTasks` remplace les affectations des
+  tâches citées en une seule `$transaction` ; la route l'appelle avec une tâche.
+- **STAR nommé** : la route garde son message générique (« Ce STAR n'est pas en service… ») ;
+  l'assistant vérifie avant, avec `findNotServing`, et nomme chaque STAR concerné.

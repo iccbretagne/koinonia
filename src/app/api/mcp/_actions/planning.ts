@@ -7,7 +7,11 @@ import { consumeConfirmation, createConfirmation, publicOrigin } from "@/modules
 import {
   PLANNED_STATUSES,
   assertEventDepartment,
+  assignEventTasks,
+  findNotServing,
   getPlanningAvailability,
+  listEventTasks,
+  listServingMembers,
   listPendingWithdrawalsForSlot,
   manualRelance,
 } from "@/modules/planning";
@@ -19,6 +23,7 @@ import {
   CHANGED,
   EXPIRED,
   byKey,
+  byText,
   confirmInput,
   fingerprint,
   hasPermission,
@@ -56,10 +61,11 @@ const HISTORY_DAYS = 60;
 
 const fullName = (m: { firstName: string; lastName: string }) => `${m.firstName} ${m.lastName}`;
 const canEdit = hasPermission("planning:edit");
+const canViewDepartment = hasPermission("planning:department");
 
 /** Événement et département de l'église de la connexion, dans le périmètre de planning du compte. */
-async function loadSlot(ctx: ActionContext, eventId: string, departmentId: string) {
-  if (!(await hasChurchPermission(ctx.session, "planning:edit", ctx.churchId))) return null;
+async function loadSlot(ctx: ActionContext, eventId: string, departmentId: string, permission = "planning:edit") {
+  if (!(await hasChurchPermission(ctx.session, permission, ctx.churchId))) return null;
   const [event, department] = await Promise.all([
     prisma.event.findUnique({ where: { id: eventId }, select: { id: true, churchId: true, title: true, date: true, planningDeadline: true } }),
     prisma.department.findUnique({ where: { id: departmentId }, select: { id: true, name: true, ministry: { select: { churchId: true } } } }),
@@ -506,6 +512,171 @@ export async function confirmNotice(input: z.infer<typeof confirmInput>, ctx: Ac
   return { text: `Consigne publiée pour ${slot.department.name}.`, structured: { done: true, action: "publish_notice" } };
 }
 
+// ─── Tâches du département ───────────────────────────────────────────────────
+
+const NOT_LINKED = "Ce département n'est pas lié à cet événement.";
+
+export const tasksInput = z.object({ eventId: id, departmentId: id });
+
+/** Tâches du département et STAR en service pour l'événement (null si le département n'est pas lié). */
+async function loadTasks(eventId: string, departmentId: string) {
+  const eventDept = await prisma.eventDepartment.findUnique({
+    where: { eventId_departmentId: { eventId, departmentId } },
+    select: { id: true },
+  });
+  if (!eventDept) return null;
+  const [tasks, serving] = await Promise.all([listEventTasks(eventId, departmentId), listServingMembers(eventDept.id)]);
+  return { eventDepartmentId: eventDept.id, tasks, serving };
+}
+
+export async function planningTasks(input: z.infer<typeof tasksInput>, ctx: ActionContext): Promise<ActionResult> {
+  const slot = await loadSlot(ctx, input.eventId, input.departmentId, "planning:department");
+  if (!slot) return refusal(OUT_OF_SCOPE);
+  const data = await loadTasks(input.eventId, input.departmentId);
+  if (!data) return refusal(NOT_LINKED);
+  const taskLines = data.tasks.map(
+    (t) =>
+      `- ${t.name} [taskId ${t.id}]${t.description ? ` — ${t.description}` : ""} : ` +
+      (t.assignments.length > 0 ? t.assignments.map((a) => `${fullName(a.member)} [memberId ${a.member.id}]`).join(", ") : "personne")
+  );
+  const servingLines = data.serving.map(
+    (p) => `- ${fullName(p.member)} [memberId ${p.memberId}]${p.status === "EN_SERVICE_DEBRIEF" ? " (débrief)" : ""}`
+  );
+  return {
+    text:
+      `${slot.department.name} — ${formatDay(slot.event.date)} ${formatTime(slot.event.date)} · ${slot.event.title.trim()}\n` +
+      `Tâches et STAR affectés :\n${taskLines.join("\n") || "Aucune tâche définie pour ce département."}\n` +
+      `STAR en service, qu'on peut affecter :\n${servingLines.join("\n") || "Aucun STAR en service : remplissez d'abord le planning."}`,
+    structured: {
+      eventId: input.eventId,
+      departmentId: input.departmentId,
+      tasks: data.tasks.map((t) => ({
+        taskId: t.id,
+        name: t.name,
+        description: t.description,
+        assigned: t.assignments.map((a) => ({ memberId: a.member.id, name: fullName(a.member) })),
+      })),
+      serving: data.serving.map((p) => ({ memberId: p.memberId, name: fullName(p.member), status: p.status })),
+    },
+  };
+}
+
+export const assignTasksInput = z.object({
+  eventId: id,
+  departmentId: id,
+  assignments: z
+    .array(
+      z.object({
+        taskId: id,
+        memberIds: z.array(id).max(50).describe("STAR en service à affecter (identifiants de planning_tasks) ; liste vide = plus personne sur cette tâche"),
+      })
+    )
+    .min(1)
+    .max(30)
+    .describe("Tâches à affecter : leurs affectations sont remplacées, les autres tâches ne changent pas"),
+});
+
+type AssignPayload = { eventId: string; departmentId: string; assignments: { taskId: string; memberIds: string[] }[]; fp: string };
+
+/** Empreinte des affectations des tâches citées et des STAR en service. */
+const tasksFingerprint = (data: NonNullable<Awaited<ReturnType<typeof loadTasks>>>, taskIds: string[]) =>
+  fingerprint({
+    tasks: data.tasks
+      .filter((t) => taskIds.includes(t.id))
+      .map((t) => [t.id, t.assignments.map((a) => a.member.id).sort(byText)])
+      .sort(byKey),
+    serving: data.serving.map((p) => p.memberId).sort(byText),
+  });
+
+/** Vérifie la demande sur l'état lu ; renvoie un refus nommé, ou null si tout est valable. */
+async function checkAssignments(input: z.infer<typeof assignTasksInput>, data: NonNullable<Awaited<ReturnType<typeof loadTasks>>>): Promise<string | null> {
+  const taskIds = input.assignments.map((a) => a.taskId);
+  if (new Set(taskIds).size !== taskIds.length) return "Une même tâche apparaît deux fois.";
+  const known = new Set(data.tasks.map((t) => t.id));
+  const unknown = taskIds.filter((t) => !known.has(t));
+  if (unknown.length > 0) return `Tâche introuvable dans ce département [taskId ${unknown.join(", ")}] : utilisez les identifiants de planning_tasks.`;
+  for (const a of input.assignments) {
+    if (new Set(a.memberIds).size !== a.memberIds.length) return "Un même STAR apparaît deux fois sur une tâche.";
+  }
+  const memberIds = [...new Set(input.assignments.flatMap((a) => a.memberIds))];
+  const notServing = await findNotServing(data.eventDepartmentId, memberIds);
+  if (notServing.length === 0) return null;
+  const members = await prisma.member.findMany({ where: { id: { in: notServing } }, select: { id: true, firstName: true, lastName: true } });
+  const names = new Map(members.map((m) => [m.id, fullName(m)]));
+  const list = notServing.map((m) => (names.has(m) ? `${names.get(m)} [memberId ${m}]` : `STAR inconnu [memberId ${m}]`)).join(", ");
+  return `${notServing.length > 1 ? "Ces STAR ne sont pas" : "Ce STAR n'est pas"} en service pour cet événement : ${list}. Mettez-les d'abord en service (fill_planning) ou choisissez parmi les STAR en service de planning_tasks.`;
+}
+
+export async function previewAssignTasks(input: z.infer<typeof assignTasksInput>, ctx: ActionContext): Promise<ActionResult> {
+  const slot = await loadSlot(ctx, input.eventId, input.departmentId);
+  if (!slot) return refusal(OUT_OF_SCOPE);
+  const data = await loadTasks(input.eventId, input.departmentId);
+  if (!data) return refusal(NOT_LINKED);
+  const problem = await checkAssignments(input, data);
+  if (problem) return refusal(problem);
+
+  const tasks = new Map(data.tasks.map((t) => [t.id, t]));
+  const names = new Map(data.serving.map((p) => [p.memberId, fullName(p.member)]));
+  const changes = input.assignments.filter((a) => {
+    const current = tasks.get(a.taskId)!.assignments.map((x) => x.member.id).sort(byText);
+    return current.join(",") !== [...a.memberIds].sort(byText).join(",");
+  });
+  if (changes.length === 0) return refusal("Ces affectations sont déjà celles de Koinonia : rien à changer.");
+
+  const payload: AssignPayload = {
+    eventId: input.eventId,
+    departmentId: input.departmentId,
+    assignments: changes,
+    fp: tasksFingerprint(data, changes.map((a) => a.taskId)),
+  };
+  const { token, expiresAt } = await createConfirmation(ctx.grantId, "assign_tasks", payload);
+  const lines = [
+    `${slot.department.name} — ${formatDay(slot.event.date)} ${formatTime(slot.event.date)} · ${slot.event.title.trim()}`,
+    ...changes.map((a) => {
+      const task = tasks.get(a.taskId)!;
+      const before = task.assignments.map((x) => fullName(x.member)).join(", ") || "personne";
+      const after = a.memberIds.map((m) => names.get(m) ?? m).join(", ") || "personne";
+      return `- ${task.name} : ${before} → ${after}`;
+    }),
+    "Les autres tâches du département ne changent pas.",
+  ];
+  return {
+    text: previewText(lines, token),
+    structured: { done: false, action: "assign_tasks", changes: changes.length, confirmation: token, expiresAt: expiresAt.toISOString() },
+  };
+}
+
+export async function confirmAssignTasks(input: z.infer<typeof confirmInput>, ctx: ActionContext): Promise<ActionResult> {
+  const payload = (await consumeConfirmation(ctx.grantId, "assign_tasks", input.confirmation)) as AssignPayload | null;
+  if (!payload) return refusal(EXPIRED);
+  const slot = await loadSlot(ctx, payload.eventId, payload.departmentId);
+  if (!slot) return refusal(OUT_OF_SCOPE);
+  const data = await loadTasks(payload.eventId, payload.departmentId);
+  if (!data) return refusal(NOT_LINKED);
+  if (tasksFingerprint(data, payload.assignments.map((a) => a.taskId)) !== payload.fp) return refusal(CHANGED);
+  try {
+    await assignEventTasks(payload.eventId, payload.departmentId, payload.assignments);
+  } catch (error) {
+    if (error instanceof ApiError) return refusal(error.message);
+    throw error;
+  }
+  for (const a of payload.assignments) {
+    await logAudit({
+      userId: ctx.session.user.id!,
+      churchId: ctx.churchId,
+      action: "UPDATE",
+      entityType: "TaskAssignment",
+      entityId: a.taskId,
+      details: { eventId: payload.eventId, departmentId: payload.departmentId, memberIds: a.memberIds, via: "mcp" },
+    });
+  }
+  const link = `${publicOrigin()}/dashboard`;
+  return {
+    text: `Tâches affectées pour ${slot.department.name} (${payload.assignments.length} tâche(s)).\nVoir dans Koinonia : ${link}`,
+    structured: { done: true, action: "assign_tasks", tasks: payload.assignments.length, link },
+  };
+}
+
 // ─── Catalogue ───────────────────────────────────────────────────────────────
 
 const ASK_FIRST = "Montrez le résumé et attendez l'accord explicite de la personne avant";
@@ -601,5 +772,33 @@ export const PLANNING_ACTIONS: McpActionDef[] = [
     input: confirmInput,
     available: canEdit,
     run: confirmNotice as McpActionDef["run"],
+  },
+  {
+    name: "planning_tasks",
+    action: "planning_tasks",
+    kind: "read",
+    description:
+      "Tâches d'un département pour un événement (taskId, nom, description) avec les STAR déjà affectés, et les STAR en service qu'on peut y affecter (memberId). Sans coordonnée.",
+    input: tasksInput,
+    available: canViewDepartment,
+    run: planningTasks as McpActionDef["run"],
+  },
+  {
+    name: "assign_tasks_preview",
+    action: "assign_tasks",
+    kind: "preview",
+    description: `Prépare l'affectation de STAR en service aux tâches d'un département pour un événement (identifiants de planning_tasks). Remplace les affectations des tâches citées ; les autres ne changent pas. N'enregistre rien : résumé avant → après et un jeton. ${ASK_FIRST} assign_tasks_confirm.`,
+    input: assignTasksInput,
+    available: canEdit,
+    run: previewAssignTasks as McpActionDef["run"],
+  },
+  {
+    name: "assign_tasks_confirm",
+    action: "assign_tasks",
+    kind: "confirm",
+    description: "Enregistre les affectations préparées par assign_tasks_preview, avec son jeton. Refusé si les affectations ou les STAR en service ont changé depuis l'aperçu.",
+    input: confirmInput,
+    available: canEdit,
+    run: confirmAssignTasks as McpActionDef["run"],
   },
 ];

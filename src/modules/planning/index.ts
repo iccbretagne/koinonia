@@ -77,6 +77,13 @@ export type {
   TeamEventWriteInput,
 } from "./services/team-event.service";
 export {
+  listEventTasks,
+  assignEventTasks,
+  listServingMembers,
+  findNotServing,
+} from "./services/task-assignment.service";
+export type { TaskAssignmentInput } from "./services/task-assignment.service";
+export {
   searchMembersChurchWide,
   attachMemberToDepartment,
   detachMemberFromDepartment,

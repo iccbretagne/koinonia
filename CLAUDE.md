@@ -647,7 +647,9 @@ seule (`ENABLED_MODULES`) :
   vers `/requests/new` prérempli par l'adresse (`src/app/(auth)/requests/prefill.ts`, texte et
   dates seulement), proposé avec `members:view`. Lot 3a (`planning:edit` + périmètre) :
   lectures `planning_eventsToStaff`/`planning_candidates` (identifiants, état de la grille,
-  services sur 60 jours, sans coordonnée), remplir, recopier, relancer, consignes. Le code
+  services sur 60 jours, sans coordonnée), remplir, recopier, relancer, consignes, et tâches du
+  département : lecture `planning_tasks` (`planning:department`) et `assign_tasks` (STAR en
+  service seulement, service `task-assignment.service.ts` du module planning). Le code
   métier de l'écran est **partagé** : `_core.ts` à côté de la route (`savePlanning`,
   `duplicatePlanning`, `saveNotice`), appelé par la route et par l'assistant — une règle ne
   s'écrit qu'une fois. Une **empreinte** (`fingerprint`) de l'état lu à l'aperçu est revérifiée
