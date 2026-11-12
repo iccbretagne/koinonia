@@ -419,3 +419,75 @@ si une date est invalide.
 Trois PR successives, chacune utilisable seule : **3a** planning (candidats, remplir,
 recopier, relancer, consignes) ; **3b** pour un STAR (absence, réponse) et compte rendu ;
 **3c** événements et salles.
+
+## Écarts à l'implémentation (lot 3a)
+
+- **Lectures de planning dans la couche des actions**, pas dans le catalogue de l'assistant :
+  `planning_eventsToStaff` et `planning_candidates` renvoient des identifiants, inutiles à la
+  bulle de l'assistant intégré ; elles sont proposées avec les actions (case cochée,
+  `planning:edit`). Fichier `src/app/api/mcp/_actions/planning.ts` (et non
+  `assistant/_data/planning-staff.ts`).
+- **Cœurs extraits sans contrôle de permission** : la route garde `requireChurchPermission` et
+  `requireDepartmentAccess` ; l'assistant les refait avec la session (`hasChurchPermission`,
+  `requireDepartmentAccess`). Le cœur porte tout le reste (date limite, appartenance, débrief
+  unique, journal, désistements, notifications). Paramètre `details` ajouté au journal
+  (`via: "mcp"`) ; la route n'en passe pas, son journal est inchangé.
+- **Recopie** : la route n'écrivait pas de journal ; l'assistant en écrit un (`via: "mcp"`).
+- **Relance** : pas d'empreinte (la règle « une fois par jour » de `manualRelance` suffit).
+- **Remplir le planning** : même sémantique que la grille — seuls les STAR listés changent,
+  `null` retire un STAR ; les alertes (absent, pas disponible, en service ailleurs) sont
+  signalées sans bloquer, comme dans la grille.
+
+## Écarts à l'implémentation (lot 3b)
+
+- **Permission injectée** dans le code partagé (`RequirePermission`) : les routes passent
+  `requireChurchPermission(permission, churchId)`, l'assistant une variante qui lit la session
+  reconstruite (`hasChurchPermission`, même résultat). Ainsi les routes et leurs tests restent
+  identiques, et la règle « pour un tiers : permission + périmètre » n'existe qu'une fois.
+- `assertBackupsAllowed` déménage de `absences/route.ts` vers `absences/_core.ts` (importé par
+  `absences/[id]/route.ts`) : un route handler n'exporte plus de fonction métier.
+- **Lecture `stars_inScope`** (nom → identifiant, départements) : nécessaire au Secrétariat, qui
+  a `absences:manage` sans `planning:edit` et ne voit donc pas `planning_candidates`.
+- **Compte rendu par jour** : `fill_report_preview` accepte `eventId` ou `day` ; plusieurs
+  événements ce jour-là ⇒ refus listant les identifiants. Sections désignées par **nom de
+  département** (accents et casse ignorés), clés de statistiques rappelées dans la description.
+
+## Écarts à l'implémentation (lot 3c)
+
+- **Dates explicites** plutôt qu'une règle de récurrence : l'assistant calcule les dates (« tous
+  les dimanches de décembre ») et l'aperçu les liste une à une ; chaque date crée un événement
+  simple par `createEvent` (pas de série « parent + enfants »), ce qui garde l'aperçu exact.
+- **Vérifications avant écriture, pas une transaction unique** : toutes les dates (futures,
+  distinctes), les départements et le droit sont vérifiés à l'aperçu puis à la confirmation
+  avant la première création ; seule une erreur de base en cours de route peut laisser une partie
+  créée, et le message le dit.
+- **Rattachement des départements** : `addEventDepartment` extrait de
+  `POST /api/events/[id]/departments` (`_core.ts`), avec `verifyDepartmentChurch` et
+  `getSeriesEventIds` ; réservation : `reserveRoom` extrait de `POST /api/room-reservations`.
+- **Heure de Paris** : `parisDateTime(jour, heure)` (changement d'heure compris), comme le
+  formulaire qui envoie l'heure locale du navigateur.
+
+## Écarts à l'implémentation (lot 3, tâches du département)
+
+- **Ajout après la recette** : un responsable met des STAR en service par `fill_planning` puis
+  veut leur attribuer les tâches du département (`Task` / `TaskAssignment`). Lecture
+  `planning_tasks` et action `assign_tasks`, sur le modèle des autres actions du lot 3.
+- **Service plutôt que `_core.ts`** : la logique ne dépend ni de la session ni d'un contrôle de
+  permission, elle vit donc dans le module planning (`task-assignment.service.ts`), appelée par la
+  route et par l'assistant ; les droits restent chez l'appelant.
+- **Plusieurs tâches en une transaction** : `assignEventTasks` remplace les affectations des
+  tâches citées en une seule `$transaction` ; la route l'appelle avec une tâche.
+- **STAR nommé** : la route garde son message générique (« Ce STAR n'est pas en service… ») ;
+  l'assistant vérifie avant, avec `findNotServing`, et nomme chaque STAR concerné.
+
+## Écarts à l'implémentation (lot 3, compte rendu complet)
+
+- **Même grille que l'écran** : un nouveau compte rendu part d'une section par département de
+  l'événement, comme la page de saisie ; l'assistant peut ajouter un département de l'église ou
+  une section libre, renommer ou supprimer une section.
+- **Statistiques de l'écran seulement** : les champs par type de section (Accueil, Sainte-Cène,
+  Intégration, Navette) sortent de la page dans `src/lib/report-stats.ts` et sont partagés ; une
+  clé inconnue, une section sans statistiques ou un événement sans statistiques ⇒ refus explicite
+  avec les clés attendues. Les valeurs fournies sont fusionnées clé par clé (`null` efface).
+- **Entrée renommée** : `sections[].department` devient `sections[].label` (section existante ou
+  département), avec `free`, `rename`, `remove`.

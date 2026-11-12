@@ -618,7 +618,7 @@ seule (`ENABLED_MODULES`) :
   `requireSuperAdmin()` — la base et les questions remontées sont d'instance, sans compte ni église
 
 **Spécificités du module mcp** (spec 081, [ADR-0029](docs/adr/0029-serveur-autorisation-oauth-mcp.md))
-— connexion des assistants IA des membres, lecture et deux actions confirmées, désactivable (`ENABLED_MODULES`),
+— connexion des assistants IA des membres, lecture et actions confirmées selon les droits, désactivable (`ENABLED_MODULES`),
 **aucune permission propre** :
 - Koinonia est **serveur d'autorisation OAuth 2.1** pour son seul serveur MCP
   (`/api/mcp/server`, transport Streamable HTTP sans état, `@modelcontextprotocol/sdk`) :
@@ -636,15 +636,35 @@ seule (`ENABLED_MODULES`) :
   liste **complète** (`boundedAnswer` nettoie les libellés, ne coupe pas) : la bulle de
   l'assistant borne à 8 lignes (`dataRunner`), le serveur MCP pagine (`limit` ≤ 100, `offset`,
   `total` et `nextOffset` toujours rendus). Ces outils sont en lecture seule
-- **Actions confirmées** (lot 2, `src/app/api/mcp/_actions.ts`) : seulement si la personne a coché
-  la case sur `/mcp/autoriser` (portée `write`, `canWrite`) et a une fiche STAR liée ; jamais pour
-  un tiers. Déclarer une absence et répondre à une demande de disponibilité, chacune en deux
+- **Actions confirmées** (lots 2 et 3, `src/app/api/mcp/_actions/`) : seulement si la personne a
+  coché la case sur `/mcp/autoriser` (portée `write`, `canWrite`), et chacune selon le droit de
+  l'écran (`available(viewer)`, revérifié à l'appel). Lot 2 (fiche STAR liée, jamais un tiers) :
+  déclarer une absence et répondre à une demande de disponibilité, chacune en deux
   appels : `…_preview` (ne modifie rien, jeton `kmx_` 5 min à usage unique dans
   `mcp_confirmations`, lié à la connexion et à l'action, résumé figé) puis `…_confirm` (droits
   revérifiés, services de `planning`, `logAudit` `via: "mcp"`). Les instructions du serveur
   exigent l'accord explicite de la personne entre les deux. `draft_request` n'écrit rien : lien
   vers `/requests/new` prérempli par l'adresse (`src/app/(auth)/requests/prefill.ts`, texte et
-  dates seulement), proposé avec `members:view`
+  dates seulement), proposé avec `members:view`. Lot 3a (`planning:edit` + périmètre) :
+  lectures `planning_eventsToStaff`/`planning_candidates` (identifiants, état de la grille,
+  services sur 60 jours, sans coordonnée), remplir, recopier, relancer, consignes, et tâches du
+  département : lecture `planning_tasks` (`planning:department`) et `assign_tasks` (STAR en
+  service seulement, service `task-assignment.service.ts` du module planning). Le code
+  métier de l'écran est **partagé** : `_core.ts` à côté de la route (`savePlanning`,
+  `duplicatePlanning`, `saveNotice`), appelé par la route et par l'assistant — une règle ne
+  s'écrit qu'une fois. Une **empreinte** (`fingerprint`) de l'état lu à l'aperçu est revérifiée
+  à la confirmation : données changées ⇒ refus. Lot 3b : pour un STAR du périmètre, absence
+  (`absences:manage`, `declareAbsenceFor`) et réponse de disponibilité (`planning:edit`,
+  `answerFor`), lecture `stars_inScope` ; compte rendu complet (`reports:edit` ou
+  `events:manage`, `saveReport`, rubriques non fournies gardées) : lecture `report_form`,
+  sections d'office (départements de l'événement), sections libres, renommage, suppression,
+  statistiques fusionnées clé par clé et limitées à celles de l'écran (`REPORT_STAT_FIELDS`,
+  `@/lib/report-stats`, partagé avec la page de saisie). Le contrôle de permission est
+  **injecté** dans le code partagé (`requireChurchPermission` pour l'écran, variante à session
+  pour l'assistant), ce qui garde les routes et leurs tests inchangés. Lot 3c : créer 1 à 12
+  événements datés (`events:manage`, `createEvent` + `addEventDepartment`, heure de Paris via
+  `parisDateTime`, doublons signalés), salles libres (`rooms_available`) et réservation
+  (`rooms:reserve`, `reserveRoom`, salle prise entre-temps ⇒ 409 de l'écran)
 - Journal sans contenu (`mcp_calls`), 60 appels/min/compte ; révocation par la personne
   (`/profile/assistants`) ou l'Admin d'église ; purge quotidienne (`mcp-maintenance`)
 

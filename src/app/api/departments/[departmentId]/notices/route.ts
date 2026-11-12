@@ -3,6 +3,7 @@ import { requireChurchPermission, resolveChurchId, requireDepartmentAccess } fro
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { putSchema } from "./contract";
+import { saveNotice } from "./_core";
 
 export async function GET(
   request: Request,
@@ -53,29 +54,7 @@ export async function PUT(
 
     const { eventId, content } = putSchema.parse(await request.json());
 
-    // Validate event belongs to the same church
-    const event = await prisma.event.findUnique({
-      where: { id: eventId },
-      select: { churchId: true },
-    });
-    if (event?.churchId !== churchId) {
-      throw new ApiError(404, "Événement introuvable");
-    }
-
-    const notice = await prisma.departmentNotice.upsert({
-      where: { departmentId_eventId: { departmentId, eventId } },
-      create: { departmentId, eventId, content, authorId: session.user.id },
-      update: { content, authorId: session.user.id },
-    });
-
-    await logAudit({
-      userId: session.user.id,
-      churchId,
-      action: "UPDATE",
-      entityType: "DepartmentNotice",
-      entityId: notice.id,
-      details: { departmentId, eventId },
-    });
+    await saveNotice(session, churchId, departmentId, eventId, content);
 
     return successResponse({ success: true });
   } catch (error) {

@@ -70,6 +70,8 @@ const ALLOWLIST: Record<string, string> = {
   "src/app/api/events/route.ts": EVENTS_MANAGE_LEGIT,
   "src/app/api/events/[eventId]/route.ts": EVENTS_MANAGE_LEGIT,
   "src/app/api/events/[eventId]/report/route.ts": `${EVENTS_MANAGE_LEGIT} (ou reports:view/reports:edit)`,
+  "src/app/api/mcp/_actions/events.ts": `${EVENTS_MANAGE_LEGIT} — création d'événements par l'assistant IA, même règle que POST /api/events (spec 081)`,
+  "src/app/api/mcp/_actions/report.ts": `${EVENTS_MANAGE_LEGIT} (ou reports:edit) — même règle que PUT /api/events/[eventId]/report, pour l'assistant IA (spec 081)`,
   "src/app/api/events/[eventId]/departments/route.ts": EVENTS_MANAGE_LEGIT,
   "src/app/api/welcome-duty/families/route.ts": EVENTS_MANAGE_LEGIT,
   "src/app/api/welcome-duty/families/[id]/route.ts": EVENTS_MANAGE_LEGIT,

@@ -9,7 +9,7 @@ import {
   type DeclarerScope,
 } from "@/modules/planning";
 import { logAudit } from "@/lib/audit";
-import { assertBackupsAllowed } from "../route";
+import { assertBackupsAllowed } from "../_core";
 import { patchSchema } from "./contract";
 
 /**

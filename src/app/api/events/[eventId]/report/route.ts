@@ -1,9 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { logAudit } from "@/lib/audit";
-import { Prisma } from "@/generated/prisma/client";
 import { upsertSchema } from "./contract";
+import { saveReport } from "./_core";
 
 // GET /api/events/[eventId]/report
 export async function GET(
@@ -68,60 +67,9 @@ export async function PUT(
 
     if (!event.reportEnabled) throw new ApiError(403, "Les comptes rendus ne sont pas activés pour cet événement");
 
-    const { speaker, messageTitle, notes, decisions, sections } = upsertSchema.parse(await request.json());
+    const data = upsertSchema.parse(await request.json());
 
-    // Validate all departmentIds belong to the event's church
-    const deptIds = sections.map((s) => s.departmentId).filter((id): id is string => id !== null && id !== undefined);
-    if (deptIds.length > 0) {
-      const validDepts = await prisma.department.findMany({
-        where: { id: { in: deptIds }, ministry: { churchId: event.churchId } },
-        select: { id: true },
-      });
-      if (validDepts.length !== new Set(deptIds).size) {
-        throw new ApiError(400, "Un ou plusieurs départements n'appartiennent pas à cette église");
-      }
-    }
-
-    const sectionData = sections.map((s, i) => ({
-      departmentId: s.departmentId ?? null,
-      label: s.label,
-      position: s.position ?? i,
-      stats: (s.stats as Prisma.InputJsonValue) ?? Prisma.DbNull,
-      notes: s.notes ?? null,
-    }));
-
-    const report = await prisma.eventReport.upsert({
-      where: { eventId },
-      create: {
-        eventId,
-        churchId: event.churchId,
-        authorId: session.user.id,
-        speaker: speaker ?? null,
-        messageTitle: messageTitle ?? null,
-        notes: notes ?? null,
-        decisions: decisions ?? null,
-        sections: { create: sectionData },
-      },
-      update: {
-        speaker: speaker ?? null,
-        messageTitle: messageTitle ?? null,
-        notes: notes ?? null,
-        decisions: decisions ?? null,
-        sections: {
-          deleteMany: {},
-          create: sectionData,
-        },
-      },
-      include: {
-        sections: {
-          include: { department: { select: { id: true, name: true, ministry: { select: { name: true } } } } },
-          orderBy: { position: "asc" },
-        },
-        author: { select: { id: true, name: true } },
-      },
-    });
-
-    await logAudit({ userId: session.user.id, churchId: event.churchId, action: "UPDATE", entityType: "EventReport", entityId: report.id, details: { eventId } });
+    const report = await saveReport(session, event, data);
 
     return successResponse(report);
   } catch (error) {

@@ -199,6 +199,20 @@ d'autre n'accepte ce jeton.
   appels : `…_preview` ne modifie rien et fige l'action derrière un jeton à usage unique (5 min,
   lié à la connexion et à l'action, `mcp_confirmations`) ; `…_confirm` revérifie la fiche puis
   exécute par le service de l'application, avec `logAudit` (`details.via = "mcp"`).
+- **Actions des responsables** (lot 3a) : avec la même case, et seulement avec `planning:edit`
+  dans l'église et le département dans le périmètre (`requireDepartmentAccess`), revérifiés à
+  l'aperçu et à la confirmation : remplir ou recopier un planning, relancer les sans-réponse,
+  publier une consigne. Exécutées par le code de l'écran (`_core.ts` voisin de la route) ; la
+  date limite de planification s'applique comme dans la grille. Une empreinte de l'état lu à
+  l'aperçu (grille, disponibilités, consigne) doit être identique à la confirmation.
+- **Pour un STAR et compte rendu** (lot 3b) : absence pour un STAR du périmètre
+  (`absences:manage`), réponse de disponibilité à sa place (`planning:edit`, départements du
+  périmètre seulement, saisie marquée « par un tiers »), compte rendu (`reports:edit` ou
+  `events:manage`, comptes rendus activés). Mêmes fonctions que les écrans (`declareAbsenceFor`,
+  `answerFor`, `saveReport`), qui revérifient permission et périmètre à la confirmation.
+- **Événements et salles** (lot 3c) : créer 1 à 12 événements (`events:manage`) avec leurs
+  départements ; réserver une salle (`rooms:reserve`, salle autorisée pour l'église, créneau
+  revérifié par `reserveRoom`).
 - Révocation : par la personne (« Mon profil › Assistants connectés »), par l'Admin de l'église
   (`church:settings`), ou en coupant la fonction (Super Admin pour l'instance, Admin pour l'église).
 

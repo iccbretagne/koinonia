@@ -14,8 +14,10 @@ vi.mock("@/modules/mcp", () => ({
 const actionsFor = vi.fn((_viewer: unknown, write: boolean) =>
   write
     ? [
-        { name: "declare_unavailability_preview", kind: "preview", description: "aperçu", input: {}, run: vi.fn() },
-        { name: "declare_unavailability_confirm", kind: "confirm", description: "confirme", input: {}, run: vi.fn() },
+        { name: "planning_candidates", action: "planning_candidates", kind: "read", description: "lecture", input: {}, run: vi.fn() },
+        { name: "declare_unavailability_preview", action: "declare_unavailability", kind: "preview", description: "aperçu", input: {}, run: vi.fn() },
+        { name: "declare_unavailability_confirm", action: "declare_unavailability", kind: "confirm", description: "confirme", input: {}, run: vi.fn() },
+        { name: "fill_planning_confirm", action: "fill_planning", kind: "confirm", description: "confirme", input: {}, run: vi.fn() },
       ]
     : []
 );
@@ -116,9 +118,12 @@ describe("serveur MCP", () => {
     const init = await (await rpc(1, "initialize", INIT)).json();
     expect(init.result.instructions).toContain("attends l'accord explicite de la personne");
     expect(init.result.instructions).not.toContain("Tous les outils sont en lecture seule");
+    expect(init.result.instructions).toContain("déclarer une absence pour soi ; remplir le planning d'un département");
+    expect(init.result.instructions).toContain("ni les compétences ni l'effectif");
     const tools = (await (await rpc(2, "tools/list")).json()).result.tools as { name: string; annotations: { readOnlyHint: boolean } }[];
     const hint = (name: string) => tools.find((t) => t.name === name)?.annotations.readOnlyHint;
     expect(hint("declare_unavailability_preview")).toBe(true);
     expect(hint("declare_unavailability_confirm")).toBe(false);
+    expect(hint("planning_candidates")).toBe(true);
   });
 });

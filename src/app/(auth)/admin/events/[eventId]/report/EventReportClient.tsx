@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import WhatsAppShare from "@/components/WhatsAppShare";
 import { formatReportWhatsApp, generateReportPDF, type ReportExportData } from "@/lib/report-export";
+import { reportSectionType, reportStatFields } from "@/lib/report-stats";
 
 interface Dept { id: string; name: string; ministryName: string }
 
@@ -48,45 +49,15 @@ interface Props {
 
 // ─── Configuration des champs par type de département ───────────────────────
 
-type FieldConfig = { key: string; label: string; color: string };
-type DeptType = "accueil" | "sainte-cene" | "integration" | "navette" | null;
-
-function norm(s: string) {
-  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-}
-
-function getDeptType(label: string): DeptType {
-  const n = norm(label);
-  if (n === "accueil") return "accueil";
-  if (n.includes("sainte") && n.includes("cene")) return "sainte-cene";
-  if (n === "integration" || n.startsWith("integration")) return "integration";
-  if (n.includes("navette")) return "navette";
-  return null;
-}
-
-const DEPT_FIELDS: Record<Exclude<DeptType, null>, FieldConfig[]> = {
-  accueil: [
-    { key: "hommes",  label: "Hommes",  color: "border-info/30 focus:border-info" },
-    { key: "femmes",  label: "Femmes",  color: "border-danger/30 focus:border-danger" },
-    { key: "enfants", label: "Enfants", color: "border-warning/30 focus:border-warning" },
-  ],
-  "sainte-cene": [
-    { key: "supportsUtilises", label: "Supports utilisés", color: "border-line focus:border-control-line" },
-    { key: "supportsRestants", label: "Supports restants", color: "border-line focus:border-control-line" },
-  ],
-  integration: [
-    { key: "hommes",    label: "Nouveaux arrivants (H)",  color: "border-info/30 focus:border-info" },
-    { key: "femmes",    label: "Nouveaux arrivants (F)",  color: "border-danger/30 focus:border-danger" },
-    { key: "passage",   label: "De passage",              color: "border-line focus:border-control-line" },
-    { key: "convertis", label: "Nouveaux convertis",      color: "border-success/30 focus:border-success" },
-    { key: "voeux",     label: "Renouvellement de vœux",  color: "border-brand/40 focus:border-brand" },
-  ],
-  navette: [
-    { key: "hommes",  label: "Hommes",  color: "border-info/30 focus:border-info" },
-    { key: "femmes",  label: "Femmes",  color: "border-danger/30 focus:border-danger" },
-    { key: "enfants", label: "Enfants", color: "border-warning/30 focus:border-warning" },
-  ],
+/** Couleur du champ d'une statistique (les champs eux-mêmes viennent de `@/lib/report-stats`). */
+const STAT_COLOR: Record<string, string> = {
+  hommes: "border-info/30 focus:border-info",
+  femmes: "border-danger/30 focus:border-danger",
+  enfants: "border-warning/30 focus:border-warning",
+  convertis: "border-success/30 focus:border-success",
+  voeux: "border-brand/40 focus:border-brand",
 };
+const statColor = (key: string) => STAT_COLOR[key] ?? "border-line focus:border-control-line";
 
 let sectionKeySeq = 0;
 function newSectionKey() {
@@ -282,7 +253,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
   }
 
   // Stats globales Accueil
-  const accueilSection = sections.find((s) => getDeptType(s.label) === "accueil");
+  const accueilSection = sections.find((s) => reportSectionType(s.label) === "accueil");
   const totalAdultes = accueilSection
     ? (statVal(accueilSection.stats, "hommes") ?? 0) + (statVal(accueilSection.stats, "femmes") ?? 0)
     : null;
@@ -369,8 +340,8 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
         </div>
 
         {sections.map((section, i) => {
-          const deptType = getDeptType(section.label);
-          const fields = deptType ? DEPT_FIELDS[deptType] : null;
+          const deptType = reportSectionType(section.label);
+          const fields = reportStatFields(section.label);
           return (
             <div key={section.clientKey} className="bg-surface rounded-lg border border-line p-4">
               <div className="flex items-center gap-3 mb-3">
@@ -393,7 +364,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
 
               {statsEnabled && fields && (
                 <div className={`grid gap-3 mb-3 ${statsGridClass(fields.length)}`}>
-                  {fields.map(({ key, label, color }) => (
+                  {fields.map(({ key, label }) => (
                     <div key={key}>
                       <label className="block text-xs text-ink-muted mb-1">{label}</label>
                       <input
@@ -401,7 +372,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
                         value={statVal(section.stats, key) ?? ""}
                         onChange={(e) => updateStat(i, key, e.target.value === "" ? null : Number.parseInt(e.target.value, 10))}
                         placeholder="—"
-                        className={`w-full border ${color} rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-offset-0`}
+                        className={`w-full border ${statColor(key)} rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-offset-0`}
                       />
                     </div>
                   ))}

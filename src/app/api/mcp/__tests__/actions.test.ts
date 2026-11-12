@@ -18,6 +18,13 @@ vi.mock("@/modules/mcp", () => mcp);
 const logAudit = vi.fn();
 vi.mock("@/lib/audit", () => ({ logAudit: (...a: unknown[]) => logAudit(...a) }));
 
+// Le catalogue charge aussi les actions de planning (lot 3) : leurs dépendances serveur sont simulées.
+vi.mock("@/lib/auth", () => ({ hasChurchPermission: vi.fn(), requireDepartmentAccess: vi.fn(), getUserDepartmentScope: vi.fn() }));
+vi.mock("@/lib/prisma", () => ({ prisma: {} }));
+vi.mock("@/app/api/events/[eventId]/departments/[deptId]/planning/_core", () => ({ savePlanning: vi.fn() }));
+vi.mock("@/app/api/events/[eventId]/duplicate-planning/_core", () => ({ duplicatePlanning: vi.fn() }));
+vi.mock("@/app/api/departments/[departmentId]/notices/_core", () => ({ saveNotice: vi.fn() }));
+
 const actions = await import("../_actions");
 const { ApiError } = await import("@/lib/api-utils");
 
@@ -40,12 +47,16 @@ describe("outils proposés", () => {
   it("seulement avec la portée write et une fiche STAR liée", () => {
     expect(actions.actionsFor(ctx.viewer, false)).toEqual([]);
     expect(actions.actionsFor(viewerFor("STAR"), true)).toEqual([]);
+    // STAR : ses deux actions personnelles, aucune action de planning.
     expect(actions.actionsFor(ctx.viewer, true).map((a) => a.name)).toEqual([
       "declare_unavailability_preview",
       "declare_unavailability_confirm",
       "answer_service_preview",
       "answer_service_confirm",
     ]);
+    // Resp. département avec fiche liée : les siennes et celles de la grille.
+    const head = viewerFor("DEPARTMENT_HEAD", { predicates: ["linkedStar"] });
+    expect(actions.actionsFor(head, true).map((a) => a.name)).toEqual(expect.arrayContaining(["answer_service_confirm", "fill_planning_confirm", "planning_candidates"]));
   });
 });
 
