@@ -1,7 +1,7 @@
 # Spec — Connecter un assistant IA à Koinonia (serveur MCP)
 
 - **Numéro** : 081
-- **Statut** : Implémentée (lots 1 et 2)
+- **Statut** : Implémentée (lots 1 et 2) — lot 3 en spécification
 - **Créée le** : 2026-11-11
 - **Branche suggérée** : `feat/serveur-mcp`
 
@@ -79,6 +79,35 @@ dans l'application). Toute action est
 **présentée puis confirmée** par la personne dans son assistant avant d'être faite, et
 apparaît dans l'historique comme faite « via l'assistant IA ».
 
+### Troisième lot — actions des responsables (à valider)
+
+Des tâches répétitives, aujourd'hui faites écran par écran, que la personne confie à son
+assistant. Même principe qu'au second lot : **toujours un aperçu, puis la confirmation de la
+personne**, journalisé « via l'assistant IA », et **jamais au-delà des droits du compte** dans
+l'application (périmètre de départements compris). Seulement si la case des actions a été
+cochée à la connexion.
+
+| Action | Pour qui (comme dans l'application) | Ce que l'aperçu montre |
+|---|---|---|
+| **Créer des événements** — un seul, ou une série (« tous les dimanches de décembre à 10 h ») avec leurs départements en service | Gestion des événements (Admin, Secrétaire) | La liste des dates, l'heure, le type, les départements ; les doublons possibles avec des événements existants |
+| **Remplir le planning** d'un département pour un événement : l'assistant propose les STAR à mettre en service | Responsable du département, Ministre | Qui serait en service, et pourquoi (disponible, si besoin) ; les STAR absents ou indisponibles écartés ; ce qui remplace le planning déjà saisi |
+| **Recopier un planning** d'un événement précédent sur un nouvel événement | Responsable du département, Ministre | Ce qui est recopié, département par département ; les STAR devenus absents ou indisponibles signalés |
+| **Relancer les sans-réponse** à la demande de disponibilité du mois | Responsable du département, Ministre | Le nombre de STAR relancés, par département ; jamais leurs coordonnées |
+| **Publier les consignes** d'un département pour un événement (« arrivée 8 h 30, tenue noire ») | Responsable du département, Ministre | Le texte, l'événement, le département ; la consigne existante remplacée |
+| **Réserver une salle** | Réservation de salles | La salle, le créneau, les conflits éventuels |
+| **Remplir le compte rendu** d'un événement : orateur, titre du message, statistiques et remarques par département, observations, décisions | Comptes rendus (Admin, Secrétaire, Reporter) | Chaque rubrique saisie, et ce qu'elle remplace si le compte rendu existe déjà |
+
+Cas limites propres à ce lot :
+
+- **Droits changés entre l'aperçu et la confirmation** (département retiré, rôle perdu) : la
+  confirmation est refusée, rien n'est fait.
+- **Données changées entre-temps** (planning modifié par quelqu'un d'autre, salle réservée,
+  événement supprimé) : la confirmation est refusée avec la raison ; l'assistant refait l'aperçu.
+- **Série d'événements** : bornée (au plus 12 événements par confirmation) ; aucun événement
+  créé si l'un d'eux est invalide.
+- **Notifications** : les mêmes que lorsque la personne fait l'action dans l'application (STAR
+  mis en service, responsables, organisateurs) — ni plus, ni moins.
+
 ### Scénarios alternatifs / cas limites
 
 - **Le rôle du compte change** (perte d'un département, retrait d'un rôle) : l'assistant voit
@@ -122,13 +151,18 @@ apparaît dans l'historique comme faite « via l'assistant IA ».
       le contenu de la conversation.
 - [ ] Le nombre d'appels par compte est limité.
 - [ ] Le premier lot ne permet aucune modification.
+- [ ] Au troisième lot, chacune des sept actions n'est proposée qu'aux comptes qui peuvent la
+      faire dans l'application, dans leur périmètre, et n'est faite qu'après aperçu et confirmation.
+- [ ] Une confirmation dont les droits ou les données ont changé depuis l'aperçu est refusée sans
+      rien faire.
 
 ## Hors périmètre
 
 - Un assistant IA fourni ou payé par l'église (chacun utilise le sien).
 - L'accès sans compte Koinonia, ou par une clé partagée entre plusieurs personnes.
 - La lecture de fichiers (photos, visuels, audio) : seules les informations sont lues.
-- Toute autre action que les trois du second lot.
+- Toute autre action que les trois du second lot et les sept du troisième (pas de remplacement
+  automatique d'un STAR désisté, pas de suppression d'événement, pas d'action financière).
 - Toute modification de l'assistant intégré (spec 075).
 - Les intégrations automatiques sans personne derrière (robots, synchronisations).
 
@@ -141,3 +175,7 @@ Tranchées le 2026-11-11 :
 - L'Admin d'église voit la **liste des comptes connectés** (et peut révoquer).
 - Activation par église : **coupée par défaut**, activée par l'Admin d'église — choix par
   prudence, à confirmer (question laissée sans réponse).
+
+Ajoutées le 2026-11-12 (lot 3) : actions retenues par le porteur — créer des événements, remplir
+et recopier un planning, relancer les sans-réponse, publier des consignes, réserver une salle,
+remplir le compte rendu. Le remplacement d'un STAR désisté n'est pas retenu.
