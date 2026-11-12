@@ -121,6 +121,8 @@ export interface NavigationInput {
   readonly hasTreasury?: boolean;
   /** Billetterie (spec 074) : `ticketing:manage` ou un rôle sur un événement actif. */
   readonly hasTicketing?: boolean;
+  /** Formulaires (spec 079) : `forms:manage` dans l'église courante. */
+  readonly hasForms?: boolean;
   readonly hasJobs?: boolean;
   /** Vue pastorale active (cookie `koinonia-view-mode`). */
   readonly isPastoral?: boolean;
@@ -313,6 +315,9 @@ function agendaPagesFor(input: NavigationInput, agendaPages: NavPage[]): NavPage
   }
   if (input.hasTicketing) {
     agenda.push({ href: "/billetterie", label: "Billetterie", sidebarBlock: church });
+  }
+  if (input.hasForms) {
+    agenda.push({ href: "/formulaires", label: "Formulaires", sidebarBlock: church });
   }
   agenda.push(...agendaPages);
   return agenda;

@@ -127,6 +127,8 @@ model Church {
   supervisorProfileId            String?
   responsible                    PastoralProfile?                @relation("ChurchResponsibleProfile", fields: [responsibleProfileId], references: [id])
   supervisor                     PastoralProfile?                @relation("ChurchSupervisorProfile", fields: [supervisorProfileId], references: [id])
+  // Formulaires (spec 079)
+  forms                          Form[]
 
   serviceWithdrawals  ServiceWithdrawal[]
   // Page publique « Donner » (spec 065)
@@ -199,6 +201,8 @@ model User {
   ticketingRoles                    TicketingEventRole[]
   ticketingBookings                 TicketingBooking[]
   ticketingAssignments              TicketingAssignment[]
+  formsCreated                      Form[]                        @relation("FormCreatedBy")
+  formResponses                     FormResponse[]                @relation("FormResponseUser")
   systemMessagesCreated             SystemMessage[]               @relation("SystemMessageCreatedBy")
   systemMessagesUpdated             SystemMessage[]               @relation("SystemMessageUpdatedBy")
   systemMessageReceipts             SystemMessageReceipt[]
@@ -537,6 +541,7 @@ model Event {
   treasuryCollections       TreasuryCollection[]
 
   serviceWithdrawals ServiceWithdrawal[]
+  forms              Form[]
 
   @@map("events")
 }
@@ -3352,6 +3357,7 @@ model TicketingEvent {
   options      TicketingOption[]
   bookings     TicketingBooking[]
   roles        TicketingEventRole[]
+  forms        Form[]
   posts        TicketingPost[]
   assignments  TicketingAssignment[]
   passages     TicketingPassage[]
@@ -4014,17 +4020,17 @@ model McpClient {
 
 /// Connexion d'un assistant : un compte, une église, un client. Révoquée = `revokedAt` posé.
 model McpGrant {
-  id          String     @id @default(cuid())
-  userId      String
-  user        User       @relation("McpGrantUser", fields: [userId], references: [id], onDelete: Cascade)
-  churchId    String
-  church      Church     @relation(fields: [churchId], references: [id], onDelete: Cascade)
-  clientId    String
-  client      McpClient  @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  scope       String     @db.VarChar(100)
-  createdAt   DateTime   @default(now())
-  lastUsedAt  DateTime?
-  revokedAt   DateTime?
+  id            String            @id @default(cuid())
+  userId        String
+  user          User              @relation("McpGrantUser", fields: [userId], references: [id], onDelete: Cascade)
+  churchId      String
+  church        Church            @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  clientId      String
+  client        McpClient         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  scope         String            @db.VarChar(100)
+  createdAt     DateTime          @default(now())
+  lastUsedAt    DateTime?
+  revokedAt     DateTime?
   revokedById   String?
   tokens        McpToken[]
   confirmations McpConfirmation[]
@@ -4105,4 +4111,211 @@ model McpCall {
   @@index([userId, createdAt])
   @@index([createdAt])
   @@map("mcp_calls")
+}
+
+// ─── Formulaires (spec 079, ADR-0030) ───────────────────────────────────────
+
+enum FormKind {
+  REGISTRATION
+  PARTICIPATION
+  SURVEY
+}
+
+enum FormAccess {
+  PUBLIC
+  MEMBERS
+}
+
+enum FormStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+enum FormQuestionType {
+  SHORT_TEXT
+  LONG_TEXT
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  DROPDOWN
+  YES_NO
+  NUMBER
+  DATE
+  EMAIL
+  PHONE
+  RATING
+  CONSENT
+  SESSION_LEVEL
+}
+
+enum FormResponseStatus {
+  CONFIRMED
+  WAITLISTED
+  OFFERED
+  CANCELLED
+  DECLINED
+  EXPIRED
+}
+
+/// Formulaire construit par le secrétariat (spec 079) : inscription, participation ou sondage.
+model Form {
+  id               String     @id @default(cuid())
+  churchId         String
+  /// Adresse publique `/f/<église>/<slug>`, unique par église.
+  slug             String     @db.VarChar(80)
+  title            String     @db.VarChar(150)
+  description      String?    @db.Text
+  kind             FormKind
+  access           FormAccess
+  /// Sondage anonyme : aucune identité enregistrée (ADR-0030). Figé dès la première réponse.
+  anonymous        Boolean    @default(false)
+  status           FormStatus @default(DRAFT)
+  /// Ouverture automatique des réponses.
+  opensAt          DateTime?
+  /// Fin des réponses (le formulaire reste publié et consultable par la gestion).
+  closesAt         DateTime?
+  maxResponses     Int?
+  waitlistEnabled  Boolean    @default(false)
+  offerHoldHours   Int        @default(48)
+  /// Conservation des réponses nominatives après la clôture : 1 à 24 mois.
+  retentionMonths  Int        @default(12)
+  /// Événement d'église ou de billetterie rattaché (participation, lot 3).
+  eventId          String?
+  ticketingEventId String?
+  closedAt         DateTime?
+  purgedAt         DateTime?
+  deletedAt        DateTime?
+  /// Totaux conservés après la purge.
+  totals           Json?
+  /// Nombre de réponses déjà signalées au secrétariat (signal regroupé).
+  notifiedCount    Int        @default(0)
+  createdById      String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  church         Church                 @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  createdBy      User?                  @relation("FormCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  event          Event?                 @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  ticketingEvent TicketingEvent?        @relation(fields: [ticketingEventId], references: [id], onDelete: SetNull)
+  questions      FormQuestion[]
+  responses      FormResponse[]
+  receipts       FormAnonymousReceipt[]
+
+  @@unique([churchId, slug])
+  @@index([status, closesAt])
+  @@index([eventId])
+  @@index([ticketingEventId])
+  @@map("forms")
+}
+
+model FormQuestion {
+  id                  String           @id @default(cuid())
+  formId              String
+  position            Int
+  type                FormQuestionType
+  label               String           @db.VarChar(300)
+  help                String?          @db.VarChar(500)
+  required            Boolean          @default(false)
+  /// Réglages propres au type : { min, max } pour un nombre, texte du consentement…
+  config              Json?
+  /// Affichage conditionnel : une question précédente et la valeur attendue.
+  conditionQuestionId String?
+  conditionValue      String?          @db.VarChar(100)
+
+  form    Form         @relation(fields: [formId], references: [id], onDelete: Cascade)
+  choices FormChoice[]
+  answers FormAnswer[]
+
+  @@index([formId, position])
+  @@map("form_questions")
+}
+
+model FormChoice {
+  id         String @id @default(cuid())
+  questionId String
+  position   Int
+  label      String @db.VarChar(200)
+  /// Places : une fois atteint, le choix n'est plus proposé (ou passe en liste d'attente).
+  capacity   Int?
+
+  question  FormQuestion         @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  responses FormResponseChoice[]
+
+  @@index([questionId, position])
+  @@map("form_choices")
+}
+
+model FormResponse {
+  id             String             @id @default(cuid())
+  formId         String
+  churchId       String
+  status         FormResponseStatus @default(CONFIRMED)
+  /// Compte qui a répondu (jamais pour un sondage anonyme).
+  userId         String?
+  /// Adresse de contact (formulaire public nominatif), normalisée.
+  contactEmail   String?            @db.VarChar(254)
+  /// Empreinte de l'adresse normalisée, pour repérer les doublons.
+  contactKey     String?            @db.VarChar(64)
+  /// Choix (ou niveau) attendu en liste d'attente.
+  waitingOn      String?
+  offerExpiresAt DateTime?
+  /// Jeton de gestion dérivé : sel et empreinte seulement.
+  manageSalt     String?            @db.VarChar(32)
+  manageHash     String?            @unique @db.VarChar(64)
+  /// Jour de la réponse seulement (anonymat : pas d'horodatage plus fin).
+  submittedOn    DateTime           @db.Date
+  cancelledAt    DateTime?
+  /// Posé par le code : l'instant de la réponse, ou le jour seul pour un sondage anonyme.
+  createdAt      DateTime
+  /// Dernière modification par le répondant (jamais pour un sondage anonyme).
+  modifiedAt     DateTime?
+
+  form    Form                 @relation(fields: [formId], references: [id], onDelete: Cascade)
+  user    User?                @relation("FormResponseUser", fields: [userId], references: [id], onDelete: SetNull)
+  answers FormAnswer[]
+  choices FormResponseChoice[]
+
+  @@index([formId, status])
+  @@index([formId, contactKey])
+  @@index([userId])
+  @@map("form_responses")
+}
+
+model FormAnswer {
+  id         String @id @default(cuid())
+  responseId String
+  questionId String
+  value      Json
+
+  response FormResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  question FormQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([responseId, questionId])
+  @@index([questionId])
+  @@map("form_answers")
+}
+
+/// Choix retenus par une réponse, pour compter les places en SQL.
+model FormResponseChoice {
+  responseId String
+  choiceId   String
+
+  response FormResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  choice   FormChoice   @relation(fields: [choiceId], references: [id], onDelete: Cascade)
+
+  @@id([responseId, choiceId])
+  @@index([choiceId])
+  @@map("form_response_choices")
+}
+
+/// Sondage anonyme réservé aux comptes : « ce compte a déjà répondu », sans lien vers la
+/// réponse ni date (ADR-0030).
+model FormAnonymousReceipt {
+  formId  String
+  keyHash String @db.VarChar(64)
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@id([formId, keyHash])
+  @@map("form_anonymous_receipts")
 }

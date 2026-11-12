@@ -1,7 +1,7 @@
 # Tâches — Formulaires (inscriptions, participation, sondages)
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md` · **ADR** : `docs/adr/0030-moteur-de-formulaires.md`
-- **Statut** : À faire
+- **Statut** : En cours (lot 1 fait)
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
@@ -18,91 +18,91 @@
 
 ### 1. Données, module & migration
 
-- [ ] **T1** — Enums `FormKind`, `FormAccess`, `FormStatus`, `FormQuestionType` (13 types),
+- [x] **T1** — Enums `FormKind`, `FormAccess`, `FormStatus`, `FormQuestionType` (13 types),
       `FormResponseStatus` ; modèles `Form`, `FormQuestion`, `FormChoice`, `FormResponse`,
       `FormAnswer`, `FormResponseChoice`, `FormAnonymousReceipt` (cascade depuis `Form` et
       `FormResponse`, `@@unique([churchId, slug])`, `eventId`/`ticketingEventId` nullables) ;
       migration *(fichiers : `prisma/schema.prisma`, `prisma/migrations/*_forms/`)*
-- [ ] **T2** — Module `forms` : manifeste (`forms:manage` SA/Admin/Secrétaire ; routes
+- [x] **T2** — Module `forms` : manifeste (`forms:manage` SA/Admin/Secrétaire ; routes
       `authenticated: /formulaires`, `api: /api/forms`, `public: /f`, `/api/forms/public` ;
       domaine de notification `forms`), index, enregistrement dans le registre et
       `ENABLED_MODULES` *(fichiers : `src/modules/forms/manifest.ts`, `index.ts`,
       `src/lib/registry.ts`)*
-- [ ] **T3** — Matrice des permissions et documentation des droits dans le même commit
+- [x] **T3** — Matrice des permissions et documentation des droits dans le même commit
       *(fichiers : `src/core/__tests__/permissions.test.ts`, `CLAUDE.md`, `docs/auth.md`)*
-- [ ] **T4** [P] — Schémas purs : définition d'un formulaire (questions, choix, réglages,
+- [x] **T4** [P] — Schémas purs : définition d'un formulaire (questions, choix, réglages,
       conservation 1 à 24 mois), corps des routes *(fichier : `src/modules/forms/schemas.ts`)*
 
 ### 2. Logique métier (services)
 
-- [ ] **T5** — Moteur : `buildAnswerSchema(questions)` pour les 13 types (bornes, formats,
+- [x] **T5** — Moteur : `buildAnswerSchema(questions)` pour les 13 types (bornes, formats,
       note 1 à 5, consentement vrai, choix connus) et `visibleQuestions` (question masquée ignorée)
       *(fichier : `src/modules/forms/services/engine.ts`)*
-- [ ] **T6** [P] — Jetons de gestion dérivés (`FORMS_TOKEN_SECRET`, à défaut `AUTH_SECRET`),
+- [x] **T6** [P] — Jetons de gestion dérivés (`FORMS_TOKEN_SECRET`, à défaut `AUTH_SECRET`),
       empreinte seule *(fichier : `src/modules/forms/services/tokens.ts`)*
-- [ ] **T7** — Construction : créer, mettre à jour (questions, choix, ordre, conditions),
+- [x] **T7** — Construction : créer, mettre à jour (questions, choix, ordre, conditions),
       dupliquer, slug unique par église, `assertSafeEdit` (question répondue, places sous les
       inscrits, anonymat figé) *(fichier : `src/modules/forms/services/builder.ts`)*
-- [ ] **T8** — Cycle de vie : publier, fermer, rouvrir, supprimer (réponses effacées, `deletedAt`),
+- [x] **T8** — Cycle de vie : publier, fermer, rouvrir, supprimer (réponses effacées, `deletedAt`),
       clôture automatique ; `loadAnswerableForm` avec 404 uniforme *(fichier :
       `src/modules/forms/services/lifecycle.ts`)*
-- [ ] **T9** — Réponses : `submitResponse` en transaction verrouillée (ouverture, nombre maximal,
+- [x] **T9** — Réponses : `submitResponse` en transaction verrouillée (ouverture, nombre maximal,
       doublon compte/email, places des choix, validation par le moteur), modification et
       annulation par jeton ou par compte ; sondage anonyme sans identité, reçu séparé, jour seul
       *(fichier : `src/modules/forms/services/responses.ts`)*
-- [ ] **T10** — Accès : `getFormAccess` (gestion / intervenant / aucun), gardes
+- [x] **T10** — Accès : `getFormAccess` (gestion / intervenant / aucun), gardes
       `requireFormManage`, `requireFormAccess` *(fichiers : `src/modules/forms/services/access.ts`,
       `src/modules/forms/auth.ts`)*
-- [ ] **T11** [P] — Export `.xlsx` (`sanitizeRow`), une ligne par réponse *(fichier :
+- [x] **T11** [P] — Export `.xlsx` (`sanitizeRow`), une ligne par réponse *(fichier :
       `src/modules/forms/services/exports.ts`)*
-- [ ] **T12** — Notifications : accusé de réception (email direct sans compte, sinon
+- [x] **T12** — Notifications : accusé de réception (email direct sans compte, sinon
       `createNotification` domaine `forms`), renvoi du lien de gestion sur doublon, signal regroupé
       au secrétariat sans nom *(fichier : `src/modules/forms/services/notify.ts`)*
-- [ ] **T13** — Tâches planifiées : ouverture / fin des réponses, signal des nouvelles réponses
+- [x] **T13** — Tâches planifiées : ouverture / fin des réponses, signal des nouvelles réponses
       (15 min) ; purge quotidienne (totaux puis suppression) ; branchement `/api/cron` gardé par
       `registry.has("forms")` *(fichiers : `src/modules/forms/services/tasks.ts`,
       `src/app/api/cron/route.ts`)*
 
 ### 3. API (route handlers + `contract.ts`)
 
-- [ ] **T14** — `/api/forms` (GET, POST) et `/api/forms/[id]` (GET, PATCH, DELETE) ;
+- [x] **T14** — `/api/forms` (GET, POST) et `/api/forms/[id]` (GET, PATCH, DELETE) ;
       `logAudit` sur création, modification, suppression *(fichiers : `src/app/api/forms/…`)*
-- [ ] **T15** — `/api/forms/[id]/status` (publier, fermer, rouvrir) et `/api/forms/[id]/duplicate`,
+- [x] **T15** — `/api/forms/[id]/status` (publier, fermer, rouvrir) et `/api/forms/[id]/duplicate`,
       journalisés
-- [ ] **T16** — `/api/forms/[id]/responses` (liste filtrée), `/api/forms/[id]/responses/[rid]`
+- [x] **T16** — `/api/forms/[id]/responses` (liste filtrée), `/api/forms/[id]/responses/[rid]`
       (PATCH), `/api/forms/[id]/export` (journalisé, jamais pour un intervenant)
-- [ ] **T17** — Public : `/api/forms/public/[churchSlug]/[formSlug]` (GET, POST : débit,
+- [x] **T17** — Public : `/api/forms/public/[churchSlug]/[formSlug]` (GET, POST : débit,
       Turnstile si public, appartenance à l'église si `MEMBERS`) et
       `/api/forms/public/responses/[token]` (GET, PATCH, DELETE)
-- [ ] **T18** — Compte connecté : `/api/forms/mine` (mes réponses ouvertes) et
+- [x] **T18** — Compte connecté : `/api/forms/mine` (mes réponses ouvertes) et
       `/api/forms/mine/[formId]` (GET, PATCH, DELETE)
-- [ ] **T19** — `npm run openapi` et `docs/openapi.json`
+- [x] **T19** — `npm run openapi` et `docs/openapi.json`
 
 ### 4. UI
 
-- [ ] **T20** — `/formulaires` : liste (état, réponses, places), créer, dupliquer, fermer ;
+- [x] **T20** — `/formulaires` : liste (état, réponses, places), créer, dupliquer, fermer ;
       lien « Formulaires » dans l'espace Agenda, à côté de « Billetterie »
       *(fichiers : `src/app/(auth)/formulaires/page.tsx`, `src/lib/navigation.ts`)*
-- [ ] **T21** — `/formulaires/[id]` onglets Construction (questions, choix et places, ordre
+- [x] **T21** — `/formulaires/[id]` onglets Construction (questions, choix et places, ordre
       haut/bas, condition), Réglages (accès, dates, nombre maximal, conservation), Aperçu
-- [ ] **T22** — Onglet Réponses : `DataTable`, filtres, annulation, export
-- [ ] **T23** — Page de réponse `/f/[churchSlug]/[formSlug]` (mobile d'abord, Turnstile, places
+- [x] **T22** — Onglet Réponses : `DataTable`, filtres, annulation, export
+- [x] **T23** — Page de réponse `/f/[churchSlug]/[formSlug]` (mobile d'abord, Turnstile, places
       restantes, message uniforme « non disponible ») et `/f/reponse/[token]` (modifier, annuler)
-- [ ] **T24** [P] — « Mes formulaires » pour un compte connecté (réponses ouvertes)
+- [x] **T24** [P] — « Mes formulaires » pour un compte connecté (réponses ouvertes)
 
 ### 5. Tests
 
-- [ ] **T25** — Moteur : 13 types valides / invalides, obligatoire, conditionnel, consentement
+- [x] **T25** — Moteur : 13 types valides / invalides, obligatoire, conditionnel, consentement
       *(fichier : `src/modules/forms/services/__tests__/engine.test.ts`)*
-- [ ] **T26** [P] — Construction et cycle de vie : `assertSafeEdit`, slug, duplication, 404
+- [x] **T26** [P] — Construction et cycle de vie : `assertSafeEdit`, slug, duplication, 404
       uniforme pour brouillon / fermé / supprimé / inexistant / autre église
-- [ ] **T27** [P] — Réponses : dates, nombre maximal, doublon (compte, email ⇒ lien renvoyé par
+- [x] **T27** [P] — Réponses : dates, nombre maximal, doublon (compte, email ⇒ lien renvoyé par
       email), places de choix jamais dépassées (deux envois simultanés), `MEMBERS` hors église
-- [ ] **T28** [P] — Anonymat : ni compte, ni email, ni IP, ni heure ; reçu sans lien ; un envoi
+- [x] **T28** [P] — Anonymat : ni compte, ni email, ni IP, ni heure ; reçu sans lien ; un envoi
       par compte ; pas de `logAudit`
-- [ ] **T29** [P] — Purge à 12 mois et à 24 mois au plus, totaux conservés ; notifications
+- [x] **T29** [P] — Purge à 12 mois et à 24 mois au plus, totaux conservés ; notifications
       regroupées sans nom
-- [ ] **T30** — Routes : droits (`forms:manage` dans son église, intervenant sans export),
+- [x] **T30** — Routes : droits (`forms:manage` dans son église, intervenant sans export),
       Turnstile et débit, `route-exhaustiveness`, `rbac-no-role-proxy`, `openapi.test`
 
 ---

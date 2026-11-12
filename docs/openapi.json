@@ -14516,6 +14516,1100 @@
         }
       }
     },
+    "/api/forms": {
+      "get": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Formulaires de l'église courante",
+        "description": "**Accès** : permission `forms:manage`.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "responses": {
+          "200": {
+            "description": "Formulaires non supprimés avec leur état et leurs décomptes de réponses",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Création d'un formulaire",
+        "description": "**Accès** : permission `forms:manage`.\n\nCrée un brouillon (inscription, participation ou sondage ; public ou comptes connectés ; seul un sondage peut être anonyme), avec une adresse unique dans l'église. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 150
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "REGISTRATION",
+                      "PARTICIPATION",
+                      "SURVEY"
+                    ]
+                  },
+                  "access": {
+                    "type": "string",
+                    "enum": [
+                      "PUBLIC",
+                      "MEMBERS"
+                    ],
+                    "default": "PUBLIC"
+                  },
+                  "anonymous": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "required": [
+                  "title",
+                  "kind"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Formulaire créé",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/forms/{id}": {
+      "get": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Formulaire à construire",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Formulaire, questions et choix, décomptes (réponses, questions répondues, places tenues par choix)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Modification d'un formulaire",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\nRéglages et, si fournie, liste complète des questions (clé = identifiant existant ou clé provisoire). Dès qu'il y a des réponses : 409 pour supprimer une question répondue ou un choix retenu, changer le type d'une question répondue, baisser des places sous les réponses, changer l'anonymat ou ajouter une question obligatoire. Conservation de 1 à 24 mois. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 150
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 5000
+                  },
+                  "slug": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 80,
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                  },
+                  "access": {
+                    "type": "string",
+                    "enum": [
+                      "PUBLIC",
+                      "MEMBERS"
+                    ]
+                  },
+                  "anonymous": {
+                    "type": "boolean"
+                  },
+                  "opensAt": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  },
+                  "closesAt": {
+                    "type": "string",
+                    "nullable": true,
+                    "format": "date-time"
+                  },
+                  "maxResponses": {
+                    "type": "integer",
+                    "nullable": true,
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "waitlistEnabled": {
+                    "type": "boolean"
+                  },
+                  "offerHoldHours": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 336
+                  },
+                  "retentionMonths": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 24
+                  },
+                  "questions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "SHORT_TEXT",
+                            "LONG_TEXT",
+                            "SINGLE_CHOICE",
+                            "MULTIPLE_CHOICE",
+                            "DROPDOWN",
+                            "YES_NO",
+                            "NUMBER",
+                            "DATE",
+                            "EMAIL",
+                            "PHONE",
+                            "RATING",
+                            "CONSENT",
+                            "SESSION_LEVEL"
+                          ]
+                        },
+                        "label": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 300
+                        },
+                        "help": {
+                          "type": "string",
+                          "nullable": true,
+                          "maxLength": 500
+                        },
+                        "required": {
+                          "type": "boolean",
+                          "default": false
+                        },
+                        "config": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "min": {
+                              "type": "integer",
+                              "minimum": -1000000,
+                              "maximum": 1000000
+                            },
+                            "max": {
+                              "type": "integer",
+                              "minimum": -1000000,
+                              "maximum": 1000000
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "choices": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 40
+                              },
+                              "label": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              },
+                              "capacity": {
+                                "type": "integer",
+                                "nullable": true,
+                                "minimum": 1,
+                                "maximum": 100000
+                              }
+                            },
+                            "required": [
+                              "key",
+                              "label"
+                            ]
+                          },
+                          "maxItems": 50
+                        },
+                        "condition": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "questionKey": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 40
+                            },
+                            "value": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 100
+                            }
+                          },
+                          "required": [
+                            "questionKey",
+                            "value"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "type",
+                        "label"
+                      ]
+                    },
+                    "maxItems": 60
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Formulaire mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Suppression d'un formulaire",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\nEfface ses réponses tout de suite ; le formulaire répond ensuite comme une adresse inconnue. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Suppression effectuée",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/forms/{id}/duplicate": {
+      "post": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Duplication d'un formulaire",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\nCopie en brouillon : réglages, questions, choix et conditions, sans aucune réponse. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 150
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Nouveau brouillon",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/forms/{id}/export": {
+      "get": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Export des réponses d'un formulaire",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\nClasseur avec une ligne par réponse et une colonne par question, valeurs neutralisées contre l'injection de formules ; aucune identité pour un sondage anonyme. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Classeur des réponses",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/forms/{id}/responses": {
+      "get": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Réponses d'un formulaire",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\nRéponses avec leurs valeurs et, pour un formulaire nominatif, le compte qui a répondu. Un sondage anonyme n'a aucune identité.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CONFIRMED",
+                "WAITLISTED",
+                "OFFERED",
+                "CANCELLED",
+                "DECLINED",
+                "EXPIRED"
+              ]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Réponses, de la plus ancienne à la plus récente",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/forms/{id}/responses/{rid}": {
+      "patch": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Annulation d'une réponse par la gestion",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\nLa réponse passe à « Annulée » et libère sa place. 409 si elle est déjà close. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "rid",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "cancel"
+                    ]
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Réponse mise à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/forms/{id}/status": {
+      "post": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Publication, clôture ou réouverture d'un formulaire",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\npublish : brouillon → publié (au moins une question ; un public nominatif exige une question Email obligatoire). close : publié → clôturé, la conservation court. reopen : clôturé → publié si la fin des réponses n'est pas passée et les réponses pas effacées. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "publish",
+                      "close",
+                      "reopen"
+                    ]
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Formulaire dans son nouvel état",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/forms/mine": {
+      "get": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Mes réponses ouvertes",
+        "description": "**Accès** : toute personne connectée.\n\nRéponses du compte connecté aux formulaires publiés (hors sondages anonymes, qui ne gardent aucun lien avec le compte).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "responses": {
+          "200": {
+            "description": "Réponses avec leur formulaire et son adresse",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/forms/mine/{formId}": {
+      "get": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Ma réponse à un formulaire",
+        "description": "**Accès** : toute personne connectée — sa propre réponse seulement.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "formId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Valeurs et état de la réponse du compte, ou 404",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Modification de ma réponse",
+        "description": "**Accès** : toute personne connectée — sa propre réponse seulement.\n\nTant que le formulaire accepte des réponses ; mêmes contrôles qu'à l'envoi.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "formId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "answers": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "nullable": true
+                    }
+                  }
+                },
+                "required": [
+                  "answers"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Réponse modifiée",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Annulation de ma réponse",
+        "description": "**Accès** : toute personne connectée — sa propre réponse seulement.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "formId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Réponse annulée",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/forms/public/{churchSlug}/{formSlug}": {
+      "get": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Formulaire à remplir",
+        "description": "**Accès** : public, sans session.\n\nFormulaire publié qui accepte des réponses : questions, choix et places restantes. Inexistant, autre église, brouillon, clôturé, supprimé, pas encore ouvert, fin des réponses passée ou nombre maximal atteint : 404, même message « non disponible ». Réservé aux comptes connectés : 401 sans session, 404 pour un compte d'une autre église. Pour un compte, indique sa réponse existante (ou, pour un sondage anonyme, seulement qu'il a déjà répondu).",
+        "security": [],
+        "x-access": "public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "formSlug",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Formulaire public",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/forms/public/{churchSlug}/{formSlug}/responses": {
+      "post": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Envoi d'une réponse",
+        "description": "**Accès** : public, sans session.\n\nFormulaire public : vérification anti-robots et 5 envois par minute par adresse IP ; réservé : compte de l'église. Réponses validées par question (types, obligatoires, affichage conditionnel). Choix complet : liste d'attente si elle est active, sinon 409. Doublon (même compte, ou même adresse email pour un public nominatif) : 409, et pour un public le lien de gestion de la réponse existante est renvoyé à l'adresse. Sondage anonyme : aucune identité enregistrée. Accusé de réception (email sans compte, notification avec compte).",
+        "security": [],
+        "x-access": "public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "formSlug",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "answers": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "nullable": true
+                    }
+                  },
+                  "turnstileToken": {
+                    "type": "string",
+                    "maxLength": 4096
+                  }
+                },
+                "required": [
+                  "answers"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "État de la réponse (confirmée ou en liste d'attente) et, sans compte, le jeton de gestion",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          }
+        }
+      }
+    },
+    "/api/forms/public/responses/{token}": {
+      "get": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Ma réponse (lien de gestion)",
+        "description": "**Accès** : jeton de partage dans l'adresse.\n\nRéponse rattachée au jeton du lien reçu par email, avec le formulaire. Jeton inconnu ou formulaire supprimé : 404.",
+        "security": [],
+        "x-access": "token",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Formulaire, valeurs de la réponse, état, et si elle peut encore être modifiée",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Modification de ma réponse",
+        "description": "**Accès** : jeton de partage dans l'adresse.\n\nTant que le formulaire accepte des réponses ; mêmes contrôles qu'à l'envoi, un choix devenu complet est refusé (409).",
+        "security": [],
+        "x-access": "token",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "answers": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "nullable": true
+                    }
+                  }
+                },
+                "required": [
+                  "answers"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Réponse modifiée",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Annulation de ma réponse",
+        "description": "**Accès** : jeton de partage dans l'adresse.\n\nLa réponse passe à « Annulée » et libère sa place.",
+        "security": [],
+        "x-access": "token",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Réponse annulée",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/giving": {
       "get": {
         "tags": [

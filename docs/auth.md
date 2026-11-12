@@ -409,6 +409,7 @@ hors nom/slug/superviseur), historique des modifications. `access:admins` s'ajou
 | `treasury:manage` | x | x | | | | | | | | x |
 | `treasury:reopen` | x | x | | | | | | | | |
 | `ticketing:manage` | x | x | x | | | | | | | |
+| `forms:manage` | x | x | x | | | | | | | |
 
 #### Module `agenda`
 
@@ -640,6 +641,17 @@ renommé spec 052) :
   fonction de département)
 - Conserve `audio:listen` et les permissions transverses du module emploi (`jobs:*`, hors
   `jobs:manage`)
+
+**Spécificités du module formulaires** (spec 079, ADR-0030) :
+- `forms:manage` (Super Admin, Admin, Secrétaire) ouvre `/formulaires` : construire, publier,
+  clôturer, dupliquer, supprimer, consulter et exporter les formulaires **de l'église du
+  formulaire** (`requireFormManage`, `@/modules/forms/auth`) ; autre église, supprimé ou
+  inexistant : 404
+- Répondre : formulaire public `/f/<église>/<formulaire>` (Turnstile, 5 envois par minute par
+  IP, lien de gestion par jeton dérivé) ou réservé aux comptes de l'église (`isChurchMember`,
+  401 sans session, 404 pour une autre église) ; chacun ne gère que sa propre réponse
+- Sondage anonyme : ni compte, ni email, ni heure ; un compte ne répond qu'une fois grâce à un
+  reçu séparé, sans lien vers la réponse
 
 **Spécificités du module dons** (spec 065) :
 - `giving:manage` (Super Admin, Admin, Secrétaire, Comptable) ouvre `/dons` : paramétrage de la

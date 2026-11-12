@@ -4,7 +4,7 @@
 - **Statut** : Validé
 - **Mis à jour le** : 2026-11-12
 - **ADR** : [ADR-0030](../../docs/adr/0030-moteur-de-formulaires.md) (moteur de formulaires et
-  anonymat des sondages, Proposé)
+  anonymat des sondages, Accepté)
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
 
@@ -320,3 +320,18 @@ Vitest, `prismaMock`, comme les autres modules :
 - **Purge** : totaux calculés puis réponses effacées, à la bonne date (12 mois, 24 au plus).
 - **Routes** : `contract.ts` de chaque route, `npm run openapi`, matrice des permissions,
   `route-exhaustiveness`, `rbac-no-role-proxy`.
+
+## Écarts à l'implémentation (lot 1)
+
+- **Clôture à la fin des réponses** pour tous les formulaires au lot 1 (tâche `forms`) ; le lot 2
+  exclura les inscriptions à sessions, clôturées le lendemain de la dernière session.
+- **Horodatage posé par le code** : `form_responses.createdAt` sans valeur par défaut (jour seul
+  pour un sondage anonyme), `modifiedAt` au lieu de `updatedAt`, identifiants UUID v4 pour les
+  réponses et valeurs anonymes (un cuid encode l'heure). `forms.notifiedCount` (compteur pris de
+  façon atomique) remplace `notifiedUpTo`, inutilisable avec des dates au jour.
+- **Liste d'attente** : le service sait mettre une réponse en attente sur un choix complet, mais le
+  réglage n'est pas proposé dans l'interface avant le lot 2 (places proposées à confirmer).
+- **Destinataire du signal** : l'auteur du formulaire, à défaut les Admins et Secrétaires de
+  l'église.
+- **« Mes réponses »** : `/formulaires/mes-reponses` (les sondages anonymes n'y figurent pas).
+- **`/formulaires`** : réservé à `forms:manage` au lot 1 ; les intervenants arrivent au lot 2.

@@ -1,6 +1,6 @@
 # ADR-0030 — Moteur de formulaires générique et anonymat par séparation
 
-- **Statut** : Proposé
+- **Statut** : Accepté
 - **Date** : 2026-11-12
 
 ## Contexte

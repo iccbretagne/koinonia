@@ -188,6 +188,19 @@ module.exports = {
       },
     },
     {
+      name: "no-forms-imports-other-modules",
+      severity: "error",
+      comment:
+        "Le module forms (spec 079, ADR-0030) n'importe aucun autre module : le rattachement à un événement d'église ou de billetterie est une colonne posée par src/app (ADR-0027).",
+      from: {
+        path: "^src/modules/forms/",
+        pathNot: "/__tests__/",
+      },
+      to: {
+        path: "^src/modules/(?!forms/)",
+      },
+    },
+    {
       name: "no-treasury-imports-other-modules",
       severity: "error",
       comment:
