@@ -437,3 +437,17 @@ recopier, relancer, consignes) ; **3b** pour un STAR (absence, réponse) et comp
 - **Remplir le planning** : même sémantique que la grille — seuls les STAR listés changent,
   `null` retire un STAR ; les alertes (absent, pas disponible, en service ailleurs) sont
   signalées sans bloquer, comme dans la grille.
+
+## Écarts à l'implémentation (lot 3b)
+
+- **Permission injectée** dans le code partagé (`RequirePermission`) : les routes passent
+  `requireChurchPermission(permission, churchId)`, l'assistant une variante qui lit la session
+  reconstruite (`hasChurchPermission`, même résultat). Ainsi les routes et leurs tests restent
+  identiques, et la règle « pour un tiers : permission + périmètre » n'existe qu'une fois.
+- `assertBackupsAllowed` déménage de `absences/route.ts` vers `absences/_core.ts` (importé par
+  `absences/[id]/route.ts`) : un route handler n'exporte plus de fonction métier.
+- **Lecture `stars_inScope`** (nom → identifiant, départements) : nécessaire au Secrétariat, qui
+  a `absences:manage` sans `planning:edit` et ne voit donc pas `planning_candidates`.
+- **Compte rendu par jour** : `fill_report_preview` accepte `eventId` ou `day` ; plusieurs
+  événements ce jour-là ⇒ refus listant les identifiants. Sections désignées par **nom de
+  département** (accents et casse ignorés), clés de statistiques rappelées dans la description.

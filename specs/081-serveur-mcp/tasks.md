@@ -1,7 +1,7 @@
 # Tâches — Connecter un assistant IA à Koinonia (serveur MCP)
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md` · **ADR** : `docs/adr/0029-serveur-autorisation-oauth-mcp.md`
-- **Statut** : Lots 1 et 2 terminés ; lot 3a terminé, 3b et 3c à faire
+- **Statut** : Lots 1 et 2 terminés ; lots 3a et 3b terminés, 3c à faire
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
@@ -197,16 +197,16 @@
 
 ### 3b — Pour un STAR et compte rendu
 
-- [ ] **T54** — Extraire `declareAbsenceAs(session, churchId, input)` de `POST /api/absences`
+- [x] **T54** — Extraire `declareAbsenceAs(session, churchId, input)` de `POST /api/absences`
       et `answerAs(session, churchId, memberId, answers)` de `PUT /api/availability`
       *(fichiers : `src/app/api/absences/_core.ts`, `src/app/api/availability/_core.ts`)*
-- [ ] **T55** — Extraire `saveReport(session, eventId, input)` de `PUT /api/events/[id]/report`
+- [x] **T55** — Extraire `saveReport(session, eventId, input)` de `PUT /api/events/[id]/report`
       *(fichier : `…/report/_core.ts`)*
-- [ ] **T56** — `declare_unavailability_for_preview` / `_confirm` et `answer_service_for_preview`
+- [x] **T56** — `declare_unavailability_for_preview` / `_confirm` et `answer_service_for_preview`
       / `_confirm` (`absences:manage` / `planning:edit`, STAR du périmètre, « saisi pour … »)
-- [ ] **T57** — `fill_report_preview` / `_confirm` : rubriques saisies et remplacées, sections
+- [x] **T57** — `fill_report_preview` / `_confirm` : rubriques saisies et remplacées, sections
       reprises du compte rendu existant ou des départements en service, empreinte du compte rendu
-- [ ] **T58** — Tests 3b (mêmes cas qu'en T53, plus : STAR sorti du périmètre entre aperçu et
+- [x] **T58** — Tests 3b (mêmes cas qu'en T53, plus : STAR sorti du périmètre entre aperçu et
       confirmation, comptes rendus désactivés)
 
 ### 3c — Événements et salles

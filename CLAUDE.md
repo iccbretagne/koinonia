@@ -651,7 +651,12 @@ seule (`ENABLED_MODULES`) :
   métier de l'écran est **partagé** : `_core.ts` à côté de la route (`savePlanning`,
   `duplicatePlanning`, `saveNotice`), appelé par la route et par l'assistant — une règle ne
   s'écrit qu'une fois. Une **empreinte** (`fingerprint`) de l'état lu à l'aperçu est revérifiée
-  à la confirmation : données changées ⇒ refus
+  à la confirmation : données changées ⇒ refus. Lot 3b : pour un STAR du périmètre, absence
+  (`absences:manage`, `declareAbsenceFor`) et réponse de disponibilité (`planning:edit`,
+  `answerFor`), lecture `stars_inScope` ; compte rendu complet (`reports:edit` ou
+  `events:manage`, `saveReport`, rubriques non fournies gardées). Le contrôle de permission est
+  **injecté** dans le code partagé (`requireChurchPermission` pour l'écran, variante à session
+  pour l'assistant), ce qui garde les routes et leurs tests inchangés
 - Journal sans contenu (`mcp_calls`), 60 appels/min/compte ; révocation par la personne
   (`/profile/assistants`) ou l'Admin d'église ; purge quotidienne (`mcp-maintenance`)
 

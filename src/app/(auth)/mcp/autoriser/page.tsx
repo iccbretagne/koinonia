@@ -118,7 +118,8 @@ export default async function AuthorizeAssistantPage({
               Autoriser aussi des actions, <strong>toujours confirmées par vous</strong>{" "}
               dans l&apos;assistant, selon vos droits dans Koinonia : déclarer une absence et répondre à une
               demande de disponibilité pour vous ; et, si vous êtes responsable, remplir ou recopier un planning,
-              relancer les sans-réponse et publier des consignes.
+              relancer les sans-réponse, publier des consignes, saisir une absence ou une réponse pour un STAR de
+              votre périmètre, remplir un compte rendu.
               <span className="block text-xs text-ink-subtle mt-1">
                 Sans cette case, l&apos;assistant ne peut rien modifier. Chaque action est journalisée
                 « via l&apos;assistant IA ».

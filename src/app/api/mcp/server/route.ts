@@ -32,6 +32,9 @@ const ACTION_LABELS: Record<string, string> = {
   copy_planning: "recopier un planning",
   remind_unanswered: "relancer les STAR sans réponse",
   publish_notice: "publier les consignes d'un département",
+  declare_unavailability_for: "déclarer une absence pour un STAR de son périmètre",
+  answer_service_for: "répondre pour un STAR de son périmètre à une demande de disponibilité",
+  fill_report: "remplir le compte rendu d'un événement",
 };
 
 const PLANNING_HINT =
