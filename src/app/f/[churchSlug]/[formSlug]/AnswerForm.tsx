@@ -4,9 +4,10 @@ import { useState } from "react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import FormFiller, { visibleAnswers } from "@/components/forms/FormFiller";
 import type { Answers, FillerForm } from "@/components/forms/types";
+import OfferPanel from "@/components/forms/OfferPanel";
 import { Alert, Button, Input, Modal } from "@/components/ui";
 
-type Existing = { status: string; answers: Answers } | null;
+type Existing = { status: string; answers: Answers; offerExpiresAt: string | null } | null;
 
 /** « Retrouver ma réponse » : le lien de gestion est renvoyé à l'adresse utilisée pour répondre. */
 function RecoverModal({ url, siteKey, onClose }: { readonly url: string; readonly siteKey: string; readonly onClose: () => void }) {
@@ -70,6 +71,8 @@ export default function AnswerForm({
   const [result, setResult] = useState<{ status: string; manageToken: string | null } | null>(null);
   const editing = !!existing && signedIn;
   const [recovering, setRecovering] = useState(false);
+  const [offer, setOffer] = useState(existing?.status === "OFFERED" ? existing.offerExpiresAt : undefined);
+  const [offerResult, setOfferResult] = useState<string | null>(null);
 
   async function send() {
     setState("sending");
@@ -125,6 +128,19 @@ export default function AnswerForm({
       }}
     >
       {editing && <Alert tone="info" title="Vous avez déjà répondu : vous pouvez modifier ou annuler votre réponse." />}
+      {editing && existing?.status === "WAITLISTED" && <Alert tone="info" title="Vous êtes en liste d'attente : vous serez prévenu(e) si une place se libère." />}
+      {editing && offer !== undefined && (
+        <OfferPanel
+          url={`/api/forms/mine/${form.id}/offer`}
+          expiresAt={offer}
+          onDone={(next) => {
+            setOffer(undefined);
+            setOfferResult(next === "CONFIRMED" ? "Place acceptée : votre inscription est confirmée." : "Place déclinée.");
+            if (next !== "CONFIRMED") setState("cancelled");
+          }}
+        />
+      )}
+      {offerResult && <Alert tone="success">{offerResult}</Alert>}
       {recoverable && turnstileSiteKey && (
         <p className="text-[14px] text-ink-muted">
           Vous avez déjà répondu ?{" "}

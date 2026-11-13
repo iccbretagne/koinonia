@@ -16,7 +16,7 @@ async function own(params: Params["params"]) {
 export async function GET(_request: Request, { params }: Params) {
   try {
     const response = await own(params);
-    return successResponse({ status: response.status, answers: answersRecord(response.answers) });
+    return successResponse({ status: response.status, offerExpiresAt: response.offerExpiresAt, answers: answersRecord(response.answers) });
   } catch (error) {
     return errorResponse(error);
   }

@@ -2279,8 +2279,20 @@ schéma construit à partir des questions (`@/modules/forms`). Toutes les tables
   qui une place est proposée).
 - **`form_anonymous_receipts`** : `(formId, keyHash)` — « ce compte a répondu », sans date ni lien
   vers la réponse.
+- **`form_sessions`** (lot 2) : `position`, `label`, `startDate` (date), `days` (1 ou 2).
+- **`form_levels`** : `sessionId` (cascade), `position`, `code`, `label`, `capacity`, `isEntry`
+  (niveau d'entrée : « niveau précédent suivi » non demandé). `form_responses.sessionId`,
+  `levelId` (set null) et `previousLevelDone` portent le choix ; les places d'un niveau se
+  comptent comme celles d'un choix (confirmées ou proposées). `waitingOn` désigne le niveau ou le
+  choix attendu en liste d'attente.
+- **`form_facilitators`** : `(formId, userId)` unique, `allScope` ; **`form_facilitator_scopes`** :
+  `sessionId`, `levelId` (null = toute la session).
+- **`form_attendance`** : `(responseId, day, half)` — `half` `AM`/`PM`, `present`, `updatedById`,
+  `updatedAt` (la dernière saisie l'emporte).
 
-La tâche `forms` (15 min) clôture à la fin des réponses et signale les nouvelles réponses ; la
+La tâche `forms` (15 min) fait expirer les places proposées non confirmées (place proposée au
+suivant), clôture à la fin des réponses (le lendemain de la dernière session pour une inscription
+à sessions) et signale les nouvelles réponses ; la
 tâche `forms-purge` (quotidienne) calcule `totals` puis efface les réponses au terme de la
 conservation.
 

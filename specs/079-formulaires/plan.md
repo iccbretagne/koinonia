@@ -342,3 +342,27 @@ Vitest, `prismaMock`, comme les autres modules :
 - **« Retrouver ma réponse »** (retour de recette) : sur la page publique, l'adresse saisie reçoit
   le lien de gestion de sa réponse active (`POST …/recover`, Turnstile, 3/min/IP), même réponse
   que l'adresse soit connue ou non — sur le modèle de « Retrouver ma réservation ».
+
+## Écarts à l'implémentation (lot 2)
+
+- **Question « Session et niveau » ajoutée d'office** : comme l'email, le secrétariat déclare les
+  sessions dans la construction et la question suit (`ensureRegistrationQuestion`, obligatoire,
+  sans condition, juste après l'email ; retirée si plus aucune session et sans réponse). Une seule
+  par formulaire, réservée aux inscriptions, jamais parent d'une condition.
+- **Liste d'attente** : une seule règle, `fillOpenPlaces(tx, formId)` (au lieu de
+  `offerNextPlace(tx, formId, slot)`), appelée sous le verrou après annulation, refus, expiration,
+  modification d'une réponse et modification du formulaire (places ajoutées). Les personnes en
+  attente sont servies dans l'ordre d'arrivée, dès que **tout** ce qu'elles ont retenu (niveau,
+  choix limités) a de la place. Notification après la transaction (`notifyOffers`) : compte ⇒
+  `createNotification` vers la page du formulaire, sans compte ⇒ email avec « Gérer ma réponse ».
+  Acceptation et refus aussi pour un compte connecté (`POST /api/forms/mine/[formId]/offer`).
+- **Accès** : `getFormAccess`/`requireFormAccess`/`scopeWhere` dans `@/modules/forms/auth` (pas de
+  fichier `access.ts`). Un intervenant voit les noms, jamais les adresses ; il n'a ni export, ni
+  annulation, ni réglages. Nav : le lien « Formulaires » apparaît aussi à un intervenant désigné
+  sur un formulaire non clôturé de l'église courante.
+- **Clôture** : une inscription à sessions n'est pas clôturée à la fin des réponses (qui s'arrêtent
+  quand même) mais le lendemain de la dernière session, à 0 h UTC (`sessionsEnd`).
+- **Présence** : un `logAudit` par case réellement modifiée (une saisie identique n'écrit rien) ;
+  la feuille se relit toutes les 15 s.
+- **Export** : la colonne « Session et niveau » donne session, niveau et « niveau précédent
+  suivi » ; une colonne par demi-journée de la plus longue session.

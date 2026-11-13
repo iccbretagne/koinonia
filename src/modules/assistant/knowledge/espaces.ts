@@ -172,9 +172,21 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     title: "Modifier ou annuler ma réponse à un formulaire",
     questions: ["Changer ma réponse au formulaire", "annuler mon inscription", "je me suis trompé dans le formulaire"],
     answer:
-      "Sans compte, ouvrez le lien « Gérer ma réponse » de l'accusé de réception, ou cliquez sur « Retrouver ma réponse » dans le formulaire pour le recevoir à nouveau par email. Avec un compte, rouvrez le formulaire ou « Formulaires › Mes réponses ». La modification reste possible tant que le formulaire accepte des réponses ; un sondage anonyme ne se modifie pas.",
+      "Sans compte, ouvrez le lien « Gérer ma réponse » de l'accusé de réception, ou cliquez sur « Retrouver ma réponse » dans le formulaire pour le recevoir à nouveau par email. Avec un compte, rouvrez le formulaire ou « Formulaires › Mes réponses ». La modification reste possible tant que le formulaire accepte des réponses ; un sondage anonyme ne se modifie pas. En liste d'attente, une place qui se libère vous est proposée par notification ou par email : acceptez-la ou déclinez-la depuis le même lien avant la date indiquée.",
     href: "/formulaires/mes-reponses",
     hrefLabel: "Mes réponses",
     audience: {},
+  },
+  {
+    key: "KB-149",
+    kind: "howto",
+    title: "Faire l'appel d'une session de formation",
+    questions: ["Noter les présences PCNC", "faire l'appel de ma session", "liste des inscrits de mon niveau", "je suis formateur PCNC"],
+    answer:
+      "Si le secrétariat vous a désigné intervenant d'une inscription, ouvrez « Formulaires » : l'onglet « Inscrits » liste les personnes de vos sessions et niveaux, l'onglet « Présence » coche matin et après-midi pour chaque jour. Plusieurs intervenants peuvent cocher en même temps ; la feuille se met à jour toute seule. Votre accès s'arrête à la clôture, le lendemain de la dernière session.",
+    href: "/formulaires",
+    hrefLabel: "Formulaires",
+    audience: {},
+    screens: ["/formulaires"],
   },
 ];

@@ -25,6 +25,13 @@ export async function exportResponses(formId: string): Promise<{ buffer: Buffer;
   if (!form) throw new Error("Formulaire introuvable");
   const responses = await listResponses(formId);
 
+  // Présence (inscription à sessions) : une colonne par demi-journée de la plus longue session.
+  const maxDays = Math.max(0, ...form.sessions.map((x) => x.days));
+  const presenceColumns = Array.from({ length: maxDays }, (_, i) =>
+    (["AM", "PM"] as const).map((half) => ({ day: i + 1, half, key: `presence-${i + 1}-${half}`, header: `Jour ${i + 1} ${half === "AM" ? "matin" : "après-midi"}` }))
+  ).flat();
+  const ctx = { sessions: form.sessions };
+
   const { default: ExcelJS } = await import("exceljs");
   const wb = new ExcelJS.Workbook();
   const sheet = wb.addWorksheet("Réponses");
@@ -33,6 +40,7 @@ export async function exportResponses(formId: string): Promise<{ buffer: Buffer;
     { header: "Statut", key: "status", width: 18 },
     ...(form.anonymous ? [] : [{ header: "Compte", key: "account", width: 26 }]),
     ...form.questions.map((q) => ({ header: q.label, key: q.id, width: Math.min(40, Math.max(14, q.label.length)) })),
+    ...presenceColumns.map((c) => ({ header: c.header, key: c.key, width: 14 })),
   ];
   sheet.getRow(1).font = { bold: true };
   for (const r of responses) {
@@ -42,7 +50,11 @@ export async function exportResponses(formId: string): Promise<{ buffer: Buffer;
       status: STATUS_LABEL[r.status] ?? r.status,
       ...(form.anonymous ? {} : { account: r.user ? (r.user.displayName ?? r.user.name ?? r.user.email) : "" }),
     };
-    for (const q of form.questions) row[q.id] = displayValue(q, answers.get(q.id));
+    for (const q of form.questions) row[q.id] = displayValue(q, answers.get(q.id), ctx);
+    for (const c of presenceColumns) {
+      const cell = r.attendance.find((a) => a.day === c.day && a.half === c.half);
+      row[c.key] = cell ? (cell.present ? "Présent" : "Absent") : "";
+    }
     sheet.addRow(sanitizeRow(row));
   }
   const fileName = `${form.slug}-reponses.xlsx`;

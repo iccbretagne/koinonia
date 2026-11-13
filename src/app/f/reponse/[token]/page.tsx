@@ -31,6 +31,7 @@ export default async function ManageResponsePage({ params }: Params) {
         status={response.status}
         answers={answersRecord(response.answers) as Record<string, unknown>}
         editable={open && acceptsResponses(response.form)}
+        offerExpiresAt={response.offerExpiresAt?.toISOString() ?? null}
       />
     </PublicShell>
   );

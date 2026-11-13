@@ -60,12 +60,13 @@ describe("moteur — les 13 types", () => {
     expect(ko(q("q1", "PHONE"), "abc")).toThrow("numéro invalide");
   });
 
-  it("consentement : obligatoire ⇒ coché ; session/niveau indisponible au lot 1", () => {
+  it("consentement : obligatoire ⇒ coché ; session/niveau sans niveau connu refusé", () => {
     const consent = q("q1", "CONSENT", { required: true });
     expect(ok(consent, true)).toBe(true);
     expect(ko(consent, false)).toThrow("obligatoire");
     expect(ok(q("q1", "CONSENT"), false)).toBe(false);
-    expect(ko(q("q1", "SESSION_LEVEL"), "x")).toThrow("indisponible");
+    expect(ko(q("q1", "SESSION_LEVEL"), "x")).toThrow("choisissez une session");
+    expect(ko(q("q1", "SESSION_LEVEL"), { levelId: "inconnu" })).toThrow("niveau inconnu");
   });
 
   it("obligatoire : vide refusé, facultatif vide ignoré", () => {

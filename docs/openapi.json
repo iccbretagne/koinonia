@@ -14858,6 +14858,91 @@
                       ]
                     },
                     "maxItems": 60
+                  },
+                  "sessions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40
+                        },
+                        "label": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 150
+                        },
+                        "startDate": {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        },
+                        "days": {
+                          "anyOf": [
+                            {
+                              "type": "number",
+                              "enum": [
+                                1
+                              ]
+                            },
+                            {
+                              "type": "number",
+                              "enum": [
+                                2
+                              ]
+                            }
+                          ]
+                        },
+                        "levels": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 40
+                              },
+                              "code": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 20
+                              },
+                              "label": {
+                                "type": "string",
+                                "nullable": true,
+                                "maxLength": 150
+                              },
+                              "capacity": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 10000
+                              },
+                              "isEntry": {
+                                "type": "boolean",
+                                "default": false
+                              }
+                            },
+                            "required": [
+                              "key",
+                              "code",
+                              "capacity"
+                            ]
+                          },
+                          "minItems": 1,
+                          "maxItems": 20
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "label",
+                        "startDate",
+                        "days",
+                        "levels"
+                      ]
+                    },
+                    "maxItems": 20
                   }
                 }
               }
@@ -14914,6 +14999,166 @@
                 "schema": {}
               }
             }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/forms/{id}/attendance": {
+      "get": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Feuille de présence d'une session",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire, ou intervenant désigné (son périmètre) tant que le formulaire n'est pas clôturé.\n\nInscrits confirmés de la session (périmètre de l'intervenant), avec leur niveau et leurs cases jour × matin/après-midi.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            },
+            "required": true,
+            "name": "sessionId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session et lignes de la feuille",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Saisie des présences",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire, ou intervenant désigné (son périmètre) tant que le formulaire n'est pas clôturé.\n\nEnregistre des cases ; la dernière saisie l'emporte (plusieurs intervenants en même temps). Inscrit hors session, hors périmètre ou non confirmé : 404. Chaque case modifiée est journalisée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sessionId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "cells": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "responseId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40
+                        },
+                        "day": {
+                          "anyOf": [
+                            {
+                              "type": "number",
+                              "enum": [
+                                1
+                              ]
+                            },
+                            {
+                              "type": "number",
+                              "enum": [
+                                2
+                              ]
+                            }
+                          ]
+                        },
+                        "half": {
+                          "type": "string",
+                          "enum": [
+                            "AM",
+                            "PM"
+                          ]
+                        },
+                        "present": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "responseId",
+                        "day",
+                        "half",
+                        "present"
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 400
+                  }
+                },
+                "required": [
+                  "sessionId",
+                  "cells"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Nombre de cases modifiées",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
           },
           "401": {
             "description": "Session absente"
@@ -15025,13 +15270,155 @@
         }
       }
     },
+    "/api/forms/{id}/facilitators": {
+      "get": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Intervenants d'un formulaire",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Intervenants, avec tout le formulaire ou leurs sessions et niveaux",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Désignation des intervenants",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\nRemplace la liste. Comptes de l'église seulement ; inscription à sessions seulement ; chacun sur tout le formulaire ou sur des sessions et niveaux du formulaire. Les nouveaux intervenants sont prévenus (domaine forms). Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "facilitators": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "userId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40
+                        },
+                        "allScope": {
+                          "type": "boolean"
+                        },
+                        "scopes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "sessionId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 40
+                              },
+                              "levelId": {
+                                "type": "string",
+                                "nullable": true,
+                                "minLength": 1,
+                                "maxLength": 40
+                              }
+                            },
+                            "required": [
+                              "sessionId"
+                            ]
+                          },
+                          "maxItems": 60,
+                          "default": []
+                        }
+                      },
+                      "required": [
+                        "userId",
+                        "allScope"
+                      ]
+                    },
+                    "maxItems": 50
+                  }
+                },
+                "required": [
+                  "facilitators"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Intervenants enregistrés",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
     "/api/forms/{id}/responses": {
       "get": {
         "tags": [
           "forms"
         ],
         "summary": "Réponses d'un formulaire",
-        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\nRéponses avec leurs valeurs et, pour un formulaire nominatif, le compte qui a répondu. Un sondage anonyme n'a aucune identité.",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire, ou intervenant désigné tant que le formulaire n'est pas clôturé.\n\nRéponses avec leurs valeurs, leur session et leur niveau, leurs présences et, pour un formulaire nominatif, le compte qui a répondu. Un sondage anonyme n'a aucune identité. Un intervenant ne voit que son périmètre (sessions, niveaux), sans adresse email.",
         "security": [
           {
             "session": []
@@ -15061,6 +15448,26 @@
             },
             "required": false,
             "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            },
+            "required": false,
+            "name": "sessionId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            },
+            "required": false,
+            "name": "levelId",
             "in": "query"
           }
         ],
@@ -15393,6 +15800,67 @@
         }
       }
     },
+    "/api/forms/mine/{formId}/offer": {
+      "post": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Réponse à une place proposée",
+        "description": "**Accès** : toute personne connectée — sa propre réponse seulement.\n\nListe d'attente : accepter confirme la réponse ; décliner la clôt et propose la place à la personne suivante. Aucune place proposée ou proposition expirée : 409.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "formId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accept": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "accept"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Nouvel état de la réponse",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
     "/api/forms/public/{churchSlug}/{formSlug}": {
       "get": {
         "tags": [
@@ -15671,6 +16139,57 @@
                 "schema": {}
               }
             }
+          }
+        }
+      }
+    },
+    "/api/forms/public/responses/{token}/offer": {
+      "post": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Réponse à une place proposée (lien de gestion)",
+        "description": "**Accès** : jeton de partage dans l'adresse.\n\nListe d'attente : accepter confirme la réponse ; décliner la clôt et propose la place à la personne suivante. Aucune place proposée ou proposition expirée : 409.",
+        "security": [],
+        "x-access": "token",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accept": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "accept"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Nouvel état de la réponse",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
           }
         }
       }

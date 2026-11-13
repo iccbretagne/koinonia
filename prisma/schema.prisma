@@ -203,6 +203,7 @@ model User {
   ticketingAssignments              TicketingAssignment[]
   formsCreated                      Form[]                        @relation("FormCreatedBy")
   formResponses                     FormResponse[]                @relation("FormResponseUser")
+  formFacilitations                 FormFacilitator[]             @relation("FormFacilitatorUser")
   systemMessagesCreated             SystemMessage[]               @relation("SystemMessageCreatedBy")
   systemMessagesUpdated             SystemMessage[]               @relation("SystemMessageUpdatedBy")
   systemMessageReceipts             SystemMessageReceipt[]
@@ -4200,6 +4201,8 @@ model Form {
   questions      FormQuestion[]
   responses      FormResponse[]
   receipts       FormAnonymousReceipt[]
+  sessions       FormSession[]
+  facilitators   FormFacilitator[]
 
   @@unique([churchId, slug])
   @@index([status, closesAt])
@@ -4246,36 +4249,45 @@ model FormChoice {
 }
 
 model FormResponse {
-  id             String             @id @default(cuid())
-  formId         String
-  churchId       String
-  status         FormResponseStatus @default(CONFIRMED)
+  id                String             @id @default(cuid())
+  formId            String
+  churchId          String
+  status            FormResponseStatus @default(CONFIRMED)
   /// Compte qui a répondu (jamais pour un sondage anonyme).
-  userId         String?
+  userId            String?
   /// Adresse de contact (formulaire public nominatif), normalisée.
-  contactEmail   String?            @db.VarChar(254)
+  contactEmail      String?            @db.VarChar(254)
   /// Empreinte de l'adresse normalisée, pour repérer les doublons.
-  contactKey     String?            @db.VarChar(64)
+  contactKey        String?            @db.VarChar(64)
+  /// Inscription (lot 2) : session et niveau retenus, « niveau précédent suivi » (indicatif).
+  sessionId         String?
+  levelId           String?
+  previousLevelDone Boolean?
   /// Choix (ou niveau) attendu en liste d'attente.
-  waitingOn      String?
-  offerExpiresAt DateTime?
+  waitingOn         String?
+  offerExpiresAt    DateTime?
   /// Jeton de gestion dérivé : sel et empreinte seulement.
-  manageSalt     String?            @db.VarChar(32)
-  manageHash     String?            @unique @db.VarChar(64)
+  manageSalt        String?            @db.VarChar(32)
+  manageHash        String?            @unique @db.VarChar(64)
   /// Jour de la réponse seulement (anonymat : pas d'horodatage plus fin).
-  submittedOn    DateTime           @db.Date
-  cancelledAt    DateTime?
+  submittedOn       DateTime           @db.Date
+  cancelledAt       DateTime?
   /// Posé par le code : l'instant de la réponse, ou le jour seul pour un sondage anonyme.
-  createdAt      DateTime
+  createdAt         DateTime
   /// Dernière modification par le répondant (jamais pour un sondage anonyme).
-  modifiedAt     DateTime?
+  modifiedAt        DateTime?
 
-  form    Form                 @relation(fields: [formId], references: [id], onDelete: Cascade)
-  user    User?                @relation("FormResponseUser", fields: [userId], references: [id], onDelete: SetNull)
-  answers FormAnswer[]
-  choices FormResponseChoice[]
+  form       Form                 @relation(fields: [formId], references: [id], onDelete: Cascade)
+  user       User?                @relation("FormResponseUser", fields: [userId], references: [id], onDelete: SetNull)
+  session    FormSession?         @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  level      FormLevel?           @relation(fields: [levelId], references: [id], onDelete: SetNull)
+  answers    FormAnswer[]
+  choices    FormResponseChoice[]
+  attendance FormAttendance[]
 
   @@index([formId, status])
+  @@index([levelId, status])
+  @@index([formId, waitingOn, status])
   @@index([formId, contactKey])
   @@index([userId])
   @@map("form_responses")
@@ -4318,4 +4330,93 @@ model FormAnonymousReceipt {
 
   @@id([formId, keyHash])
   @@map("form_anonymous_receipts")
+}
+
+/// Session d'une inscription (lot 2) : un ou deux jours, plusieurs niveaux.
+model FormSession {
+  id        String   @id @default(cuid())
+  formId    String
+  position  Int
+  label     String   @db.VarChar(150)
+  startDate DateTime @db.Date
+  /// 1 ou 2 jours.
+  days      Int      @default(1)
+
+  form      Form                   @relation(fields: [formId], references: [id], onDelete: Cascade)
+  levels    FormLevel[]
+  responses FormResponse[]
+  scopes    FormFacilitatorScope[]
+
+  @@index([formId, position])
+  @@map("form_sessions")
+}
+
+/// Niveau proposé dans une session, avec ses places. Le niveau d'entrée n'a pas de prérequis.
+model FormLevel {
+  id        String  @id @default(cuid())
+  sessionId String
+  position  Int
+  code      String  @db.VarChar(20)
+  label     String? @db.VarChar(150)
+  capacity  Int
+  isEntry   Boolean @default(false)
+
+  session   FormSession            @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  responses FormResponse[]
+  scopes    FormFacilitatorScope[]
+
+  @@index([sessionId, position])
+  @@map("form_levels")
+}
+
+/// Intervenant désigné (ex. formateur) : consultation et présence de son périmètre, sans export.
+model FormFacilitator {
+  id       String  @id @default(cuid())
+  formId   String
+  userId   String
+  /// Tout le formulaire, ou seulement les sessions/niveaux de `scopes`.
+  allScope Boolean @default(true)
+
+  form   Form                   @relation(fields: [formId], references: [id], onDelete: Cascade)
+  user   User                   @relation("FormFacilitatorUser", fields: [userId], references: [id], onDelete: Cascade)
+  scopes FormFacilitatorScope[]
+
+  @@unique([formId, userId])
+  @@index([userId])
+  @@map("form_facilitators")
+}
+
+/// Périmètre d'un intervenant : une session entière (levelId nul) ou un niveau.
+model FormFacilitatorScope {
+  id            String  @id @default(cuid())
+  facilitatorId String
+  sessionId     String
+  levelId       String?
+
+  facilitator FormFacilitator @relation(fields: [facilitatorId], references: [id], onDelete: Cascade)
+  session     FormSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  level       FormLevel?      @relation(fields: [levelId], references: [id], onDelete: Cascade)
+
+  @@index([facilitatorId])
+  @@map("form_facilitator_scopes")
+}
+
+/// Présence d'un inscrit par jour et demi-journée ; la dernière saisie l'emporte.
+model FormAttendance {
+  responseId  String
+  day         Int
+  half        FormHalfDay
+  present     Boolean
+  updatedById String?
+  updatedAt   DateTime    @updatedAt
+
+  response FormResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+
+  @@id([responseId, day, half])
+  @@map("form_attendance")
+}
+
+enum FormHalfDay {
+  AM
+  PM
 }

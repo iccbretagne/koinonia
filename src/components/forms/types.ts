@@ -21,6 +21,23 @@ export interface FillerQuestion {
   readonly choices: readonly FillerChoice[];
 }
 
+export interface FillerLevel {
+  readonly id: string;
+  readonly code: string;
+  readonly label: string | null;
+  readonly isEntry: boolean;
+  /** Places restantes. */
+  readonly remaining: number;
+}
+
+export interface FillerSession {
+  readonly id: string;
+  readonly label: string;
+  readonly startDate: string;
+  readonly days: number;
+  readonly levels: readonly FillerLevel[];
+}
+
 export interface FillerForm {
   readonly id: string;
   readonly title: string;
@@ -28,6 +45,8 @@ export interface FillerForm {
   readonly anonymous: boolean;
   readonly waitlistEnabled: boolean;
   readonly questions: readonly FillerQuestion[];
+  /** Inscription à sessions (lot 2). */
+  readonly sessions?: readonly FillerSession[];
 }
 
 export type Answers = Record<string, unknown>;

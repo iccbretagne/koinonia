@@ -3,6 +3,7 @@
 import { useState } from "react";
 import FormFiller, { visibleAnswers } from "@/components/forms/FormFiller";
 import type { Answers, FillerForm } from "@/components/forms/types";
+import OfferPanel from "@/components/forms/OfferPanel";
 import { Alert, Button } from "@/components/ui";
 
 const STATUS: Record<string, string> = {
@@ -20,12 +21,14 @@ export default function ManageResponse({
   status: initialStatus,
   answers: initial,
   editable,
+  offerExpiresAt,
 }: {
   readonly token: string;
   readonly form: FillerForm;
   readonly status: string;
   readonly answers: Answers;
   readonly editable: boolean;
+  readonly offerExpiresAt: string | null;
 }) {
   const [answers, setAnswers] = useState<Answers>(initial);
   const [status, setStatus] = useState(initialStatus);
@@ -53,6 +56,16 @@ export default function ManageResponse({
     <div className="space-y-5">
       <Alert tone={open ? "success" : "info"} title={STATUS[status] ?? status} />
       {message && <Alert tone={message.tone}>{message.text}</Alert>}
+      {status === "OFFERED" && (
+        <OfferPanel
+          url={`/api/forms/public/responses/${token}/offer`}
+          expiresAt={offerExpiresAt}
+          onDone={(next) => {
+            setStatus(next);
+            setMessage({ tone: "success", text: next === "CONFIRMED" ? "Place acceptée : votre inscription est confirmée." : "Place déclinée." });
+          }}
+        />
+      )}
       {open && (
         <form
           className="space-y-5"

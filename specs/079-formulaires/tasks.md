@@ -111,48 +111,48 @@
 
 ### 1. Données & migration
 
-- [ ] **T31** — Modèles `FormSession` (1 ou 2 jours), `FormLevel` (code, places, niveau
+- [x] **T31** — Modèles `FormSession` (1 ou 2 jours), `FormLevel` (code, places, niveau
       d'entrée), `FormFacilitator`, `FormFacilitatorScope`, `FormAttendance` ; colonnes
       `sessionId`, `levelId`, `previousLevelDone`, `waitingOn`, `offerExpiresAt` ; migration
 
 ### 2. Logique métier
 
-- [ ] **T32** — Type `SESSION_LEVEL` dans le moteur et la construction : sessions, niveaux,
+- [x] **T32** — Type `SESSION_LEVEL` dans le moteur et la construction : sessions, niveaux,
       places ; « niveau précédent suivi » demandé hors niveau d'entrée, jamais bloquant
-- [ ] **T33** — Places des niveaux dans `submitResponse` (verrou), liste d'attente si complet
-- [ ] **T34** — Liste d'attente : `offerNextPlace` à chaque place libérée (annulation, déclin,
+- [x] **T33** — Places des niveaux dans `submitResponse` (verrou), liste d'attente si complet
+- [x] **T34** — Liste d'attente : `offerNextPlace` à chaque place libérée (annulation, déclin,
       expiration, capacité augmentée), place proposée comptée comme prise, acceptation / déclin,
       notification de la proposition ; expiration par la tâche planifiée *(fichier :
       `src/modules/forms/services/waitlist.ts`)*
-- [ ] **T35** — Intervenants : plusieurs par formulaire, tout le formulaire ou sessions/niveaux ;
+- [x] **T35** — Intervenants : plusieurs par formulaire, tout le formulaire ou sessions/niveaux ;
       accès éteint à la clôture ou au retrait ; clôture automatique le lendemain de la dernière
       session *(fichiers : `access.ts`, `lifecycle.ts`)*
-- [ ] **T36** — Présence : feuille par session (jours × matin/après-midi), dernière saisie
+- [x] **T36** — Présence : feuille par session (jours × matin/après-midi), dernière saisie
       gagnante, `logAudit` par case ; export avec présences *(fichier :
       `src/modules/forms/services/attendance.ts`)*
 
 ### 3. API
 
-- [ ] **T37** — `/api/forms/[id]/facilitators` (GET, PUT), `/api/forms/[id]/attendance`
+- [x] **T37** — `/api/forms/[id]/facilitators` (GET, PUT), `/api/forms/[id]/attendance`
       (GET, PUT, périmètre de l'intervenant), `/api/forms/public/responses/[token]/offer` (POST) ;
       liste des réponses filtrée au périmètre ; `npm run openapi`
 
 ### 4. UI
 
-- [ ] **T38** — Construction : sessions et niveaux ; Réglages : liste d'attente, délai de
+- [x] **T38** — Construction : sessions et niveaux ; Réglages : liste d'attente, délai de
       confirmation, intervenants et leur périmètre
-- [ ] **T39** — Page de réponse : choix session/niveau, places restantes, niveau complet ⇒ liste
+- [x] **T39** — Page de réponse : choix session/niveau, places restantes, niveau complet ⇒ liste
       d'attente ; page de gestion : accepter / décliner une place proposée
-- [ ] **T40** — Onglet Réponses par session et niveau avec décompte et « niveau précédent suivi » ;
+- [x] **T40** — Onglet Réponses par session et niveau avec décompte et « niveau précédent suivi » ;
       onglet Présence (cases matin/après-midi, rafraîchissement des coches des autres)
 
 ### 5. Tests
 
-- [ ] **T41** — Dernière place prise par une seule réponse ; liste d'attente : proposition,
+- [x] **T41** — Dernière place prise par une seule réponse ; liste d'attente : proposition,
       acceptation, déclin, expiration ⇒ suivante
-- [ ] **T42** [P] — Intervenant borné à ses niveaux (réponses et présence), sans export, accès
+- [x] **T42** [P] — Intervenant borné à ses niveaux (réponses et présence), sans export, accès
       éteint à la clôture ou au retrait
-- [ ] **T43** [P] — Présence : deux jours × deux demi-journées, dernière saisie, journal, export
+- [x] **T43** [P] — Présence : deux jours × deux demi-journées, dernière saisie, journal, export
 
 ---
 

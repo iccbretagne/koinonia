@@ -17,6 +17,7 @@ export {
   contactQuestion,
   CONTACT_QUESTION,
   listForms,
+  ensureRegistrationQuestion,
   FORM_INCLUDE,
   ACTIVE_STATUSES,
   HOLDING_STATUSES,
@@ -40,9 +41,17 @@ export {
   answersRecord,
   hasAnonymousReceipt,
   recoverResponseLink,
+  respondToOffer,
+  expireOffers,
+  holdingByLevel,
 } from "./services/responses";
+export { fillOpenPlaces } from "./services/waitlist";
+export { listFacilitators, setFacilitators, listFacilitatedForms } from "./services/facilitators";
+export type { FacilitatorInput } from "./services/facilitators";
+export { getAttendanceSheet, saveAttendance, participantName, HALF_LABEL } from "./services/attendance";
+export type { AttendanceCell } from "./services/attendance";
 export type { SubmitResult, Respondent, ResponseWithForm, PublicFormView } from "./services/responses";
 
 export { exportResponses, STATUS_LABEL } from "./services/exports";
 export { sendReceipt, resendManageLink, formPath } from "./services/notify";
-export { runFormTasks, runFormPurge } from "./services/tasks";
+export { runFormTasks, runFormPurge, sessionsEnd } from "./services/tasks";

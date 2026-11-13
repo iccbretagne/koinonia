@@ -22,6 +22,7 @@ export async function GET(request: Request, { params }: Params) {
     return successResponse({
       form: await publicView(response.form),
       status: response.status,
+      offerExpiresAt: response.offerExpiresAt,
       answers: answersRecord(response.answers),
       editable: acceptsResponses(response.form) && ["CONFIRMED", "WAITLISTED", "OFFERED"].includes(response.status),
     });

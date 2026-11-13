@@ -113,8 +113,28 @@ export const formCreateSchema = z.object({
   anonymous: z.boolean().default(false),
 });
 
+/** Session d'une inscription (lot 2) : un ou deux jours, niveaux avec places. */
+export const levelInputSchema = z.object({
+  key,
+  code: z.string().trim().min(1).max(20),
+  label: z.string().trim().max(150).nullable().optional(),
+  capacity: z.number().int().min(1).max(10_000),
+  /** Niveau d'entrée : pas de prérequis, « niveau précédent suivi » n'est pas demandé. */
+  isEntry: z.boolean().default(false),
+});
+
+export const sessionInputSchema = z.object({
+  key,
+  label: z.string().trim().min(1).max(150),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date AAAA-MM-JJ"),
+  days: z.union([z.literal(1), z.literal(2)]),
+  levels: z.array(levelInputSchema).min(1).max(20),
+});
+export type SessionInput = z.infer<typeof sessionInputSchema>;
+
 export const formUpdateSchema = formSettingsSchema.partial().extend({
   questions: z.array(questionInputSchema).max(MAX_QUESTIONS).optional(),
+  sessions: z.array(sessionInputSchema).max(20).optional(),
 });
 export type FormUpdateInput = z.infer<typeof formUpdateSchema>;
 
@@ -139,18 +159,56 @@ export const recoverSchema = z.object({
   turnstileToken: z.string().max(4096).optional(),
 });
 
+/** Place proposée en liste d'attente : accepter ou décliner. */
+export const offerSchema = z.object({ accept: z.boolean() });
+
+/** Intervenants d'un formulaire (liste complète). */
+export const facilitatorsSchema = z.object({
+  facilitators: z
+    .array(
+      z.object({
+        userId: z.string().min(1).max(40),
+        allScope: z.boolean(),
+        scopes: z.array(z.object({ sessionId: z.string().min(1).max(40), levelId: z.string().min(1).max(40).nullable().optional() })).max(60).default([]),
+      })
+    )
+    .max(50),
+});
+
+/** Feuille de présence : cases à enregistrer (la dernière saisie l'emporte). */
+export const attendanceSchema = z.object({
+  sessionId: z.string().min(1).max(40),
+  cells: z
+    .array(z.object({ responseId: z.string().min(1).max(40), day: z.union([z.literal(1), z.literal(2)]), half: z.enum(["AM", "PM"]), present: z.boolean() }))
+    .min(1)
+    .max(400),
+});
+
+export const attendanceQuerySchema = z.object({ sessionId: z.string().min(1).max(40) });
+
 export const responsesQuerySchema = z.object({
   status: z.enum(["CONFIRMED", "WAITLISTED", "OFFERED", "CANCELLED", "DECLINED", "EXPIRED"]).optional(),
+  sessionId: z.string().min(1).max(40).optional(),
+  levelId: z.string().min(1).max(40).optional(),
 });
 
 // ─── Affichage conditionnel (partagé par le serveur et la page de réponse) ───
 
-export type AnswerValue = string | number | boolean | string[];
+/** Réponse à « session et niveau » (lot 2). */
+export interface RegistrationValue {
+  sessionId: string;
+  levelId: string;
+  /** Indicatif, null pour un niveau d'entrée. */
+  previousLevelDone: boolean | null;
+}
+
+export type AnswerValue = string | number | boolean | string[] | RegistrationValue;
 
 /** Une valeur vaut-elle la valeur attendue par une condition ? */
 export function matchesCondition(value: unknown, expected: string): boolean {
   if (value === undefined || value === null) return false;
   if (Array.isArray(value)) return value.includes(expected);
+  if (typeof value === "object") return false;
   return String(value) === expected;
 }
 
