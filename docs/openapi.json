@@ -15160,7 +15160,7 @@
           "forms"
         ],
         "summary": "Publication, clôture ou réouverture d'un formulaire",
-        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\npublish : brouillon → publié (au moins une question ; un public nominatif exige une question Email obligatoire). close : publié → clôturé, la conservation court. reopen : clôturé → publié si la fin des réponses n'est pas passée et les réponses pas effacées. Journalisé.",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\npublish : brouillon → publié (au moins une question ; un public nominatif reçoit d'office une question Email obligatoire). close : publié → clôturé, la conservation court. reopen : clôturé → publié si la fin des réponses n'est pas passée et les réponses pas effacées. Journalisé.",
         "security": [
           {
             "session": []
@@ -15428,6 +15428,71 @@
                 "schema": {}
               }
             }
+          }
+        }
+      }
+    },
+    "/api/forms/public/{churchSlug}/{formSlug}/recover": {
+      "post": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Retrouver ma réponse",
+        "description": "**Accès** : public, sans session.\n\nFormulaire public nominatif : renvoie par email le lien « Gérer ma réponse » de la réponse active de cette adresse. Réponse toujours identique, que l'adresse soit connue ou non. Turnstile obligatoire, 3 demandes par minute et par IP.",
+        "security": [],
+        "x-access": "public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "formSlug",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "format": "email"
+                  },
+                  "turnstileToken": {
+                    "type": "string",
+                    "maxLength": 4096
+                  }
+                },
+                "required": [
+                  "email"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ ok: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
           }
         }
       }

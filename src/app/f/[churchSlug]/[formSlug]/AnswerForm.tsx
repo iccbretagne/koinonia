@@ -4,9 +4,44 @@ import { useState } from "react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import FormFiller, { visibleAnswers } from "@/components/forms/FormFiller";
 import type { Answers, FillerForm } from "@/components/forms/types";
-import { Alert, Button } from "@/components/ui";
+import { Alert, Button, Input, Modal } from "@/components/ui";
 
 type Existing = { status: string; answers: Answers } | null;
+
+/** « Retrouver ma réponse » : le lien de gestion est renvoyé à l'adresse utilisée pour répondre. */
+function RecoverModal({ url, siteKey, onClose }: { readonly url: string; readonly siteKey: string; readonly onClose: () => void }) {
+  const [email, setEmail] = useState("");
+  const [token, setToken] = useState<string | null>(null);
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  async function submit() {
+    setState("sending");
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, turnstileToken: token ?? undefined }),
+    });
+    setState(res.ok ? "sent" : "error");
+  }
+  return (
+    <Modal open onClose={onClose} title="Retrouver ma réponse" mobileLayout="sheet">
+      {state === "sent" ? (
+        <Alert tone="success" title="Demande envoyée.">
+          Si une réponse existe pour cette adresse, vous allez recevoir par email le lien pour la consulter, la modifier ou l&apos;annuler.
+        </Alert>
+      ) : (
+        <div className="space-y-4">
+          <p className="text-[15px] text-ink-muted">Indiquez l&apos;email utilisé pour répondre : nous y renvoyons le lien de votre réponse.</p>
+          <Input label="Email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <TurnstileWidget siteKey={siteKey} onToken={setToken} />
+          {state === "error" && <Alert tone="danger">La demande n&apos;a pas abouti. Réessayez dans un instant.</Alert>}
+          <Button type="button" disabled={!email || !token || state === "sending"} onClick={() => void submit()}>
+            {state === "sending" ? "Envoi…" : "Recevoir le lien"}
+          </Button>
+        </div>
+      )}
+    </Modal>
+  );
+}
 
 /** Envoi, ou modification de sa réponse pour un compte connecté (spec 079). */
 export default function AnswerForm({
@@ -15,6 +50,7 @@ export default function AnswerForm({
   formSlug,
   turnstileSiteKey,
   signedIn,
+  recoverable,
   existing,
 }: {
   readonly form: FillerForm;
@@ -22,6 +58,8 @@ export default function AnswerForm({
   readonly formSlug: string;
   readonly turnstileSiteKey: string | null;
   readonly signedIn: boolean;
+  /** Formulaire public nominatif, personne non connectée : « Retrouver ma réponse » proposé. */
+  readonly recoverable: boolean;
   readonly existing: Existing;
 }) {
   const [answers, setAnswers] = useState<Answers>(existing?.answers ?? {});
@@ -31,6 +69,7 @@ export default function AnswerForm({
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ status: string; manageToken: string | null } | null>(null);
   const editing = !!existing && signedIn;
+  const [recovering, setRecovering] = useState(false);
 
   async function send() {
     setState("sending");
@@ -86,6 +125,17 @@ export default function AnswerForm({
       }}
     >
       {editing && <Alert tone="info" title="Vous avez déjà répondu : vous pouvez modifier ou annuler votre réponse." />}
+      {recoverable && turnstileSiteKey && (
+        <p className="text-[14px] text-ink-muted">
+          Vous avez déjà répondu ?{" "}
+          <button type="button" className="font-semibold text-brand-text underline" onClick={() => setRecovering(true)}>
+            Retrouver ma réponse
+          </button>
+        </p>
+      )}
+      {recovering && turnstileSiteKey && (
+        <RecoverModal url={`/api/forms/public/${churchSlug}/${formSlug}/recover`} siteKey={turnstileSiteKey} onClose={() => setRecovering(false)} />
+      )}
       <FormFiller form={form} answers={answers} onChange={setAnswers} disabled={state === "sending"} />
       {turnstileSiteKey && !editing && <TurnstileWidget siteKey={turnstileSiteKey} onToken={setToken} resetSignal={reset} />}
       {error && <Alert tone="danger">{error}</Alert>}

@@ -160,3 +160,19 @@ describe("gestion de sa réponse", () => {
     expect(await findResponseByToken(token)).toBeNull();
   });
 });
+
+describe("retrouver ma réponse", () => {
+  it("par l'empreinte de l'adresse, réponse active avec jeton seulement", async () => {
+    const { recoverResponseLink } = await import("../responses");
+    const { contactKey } = await import("../tokens");
+    prismaMock.formResponse.findFirst.mockResolvedValueOnce(null);
+    expect(await recoverResponseLink("f1", "marie@exemple.fr")).toBeNull();
+    const where = prismaMock.formResponse.findFirst.mock.calls[0][0].where;
+    expect(where).toMatchObject({ formId: "f1", contactKey: contactKey("f1", "marie@exemple.fr"), status: { in: ["CONFIRMED", "WAITLISTED", "OFFERED"] } });
+    prismaMock.formResponse.findFirst.mockResolvedValueOnce({ id: "r1", contactEmail: "marie@exemple.fr", manageSalt: "b".repeat(32) });
+    expect(await recoverResponseLink("f1", "marie@exemple.fr")).toEqual({
+      contactEmail: "marie@exemple.fr",
+      manageToken: manageTokenOf({ id: "r1", manageSalt: "b".repeat(32) }),
+    });
+  });
+});

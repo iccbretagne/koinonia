@@ -335,3 +335,10 @@ Vitest, `prismaMock`, comme les autres modules :
   l'église.
 - **« Mes réponses »** : `/formulaires/mes-reponses` (les sondages anonymes n'y figurent pas).
 - **`/formulaires`** : réservé à `forms:manage` au lot 1 ; les intervenants arrivent au lot 2.
+- **Question Email ajoutée d'office** (retour de recette) : un formulaire public nominatif reçoit
+  automatiquement une question Email obligatoire en tête (`ensureContactQuestion`, à la création,
+  à chaque modification et à la publication), verrouillée dans le constructeur, au lieu d'une
+  publication refusée.
+- **« Retrouver ma réponse »** (retour de recette) : sur la page publique, l'adresse saisie reçoit
+  le lien de gestion de sa réponse active (`POST …/recover`, Turnstile, 3/min/IP), même réponse
+  que l'adresse soit connue ou non — sur le modèle de « Retrouver ma réservation ».

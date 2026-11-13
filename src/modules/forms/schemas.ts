@@ -133,6 +133,12 @@ export const publicAnswersSchema = answersSchema.extend({
   turnstileToken: z.string().max(4096).optional(),
 });
 
+/** « Retrouver ma réponse » (formulaire public). */
+export const recoverSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(254),
+  turnstileToken: z.string().max(4096).optional(),
+});
+
 export const responsesQuerySchema = z.object({
   status: z.enum(["CONFIRMED", "WAITLISTED", "OFFERED", "CANCELLED", "DECLINED", "EXPIRED"]).optional(),
 });

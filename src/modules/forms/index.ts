@@ -13,6 +13,9 @@ export {
   usageCounts,
   assertSafeEdit,
   slugify,
+  needsContact,
+  contactQuestion,
+  CONTACT_QUESTION,
   listForms,
   FORM_INCLUDE,
   ACTIVE_STATUSES,
@@ -36,6 +39,7 @@ export {
   publicView,
   answersRecord,
   hasAnonymousReceipt,
+  recoverResponseLink,
 } from "./services/responses";
 export type { SubmitResult, Respondent, ResponseWithForm, PublicFormView } from "./services/responses";
 

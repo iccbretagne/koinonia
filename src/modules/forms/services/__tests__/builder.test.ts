@@ -3,7 +3,7 @@ import { prismaMock } from "@/__mocks__/prisma";
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
-const { assertSafeEdit, slugify, updateForm, duplicateForm } = await import("../builder");
+const { assertSafeEdit, slugify, updateForm, duplicateForm, createForm } = await import("../builder");
 const { changeStatus, loadAnswerableForm, acceptsResponses } = await import("../lifecycle");
 
 const choice = (id: string, capacity: number | null = null) => ({ id, questionId: "q1", position: 0, label: id.toUpperCase(), capacity });
@@ -85,6 +85,16 @@ describe("modification d'un formulaire qui a des réponses", () => {
   });
 });
 
+describe("création", () => {
+  it("public nominatif : la question Email est créée d'office", async () => {
+    prismaMock.form.findMany.mockResolvedValue([]);
+    prismaMock.form.create.mockResolvedValue({ id: "f9" });
+    prismaMock.form.findUniqueOrThrow.mockResolvedValue({ ...FORM, id: "f9", questions: [] });
+    await createForm("c1", "u1", { title: "Soirée", kind: "PARTICIPATION", access: "PUBLIC", anonymous: false });
+    expect(prismaMock.formQuestion.create.mock.calls[0][0].data).toMatchObject({ formId: "f9", type: "EMAIL", required: true, label: "Votre email" });
+  });
+});
+
 describe("mise à jour", () => {
   beforeEach(() => {
     prismaMock.form.update.mockResolvedValue(FORM);
@@ -155,14 +165,35 @@ describe("duplication", () => {
 });
 
 describe("cycle de vie", () => {
-  it("publication : au moins une question, et un email obligatoire pour un public nominatif", async () => {
+  it("publication : au moins une vraie question ; l'email d'un public nominatif est ajouté d'office", async () => {
     prismaMock.form.findFirst.mockResolvedValueOnce({ ...FORM, questions: [] });
     await expect(changeStatus("f1", "publish")).rejects.toThrow("au moins une question");
+    prismaMock.form.findFirst.mockResolvedValueOnce({ ...FORM, questions: [FORM.questions[1]] });
+    await expect(changeStatus("f1", "publish")).rejects.toThrow("au moins une question");
+    // Public nominatif sans question Email : ajoutée en tête, puis publié.
     prismaMock.form.findFirst.mockResolvedValueOnce({ ...FORM, questions: [FORM.questions[0]] });
-    await expect(changeStatus("f1", "publish")).rejects.toThrow("question « Email » obligatoire");
-    prismaMock.form.findFirst.mockResolvedValueOnce({ ...FORM, access: "MEMBERS", questions: [FORM.questions[0]] });
+    prismaMock.form.findUniqueOrThrow.mockResolvedValueOnce({ ...FORM, questions: [FORM.questions[0]] });
     await changeStatus("f1", "publish");
+    expect(prismaMock.formQuestion.updateMany).toHaveBeenCalledWith({ where: { formId: "f1" }, data: { position: { increment: 1 } } });
+    expect(prismaMock.formQuestion.create.mock.calls[0][0].data).toMatchObject({ formId: "f1", position: 0, type: "EMAIL", required: true });
     expect(prismaMock.form.update).toHaveBeenLastCalledWith(expect.objectContaining({ data: { status: "PUBLISHED" } }));
+  });
+
+  it("adresse de contact : une question Email existante devient obligatoire ; rien pour un réservé ou un anonyme", async () => {
+    const optionalEmail = { ...FORM.questions[1], required: false };
+    prismaMock.form.findFirst.mockResolvedValueOnce({ ...FORM, questions: [FORM.questions[0], optionalEmail] });
+    prismaMock.form.findUniqueOrThrow.mockResolvedValueOnce({ ...FORM, questions: [FORM.questions[0], optionalEmail] });
+    await changeStatus("f1", "publish");
+    expect(prismaMock.formQuestion.update).toHaveBeenCalledWith({ where: { id: "q2" }, data: { required: true } });
+    expect(prismaMock.formQuestion.create).not.toHaveBeenCalled();
+    vi.clearAllMocks();
+    for (const variant of [{ access: "MEMBERS" }, { kind: "SURVEY", anonymous: true }]) {
+      prismaMock.form.findFirst.mockResolvedValueOnce({ ...FORM, ...variant, questions: [FORM.questions[0]] });
+      prismaMock.form.findUniqueOrThrow.mockResolvedValueOnce({ ...FORM, ...variant, questions: [FORM.questions[0]] });
+      await changeStatus("f1", "publish");
+    }
+    expect(prismaMock.formQuestion.create).not.toHaveBeenCalled();
+    expect(prismaMock.formQuestion.update).not.toHaveBeenCalled();
   });
 
   it("clôture puis réouverture ; pas de réouverture après la fin des réponses ni après la purge", async () => {

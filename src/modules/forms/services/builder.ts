@@ -63,14 +63,46 @@ export async function uniqueSlug(churchId: string, base: string, db: Tx = prisma
   return `${base}-${randomUUID().slice(0, 8)}`;
 }
 
+/** Un formulaire public nominatif a besoin d'une adresse de contact. */
+export const needsContact = (form: { access: string; anonymous: boolean }) => form.access === "PUBLIC" && !form.anonymous;
+
+/** Question qui sert d'adresse de contact : la première question Email obligatoire, toujours affichée. */
+export function contactQuestion<Q extends { type: string; required: boolean; conditionQuestionId: string | null }>(questions: readonly Q[]): Q | undefined {
+  return questions.find((q) => q.type === "EMAIL" && q.required && !q.conditionQuestionId);
+}
+
+export const CONTACT_QUESTION = {
+  label: "Votre email",
+  help: "Pour l'accusé de réception et le lien qui permet de retrouver, modifier ou annuler votre réponse.",
+} as const;
+
+/**
+ * Formulaire public nominatif : garantit une question Email obligatoire, sans que le secrétariat
+ * ait à y penser. Une question Email existante et toujours affichée devient obligatoire ; sinon
+ * une question est ajoutée en tête.
+ */
+export async function ensureContactQuestion(tx: Tx, formId: string): Promise<void> {
+  const form = await tx.form.findUniqueOrThrow({ where: { id: formId }, include: FORM_INCLUDE });
+  if (!needsContact(form) || contactQuestion(form.questions)) return;
+  const existing = form.questions.find((q) => q.type === "EMAIL" && !q.conditionQuestionId);
+  if (existing) {
+    await tx.formQuestion.update({ where: { id: existing.id }, data: { required: true } });
+    return;
+  }
+  await tx.formQuestion.updateMany({ where: { formId }, data: { position: { increment: 1 } } });
+  await tx.formQuestion.create({
+    data: { id: randomUUID(), formId, position: 0, type: "EMAIL", label: CONTACT_QUESTION.label, help: CONTACT_QUESTION.help, required: true },
+  });
+}
+
 export async function createForm(
   churchId: string,
   userId: string,
   input: { title: string; kind: "REGISTRATION" | "PARTICIPATION" | "SURVEY"; access: "PUBLIC" | "MEMBERS"; anonymous: boolean }
 ) {
   if (input.anonymous && input.kind !== "SURVEY") throw new ApiError(400, "Seul un sondage peut être anonyme");
-  return prisma.$transaction(async (tx) =>
-    tx.form.create({
+  return prisma.$transaction(async (tx) => {
+    const form = await tx.form.create({
       data: {
         churchId,
         createdById: userId,
@@ -81,9 +113,10 @@ export async function createForm(
         slug: await uniqueSlug(churchId, slugify(input.title), tx),
         retentionMonths: RETENTION_MONTHS.default,
       },
-      include: FORM_INCLUDE,
-    })
-  );
+    });
+    await ensureContactQuestion(tx, form.id);
+    return tx.form.findUniqueOrThrow({ where: { id: form.id }, include: FORM_INCLUDE });
+  });
 }
 
 /** Formulaires d'une église (non supprimés), avec leurs décomptes de réponses. */
@@ -296,6 +329,7 @@ export async function updateForm(formId: string, input: FormUpdateInput) {
     }
     await tx.form.update({ where: { id: formId }, data: { ...settings, ...(slug ? { slug } : {}) } });
     if (questions) await writeQuestions(tx, form, questions);
+    await ensureContactQuestion(tx, formId);
     return tx.form.findUniqueOrThrow({ where: { id: formId }, include: FORM_INCLUDE });
   });
 }

@@ -717,8 +717,10 @@ désactivable (`ENABLED_MODULES`) :
   `@/modules/forms/schemas`, partagé avec la page) : seule porte d'entrée des réponses, une question
   masquée est ignorée. `forms` n'importe aucun autre module (règle dependency-cruiser)
 - Répondre : `/f/<église>/<formulaire>` public (Turnstile, débit limité, question Email
-  obligatoire pour l'accusé et les doublons, lien « Gérer ma réponse » `/f/reponse/<jeton>`,
-  jeton dérivé dont seule l'empreinte est stockée) ou réservé aux comptes de l'église ; les
+  obligatoire **ajoutée d'office** par `ensureContactQuestion` pour l'accusé, les doublons et
+  « Retrouver ma réponse » (`…/recover`, lien renvoyé à l'adresse, même réponse qu'elle soit
+  connue ou non), lien « Gérer ma réponse » `/f/reponse/<jeton>`, jeton dérivé dont seule
+  l'empreinte est stockée) ou réservé aux comptes de l'église ; les
   places se comptent sous verrou de la ligne `forms` ; un doublon public reçoit le lien par
   email, jamais à l'écran. Formulaire indisponible pour toute raison : même message
 - **Sondage anonyme** : ni compte, ni email, ni heure (jour seul), identifiants UUID v4, pas de

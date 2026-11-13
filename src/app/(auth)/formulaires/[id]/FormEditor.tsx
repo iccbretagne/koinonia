@@ -181,6 +181,7 @@ function QuestionCard({
   count,
   previous,
   answered,
+  contact,
   holding,
   onChange,
   onMove,
@@ -191,6 +192,8 @@ function QuestionCard({
   readonly count: number;
   readonly previous: Draft[];
   readonly answered: boolean;
+  /** Adresse de contact d'un formulaire public nominatif : ajoutée d'office, toujours obligatoire. */
+  readonly contact: boolean;
   readonly holding: Record<string, number>;
   readonly onChange: (d: Draft) => void;
   readonly onMove: (delta: number) => void;
@@ -202,12 +205,13 @@ function QuestionCard({
       <div className="flex items-center justify-between gap-2">
         <p className="text-[13px] font-semibold text-ink-muted">
           Question {index + 1}
+          {contact && <span className="ml-2 font-normal">· adresse de contact, ajoutée d&apos;office</span>}
           {answered && <span className="ml-2 font-normal">· a des réponses</span>}
         </p>
         <div className="flex gap-1">
           <IconButton icon={ArrowUp} aria-label="Monter" disabled={index === 0} onClick={() => onMove(-1)} />
           <IconButton icon={ArrowDown} aria-label="Descendre" disabled={index === count - 1} onClick={() => onMove(1)} />
-          <IconButton icon={Trash2} aria-label="Supprimer la question" disabled={answered} onClick={onRemove} />
+          <IconButton icon={Trash2} aria-label="Supprimer la question" disabled={answered || contact} onClick={onRemove} />
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-[1fr_220px]">
@@ -215,7 +219,7 @@ function QuestionCard({
         <Select
           label="Type"
           value={draft.type}
-          disabled={answered}
+          disabled={answered || contact}
           options={AVAILABLE_TYPES.map((t) => ({ value: t, label: QUESTION_TYPE_LABELS[t] }))}
           onChange={(e) => {
             const type = e.target.value as QuestionType;
@@ -272,7 +276,7 @@ function QuestionCard({
       )}
       <ConditionEditor draft={draft} previous={previous} onChange={onChange} />
       <label className="flex min-h-11 items-center gap-3">
-        <Checkbox checked={draft.required} onChange={(e) => onChange({ ...draft, required: e.target.checked })} />
+        <Checkbox checked={draft.required} disabled={contact} onChange={(e) => onChange({ ...draft, required: e.target.checked })} />
         <span className="text-[15px] text-ink">Réponse obligatoire</span>
       </label>
     </li>
@@ -284,6 +288,8 @@ function Construction({ form, usage }: { readonly form: Form; readonly usage: Us
   const [drafts, setDrafts] = useState<Draft[]>(() => form.questions.map(toDraft));
   const [newType, setNewType] = useState<QuestionType>("SHORT_TEXT");
   const answered = new Set(usage.answeredQuestions);
+  const needsContact = form.access === "PUBLIC" && !form.anonymous;
+  const contactKey = needsContact ? drafts.find((d) => d.type === "EMAIL" && d.required && !d.conditionKey)?.key : undefined;
   const update = (i: number, d: Draft) => setDrafts(drafts.map((x, j) => (j === i ? d : x)));
   const move = (i: number, delta: number) => {
     const next = [...drafts];
@@ -311,6 +317,12 @@ function Construction({ form, usage }: { readonly form: Form; readonly usage: Us
 
   return (
     <div className="space-y-4">
+      {needsContact && (
+        <p className="text-[14px] text-ink-muted">
+          Formulaire public : une question Email obligatoire est ajoutée d&apos;office. Elle sert à l&apos;accusé de réception, à repérer
+          les doublons et au lien qui permet à chacun de retrouver, modifier ou annuler sa réponse.
+        </p>
+      )}
       {usage.responses > 0 && (
         <Alert tone="info" title="Ce formulaire a déjà des réponses.">
           Vous pouvez corriger les libellés, ajouter une question facultative et augmenter les places ; pas supprimer une question
@@ -326,6 +338,7 @@ function Construction({ form, usage }: { readonly form: Form; readonly usage: Us
             count={drafts.length}
             previous={drafts.slice(0, i)}
             answered={answered.has(d.key)}
+            contact={d.key === contactKey}
             holding={usage.holdingByChoice}
             onChange={(next) => update(i, next)}
             onMove={(delta) => move(i, delta)}

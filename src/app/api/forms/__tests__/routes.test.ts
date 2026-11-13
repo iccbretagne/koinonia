@@ -28,6 +28,8 @@ const forms = {
   submitResponse: vi.fn(),
   sendReceipt: vi.fn(),
   resendManageLink: vi.fn(),
+  needsContact: (f: { access: string; anonymous: boolean }) => f.access === "PUBLIC" && !f.anonymous,
+  recoverResponseLink: vi.fn(async (..._a: unknown[]) => null as null | { contactEmail: string; manageToken: string }),
   exportResponses: vi.fn(async () => ({ buffer: Buffer.from("x"), fileName: "pcnc-reponses.xlsx", count: 3 })),
   changeStatus: vi.fn(async () => ({ id: "f1" })),
   publicView: vi.fn(async () => ({ id: "f1" })),
@@ -41,6 +43,7 @@ const status = await import("../[id]/status/route");
 const exportRoute = await import("../[id]/export/route");
 const publicGet = await import("../public/[churchSlug]/[formSlug]/route");
 const publicPost = await import("../public/[churchSlug]/[formSlug]/responses/route");
+const recover = await import("../public/[churchSlug]/[formSlug]/recover/route");
 
 const idParams = { params: Promise.resolve({ id: "f1" }) };
 const slugParams = { params: Promise.resolve({ churchSlug: "rennes", formSlug: "pcnc" }) };
@@ -122,5 +125,24 @@ describe("réponse publique", () => {
     expect(res.status).toBe(201);
     expect(await res.json()).toEqual({ status: "CONFIRMED", manageToken: "b".repeat(64) });
     expect(forms.sendReceipt).toHaveBeenCalledWith(expect.objectContaining({ responseId: "r1", contactEmail: "x@y.fr" }));
+  });
+
+  it("retrouver ma réponse : lien renvoyé à l'adresse, même réponse que l'adresse soit connue ou non", async () => {
+    const ask = async () => {
+      const res = await recover.POST(post({ email: "Marie@Exemple.fr", turnstileToken: "t" }), slugParams);
+      return { status: res.status, body: await res.json() };
+    };
+    const unknown = await ask();
+    expect(forms.recoverResponseLink).toHaveBeenCalledWith("f1", "marie@exemple.fr");
+    expect(forms.resendManageLink).not.toHaveBeenCalled();
+    forms.recoverResponseLink.mockResolvedValueOnce({ contactEmail: "marie@exemple.fr", manageToken: "c".repeat(64) });
+    const known = await ask();
+    expect(forms.resendManageLink).toHaveBeenCalledWith(FORM, "marie@exemple.fr", "c".repeat(64));
+    expect(known).toEqual(unknown);
+    expect(JSON.stringify(known)).not.toContain("c".repeat(64));
+    forms.loadAnswerableForm.mockResolvedValue(null);
+    expect(await ask()).toEqual(unknown);
+    verifyTurnstile.mockResolvedValueOnce(false);
+    expect((await recover.POST(post({ email: "x@y.fr" }), slugParams)).status).toBe(400);
   });
 });

@@ -3,7 +3,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
 import { parseAnswers, type ParsedAnswers } from "./engine";
-import { ACTIVE_STATUSES, FORM_INCLUDE, HOLDING_STATUSES, type FormWithQuestions } from "./builder";
+import { ACTIVE_STATUSES, FORM_INCLUDE, HOLDING_STATUSES, contactQuestion, type FormWithQuestions } from "./builder";
 import { UNAVAILABLE, acceptsResponses, isFull } from "./lifecycle";
 import { anonymousReceiptKey, contactKey, isTokenShape, manageTokenPair, matchesHash, newSalt, hashToken } from "./tokens";
 
@@ -67,9 +67,9 @@ function answerRows(parsed: ParsedAnswers, responseId: string, anonymous: boolea
   }));
 }
 
-/** Adresse de contact d'un formulaire public nominatif : la première question email obligatoire. */
+/** Adresse de contact d'un formulaire public nominatif (question ajoutée d'office). */
 function contactEmailOf(form: FormWithQuestions, parsed: ParsedAnswers): string | null {
-  const q = form.questions.find((x) => x.type === "EMAIL" && x.required && !x.conditionQuestionId);
+  const q = contactQuestion(form.questions);
   const value = q ? parsed.values.get(q.id) : undefined;
   return typeof value === "string" ? value : null;
 }
@@ -305,4 +305,17 @@ export async function hasAnonymousReceipt(formId: string, userId: string): Promi
     where: { formId_keyHash: { formId, keyHash: anonymousReceiptKey(formId, userId) } },
   });
   return receipt !== null;
+}
+
+/**
+ * « Retrouver ma réponse » : renvoie le lien de gestion de la réponse active de cette adresse,
+ * s'il y en a une. L'appelant répond toujours la même chose, que l'adresse soit connue ou non.
+ */
+export async function recoverResponseLink(formId: string, email: string): Promise<{ contactEmail: string; manageToken: string } | null> {
+  const existing = await prisma.formResponse.findFirst({
+    where: { formId, status: { in: [...ACTIVE_STATUSES] }, contactKey: contactKey(formId, email), manageSalt: { not: null } },
+    select: { id: true, contactEmail: true, manageSalt: true },
+  });
+  const manageToken = existing ? manageTokenOf(existing) : null;
+  return existing?.contactEmail && manageToken ? { contactEmail: existing.contactEmail, manageToken } : null;
 }

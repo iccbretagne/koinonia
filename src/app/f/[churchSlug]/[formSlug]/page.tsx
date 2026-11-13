@@ -74,6 +74,7 @@ export default async function FormPage({ params }: Params) {
             formSlug={formSlug}
             turnstileSiteKey={siteKey}
             signedIn={!!userId}
+            recoverable={form.access === "PUBLIC" && !form.anonymous && !userId}
             existing={mine ? { status: mine.status, answers: answersRecord(mine.answers) } : null}
           />
         )}

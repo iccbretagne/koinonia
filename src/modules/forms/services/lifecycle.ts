@@ -1,7 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
-import { ACTIVE_STATUSES, FORM_INCLUDE, getForm, type FormWithQuestions } from "./builder";
+import { ACTIVE_STATUSES, FORM_INCLUDE, contactQuestion, ensureContactQuestion, getForm, needsContact, type FormWithQuestions } from "./builder";
 
 /**
  * Cycle de vie d'un formulaire (spec 079) : brouillon → publié → clôturé.
@@ -30,15 +30,13 @@ export async function isFull(form: { id: string; maxResponses: number | null }, 
   return count >= form.maxResponses;
 }
 
-/** Contrôles avant publication : de quoi répondre, et une adresse de contact pour un public nominatif. */
+/**
+ * Contrôles avant publication : de quoi répondre. L'adresse de contact d'un public nominatif est
+ * garantie par `ensureContactQuestion` (ajoutée d'office), jamais demandée au secrétariat.
+ */
 function assertPublishable(form: FormWithQuestions) {
-  if (form.questions.length === 0) throw new ApiError(400, "Ajoutez au moins une question avant de publier");
-  if (form.access === "PUBLIC" && !form.anonymous && !form.questions.some((q) => q.type === "EMAIL" && q.required && !q.conditionQuestionId)) {
-    throw new ApiError(
-      400,
-      "Un formulaire public nominatif demande une question « Email » obligatoire : elle sert à l'accusé de réception et à repérer les doublons"
-    );
-  }
+  const answerable = form.questions.filter((q) => !(needsContact(form) && q === contactQuestion(form.questions)));
+  if (answerable.length === 0) throw new ApiError(400, "Ajoutez au moins une question avant de publier");
 }
 
 export async function changeStatus(formId: string, action: "publish" | "close" | "reopen") {
@@ -50,7 +48,10 @@ export async function changeStatus(formId: string, action: "publish" | "close" |
     case "publish":
       if (form.status !== "DRAFT") throw new ApiError(409, "Seul un brouillon se publie");
       assertPublishable(form);
-      return prisma.form.update({ where: { id: formId }, data: { status: "PUBLISHED" }, include: FORM_INCLUDE });
+      return prisma.$transaction(async (tx) => {
+        await ensureContactQuestion(tx, formId);
+        return tx.form.update({ where: { id: formId }, data: { status: "PUBLISHED" }, include: FORM_INCLUDE });
+      });
     case "close":
       if (form.status !== "PUBLISHED") throw new ApiError(409, "Seul un formulaire publié se clôture");
       return prisma.form.update({ where: { id: formId }, data: { status: "CLOSED", closedAt: now }, include: FORM_INCLUDE });
