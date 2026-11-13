@@ -136,7 +136,7 @@ ne voit que les résultats regroupés.
 - **Un formateur limité à un niveau** ne voit ni les inscrits ni la feuille de présence des
   autres niveaux.
 - **Durée de conservation** : 12 mois par défaut après la fermeture, réglable par formulaire
-  jusqu'à **24 mois au plus**. [Durée maximale proposée, à confirmer au plan.]
+  jusqu'à **24 mois au plus**. (confirmé au plan)
 - **Quand la durée de conservation est écoulée**, les réponses nominatives et les présences sont
   effacées sans retour possible ; les totaux restent consultables.
 - **Une personne d'une autre église** (compte connecté ailleurs) ne voit pas un formulaire

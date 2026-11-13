@@ -2251,6 +2251,39 @@ de bénéficiaire, d'IBAN, de BIC, de lien de don en ligne, de l'affichage du vi
 ligne, le dépôt, le remplacement ou le retrait du logo, ou la désactivation de la page, alerte `churches.accountingEmails` (à défaut les Admins,
 domaine de notification `giving`).
 
+### Module Formulaires (`forms`)
+
+Spec 079, ADR-0030. Questions typées en lignes, réponses en JSON par question, validées par un
+schéma construit à partir des questions (`@/modules/forms`). Toutes les tables descendent de
+`forms` (cascade).
+
+- **`forms`** : `churchId`, `slug` (unique par église), `title`, `description`, `kind`
+  (`REGISTRATION`, `PARTICIPATION`, `SURVEY`), `access` (`PUBLIC`, `MEMBERS`), `anonymous` (figé
+  dès la première réponse), `status` (`DRAFT`, `PUBLISHED`, `CLOSED`), `opensAt`, `closesAt` (fin
+  des réponses, puis clôture automatique), `maxResponses`, `waitlistEnabled`, `offerHoldHours`
+  (48), `retentionMonths` (12, 24 au plus, à compter de `closedAt`), `eventId` /
+  `ticketingEventId` (set null), `purgedAt`, `totals` (JSON conservé après la purge),
+  `deletedAt`, `notifiedCount` (signal regroupé au secrétariat), `createdById`.
+- **`form_questions`** : `position`, `type` (13 types), `label`, `help`, `required`, `config`
+  (bornes d'un nombre), `conditionQuestionId` / `conditionValue` (affichage conditionnel sur une
+  question précédente).
+- **`form_choices`** : `position`, `label`, `capacity` (places, null = illimité).
+- **`form_responses`** : `status` (`CONFIRMED`, `WAITLISTED`, `OFFERED`, `CANCELLED`, `DECLINED`,
+  `EXPIRED`), `userId` (set null), `contactEmail` et `contactKey` (empreinte HMAC pour les
+  doublons), `waitingOn`, `offerExpiresAt`, `manageSalt` / `manageHash` (jeton de gestion dérivé,
+  empreinte seule), `submittedOn` (jour), `createdAt` (posé par le code : jour seul pour un
+  sondage anonyme), `modifiedAt`, `cancelledAt`. Une réponse anonyme n'a ni compte, ni email, ni
+  identifiant daté (UUID v4).
+- **`form_answers`** : `value` (JSON), unique par réponse et question.
+- **`form_response_choices`** : choix retenus, pour compter les places (réponses confirmées ou à
+  qui une place est proposée).
+- **`form_anonymous_receipts`** : `(formId, keyHash)` — « ce compte a répondu », sans date ni lien
+  vers la réponse.
+
+La tâche `forms` (15 min) clôture à la fin des réponses et signale les nouvelles réponses ; la
+tâche `forms-purge` (quotidienne) calcule `totals` puis efface les réponses au terme de la
+conservation.
+
 ### Module Candidatures au service (`serving`)
 
 Spec 077. Une candidature reçue du formulaire public `/servir/<slug>` est étudiée par le Pôle Vie

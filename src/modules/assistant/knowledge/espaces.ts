@@ -153,4 +153,28 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     otherwise: "L'équipe d'un événement est constituée par son organisateur.",
     screens: ["/billetterie"],
   },
+  {
+    key: "KB-147",
+    kind: "howto",
+    title: "Créer un formulaire",
+    questions: ["Créer un formulaire d'inscription", "faire un sondage", "qui vient à l'événement", "remplacer Google Forms", "inscriptions PCNC"],
+    answer:
+      "Dans « Formulaires », créez une inscription, une participation ou un sondage, ajoutez les questions (texte, choix avec places, oui/non, nombre, date, email, note, consentement…) et une condition d'affichage si besoin, puis publiez et copiez le lien. Un formulaire public demande toujours l'email du répondant (question ajoutée d'office) ; les réponses s'exportent et s'effacent au terme de la conservation choisie (12 mois par défaut).",
+    href: "/formulaires",
+    hrefLabel: "Formulaires",
+    audience: { permissions: ["forms:manage"] },
+    otherwise: "Les formulaires sont créés par le Secrétaire et l'administration de l'église.",
+    screens: ["/formulaires"],
+  },
+  {
+    key: "KB-148",
+    kind: "howto",
+    title: "Modifier ou annuler ma réponse à un formulaire",
+    questions: ["Changer ma réponse au formulaire", "annuler mon inscription", "je me suis trompé dans le formulaire"],
+    answer:
+      "Sans compte, ouvrez le lien « Gérer ma réponse » de l'accusé de réception, ou cliquez sur « Retrouver ma réponse » dans le formulaire pour le recevoir à nouveau par email. Avec un compte, rouvrez le formulaire ou « Formulaires › Mes réponses ». La modification reste possible tant que le formulaire accepte des réponses ; un sondage anonyme ne se modifie pas.",
+    href: "/formulaires/mes-reponses",
+    hrefLabel: "Mes réponses",
+    audience: {},
+  },
 ];

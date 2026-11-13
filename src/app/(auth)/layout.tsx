@@ -508,6 +508,7 @@ export default async function AuthLayout({
   const hasShuttle = await isShuttleVisible(session, currentChurchId);
   const hasTreasury = await isTreasuryVisible(session, currentChurchId).catch(() => false);
   const hasTicketing = await isTicketingVisible(session, currentChurchId);
+  const hasForms = registry.has("forms") && userPermissions.has("forms:manage");
   const hasJobs = userPermissions.has("jobs:view");
   const hasEventsAccess = userPermissions.has("events:view");
   const hasEventsManage = userPermissions.has("events:manage");
@@ -570,7 +571,7 @@ export default async function AuthLayout({
     session.user.isSuperAdmin ||
     [visibleConfigLinks, requestLinks, mediaLinks, integrationNavLinks, servingNavLinks, agendaNavLinks].some((links) => links.length > 0) ||
     [
-      hasDiscipleship, hasAccounting, hasShuttle, hasTreasury, hasTicketing, hasJobs, hasEventsAccess, hasPlanningAccess, hasMembersAccess,
+      hasDiscipleship, hasAccounting, hasShuttle, hasTreasury, hasTicketing, hasForms, hasJobs, hasEventsAccess, hasPlanningAccess, hasMembersAccess,
       hasReports, hasRooms, hasMyPlanning, showStarEvents, hasAbsences, hasAvailability,
     ].some(Boolean);
 
@@ -604,6 +605,7 @@ export default async function AuthLayout({
       hasShuttle={hasShuttle}
       hasTreasury={hasTreasury}
       hasTicketing={hasTicketing}
+      hasForms={hasForms}
       hasJobs={hasJobs}
       isPastoral={isInPastoralMode}
       hasEventsAccess={hasEventsAccess}

@@ -20,10 +20,11 @@ import { ticketingModule } from "@/modules/ticketing/manifest";
 import { treasuryModule } from "@/modules/treasury/manifest";
 import { assistantModule } from "@/modules/assistant/manifest";
 import { servingModule } from "@/modules/serving/manifest";
+import { formsModule } from "@/modules/forms/manifest";
 import type { Role } from "@/generated/prisma/client";
 
 /**
- * Les 19 modules du registry (`src/lib/registry.ts`), importés par leur manifeste et non par
+ * Les 20 modules du registry (`src/lib/registry.ts`), importés par leur manifeste et non par
  * leur index : un index re-exporte les services du module, donc Prisma, NextAuth et le client
  * S3 — indisponibles dans l'environnement de test `node`. Le manifeste, lui, ne dépend que de
  * `defineModule`.
@@ -48,6 +49,7 @@ const ALL_MODULES = [
   treasuryModule,
   assistantModule,
   servingModule,
+  formsModule,
 ];
 
 /** Les 10 rôles de l'enum Prisma `Role`. */
@@ -106,6 +108,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "discipleship:view",
     "events:manage",
     "events:view",
+    "forms:manage",
     "giving:manage",
     "integration:delete",
     "integration:manage",
@@ -164,6 +167,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "discipleship:view",
     "events:manage",
     "events:view",
+    "forms:manage",
     "giving:manage",
     "integration:delete",
     "integration:manage",
@@ -212,6 +216,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "discipleship:view",
     "events:manage",
     "events:view",
+    "forms:manage",
     "giving:manage",
     "integration:manage",
     "jobs:freelance",
@@ -333,7 +338,7 @@ function buildFullRegistry() {
 }
 
 describe("buildRolePermissions", () => {
-  it("couvre les 19 modules du registry", () => {
+  it("couvre les 20 modules du registry", () => {
     expect(ALL_MODULES.map((m) => m.name).sort()).toEqual([
       "accounting",
       "agenda",
@@ -342,6 +347,7 @@ describe("buildRolePermissions", () => {
       "care",
       "core",
       "discipleship",
+      "forms",
       "giving",
       "integration",
       "jobs",

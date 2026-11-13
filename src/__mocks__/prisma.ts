@@ -166,6 +166,14 @@ export const prismaMock = {
   servingApplication: createModelMock(),
   servingAssignment: createModelMock(),
   servingSettings: createModelMock(),
+  // Module formulaires (spec 079)
+  form: createModelMock(),
+  formQuestion: createModelMock(),
+  formChoice: createModelMock(),
+  formResponse: createModelMock(),
+  formAnswer: createModelMock(),
+  formResponseChoice: createModelMock(),
+  formAnonymousReceipt: createModelMock(),
   $queryRaw: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   $transaction: vi.fn((arg: any) => (Array.isArray(arg) ? Promise.all(arg) : arg(prismaMock))),

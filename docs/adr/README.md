@@ -56,6 +56,7 @@ Statuts possibles : `Proposé`, `Accepté`, `Rejeté`, `Déprécié`, `Remplacé
 | [0027](0027-reprise-par-lecture-entre-modules.md) | Reprise des mouvements entre modules par lecture, jamais par copie | Accepté |
 | [0028](0028-assistant-moteur-interchangeable.md) | Assistant : moteur de réponse interchangeable, données par questions déclarées | Accepté |
 | [0029](0029-serveur-autorisation-oauth-mcp.md) | Koinonia serveur d'autorisation OAuth pour ses connexions MCP | Accepté |
+| [0030](0030-moteur-de-formulaires.md) | Moteur de formulaires générique et anonymat par séparation | Accepté |
 
 ## Note sur les ADR 0001–0003
 

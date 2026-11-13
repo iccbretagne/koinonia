@@ -102,6 +102,18 @@ async function runMcpMaintenance() {
   return run();
 }
 
+/** Formulaires (spec 079) : clôture à la fin des réponses, signal regroupé des nouvelles réponses. */
+async function runFormTasks() {
+  const { runFormTasks: run } = await import("@/modules/forms");
+  return run();
+}
+
+/** Formulaires (spec 079) : effacement des réponses au terme de la conservation, totaux gardés. */
+async function runFormPurge() {
+  const { runFormPurge: run } = await import("@/modules/forms");
+  return run();
+}
+
 function authorizeCron(request: Request) {
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
@@ -420,6 +432,9 @@ function cronTasks(appUrl: string): CronTask[] {
     { key: "accounting-justifications", module: "accounting", schedule: { kind: "interval", minutes: 60 }, run: runJustificationReminders },
     // Assistants IA (spec 081) : jetons expirés et journal ancien, une fois par jour.
     { key: "mcp-maintenance", module: "mcp", schedule: { kind: "daily", hour: 3 }, run: runMcpMaintenance },
+    // Formulaires (spec 079) : idempotente (compteur pris de façon atomique), précision au quart d'heure.
+    { key: "forms", module: "forms", schedule: { kind: "interval", minutes: 15 }, run: runFormTasks },
+    { key: "forms-purge", module: "forms", schedule: { kind: "daily", hour: 3 }, run: runFormPurge },
   ];
   return tasks.filter((t) => !t.module || registry.has(t.module));
 }

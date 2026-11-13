@@ -34,6 +34,7 @@ const WHITELIST = new Set([
   "src/modules/giving/services/alerts.ts", // adresse institutionnelle church.accountingEmails (spec 065)
   "src/modules/ticketing/services/emails.ts", // contact de réservation sans compte ; avec compte → createNotification (spec 074)
   "src/modules/serving/services/notifications.ts", // adresse institutionnelle Department.contactEmail du PVS, lien seul (spec 077)
+  "src/modules/forms/services/notify.ts", // répondant d'un formulaire public sans compte ; avec compte → createNotification (spec 079)
 ]);
 
 function walk(dir: string, acc: string[] = []): string[] {

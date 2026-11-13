@@ -426,6 +426,7 @@ Compt = Comptable.
 | `treasury:manage` | x | x | | | | | | | | x |
 | `treasury:reopen` | x | x | | | | | | | | |
 | `ticketing:manage` | x | x | x | | | | | | | |
+| `forms:manage` | x | x | x | | | | | | | |
 | `agenda:view` | x | x | x | | | | | | | |
 | `agenda:manage` | x | x | x | | | | | | | |
 | `care:qualify` | x | x | | | | | | | x | |
@@ -704,6 +705,32 @@ seule (`ENABLED_MODULES`) :
 - Planning de l'équipe (onglet Équipe) : vue par poste, affectation modifiable (poste, créneau ;
   la personne est prévenue), comptes filtrés par département (responsabilité ou fiche STAR liée,
   lus en base sans importer `planning`) — aide à la recherche, jamais une restriction
+
+**Spécificités du module formulaires** (spec 079, [ADR-0030](docs/adr/0030-moteur-de-formulaires.md)) —
+désactivable (`ENABLED_MODULES`) :
+- `forms:manage` (Super Admin, Admin, Secrétaire) ouvre `/formulaires` (lien dans l'espace Agenda,
+  à côté de la Billetterie) : construire (13 types de questions, choix avec places, condition
+  d'affichage sur une question précédente), publier, clôturer, dupliquer, supprimer, voir et
+  exporter les réponses. L'église qui fait foi est celle **du formulaire** (`requireFormManage`,
+  `@/modules/forms/auth`). Dès qu'il y a des réponses, `assertSafeEdit` borne la modification
+- **Moteur** (`parseAnswers`, schéma dérivé des questions ; `visibleQuestionIds` dans
+  `@/modules/forms/schemas`, partagé avec la page) : seule porte d'entrée des réponses, une question
+  masquée est ignorée. `forms` n'importe aucun autre module (règle dependency-cruiser)
+- Répondre : `/f/<église>/<formulaire>` public (Turnstile, débit limité, question Email
+  obligatoire **ajoutée d'office** par `ensureContactQuestion` pour l'accusé, les doublons et
+  « Retrouver ma réponse » (`…/recover`, lien renvoyé à l'adresse, même réponse qu'elle soit
+  connue ou non), lien « Gérer ma réponse » `/f/reponse/<jeton>`, jeton dérivé dont seule
+  l'empreinte est stockée) ou réservé aux comptes de l'église ; les
+  places se comptent sous verrou de la ligne `forms` ; un doublon public reçoit le lien par
+  email, jamais à l'écran. Formulaire indisponible pour toute raison : même message
+- **Sondage anonyme** : ni compte, ni email, ni heure (jour seul), identifiants UUID v4, pas de
+  `logAudit` à l'envoi ; « déjà répondu » par `form_anonymous_receipts`, sans lien vers la réponse
+- Notifications domaine `forms` : accusé (email direct sans compte, liste blanche ;
+  `createNotification` avec compte) ; signal au secrétariat **regroupé** par la tâche cron `forms`
+  (15 min, sans nom). Fin des réponses ⇒ clôture ; purge `forms-purge` à
+  `closedAt + retentionMonths` (12 par défaut, 24 au plus), totaux gardés dans `forms.totals`
+- Lots 2 (PCNC : sessions, niveaux, liste d'attente à confirmer, intervenants, présence) et 3
+  (résultats regroupés, rattachement aux événements) : voir `specs/079-formulaires/tasks.md`
 
 **Spécificités du module messages** (spec 071) :
 - `messages:publish` (Super Admin, Admin, Secrétaire) ouvre `/admin/messages` : publier, programmer,
