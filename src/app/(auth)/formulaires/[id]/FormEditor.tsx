@@ -357,8 +357,41 @@ function Construction({ form, usage }: { readonly form: Form; readonly usage: Us
       },
     ]);
 
+  // Participation : « Je viens » et « Nombre d'accompagnants » donnent le total des participants.
+  const hasAttendance = drafts.some((d) => d.participation === "attendance");
+  const addParticipationQuestions = () => {
+    const blank = { help: "", min: "", max: "", choices: [], conditionKey: "", conditionValue: "" };
+    const attendance: Draft = { ...blank, key: tempKey(), type: "YES_NO", label: "Je viens", required: usage.responses === 0, participation: "attendance" };
+    const companions: Draft = {
+      ...blank,
+      key: tempKey(),
+      type: "NUMBER",
+      label: "Nombre d'accompagnants",
+      required: false,
+      min: "0",
+      max: "10",
+      participation: "companions",
+      conditionKey: attendance.key,
+      conditionValue: "true",
+    };
+    const next = [...drafts, attendance, ...(drafts.some((d) => d.participation === "companions") ? [] : [companions])];
+    setDrafts(next);
+    void call(`/api/forms/${form.id}`, "PATCH", { questions: next.map(toInput) }, "Questions « Je viens » et « Nombre d'accompagnants » ajoutées");
+  };
+
   return (
     <div className="space-y-4">
+      {form.kind === "PARTICIPATION" && !hasAttendance && (
+        <Alert tone="info" title="Compter les participants">
+          <p>
+            Ajoutez « Je viens » (oui / non) et « Nombre d&apos;accompagnants » : l&apos;onglet Résultats affichera le total des
+            participants, accompagnants compris. Vous pouvez aussi cocher ce réglage sur une question oui / non ou nombre existante.
+          </p>
+          <Button type="button" size="sm" className="mt-3" disabled={busy || form.purgedAt !== null} onClick={addParticipationQuestions}>
+            <Plus className="size-4" aria-hidden="true" /> Ajouter « Je viens » et « Nombre d&apos;accompagnants »
+          </Button>
+        </Alert>
+      )}
       {form.kind === "REGISTRATION" && (
         <SessionsEditor
           key={JSON.stringify(form.sessions)}
