@@ -54,6 +54,9 @@ SUPER_ADMIN_EMAILS=admin@votre-eglise.com
 ENABLED_MODULES=
 TURNSTILE_SITE_KEY=cle-publique-turnstile
 TURNSTILE_SECRET_KEY=cle-secrete-turnstile
+# Facultatifs (à défaut AUTH_SECRET) : secrets des liens de billetterie et des formulaires
+TICKETING_TOKEN_SECRET=
+FORMS_TOKEN_SECRET=
 VAPID_PUBLIC_KEY=cle-publique-vapid
 VAPID_PRIVATE_KEY=cle-privee-vapid
 VAPID_SUBJECT=mailto:contact@votre-domaine.com
@@ -74,7 +77,7 @@ supprimés au premier refus du service push). Sans ces trois variables, le canal
 indisponible et « Mes notifications » l'indique.
 
 `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` (Cloudflare → Turnstile, widget déclarant le
-domaine de l'instance) protègent les formulaires publics `/agenda-public` et `/rejoindre`
+domaine de l'instance) protègent les pages publiques `/agenda-public`, `/rejoindre`, `/servir`, `/inscription` (billetterie) et `/f` (formulaires)
 (spec 030). Elles sont lues au démarrage de chaque requête, pas au build : un changement prend
 effet au redémarrage du service. Sans les deux, ces formulaires affichent « Formulaire
 temporairement indisponible » et une erreur `Turnstile non configuré` est journalisée.

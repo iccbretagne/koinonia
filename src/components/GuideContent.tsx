@@ -210,7 +210,7 @@ const FEATURES: Feature[] = [
   // ── Absences ─────────────────────────────────────────────────────────────
   {
     name: "Connecter mon assistant IA (MCP)",
-    description: "Depuis « Mon profil › Assistants IA connectés », copiez l'adresse du serveur et ajoutez-la comme connecteur dans votre assistant IA (Claude, ChatGPT, Claude Code). Il vous renvoie vers Koinonia : choisissez l'église et autorisez. L'assistant lit uniquement ce que vous voyez déjà (planning, événements, demandes, comptes rendus, audio, guide), sans rien modifier, et jamais le suivi pastoral, les coordonnées bancaires ni les coordonnées d'autrui. Vous révoquez l'accès d'un clic ; une connexion inutilisée 90 jours expire. L'administrateur de l'église active la fonction dans les paramètres de l'église, où il voit aussi la liste des comptes connectés.",
+    description: "Depuis « Mon profil › Assistants IA connectés », copiez l'adresse du serveur et ajoutez-la comme connecteur dans votre assistant IA (Claude, ChatGPT, Claude Code). Il vous renvoie vers Koinonia : choisissez l'église et autorisez. L'assistant lit uniquement ce que vous voyez déjà (planning, événements, demandes, comptes rendus, audio, guide), et jamais le suivi pastoral, les coordonnées bancaires ni les coordonnées d'autrui. Si vous cochez la case des actions à l'autorisation, il peut aussi agir pour vous selon vos droits — déclarer une absence, répondre à une demande de disponibilité, et pour un responsable remplir ou recopier un planning, attribuer les tâches, relancer les sans-réponse, publier des consignes, saisir pour un STAR de son périmètre, remplir un compte rendu, créer des événements ou réserver une salle — toujours en deux temps : il vous montre un résumé et n'enregistre qu'après votre accord dans la conversation. Il peut aussi préparer une demande (annonce, visuel, événement) sous forme de lien vers le formulaire prérempli, que vous envoyez vous-même. Vous révoquez l'accès d'un clic ; une connexion inutilisée 90 jours expire. L'administrateur de l'église active la fonction dans les paramètres de l'église, où il voit aussi la liste des comptes connectés.",
     category: "Profil",
     screenshotTitle: "Assistants connectés",
     screenshotFile: "guide-assistants.png",
@@ -483,6 +483,47 @@ const FEATURES: Feature[] = [
     screenshotTitle: "Trésorerie",
     screenshotFile: "guide-tresorerie.png",
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "edit" },
+  },
+  // ── Formulaires ─────────────────────────────────────────────────────────
+  {
+    name: "Formulaires : créer et publier",
+    description: "Depuis Agenda › « Formulaires », créez une inscription, une participation ou un sondage. Onglet Construction : ajoutez les questions (texte, choix avec places, liste, oui/non, nombre, date, email, téléphone, note de 1 à 5, consentement), réordonnez-les, et faites apparaître une question seulement selon une réponse précédente. Onglet Réglages : qui peut répondre (tout le monde par le lien, ou les comptes connectés de l'église), sondage anonyme, dates d'ouverture et de fin, nombre maximal de réponses, liste d'attente, durée de conservation (12 mois par défaut, 24 au plus). Un formulaire public demande toujours l'email du répondant (question ajoutée d'office). Vérifiez dans l'Aperçu, publiez, puis « Copier le lien ». L'onglet Réponses liste les réponses, permet d'en annuler une et d'exporter le tout ; « Dupliquer » repart d'un formulaire existant. Dès qu'il y a des réponses, on ne supprime plus une question répondue ni ne baisse des places sous les réponses reçues.",
+    category: "Formulaires",
+    screenshotTitle: "Construction d'un formulaire",
+    screenshotFile: "guide-forms-builder.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Formulaires : inscriptions à sessions (PCNC)",
+    description: "Dans une inscription, le bloc « Sessions et niveaux » de la Construction déclare des sessions d'une ou deux journées et leurs niveaux, chacun avec ses places ; la question « Session et niveau » s'ajoute d'office. Hors niveau d'entrée, on demande « Avez-vous suivi le niveau précédent ? », à titre indicatif. Avec la liste d'attente (Réglages), une personne qui vise un niveau complet attend ; dès qu'une place se libère, elle lui est proposée et elle a le délai choisi (48 h par défaut) pour l'accepter, sinon la place passe à la suivante. Toujours dans Réglages, « Intervenants » désigne les formateurs, chacun sur tout le formulaire ou sur certaines sessions et certains niveaux. L'onglet Présence coche matin et après-midi pour chaque jour ; l'export reprend session, niveau et présences. Le formulaire se clôture le lendemain de la dernière session.",
+    category: "Formulaires",
+    screenshotTitle: "Sessions et niveaux",
+    screenshotFile: "guide-forms-sessions.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Formulaires : résultats et participation",
+    description: "L'onglet Résultats regroupe les réponses confirmées par question : barres avec effectifs et pourcentages, places des ateliers, note moyenne, total d'un nombre, réponses libres listées sans nom. Aucune identité n'y apparaît, même pour un sondage nominatif ; l'export ajoute une feuille « Résultats ». Pour une participation, l'encart « Compter les participants » ajoute d'un clic « Je viens » et « Nombre d'accompagnants » : les résultats donnent alors le total des participants, accompagnants compris. Dans Réglages, « Événement rattaché » relie la participation à un événement d'église ou de billetterie : le formulaire apparaît sur la page de l'événement.",
+    category: "Formulaires",
+    screenshotTitle: "Résultats d'un formulaire",
+    screenshotFile: "guide-forms-results.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Répondre à un formulaire",
+    description: "Ouvrez le lien reçu, ou le formulaire depuis la page d'un événement. Sans compte, vous recevez un accusé de réception par email avec le lien « Gérer ma réponse » pour la modifier ou l'annuler tant que le formulaire est ouvert ; « Retrouver ma réponse » renvoie ce lien à votre adresse. Avec un compte, rouvrez le formulaire ou « Formulaires › Mes réponses ». En liste d'attente, une place qui se libère vous est proposée par notification ou par email : acceptez-la ou déclinez-la avant la date indiquée. Un sondage anonyme n'enregistre ni votre nom, ni votre adresse, ni votre compte.",
+    category: "Formulaires",
+    screenshotTitle: "Page de réponse",
+    screenshotFile: "guide-forms-answer.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "edit" },
+  },
+  {
+    name: "Intervenant : inscrits et présence",
+    description: "Si le secrétariat vous a désigné intervenant d'une inscription (formateur PCNC par exemple), « Formulaires » liste les formulaires où vous intervenez. L'onglet Inscrits montre les personnes de vos sessions et niveaux, sans leurs coordonnées ; l'onglet Présence coche matin et après-midi pour chaque jour, à plusieurs en même temps (la feuille se met à jour toute seule) ; l'onglet Résultats donne les chiffres de votre périmètre. Vous n'exportez ni ne modifiez rien ; votre accès s'arrête à la clôture du formulaire.",
+    category: "Formulaires",
+    screenshotTitle: "Feuille de présence",
+    screenshotFile: "guide-forms-attendance.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "edit" },
   },
   {
     name: "Billetterie : événements et inscriptions",

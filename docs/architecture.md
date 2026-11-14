@@ -55,6 +55,15 @@ Le manifeste vit dans son propre fichier parce que l'index tire les services —
 | `integration` | Suivi des parcours d'intégration : demandes aux familles, appel au salut (MSDP), affectation bergers/conseillers, KPIs. Dépend de `core` |
 | `jobs` | Offres d'emploi/stage/alternance, profils de recherche d'emploi, abonnements aux notifications, modération. Module transversal ouvert à tous les rôles authentifiés. Dépend de `core` |
 | `giving` | Page publique « Donner » paramétrable par église (`/donner/<slug>`, sans connexion), paramétrage (`/dons`, `giving:manage`) et slide de projection avec QR code (`/dons/slide`). Vérifie l'IBAN, journalise toute modification et alerte la comptabilité (à défaut les Admins) d'un changement de coordonnées de paiement (spec 065). Nom et logo de l'église réglables par support, logo stocké via `storage` (spec 066). Dépend de `core`, `storage` |
+| `care` | Suivi pastoral (spec 052, ADR-0015) : demandes de rendez-vous pastoral et suivis de nouveaux convertis MSDP, qualification et affectation (`care:qualify`/`care:view`), relances, statistiques |
+| `shuttle` | Navette (spec 073), extension de la comptabilité : registre à montants signés, dépenses avec justificatif, cautions, locations, notes de frais liées. Équipe = département de fonction `NAVETTE`. Dépend d'`accounting` (via son index) |
+| `treasury` | Trésorerie (spec 076) : comptes (caisse, coffre, en ligne), registre, collectes de culte, remises, transferts, budget, clôture mensuelle ; reprend par lecture les paiements et abondements payés depuis une caisse (ADR-0027) |
+| `ticketing` | Billetterie (spec 074) : événements publics, inscriptions sans compte, billets par jeton, options, paiements déclarés, rôles d'événement, contrôle d'entrée et restauration hors ligne (ADR-0026) |
+| `messages` | Messages système (spec 071) : bandeau, public par critères, programmation, notification ; Urgent hors préférence email (ADR-0025) |
+| `serving` | Candidatures au service (spec 077) : formulaire public `/servir/<slug>`, étude par l'équipe Vie des STAR, affectation aux départements |
+| `assistant` | Assistant de prise en main (spec 075, ADR-0028) : fiches filtrées par module et audience, questions de données relisant les chargeurs des écrans, questions à traiter |
+| `mcp` | Connexion des assistants IA des membres (spec 081, ADR-0029) : serveur d'autorisation OAuth 2.1, serveur MCP, outils de lecture et actions confirmées (aperçu puis confirmation) selon les droits de l'écran |
+| `forms` | Formulaires (spec 079, ADR-0030) : construction, moteur de validation, réponses publiques ou réservées, sondages anonymes, sessions et niveaux avec liste d'attente, intervenants et présence, résultats regroupés, rattachement aux événements. N'importe aucun autre module |
 
 **Exports du module `media` :**
 - `mediaModule` — manifeste
@@ -86,9 +95,7 @@ Singleton process-level : boot avec tous les modules actifs + matrice `rolePermi
 
 ```typescript
 export const registry = boot({
-  modules: [coreModule, planningModule, discipleshipModule, storageModule, mediaModule,
-            audioModule, agendaModule, roomsModule, integrationModule, accountingModule, jobsModule,
-            givingModule],
+  modules: [...allManifests], // tous les manifestes de src/modules, filtrés par ENABLED_MODULES
 });
 export const rolePermissions = buildRolePermissions(registry);
 ```
@@ -554,7 +561,9 @@ liste noyau explicite ; sinon 404 avant toute autre vérification, y compris pou
 | `CRON_SECRET` | Protège les routes `/api/cron/*` |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | Envoi d'emails (nodemailer) — notifications, rappels |
 | `SMTP_IGNORE_TLS` / `SMTP_TLS_REJECT_UNAUTHORIZED` | Ajustements TLS pour un relay local ou un certificat auto-signé |
-| `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile sur les formulaires publics `agenda-public` et `rejoindre`, lues au runtime (sans les deux : formulaires indisponibles) |
+| `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile sur les pages publiques `/agenda-public`, `/rejoindre`, `/servir`, `/inscription` (billetterie) et `/f` (formulaires), lues au runtime (sans les deux : ces pages sont indisponibles) |
+| `TICKETING_TOKEN_SECRET` | Facultatif : secret HMAC des jetons de billetterie (billets, réservations, badges) ; à défaut `AUTH_SECRET`. Le changer invalide les liens déjà envoyés |
+| `FORMS_TOKEN_SECRET` | Facultatif : secret HMAC des liens « Gérer ma réponse » et des empreintes d'anonymat des formulaires ; à défaut `AUTH_SECRET`. Le changer invalide les liens déjà envoyés et les reçus « déjà répondu » |
 | `AUDIO_CACHE_DIR` / `AUDIO_CACHE_MAX_BYTES` | Cache local du module audio, éviction LRU (défaut : 5 Go) |
 | `AUDIO_XACCEL_LOCATION` | Active la délégation de diffusion audio au reverse proxy (X-Accel) |
 
