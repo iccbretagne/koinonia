@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.36.1] - 2026-11-14
+
+### Modifié
+
+- Guide utilisateur : cinq fiches Formulaires (créer et publier, inscriptions à sessions, résultats et participation, répondre à un formulaire, intervenant), et la fiche « Connecter mon assistant IA » décrit les actions confirmées et le brouillon de demande. Documentation technique à jour des modules récents.
+
 ## [v1.36.0] - 2026-11-14
 
 ### Ajouté
