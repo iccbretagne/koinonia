@@ -729,8 +729,14 @@ désactivable (`ENABLED_MODULES`) :
   `createNotification` avec compte) ; signal au secrétariat **regroupé** par la tâche cron `forms`
   (15 min, sans nom). Fin des réponses ⇒ clôture ; purge `forms-purge` à
   `closedAt + retentionMonths` (12 par défaut, 24 au plus), totaux gardés dans `forms.totals`
-- Lots 2 (PCNC : sessions, niveaux, liste d'attente à confirmer, intervenants, présence) et 3
-  (résultats regroupés, rattachement aux événements) : voir `specs/079-formulaires/tasks.md`
+- **Inscriptions à sessions** (lot 2) : sessions d'un ou deux jours, niveaux avec places ; question
+  « Session et niveau » ajoutée d'office (`ensureRegistrationQuestion`). Liste d'attente : une
+  seule règle, `fillOpenPlaces` (`services/waitlist.ts`), sous le verrou après toute place
+  libérée ; place proposée tenue `offerHoldHours`, puis expirée par la tâche `forms`.
+  **Intervenants** : donnée par formulaire (`getFormAccess`/`scopeWhere`, `@/modules/forms/auth`),
+  réponses et présence de leur périmètre, sans adresse, sans export ; éteints à la clôture (le
+  lendemain de la dernière session)
+- Lot 3 (résultats regroupés, rattachement aux événements) : voir `specs/079-formulaires/tasks.md`
 
 **Spécificités du module messages** (spec 071) :
 - `messages:publish` (Super Admin, Admin, Secrétaire) ouvre `/admin/messages` : publier, programmer,

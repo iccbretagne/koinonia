@@ -4,7 +4,7 @@ import { useId, type ReactNode } from "react";
 import { Checkbox, Input, Select, Textarea } from "@/components/ui";
 import { fieldLabelClasses } from "@/components/ui";
 import { visibleQuestionIds } from "@/modules/forms/schemas";
-import type { Answers, FillerChoice, FillerQuestion, FillerForm } from "./types";
+import type { Answers, FillerChoice, FillerQuestion, FillerForm, FillerSession } from "./types";
 
 /**
  * Remplissage d'un formulaire (spec 079) : page publique, page « Gérer ma réponse », aperçu de la
@@ -24,6 +24,93 @@ function choiceLabel(c: FillerChoice, waitlist: boolean) {
   return `${c.label} (complet${waitlist ? " — liste d'attente" : ""})`;
 }
 
+const dayFr = (iso: string) =>
+  new Date(`${iso}T12:00:00Z`).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Paris" });
+
+/** « Samedi 14 novembre » ou « Samedi 14 et dimanche 15 novembre ». */
+export function sessionDates(s: Pick<FillerSession, "startDate" | "days">): string {
+  if (s.days < 2) return dayFr(s.startDate);
+  const next = new Date(Date.parse(`${s.startDate}T12:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+  return `${dayFr(s.startDate)} et ${dayFr(next)}`;
+}
+
+/** « Session et niveau » : un niveau parmi les sessions, et « niveau précédent suivi » hors niveau d'entrée. */
+function SessionLevel({
+  q,
+  sessions,
+  value,
+  onChange,
+  waitlist,
+  disabled,
+}: {
+  readonly q: FillerQuestion;
+  readonly sessions: readonly FillerSession[];
+  readonly value: unknown;
+  readonly onChange: (value: unknown) => void;
+  readonly waitlist: boolean;
+  readonly disabled: boolean;
+}) {
+  const id = useId();
+  const current = value && typeof value === "object" ? (value as { levelId?: string; previousLevelDone?: boolean | null }) : {};
+  const level = sessions.flatMap((s) => s.levels).find((l) => l.id === current.levelId);
+  return (
+    <fieldset className="flex flex-col gap-3">
+      <legend className={fieldLabelClasses}>{`${q.label}${required(q)}`}</legend>
+      {q.help && <p className="text-[13px] text-ink-muted">{q.help}</p>}
+      {sessions.map((s) => (
+        <div key={s.id} className="rounded-control border border-line p-3">
+          <p className="font-semibold text-ink">{s.label}</p>
+          <p className="text-[13px] text-ink-muted first-letter:uppercase">{sessionDates(s)}</p>
+          <div className="mt-2 flex flex-col">
+            {s.levels.map((l) => {
+              const full = l.remaining === 0;
+              const blocked = full && !waitlist && current.levelId !== l.id;
+              const places = full ? `complet${waitlist ? " — liste d'attente" : ""}` : `${l.remaining} place${l.remaining > 1 ? "s" : ""}`;
+              return (
+                <label key={l.id} className={`flex min-h-11 items-center gap-3 ${blocked ? "opacity-50" : "cursor-pointer"}`}>
+                  <input
+                    type="radio"
+                    name={id}
+                    className="size-5 accent-brand"
+                    checked={current.levelId === l.id}
+                    disabled={disabled || blocked}
+                    onChange={() => onChange({ levelId: l.id, previousLevelDone: l.isEntry ? null : (current.previousLevelDone ?? undefined) })}
+                  />
+                  <span className="text-[15px] text-ink">
+                    Niveau {l.code}
+                    {l.label ? ` — ${l.label}` : ""} <span className="text-ink-muted">({places})</span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+      {level && !level.isEntry && (
+        <div className="flex flex-col gap-1.5">
+          <p className={fieldLabelClasses}>Avez-vous suivi le niveau précédent ? *</p>
+          <div className="flex gap-6">
+            {[true, false].map((v) => (
+              <label key={String(v)} className="flex min-h-11 cursor-pointer items-center gap-3">
+                <input
+                  type="radio"
+                  name={`${id}-prev`}
+                  className="size-5 accent-brand"
+                  checked={current.previousLevelDone === v}
+                  disabled={disabled}
+                  onChange={() => onChange({ levelId: level.id, previousLevelDone: v })}
+                />
+                <span className="text-[15px] text-ink">{v ? "Oui" : "Non"}</span>
+              </label>
+            ))}
+          </div>
+          <p className="text-[13px] text-ink-muted">À titre indicatif : votre inscription n&apos;en dépend pas.</p>
+        </div>
+      )}
+    </fieldset>
+  );
+}
+
 const required = (q: FillerQuestion) => (q.required ? " *" : "");
 
 function Question({
@@ -32,12 +119,14 @@ function Question({
   onChange,
   waitlist,
   disabled,
+  sessions = [],
 }: {
   readonly q: FillerQuestion;
   readonly value: unknown;
   readonly onChange: (value: unknown) => void;
   readonly waitlist: boolean;
   readonly disabled: boolean;
+  readonly sessions?: readonly FillerSession[];
 }) {
   const id = useId();
   const label = `${q.label}${required(q)}`;
@@ -160,7 +249,7 @@ function Question({
         </label>
       );
     case "SESSION_LEVEL":
-      return null;
+      return <SessionLevel q={q} sessions={sessions} value={value} onChange={onChange} waitlist={waitlist} disabled={disabled} />;
   }
 }
 
@@ -188,6 +277,7 @@ export default function FormFiller({
             q={q}
             value={answers[q.id]}
             waitlist={form.waitlistEnabled}
+            sessions={form.sessions}
             disabled={disabled}
             onChange={(v) => onChange({ ...answers, [q.id]: v })}
           />

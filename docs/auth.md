@@ -652,6 +652,11 @@ renommé spec 052) :
   401 sans session, 404 pour une autre église) ; chacun ne gère que sa propre réponse
 - Sondage anonyme : ni compte, ni email, ni heure ; un compte ne répond qu'une fois grâce à un
   reçu séparé, sans lien vers la réponse
+- **Intervenants** (lot 2) : comptes de l'église désignés formulaire par formulaire
+  (`form_facilitators`), sur tout le formulaire ou des sessions/niveaux — une **donnée** vérifiée
+  objet par objet (`getFormAccess`/`requireFormAccess`/`scopeWhere`), pas une permission. Ils
+  voient les inscrits de leur périmètre sans adresse et font l'appel ; ni export, ni annulation,
+  ni réglages. Accès éteint à la clôture, au retrait, ou si le compte quitte l'église
 
 **Spécificités du module dons** (spec 065) :
 - `giving:manage` (Super Admin, Admin, Secrétaire, Comptable) ouvre `/dons` : paramétrage de la

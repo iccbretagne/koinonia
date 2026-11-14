@@ -22,16 +22,22 @@ const FORM = {
   closesAt: null,
   closedAt: null,
   maxResponses: null,
+  sessions: [] as unknown[],
   questions: [
     { id: "q1", formId: "f1", position: 0, type: "SINGLE_CHOICE", label: "Atelier", help: null, required: true, config: null, conditionQuestionId: null, conditionValue: null, choices: [choice("a", 20), choice("b")] },
     { id: "q2", formId: "f1", position: 1, type: "EMAIL", label: "Email", help: null, required: true, config: null, conditionQuestionId: null, conditionValue: null, choices: [] },
   ],
 };
-const usage = (over: Partial<{ responses: number; answered: string[]; holding: [string, number][]; used: string[] }> = {}) => ({
+const usage = (
+  over: Partial<{ responses: number; answered: string[]; holding: [string, number][]; used: string[]; levels: [string, number][]; usedLevels: string[]; usedSessions: string[] }> = {}
+) => ({
   responses: over.responses ?? 0,
   answeredQuestions: new Set(over.answered ?? []),
   holdingByChoice: new Map(over.holding ?? []),
   usedChoices: new Set(over.used ?? []),
+  holdingByLevel: new Map(over.levels ?? []),
+  usedLevels: new Set(over.usedLevels ?? []),
+  usedSessions: new Set(over.usedSessions ?? []),
 });
 const asInput = (questions = FORM.questions) =>
   questions.map((q) => ({
@@ -104,6 +110,7 @@ describe("mise à jour", () => {
     prismaMock.formAnswer.groupBy.mockResolvedValue([]);
     prismaMock.formResponseChoice.groupBy.mockResolvedValue([]);
     prismaMock.formResponseChoice.findMany.mockResolvedValue([]);
+    prismaMock.formResponse.groupBy.mockResolvedValue([]);
   });
 
   it("refus : condition sur une question suivante, choix absent, réglage hors nombre, anonymat hors sondage", async () => {
@@ -115,7 +122,11 @@ describe("mise à jour", () => {
     await expect(updateForm("f1", { questions: [{ key: "z", type: "SINGLE_CHOICE", label: "Z", required: false, choices: [] }] })).rejects.toThrow("au moins un choix");
     await expect(updateForm("f1", { questions: [{ key: "z", type: "SHORT_TEXT", label: "Z", required: false, config: { min: 1 } }] })).rejects.toThrow("réservé aux nombres");
     await expect(updateForm("f1", { anonymous: true })).rejects.toThrow("Seul un sondage");
-    await expect(updateForm("f1", { questions: [{ key: "s", type: "SESSION_LEVEL", label: "S", required: true }] })).rejects.toThrow("inscriptions PCNC");
+    await expect(
+      updateForm("f1", { questions: [{ key: "s", type: "SESSION_LEVEL", label: "S", required: true, condition: { questionKey: "q1", value: "a" } }] })
+    ).rejects.toThrow("pas de condition");
+    prismaMock.form.update.mockResolvedValue({ ...FORM, kind: "PARTICIPATION" });
+    await expect(updateForm("f1", { questions: [{ key: "s", type: "SESSION_LEVEL", label: "S", required: true }] })).rejects.toThrow("réservé aux inscriptions");
   });
 
   it("conditions écrites après les questions, valeur de choix traduite en identifiant", async () => {

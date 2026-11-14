@@ -19,6 +19,7 @@ export async function GET(_request: Request, { params }: Params) {
         responses: usage.responses,
         answeredQuestions: [...usage.answeredQuestions],
         holdingByChoice: Object.fromEntries(usage.holdingByChoice),
+        holdingByLevel: Object.fromEntries(usage.holdingByLevel),
       },
     });
   } catch (error) {

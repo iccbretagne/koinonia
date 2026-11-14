@@ -41,7 +41,9 @@ const FORM = {
   closesAt: null,
   maxResponses: null,
   waitlistEnabled: false,
+  offerHoldHours: 48,
   questions: [ATELIER, EMAIL],
+  sessions: [] as unknown[],
 };
 const member = { userId: "u1", email: "marie@exemple.fr" };
 
@@ -145,7 +147,8 @@ describe("gestion de sa réponse", () => {
   it("annulation : une fois, et seulement dans son formulaire", async () => {
     prismaMock.formResponse.findUnique.mockResolvedValueOnce({ status: "CONFIRMED", formId: "f2" });
     await expect(cancelResponse("r1", { formId: "f1" })).rejects.toThrow("introuvable");
-    prismaMock.formResponse.findUnique.mockResolvedValueOnce({ status: "CANCELLED", formId: "f1" });
+    prismaMock.formResponse.findUnique.mockResolvedValueOnce({ formId: "f1" });
+    prismaMock.formResponse.findUniqueOrThrow.mockResolvedValueOnce({ status: "CANCELLED" });
     await expect(cancelResponse("r1", { formId: "f1" })).rejects.toThrow("déjà close");
   });
 

@@ -8,7 +8,10 @@ import {
   type FormUpdateInput,
   type QuestionInput,
   type QuestionType,
+  type SessionInput,
 } from "../schemas";
+import { fillOpenPlaces } from "./waitlist";
+import { notifyOffers } from "./notify";
 
 /**
  * Construction d'un formulaire (spec 079) : création, mise à jour des réglages et des questions,
@@ -30,6 +33,10 @@ export const FORM_INCLUDE = {
   questions: {
     orderBy: { position: "asc" },
     include: { choices: { orderBy: { position: "asc" } } },
+  },
+  sessions: {
+    orderBy: { position: "asc" },
+    include: { levels: { orderBy: { position: "asc" } } },
   },
 } as const satisfies Prisma.FormInclude;
 
@@ -92,6 +99,37 @@ export async function ensureContactQuestion(tx: Tx, formId: string): Promise<voi
   await tx.formQuestion.updateMany({ where: { formId }, data: { position: { increment: 1 } } });
   await tx.formQuestion.create({
     data: { id: randomUUID(), formId, position: 0, type: "EMAIL", label: CONTACT_QUESTION.label, help: CONTACT_QUESTION.help, required: true },
+  });
+}
+
+export const REGISTRATION_QUESTION = { label: "Session et niveau" } as const;
+
+/**
+ * Inscription à sessions (lot 2) : garantit la question « Session et niveau », obligatoire,
+ * juste après l'adresse de contact. Le secrétariat déclare les sessions, la question suit.
+ */
+export async function ensureRegistrationQuestion(tx: Tx, formId: string): Promise<void> {
+  const form = await tx.form.findUniqueOrThrow({ where: { id: formId }, include: FORM_INCLUDE });
+  if (form.kind !== "REGISTRATION") return;
+  const existing = form.questions.find((q) => q.type === "SESSION_LEVEL");
+  if (form.sessions.length === 0) {
+    // Plus de session : la question n'a plus d'objet, tant que personne n'y a répondu.
+    if (existing && (await tx.formAnswer.count({ where: { questionId: existing.id } })) === 0) {
+      await tx.formQuestion.delete({ where: { id: existing.id } });
+    }
+    return;
+  }
+  if (existing) {
+    if (!existing.required || existing.conditionQuestionId) {
+      await tx.formQuestion.update({ where: { id: existing.id }, data: { required: true, conditionQuestionId: null, conditionValue: null } });
+    }
+    return;
+  }
+  const contact = needsContact(form) ? contactQuestion(form.questions) : undefined;
+  const position = contact ? contact.position + 1 : 0;
+  await tx.formQuestion.updateMany({ where: { formId, position: { gte: position } }, data: { position: { increment: 1 } } });
+  await tx.formQuestion.create({
+    data: { id: randomUUID(), formId, position, type: "SESSION_LEVEL", label: REGISTRATION_QUESTION.label, required: true },
   });
 }
 
@@ -158,7 +196,7 @@ export async function getForm(formId: string, db: Tx = prisma): Promise<FormWith
 
 /** Décomptes utiles à la gestion et à `assertSafeEdit`. */
 export async function usageCounts(formId: string, db: Tx = prisma) {
-  const [responses, answered, holding] = await Promise.all([
+  const [responses, answered, holding, holdingLevels, usedLevels] = await Promise.all([
     db.formResponse.count({ where: { formId } }),
     db.formAnswer.groupBy({ by: ["questionId"], where: { response: { formId } }, _count: { _all: true } }),
     db.formResponseChoice.groupBy({
@@ -166,6 +204,8 @@ export async function usageCounts(formId: string, db: Tx = prisma) {
       where: { response: { formId, status: { in: [...HOLDING_STATUSES] } } },
       _count: { _all: true },
     }),
+    db.formResponse.groupBy({ by: ["levelId"], where: { formId, levelId: { not: null }, status: { in: [...HOLDING_STATUSES] } }, _count: { _all: true } }),
+    db.formResponse.groupBy({ by: ["sessionId", "levelId"], where: { formId, levelId: { not: null } }, _count: { _all: true } }),
   ]);
   const used = await db.formResponseChoice.findMany({ where: { response: { formId } }, select: { choiceId: true }, distinct: ["choiceId"] });
   return {
@@ -173,6 +213,9 @@ export async function usageCounts(formId: string, db: Tx = prisma) {
     answeredQuestions: new Set(answered.map((a) => a.questionId)),
     holdingByChoice: new Map(holding.map((h) => [h.choiceId, h._count._all])),
     usedChoices: new Set(used.map((u) => u.choiceId)),
+    holdingByLevel: new Map(holdingLevels.map((h) => [h.levelId!, h._count._all])),
+    usedLevels: new Set(usedLevels.map((u) => u.levelId!)),
+    usedSessions: new Set(usedLevels.map((u) => u.sessionId!)),
   };
 }
 
@@ -186,12 +229,16 @@ interface PlannedQuestion {
 }
 
 /** Contrôles de cohérence d'une liste de questions (indépendants des réponses). */
-function validateQuestions(questions: QuestionInput[]) {
+function validateQuestions(questions: QuestionInput[], kind: string) {
   const keys = new Set<string>();
+  if (questions.filter((q) => q.type === "SESSION_LEVEL").length > 1) throw new ApiError(400, "Une seule question « Session et niveau » par formulaire");
   for (const [index, q] of questions.entries()) {
     if (keys.has(q.key)) throw new ApiError(400, "Deux questions portent la même clé");
     keys.add(q.key);
-    if (q.type === "SESSION_LEVEL") throw new ApiError(400, "Les sessions et niveaux arrivent avec les inscriptions PCNC");
+    if (q.type === "SESSION_LEVEL") {
+      if (kind !== "REGISTRATION") throw new ApiError(400, "« Session et niveau » est réservé aux inscriptions");
+      if (q.condition) throw new ApiError(400, "« Session et niveau » est toujours affichée : pas de condition");
+    }
     const isChoice = CHOICE_TYPES.includes(q.type);
     if (isChoice && !q.choices?.length) throw new ApiError(400, `« ${q.label} » : ajoutez au moins un choix`);
     if (!isChoice && q.choices?.length) throw new ApiError(400, `« ${q.label} » : ce type de question n'a pas de choix`);
@@ -205,6 +252,7 @@ function validateQuestions(questions: QuestionInput[]) {
       const parentIndex = questions.findIndex((p) => p.key === q.condition!.questionKey);
       if (parentIndex < 0 || parentIndex >= index) throw new ApiError(400, `« ${q.label} » : la condition doit porter sur une question précédente`);
       const parent = questions[parentIndex];
+      if (parent.type === "SESSION_LEVEL") throw new ApiError(400, `« ${q.label} » : pas de condition sur « Session et niveau »`);
       if (CHOICE_TYPES.includes(parent.type) && !parent.choices?.some((c) => c.key === q.condition!.value)) {
         throw new ApiError(400, `« ${q.label} » : la condition vise un choix inconnu`);
       }
@@ -215,19 +263,38 @@ function validateQuestions(questions: QuestionInput[]) {
   }
 }
 
+/** Contrôles de cohérence des sessions et niveaux. */
+function validateSessions(sessions: SessionInput[], kind: string) {
+  if (sessions.length > 0 && kind !== "REGISTRATION") throw new ApiError(400, "Les sessions sont réservées aux inscriptions");
+  const keys = new Set<string>();
+  for (const session of sessions) {
+    if (keys.has(session.key)) throw new ApiError(400, "Deux sessions portent la même clé");
+    keys.add(session.key);
+    if (Number.isNaN(Date.parse(`${session.startDate}T00:00:00Z`))) throw new ApiError(400, `« ${session.label} » : date invalide`);
+    const codes = new Set<string>();
+    for (const level of session.levels) {
+      if (keys.has(level.key)) throw new ApiError(400, "Deux niveaux portent la même clé");
+      keys.add(level.key);
+      if (codes.has(level.code)) throw new ApiError(400, `« ${session.label} » : le niveau ${level.code} apparaît deux fois`);
+      codes.add(level.code);
+    }
+  }
+}
+
 /**
  * Modification sûre d'un formulaire qui a des réponses (spec 079, cas limites) : refus explicite
  * de ce qui ferait perdre ou fausser des réponses.
  */
 export function assertSafeEdit(
   form: FormWithQuestions,
-  next: { anonymous?: boolean; questions?: QuestionInput[] },
+  next: { anonymous?: boolean; questions?: QuestionInput[]; sessions?: SessionInput[] },
   usage: Usage
 ) {
   if (usage.responses === 0) return;
   if (next.anonymous !== undefined && next.anonymous !== form.anonymous) {
     throw new ApiError(409, "Ce formulaire a des réponses : on ne peut plus changer son anonymat");
   }
+  if (next.sessions) assertSafeSessions(form, next.sessions, usage);
   if (!next.questions) return;
   const byKey = new Map(next.questions.map((q) => [q.key, q]));
   for (const q of form.questions) {
@@ -254,6 +321,55 @@ export function assertSafeEdit(
   for (const q of next.questions) {
     const existing = form.questions.find((x) => x.id === q.key);
     if (!existing && q.required) throw new ApiError(409, `« ${q.label} » : une question ajoutée après les premières réponses doit être facultative`);
+  }
+}
+
+/** Sessions et niveaux qui ont des inscrits : ni supprimés, ni ramenés sous leurs inscrits. */
+function assertSafeSessions(form: FormWithQuestions, sessions: SessionInput[], usage: Usage) {
+  const nextSessions = new Map(sessions.map((s) => [s.key, s]));
+  for (const session of form.sessions) {
+    const kept = nextSessions.get(session.id);
+    if (!kept) {
+      if (usage.usedSessions.has(session.id)) throw new ApiError(409, `« ${session.label} » a des inscrits : elle ne peut pas être supprimée`);
+      continue;
+    }
+    const nextLevels = new Map(kept.levels.map((l) => [l.key, l]));
+    for (const level of session.levels) {
+      const nl = nextLevels.get(level.id);
+      if (!nl) {
+        if (usage.usedLevels.has(level.id)) throw new ApiError(409, `Niveau ${level.code} de « ${session.label} » : il a des inscrits, il ne peut pas être supprimé`);
+        continue;
+      }
+      const holding = usage.holdingByLevel.get(level.id) ?? 0;
+      if (nl.capacity < holding) {
+        throw new ApiError(409, `Niveau ${level.code} de « ${session.label} » : ${holding} inscrit(s), les places ne peuvent pas descendre en dessous`);
+      }
+    }
+  }
+}
+
+/** Écrit les sessions et leurs niveaux : mises à jour, créations, suppressions. */
+async function writeSessions(tx: Tx, form: FormWithQuestions, sessions: SessionInput[]) {
+  const existing = new Map(form.sessions.map((s) => [s.id, s]));
+  const keep = new Set(sessions.filter((s) => existing.has(s.key)).map((s) => s.key));
+  const removed = form.sessions.filter((s) => !keep.has(s.id)).map((s) => s.id);
+  if (removed.length) await tx.formSession.deleteMany({ where: { id: { in: removed } } });
+  for (const [position, input] of sessions.entries()) {
+    const before = existing.get(input.key);
+    const id = before ? before.id : randomUUID();
+    const data = { position, label: input.label, startDate: new Date(`${input.startDate}T00:00:00.000Z`), days: input.days };
+    if (before) await tx.formSession.update({ where: { id }, data });
+    else await tx.formSession.create({ data: { ...data, id, formId: form.id } });
+
+    const beforeLevels = new Map((before?.levels ?? []).map((l) => [l.id, l]));
+    const keepLevels = new Set(input.levels.filter((l) => beforeLevels.has(l.key)).map((l) => l.key));
+    const removedLevels = (before?.levels ?? []).filter((l) => !keepLevels.has(l.id)).map((l) => l.id);
+    if (removedLevels.length) await tx.formLevel.deleteMany({ where: { id: { in: removedLevels } } });
+    for (const [i, level] of input.levels.entries()) {
+      const levelData = { position: i, code: level.code, label: level.label ?? null, capacity: level.capacity, isEntry: level.isEntry };
+      if (beforeLevels.has(level.key)) await tx.formLevel.update({ where: { id: level.key }, data: levelData });
+      else await tx.formLevel.create({ data: { ...levelData, id: randomUUID(), sessionId: id } });
+    }
   }
 }
 
@@ -309,29 +425,36 @@ async function writeQuestions(tx: Tx, form: FormWithQuestions, questions: Questi
 }
 
 /** Mise à jour des réglages et, si fournies, de toutes les questions (liste complète). */
-export async function updateForm(formId: string, input: FormUpdateInput) {
-  return prisma.$transaction(async (tx) => {
+export async function updateForm(formId: string, input: FormUpdateInput): Promise<FormWithQuestions> {
+  const { form, offered } = await prisma.$transaction(async (tx) => {
     const form = await tx.form.update({ where: { id: formId }, data: { updatedAt: new Date() }, include: FORM_INCLUDE });
     if (form.deletedAt) throw new ApiError(404, "Formulaire introuvable");
     if (form.purgedAt) throw new ApiError(409, "Les réponses de ce formulaire ont été effacées : il ne se modifie plus");
-    if (input.questions) validateQuestions(input.questions);
+    if (input.questions) validateQuestions(input.questions, form.kind);
+    if (input.sessions) validateSessions(input.sessions, form.kind);
     const anonymous = input.anonymous ?? form.anonymous;
     if (anonymous && form.kind !== "SURVEY") throw new ApiError(400, "Seul un sondage peut être anonyme");
-    assertSafeEdit(form, { anonymous: input.anonymous, questions: input.questions }, await usageCounts(formId, tx));
+    assertSafeEdit(form, { anonymous: input.anonymous, questions: input.questions, sessions: input.sessions }, await usageCounts(formId, tx));
 
     const opensAt = input.opensAt === undefined ? form.opensAt : input.opensAt;
     const closesAt = input.closesAt === undefined ? form.closesAt : input.closesAt;
     if (opensAt && closesAt && opensAt >= closesAt) throw new ApiError(400, "La fin des réponses doit suivre leur ouverture");
 
-    const { questions, slug, ...settings } = input;
+    const { questions, sessions, slug, ...settings } = input;
     if (slug && slug !== form.slug && (await uniqueSlug(form.churchId, slug, tx, form.id)) !== slug) {
       throw new ApiError(409, "Cette adresse est déjà prise par un autre formulaire de l'église");
     }
     await tx.form.update({ where: { id: formId }, data: { ...settings, ...(slug ? { slug } : {}) } });
-    if (questions) await writeQuestions(tx, form, questions);
+    if (sessions) await writeSessions(tx, form, sessions);
+    if (questions) await writeQuestions(tx, await tx.form.findUniqueOrThrow({ where: { id: formId }, include: FORM_INCLUDE }), questions);
     await ensureContactQuestion(tx, formId);
-    return tx.form.findUniqueOrThrow({ where: { id: formId }, include: FORM_INCLUDE });
+    await ensureRegistrationQuestion(tx, formId);
+    // Places ajoutées (ou liste d'attente activée) : proposées aux premiers en attente.
+    const offered = await fillOpenPlaces(tx, formId);
+    return { form: await tx.form.findUniqueOrThrow({ where: { id: formId }, include: FORM_INCLUDE }), offered };
   });
+  await notifyOffers(offered);
+  return form;
 }
 
 /** Copie d'un formulaire en brouillon : réglages, questions, choix et conditions, sans réponse. */
@@ -359,6 +482,17 @@ export async function duplicateForm(formId: string, userId: string, title?: stri
       },
       include: FORM_INCLUDE,
     });
+    await writeSessions(
+      tx,
+      copy,
+      source.sessions.map((session) => ({
+        key: `copy-${session.id}`,
+        label: session.label,
+        startDate: session.startDate.toISOString().slice(0, 10),
+        days: session.days === 2 ? 2 : 1,
+        levels: session.levels.map((l) => ({ key: `copy-${l.id}`, code: l.code, label: l.label, capacity: l.capacity, isEntry: l.isEntry })),
+      }))
+    );
     await writeQuestions(
       tx,
       copy,

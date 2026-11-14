@@ -2,7 +2,9 @@ import { randomUUID } from "node:crypto";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
-import { parseAnswers, type ParsedAnswers } from "./engine";
+import { parseAnswers, type EngineContext, type ParsedAnswers } from "./engine";
+import { fillOpenPlaces } from "./waitlist";
+import { notifyOffers } from "./notify";
 import { ACTIVE_STATUSES, FORM_INCLUDE, HOLDING_STATUSES, contactQuestion, type FormWithQuestions } from "./builder";
 import { UNAVAILABLE, acceptsResponses, isFull } from "./lifecycle";
 import { anonymousReceiptKey, contactKey, isTokenShape, manageTokenPair, matchesHash, newSalt, hashToken } from "./tokens";
@@ -24,6 +26,11 @@ export interface Respondent {
 const engineQuestions = (form: FormWithQuestions) =>
   form.questions.map((q) => ({ ...q, choices: q.choices.map((c) => ({ id: c.id, label: c.label, capacity: c.capacity })) }));
 
+/** Niveaux des sessions, pour valider « session et niveau ». */
+const engineContext = (form: FormWithQuestions): EngineContext => ({
+  levels: form.sessions.flatMap((s) => s.levels.map((l) => ({ id: l.id, sessionId: s.id, code: l.code, isEntry: l.isEntry }))),
+});
+
 /** Jour courant (UTC), seul horodatage d'une réponse anonyme. */
 const today = (now: Date) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
@@ -39,19 +46,53 @@ export async function holdingByChoice(formId: string, db: Tx = prisma, excludeRe
   return new Map(rows.map((r) => [r.choiceId, r._count._all]));
 }
 
-/** Places restantes des choix limités, pour la page de réponse. */
+/** Places tenues par niveau (inscription à sessions). */
+export async function holdingByLevel(formId: string, db: Tx = prisma, excludeResponseId?: string) {
+  const rows = await db.formResponse.groupBy({
+    by: ["levelId"],
+    where: {
+      formId,
+      levelId: { not: null },
+      status: { in: [...HOLDING_STATUSES] },
+      ...(excludeResponseId ? { id: { not: excludeResponseId } } : {}),
+    },
+    _count: { _all: true },
+  });
+  return new Map(rows.map((r) => [r.levelId!, r._count._all]));
+}
+
+/** Places restantes des choix limités et des niveaux, pour la page de réponse. */
 export async function remainingPlaces(form: FormWithQuestions) {
-  const held = await holdingByChoice(form.id);
+  const [held, heldLevels] = await Promise.all([holdingByChoice(form.id), holdingByLevel(form.id)]);
   const remaining: Record<string, number> = {};
   for (const q of form.questions) for (const c of q.choices) if (c.capacity != null) remaining[c.id] = Math.max(0, c.capacity - (held.get(c.id) ?? 0));
+  for (const session of form.sessions) for (const l of session.levels) remaining[l.id] = Math.max(0, l.capacity - (heldLevels.get(l.id) ?? 0));
   return remaining;
 }
 
-/** Choix complets parmi ceux retenus. */
-function fullChoices(form: FormWithQuestions, choiceIds: string[], held: Map<string, number>) {
-  const choices = new Map(form.questions.flatMap((q) => q.choices).map((c) => [c.id, c]));
-  return choiceIds.map((id) => choices.get(id)!).filter((c) => c.capacity != null && (held.get(c.id) ?? 0) >= c.capacity);
+interface Slot {
+  id: string;
+  label: string;
 }
+
+/** Choix et niveau complets parmi ceux retenus (identifiant et libellé pour le message). */
+async function fullSlots(tx: Tx, form: FormWithQuestions, choiceIds: string[], levelId: string | null, excludeResponseId?: string): Promise<Slot[]> {
+  const held = await holdingByChoice(form.id, tx, excludeResponseId);
+  const choices = new Map(form.questions.flatMap((q) => q.choices).map((c) => [c.id, c]));
+  const full: Slot[] = choiceIds
+    .map((id) => choices.get(id)!)
+    .filter((c) => c.capacity != null && (held.get(c.id) ?? 0) >= c.capacity)
+    .map((c) => ({ id: c.id, label: c.label }));
+  if (levelId) {
+    const session = form.sessions.find((s) => s.levels.some((l) => l.id === levelId))!;
+    const level = session.levels.find((l) => l.id === levelId)!;
+    const heldLevel = (await holdingByLevel(form.id, tx, excludeResponseId)).get(levelId) ?? 0;
+    if (heldLevel >= level.capacity) full.push({ id: level.id, label: `${session.label} — niveau ${level.code}` });
+  }
+  return full;
+}
+
+const fullMessage = (full: Slot[]) => `${full.map((c) => `« ${c.label} »`).join(", ")} : complet.`;
 
 /** Verrou du formulaire pour la durée de la transaction, relu avec ses questions. */
 async function lockForm(tx: Tx, formId: string) {
@@ -102,7 +143,8 @@ export async function submitResponse(
     const form = await lockForm(tx, formId);
     if (!acceptsResponses(form, now) || (await isFull(form, tx))) throw new ApiError(404, UNAVAILABLE);
     if (form.access === "MEMBERS" && !respondent) throw new ApiError(401, "Connectez-vous pour répondre à ce formulaire");
-    const parsed = parseAnswers(engineQuestions(form), raw);
+    const parsed = parseAnswers(engineQuestions(form), raw, engineContext(form));
+    const registration = parsed.registration;
 
     const anonymous = form.anonymous;
     const userId = anonymous ? null : (respondent?.userId ?? null);
@@ -131,12 +173,12 @@ export async function submitResponse(
     }
 
     // Places
-    const full = fullChoices(form, parsed.choiceIds, await holdingByChoice(form.id, tx));
+    const full = await fullSlots(tx, form, parsed.choiceIds, registration?.levelId ?? null);
     let status: "CONFIRMED" | "WAITLISTED" = "CONFIRMED";
     let waitingOn: string | null = null;
     if (full.length > 0) {
       if (!form.waitlistEnabled || full.length > 1 || anonymous) {
-        throw new ApiError(409, `${full.map((c) => `« ${c.label} »`).join(", ")} : complet. Choisissez une autre option.`);
+        throw new ApiError(409, `${fullMessage(full)} Choisissez une autre option.`);
       }
       status = "WAITLISTED";
       waitingOn = full[0].id;
@@ -155,6 +197,9 @@ export async function submitResponse(
         contactEmail,
         contactKey: key,
         waitingOn,
+        sessionId: registration?.sessionId ?? null,
+        levelId: registration?.levelId ?? null,
+        previousLevelDone: registration?.previousLevelDone ?? null,
         manageSalt: salt,
         manageHash: pair?.hash ?? null,
         submittedOn: today(now),
@@ -203,20 +248,31 @@ export function manageTokenOf(response: { id: string; manageSalt: string | null 
 
 const isOpenResponse = (status: string) => (ACTIVE_STATUSES as readonly string[]).includes(status);
 
-/** Modification de sa propre réponse, tant que le formulaire accepte des réponses. */
+/**
+ * Modification de sa propre réponse, tant que le formulaire accepte des réponses. Une place tenue
+ * n'est jamais perdue pour un choix complet : il est refusé. En liste d'attente, l'attente suit le
+ * nouveau choix. Ce qui est libéré est proposé aux personnes en attente.
+ */
 export async function updateOwnResponse(responseId: string, raw: Record<string, unknown>, now = new Date()) {
-  return prisma.$transaction(async (tx) => {
+  const { response, offered } = await prisma.$transaction(async (tx) => {
     const current = await tx.formResponse.findUniqueOrThrow({ where: { id: responseId }, include: { choices: true } });
     const form = await lockForm(tx, current.formId);
     if (!acceptsResponses(form, now) || form.anonymous || !isOpenResponse(current.status)) {
       throw new ApiError(409, "Cette réponse ne peut plus être modifiée");
     }
-    const parsed = parseAnswers(engineQuestions(form), raw);
+    const parsed = parseAnswers(engineQuestions(form), raw, engineContext(form));
+    const registration = parsed.registration;
+    const levelId = registration?.levelId ?? null;
+    const waiting = current.status === "WAITLISTED";
     const before = new Set(current.choices.map((c) => c.choiceId));
-    const added = parsed.choiceIds.filter((id) => !before.has(id));
-    const full = fullChoices(form, added, await holdingByChoice(form.id, tx, responseId));
-    if (full.length > 0 && current.status !== "WAITLISTED") {
-      throw new ApiError(409, `${full.map((c) => `« ${c.label} »`).join(", ")} : complet. Gardez votre choix ou choisissez une autre option.`);
+    // Une place tenue n'est comptée qu'une fois : la réponse elle-même est exclue du décompte.
+    const candidates = waiting ? parsed.choiceIds : parsed.choiceIds.filter((id) => !before.has(id));
+    const candidateLevel = waiting || levelId !== current.levelId ? levelId : null;
+    const full = await fullSlots(tx, form, candidates, candidateLevel, responseId);
+    let waitingOn = current.waitingOn;
+    if (full.length > 0) {
+      if (!waiting || full.length > 1) throw new ApiError(409, `${fullMessage(full)} Gardez votre choix ou choisissez une autre option.`);
+      waitingOn = full[0].id;
     }
     const email = form.access === "PUBLIC" ? contactEmailOf(form, parsed) : current.contactEmail;
     await tx.formAnswer.deleteMany({ where: { responseId } });
@@ -226,27 +282,96 @@ export async function updateOwnResponse(responseId: string, raw: Record<string, 
     if (parsed.choiceIds.length) {
       await tx.formResponseChoice.createMany({ data: [...new Set(parsed.choiceIds)].map((choiceId) => ({ responseId, choiceId })) });
     }
-    return tx.formResponse.update({
+    await tx.formResponse.update({
       where: { id: responseId },
-      data: { modifiedAt: now, contactEmail: email, contactKey: email ? contactKey(form.id, email) : null },
+      data: {
+        modifiedAt: now,
+        contactEmail: email,
+        contactKey: email ? contactKey(form.id, email) : null,
+        waitingOn,
+        sessionId: registration?.sessionId ?? null,
+        levelId,
+        previousLevelDone: registration?.previousLevelDone ?? null,
+      },
     });
+    const offered = await fillOpenPlaces(tx, form.id, now);
+    return { response: await tx.formResponse.findUniqueOrThrow({ where: { id: responseId } }), offered };
   });
+  await notifyOffers(offered.filter((id) => id !== responseId));
+  return response;
 }
 
-/** Annulation (par le répondant ou par la gestion). */
+/** Annulation (par le répondant ou par la gestion) ; la place libérée est proposée. */
 export async function cancelResponse(responseId: string, options: { formId?: string; now?: Date } = {}) {
   const now = options.now ?? new Date();
-  const response = await prisma.formResponse.findUnique({ where: { id: responseId }, select: { status: true, formId: true } });
-  if (!response || (options.formId && response.formId !== options.formId)) throw new ApiError(404, "Réponse introuvable");
-  if (!isOpenResponse(response.status)) throw new ApiError(409, "Cette réponse est déjà close");
-  return prisma.formResponse.update({ where: { id: responseId }, data: { status: "CANCELLED", cancelledAt: now } });
+  const existing = await prisma.formResponse.findUnique({ where: { id: responseId }, select: { formId: true } });
+  if (!existing || (options.formId && existing.formId !== options.formId)) throw new ApiError(404, "Réponse introuvable");
+  const { response, offered } = await prisma.$transaction(async (tx) => {
+    await lockForm(tx, existing.formId);
+    const current = await tx.formResponse.findUniqueOrThrow({ where: { id: responseId }, select: { status: true } });
+    if (!isOpenResponse(current.status)) throw new ApiError(409, "Cette réponse est déjà close");
+    const response = await tx.formResponse.update({ where: { id: responseId }, data: { status: "CANCELLED", cancelledAt: now, offerExpiresAt: null } });
+    return { response, offered: await fillOpenPlaces(tx, existing.formId, now) };
+  });
+  await notifyOffers(offered);
+  return response;
+}
+
+/**
+ * Réponse à une place proposée : accepter ⇒ confirmée ; décliner ⇒ la place passe à la personne
+ * suivante. Une proposition expirée ne s'accepte plus (même si la tâche ne l'a pas encore close).
+ */
+export async function respondToOffer(responseId: string, accept: boolean, now = new Date()) {
+  const existing = await prisma.formResponse.findUnique({ where: { id: responseId }, select: { formId: true } });
+  if (!existing) throw new ApiError(404, "Réponse introuvable");
+  const { response, offered } = await prisma.$transaction(async (tx) => {
+    await lockForm(tx, existing.formId);
+    const current = await tx.formResponse.findUniqueOrThrow({ where: { id: responseId }, select: { status: true, offerExpiresAt: true } });
+    if (current.status !== "OFFERED") throw new ApiError(409, "Aucune place ne vous est proposée");
+    if (current.offerExpiresAt && current.offerExpiresAt <= now) throw new ApiError(409, "Cette proposition a expiré");
+    if (accept) {
+      const response = await tx.formResponse.update({ where: { id: responseId }, data: { status: "CONFIRMED", offerExpiresAt: null, waitingOn: null } });
+      return { response, offered: [] as string[] };
+    }
+    const response = await tx.formResponse.update({ where: { id: responseId }, data: { status: "DECLINED", cancelledAt: now, offerExpiresAt: null } });
+    return { response, offered: await fillOpenPlaces(tx, existing.formId, now) };
+  });
+  await notifyOffers(offered);
+  return response;
+}
+
+/** Tâche planifiée : propositions expirées closes, places proposées aux suivants. */
+export async function expireOffers(now = new Date()): Promise<number> {
+  const expired = await prisma.formResponse.findMany({
+    where: { status: "OFFERED", offerExpiresAt: { lte: now } },
+    select: { formId: true },
+    distinct: ["formId"],
+  });
+  let count = 0;
+  for (const { formId } of expired) {
+    const offered = await prisma.$transaction(async (tx) => {
+      await lockForm(tx, formId);
+      const result = await tx.formResponse.updateMany({
+        where: { formId, status: "OFFERED", offerExpiresAt: { lte: now } },
+        data: { status: "EXPIRED", offerExpiresAt: null },
+      });
+      count += result.count;
+      return fillOpenPlaces(tx, formId, now);
+    });
+    await notifyOffers(offered);
+  }
+  return count;
 }
 
 /** Réponses d'un formulaire pour la gestion (identité absente d'un sondage anonyme). */
-export async function listResponses(formId: string, status?: Prisma.FormResponseWhereInput["status"]) {
+export async function listResponses(formId: string, status?: Prisma.FormResponseWhereInput["status"], scope: Prisma.FormResponseWhereInput = {}) {
   return prisma.formResponse.findMany({
-    where: { formId, ...(status ? { status } : {}) },
-    include: { answers: true, user: { select: { id: true, name: true, displayName: true, email: true } } },
+    where: { AND: [{ formId, ...(status ? { status } : {}) }, scope] },
+    include: {
+      answers: true,
+      user: { select: { id: true, name: true, displayName: true, email: true } },
+      attendance: { select: { day: true, half: true, present: true } },
+    },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
   });
 }
@@ -289,6 +414,13 @@ export async function publicView(form: FormWithQuestions & { church: { name: str
       conditionQuestionId: q.conditionQuestionId,
       conditionValue: q.conditionValue,
       choices: q.choices.map((c) => ({ id: c.id, label: c.label, remaining: c.capacity == null ? null : (remaining[c.id] ?? 0) })),
+    })),
+    sessions: form.sessions.map((session) => ({
+      id: session.id,
+      label: session.label,
+      startDate: session.startDate.toISOString().slice(0, 10),
+      days: session.days,
+      levels: session.levels.map((l) => ({ id: l.id, code: l.code, label: l.label, isEntry: l.isEntry, remaining: remaining[l.id] ?? 0 })),
     })),
   };
 }

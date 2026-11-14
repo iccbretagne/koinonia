@@ -24,10 +24,13 @@ describe("conservation", () => {
       { id: "due", closedAt: new Date("2026-01-15T00:00:00Z"), retentionMonths: 12 },
       { id: "later", closedAt: new Date("2026-06-01T00:00:00Z"), retentionMonths: 12 },
     ]);
-    prismaMock.formResponse.groupBy.mockResolvedValue([
-      { status: "CONFIRMED", _count: { _all: 40 } },
-      { status: "CANCELLED", _count: { _all: 3 } },
-    ]);
+    prismaMock.formResponse.groupBy
+      .mockResolvedValueOnce([
+        { status: "CONFIRMED", _count: { _all: 40 } },
+        { status: "CANCELLED", _count: { _all: 3 } },
+      ])
+      .mockResolvedValueOnce([{ levelId: "l1", _count: { _all: 12 } }]);
+    prismaMock.formLevel.findMany.mockResolvedValue([{ id: "l1", code: "002", session: { label: "Novembre" } }]);
     prismaMock.formResponseChoice.groupBy.mockResolvedValue([{ choiceId: "a", _count: { _all: 20 } }]);
     prismaMock.formChoice.findMany.mockResolvedValue([{ id: "a", label: "001", question: { label: "Niveau" } }]);
     expect(await runFormPurge(now)).toBe(1);
@@ -37,18 +40,33 @@ describe("conservation", () => {
       where: { id: "due" },
       data: {
         purgedAt: now,
-        totals: { responses: 43, byStatus: { CONFIRMED: 40, CANCELLED: 3 }, byChoice: [{ question: "Niveau", choice: "001", count: 20 }] },
+        totals: {
+          responses: 43,
+          byStatus: { CONFIRMED: 40, CANCELLED: 3 },
+          byChoice: [{ question: "Niveau", choice: "001", count: 20 }],
+          byLevel: [{ session: "Novembre", level: "002", count: 12 }],
+        },
       },
     });
     expect(prismaMock.formResponse.deleteMany).toHaveBeenCalledTimes(1);
   });
 
-  it("clôture automatique à la fin des réponses", async () => {
-    prismaMock.form.updateMany.mockResolvedValue({ count: 2 });
-    const now = new Date();
-    expect(await closeEndedForms(now)).toBe(2);
-    expect(prismaMock.form.updateMany).toHaveBeenCalledWith({
-      where: { status: "PUBLISHED", deletedAt: null, closesAt: { lte: now } },
+  it("clôture automatique : à la fin des réponses, ou le lendemain de la dernière session", async () => {
+    const now = new Date("2026-11-16T08:00:00Z");
+    prismaMock.form.updateMany.mockResolvedValueOnce({ count: 2 }).mockResolvedValueOnce({ count: 1 });
+    prismaMock.form.findMany.mockResolvedValue([
+      // Samedi 14 et dimanche 15 : close le lundi 16 à 0 h.
+      { id: "fini", sessions: [{ startDate: new Date("2026-11-14T00:00:00Z"), days: 2 }] },
+      // Dernière session le 16 : l'appel continue toute la journée.
+      { id: "en-cours", sessions: [{ startDate: new Date("2026-11-07T00:00:00Z"), days: 1 }, { startDate: new Date("2026-11-16T00:00:00Z"), days: 1 }] },
+    ]);
+    expect(await closeEndedForms(now)).toBe(3);
+    expect(prismaMock.form.updateMany).toHaveBeenNthCalledWith(1, {
+      where: { status: "PUBLISHED", deletedAt: null, closesAt: { lte: now }, sessions: { none: {} } },
+      data: { status: "CLOSED", closedAt: now },
+    });
+    expect(prismaMock.form.updateMany).toHaveBeenNthCalledWith(2, {
+      where: { id: { in: ["fini"] }, status: "PUBLISHED" },
       data: { status: "CLOSED", closedAt: now },
     });
   });

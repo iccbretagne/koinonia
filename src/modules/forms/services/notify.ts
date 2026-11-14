@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { displayValue } from "./engine";
 import type { FormWithQuestions } from "./builder";
+import { manageTokenPair } from "./tokens";
 
 /**
  * Notifications des formulaires (spec 079), domaine `forms`.
@@ -49,7 +50,7 @@ const button = (url: string, label: string) =>
 function recap(form: FormWithQuestions, answers: Map<string, unknown>): string {
   const rows = form.questions
     .filter((q) => answers.has(q.id))
-    .map((q) => `<tr><td style="padding: 4px 12px 4px 0; color: #6b7280; vertical-align: top;">${esc(q.label)}</td><td style="padding: 4px 0;">${esc(displayValue(q, answers.get(q.id)))}</td></tr>`)
+    .map((q) => `<tr><td style="padding: 4px 12px 4px 0; color: #6b7280; vertical-align: top;">${esc(q.label)}</td><td style="padding: 4px 0;">${esc(displayValue(q, answers.get(q.id), { sessions: form.sessions }))}</td></tr>`)
     .join("");
   return rows ? `<table style="border-collapse: collapse; font-size: 14px;">${rows}</table>` : "";
 }
@@ -166,4 +167,54 @@ export async function signalNewResponses(): Promise<number> {
     signalled += fresh;
   }
   return signalled;
+}
+
+const parisDateTime = (d: Date) =>
+  d.toLocaleString("fr-FR", { timeZone: "Europe/Paris", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+
+/**
+ * Liste d'attente : une place est proposée. Compte ⇒ notification (lien vers le formulaire, où
+ * accepter ou décliner) ; sans compte ⇒ email avec le lien « Gérer ma réponse ». Après la
+ * transaction ; une erreur d'envoi n'annule jamais l'offre (elle reste visible sur la page).
+ */
+export async function notifyOffers(responseIds: readonly string[]): Promise<void> {
+  if (responseIds.length === 0) return;
+  const responses = await prisma.formResponse.findMany({
+    where: { id: { in: [...responseIds] }, status: "OFFERED" },
+    select: {
+      id: true,
+      userId: true,
+      contactEmail: true,
+      manageSalt: true,
+      offerExpiresAt: true,
+      form: { select: { title: true, slug: true, church: { select: { name: true, slug: true } } } },
+    },
+  });
+  for (const r of responses) {
+    const until = r.offerExpiresAt ? ` Confirmez avant ${parisDateTime(r.offerExpiresAt)}, sinon elle sera proposée à la personne suivante.` : "";
+    const message = `Une place s'est libérée pour vous.${until}`;
+    try {
+      if (r.userId) {
+        await createNotification({
+          userId: r.userId,
+          domain: "forms",
+          type: "FORM_OFFER",
+          title: `Place disponible : ${r.form.title}`,
+          message,
+          link: formPath(r.form.church.slug, r.form.slug),
+          entityType: "FormResponse",
+          entityId: r.id,
+        });
+      } else if (r.contactEmail && r.manageSalt) {
+        const token = manageTokenPair(r.id, r.manageSalt).token;
+        await sendEmail({
+          to: r.contactEmail,
+          subject: `${r.form.title} — une place s'est libérée`,
+          html: layout(r.form.title, r.form.church.name, `<p>${esc(message)}</p>${button(manageUrl(token), "Accepter ou décliner la place")}`),
+        });
+      }
+    } catch (error) {
+      logger.error({ err: error, responseId: r.id }, "Offre de place d'un formulaire non notifiée");
+    }
+  }
 }

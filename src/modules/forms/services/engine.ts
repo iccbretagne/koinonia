@@ -1,5 +1,5 @@
 import { ApiError } from "@/lib/api-utils";
-import { CHOICE_TYPES, matchesCondition, type AnswerValue, type QuestionType } from "../schemas";
+import { CHOICE_TYPES, matchesCondition, type AnswerValue, type QuestionType, type RegistrationValue } from "../schemas";
 
 /**
  * Moteur de formulaires (spec 079, ADR-0030) : validation d'une réponse à partir des questions
@@ -27,11 +27,25 @@ export interface EngineQuestion {
 
 export type { AnswerValue } from "../schemas";
 
+/** Niveau d'une session (lot 2), pour valider la réponse « session et niveau ». */
+export interface EngineLevel {
+  id: string;
+  sessionId: string;
+  code: string;
+  isEntry: boolean;
+}
+
+export interface EngineContext {
+  levels?: readonly EngineLevel[];
+}
+
 export interface ParsedAnswers {
   /** Valeur validée par question visible et renseignée. */
   values: Map<string, AnswerValue>;
   /** Choix retenus (choix unique, liste, choix multiple), pour compter les places. */
   choiceIds: string[];
+  /** Session et niveau retenus (inscription), s'il y a une question « session et niveau ». */
+  registration: RegistrationValue | null;
 }
 
 const LIMITS = { SHORT_TEXT: 300, LONG_TEXT: 5000 } as const;
@@ -51,7 +65,21 @@ const isEmpty = (v: unknown) =>
   v === undefined || v === null || (typeof v === "string" && v.trim() === "") || (Array.isArray(v) && v.length === 0);
 
 /** Message d'erreur pour une valeur invalide, ou null. La valeur normalisée est renvoyée à part. */
-function validateValue(q: EngineQuestion, raw: unknown): { value?: AnswerValue; error?: string } {
+/**
+ * « Session et niveau » : `{ levelId, previousLevelDone }`. Le niveau désigne sa session ; hors
+ * niveau d'entrée, « niveau précédent suivi » (oui/non) est demandé mais jamais bloquant.
+ */
+function validateRegistration(raw: unknown, ctx: EngineContext): { value?: RegistrationValue; error?: string } {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { error: "choisissez une session et un niveau" };
+  const { levelId, previousLevelDone } = raw as { levelId?: unknown; previousLevelDone?: unknown };
+  const level = ctx.levels?.find((l) => l.id === levelId);
+  if (!level) return { error: "niveau inconnu" };
+  if (level.isEntry) return { value: { sessionId: level.sessionId, levelId: level.id, previousLevelDone: null } };
+  if (typeof previousLevelDone !== "boolean") return { error: "indiquez si vous avez suivi le niveau précédent" };
+  return { value: { sessionId: level.sessionId, levelId: level.id, previousLevelDone } };
+}
+
+function validateValue(q: EngineQuestion, raw: unknown, ctx: EngineContext = {}): { value?: AnswerValue; error?: string } {
   const choiceIds = new Set(q.choices.map((c) => c.id));
   switch (q.type) {
     case "SHORT_TEXT":
@@ -97,7 +125,7 @@ function validateValue(q: EngineQuestion, raw: unknown): { value?: AnswerValue; 
     case "CONSENT":
       return typeof raw === "boolean" ? { value: raw } : { error: "case à cocher attendue" };
     case "SESSION_LEVEL":
-      return { error: "type de question indisponible" };
+      return validateRegistration(raw, ctx);
   }
 }
 
@@ -106,7 +134,7 @@ function validateValue(q: EngineQuestion, raw: unknown): { value?: AnswerValue; 
  * ni requise ni enregistrée), obligatoires renseignées, consentement obligatoire coché, valeurs
  * conformes à leur type. Erreur ⇒ `ApiError(400)` qui nomme la question.
  */
-export function parseAnswers(questions: EngineQuestion[], raw: Record<string, unknown>): ParsedAnswers {
+export function parseAnswers(questions: EngineQuestion[], raw: Record<string, unknown>, ctx: EngineContext = {}): ParsedAnswers {
   const sorted = [...questions].sort(byPosition);
   const values = new Map<string, AnswerValue>();
   // Ordre des positions : la visibilité d'une question ne dépend que des précédentes.
@@ -124,7 +152,7 @@ export function parseAnswers(questions: EngineQuestion[], raw: Record<string, un
       if (q.type === "CONSENT" && input === false) values.set(q.id, false);
       continue;
     }
-    const { value, error } = validateValue(q, input);
+    const { value, error } = validateValue(q, input, ctx);
     if (error !== undefined || value === undefined) throw new ApiError(400, `« ${q.label} » : ${error ?? "valeur invalide"}`);
     if (Array.isArray(value) && value.length === 0 && q.required) throw new ApiError(400, `« ${q.label} » : réponse obligatoire`);
     values.set(q.id, value);
@@ -137,12 +165,25 @@ export function parseAnswers(questions: EngineQuestion[], raw: Record<string, un
     if (typeof v === "string") choiceIds.push(v);
     else if (Array.isArray(v)) choiceIds.push(...v);
   }
-  return { values, choiceIds };
+  const registrationQuestion = sorted.find((q) => q.type === "SESSION_LEVEL");
+  const registration = registrationQuestion ? ((values.get(registrationQuestion.id) as RegistrationValue | undefined) ?? null) : null;
+  return { values, choiceIds, registration };
 }
 
 /** Texte lisible d'une valeur (récapitulatif, export). */
-export function displayValue(q: Pick<EngineQuestion, "type" | "choices">, value: unknown): string {
+export function displayValue(
+  q: Pick<EngineQuestion, "type" | "choices">,
+  value: unknown,
+  ctx: { sessions?: readonly { id: string; label: string; levels: readonly { id: string; code: string; label: string | null }[] }[] } = {}
+): string {
   if (value === undefined || value === null) return "";
+  if (q.type === "SESSION_LEVEL" && typeof value === "object" && !Array.isArray(value)) {
+    const r = value as RegistrationValue;
+    const session = ctx.sessions?.find((s) => s.id === r.sessionId);
+    const level = session?.levels.find((l) => l.id === r.levelId);
+    const prev = r.previousLevelDone === null ? "" : ` (niveau précédent suivi : ${r.previousLevelDone ? "oui" : "non"})`;
+    return `${session?.label ?? "Session"} — niveau ${level?.code ?? "?"}${level?.label ? ` ${level.label}` : ""}${prev}`;
+  }
   const label = (id: unknown) => q.choices.find((c) => c.id === id)?.label ?? String(id);
   if (Array.isArray(value)) return value.map(label).join(", ");
   if (CHOICE_TYPES.includes(q.type)) return label(value);

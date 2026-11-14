@@ -1,7 +1,16 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
-import { ACTIVE_STATUSES, FORM_INCLUDE, contactQuestion, ensureContactQuestion, getForm, needsContact, type FormWithQuestions } from "./builder";
+import {
+  ACTIVE_STATUSES,
+  FORM_INCLUDE,
+  contactQuestion,
+  ensureContactQuestion,
+  ensureRegistrationQuestion,
+  getForm,
+  needsContact,
+  type FormWithQuestions,
+} from "./builder";
 
 /**
  * Cycle de vie d'un formulaire (spec 079) : brouillon → publié → clôturé.
@@ -36,7 +45,10 @@ export async function isFull(form: { id: string; maxResponses: number | null }, 
  */
 function assertPublishable(form: FormWithQuestions) {
   const answerable = form.questions.filter((q) => !(needsContact(form) && q === contactQuestion(form.questions)));
-  if (answerable.length === 0) throw new ApiError(400, "Ajoutez au moins une question avant de publier");
+  if (answerable.length === 0 && form.sessions.length === 0) throw new ApiError(400, "Ajoutez au moins une question avant de publier");
+  if (form.questions.some((q) => q.type === "SESSION_LEVEL") && form.sessions.length === 0) {
+    throw new ApiError(400, "Déclarez au moins une session avant de publier");
+  }
 }
 
 export async function changeStatus(formId: string, action: "publish" | "close" | "reopen") {
@@ -50,6 +62,7 @@ export async function changeStatus(formId: string, action: "publish" | "close" |
       assertPublishable(form);
       return prisma.$transaction(async (tx) => {
         await ensureContactQuestion(tx, formId);
+        await ensureRegistrationQuestion(tx, formId);
         return tx.form.update({ where: { id: formId }, data: { status: "PUBLISHED" }, include: FORM_INCLUDE });
       });
     case "close":

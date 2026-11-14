@@ -15,8 +15,11 @@ import {
   type QuestionType,
 } from "@/modules/forms/schemas";
 import { useApi } from "../use-api";
+import SessionsEditor, { type EditorSession } from "./SessionsEditor";
+import FacilitatorsEditor, { type Facilitator } from "./FacilitatorsEditor";
+import Attendance from "./Attendance";
 
-export type EditorTab = "construction" | "reglages" | "apercu" | "reponses";
+export type EditorTab = "construction" | "reglages" | "apercu" | "reponses" | "presence";
 
 interface Choice {
   id: string;
@@ -52,6 +55,7 @@ interface Form {
   retentionMonths: number;
   purgedAt: string | null;
   questions: Question[];
+  sessions: EditorSession[];
 }
 interface Response {
   id: string;
@@ -60,11 +64,15 @@ interface Response {
   answers: { questionId: string; value: unknown }[];
   user: { name: string | null; displayName: string | null; email: string } | null;
   contactEmail: string | null;
+  sessionId: string | null;
+  levelId: string | null;
+  previousLevelDone: boolean | null;
 }
 interface Usage {
   responses: number;
   answeredQuestions: string[];
   holdingByChoice: Record<string, number>;
+  holdingByLevel: Record<string, number>;
 }
 
 /** Question en cours d'édition : clé = identifiant existant ou clé provisoire. */
@@ -96,7 +104,7 @@ const RESPONSE_STATUS: Record<string, string> = {
   EXPIRED: "Expirée",
 };
 
-/** Types proposés au lot 1 (la session/niveau arrive avec les inscriptions PCNC). */
+/** Types proposés à l'ajout : « Session et niveau » est ajoutée d'office avec les sessions. */
 const AVAILABLE_TYPES = QUESTION_TYPES.filter((t) => t !== "SESSION_LEVEL");
 
 let seq = 0;
@@ -182,6 +190,7 @@ function QuestionCard({
   previous,
   answered,
   contact,
+  registration,
   holding,
   onChange,
   onMove,
@@ -194,6 +203,8 @@ function QuestionCard({
   readonly answered: boolean;
   /** Adresse de contact d'un formulaire public nominatif : ajoutée d'office, toujours obligatoire. */
   readonly contact: boolean;
+  /** « Session et niveau » : ajoutée d'office avec les sessions, toujours obligatoire. */
+  readonly registration: boolean;
   readonly holding: Record<string, number>;
   readonly onChange: (d: Draft) => void;
   readonly onMove: (delta: number) => void;
@@ -206,12 +217,13 @@ function QuestionCard({
         <p className="text-[13px] font-semibold text-ink-muted">
           Question {index + 1}
           {contact && <span className="ml-2 font-normal">· adresse de contact, ajoutée d&apos;office</span>}
+          {registration && <span className="ml-2 font-normal">· choix de la session et du niveau, ajoutée d&apos;office</span>}
           {answered && <span className="ml-2 font-normal">· a des réponses</span>}
         </p>
         <div className="flex gap-1">
           <IconButton icon={ArrowUp} aria-label="Monter" disabled={index === 0} onClick={() => onMove(-1)} />
           <IconButton icon={ArrowDown} aria-label="Descendre" disabled={index === count - 1} onClick={() => onMove(1)} />
-          <IconButton icon={Trash2} aria-label="Supprimer la question" disabled={answered || contact} onClick={onRemove} />
+          <IconButton icon={Trash2} aria-label="Supprimer la question" disabled={answered || contact || registration} onClick={onRemove} />
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-[1fr_220px]">
@@ -219,8 +231,8 @@ function QuestionCard({
         <Select
           label="Type"
           value={draft.type}
-          disabled={answered || contact}
-          options={AVAILABLE_TYPES.map((t) => ({ value: t, label: QUESTION_TYPE_LABELS[t] }))}
+          disabled={answered || contact || registration}
+          options={(registration ? QUESTION_TYPES : AVAILABLE_TYPES).map((t) => ({ value: t, label: QUESTION_TYPE_LABELS[t] }))}
           onChange={(e) => {
             const type = e.target.value as QuestionType;
             onChange({ ...draft, type, choices: CHOICE_TYPES.includes(type) ? (draft.choices.length ? draft.choices : [{ key: tempKey(), label: "", capacity: "" }]) : [] });
@@ -274,9 +286,9 @@ function QuestionCard({
           </Button>
         </div>
       )}
-      <ConditionEditor draft={draft} previous={previous} onChange={onChange} />
+      {!registration && <ConditionEditor draft={draft} previous={previous} onChange={onChange} />}
       <label className="flex min-h-11 items-center gap-3">
-        <Checkbox checked={draft.required} disabled={contact} onChange={(e) => onChange({ ...draft, required: e.target.checked })} />
+        <Checkbox checked={draft.required} disabled={contact || registration} onChange={(e) => onChange({ ...draft, required: e.target.checked })} />
         <span className="text-[15px] text-ink">Réponse obligatoire</span>
       </label>
     </li>
@@ -317,6 +329,16 @@ function Construction({ form, usage }: { readonly form: Form; readonly usage: Us
 
   return (
     <div className="space-y-4">
+      {form.kind === "REGISTRATION" && (
+        <SessionsEditor
+          key={JSON.stringify(form.sessions)}
+          formId={form.id}
+          sessions={form.sessions}
+          holdingByLevel={usage.holdingByLevel}
+          responses={usage.responses}
+          disabled={form.purgedAt !== null}
+        />
+      )}
       {needsContact && (
         <p className="text-[14px] text-ink-muted">
           Formulaire public : une question Email obligatoire est ajoutée d&apos;office. Elle sert à l&apos;accusé de réception, à repérer
@@ -339,6 +361,7 @@ function Construction({ form, usage }: { readonly form: Form; readonly usage: Us
             previous={drafts.slice(0, i)}
             answered={answered.has(d.key)}
             contact={d.key === contactKey}
+            registration={d.type === "SESSION_LEVEL"}
             holding={usage.holdingByChoice}
             onChange={(next) => update(i, next)}
             onMove={(delta) => move(i, delta)}
@@ -363,7 +386,17 @@ function Construction({ form, usage }: { readonly form: Form; readonly usage: Us
 
 // ─── Réglages ────────────────────────────────────────────────────────────────
 
-function Settings({ form, usage }: { readonly form: Form; readonly usage: Usage }) {
+function Settings({
+  form,
+  usage,
+  members,
+  facilitators,
+}: {
+  readonly form: Form;
+  readonly usage: Usage;
+  readonly members: { id: string; name: string }[];
+  readonly facilitators: Facilitator[];
+}) {
   const { call, busy } = useApi();
   const [s, setS] = useState({
     title: form.title,
@@ -423,7 +456,25 @@ function Settings({ form, usage }: { readonly form: Form; readonly usage: Usage 
         <Input label="Fin des réponses" hint="Le formulaire est alors clôturé." type="datetime-local" value={s.closesAt} onChange={(e) => setS({ ...s, closesAt: e.target.value })} />
       </div>
       <Input label="Nombre maximal de réponses" hint="Vide : sans limite." type="number" min={1} value={s.maxResponses} onChange={(e) => setS({ ...s, maxResponses: e.target.value })} />
-      {/* Liste d'attente : réglage proposé avec les places proposées à confirmer (spec 079, lot 2). */}
+      {!s.anonymous && (
+        <>
+          <label className="flex min-h-11 items-center gap-3">
+            <Checkbox checked={s.waitlistEnabled} onChange={(e) => setS({ ...s, waitlistEnabled: e.target.checked })} />
+            <span className="text-[15px] text-ink">Liste d&apos;attente quand un choix ou un niveau est complet</span>
+          </label>
+          {s.waitlistEnabled && (
+            <Input
+              label="Délai pour confirmer une place proposée (heures)"
+              hint="Passé ce délai, la place est proposée à la personne suivante."
+              type="number"
+              min={1}
+              max={336}
+              value={s.offerHoldHours}
+              onChange={(e) => setS({ ...s, offerHoldHours: e.target.value })}
+            />
+          )}
+        </>
+      )}
       <Select
         label="Conservation des réponses après la clôture"
         value={s.retentionMonths}
@@ -434,6 +485,11 @@ function Settings({ form, usage }: { readonly form: Form; readonly usage: Usage 
       <Button type="button" disabled={busy || !s.title.trim()} onClick={() => void save()}>
         {busy ? "Enregistrement…" : "Enregistrer les réglages"}
       </Button>
+      {form.kind === "REGISTRATION" && form.sessions.length > 0 && (
+        <div className="border-t border-line pt-4">
+          <FacilitatorsEditor key={JSON.stringify(facilitators)} formId={form.id} sessions={form.sessions} members={members} initial={facilitators} />
+        </div>
+      )}
     </div>
   );
 }
@@ -452,6 +508,10 @@ function Preview({ form, usage }: { readonly form: Form; readonly usage: Usage }
       questions: form.questions.map((q) => ({
         ...q,
         choices: q.choices.map((c) => ({ id: c.id, label: c.label, remaining: c.capacity == null ? null : Math.max(0, c.capacity - (usage.holdingByChoice[c.id] ?? 0)) })),
+      })),
+      sessions: form.sessions.map((session) => ({
+        ...session,
+        levels: session.levels.map((l) => ({ ...l, remaining: Math.max(0, l.capacity - (usage.holdingByLevel[l.id] ?? 0)) })),
       })),
     }),
     [form, usage]
@@ -473,21 +533,64 @@ function display(q: Question, value: unknown): string {
   return String(value);
 }
 
-function Responses({ form, responses }: { readonly form: Form; readonly responses: Response[] }) {
+function Responses({ form, responses: all, manage }: { readonly form: Form; readonly responses: Response[]; readonly manage: boolean }) {
   const { call, busy } = useApi();
   const [cancelling, setCancelling] = useState<string | null>(null);
-  const shown = form.questions.slice(0, 4);
+  const [sessionFilter, setSessionFilter] = useState("");
+  const hasSessions = form.sessions.length > 0;
+  const responses = sessionFilter ? all.filter((r) => r.sessionId === sessionFilter) : all;
+  const shown = form.questions.filter((q) => q.type !== "SESSION_LEVEL").slice(0, 4);
   const active = responses.filter((r) => ["CONFIRMED", "WAITLISTED", "OFFERED"].includes(r.status)).length;
+  const sessionOf = new Map(form.sessions.map((x) => [x.id, x]));
+  const levelOf = new Map(form.sessions.flatMap((x) => x.levels.map((l) => [l.id, l] as const)));
+  // Décompte par niveau : places tenues (confirmées ou proposées) et liste d'attente.
+  const counts = (levelId: string, statuses: string[]) => all.filter((r) => r.levelId === levelId && statuses.includes(r.status)).length;
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[15px] text-ink">
           {active} réponse{active > 1 ? "s" : ""} active{active > 1 ? "s" : ""} sur {responses.length}
         </p>
-        <a href={`/api/forms/${form.id}/export`} className="inline-flex items-center gap-2 text-[15px] font-semibold text-brand-text underline">
-          <Download className="size-4" aria-hidden="true" /> Exporter (.xlsx)
-        </a>
+        {manage && (
+          <a href={`/api/forms/${form.id}/export`} className="inline-flex items-center gap-2 text-[15px] font-semibold text-brand-text underline">
+            <Download className="size-4" aria-hidden="true" /> Exporter (.xlsx)
+          </a>
+        )}
       </div>
+      {hasSessions && (
+        <div className="space-y-3">
+          <div className="max-w-sm">
+            <Select
+              label="Session"
+              value={sessionFilter}
+              placeholder="Toutes les sessions"
+              options={form.sessions.map((x) => ({ value: x.id, label: x.label }))}
+              onChange={(e) => setSessionFilter(e.target.value)}
+            />
+          </div>
+          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {form.sessions
+              .filter((x) => !sessionFilter || x.id === sessionFilter)
+              .flatMap((x) =>
+                x.levels.map((l) => {
+                  const held = counts(l.id, ["CONFIRMED", "OFFERED"]);
+                  const waiting = counts(l.id, ["WAITLISTED"]);
+                  return (
+                    <li key={l.id} className="rounded-control border border-line bg-surface px-3 py-2 text-[14px]">
+                      <p className="font-semibold text-ink">
+                        {x.label} — niveau {l.code}
+                      </p>
+                      <p className="text-ink-muted">
+                        {held} / {l.capacity} place{l.capacity > 1 ? "s" : ""}
+                        {waiting ? ` · ${waiting} en attente` : ""}
+                      </p>
+                    </li>
+                  );
+                })
+              )}
+          </ul>
+        </div>
+      )}
       {responses.length === 0 ? (
         <p className="text-ink-muted">Aucune réponse pour le moment.</p>
       ) : (
@@ -498,6 +601,13 @@ function Responses({ form, responses }: { readonly form: Form; readonly response
                 <th className="px-3 py-2 font-semibold">Date</th>
                 <th className="px-3 py-2 font-semibold">Statut</th>
                 {!form.anonymous && <th className="px-3 py-2 font-semibold">Répondant</th>}
+                {hasSessions && (
+                  <>
+                    <th className="px-3 py-2 font-semibold">Session</th>
+                    <th className="px-3 py-2 font-semibold">Niveau</th>
+                    <th className="px-3 py-2 font-semibold">Niveau précédent suivi</th>
+                  </>
+                )}
                 {shown.map((q) => (
                   <th key={q.id} className="px-3 py-2 font-semibold">
                     {q.label}
@@ -515,13 +625,20 @@ function Responses({ form, responses }: { readonly form: Form; readonly response
                     <td className="px-3 py-2 whitespace-nowrap">{new Date(r.submittedOn).toLocaleDateString("fr-FR", { timeZone: "UTC" })}</td>
                     <td className="px-3 py-2">{RESPONSE_STATUS[r.status] ?? r.status}</td>
                     {!form.anonymous && <td className="px-3 py-2">{r.user ? (r.user.displayName ?? r.user.name ?? r.user.email) : (r.contactEmail ?? "")}</td>}
+                    {hasSessions && (
+                      <>
+                        <td className="px-3 py-2">{r.sessionId ? (sessionOf.get(r.sessionId)?.label ?? "") : ""}</td>
+                        <td className="px-3 py-2">{r.levelId ? (levelOf.get(r.levelId)?.code ?? "") : ""}</td>
+                        <td className="px-3 py-2">{r.previousLevelDone === null ? "—" : r.previousLevelDone ? "Oui" : "Non"}</td>
+                      </>
+                    )}
                     {shown.map((q) => (
                       <td key={q.id} className="max-w-60 truncate px-3 py-2">
                         {display(q, values.get(q.id))}
                       </td>
                     ))}
                     <td className="px-3 py-2 text-right">
-                      {open && (
+                      {open && manage && (
                         <Button type="button" size="sm" variant="ghost" onClick={() => setCancelling(r.id)}>
                           Annuler
                         </Button>
@@ -534,7 +651,7 @@ function Responses({ form, responses }: { readonly form: Form; readonly response
           </table>
         </div>
       )}
-      {form.questions.length > shown.length && <p className="text-[13px] text-ink-muted">Toutes les questions figurent dans l&apos;export.</p>}
+      {manage && form.questions.length > shown.length && <p className="text-[13px] text-ink-muted">Toutes les questions figurent dans l&apos;export.</p>}
       <ConfirmModal
         open={cancelling !== null}
         title="Annuler cette réponse ?"
@@ -560,12 +677,19 @@ export default function FormEditor({
   churchSlug,
   usage,
   responses,
+  manage,
+  members,
+  facilitators,
 }: {
   readonly tab: EditorTab;
   readonly form: Form;
   readonly churchSlug: string;
   readonly usage: Usage;
   readonly responses: Response[];
+  /** false : intervenant (réponses et présence de son périmètre seulement). */
+  readonly manage: boolean;
+  readonly members: { id: string; name: string }[];
+  readonly facilitators: Facilitator[];
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -573,6 +697,23 @@ export default function FormEditor({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const path = `/f/${churchSlug}/${form.slug}`;
   const base = `/formulaires/${form.id}`;
+  const hasSessions = form.sessions.length > 0;
+
+  if (!manage) {
+    return (
+      <div className="space-y-6">
+        <PageHeader eyebrow="Formulaires · intervenant" title={form.title} />
+        <Tabs
+          ariaLabel="Sections du formulaire"
+          tabs={[
+            { href: `${base}?onglet=reponses`, label: "Inscrits", active: tab === "reponses" },
+            ...(hasSessions ? [{ href: `${base}?onglet=presence`, label: "Présence", active: tab === "presence" }] : []),
+          ]}
+        />
+        {tab === "presence" && hasSessions ? <Attendance formId={form.id} sessions={form.sessions} /> : <Responses form={form} responses={responses} manage={false} />}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -632,12 +773,14 @@ export default function FormEditor({
           { href: `${base}?onglet=reglages`, label: "Réglages", active: tab === "reglages" },
           { href: `${base}?onglet=apercu`, label: "Aperçu", active: tab === "apercu" },
           { href: `${base}?onglet=reponses`, label: "Réponses", count: usage.responses, active: tab === "reponses" },
+          ...(hasSessions ? [{ href: `${base}?onglet=presence`, label: "Présence", active: tab === "presence" }] : []),
         ]}
       />
       {tab === "construction" && <Construction key={JSON.stringify(form.questions.map((q) => q.id))} form={form} usage={usage} />}
-      {tab === "reglages" && <Settings form={form} usage={usage} />}
+      {tab === "reglages" && <Settings form={form} usage={usage} members={members} facilitators={facilitators} />}
       {tab === "apercu" && <Preview form={form} usage={usage} />}
-      {tab === "reponses" && <Responses form={form} responses={responses} />}
+      {tab === "reponses" && <Responses form={form} responses={responses} manage />}
+      {tab === "presence" && hasSessions && <Attendance formId={form.id} sessions={form.sessions} />}
       <ConfirmModal
         open={confirmDelete}
         title="Supprimer ce formulaire ?"

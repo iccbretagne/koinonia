@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ClipboardList } from "lucide-react";
 import { getCurrentChurchId, hasChurchPermission, requireAuth } from "@/lib/auth";
 import { EmptyState, PageHeader, StatusChip } from "@/components/ui";
-import { listForms } from "@/modules/forms";
+import { listFacilitatedForms, listForms } from "@/modules/forms";
 import { FORM_KIND_LABELS } from "@/modules/forms/schemas";
 import CreateFormButton from "./CreateFormButton";
 
@@ -14,16 +14,39 @@ const STATUS = {
 
 const dateFr = (d: Date) => d.toLocaleDateString("fr-FR", { day: "numeric", month: "short", timeZone: "Europe/Paris" });
 
-/** Formulaires de l'église (spec 079) : réservé au secrétariat et à l'administration. */
+/**
+ * Formulaires de l'église (spec 079) : réservé au secrétariat et à l'administration ; un
+ * intervenant y retrouve les formulaires où il est désigné (lot 2).
+ */
 export default async function FormsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   const manager = churchId ? await hasChurchPermission(session, "forms:manage", churchId) : false;
   if (!churchId || !manager) {
+    const facilitated = churchId ? await listFacilitatedForms(session.user.id, [churchId]) : [];
     return (
       <div className="space-y-6">
         <PageHeader eyebrow="Agenda" title="Formulaires" />
-        <EmptyState icon={ClipboardList} title="Accès réservé" description="Les formulaires sont gérés par le secrétariat et l'administration de l'église." />
+        {facilitated.length > 0 ? (
+          <section className="space-y-3">
+            <h2 className="font-semibold text-ink">Où j&apos;interviens</h2>
+            <ul className="grid gap-3 md:grid-cols-2">
+              {facilitated.map((f) => (
+                <li key={f.id}>
+                  <Link href={`/formulaires/${f.id}?onglet=reponses`} className="block rounded-card border border-line bg-surface p-4 hover:border-brand">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="font-semibold text-ink">{f.title}</p>
+                      <StatusChip tone={STATUS[f.status].tone}>{STATUS[f.status].label}</StatusChip>
+                    </div>
+                    <p className="mt-1 text-[13px] text-ink-muted">Inscrits et feuille de présence de votre périmètre</p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : (
+          <EmptyState icon={ClipboardList} title="Accès réservé" description="Les formulaires sont gérés par le secrétariat et l'administration de l'église." />
+        )}
         <Link href="/formulaires/mes-reponses" className="text-[15px] font-semibold text-brand-text underline">
           Mes réponses
         </Link>
