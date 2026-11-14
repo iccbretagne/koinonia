@@ -69,7 +69,7 @@ Elle est adaptable à toute église structurée en ministères et départements.
 
 ## 4. Architecture fonctionnelle
 
-Le domaine est découpé en **11 modules** déclaratifs. Chaque module publie un manifeste
+Le domaine est découpé en **21 modules** déclaratifs. Chaque module publie un manifeste
 (`defineModule`) portant son nom, sa version, ses dépendances, ses permissions et ses entrées de
 navigation. Le registry assemble l'ensemble au démarrage.
 
@@ -85,7 +85,17 @@ navigation. Le registry assemble l'ensemble au démarrage.
 | `agenda` | Profils pastoraux et prise de rendez-vous | `core` |
 | `integration` | Parcours d'intégration des nouvelles familles | `core` |
 | `rooms` | Réservation de salles | `core` |
-| `jobs` | Table de jobs et ordonnancement des traitements différés | `core` |
+| `jobs` | Offres d'emploi, de stage et de freelance, profils, alertes | `core` |
+| `care` | Suivi pastoral : rendez-vous pastoraux, suivis de nouveaux convertis | `core` |
+| `giving` | Page publique « Donner » et slide de projection | `core`, `storage` |
+| `messages` | Messages système (bandeau, notification, Urgent) | `core` |
+| `serving` | Candidatures au service et accueil des STAR | `core`, `planning`, `storage` |
+| `shuttle` | Navette : registre, dépenses, cautions, locations | `core`, `planning`, `accounting` |
+| `treasury` | Trésorerie : caisses, collectes, remises, budget, clôture | `core`, `accounting` |
+| `ticketing` | Billetterie : inscriptions publiques, billets, paiements, contrôle hors ligne | `core`, `planning` |
+| `assistant` | Assistant de prise en main (fiches, questions de données) | `core` |
+| `mcp` | Connexion des assistants IA des membres (OAuth 2.1, MCP, actions confirmées) | `core`, `assistant` |
+| `forms` | Formulaires : inscriptions à sessions, participation, sondages | `core` |
 
 Le détail des capacités et des permissions de chaque module est dans `architecture.md` et
 `auth.md`.
@@ -312,6 +322,26 @@ même si la feature qui l'a motivée est totalement réécrite.*
 | [0008](adr/0008-cache-disque-renditions-audio.md) | Cache disque local des renditions audio | Accepté |
 | [0009](adr/0009-garde-perimetre-explicite.md) | Garde de périmètre explicite au point d'entrée | Accepté |
 | [0010](adr/0010-acces-transverse-inter-eglises.md) | Accès transverse inter-églises borné au module demandeur | Accepté |
+| [0011](adr/0011-manifeste-separe-de-l-index.md) | Manifeste de module séparé de son index public | Accepté |
+| [0012](adr/0012-manifeste-declare-surface-http.md) | Le manifeste déclare la surface HTTP du module ; le proxy l'applique | Accepté |
+| [0013](adr/0013-perimetre-appartenance-lecture-seule.md) | Périmètre d'appartenance, en lecture seule, distinct du périmètre de responsabilité | Accepté — amendé par 0014 |
+| [0014](adr/0014-fonctions-departement-droits-ecriture.md) | Certaines fonctions de département confèrent des droits d'écriture, nommément | Accepté |
+| [0015](adr/0015-module-suivi-rendez-vous-pastoraux.md) | Module `care` : suivi et rendez-vous pastoraux, distinct d'`integration` et d'`agenda` | Accepté |
+| [0016](adr/0016-preferences-notifications-email.md) | Un domaine par notification, email décidé centralement par préférence utilisateur | Accepté |
+| [0017](adr/0017-permission-n-approxime-pas-un-role.md) | Une permission n'approxime jamais un rôle administratif | Accepté |
+| [0018](adr/0018-tokens-semantiques-design-system.md) | L'interface passe par des tokens sémantiques (thèmes clair/sombre) | Accepté |
+| [0019](adr/0019-effacement-demande-supprimee.md) | Supprimer une demande efface son historique et ses notifications | Accepté |
+| [0020](adr/0020-disponibilite-derivee-absence-indisponible.md) | La disponibilité est dérivée ; absence et statut INDISPONIBLE fusionnent | Accepté |
+| [0021](adr/0021-planificateur-taches-cron.md) | Un seul déclencheur cron, chaque tâche à son propre rythme | Accepté |
+| [0022](adr/0022-csp-nonce-report-only.md) | CSP stricte par nonce, déployée d'abord en Report-Only | Accepté |
+| [0023](adr/0023-contrats-openapi-generes.md) | Référence d'API générée depuis des contrats colocalisés | Accepté |
+| [0024](adr/0024-notifications-push-web-push.md) | Notifications natives par Web Push, livrées depuis les notifications de l'application | Accepté |
+| [0025](adr/0025-email-urgent-hors-preference.md) | Email envoyé malgré la préférence pour un message système urgent | Accepté |
+| [0026](adr/0026-ecrans-hors-ligne.md) | Écrans de terrain utilisables hors ligne | Accepté |
+| [0027](adr/0027-reprise-par-lecture-entre-modules.md) | Reprise des mouvements entre modules par lecture, jamais par copie | Accepté |
+| [0028](adr/0028-assistant-moteur-interchangeable.md) | Assistant : moteur de réponse interchangeable, données par questions déclarées | Accepté |
+| [0029](adr/0029-serveur-autorisation-oauth-mcp.md) | Koinonia serveur d'autorisation OAuth pour ses connexions MCP | Accepté |
+| [0030](adr/0030-moteur-de-formulaires.md) | Moteur de formulaires générique et anonymat par séparation | Accepté |
 
 ## 11. Index documentaire
 

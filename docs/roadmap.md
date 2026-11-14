@@ -142,6 +142,19 @@
 - [x] Remplacer les placeholders par de vraies captures d'écran annotées
 - [x] Tutoriel interactif (onboarding guide pas-à-pas pour les nouveaux utilisateurs)
 
+## Modules livrés (specs 065 à 081)
+
+- [x] Dons : page publique « Donner » et slide de projection (specs 065 à 067)
+- [x] Notifications natives sur les appareils (spec 068) et icône de l'application (spec 069)
+- [x] Installer l'application (spec 070), messages système (spec 071), logo de l'église (spec 072)
+- [x] Navette (spec 073), billetterie avec contrôle hors ligne (spec 074), trésorerie (spec 076)
+- [x] Assistant de prise en main Nia / Koï (spec 075)
+- [x] Candidatures au service (spec 077), justificatifs après la remise des fonds (spec 078)
+- [x] Formulaires : inscriptions à sessions avec liste d'attente, intervenants et présence,
+      participation rattachée aux événements, sondages anonymes, résultats regroupés (spec 079)
+- [x] Galerie médias (spec 080)
+- [x] Connexion des assistants IA des membres, lecture et actions confirmées (spec 081)
+
 ## Technique
 
 - [x] Tests unitaires (Vitest)

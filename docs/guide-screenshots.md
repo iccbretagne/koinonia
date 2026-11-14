@@ -82,7 +82,7 @@ fenêtre parasite.
 
 ---
 
-## Liste des 65 captures
+## Liste des captures
 
 ### Planning (5)
 
@@ -224,6 +224,16 @@ fenêtre parasite.
 | 63 | `guide-audio-production.png` | Production audio (dépôt, découpage, publication) | `admin` | `/audio/production` | — |
 | 64 | `guide-audio-parametres.png` | Paramètres audio | `admin` | `/audio/parametres` | — |
 | 65 | `guide-audio-depublier.png` | Dépublier un culte | `admin` | `/audio/production` | clic « Ouvrir » |
+
+### Formulaires (5)
+
+| # | Fichier | Fonction | Compte | URL | Avant la capture |
+|---|---|---|---|---|---|
+| 66 | `guide-forms-builder.png` | Formulaires : créer et publier | `secretaire` | `/formulaires/[id]?onglet=construction` | un formulaire de participation avec quelques questions |
+| 67 | `guide-forms-sessions.png` | Formulaires : inscriptions à sessions (PCNC) | `secretaire` | `/formulaires/[id]?onglet=construction` | une inscription avec une session de 2 jours et deux niveaux |
+| 68 | `guide-forms-results.png` | Formulaires : résultats et participation | `secretaire` | `/formulaires/[id]?onglet=resultats` | quelques réponses confirmées |
+| 69 | `guide-forms-answer.png` | Répondre à un formulaire | `star` | `/f/[église]/[formulaire]` | formulaire publié |
+| 70 | `guide-forms-attendance.png` | Intervenant : inscrits et présence | `star` | `/formulaires/[id]?onglet=presence` | le compte désigné intervenant, des inscrits confirmés |
 ---
 
 ## Publication
