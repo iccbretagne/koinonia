@@ -14664,7 +14664,7 @@
           "forms"
         ],
         "summary": "Modification d'un formulaire",
-        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\nRéglages et, si fournie, liste complète des questions (clé = identifiant existant ou clé provisoire). Dès qu'il y a des réponses : 409 pour supprimer une question répondue ou un choix retenu, changer le type d'une question répondue, baisser des places sous les réponses, changer l'anonymat ou ajouter une question obligatoire. Conservation de 1 à 24 mois. Journalisé.",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\nRéglages et, si fournie, liste complète des questions (clé = identifiant existant ou clé provisoire). Dès qu'il y a des réponses : 409 pour supprimer une question répondue ou un choix retenu, changer le type d'une question répondue, baisser des places sous les réponses, changer l'anonymat ou ajouter une question obligatoire. Sessions et niveaux (inscription) : un niveau qui a des inscrits n'est ni supprimé ni ramené sous ses inscrits. Rattachement (participation seulement) : un événement d'église ou de billetterie de l'église du formulaire, sinon 400. Conservation de 1 à 24 mois. Journalisé.",
         "security": [
           {
             "session": []
@@ -14797,6 +14797,13 @@
                               "type": "integer",
                               "minimum": -1000000,
                               "maximum": 1000000
+                            },
+                            "participation": {
+                              "type": "string",
+                              "enum": [
+                                "attendance",
+                                "companions"
+                              ]
                             }
                           },
                           "additionalProperties": false
@@ -14943,6 +14950,18 @@
                       ]
                     },
                     "maxItems": 20
+                  },
+                  "eventId": {
+                    "type": "string",
+                    "nullable": true,
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "ticketingEventId": {
+                    "type": "string",
+                    "nullable": true,
+                    "minLength": 1,
+                    "maxLength": 40
                   }
                 }
               }
@@ -15551,6 +15570,47 @@
           },
           "400": {
             "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/forms/{id}/results": {
+      "get": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Résultats regroupés d'un formulaire",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire, ou intervenant désigné tant que le formulaire n'est pas clôturé.\n\nUn agrégat par question sur les réponses confirmées : effectifs par choix (places comprises), oui/non, note moyenne et répartition, somme et moyenne d'un nombre, textes libres triés (jamais dans l'ordre d'arrivée), emails et téléphones seulement comptés. Participation : personnes qui viennent, accompagnants, total. Aucune identité, sondage anonyme ou non. Un intervenant n'a que son périmètre.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Résultats par question et résumé de participation",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
           },
           "401": {
             "description": "Session absente"

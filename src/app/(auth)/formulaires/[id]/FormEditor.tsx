@@ -18,8 +18,15 @@ import { useApi } from "../use-api";
 import SessionsEditor, { type EditorSession } from "./SessionsEditor";
 import FacilitatorsEditor, { type Facilitator } from "./FacilitatorsEditor";
 import Attendance from "./Attendance";
+import Results from "./Results";
+import type { FormResults } from "@/modules/forms";
 
-export type EditorTab = "construction" | "reglages" | "apercu" | "reponses" | "presence";
+export type EditorTab = "construction" | "reglages" | "apercu" | "reponses" | "presence" | "resultats";
+
+export interface LinkableEvents {
+  events: { id: string; title: string; date: string }[];
+  ticketing: { id: string; title: string; date: string }[];
+}
 
 interface Choice {
   id: string;
@@ -33,7 +40,7 @@ interface Question {
   label: string;
   help: string | null;
   required: boolean;
-  config: { min?: number; max?: number } | null;
+  config: { min?: number; max?: number; participation?: "attendance" | "companions" } | null;
   conditionQuestionId: string | null;
   conditionValue: string | null;
   choices: Choice[];
@@ -54,6 +61,8 @@ interface Form {
   offerHoldHours: number;
   retentionMonths: number;
   purgedAt: string | null;
+  eventId: string | null;
+  ticketingEventId: string | null;
   questions: Question[];
   sessions: EditorSession[];
 }
@@ -84,6 +93,7 @@ interface Draft {
   required: boolean;
   min: string;
   max: string;
+  participation: "" | "attendance" | "companions";
   choices: { key: string; label: string; capacity: string }[];
   conditionKey: string;
   conditionValue: string;
@@ -119,6 +129,7 @@ function toDraft(q: Question): Draft {
     required: q.required,
     min: q.config?.min?.toString() ?? "",
     max: q.config?.max?.toString() ?? "",
+    participation: q.config?.participation ?? "",
     choices: q.choices.map((c) => ({ key: c.id, label: c.label, capacity: c.capacity?.toString() ?? "" })),
     conditionKey: q.conditionQuestionId ?? "",
     conditionValue: q.conditionValue ?? "",
@@ -134,7 +145,11 @@ function toInput(d: Draft) {
     label: d.label,
     help: d.help.trim() || null,
     required: d.required,
-    config: d.type === "NUMBER" && (d.min !== "" || d.max !== "") ? { min: num(d.min), max: num(d.max) } : null,
+    config: (() => {
+      const bounds = d.type === "NUMBER" && (d.min !== "" || d.max !== "") ? { min: num(d.min), max: num(d.max) } : {};
+      const role = d.participation && ((d.participation === "attendance" && d.type === "YES_NO") || (d.participation === "companions" && d.type === "NUMBER")) ? { participation: d.participation } : {};
+      return Object.keys(bounds).length || Object.keys(role).length ? { ...bounds, ...role } : null;
+    })(),
     choices: isChoice ? d.choices.map((c) => ({ key: c.key, label: c.label, capacity: c.capacity.trim() ? Number(c.capacity) : null })) : undefined,
     condition: d.conditionKey && d.conditionValue ? { questionKey: d.conditionKey, value: d.conditionValue } : null,
   };
@@ -191,6 +206,7 @@ function QuestionCard({
   answered,
   contact,
   registration,
+  participationForm,
   holding,
   onChange,
   onMove,
@@ -205,6 +221,8 @@ function QuestionCard({
   readonly contact: boolean;
   /** « Session et niveau » : ajoutée d'office avec les sessions, toujours obligatoire. */
   readonly registration: boolean;
+  /** Participation : « Je viens » et « Nombre d'accompagnants » servent au total des participants. */
+  readonly participationForm: boolean;
   readonly holding: Record<string, number>;
   readonly onChange: (d: Draft) => void;
   readonly onMove: (delta: number) => void;
@@ -286,6 +304,17 @@ function QuestionCard({
           </Button>
         </div>
       )}
+      {participationForm && (draft.type === "YES_NO" || draft.type === "NUMBER") && (
+        <label className="flex min-h-11 items-center gap-3">
+          <Checkbox
+            checked={draft.participation === (draft.type === "YES_NO" ? "attendance" : "companions")}
+            onChange={(e) => onChange({ ...draft, participation: e.target.checked ? (draft.type === "YES_NO" ? "attendance" : "companions") : "" })}
+          />
+          <span className="text-[15px] text-ink">
+            {draft.type === "YES_NO" ? "Question « Je viens » (compte les participants)" : "Nombre d'accompagnants (ajouté au total des participants)"}
+          </span>
+        </label>
+      )}
       {!registration && <ConditionEditor draft={draft} previous={previous} onChange={onChange} />}
       <label className="flex min-h-11 items-center gap-3">
         <Checkbox checked={draft.required} disabled={contact || registration} onChange={(e) => onChange({ ...draft, required: e.target.checked })} />
@@ -321,6 +350,7 @@ function Construction({ form, usage }: { readonly form: Form; readonly usage: Us
         required: false,
         min: "",
         max: "",
+        participation: "",
         choices: CHOICE_TYPES.includes(newType) ? [{ key: tempKey(), label: "", capacity: "" }] : [],
         conditionKey: "",
         conditionValue: "",
@@ -362,6 +392,7 @@ function Construction({ form, usage }: { readonly form: Form; readonly usage: Us
             answered={answered.has(d.key)}
             contact={d.key === contactKey}
             registration={d.type === "SESSION_LEVEL"}
+            participationForm={form.kind === "PARTICIPATION"}
             holding={usage.holdingByChoice}
             onChange={(next) => update(i, next)}
             onMove={(delta) => move(i, delta)}
@@ -391,11 +422,13 @@ function Settings({
   usage,
   members,
   facilitators,
+  linkable,
 }: {
   readonly form: Form;
   readonly usage: Usage;
   readonly members: { id: string; name: string }[];
   readonly facilitators: Facilitator[];
+  readonly linkable: LinkableEvents;
 }) {
   const { call, busy } = useApi();
   const [s, setS] = useState({
@@ -410,7 +443,9 @@ function Settings({
     waitlistEnabled: form.waitlistEnabled,
     offerHoldHours: String(form.offerHoldHours),
     retentionMonths: String(form.retentionMonths),
+    link: form.eventId ? `event:${form.eventId}` : form.ticketingEventId ? `ticketing:${form.ticketingEventId}` : "",
   });
+  const dayFr = (iso: string) => new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric", timeZone: "Europe/Paris" });
   const save = () =>
     call(
       `/api/forms/${form.id}`,
@@ -427,6 +462,12 @@ function Settings({
         waitlistEnabled: s.waitlistEnabled,
         offerHoldHours: Number(s.offerHoldHours),
         retentionMonths: Number(s.retentionMonths),
+        ...(form.kind === "PARTICIPATION"
+          ? {
+              eventId: s.link.startsWith("event:") ? s.link.slice(6) : null,
+              ticketingEventId: s.link.startsWith("ticketing:") ? s.link.slice(10) : null,
+            }
+          : {}),
       },
       "Réglages enregistrés"
     );
@@ -455,6 +496,19 @@ function Settings({
         <Input label="Ouverture des réponses" hint="Vide : dès la publication." type="datetime-local" value={s.opensAt} onChange={(e) => setS({ ...s, opensAt: e.target.value })} />
         <Input label="Fin des réponses" hint="Le formulaire est alors clôturé." type="datetime-local" value={s.closesAt} onChange={(e) => setS({ ...s, closesAt: e.target.value })} />
       </div>
+      {form.kind === "PARTICIPATION" && (
+        <Select
+          label="Événement rattaché"
+          hint="Le formulaire apparaît sur la page de l'événement."
+          value={s.link}
+          placeholder="Aucun"
+          options={[
+            ...linkable.events.map((e) => ({ value: `event:${e.id}`, label: `${e.title} — ${dayFr(e.date)}` })),
+            ...linkable.ticketing.map((e) => ({ value: `ticketing:${e.id}`, label: `Billetterie : ${e.title} — ${dayFr(e.date)}` })),
+          ]}
+          onChange={(e) => setS({ ...s, link: e.target.value })}
+        />
+      )}
       <Input label="Nombre maximal de réponses" hint="Vide : sans limite." type="number" min={1} value={s.maxResponses} onChange={(e) => setS({ ...s, maxResponses: e.target.value })} />
       {!s.anonymous && (
         <>
@@ -680,6 +734,8 @@ export default function FormEditor({
   manage,
   members,
   facilitators,
+  linkable,
+  results,
 }: {
   readonly tab: EditorTab;
   readonly form: Form;
@@ -690,6 +746,8 @@ export default function FormEditor({
   readonly manage: boolean;
   readonly members: { id: string; name: string }[];
   readonly facilitators: Facilitator[];
+  readonly linkable: LinkableEvents;
+  readonly results: FormResults | null;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -708,9 +766,16 @@ export default function FormEditor({
           tabs={[
             { href: `${base}?onglet=reponses`, label: "Inscrits", active: tab === "reponses" },
             ...(hasSessions ? [{ href: `${base}?onglet=presence`, label: "Présence", active: tab === "presence" }] : []),
+            { href: `${base}?onglet=resultats`, label: "Résultats", active: tab === "resultats" },
           ]}
         />
-        {tab === "presence" && hasSessions ? <Attendance formId={form.id} sessions={form.sessions} /> : <Responses form={form} responses={responses} manage={false} />}
+        {tab === "presence" && hasSessions ? (
+          <Attendance formId={form.id} sessions={form.sessions} />
+        ) : tab === "resultats" && results ? (
+          <Results results={results} anonymous={form.anonymous} manage={false} formId={form.id} />
+        ) : (
+          <Responses form={form} responses={responses} manage={false} />
+        )}
       </div>
     );
   }
@@ -774,10 +839,12 @@ export default function FormEditor({
           { href: `${base}?onglet=apercu`, label: "Aperçu", active: tab === "apercu" },
           { href: `${base}?onglet=reponses`, label: "Réponses", count: usage.responses, active: tab === "reponses" },
           ...(hasSessions ? [{ href: `${base}?onglet=presence`, label: "Présence", active: tab === "presence" }] : []),
+          { href: `${base}?onglet=resultats`, label: "Résultats", active: tab === "resultats" },
         ]}
       />
       {tab === "construction" && <Construction key={JSON.stringify(form.questions.map((q) => q.id))} form={form} usage={usage} />}
-      {tab === "reglages" && <Settings form={form} usage={usage} members={members} facilitators={facilitators} />}
+      {tab === "reglages" && <Settings form={form} usage={usage} members={members} facilitators={facilitators} linkable={linkable} />}
+      {tab === "resultats" && results && <Results results={results} anonymous={form.anonymous} manage formId={form.id} />}
       {tab === "apercu" && <Preview form={form} usage={usage} />}
       {tab === "reponses" && <Responses form={form} responses={responses} manage />}
       {tab === "presence" && hasSessions && <Attendance formId={form.id} sessions={form.sessions} />}

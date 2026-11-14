@@ -56,6 +56,8 @@ function collectText(node: unknown, acc: string[] = []): string[] {
 describe("Fiche d'événement — bloc audio", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Aucun formulaire rattaché (bloc « Formulaires », spec 079 lot 3).
+    prismaMock.form.findMany.mockResolvedValue([]);
     prismaMock.department.findMany.mockResolvedValue([]);
   });
 

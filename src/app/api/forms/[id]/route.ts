@@ -3,6 +3,7 @@ import { logAudit } from "@/lib/audit";
 import { requireFormManage } from "@/modules/forms/auth";
 import { deleteForm, getForm, updateForm, usageCounts } from "@/modules/forms";
 import { formUpdateSchema } from "./contract";
+import { assertLinkableEvents } from "../_events";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -32,6 +33,7 @@ export async function PATCH(request: Request, { params }: Params) {
     const { id } = await params;
     const { session, churchId } = await requireFormManage(id);
     const data = formUpdateSchema.parse(await request.json());
+    await assertLinkableEvents(churchId, data);
     const form = await updateForm(id, data);
     await logAudit({
       userId: session.user.id,
@@ -39,7 +41,12 @@ export async function PATCH(request: Request, { params }: Params) {
       action: "UPDATE",
       entityType: "Form",
       entityId: id,
-      details: { fields: Object.keys(data), questions: data.questions?.length },
+      details: {
+        fields: Object.keys(data),
+        questions: data.questions?.length,
+        ...(data.eventId !== undefined ? { eventId: data.eventId } : {}),
+        ...(data.ticketingEventId !== undefined ? { ticketingEventId: data.ticketingEventId } : {}),
+      },
     });
     return successResponse(form);
   } catch (error) {

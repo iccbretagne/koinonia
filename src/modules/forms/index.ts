@@ -53,5 +53,9 @@ export type { AttendanceCell } from "./services/attendance";
 export type { SubmitResult, Respondent, ResponseWithForm, PublicFormView } from "./services/responses";
 
 export { exportResponses, STATUS_LABEL } from "./services/exports";
+export { formResults, aggregate } from "./services/results";
+export type { FormResults, QuestionResult, ParticipationSummary } from "./services/results";
+export { listFormsForEvent } from "./services/events";
+export type { EventForm } from "./services/events";
 export { sendReceipt, resendManageLink, formPath } from "./services/notify";
 export { runFormTasks, runFormPurge, sessionsEnd } from "./services/tasks";

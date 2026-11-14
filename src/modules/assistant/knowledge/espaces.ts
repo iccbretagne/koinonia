@@ -157,9 +157,9 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     key: "KB-147",
     kind: "howto",
     title: "Créer un formulaire",
-    questions: ["Créer un formulaire d'inscription", "faire un sondage", "qui vient à l'événement", "remplacer Google Forms", "inscriptions PCNC"],
+    questions: ["Créer un formulaire d'inscription", "faire un sondage", "qui vient à l'événement", "remplacer Google Forms", "inscriptions PCNC", "résultats du sondage", "combien de participants"],
     answer:
-      "Dans « Formulaires », créez une inscription, une participation ou un sondage, ajoutez les questions (texte, choix avec places, oui/non, nombre, date, email, note, consentement…) et une condition d'affichage si besoin, puis publiez et copiez le lien. Un formulaire public demande toujours l'email du répondant (question ajoutée d'office) ; les réponses s'exportent et s'effacent au terme de la conservation choisie (12 mois par défaut).",
+      "Dans « Formulaires », créez une inscription, une participation ou un sondage, ajoutez les questions (texte, choix avec places, oui/non, nombre, date, email, note, consentement…) et une condition d'affichage si besoin, puis publiez et copiez le lien. Un formulaire public demande toujours l'email du répondant (question ajoutée d'office). L'onglet « Résultats » regroupe les réponses par question (graphiques, réponses libres sans nom) ; une participation se rattache à un événement, et « Je viens » plus « Nombre d'accompagnants » donnent le total des participants. Les réponses s'exportent et s'effacent au terme de la conservation choisie (12 mois par défaut).",
     href: "/formulaires",
     hrefLabel: "Formulaires",
     audience: { permissions: ["forms:manage"] },

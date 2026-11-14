@@ -13,7 +13,7 @@ export const contract = defineContract({
   PATCH: {
     summary: "Modification d'un formulaire",
     description:
-      "Réglages et, si fournie, liste complète des questions (clé = identifiant existant ou clé provisoire). Dès qu'il y a des réponses : 409 pour supprimer une question répondue ou un choix retenu, changer le type d'une question répondue, baisser des places sous les réponses, changer l'anonymat ou ajouter une question obligatoire. Conservation de 1 à 24 mois. Journalisé.",
+      "Réglages et, si fournie, liste complète des questions (clé = identifiant existant ou clé provisoire). Dès qu'il y a des réponses : 409 pour supprimer une question répondue ou un choix retenu, changer le type d'une question répondue, baisser des places sous les réponses, changer l'anonymat ou ajouter une question obligatoire. Sessions et niveaux (inscription) : un niveau qui a des inscrits n'est ni supprimé ni ramené sous ses inscrits. Rattachement (participation seulement) : un événement d'église ou de billetterie de l'église du formulaire, sinon 400. Conservation de 1 à 24 mois. Journalisé.",
     access: "forms:manage",
     accessNote: "dans l'église du formulaire",
     body: formUpdateSchema,

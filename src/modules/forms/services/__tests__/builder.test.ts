@@ -127,6 +127,17 @@ describe("mise à jour", () => {
     ).rejects.toThrow("pas de condition");
     prismaMock.form.update.mockResolvedValue({ ...FORM, kind: "PARTICIPATION" });
     await expect(updateForm("f1", { questions: [{ key: "s", type: "SESSION_LEVEL", label: "S", required: true }] })).rejects.toThrow("réservé aux inscriptions");
+    // Rattachement et rôles de participation : réservés aux participations (lot 3).
+    prismaMock.form.update.mockResolvedValue(FORM);
+    await expect(updateForm("f1", { eventId: "e1" })).rejects.toThrow("Seule une participation");
+    await expect(
+      updateForm("f1", { questions: [{ key: "v", type: "YES_NO", label: "Je viens", required: true, config: { participation: "attendance" } }] })
+    ).rejects.toThrow("réservé aux participations");
+    prismaMock.form.update.mockResolvedValue({ ...FORM, kind: "PARTICIPATION", eventId: null, ticketingEventId: null });
+    await expect(updateForm("f1", { eventId: "e1", ticketingEventId: "t1" })).rejects.toThrow("Un seul événement");
+    await expect(
+      updateForm("f1", { questions: [{ key: "v", type: "NUMBER", label: "Je viens", required: true, config: { participation: "attendance" } }] })
+    ).rejects.toThrow("est un oui/non");
   });
 
   it("conditions écrites après les questions, valeur de choix traduite en identifiant", async () => {

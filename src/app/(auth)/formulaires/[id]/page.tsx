@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
 import { getFormAccess, scopeWhere } from "@/modules/forms/auth";
-import { getForm, listFacilitators, listResponses, participantName, usageCounts } from "@/modules/forms";
+import { formResults, getForm, listFacilitators, listResponses, participantName, usageCounts } from "@/modules/forms";
+import { linkableEvents } from "@/app/api/forms/_events";
 import { prisma } from "@/lib/prisma";
 import FormEditor, { type EditorTab } from "./FormEditor";
 
@@ -10,8 +11,8 @@ type Props = {
   readonly searchParams: Promise<{ onglet?: string }>;
 };
 
-const TABS: EditorTab[] = ["construction", "reglages", "apercu", "reponses", "presence"];
-const FACILITATOR_TABS: EditorTab[] = ["reponses", "presence"];
+const TABS: EditorTab[] = ["construction", "reglages", "apercu", "reponses", "presence", "resultats"];
+const FACILITATOR_TABS: EditorTab[] = ["reponses", "presence", "resultats"];
 
 /** Comptes de l'église, pour désigner les intervenants. */
 async function churchMembers(churchId: string) {
@@ -37,12 +38,16 @@ export default async function FormPage({ params, searchParams }: Props) {
   const manage = access.kind === "manage";
   const { onglet } = await searchParams;
   const tab = (manage ? TABS : FACILITATOR_TABS).find((t) => t === onglet) ?? (manage ? "construction" : "reponses");
-  const [usage, church, responses, members, facilitators] = await Promise.all([
+  const [usage, church, responses, members, facilitators, linkable, results] = await Promise.all([
     usageCounts(id),
     prisma.church.findUnique({ where: { id: form.churchId }, select: { slug: true } }),
     tab === "reponses" ? listResponses(id, undefined, scopeWhere(access)) : Promise.resolve([]),
     manage && tab === "reglages" ? churchMembers(form.churchId) : Promise.resolve([]),
     manage && tab === "reglages" ? listFacilitators(id) : Promise.resolve([]),
+    manage && tab === "reglages" && form.kind === "PARTICIPATION"
+      ? linkableEvents(form.churchId, { eventId: form.eventId, ticketingEventId: form.ticketingEventId })
+      : Promise.resolve({ events: [], ticketing: [] }),
+    tab === "resultats" ? formResults(id, scopeWhere(access)).then(({ form: _f, ...r }) => r) : Promise.resolve(null),
   ]);
   // Un intervenant voit les noms, jamais les adresses : la colonne « Répondant » reçoit le nom.
   const shortTexts = form.questions.filter((q) => q.type === "SHORT_TEXT").map((q) => q.id);
@@ -58,6 +63,8 @@ export default async function FormPage({ params, searchParams }: Props) {
       manage={manage}
       members={members}
       facilitators={facilitators}
+      linkable={linkable}
+      results={results ? JSON.parse(JSON.stringify(results)) : null}
       usage={{
         responses: usage.responses,
         answeredQuestions: [...usage.answeredQuestions],

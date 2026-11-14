@@ -5,13 +5,15 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import { getOrCreatePrimaryShareToken, buildPublicAudioUrl } from "@/modules/audio";
 import EventDetailClient from "./EventDetailClient";
+import EventFormsBlock from "@/components/forms/EventFormsBlock";
+import { registry } from "@/lib/registry";
 
 export default async function EventDetailPage({
   params,
 }: {
   readonly params: Promise<{ eventId: string }>;
 }) {
-  await requireAuth();
+  const session = await requireAuth();
   const { eventId } = await params;
 
   const event = await prisma.event.findUnique({
@@ -33,6 +35,10 @@ export default async function EventDetailPage({
     include: { ministry: { select: { id: true, name: true } } },
     orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
   });
+
+  // Formulaires de participation rattachés (spec 079, lot 3).
+  const forms = registry.has("forms") ? await (await import("@/modules/forms")).listFormsForEvent({ eventId: event.id }) : [];
+  const formsManager = forms.length > 0 && (await (await import("@/lib/auth")).hasChurchPermission(session, "forms:manage", event.churchId));
 
   const linkedDeptIds = new Set(event.eventDepts.map((ed) => ed.departmentId));
 
@@ -82,6 +88,10 @@ export default async function EventDetailPage({
           )}
         </div>
       )}
+
+      <div className="mb-6">
+        <EventFormsBlock forms={forms} manage={formsManager} />
+      </div>
 
       <EventDetailClient
         eventId={event.id}

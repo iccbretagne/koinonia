@@ -366,3 +366,20 @@ Vitest, `prismaMock`, comme les autres modules :
   la feuille se relit toutes les 15 s.
 - **Export** : la colonne « Session et niveau » donne session, niveau et « niveau précédent
   suivi » ; une colonne par demi-journée de la plus longue session.
+
+## Écarts à l'implémentation (lot 3)
+
+- **Total des participants** : deux réglages de question propres à une participation —
+  « Je viens » (oui/non, `config.participation = "attendance"`) et « Nombre d'accompagnants »
+  (nombre ≥ 0, `"companions"`), une fois chacun. Total = réponses confirmées qui viennent (toutes
+  sans question « Je viens ») + leurs accompagnants.
+- **Résultats** (`results.ts`, `aggregate`) : réponses **confirmées** seulement ; textes libres
+  triés par ordre alphabétique (jamais l'ordre d'arrivée), 500 au plus ; emails et téléphones
+  seulement comptés. Export : feuille « Résultats » ajoutée au classeur des réponses (pas de
+  route d'export séparée).
+- **Rattachement** : validé par `src/app/api/forms/_events.ts` (`assertLinkableEvents`, ADR-0027),
+  événements proposés : 30 derniers jours et à venir. `listFormsForEvent` lit seulement `forms`.
+  Bloc « Formulaires » sur `/admin/events/[eventId]`, sur la vue STAR `/events/[eventId]/star-view`
+  (comptes de l'église) et sur l'aperçu de l'événement de billetterie (`/events/[eventId]` n'existe
+  pas).
+- **Intervenants** : onglet Résultats aussi, borné à leur périmètre.

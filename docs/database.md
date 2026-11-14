@@ -2262,10 +2262,12 @@ schéma construit à partir des questions (`@/modules/forms`). Toutes les tables
   dès la première réponse), `status` (`DRAFT`, `PUBLISHED`, `CLOSED`), `opensAt`, `closesAt` (fin
   des réponses, puis clôture automatique), `maxResponses`, `waitlistEnabled`, `offerHoldHours`
   (48), `retentionMonths` (12, 24 au plus, à compter de `closedAt`), `eventId` /
-  `ticketingEventId` (set null), `purgedAt`, `totals` (JSON conservé après la purge),
+  `ticketingEventId` (set null ; participation seulement, événement de la même église vérifié par
+  `src/app`), `purgedAt`, `totals` (JSON conservé après la purge),
   `deletedAt`, `notifiedCount` (signal regroupé au secrétariat), `createdById`.
 - **`form_questions`** : `position`, `type` (13 types), `label`, `help`, `required`, `config`
-  (bornes d'un nombre), `conditionQuestionId` / `conditionValue` (affichage conditionnel sur une
+  (bornes d'un nombre ; `participation` : `attendance` pour « Je viens », `companions` pour le
+  nombre d'accompagnants, lot 3), `conditionQuestionId` / `conditionValue` (affichage conditionnel sur une
   question précédente).
 - **`form_choices`** : `position`, `label`, `capacity` (places, null = illimité).
 - **`form_responses`** : `status` (`CONFIRMED`, `WAITLISTED`, `OFFERED`, `CANCELLED`, `DECLINED`,

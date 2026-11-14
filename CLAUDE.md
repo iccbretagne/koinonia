@@ -736,7 +736,11 @@ désactivable (`ENABLED_MODULES`) :
   **Intervenants** : donnée par formulaire (`getFormAccess`/`scopeWhere`, `@/modules/forms/auth`),
   réponses et présence de leur périmètre, sans adresse, sans export ; éteints à la clôture (le
   lendemain de la dernière session)
-- Lot 3 (résultats regroupés, rattachement aux événements) : voir `specs/079-formulaires/tasks.md`
+- **Résultats et participation** (lot 3) : `formResults`/`aggregate` (`services/results.ts`), sur
+  les réponses confirmées, sans identité (textes triés, emails et téléphones seulement comptés).
+  Participation : questions « Je viens » / « Nombre d'accompagnants » (`config.participation`),
+  total des participants ; rattachement à un événement d'église ou de billetterie validé par
+  `src/app/api/forms/_events.ts` (ADR-0027), bloc `EventFormsBlock` via `listFormsForEvent`
 
 **Spécificités du module messages** (spec 071) :
 - `messages:publish` (Super Admin, Admin, Secrétaire) ouvre `/admin/messages` : publier, programmer,
