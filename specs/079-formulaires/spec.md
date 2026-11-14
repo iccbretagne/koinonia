@@ -1,7 +1,7 @@
 # Spec — Formulaires (inscriptions, participation, sondages)
 
 - **Numéro** : 079
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-11-11
 - **Branche suggérée** : `feat/formulaires`
 

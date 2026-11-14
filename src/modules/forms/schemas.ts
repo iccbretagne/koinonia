@@ -49,6 +49,9 @@ export const FORM_KIND_LABELS: Record<(typeof FORM_KINDS)[number], string> = {
   SURVEY: "Sondage",
 };
 
+export const PARTICIPATION_ROLES = ["attendance", "companions"] as const;
+export type ParticipationRole = (typeof PARTICIPATION_ROLES)[number];
+
 export const RETENTION_MONTHS = { default: 12, max: 24 } as const;
 export const MAX_QUESTIONS = 60;
 export const MAX_CHOICES = 50;
@@ -66,6 +69,11 @@ export const questionConfigSchema = z
   .object({
     min: z.number().int().min(-1_000_000).max(1_000_000).optional(),
     max: z.number().int().min(-1_000_000).max(1_000_000).optional(),
+    /**
+     * Participation (lot 3) : « Je viens » (oui/non) et « Nombre d'accompagnants » (nombre), pour
+     * compter les participants accompagnants compris.
+     */
+    participation: z.enum(PARTICIPATION_ROLES).optional(),
   })
   .strict();
 
@@ -135,6 +143,9 @@ export type SessionInput = z.infer<typeof sessionInputSchema>;
 export const formUpdateSchema = formSettingsSchema.partial().extend({
   questions: z.array(questionInputSchema).max(MAX_QUESTIONS).optional(),
   sessions: z.array(sessionInputSchema).max(20).optional(),
+  /** Rattachement d'une participation (lot 3) : un événement d'église ou de billetterie, ou aucun. */
+  eventId: z.string().min(1).max(40).nullable().optional(),
+  ticketingEventId: z.string().min(1).max(40).nullable().optional(),
 });
 export type FormUpdateInput = z.infer<typeof formUpdateSchema>;
 

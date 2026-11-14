@@ -2,6 +2,7 @@ import { sanitizeRow } from "@/lib/excel";
 import { displayValue } from "./engine";
 import { getForm } from "./builder";
 import { listResponses } from "./responses";
+import { aggregate } from "./results";
 
 /**
  * Export des réponses d'un formulaire (spec 079) : une ligne par réponse, une colonne par
@@ -57,6 +58,43 @@ export async function exportResponses(formId: string): Promise<{ buffer: Buffer;
     }
     sheet.addRow(sanitizeRow(row));
   }
+  // Résultats regroupés (lot 3) : mêmes agrégats que l'onglet Résultats, sans identité.
+  const results = aggregate(
+    form,
+    responses.filter((r) => r.status === "CONFIRMED")
+  );
+  const summary = wb.addWorksheet("Résultats");
+  summary.columns = [
+    { header: "Question", key: "question", width: 40 },
+    { header: "Réponse", key: "item", width: 40 },
+    { header: "Nombre", key: "count", width: 12 },
+    { header: "Part", key: "share", width: 10 },
+  ];
+  summary.getRow(1).font = { bold: true };
+  const pct = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)} %` : "");
+  if (results.participation) {
+    const p = results.participation;
+    for (const [item, count] of [
+      ["Personnes qui viennent", p.attending],
+      ["Accompagnants", p.companions],
+      ["Total des participants", p.total],
+      ["Ne viennent pas", p.notAttending],
+    ] as const) {
+      summary.addRow(sanitizeRow({ question: "Participation", item, count, share: "" }));
+    }
+  }
+  for (const q of results.questions) {
+    if (q.kind === "choices") for (const i of q.items) summary.addRow(sanitizeRow({ question: q.label, item: i.label, count: i.count, share: pct(i.count, q.answered) }));
+    else if (q.kind === "rating") {
+      q.distribution.forEach((count, i) => summary.addRow(sanitizeRow({ question: q.label, item: `${i + 1} / 5`, count, share: pct(count, q.answered) })));
+      summary.addRow(sanitizeRow({ question: q.label, item: "Moyenne", count: q.average ?? "", share: "" }));
+    } else if (q.kind === "number") {
+      summary.addRow(sanitizeRow({ question: q.label, item: "Somme", count: q.sum, share: "" }));
+      summary.addRow(sanitizeRow({ question: q.label, item: "Moyenne", count: q.average ?? "", share: "" }));
+    } else if (q.kind === "texts") for (const t of q.texts) summary.addRow(sanitizeRow({ question: q.label, item: t, count: "", share: "" }));
+    else summary.addRow(sanitizeRow({ question: q.label, item: "Réponses", count: q.answered, share: "" }));
+  }
+
   const fileName = `${form.slug}-reponses.xlsx`;
   return { buffer: Buffer.from(await wb.xlsx.writeBuffer()), fileName, count: responses.length };
 }

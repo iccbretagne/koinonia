@@ -244,7 +244,18 @@ function validateQuestions(questions: QuestionInput[], kind: string) {
     if (!isChoice && q.choices?.length) throw new ApiError(400, `« ${q.label} » : ce type de question n'a pas de choix`);
     const choiceKeys = new Set(q.choices?.map((c) => c.key));
     if (choiceKeys.size !== (q.choices?.length ?? 0)) throw new ApiError(400, `« ${q.label} » : deux choix portent la même clé`);
-    if (q.config && q.type !== "NUMBER") throw new ApiError(400, `« ${q.label} » : réglage réservé aux nombres`);
+    const role = q.config?.participation;
+    const bounds = q.config && (q.config.min !== undefined || q.config.max !== undefined);
+    if (bounds && q.type !== "NUMBER") throw new ApiError(400, `« ${q.label} » : réglage réservé aux nombres`);
+    if (role) {
+      if (kind !== "PARTICIPATION") throw new ApiError(400, `« ${q.label} » : réglage réservé aux participations`);
+      if (role === "attendance" && q.type !== "YES_NO") throw new ApiError(400, `« ${q.label} » : « Je viens » est un oui/non`);
+      if (role === "companions" && q.type !== "NUMBER") throw new ApiError(400, `« ${q.label} » : les accompagnants sont un nombre`);
+      if (role === "companions" && q.config?.min !== undefined && q.config.min < 0) throw new ApiError(400, `« ${q.label} » : minimum 0 pour des accompagnants`);
+      if (questions.filter((x) => x.config?.participation === role).length > 1) {
+        throw new ApiError(400, role === "attendance" ? "Une seule question « Je viens »" : "Une seule question « Nombre d'accompagnants »");
+      }
+    }
     if (q.config?.min !== undefined && q.config.max !== undefined && q.config.min > q.config.max) {
       throw new ApiError(400, `« ${q.label} » : minimum supérieur au maximum`);
     }
@@ -439,6 +450,12 @@ export async function updateForm(formId: string, input: FormUpdateInput): Promis
     const opensAt = input.opensAt === undefined ? form.opensAt : input.opensAt;
     const closesAt = input.closesAt === undefined ? form.closesAt : input.closesAt;
     if (opensAt && closesAt && opensAt >= closesAt) throw new ApiError(400, "La fin des réponses doit suivre leur ouverture");
+
+    // Rattachement (lot 3) : l'église de l'événement est vérifiée par l'appelant (ADR-0027).
+    const eventId = input.eventId === undefined ? form.eventId : input.eventId;
+    const ticketingEventId = input.ticketingEventId === undefined ? form.ticketingEventId : input.ticketingEventId;
+    if ((eventId || ticketingEventId) && form.kind !== "PARTICIPATION") throw new ApiError(400, "Seule une participation se rattache à un événement");
+    if (eventId && ticketingEventId) throw new ApiError(400, "Un seul événement : d'église ou de billetterie");
 
     const { questions, sessions, slug, ...settings } = input;
     if (slug && slug !== form.slug && (await uniqueSlug(form.churchId, slug, tx, form.id)) !== slug) {

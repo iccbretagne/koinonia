@@ -160,33 +160,33 @@
 
 ### 1. Données & logique métier
 
-- [ ] **T44** — Résultats regroupés par question (effectifs, pourcentages, moyenne des notes,
+- [x] **T44** — Résultats regroupés par question (effectifs, pourcentages, moyenne des notes,
       textes libres), jamais d'identité en anonyme *(fichier :
       `src/modules/forms/services/results.ts`)*
-- [ ] **T45** — Rattachement à un événement d'église ou de billetterie : validation de l'église
+- [x] **T45** — Rattachement à un événement d'église ou de billetterie : validation de l'église
       par `src/app` (ADR-0027), `listFormsForEvent` ; participation : total des participants
       accompagnants compris, remplissage des choix
 
 ### 2. API
 
-- [ ] **T46** — `/api/forms/[id]/results` (gestion et intervenant), export des résultats ;
+- [x] **T46** — `/api/forms/[id]/results` (gestion et intervenant), export des résultats ;
       rattachement dans PATCH `/api/forms/[id]` ; `npm run openapi`
 
 ### 3. UI
 
-- [ ] **T47** — Onglet Résultats (`recharts`, réponses libres, export) ; Réglages : anonyme ou
+- [x] **T47** — Onglet Résultats (`recharts`, réponses libres, export) ; Réglages : anonyme ou
       nominatif, événement rattaché
-- [ ] **T48** [P] — Bloc « Formulaires » sur `/events/[eventId]` et sur la page de l'événement de
+- [x] **T48** [P] — Bloc « Formulaires » sur `/events/[eventId]` et sur la page de l'événement de
       billetterie
 
 ### 4. Tests
 
-- [ ] **T49** — Résultats regroupés, anonymat dans les résultats et l'export, participation
+- [x] **T49** — Résultats regroupés, anonymat dans les résultats et l'export, participation
       (accompagnants, ateliers pleins), rattachement refusé pour un événement d'une autre église
 
 ### 5. Documentation (à chaque lot)
 
-- [ ] **T50** — `CLAUDE.md` (module `forms`), `docs/database.md`, guide et fiches de l'assistant,
+- [x] **T50** — `CLAUDE.md` (module `forms`), `docs/database.md`, guide et fiches de l'assistant,
       `CHANGELOG.md` ; statut de l'ADR-0030 passé à Accepté au lot 1
 
 ## Vérification finale (à chaque lot)
