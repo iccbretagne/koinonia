@@ -6,6 +6,8 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.36.0] - 2026-11-14
+
 ### Ajouté
 
 - Formulaires (spec 079, lot 1) : le secrétariat construit lui-même ses formulaires dans « Formulaires » (espace Agenda) — inscription, participation ou sondage — avec 13 types de questions (texte, choix avec places, liste, oui/non, nombre, date, email, téléphone, note, consentement…), des questions qui n'apparaissent que selon une réponse précédente, un aperçu et la duplication d'un formulaire existant. Diffusion par un lien public (sans compte, protégé contre les robots) ou réservée aux comptes de l'église ; ouverture et fin des réponses à des dates choisies, nombre maximal de réponses. Le répondant reçoit un accusé de réception et peut modifier ou annuler sa réponse ; un formulaire public demande toujours l'email (question ajoutée d'office), et « Retrouver ma réponse » renvoie le lien à cette adresse ; une seconde réponse avec la même adresse est refusée et le lien de la première lui est renvoyé par email. Un sondage anonyme n'enregistre aucune identité. Réponses consultables et exportables, nouvelles réponses signalées regroupées, actions journalisées ; au terme de la conservation (12 mois par défaut, 24 au plus), les réponses sont effacées et seuls les totaux restent.
