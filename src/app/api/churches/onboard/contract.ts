@@ -7,7 +7,7 @@ export const onboardSchema = z.object({
     .string()
     .min(1, "L'identifiant est requis")
     .regex(/^[a-z0-9-]+$/, "L'identifiant ne peut contenir que des lettres minuscules, chiffres et tirets"),
-  adminEmail: z.string().email("Email invalide").optional().or(z.literal("")),
+  adminEmail: z.email("Email invalide").optional().or(z.literal("")),
 });
 
 export const contract = defineContract({

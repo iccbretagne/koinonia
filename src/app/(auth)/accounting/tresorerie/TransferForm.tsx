@@ -27,7 +27,7 @@ export default function TransferForm({
   const [error, setError] = useState<string | null>(null);
   const options = accounts.map((a) => ({ value: a.id, label: a.name }));
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.SubmitEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);

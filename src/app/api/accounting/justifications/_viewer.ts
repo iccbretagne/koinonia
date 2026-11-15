@@ -11,14 +11,14 @@ export async function requireJustificationViewer(): Promise<JustificationViewer>
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) throw new ApiError(400, "Aucune église sélectionnée");
-  const perms = session.user.churchRoles.filter((r) => r.churchId === churchId).flatMap((r) => rolePermissions[r.role] ?? []);
-  if (!["accounting:view", "accounting:submit", "accounting:manage"].some((p) => perms.includes(p))) {
+  const perms = new Set(session.user.churchRoles.filter((r) => r.churchId === churchId).flatMap((r) => rolePermissions[r.role] ?? []));
+  if (!["accounting:view", "accounting:submit", "accounting:manage"].some((p) => perms.has(p))) {
     throw new ApiError(403, "Accès refusé");
   }
   return {
     userId: session.user.id!,
     churchId,
-    manage: perms.includes("accounting:manage"),
+    manage: perms.has("accounting:manage"),
     scope: await getAccountingDepartmentScope(session, churchId),
   };
 }

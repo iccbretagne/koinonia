@@ -49,7 +49,7 @@ export interface ParsedAnswers {
 }
 
 const LIMITS = { SHORT_TEXT: 300, LONG_TEXT: 5000 } as const;
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/;
 const PHONE = /^[+0-9 ().-]{6,25}$/;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 

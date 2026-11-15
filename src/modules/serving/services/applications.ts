@@ -222,7 +222,7 @@ export async function loadApplication(id: string): Promise<ApplicationRecord | n
 }
 
 function assertSameChurch(actor: ServingActor, app: { churchId: string } | null): asserts app {
-  if (!app || app.churchId !== actor.churchId) throw new ApiError(404, "Candidature introuvable");
+  if (app?.churchId !== actor.churchId) throw new ApiError(404, "Candidature introuvable");
 }
 
 /** Lecture autorisée de la fiche (gestionnaire ou département actif), sans journalisation. */

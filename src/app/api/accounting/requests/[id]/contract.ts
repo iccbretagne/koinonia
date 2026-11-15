@@ -11,7 +11,7 @@ export const patchSchema = z.discriminatedUnion("action", [
     action:          z.literal("approve"),
     payments: z.array(z.object({
       amount:        z.number().positive(),
-      scheduledDate: z.string().datetime(),
+      scheduledDate: z.iso.datetime(),
       note:          z.string().max(500).optional(),
     })).min(1),
   }),

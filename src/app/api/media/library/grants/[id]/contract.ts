@@ -2,7 +2,7 @@ import { z } from "zod";
 import { defineContract } from "@/lib/openapi/contract";
 
 export const updateGrantSchema = z.object({
-  expiresAt: z.string().datetime({ offset: true }).nullable().describe("Nouvelle date de fin (future) ou `null`"),
+  expiresAt: z.iso.datetime({ offset: true }).nullable().describe("Nouvelle date de fin (future) ou `null`"),
 });
 
 export const contract = defineContract({

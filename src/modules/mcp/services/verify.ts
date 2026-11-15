@@ -21,7 +21,7 @@ export async function verifyAccessToken(rawToken: string, now = new Date()): Pro
     where: { hash: hashToken(rawToken) },
     select: { kind: true, expiresAt: true, grant: { select: { id: true, userId: true, churchId: true, scope: true, revokedAt: true, lastUsedAt: true } } },
   });
-  if (!token || token.kind !== "ACCESS" || token.expiresAt <= now) return null;
+  if (token?.kind !== "ACCESS" || token.expiresAt <= now) return null;
   const grant = token.grant;
   if (grant.revokedAt) return null;
   if (!(await isMcpEnabled(grant.churchId))) return null;

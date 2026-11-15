@@ -6,7 +6,7 @@ export const createSchema = z.object({
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
   phone: z.string().max(30).optional(),
-  email: z.string().email().optional().or(z.literal("")),
+  email: z.email().optional().or(z.literal("")),
   sourceRequestId: z.string().optional(),
   notes: z.string().max(10000).optional(),
 });

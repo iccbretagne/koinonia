@@ -4,7 +4,7 @@ import { defineContract } from "@/lib/openapi/contract";
 export const createSchema = z.object({
   churchId: z.string().min(1, "L'église est requise"),
   name: z.string().min(1, "Le nom est requis"),
-  email: z.string().email("Email invalide").nullable().optional(),
+  email: z.email("Email invalide").nullable().optional(),
   role: z.enum(["PASTEUR", "ASSISTANT_PASTEUR", "BERGER"]),
   userId: z.string().nullable().optional(),
 });

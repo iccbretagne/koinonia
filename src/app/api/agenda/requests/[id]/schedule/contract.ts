@@ -2,8 +2,8 @@ import { z } from "zod";
 import { defineContract } from "@/lib/openapi/contract";
 
 export const scheduleSchema = z.object({
-  startsAt: z.string().datetime("Date de début invalide"),
-  endsAt: z.string().datetime().nullable().optional(),
+  startsAt: z.iso.datetime("Date de début invalide"),
+  endsAt: z.iso.datetime().nullable().optional(),
   location: z.string().nullable().optional(),
   title: z.string().nullable().optional(),
   description: z.string().nullable().optional(),

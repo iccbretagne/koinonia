@@ -10,7 +10,7 @@ interface FilterChipProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
  * Pastille de filtre bascule (spec 063, extraite spec 064) : bouton `aria-pressed` de 44 px de
  * haut. À regrouper dans un conteneur `role="group"` portant un `aria-label`.
  */
-export default function FilterChip({ pressed, children, className = "", type = "button", ...props }: FilterChipProps) {
+export default function FilterChip({ pressed, children, className = "", type = "button", ...props }: Readonly<FilterChipProps>) {
   return (
     <button
       type={type}

@@ -8,9 +8,9 @@ export const jobSchema = z.object({
   location:     z.string().max(150).optional().nullable(),
   description:  z.string().min(1),
   duration:     z.string().max(100).optional().nullable(),
-  deadline:     z.string().datetime().optional().nullable(),
-  contactEmail: z.string().email().max(150).optional().nullable(),
-  contactUrl:   z.string().url().max(500).optional().nullable(),
+  deadline:     z.iso.datetime().optional().nullable(),
+  contactEmail: z.email().max(150).optional().nullable(),
+  contactUrl:   z.url().max(500).optional().nullable(),
 });
 
 export const contract = defineContract({

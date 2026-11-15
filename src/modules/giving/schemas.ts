@@ -58,7 +58,7 @@ export const givingPageSchema = z
 
     verseText: optionalText(500),
     verseReference: optionalText(80),
-    contactEmail: optionalText(254).refine((v) => v === null || z.string().email().safeParse(v).success, {
+    contactEmail: optionalText(254).refine((v) => v === null || z.email().safeParse(v).success, {
       message: "Adresse email invalide.",
     }),
     address: optionalText(255),
@@ -70,15 +70,15 @@ export const givingPageSchema = z
     // formulaire ouvert avant le déploiement reste valide. `logoKey` n'en fait pas partie : seul
     // le service du logo l'écrit.
     pageChurchNameShown: z.boolean().default(true),
-    pageChurchNameSize: z.nativeEnum(GivingNameSize).default("SMALL"),
+    pageChurchNameSize: z.enum(GivingNameSize).default("SMALL"),
     slideChurchNameShown: z.boolean().default(true),
-    slideChurchNameSize: z.nativeEnum(GivingNameSize).default("SMALL"),
+    slideChurchNameSize: z.enum(GivingNameSize).default("SMALL"),
     pageLogoShown: z.boolean().default(true),
     slideLogoShown: z.boolean().default(true),
   })
   .superRefine((d, ctx) => {
     for (const [path, message] of [...bankDetailErrors(d), ...missingSectionFields(d)]) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: [path], message });
+      ctx.addIssue({ code: "custom", path: [path], message });
     }
   });
 

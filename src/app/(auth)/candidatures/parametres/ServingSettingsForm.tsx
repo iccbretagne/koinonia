@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { Alert, Button, Input, useToast } from "@/components/ui";
 import type { ServingSettingsView } from "@/modules/serving";
 
@@ -20,7 +20,7 @@ export default function ServingSettingsForm({ churchId, initial }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
-  async function save(e: FormEvent) {
+  async function save(e: SubmitEvent) {
     e.preventDefault();
     setSaving(true);
     setErrors({});

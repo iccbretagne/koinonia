@@ -84,7 +84,7 @@ export async function bookSlot(applicationId: string, slotId: string, opts: { by
     const app = await tx.servingApplication.findUniqueOrThrow({ where: { id: applicationId }, select: { churchId: true, status: true } });
     if (app.status === "REJECTED") throw new ApiError(409, "Cette candidature n'est plus à l'étude");
     const slot = await tx.servingInterviewSlot.findUnique({ where: { id: slotId } });
-    if (!slot || slot.churchId !== app.churchId) throw new ApiError(404, "Créneau introuvable");
+    if (slot?.churchId !== app.churchId) throw new ApiError(404, "Créneau introuvable");
     if (slot.startsAt <= now) throw new ApiError(409, "Ce créneau est passé");
     if (!slot.interviewerId) throw new ApiError(409, "Ce créneau n'a plus de personne pour vous recevoir");
     const current = await activeInterview(tx, applicationId);

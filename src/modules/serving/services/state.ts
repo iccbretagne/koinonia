@@ -59,7 +59,7 @@ export function hasActiveAssignment(app: Pick<ApplicationLike, "assignments">): 
  * (31 janvier + 1 mois = 28 ou 29 février).
  */
 export function addMonths(date: Date, months: number): Date {
-  const result = new Date(date.getTime());
+  const result = new Date(date);
   const day = result.getUTCDate();
   result.setUTCDate(1);
   result.setUTCMonth(result.getUTCMonth() + months);

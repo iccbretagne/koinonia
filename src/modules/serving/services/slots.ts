@@ -223,7 +223,7 @@ export async function listFreeSlots(churchId: string, now = new Date()) {
       startsAt: s.startsAt.toISOString(),
       durationMinutes: s.durationMinutes,
       location: s.location,
-      visioUrl: s.visioUrl ? true : false,
+      visioUrl: !!s.visioUrl,
       interviewerName: s.interviewer?.displayName ?? s.interviewer?.name ?? null,
     }));
 }

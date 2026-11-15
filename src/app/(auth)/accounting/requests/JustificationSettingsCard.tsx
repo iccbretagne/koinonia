@@ -11,10 +11,10 @@ interface Settings {
 export default function JustificationSettingsCard({ initial }: { readonly initial: Settings }) {
   const uid = useId();
   const [first, setFirst] = useState(String(initial.firstReminderDays));
-  const [interval, setEvery] = useState(String(initial.reminderIntervalDays));
+  const [every, setEvery] = useState(String(initial.reminderIntervalDays));
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
-  const dirty = first !== String(initial.firstReminderDays) || interval !== String(initial.reminderIntervalDays);
+  const dirty = first !== String(initial.firstReminderDays) || every !== String(initial.reminderIntervalDays);
 
   async function save() {
     setBusy(true);
@@ -23,7 +23,7 @@ export default function JustificationSettingsCard({ initial }: { readonly initia
       const res = await fetch("/api/accounting/justifications/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstReminderDays: Number(first), reminderIntervalDays: Number(interval) }),
+        body: JSON.stringify({ firstReminderDays: Number(first), reminderIntervalDays: Number(every) }),
       });
       const json = await res.json();
       setMessage(res.ok ? { ok: true, text: "Délais enregistrés." } : { ok: false, text: json.error ?? "Valeurs invalides" });
@@ -50,8 +50,8 @@ export default function JustificationSettingsCard({ initial }: { readonly initia
           <input id={`${uid}-first`} type="number" min={1} max={60} value={first} onChange={(e) => setFirst(e.target.value)} className={input} />
         </div>
         <div>
-          <label htmlFor={`${uid}-interval`} className="block text-xs text-ink-muted mb-1">Puis tous les (jours)</label>
-          <input id={`${uid}-interval`} type="number" min={1} max={30} value={interval} onChange={(e) => setEvery(e.target.value)} className={input} />
+          <label htmlFor={`${uid}-every`} className="block text-xs text-ink-muted mb-1">Puis tous les (jours)</label>
+          <input id={`${uid}-every`} type="number" min={1} max={30} value={every} onChange={(e) => setEvery(e.target.value)} className={input} />
         </div>
         <button
           onClick={save}

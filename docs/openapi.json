@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "API Koinonia",
-    "version": "1.36.1",
+    "version": "1.37.0",
     "description": "API interne de Koinonia, appelée par l'application (session NextAuth, même origine). Générée depuis les contrats `contract.ts` des routes — voir `docs/api.md` (conventions) et ADR-0023."
   },
   "components": {
@@ -15995,8 +15995,7 @@
                 "properties": {
                   "email": {
                     "type": "string",
-                    "maxLength": 254,
-                    "format": "email"
+                    "maxLength": 254
                   },
                   "turnstileToken": {
                     "type": "string",
@@ -23672,8 +23671,7 @@
                     "type": "string"
                   },
                   "email": {
-                    "type": "string",
-                    "format": "email"
+                    "type": "string"
                   },
                   "confirmCreate": {
                     "type": "boolean"
@@ -27766,8 +27764,7 @@
                   },
                   "email": {
                     "type": "string",
-                    "maxLength": 200,
-                    "format": "email"
+                    "maxLength": 200
                   },
                   "turnstileToken": {
                     "type": "string",

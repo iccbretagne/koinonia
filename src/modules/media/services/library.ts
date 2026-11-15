@@ -229,7 +229,7 @@ export async function listLibraryItems(
 
   return {
     items,
-    nextCursor: hasMore && page.length > 0 ? encodeGalleryCursor(page[page.length - 1].key) : null,
+    nextCursor: hasMore && page.length > 0 ? encodeGalleryCursor(page.at(-1)!.key) : null,
     total: photoTotal + visuals.length,
   };
 }

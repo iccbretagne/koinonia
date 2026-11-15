@@ -2,7 +2,7 @@ import { z } from "zod";
 import { defineContract } from "@/lib/openapi/contract";
 
 export const confirmSchema = z.object({
-  quarantineId: z.string().uuid(),
+  quarantineId: z.uuid(),
   filename: z.string().min(1),
   mimeType: z.string(),
   size: z.number().int().positive(),

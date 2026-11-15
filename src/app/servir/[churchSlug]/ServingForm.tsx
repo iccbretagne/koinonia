@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ChangeEvent, type SubmitEvent, type ReactNode } from "react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import InterviewManager from "@/components/serving/InterviewManager";
 import { Alert, Button, Input, Textarea, fieldLabelClasses } from "@/components/ui";
@@ -136,7 +136,7 @@ export default function ServingForm({ churchSlug, churchName, retentionMonths, t
     setTrainings((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
   }
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!turnstileToken) {
       setGlobalError("Merci de compléter la vérification anti-robots en bas du formulaire.");

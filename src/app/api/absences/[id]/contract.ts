@@ -8,8 +8,8 @@ export const patchSchema = z
     z.object({
       action: z.literal("update"),
       kind: z.enum(["PERIOD"]).optional(),
-      startDate: z.string().datetime().optional(),
-      endDate: z.string().datetime().optional(),
+      startDate: z.iso.datetime().optional(),
+      endDate: z.iso.datetime().optional(),
       eventIds: z.array(z.string().min(1)).max(52).optional(),
       allDepartments: z.boolean().optional(),
       departmentIds: z.array(z.string().min(1)).optional(),

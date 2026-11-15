@@ -420,7 +420,7 @@ export async function previewRemind(input: z.infer<typeof remindInput>, ctx: Act
     where: { eventId_departmentId: { eventId: input.eventId, departmentId: input.departmentId } },
     select: { manualRelanceAt: true },
   });
-  if (ask?.manualRelanceAt && ask.manualRelanceAt.toDateString() === new Date().toDateString()) {
+  if (ask?.manualRelanceAt?.toDateString() === new Date().toDateString()) {
     return refusal("Les sans-réponse de ce département ont déjà été relancés aujourd'hui.");
   }
   const members = await prisma.memberDepartment.findMany({ where: { departmentId: input.departmentId }, select: { memberId: true } });

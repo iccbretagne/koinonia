@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useState, type SubmitEvent, type ReactNode } from "react";
 import { Button } from "@/components/ui";
 
 /**
@@ -18,7 +18,7 @@ export default function AuthorizeForm({
   const [busy, setBusy] = useState<"allow" | "deny" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function decide(event: FormEvent<HTMLFormElement>, decision: "allow" | "deny") {
+  async function decide(event: SubmitEvent<HTMLFormElement>, decision: "allow" | "deny") {
     event.preventDefault();
     setBusy(decision);
     setError(null);
@@ -54,7 +54,7 @@ export default function AuthorizeForm({
           disabled={busy !== null}
           onClick={(e) => {
             const form = e.currentTarget.form;
-            if (form) void decide({ preventDefault() {}, currentTarget: form } as FormEvent<HTMLFormElement>, "deny");
+            if (form) void decide({ preventDefault() {}, currentTarget: form } as SubmitEvent<HTMLFormElement>, "deny");
           }}
         >
           {busy === "deny" ? "Refus…" : "Refuser"}

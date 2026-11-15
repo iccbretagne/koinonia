@@ -72,7 +72,7 @@ function parseTab(value: string | null): TabKey {
 
 /** Fusionne localement le résultat d'une modification (le serveur ne renvoie que le statut). */
 function applyChange(item: QueueItem, change: RequestChange, status: string, executionError: string | null): QueueItem {
-  const payload = { ...item.payload, ...(change.payload ?? {}) };
+  const payload = { ...item.payload, ...change.payload };
   if (change.deliveryLink !== undefined) payload.deliveryLink = change.deliveryLink;
   const cascade = status === "ANNULE" && (item.type === "DIFFUSION_INTERNE" || item.type === "RESEAUX_SOCIAUX");
   return {

@@ -6,7 +6,7 @@ export const updateSchema = z.object({
   lastName: z.string().min(1, "Le nom est requis"),
   departmentId: z.string().min(1, "Le département principal est requis"),
   additionalDepartmentIds: z.array(z.string()).optional(),
-  email: z.string().email("Email invalide").nullable().optional(),
+  email: z.email("Email invalide").nullable().optional(),
   phone: z.string().nullable().optional(),
 });
 

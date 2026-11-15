@@ -4,8 +4,8 @@ import { defineContract } from "@/lib/openapi/contract";
 export const updateSchema = z.object({
   title: z.string().min(1).optional(),
   description: z.string().nullable().optional(),
-  startsAt: z.string().datetime().optional(),
-  endsAt: z.string().datetime().nullable().optional(),
+  startsAt: z.iso.datetime().optional(),
+  endsAt: z.iso.datetime().nullable().optional(),
   location: z.string().nullable().optional(),
 }).refine(
   (d) => !(d.startsAt && d.endsAt) || new Date(d.endsAt) > new Date(d.startsAt),

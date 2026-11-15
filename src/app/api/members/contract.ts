@@ -14,7 +14,7 @@ export const bulkSchema = z.object({
 export const createSchema = z.object({
   firstName: z.string().min(1, "Le prénom est requis"),
   lastName: z.string().min(1, "Le nom est requis"),
-  email: z.string().email("Email invalide").optional(),
+  email: z.email("Email invalide").optional(),
   departmentId: z.string().min(1, "Le département principal est requis"),
   additionalDepartmentIds: z.array(z.string()).optional(),
   confirmDuplicate: z.boolean().optional(),

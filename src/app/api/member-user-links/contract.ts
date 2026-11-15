@@ -14,7 +14,7 @@ export const createSchema = z
       .optional(),
     churchId: z.string(),
     userId: z.string().optional(),
-    email: z.string().trim().email().optional(),
+    email: z.string().trim().pipe(z.email()).optional(),
     // Double confirmation exigée avant de créer un compte dormant pour une adresse inconnue —
     // une erreur de frappe ne doit pas rattacher silencieusement un STAR à une adresse fantôme.
     confirmCreate: z.boolean().optional(),

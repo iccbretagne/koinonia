@@ -263,7 +263,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
           <button
             type="button"
             onClick={claimAll}
-            disabled={claiming !== null && claiming.includes("/")}
+            disabled={claiming?.includes("/") ?? false}
             className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
             {claiming?.includes("/") ? `Envoi ${claiming}…` : `Réclamer les justificatifs (${arrears.length})`}

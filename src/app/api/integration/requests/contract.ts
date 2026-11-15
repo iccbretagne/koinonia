@@ -6,7 +6,7 @@ export const createSchema = z.object({
   // Identité
   firstName:    z.string().min(1).max(100),
   lastName:     z.string().min(1).max(100),
-  email:        z.string().email().optional().or(z.literal("")),
+  email:        z.email().optional().or(z.literal("")),
   phone:        z.string().min(1, "Le téléphone est obligatoire").max(30),
   // Adresse
   address:      z.string().max(500).optional().or(z.literal("")),

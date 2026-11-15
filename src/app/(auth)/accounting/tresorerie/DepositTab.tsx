@@ -36,7 +36,7 @@ export default function DepositTab({ accounts, cheques }: { readonly accounts: A
     });
   }
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.SubmitEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);

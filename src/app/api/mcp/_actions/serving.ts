@@ -34,7 +34,7 @@ export const createInterviewSlotsInput = z.object({
   durationMinutes: z.number().int().min(5).max(240).optional().describe(`Durée de chaque créneau, ${DEFAULT_INTERVIEW_MINUTES} min par défaut`),
   interviewer: z.string().trim().min(1).max(100).optional().describe("Nom de la personne de l'équipe Vie des STAR qui reçoit ; la personne connectée par défaut"),
   location: z.string().trim().max(200).optional().describe("Lieu (sinon visioUrl)"),
-  visioUrl: z.string().trim().url().startsWith("https://").max(500).optional().describe("Lien de visio https"),
+  visioUrl: z.string().trim().max(500).pipe(z.url().startsWith("https://")).optional().describe("Lien de visio https"),
 });
 
 type SlotsInput = z.infer<typeof createInterviewSlotsInput>;

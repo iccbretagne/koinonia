@@ -3,7 +3,7 @@ import { defineContract } from "@/lib/openapi/contract";
 
 export const createSchema = z.object({
   planningEventId: z.string().optional(),
-  serviceDate: z.string().datetime().optional(),
+  serviceDate: z.iso.datetime().optional(),
   title: z.string().optional(),
   speaker: z.string().optional(),
   series: z.string().min(1).optional(),

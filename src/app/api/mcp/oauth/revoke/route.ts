@@ -1,6 +1,6 @@
 /** POST /api/mcp/oauth/revoke — révocation par le client (spec 081, RFC 7009). */
 import { revokeByToken } from "@/modules/mcp";
-import { CORS_HEADERS, oauthError, preflight, readParams } from "../_http";
+import { CORS_HEADERS, oauthError, readParams } from "../_http";
 import { revokeSchema } from "./contract";
 
 export async function POST(request: Request) {
@@ -13,4 +13,4 @@ export async function POST(request: Request) {
   }
 }
 
-export const OPTIONS = preflight;
+export { preflight as OPTIONS } from "../_http";

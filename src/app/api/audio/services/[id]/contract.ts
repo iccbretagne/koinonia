@@ -4,7 +4,7 @@ import { defineContract } from "@/lib/openapi/contract";
 export const updateSchema = z.object({
   title: z.string().nullable().optional(),
   speaker: z.string().optional(),
-  serviceDate: z.string().datetime().optional(),
+  serviceDate: z.iso.datetime().optional(),
   planningEventId: z.string().nullable().optional(),
   coverKey: z.string().nullable().optional(),
   series: z.string().min(1).nullable().optional(),

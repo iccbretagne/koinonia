@@ -36,8 +36,7 @@ export async function registerClient(input: { name?: string; redirectUris: strin
   if (uris.length === 0 || uris.length > MAX_URIS) {
     throw new OAuthError("invalid_redirect_uri", "Entre 1 et 10 adresses de redirection sont attendues");
   }
-  const bad = uris.find((u) => !isAcceptableRedirectUri(u));
-  if (bad) throw new OAuthError("invalid_redirect_uri", "Adresse de redirection refusée (https, ou boucle locale)");
+  if (uris.some((u) => !isAcceptableRedirectUri(u))) throw new OAuthError("invalid_redirect_uri", "Adresse de redirection refusée (https, ou boucle locale)");
 
   const name = (input.name ?? "").trim().slice(0, 200) || "Assistant IA";
   const clientId = `kmcp_${randomBytes(18).toString("base64url")}`;

@@ -49,9 +49,9 @@ export function slugify(title: string): string {
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
+    .replace(/^-|-$/g, "") // tirets déjà fusionnés par la ligne précédente
     .slice(0, 60)
-    .replace(/-+$/g, "");
+    .replace(/-$/, "");
   return slug.length >= 2 ? slug : "formulaire";
 }
 
@@ -330,8 +330,7 @@ export function assertSafeEdit(
     }
   }
   for (const q of next.questions) {
-    const existing = form.questions.find((x) => x.id === q.key);
-    if (!existing && q.required) throw new ApiError(409, `« ${q.label} » : une question ajoutée après les premières réponses doit être facultative`);
+    if (q.required && !form.questions.some((x) => x.id === q.key)) throw new ApiError(409, `« ${q.label} » : une question ajoutée après les premières réponses doit être facultative`);
   }
 }
 
