@@ -10,8 +10,9 @@ import type { Predicate } from "@/modules/assistant";
  * que la navigation de `(auth)/layout.tsx`) et modules actifs. Rien n'est déduit du client.
  */
 
-const TEAM_FUNCTIONS: Record<"secretariatTeam" | "mediaTeam" | "integrationTeam", string[]> = {
+const TEAM_FUNCTIONS: Record<"secretariatTeam" | "mediaTeam" | "integrationTeam" | "pvsTeam", string[]> = {
   secretariatTeam: ["SECRETARIAT"],
+  pvsTeam: ["VIE_DES_STAR"],
   mediaTeam: ["PRODUCTION_MEDIA", "COMMUNICATION", "PHOTOS"],
   integrationTeam: ["INTEGRATION", "MSDP"],
 };

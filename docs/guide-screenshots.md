@@ -105,12 +105,13 @@ fenêtre parasite.
 | 10 | `guide-announcement-sheet.png` | Trame des annonces | `secretaire` | `/events/announcement-sheets` | — |
 | 11 | `guide-reports.png` | Comptes rendus | `reporter` | `/admin/reports` | — |
 
-### Membres (2)
+### Membres (3)
 
 | # | Fichier | Fonction | Compte | URL | Avant la capture |
 |---|---|---|---|---|---|
 | 12 | `guide-members-list.png` | Voir les membres (STAR) | `admin` | `/admin/members` | — |
 | 13 | `guide-members-manage.png` | Gérer les membres (STAR) | `resp-accueil` | `/admin/members` | clic « Modifier » |
+| 13b | `guide-candidatures.png` | Candidatures au service (Vie des STAR) | `admin` | `/candidatures` | quelques candidatures reçues |
 
 ### Discipolat (3)
 

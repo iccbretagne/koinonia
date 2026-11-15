@@ -484,6 +484,15 @@ const FEATURES: Feature[] = [
     screenshotFile: "guide-tresorerie.png",
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "edit" },
   },
+  // ── Candidatures au service ─────────────────────────────────────────────
+  {
+    name: "Candidatures au service (Vie des STAR)",
+    description: "Le formulaire public « Servir » recueille les fiches des personnes qui veulent servir. Dans « Candidatures », l'équipe Vie des STAR (PVS) les étudie et les oriente vers un ou plusieurs départements ; le responsable ou le Ministre du département accueille la personne, qui passe en observation (3 mois par défaut) et peut déjà être planifiée, puis il la confirme ou la renvoie au PVS avec un motif. Avant la fin de l'observation, puis chaque semaine sans décision, le département et le PVS reçoivent un rappel. Le bouton « Paramètres », ouvert à toute l'équipe PVS et à l'Admin, règle la durée d'observation, la conservation des fiches et l'adresse email du PVS. Accès : l'équipe PVS et l'Admin voient toutes les fiches ; un responsable ou un Ministre voit celles orientées vers ses départements.",
+    category: "Membres",
+    screenshotTitle: "Candidatures",
+    screenshotFile: "guide-candidatures.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
   // ── Formulaires ─────────────────────────────────────────────────────────
   {
     name: "Formulaires : créer et publier",

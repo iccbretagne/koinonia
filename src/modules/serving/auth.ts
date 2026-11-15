@@ -16,7 +16,7 @@ export type ServingActor = {
   churchId: string;
   /** PVS, Admin ou Super Admin : étude et traitement avant affectation. */
   canManage: boolean;
-  /** Réglages : Super Admin, Admin, responsable du PVS. */
+  /** Réglages : Super Admin, Admin, équipe PVS. */
   canEditSettings: boolean;
   pvsDeptIds: string[];
   /** Fiches STAR liées au compte dans cette église (lien validé), pour la vue du STAR (D8). */
@@ -77,7 +77,7 @@ export async function requireServingManage(churchId: string): Promise<ServingAct
   return actor;
 }
 
-/** Réglages des candidatures : Super Admin, Admin, responsable du PVS. */
+/** Réglages des candidatures : Super Admin, Admin, équipe PVS. */
 export async function requireServingSettingsAccess(churchId: string): Promise<ServingActor> {
   const actor = await requireServingActor(churchId);
   if (!actor.canEditSettings) throw new Error("FORBIDDEN");

@@ -166,7 +166,7 @@ jointe : un lien vers Koinonia suffit.
 | Nouvelle candidature | Équipe PVS (+ adresse email du PVS) |
 | Affectation à un département | Resp. et Ministre du département |
 | Renvoi au PVS | Équipe PVS (+ adresse email du PVS) |
-| Fin d'observation proche, puis échue | Resp. et Ministre du département |
+| Fin d'observation proche, puis échue | Resp. et Ministre du département, équipe PVS (+ adresse email du PVS) |
 | Effacement dans un mois d'une candidature jamais traitée | Équipe PVS |
 | Confirmation | Équipe PVS |
 
@@ -198,7 +198,7 @@ jointe : un lien vers Koinonia suffit.
 - [x] Le Resp. ou le Ministre peut accepter une affectation : la personne devient STAR du
   département, marquée « en observation » et planifiable, pour la durée d'observation de
   l'église.
-- [x] Le PVS (responsable du PVS) et l'Admin règlent la durée d'observation (3 mois par défaut) ;
+- [x] Le PVS (toute l'équipe, depuis le retour de recette de novembre 2026) et l'Admin règlent la durée d'observation (3 mois par défaut) ;
   un changement ne modifie pas les observations en cours.
 - [x] Un renvoi retire la personne du département concerné.
 - [x] Sans décision à la fin de l'observation, l'observation passe « échue » et des relances partent
@@ -213,7 +213,7 @@ jointe : un lien vers Koinonia suffit.
 
 **Notifications et email de département**
 - [x] Les notifications du tableau ci-dessus partent, sans pièce jointe ni donnée sensible.
-- [x] L'Admin d'église et le responsable du PVS peuvent saisir l'adresse email du PVS, qui reçoit
+- [x] L'Admin d'église et l'équipe PVS peuvent saisir l'adresse email du PVS, qui reçoit
   les notifications de nouvelle candidature et de renvoi.
 
 **Consultation par le STAR**
@@ -226,7 +226,7 @@ jointe : un lien vers Koinonia suffit.
 **Conservation**
 - [x] Une candidature non retenue est effacée, photo comprise, 1 an après la décision ; une
   candidature jamais traitée, 1 an après sa réception (PVS prévenu un mois avant).
-- [x] La durée est réglable par église, par l'Admin ou le responsable du PVS.
+- [x] La durée est réglable par église, par l'Admin ou l'équipe PVS.
 - [x] L'effacement est journalisé sans donnée personnelle.
 
 ## Hors périmètre
@@ -246,7 +246,7 @@ jointe : un lien vers Koinonia suffit.
 
 - **D1** — Avant validation, l'Admin d'église et le Super Admin ont les mêmes droits que l'équipe
   PVS, pour dépanner.
-- **D2** — L'adresse email concerne le seul département PVS ; l'Admin et le responsable du PVS la
+- **D2** — L'adresse email concerne le seul département PVS ; l'Admin et l'équipe PVS la
   règlent.
 - **D3** — Pendant l'observation, la personne est STAR du département, marquée « en
   observation » et planifiable ; un renvoi l'en retire.

@@ -89,6 +89,19 @@ describe("rappels d'observation", () => {
     expect(notifyUsers.mock.calls[0][1].type).toBe("SERVING_OBSERVATION_OVERDUE");
   });
 
+  it("prévient aussi l'équipe PVS, sans doublon avec les responsables du département", async () => {
+    prismaMock.servingAssignment.findMany.mockResolvedValue([obs("d", -3)]);
+    prismaMock.userDepartment.findMany
+      .mockResolvedValueOnce([{ userChurchRole: { userId: "u-1" } }])
+      .mockResolvedValueOnce([{ userChurchRole: { userId: "u-pvs" } }, { userChurchRole: { userId: "u-1" } }]);
+    await runServingTasks(NOW);
+    expect(notifyUsers).toHaveBeenCalledTimes(2);
+    expect(notifyUsers.mock.calls[0][0]).toEqual(["u-1"]);
+    expect(notifyUsers.mock.calls[1][0]).toEqual(["u-pvs"]);
+    expect(notifyUsers.mock.calls[1][1]).toMatchObject({ type: "SERVING_OBSERVATION_OVERDUE", domain: "serving" });
+    expect(notifyUsers.mock.calls[1][1].message).toContain("sans décision du département");
+  });
+
   it("n'envoie rien si un autre passage a déjà réservé l'envoi", async () => {
     prismaMock.servingAssignment.findMany.mockResolvedValue([obs("c", -3)]);
     prismaMock.servingAssignment.updateMany.mockResolvedValue({ count: 0 });

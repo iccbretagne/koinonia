@@ -80,9 +80,10 @@ describe("canViewApplication", () => {
 });
 
 describe("canEditSettings", () => {
-  it("responsable PVS oui, membre PVS non", () => {
+  it("toute l'équipe PVS (responsable et membre), pas un autre département", () => {
     expect(canEditSettings(user("DEPARTMENT_HEAD", { departments: [PVS] }), CHURCH, [PVS], perms)).toBe(true);
-    expect(canEditSettings(user("STAR", { departments: [PVS] }), CHURCH, [PVS], perms)).toBe(false);
+    expect(canEditSettings(user("STAR", { departments: [PVS] }), CHURCH, [PVS], perms)).toBe(true);
+    expect(canEditSettings(user("DEPARTMENT_HEAD", { departments: [ACCUEIL.id] }), CHURCH, [PVS], perms)).toBe(false);
   });
   it("Admin oui, Secrétaire non", () => {
     expect(canEditSettings(user("ADMIN"), CHURCH, [PVS], perms)).toBe(true);

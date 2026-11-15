@@ -51,6 +51,7 @@ async function remindObservations(now: Date): Promise<{ ending: number; overdue:
 
   let ending = 0;
   let overdue = 0;
+  const pvs = new Map<string, string[]>();
   for (const a of rows) {
     const isOverdue = a.observationEndsAt!.getTime() <= now.getTime();
     const { count } = await prisma.servingAssignment.updateMany({
@@ -61,12 +62,15 @@ async function remindObservations(now: Date): Promise<{ ending: number; overdue:
     });
     if (count === 0) continue;
     try {
+      const churchId = a.application.churchId;
+      if (!pvs.has(churchId)) pvs.set(churchId, await getPvsDepartmentIds(churchId));
       await notifyObservationEnding(
-        a.application.churchId,
+        churchId,
         a.department.id,
         a.department.name,
         { applicationId: a.application.id, firstName: a.application.firstName, lastName: a.application.lastName },
-        isOverdue
+        isOverdue,
+        pvs.get(churchId)!
       );
       if (isOverdue) overdue++;
       else ending++;

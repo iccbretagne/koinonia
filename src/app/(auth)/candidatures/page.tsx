@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Settings } from "lucide-react";
+import { buttonClasses } from "@/components/ui/button-classes";
 import { getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PublicFormBanner from "@/components/PublicFormBanner";
@@ -53,8 +55,8 @@ export default async function CandidaturesPage({
         }
         actions={
           actor.canEditSettings ? (
-            <Link href="/candidatures/parametres" className="text-sm text-ink-subtle hover:text-brand-text transition-colors">
-              Paramètres
+            <Link href="/candidatures/parametres" className={buttonClasses("secondary", "sm")}>
+              <Settings className="size-4" aria-hidden="true" /> Paramètres (observation, email du PVS)
             </Link>
           ) : undefined
         }

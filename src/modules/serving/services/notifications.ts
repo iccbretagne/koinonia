@@ -158,24 +158,45 @@ export async function notifyConfirmed(churchId: string, pvsDeptIds: string[], de
   });
 }
 
+/**
+ * Fin d'observation proche, puis échue : le département décide (confirme ou renvoie) ; le PVS
+ * (équipe et boîte du PVS) est prévenu en même temps pour pouvoir relancer.
+ */
 export async function notifyObservationEnding(
   churchId: string,
   departmentId: string,
   departmentName: string,
   who: Who,
-  overdue: boolean
+  overdue: boolean,
+  pvsDeptIds: string[] = []
 ) {
-  await notifyUsers(await departmentLeadIds(churchId, departmentId), {
+  const type = overdue ? "SERVING_OBSERVATION_OVERDUE" : "SERVING_OBSERVATION_ENDING";
+  const title = overdue ? "Période d'observation terminée" : "Fin de période d'observation proche";
+  const link = applicationLink(who.applicationId);
+  const leads = await departmentLeadIds(churchId, departmentId);
+  await notifyUsers(leads, {
     domain: DOMAIN,
-    type: overdue ? "SERVING_OBSERVATION_OVERDUE" : "SERVING_OBSERVATION_ENDING",
-    title: overdue ? "Période d'observation terminée" : "Fin de période d'observation proche",
+    type,
+    title,
     message: overdue
       ? `L'observation de ${fullName(who)} dans ${departmentName} est terminée : confirme-la ou renvoie-la au PVS.`
       : `L'observation de ${fullName(who)} dans ${departmentName} se termine bientôt.`,
-    link: applicationLink(who.applicationId),
+    link,
     entityType: SERVING_ENTITY,
     entityId: who.applicationId,
   });
+  if (pvsDeptIds.length === 0) return;
+  const pvsContent = {
+    title,
+    message: overdue
+      ? `L'observation de ${fullName(who)} dans ${departmentName} est terminée, sans décision du département.`
+      : `L'observation de ${fullName(who)} dans ${departmentName} se termine bientôt.`,
+    link,
+  };
+  const leadSet = new Set(leads);
+  const pvsIds = (await pvsRecipientIds(churchId, pvsDeptIds)).filter((id) => !leadSet.has(id));
+  await notifyUsers(pvsIds, { domain: DOMAIN, type, ...pvsContent, entityType: SERVING_ENTITY, entityId: who.applicationId });
+  await copyToPvsMailboxes(pvsDeptIds, pvsContent);
 }
 
 export async function notifyPurgeWarning(churchId: string, pvsDeptIds: string[], who: Who) {

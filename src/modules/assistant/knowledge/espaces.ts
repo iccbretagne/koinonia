@@ -189,4 +189,18 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     audience: {},
     screens: ["/formulaires"],
   },
+  {
+    key: "KB-150",
+    kind: "howto",
+    title: "Étudier les candidatures au service",
+    questions: ["Voir les candidatures au service", "formulaire servir", "orienter une candidature vers un département", "durée d'observation", "email du PVS"],
+    answer:
+      "Dans « Candidatures », l'équipe Vie des STAR (PVS) étudie les fiches reçues par le formulaire « Servir » et les oriente vers un ou plusieurs départements. Le responsable du département accueille la personne : elle est en observation (3 mois par défaut), puis il la confirme ou la renvoie au PVS. Avant la fin de l'observation, puis chaque semaine tant qu'aucune décision n'est prise, le département et le PVS reçoivent un rappel. Le bouton « Paramètres » règle la durée d'observation, la conservation des fiches et l'adresse email du PVS ; il est ouvert à toute l'équipe PVS et à l'Admin.",
+    href: "/candidatures",
+    hrefLabel: "Candidatures",
+    audience: { predicates: ["pvsTeam"], permissions: ["serving:manage"] },
+    otherwise: "Les candidatures au service sont étudiées par l'équipe Vie des STAR.",
+    screens: ["/candidatures"],
+    module: "serving",
+  },
 ];
