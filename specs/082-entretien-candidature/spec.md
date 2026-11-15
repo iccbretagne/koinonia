@@ -30,7 +30,7 @@ d'entretien**, tenus à jour selon les disponibilités de ses membres, et que la
     pour chacun la date, l'heure, la durée, le lieu (sur place ou en visio) et le membre du PVS
     qui reçoit ;
   - voit pour chaque créneau s'il est libre ou réservé, et par qui ;
-  - voit sur chaque candidature le rendez-vous choisi ou « sans rendez-vous » ; fixe, déplace ou
+  - voit sur chaque candidature le rendez-vous choisi ou « À planifier » ; fixe, déplace ou
     annule un rendez-vous pour le candidat, à tout moment ;
   - note qu'un entretien a eu lieu ou que la personne n'est pas venue.
 - **Membre du PVS qui reçoit** (désigné sur le créneau) : est prévenu quand son créneau est
@@ -66,10 +66,10 @@ d'entretien**, tenus à jour selon les disponibilités de ses membres, et que la
 
 - **Aucun créneau libre** au moment de l'envoi : la fiche est bien enregistrée et le candidat voit
   « Aucun créneau n'est disponible pour le moment ; vous recevrez un email dès que de nouveaux
-  créneaux seront proposés ». La candidature est marquée « sans rendez-vous ».
+  créneaux seront proposés ». La candidature est marquée « À planifier ».
 - **Aucun créneau ne lui convient** : le candidat choisit « Aucun créneau ne me convient » ; la
-  fiche est enregistrée, la candidature est marquée « sans rendez-vous » et le PVS le recontacte.
-- **Nouveaux créneaux ouverts** : les candidats « sans rendez-vous » dont la candidature est encore
+  fiche est enregistrée, la candidature est marquée « À planifier » et le PVS le recontacte.
+- **Nouveaux créneaux ouverts** : les candidats « À planifier » dont la candidature est encore
   à l'étude reçoivent un email les invitant à choisir un créneau par leur lien. Un seul email par
   vague de créneaux ajoutés, jamais plus d'un par jour à une même personne.
 - **Deux personnes choisissent le même créneau en même temps** : une seule l'obtient ; l'autre voit
@@ -78,7 +78,7 @@ d'entretien**, tenus à jour selon les disponibilités de ses membres, et que la
   l'ancien créneau redevient libre, le nouveau est réservé, le PVS et les membres qui reçoivent
   (ancien et nouveau) sont prévenus.
 - **Le candidat annule** son rendez-vous, au plus tard 24 heures avant : le créneau redevient
-  libre ; la candidature reste enregistrée, marquée « sans rendez-vous ».
+  libre ; la candidature reste enregistrée, marquée « À planifier ».
 - **Moins de 24 heures avant** : le lien affiche le rendez-vous sans permettre de le changer ni de
   l'annuler, et invite à contacter le PVS (adresse email du PVS si elle est renseignée).
 - **Le PVS déplace ou retire un créneau déjà réservé** : le candidat est prévenu par email et
@@ -97,6 +97,43 @@ d'entretien**, tenus à jour selon les disponibilités de ses membres, et que la
   fiche, avec la même réponse que l'adresse soit connue ou non.
 - **Membre du PVS qui quitte l'équipe** : il ne peut plus être désigné ; ses créneaux à venir
   restent affichés au PVS comme « à réattribuer » jusqu'à ce qu'une autre personne soit désignée.
+
+### Statuts
+
+**Rendez-vous** (un par essai ; une candidature garde l'historique de tous ses rendez-vous) :
+
+| Statut | Quand |
+|---|---|
+| **Réservé** | Un créneau est choisi, l'entretien est à venir |
+| **À compléter** | L'heure de fin est passée et l'issue n'a pas encore été notée |
+| **Réalisé** | Le PVS a noté que l'entretien a eu lieu |
+| **Absent** | La personne n'est pas venue sans prévenir |
+| **Excusé** | La personne a prévenu qu'elle ne viendrait pas (typiquement moins de 24 heures avant, quand elle ne peut plus annuler elle-même) |
+| **Annulé** | Annulé par le candidat, par le PVS, ou parce que la candidature n'est pas retenue ou est effacée — le motif d'annulation est conservé |
+
+**Repère sur la candidature** : tant qu'aucun rendez-vous n'est réservé ni réalisé, la
+candidature est **« À planifier »**, avec sa raison :
+
+- aucun créneau disponible à l'envoi de la fiche ;
+- aucun créneau ne convenait au candidat ;
+- rendez-vous annulé par le candidat ;
+- créneau déplacé ou retiré par le PVS ;
+- absent ou excusé, à reprogrammer.
+
+Un rendez-vous **réalisé** retire le repère. Un entretien réalisé n'est **jamais exigé** pour
+valider une candidature : le PVS peut valider sans entretien (personne déjà connue, par exemple).
+Aucun statut ne change seul vers « réalisé » ou « absent » : l'issue est toujours notée par une
+personne.
+
+### Relances au PVS
+
+- **Issue à noter** : le lendemain d'un entretien resté « À compléter », le membre qui a reçu est
+  notifié ; le PVS voit un compteur des entretiens à compléter.
+- **Candidature à planifier** : une candidature encore à l'étude qui reste « À planifier » depuis
+  14 jours (délai réglable dans les paramètres des candidatures) déclenche une notification à
+  l'équipe PVS, puis une nouvelle tous les 14 jours tant que rien ne change. La notification ne
+  contient que le prénom et le nom du candidat et la raison du repère.
+- **Absences répétées** : deux absences d'affilée sont signalées en évidence sur la candidature.
 
 ### Ce que voit chacun
 
@@ -121,14 +158,25 @@ d'entretien**, tenus à jour selon les disponibilités de ses membres, et que la
       personne qui reçoit et un lien pour retrouver, changer ou annuler son rendez-vous.
 - [ ] Le candidat peut changer ou annuler jusqu'à 24 heures avant ; au-delà, le lien l'invite à
       contacter le PVS. Changer ou annuler libère l'ancien créneau.
-- [ ] Sans créneau choisi, la fiche est enregistrée et la candidature est marquée « sans
-      rendez-vous » pour le PVS.
-- [ ] L'ouverture de nouveaux créneaux prévient par email les candidats « sans rendez-vous » encore
+- [ ] Sans créneau choisi, la fiche est enregistrée et la candidature est « À planifier » pour le
+      PVS.
+- [ ] L'ouverture de nouveaux créneaux prévient par email les candidats « À planifier » encore
       à l'étude, au plus une fois par jour.
 - [ ] La veille, le candidat reçoit un rappel par email et le membre qui reçoit un rappel par
       notification.
-- [ ] Le PVS voit le rendez-vous (ou son absence) sur chaque candidature, peut fixer, déplacer ou
-      annuler un rendez-vous pour le candidat, et noter « entretien réalisé » ou « absent ».
+- [ ] Le PVS voit le rendez-vous en cours et l'historique des rendez-vous de chaque candidature,
+      peut fixer, déplacer ou annuler un rendez-vous pour le candidat, et noter « réalisé »,
+      « absent » ou « excusé ».
+- [ ] Un rendez-vous passé sans issue notée apparaît « À compléter » ; le membre qui a reçu est
+      notifié le lendemain et le PVS voit le nombre d'entretiens à compléter.
+- [ ] Une candidature sans rendez-vous réservé ni réalisé affiche « À planifier » avec sa raison
+      (aucun créneau disponible, aucun ne convenait, annulé par le candidat, créneau retiré,
+      absent ou excusé).
+- [ ] Une candidature encore à l'étude restée « À planifier » 14 jours (délai réglable) déclenche
+      une notification à l'équipe PVS, renouvelée tous les 14 jours tant que rien ne change.
+- [ ] Deux absences d'affilée sont signalées sur la candidature.
+- [ ] Valider une candidature n'exige pas d'entretien réalisé ; aucun statut ne passe seul à
+      « réalisé » ou « absent ».
 - [ ] Déplacer ou retirer un créneau réservé prévient le candidat et l'invite à en choisir un autre.
 - [ ] Une candidature non retenue libère son créneau à venir et le candidat reçoit un message
       d'annulation neutre ; une candidature effacée libère son créneau sans message.
@@ -158,15 +206,20 @@ d'entretien**, tenus à jour selon les disponibilités de ses membres, et que la
 - **Où** : un lieu de l'église ou un lien de visio, selon le créneau.
 - **Places** : un seul candidat par créneau.
 - **Choix du créneau** : facultatif ; « Aucun créneau ne me convient » laisse la candidature
-  « sans rendez-vous ».
+  « À planifier ».
 - **Changer ou annuler** : par le candidat jusqu'à 24 heures avant ; le PVS à tout moment.
 - **Rappel** : la veille, au candidat (email) et au membre qui reçoit (notification).
 - **Nom affiché** : le candidat voit le prénom et le nom de la personne qui le reçoit.
-- **Nouveaux créneaux** : les candidats « sans rendez-vous » encore à l'étude sont prévenus par
+- **Nouveaux créneaux** : les candidats « À planifier » encore à l'étude sont prévenus par
   email, au plus une fois par jour.
 - **Candidature non retenue** : message d'annulation neutre, sans motif.
 - **Saisie en série** : disponible dès ce lot.
 - **Durée par défaut** : 30 minutes, modifiable sur chaque créneau.
+- **Statuts** : réservé, à compléter, réalisé, absent, excusé, annulé (avec motif) ; repère
+  « À planifier » avec sa raison sur la candidature ; historique conservé ; deux absences d'affilée
+  signalées.
+- **Relance « À planifier »** : à 14 jours (réglable), puis tous les 14 jours, à l'équipe PVS ;
+  issue d'entretien à noter signalée le lendemain au membre qui a reçu.
 
 ## Questions ouvertes
 
