@@ -27,6 +27,9 @@ export const SYNONYM_PHRASES: readonly (readonly [string, string])[] = [
 /** Mots isolés. */
 export const SYNONYM_WORDS: Readonly<Record<string, string>> = {
   dispo: "disponible",
+  creneaux: "creneau",
+  entretiens: "entretien",
+  candidats: "candidat",
   dispos: "disponibilite",
   disponibilites: "disponibilite",
   indispo: "indisponible",

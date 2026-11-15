@@ -38,6 +38,9 @@ export const MCP_TOOLS: Readonly<Record<string, { permissions?: string[] } | nul
   "audio.recentSermons": { permissions: ["audio:listen"] },
   "reports.recent": { permissions: ["reports:view"] },
   "reports.get": { permissions: ["reports:view"] },
+  "serving.myInterviews": null,
+  "serving.toPlan": null,
+  "serving.freeSlots": null,
 };
 
 /** Nom d'outil MCP d'une clé de question : « planning.myNextService » → « planning_myNextService ». */

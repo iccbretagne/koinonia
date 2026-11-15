@@ -502,8 +502,13 @@ globale par rôle (le Secrétaire n'y a pas accès) :
   observation ou confirmée — plus après un renvoi au PVS.
 - **Vue du STAR** (D8) : compte lié (lien validé) à la fiche STAR de la candidature, une fois
   accueilli dans un département ; vue réduite, sans informations internes.
-- **Réglages** (durées, adresse email du PVS) : Super Admin, `serving:manage`, ou responsable
-  d'un département PVS.
+- **Réglages** (durées, délai de relance « À planifier », adresse email du PVS) : Super Admin,
+  `serving:manage`, ou tout membre de l'équipe PVS.
+- **Entretiens** (spec 082) : créneaux et rendez-vous, même règle que l'étude
+  (`requireServingManage`) ; aucun autre rôle ne voit les créneaux ni les rendez-vous. Le
+  candidat, sans compte, n'agit que sur **son** rendez-vous par son lien `/entretien/<lien>`
+  (jeton dérivé de `SERVING_TOKEN_SECRET`, à défaut `AUTH_SECRET`, empreinte seule stockée ;
+  lien inconnu ou mal formé : même réponse ; 30 appels par minute et par adresse IP).
 
 Chaque consultation de fiche est journalisée (`VIEW`), chaque téléchargement du PDF aussi
 (`EXPORT`).

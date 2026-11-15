@@ -1,7 +1,7 @@
 # Spec — Rendez-vous d'entretien après une candidature au service
 
 - **Numéro** : 082
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-11-15
 - **Branche suggérée** : `feat/entretien-candidature`
 

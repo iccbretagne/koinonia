@@ -73,13 +73,12 @@ async function assertNoOverlap(churchId: string, planned: { interviewerId: strin
   }
 }
 
-/** Crée des créneaux (liste ou série). Renvoie le nombre de créneaux créés. */
-export async function createSlots(
-  churchId: string,
-  input: { slots: SlotInput[] } | { series: SeriesInput },
-  createdById: string,
-  now = new Date()
-): Promise<number> {
+/**
+ * Créneaux prêts à créer, toutes règles vérifiées (équipe PVS, pas de créneau passé, lieu ou
+ * visio, aucun chevauchement) sans rien écrire : partagé par la création et l'aperçu de
+ * l'assistant IA.
+ */
+export async function planSlots(churchId: string, input: { slots: SlotInput[] } | { series: SeriesInput }, now = new Date()) {
   const planned: Planned[] = "series" in input ? expandSeries(input.series) : input.slots;
   if (planned.length > 200) throw new ApiError(400, "200 créneaux au plus par saisie");
   const interviewers = new Set((await listInterviewers(churchId)).map((i) => i.id));
@@ -91,6 +90,17 @@ export async function createSlots(
     return { ...p, start, end: new Date(start.getTime() + p.durationMinutes * 60_000) };
   });
   await assertNoOverlap(churchId, rows);
+  return rows;
+}
+
+/** Crée des créneaux (liste ou série). Renvoie le nombre de créneaux créés. */
+export async function createSlots(
+  churchId: string,
+  input: { slots: SlotInput[] } | { series: SeriesInput },
+  createdById: string,
+  now = new Date()
+): Promise<number> {
+  const rows = await planSlots(churchId, input, now);
   const seriesId = "series" in input ? randomUUID() : null;
   const result = await prisma.servingInterviewSlot.createMany({
     data: rows.map((r) => ({

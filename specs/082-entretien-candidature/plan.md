@@ -292,6 +292,11 @@ le prénom et le nom du candidat sortent, jamais une coordonnée ni une autre do
 - **Candidat sans email** (l'email est facultatif sur la fiche) : le lien de rendez-vous est
   affiché sur l'écran de confirmation, sans email de confirmation, de rappel ni d'invitation ; la
   candidature le signale au PVS (« pas d'email : à contacter par téléphone »).
+- **Implémentation** : l'aperçu de l'action MCP et la création partagent `planSlots` (règles de
+  l'écran sans écriture) ; la confirmation rejoue `createSlots`, qui revérifie tout (un créneau
+  pris ou passé entre-temps ⇒ refus) — pas d'empreinte séparée. La personne qui reçoit est
+  désignée par son nom (la personne connectée par défaut). Le nom de la personne qui reçoit est
+  relu à l'affichage de la fiche (le rendez-vous ne garde que son identifiant).
 
 ## Risques & points d'attention
 

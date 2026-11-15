@@ -135,6 +135,23 @@ describe("submitApplication", () => {
     expect(sendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: ["pvs@eglise.fr"] }));
   });
 
+  it("sans créneau libre, la fiche est « À planifier · aucun créneau » ; jeton de gestion rendu, empreinte seule stockée", async () => {
+    prismaMock.servingInterviewSlot.findFirst.mockResolvedValue(null);
+    prismaMock.servingApplication.create.mockResolvedValue({ id: "app-1", firstName: "Marie", lastName: "Kouassi" });
+    const { manageToken } = await submitApplication(CHURCH, [PVS], data, Buffer.from("jpeg"));
+    const created = prismaMock.servingApplication.create.mock.calls[0][0].data;
+    expect(created.schedulingReason).toBe("NO_SLOT");
+    expect(created.manageHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(JSON.stringify(created)).not.toContain(manageToken);
+  });
+
+  it("avec un créneau libre, pas de repère « À planifier »", async () => {
+    prismaMock.servingInterviewSlot.findFirst.mockResolvedValue({ id: "s1" });
+    prismaMock.servingApplication.create.mockResolvedValue({ id: "app-1", firstName: "Marie", lastName: "Kouassi" });
+    await submitApplication(CHURCH, [PVS], data, Buffer.from("jpeg"));
+    expect(prismaMock.servingApplication.create.mock.calls[0][0].data.schedulingReason).toBeUndefined();
+  });
+
   it("retire la photo si l'enregistrement échoue", async () => {
     prismaMock.servingApplication.create.mockRejectedValue(new Error("db down"));
     await expect(submitApplication(CHURCH, [PVS], data, Buffer.from("jpeg"))).rejects.toThrow("db down");
@@ -186,6 +203,20 @@ describe("rejectApplication", () => {
     expect(prismaMock.servingAssignment.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { applicationId: "app-1", status: "SENT_BACK", resolvedAt: null } })
     );
+  });
+
+  it("annule un rendez-vous à venir, libère le créneau et envoie un message neutre", async () => {
+    prismaMock.servingApplication.findUnique.mockResolvedValue(record());
+    const booked = { id: "i1", applicationId: "app-1", slotId: "s1", status: "BOOKED", startsAt: new Date(Date.now() + 3 * 86_400_000), durationMinutes: 30, location: null, visioUrl: null, interviewerId: null };
+    prismaMock.servingInterview.findFirst.mockResolvedValue(booked);
+    prismaMock.servingInterview.update.mockResolvedValue({ ...booked, status: "CANCELLED", cancelReason: "REJECTED" });
+    prismaMock.servingApplication.findUniqueOrThrow.mockResolvedValue({ id: "app-1", churchId: CHURCH, firstName: "Marie", lastName: "Kouassi", email: "marie@example.org", manageSalt: "salt" });
+    await rejectApplication(actor(true), "app-1", "Motif interne");
+    expect(prismaMock.servingInterview.update).toHaveBeenCalledWith({ where: { id: "i1" }, data: { status: "CANCELLED", cancelReason: "REJECTED" } });
+    expect(prismaMock.servingInterviewSlot.updateMany).toHaveBeenCalledWith({ where: { id: "s1" }, data: { bookedAt: null } });
+    const mail = sendEmail.mock.calls.find((c) => (c[0].to as string[]).includes("marie@example.org"));
+    expect(mail).toBeTruthy();
+    expect(JSON.stringify(mail)).not.toContain("Motif interne");
   });
 
   it("refuse tant qu'un département suit la personne (409)", async () => {

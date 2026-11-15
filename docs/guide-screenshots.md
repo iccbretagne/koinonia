@@ -112,6 +112,7 @@ fenêtre parasite.
 | 12 | `guide-members-list.png` | Voir les membres (STAR) | `admin` | `/admin/members` | — |
 | 13 | `guide-members-manage.png` | Gérer les membres (STAR) | `resp-accueil` | `/admin/members` | clic « Modifier » |
 | 13b | `guide-candidatures.png` | Candidatures au service (Vie des STAR) | `admin` | `/candidatures` | quelques candidatures reçues |
+| 13c | `guide-candidatures-entretiens.png` | Entretiens des candidats | `admin` | `/candidatures/entretiens` | quelques créneaux libres et réservés sur deux jours |
 
 ### Discipolat (3)
 

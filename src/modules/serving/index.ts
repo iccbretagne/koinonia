@@ -47,6 +47,7 @@ export {
   deleteSlot,
   listSlots,
   listFreeSlots,
+  planSlots,
   listInterviewers,
   slotChurchId,
   type SlotView,

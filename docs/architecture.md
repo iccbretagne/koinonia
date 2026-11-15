@@ -564,6 +564,7 @@ liste noyau explicite ; sinon 404 avant toute autre vérification, y compris pou
 | `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile sur les pages publiques `/agenda-public`, `/rejoindre`, `/servir`, `/inscription` (billetterie) et `/f` (formulaires), lues au runtime (sans les deux : ces pages sont indisponibles) |
 | `TICKETING_TOKEN_SECRET` | Facultatif : secret HMAC des jetons de billetterie (billets, réservations, badges) ; à défaut `AUTH_SECRET`. Le changer invalide les liens déjà envoyés |
 | `FORMS_TOKEN_SECRET` | Facultatif : secret HMAC des liens « Gérer ma réponse » et des empreintes d'anonymat des formulaires ; à défaut `AUTH_SECRET`. Le changer invalide les liens déjà envoyés et les reçus « déjà répondu » |
+| `SERVING_TOKEN_SECRET` | Facultatif : secret HMAC du lien « mon rendez-vous » des candidats au service (`/entretien/<lien>`, spec 082) ; à défaut `AUTH_SECRET`. Le changer invalide les liens déjà envoyés |
 | `AUDIO_CACHE_DIR` / `AUDIO_CACHE_MAX_BYTES` | Cache local du module audio, éviction LRU (défaut : 5 Go) |
 | `AUDIO_XACCEL_LOCATION` | Active la délégation de diffusion audio au reverse proxy (X-Accel) |
 
