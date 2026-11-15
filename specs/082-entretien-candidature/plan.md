@@ -231,6 +231,42 @@ créneau ; rendez-vous fixé, annulé, issue notée, invitation — jamais le je
 - **`/candidatures/parametres`** : champ « Relancer une candidature à planifier après (jours) ».
 - Guide utilisateur et fiche de l'assistant (KB-150) complétés ; nav inchangée.
 
+## Assistant (Nia / Koï) et assistants IA connectés (MCP)
+
+Même règle que les autres modules (specs 075 et 081) : les questions de données relisent les
+services de l'écran et revérifient le droit de l'écran (équipe PVS, Admin, Super Admin) ; seuls
+le prénom et le nom du candidat sortent, jamais une coordonnée ni une autre donnée de la fiche.
+
+- **Questions de données** (`src/app/api/assistant/_data/serving.ts`, fiches de type `data`,
+  audience `pvsTeam` ou `serving:manage`) :
+  - `serving.myInterviews` — mes entretiens à venir (personne qui reçoit) : date, heure, prénom
+    et nom du candidat, lieu ;
+  - `serving.toPlan` — candidatures « À planifier » (prénom, nom, raison, depuis) et nombre
+    d'entretiens « À compléter » ;
+  - `serving.freeSlots` — créneaux libres à venir (jour, heure, personne qui reçoit), filtrables
+    par jour.
+- **MCP** : ces trois questions entrent dans la liste blanche `MCP_TOOLS`
+  (`src/app/api/mcp/_tools.ts`). Une **action confirmée** (lot 2/3 de la spec 081, portée
+  `write`) : `create_interview_slots_preview` / `…_confirm` — créer un ou plusieurs créneaux ou
+  une série (« tous les mardis de décembre de 19 h à 21 h avec Jean »), via `createSlots` ;
+  l'aperçu liste les créneaux et refuse ce que l'écran refuserait (personne hors PVS, créneau
+  passé, chevauchement), la confirmation revérifie le droit et journalise `via: "mcp"`.
+  Aucune action ne touche un rendez-vous (réserver, annuler, noter l'issue restent à l'écran).
+- **Fiches de l'assistant** : KB-150 complétée (entretiens, statuts, relances) ; nouvelle fiche
+  « Gérer les créneaux d'entretien » (audience PVS) ; fiches de données des trois questions ;
+  synonymes (« entretien », « rendez-vous », « créneau »).
+
+## Documentation
+
+- `CLAUDE.md` : spécificités du module candidatures (créneaux, rendez-vous, lien du candidat,
+  relances) et liste des outils et actions du module mcp.
+- `docs/database.md` (modèles, enums, colonnes), `docs/auth.md` (accès PVS, lien public),
+  `docs/architecture.md` (module `serving`, `SERVING_TOKEN_SECRET`, pages publiques
+  `/entretien`), `docs/production.md`, `.env.example`.
+- Guide utilisateur (`GuideContent.tsx`) : fiches « Entretiens : créneaux et rendez-vous » (PVS)
+  et « Candidatures » complétée ; `docs/guide-screenshots.md`.
+- `CHANGELOG.md`, `docs/openapi.json`, écarts dans ce plan.
+
 ## Décisions & alternatives écartées
 
 - **Choix** : prise atomique par `bookedAt` sur le créneau — *Pourquoi* : MariaDB n'a pas d'index

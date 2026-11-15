@@ -126,11 +126,33 @@
       créneau ou de la candidature (autre église : 404), PVS seulement, `route-exhaustiveness`,
       `openapi`, `notifications-no-direct-email` *(fichiers : `src/app/api/serving/__tests__/…`)*
 
-### 6. Documentation
+### 6. Assistant et MCP
 
-- [ ] **T30** — `CLAUDE.md` (module candidatures), `docs/database.md`, `docs/architecture.md`
-      (`SERVING_TOKEN_SECRET`), `.env.example`, `docs/production.md`, guide utilisateur et
-      `guide-screenshots.md`, fiche de l'assistant KB-150, `CHANGELOG.md`, écarts dans `plan.md`
+- [ ] **T30** — Questions de données `serving.myInterviews`, `serving.toPlan`,
+      `serving.freeSlots` : droit de l'écran revérifié, prénom et nom seuls, `boundedAnswer`
+      *(fichiers : `src/app/api/assistant/_data/serving.ts`, `_data-questions.ts`)*
+- [ ] **T31** — Fiches de l'assistant : KB-150 complétée, fiche « Gérer les créneaux
+      d'entretien », fiches de données des trois questions (audience `pvsTeam` /
+      `serving:manage`), synonymes *(fichiers : `src/modules/assistant/knowledge/espaces.ts`,
+      `donnees.ts`, `synonyms.ts`)*
+- [ ] **T32** — MCP : les trois questions dans `MCP_TOOLS` ; action confirmée
+      `create_interview_slots_preview` / `…_confirm` (portée `write`, `createSlots`, refus de
+      l'écran, empreinte, `logAudit` `via: "mcp"`) ; instructions du serveur à jour *(fichiers :
+      `src/app/api/mcp/_tools.ts`, `src/app/api/mcp/_actions/serving.ts`, index des actions)*
+- [ ] **T33** — Tests : questions de données (refus hors PVS, aucune coordonnée), outils MCP
+      visibles pour le PVS seulement, aperçu puis confirmation des créneaux, refus *(fichiers :
+      `src/app/api/assistant/__tests__/…`, `src/app/api/mcp/__tests__/…`)*
+
+### 7. Documentation
+
+- [ ] **T34** — `CLAUDE.md` (module candidatures : créneaux, rendez-vous, lien du candidat,
+      relances ; module mcp : nouveaux outils et action) ; `docs/database.md` ; `docs/auth.md` ;
+      `docs/architecture.md` (`SERVING_TOKEN_SECRET`, `/entretien`) ; `docs/production.md` ;
+      `.env.example`
+- [ ] **T35** — Guide utilisateur : fiche « Entretiens : créneaux et rendez-vous » (PVS), fiche
+      « Candidatures » complétée, fiche « Connecter mon assistant IA » (nouvelle action) ;
+      `docs/guide-screenshots.md` *(fichiers : `src/components/GuideContent.tsx`, docs)*
+- [ ] **T36** — `CHANGELOG.md`, `docs/openapi.json`, écarts dans `plan.md`, statut de la spec
 
 ## Vérification finale
 
@@ -167,4 +189,6 @@
 | Non-retenue : créneau libéré, message neutre ; effacement sans message | T8, T10, T27, T28 |
 | Aucun autre rôle ne voit créneaux ni rendez-vous | T15, T16, T29 |
 | Notifications : prénom et nom seuls | T9, T27 |
-| Journalisation | T15, T16, T29 |
+| Journalisation | T15, T16, T29, T32 |
+| Assistant et MCP (questions, fiches, action de création de créneaux) | T30–T33 |
+| Documentation et guide | T34–T36 |
