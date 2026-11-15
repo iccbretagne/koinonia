@@ -1,21 +1,17 @@
 import { z } from "zod";
 import { defineContract } from "@/lib/openapi/contract";
+import { seekerFields } from "@/modules/jobs/schemas";
 
-export const patchSeekerSchema = z
-  .object({
-    title:          z.string().min(1).max(200).optional(),
-    wantEmploi:     z.boolean().optional(),
-    wantStage:      z.boolean().optional(),
-    wantAlternance: z.boolean().optional(),
-    sector:         z.string().max(150).nullable().optional(),
-    location:       z.string().max(150).nullable().optional(),
-    remote:         z.boolean().optional(),
-    availableFrom:  z.string().datetime().nullable().optional(),
-    description:    z.string().min(1).optional(),
-    contactEmail:   z.string().email().max(150).nullable().optional(),
-    contactUrl:     z.string().url().max(500).nullable().optional(),
-    status:         z.enum(["ACTIVE", "FOUND", "ARCHIVED"]).optional(),
-  });
+export const patchSeekerSchema = z.object({
+  ...seekerFields,
+  title: seekerFields.title.optional(),
+  description: seekerFields.description.optional(),
+  wantEmploi: z.boolean().optional(),
+  wantStage: z.boolean().optional(),
+  wantAlternance: z.boolean().optional(),
+  remote: z.boolean().optional(),
+  status: z.enum(["ACTIVE", "FOUND", "ARCHIVED"]).optional(),
+});
 
 export const contract = defineContract({
   GET: {

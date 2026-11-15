@@ -1,18 +1,14 @@
 import { z } from "zod";
 import { defineContract } from "@/lib/openapi/contract";
+import { freelanceMissionFields, modalityEnum } from "@/modules/jobs/schemas";
 
 export const patchMissionSchema = z.object({
-  title:        z.string().min(1).max(200).optional(),
-  domain:       z.string().min(1).max(150).optional(),
-  duration:     z.string().max(100).nullable().optional(),
-  dailyRate:    z.string().max(100).nullable().optional(),
-  hourlyRate:   z.string().max(100).nullable().optional(),
-  modality:     z.enum(["REMOTE", "ONSITE", "HYBRID"]).optional(),
-  location:     z.string().max(150).nullable().optional(),
-  description:  z.string().min(1).optional(),
-  contactEmail: z.string().email().max(150).nullable().optional(),
-  contactUrl:   z.string().url().max(500).nullable().optional(),
-  status:       z.enum(["ACTIVE", "FILLED", "ARCHIVED"]).optional(),
+  ...freelanceMissionFields,
+  title: freelanceMissionFields.title.optional(),
+  domain: freelanceMissionFields.domain.optional(),
+  description: freelanceMissionFields.description.optional(),
+  modality: modalityEnum.optional(),
+  status: z.enum(["ACTIVE", "FILLED", "ARCHIVED"]).optional(),
 });
 
 export const contract = defineContract({

@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronLeft, FileDown, X } from "lucide-react";
 import { useState, useRef, useCallback, useEffect, useId } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -95,7 +96,7 @@ function SaveIndicator({ status, error }: { readonly status: SaveStatus; readonl
   return (
     <span className={`text-xs font-medium flex items-center gap-1.5 ${cls}`}>
       {status === "saving" && (
-        <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+        <svg aria-hidden="true" className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
         </svg>
@@ -285,9 +286,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
       <div className="flex items-center gap-2 flex-wrap">
         <Link href="/admin/reports" className="mr-auto">
           <button type="button" className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-brand-text bg-brand-soft border border-brand/20 rounded-lg hover:bg-brand-soft transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <ChevronLeft className="w-4 h-4" aria-hidden="true" />
             Retour
           </button>
         </Link>
@@ -296,9 +295,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
           onClick={handleExportPDF}
           className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-info bg-info/5 border border-info/20 rounded-lg hover:bg-info/10 transition-colors"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
+          <FileDown className="w-4 h-4" aria-hidden="true" />
           PDF
         </button>
         <WhatsAppShare getText={() => formatReportWhatsApp(buildExportData())} copiedMessage="Compte rendu copié" size="sm" />
@@ -356,9 +353,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
                 )}
                 <button type="button" onClick={() => removeSection(i)}
                   className="text-ink-subtle hover:text-danger transition-colors" title="Supprimer">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X className="w-4 h-4" aria-hidden="true" />
                 </button>
               </div>
 
@@ -450,9 +445,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
         </button>
         <Link href="/admin/reports">
           <button type="button" className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-brand-text bg-brand-soft border border-brand/20 rounded-lg hover:bg-brand-soft transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <ChevronLeft className="w-4 h-4" aria-hidden="true" />
             Retour
           </button>
         </Link>
