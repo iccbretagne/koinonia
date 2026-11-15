@@ -145,45 +145,45 @@ personne.
 
 ## Critères d'acceptation
 
-- [ ] L'équipe PVS (et l'Admin) peut créer, modifier et retirer des créneaux d'entretien pour son
+- [x] L'équipe PVS (et l'Admin) peut créer, modifier et retirer des créneaux d'entretien pour son
       église, chacun avec une date, une heure, une durée (30 minutes par défaut), un lieu sur place
       ou un lien de visio, et un membre du PVS désigné.
-- [ ] Une série de créneaux se crée en une fois (jours, plage horaire, durée) et chaque créneau de
+- [x] Une série de créneaux se crée en une fois (jours, plage horaire, durée) et chaque créneau de
       la série reste modifiable seul.
-- [ ] Après l'envoi de la fiche « Servir », le candidat se voit proposer les créneaux libres à
+- [x] Après l'envoi de la fiche « Servir », le candidat se voit proposer les créneaux libres à
       venir, avec le nom de la personne qui reçoit, et peut en choisir un ou passer l'étape.
-- [ ] Un créneau ne reçoit qu'un seul candidat ; deux réservations simultanées du même créneau
+- [x] Un créneau ne reçoit qu'un seul candidat ; deux réservations simultanées du même créneau
       n'aboutissent jamais toutes les deux.
-- [ ] Le candidat reçoit un email de confirmation avec la date, l'heure, le lieu, le nom de la
+- [x] Le candidat reçoit un email de confirmation avec la date, l'heure, le lieu, le nom de la
       personne qui reçoit et un lien pour retrouver, changer ou annuler son rendez-vous.
-- [ ] Le candidat peut changer ou annuler jusqu'à 24 heures avant ; au-delà, le lien l'invite à
+- [x] Le candidat peut changer ou annuler jusqu'à 24 heures avant ; au-delà, le lien l'invite à
       contacter le PVS. Changer ou annuler libère l'ancien créneau.
-- [ ] Sans créneau choisi, la fiche est enregistrée et la candidature est « À planifier » pour le
+- [x] Sans créneau choisi, la fiche est enregistrée et la candidature est « À planifier » pour le
       PVS.
-- [ ] L'ouverture de nouveaux créneaux prévient par email les candidats « À planifier » encore
+- [x] L'ouverture de nouveaux créneaux prévient par email les candidats « À planifier » encore
       à l'étude, au plus une fois par jour.
-- [ ] La veille, le candidat reçoit un rappel par email et le membre qui reçoit un rappel par
+- [x] La veille, le candidat reçoit un rappel par email et le membre qui reçoit un rappel par
       notification.
-- [ ] Le PVS voit le rendez-vous en cours et l'historique des rendez-vous de chaque candidature,
+- [x] Le PVS voit le rendez-vous en cours et l'historique des rendez-vous de chaque candidature,
       peut fixer, déplacer ou annuler un rendez-vous pour le candidat, et noter « réalisé »,
       « absent » ou « excusé ».
-- [ ] Un rendez-vous passé sans issue notée apparaît « À compléter » ; le membre qui a reçu est
+- [x] Un rendez-vous passé sans issue notée apparaît « À compléter » ; le membre qui a reçu est
       notifié le lendemain et le PVS voit le nombre d'entretiens à compléter.
-- [ ] Une candidature sans rendez-vous réservé ni réalisé affiche « À planifier » avec sa raison
+- [x] Une candidature sans rendez-vous réservé ni réalisé affiche « À planifier » avec sa raison
       (aucun créneau disponible, aucun ne convenait, annulé par le candidat, créneau retiré,
       absent ou excusé).
-- [ ] Une candidature encore à l'étude restée « À planifier » 14 jours (délai réglable) déclenche
+- [x] Une candidature encore à l'étude restée « À planifier » 14 jours (délai réglable) déclenche
       une notification à l'équipe PVS, renouvelée tous les 14 jours tant que rien ne change.
-- [ ] Deux absences d'affilée sont signalées sur la candidature.
-- [ ] Valider une candidature n'exige pas d'entretien réalisé ; aucun statut ne passe seul à
+- [x] Deux absences d'affilée sont signalées sur la candidature.
+- [x] Valider une candidature n'exige pas d'entretien réalisé ; aucun statut ne passe seul à
       « réalisé » ou « absent ».
-- [ ] Déplacer ou retirer un créneau réservé prévient le candidat et l'invite à en choisir un autre.
-- [ ] Une candidature non retenue libère son créneau à venir et le candidat reçoit un message
+- [x] Déplacer ou retirer un créneau réservé prévient le candidat et l'invite à en choisir un autre.
+- [x] Une candidature non retenue libère son créneau à venir et le candidat reçoit un message
       d'annulation neutre ; une candidature effacée libère son créneau sans message.
-- [ ] Aucun rôle hors PVS, Admin et Super Admin ne voit les créneaux ni les rendez-vous.
-- [ ] Les notifications ne contiennent que le prénom et le nom du candidat, jamais d'autre donnée
+- [x] Aucun rôle hors PVS, Admin et Super Admin ne voit les créneaux ni les rendez-vous.
+- [x] Les notifications ne contiennent que le prénom et le nom du candidat, jamais d'autre donnée
       de la fiche.
-- [ ] Toute création, modification ou suppression de créneau et tout changement de rendez-vous par
+- [x] Toute création, modification ou suppression de créneau et tout changement de rendez-vous par
       le PVS sont journalisés.
 
 ## Hors périmètre
