@@ -135,7 +135,7 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
           onClick={() => { setShowForm(true); setError(null); }}
           className="flex items-center gap-2 bg-brand text-on-brand px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
         >
-          <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
           Affecter un berger
@@ -148,7 +148,7 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-ink">Nouvelle affectation</h2>
             <button onClick={() => setShowForm(false)} className="text-ink-subtle hover:text-ink-muted">
-              <svg aria-hidden="true" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -257,7 +257,7 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
           {familyGroups.map(([familyId, group]) => (
             <div key={familyId} className="bg-surface rounded-xl border border-line overflow-hidden">
               <div className="flex items-center gap-3 px-5 py-3 border-b border-line bg-surface-sunken/50">
-                <svg aria-hidden="true" className="w-4 h-4 text-brand-text shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-brand-text shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 <span className="font-semibold text-ink text-sm">{group.name}</span>
@@ -282,12 +282,12 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
                       title="Retirer"
                     >
                       {deletingId === a.id ? (
-                        <svg aria-hidden="true" className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                         </svg>
                       ) : (
-                        <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       )}

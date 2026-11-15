@@ -29,13 +29,13 @@ function fmtSize(b: number) {
 function FileIcon({ mimeType }: { readonly mimeType: string }) {
   if (mimeType === "application/pdf") {
     return (
-      <svg aria-hidden="true" className="w-5 h-5 text-danger" fill="currentColor" viewBox="0 0 24 24">
+      <svg className="w-5 h-5 text-danger" fill="currentColor" viewBox="0 0 24 24">
         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM9.5 17.5c-.3 0-.5-.2-.5-.5V13h-.5c-.3 0-.5-.2-.5-.5s.2-.5.5-.5H9v-.5c0-.8.7-1.5 1.5-1.5s1.5.7 1.5 1.5V12h.5c.3 0 .5.2.5.5s-.2.5-.5.5H12v4c0 .3-.2.5-.5.5h-2zm1-5v4h1v-4h-1z"/>
       </svg>
     );
   }
   return (
-    <svg aria-hidden="true" className="w-5 h-5 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
     </svg>
   );
@@ -146,7 +146,7 @@ export default function AttachmentManager({
                 title="Télécharger"
                 className="shrink-0 p-1.5 text-ink-subtle hover:text-brand-text transition-colors"
               >
-                <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
               </button>
@@ -159,12 +159,12 @@ export default function AttachmentManager({
                   className="shrink-0 p-1.5 text-ink-subtle hover:text-danger transition-colors disabled:opacity-50"
                 >
                   {deletingId === a.id ? (
-                    <svg aria-hidden="true" className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
                     </svg>
                   ) : (
-                    <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   )}
@@ -187,7 +187,7 @@ export default function AttachmentManager({
           >
             {uploading ? (
               <div className="flex items-center gap-2 text-sm text-brand-text">
-                <svg aria-hidden="true" className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
                 </svg>
@@ -195,7 +195,7 @@ export default function AttachmentManager({
               </div>
             ) : (
               <>
-                <svg aria-hidden="true" className="w-6 h-6 text-ink-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 text-ink-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                 </svg>
                 <p className="text-sm text-ink-muted">

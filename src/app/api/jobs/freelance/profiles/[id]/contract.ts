@@ -8,10 +8,10 @@ export const patchProfileSchema = z.object({
   hourlyRate:    z.string().max(100).nullable().optional(),
   modality:      z.enum(["REMOTE", "ONSITE", "HYBRID"]).optional(),
   location:      z.string().max(150).nullable().optional(),
-  availableFrom: z.iso.datetime().nullable().optional(),
+  availableFrom: z.string().datetime().nullable().optional(),
   description:   z.string().min(1).optional(),
-  contactEmail:  z.email().max(150).nullable().optional(),
-  contactUrl:    z.url().max(500).nullable().optional(),
+  contactEmail:  z.string().email().max(150).nullable().optional(),
+  contactUrl:    z.string().url().max(500).nullable().optional(),
   status:        z.enum(["ACTIVE", "UNAVAILABLE", "ARCHIVED"]).optional(),
 });
 

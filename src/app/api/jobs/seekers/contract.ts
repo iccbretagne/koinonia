@@ -10,10 +10,10 @@ export const createSeekerSchema = z
     sector:         z.string().max(150).optional().nullable(),
     location:       z.string().max(150).optional().nullable(),
     remote:         z.boolean().default(false),
-    availableFrom:  z.iso.datetime().optional().nullable(),
+    availableFrom:  z.string().datetime().optional().nullable(),
     description:    z.string().min(1),
-    contactEmail:   z.email().max(150).optional().nullable(),
-    contactUrl:     z.url().max(500).optional().nullable(),
+    contactEmail:   z.string().email().max(150).optional().nullable(),
+    contactUrl:     z.string().url().max(500).optional().nullable(),
   })
   .refine((d) => d.wantEmploi || d.wantStage || d.wantAlternance, {
     message: "Au moins un type de contrat doit être sélectionné",
