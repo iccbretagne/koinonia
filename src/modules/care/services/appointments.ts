@@ -32,7 +32,7 @@ export const appointmentSubmitSchema = z.object({
   churchId: z.string().min(1, "L'église est requise"),
   firstName: z.string().min(1, "Le prénom est requis"),
   lastName: z.string().min(1, "Le nom est requis"),
-  email: z.string().email("Email invalide").nullable().optional(),
+  email: z.email("Email invalide").nullable().optional(),
   phone: z.string().nullable().optional(),
   subject: z.string().min(1, "L'objet est requis"),
   message: z.string().min(1, "Le message est requis"),

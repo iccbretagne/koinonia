@@ -61,7 +61,7 @@ export async function exchangeCode(input: {
     where: { hash: hashToken(input.code) },
     include: { grant: { include: { client: { select: { clientId: true } } } } },
   });
-  if (!token || token.kind !== "CODE") throw invalidGrant();
+  if (token?.kind !== "CODE") throw invalidGrant();
   if (token.usedAt) {
     // Code rejoué : la connexion obtenue avec lui n'est plus sûre (RFC 6749 §4.1.2).
     await revokeGrant(token.grantId);
@@ -81,7 +81,7 @@ export async function refreshTokens(input: { refreshToken: string; clientId: str
     where: { hash: hashToken(input.refreshToken) },
     include: { grant: { include: { client: { select: { clientId: true } } } } },
   });
-  if (!token || token.kind !== "REFRESH") throw invalidGrant();
+  if (token?.kind !== "REFRESH") throw invalidGrant();
   if (token.grant.client.clientId !== input.clientId) throw invalidGrant();
   if (token.usedAt) {
     await revokeGrant(token.grantId);

@@ -84,7 +84,7 @@ export default function CollectionTab({
     if (s) setDate(s.date);
   }
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.SubmitEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);

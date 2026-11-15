@@ -7,10 +7,10 @@ export const createSchema = z
     roomId: z.string().min(1),
     eventId: z.string().min(1).optional(),
     title: z.string().min(1).max(200),
-    startAt: z.string().datetime(),
-    endAt: z.string().datetime(),
+    startAt: z.iso.datetime(),
+    endAt: z.iso.datetime(),
     recurrenceRule: z.enum(["weekly", "biweekly", "monthly"]).optional(),
-    recurrenceEnd: z.string().datetime().optional(),
+    recurrenceEnd: z.iso.datetime().optional(),
   })
   .refine((d) => new Date(d.endAt) > new Date(d.startAt), {
     message: "endAt doit être postérieure à startAt",

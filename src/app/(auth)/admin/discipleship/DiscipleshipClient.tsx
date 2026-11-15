@@ -224,7 +224,7 @@ function DiscipleCombobox({
       {/* Selected chip */}
       {isSelected && (
         <div className="flex items-center gap-2 px-3 py-2 bg-brand-soft border border-brand/30 rounded-lg text-sm">
-          <svg className="w-4 h-4 text-brand-text shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" className="w-4 h-4 text-brand-text shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
           <span className="flex-1 font-medium text-ink">
@@ -237,7 +237,7 @@ function DiscipleCombobox({
           )}
           {isNew && <span className="text-xs text-brand-text">nouveau</span>}
           <button type="button" onClick={handleClear} className="text-ink-subtle hover:text-ink-muted ml-1">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>

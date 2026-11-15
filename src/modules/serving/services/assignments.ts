@@ -45,7 +45,7 @@ async function safeNotify(label: string, fn: () => Promise<void>) {
 export async function assignApplication(actor: ServingActor, id: string, departmentIds: string[]) {
   if (!actor.canManage) throw new Error("FORBIDDEN");
   const app = await loadApplication(id);
-  if (!app || app.churchId !== actor.churchId) throw new ApiError(404, "Candidature introuvable");
+  if (app?.churchId !== actor.churchId) throw new ApiError(404, "Candidature introuvable");
   if (app.status === "REJECTED") throw new ApiError(409, "Cette candidature n'est pas retenue.");
 
   const ids = [...new Set(departmentIds)];
@@ -110,7 +110,7 @@ async function loadDecidableAssignment(actor: ServingActor, assignmentId: string
       application: { select: { id: true, churchId: true, firstName: true, lastName: true, email: true, phone: true, memberId: true } },
     },
   });
-  if (!assignment || assignment.application.churchId !== actor.churchId) {
+  if (assignment?.application.churchId !== actor.churchId) {
     throw new ApiError(404, "Affectation introuvable");
   }
   if (!canDecideAssignment(actor.user, actor.churchId, assignment.department)) throw new Error("FORBIDDEN");

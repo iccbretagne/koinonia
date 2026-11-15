@@ -7,8 +7,8 @@ export const createSchema = z.object({
   type: z.enum(["ACTIVITY", "APPOINTMENT"]),
   title: z.string().min(1, "Le titre est requis"),
   description: z.string().nullable().optional(),
-  startsAt: z.string().datetime("Date de début invalide"),
-  endsAt: z.string().datetime().nullable().optional(),
+  startsAt: z.iso.datetime("Date de début invalide"),
+  endsAt: z.iso.datetime().nullable().optional(),
   location: z.string().nullable().optional(),
 }).refine(
   (d) => !d.endsAt || new Date(d.endsAt) > new Date(d.startsAt),

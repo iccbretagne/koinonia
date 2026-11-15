@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { Alert, Button, Input, Modal } from "@/components/ui";
 
@@ -14,7 +14,7 @@ export default function RecoverInterview({ churchSlug, turnstileSiteKey }: { rea
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function submit(e: FormEvent) {
+  async function submit(e: SubmitEvent) {
     e.preventDefault();
     if (!token) return setError("Merci de valider la vérification anti-robots.");
     setBusy(true);

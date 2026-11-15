@@ -1,7 +1,7 @@
 /** POST /api/mcp/oauth/register — enregistrement dynamique d'un client (spec 081, RFC 7591). */
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { OAuthError, registerClient } from "@/modules/mcp";
-import { oauthError, oauthJson, preflight } from "../_http";
+import { oauthError, oauthJson } from "../_http";
 import { registerSchema } from "./contract";
 
 export async function POST(request: Request) {
@@ -31,4 +31,4 @@ export async function POST(request: Request) {
   }
 }
 
-export const OPTIONS = preflight;
+export { preflight as OPTIONS } from "../_http";

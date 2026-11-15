@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type SubmitEvent } from "react";
 import Link from "next/link";
 import { ArrowRight, X } from "lucide-react";
 import IconButton from "@/components/ui/IconButton";
@@ -71,7 +71,7 @@ function BotAnswer({ response, onAsk }: { readonly response: AskResponse; readon
         <>
           <p className="font-semibold text-ink">{data?.title ?? response.title}</p>
           {!data && <p>{response.intro}</p>}
-          {data && data.items.length === 0 && <p className="text-ink-muted">{data.empty ?? "Rien à afficher."}</p>}
+          {data?.items.length === 0 && <p className="text-ink-muted">{data.empty ?? "Rien à afficher."}</p>}
           {data && data.items.length > 0 && (
             <ul className="divide-y divide-line overflow-hidden rounded-control border border-line">
               {data.items.map((item, i) => (
@@ -181,7 +181,7 @@ export default function AssistantPanel({
     postJson("/api/assistant/feedback", { question: message.question, helpful, entryKey, screen }).catch(() => undefined);
   }
 
-  function onSubmit(e: FormEvent) {
+  function onSubmit(e: SubmitEvent) {
     e.preventDefault();
     void askQuestion(input);
   }

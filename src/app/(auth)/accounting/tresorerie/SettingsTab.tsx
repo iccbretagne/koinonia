@@ -40,7 +40,7 @@ function AccountForm({ account, onDone }: { readonly account?: AccountView; read
 
   const submitLabel = account ? "Enregistrer" : "Créer le compte";
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.SubmitEvent) {
     e.preventDefault();
     const json = { name, kind, openingBalance: toNumber(balance || "0"), openingDate: date };
     const ok = await run(

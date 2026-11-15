@@ -3,13 +3,13 @@ import { defineContract } from "@/lib/openapi/contract";
 
 export const patchSchema = z.object({
   integratedInFamily: z.boolean().optional(),
-  familyIntegratedAt: z.string().datetime().optional().nullable(),
+  familyIntegratedAt: z.iso.datetime().optional().nullable(),
   followsPcnc: z.boolean().optional(),
-  pcncStartedAt: z.string().datetime().optional().nullable(),
+  pcncStartedAt: z.iso.datetime().optional().nullable(),
   isStar: z.boolean().optional(),
-  starSince: z.string().datetime().optional().nullable(),
+  starSince: z.iso.datetime().optional().nullable(),
   inDiscipleship: z.boolean().optional(),
-  discipleshipSince: z.string().datetime().optional().nullable(),
+  discipleshipSince: z.iso.datetime().optional().nullable(),
   notes: z.string().max(10000).optional().nullable(),
 });
 

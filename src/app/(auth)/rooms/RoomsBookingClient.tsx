@@ -409,7 +409,7 @@ function RoomCalendarView({
             aria-label="Période précédente"
             className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-brand-text hover:bg-brand-soft transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
@@ -421,7 +421,7 @@ function RoomCalendarView({
             aria-label="Période suivante"
             className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-brand-text hover:bg-brand-soft transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </button>
@@ -792,7 +792,7 @@ export default function RoomsBookingClient({
             className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-brand-text hover:bg-brand-soft transition-colors"
           >
             <span>Mes réservations ({myUpcoming.length})</span>
-            <svg
+            <svg aria-hidden="true"
               className={`w-4 h-4 transition-transform ${myResaOpen ? "rotate-180" : ""}`}
               fill="none"
               viewBox="0 0 24 24"

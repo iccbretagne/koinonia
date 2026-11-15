@@ -39,7 +39,7 @@ export default function RejectedLinkRequests<T extends RejectedLinkRequest>({
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-2 text-sm text-ink-muted hover:text-ink-muted transition-colors"
       >
-        <svg
+        <svg aria-hidden="true"
           className={`w-4 h-4 transition-transform ${open ? "rotate-90" : ""}`}
           fill="none" stroke="currentColor" viewBox="0 0 24 24"
         >

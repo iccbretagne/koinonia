@@ -68,7 +68,7 @@ function groupByMonth(items: Item[]): { label: string; items: Item[] }[] {
   const groups: { label: string; items: Item[] }[] = [];
   for (const item of items) {
     const label = monthFmt.format(new Date(item.date));
-    const last = groups[groups.length - 1];
+    const last = groups.at(-1);
     if (last?.label === label) last.items.push(item);
     else groups.push({ label, items: [item] });
   }
@@ -133,7 +133,7 @@ export default function GalleryClient({
     try {
       const qs = toSearch(filters);
       const res = await fetch(`/api/media/library?${qs}${qs ? "&" : ""}cursor=${encodeURIComponent(cursor)}`);
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error(`Chargement de la galerie impossible (${res.status})`);
       const page: Page = await res.json();
       setItems((prev) => [...prev, ...page.items]);
       setCursor(page.nextCursor);

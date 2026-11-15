@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { defineContract } from "@/lib/openapi/contract";
 
-export const emailListSchema = z.array(z.string().email("Email invalide")).optional().default([]);
+export const emailListSchema = z.array(z.email("Email invalide")).optional().default([]);
 
 export const updateSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),

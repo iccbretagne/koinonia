@@ -194,7 +194,7 @@ export default function PublicationDetail({
               {close.close}
             </Button>
           )}
-          {pub.isOwn && close && pub.state === close.state && (
+          {pub.isOwn && close?.state === pub.state && (
             <Button variant="secondary" disabled={busy} onClick={() => setStatus("ACTIVE", close.reopened)}>
               {close.reopen}
             </Button>

@@ -11,10 +11,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { RequestStatus } from "@/generated/prisma/client";
-import type { QueueItem } from "@/modules/planning";
 import type { StatusTone } from "@/components/ui/StatusChip";
 
-export type { QueueItem };
+export type { QueueItem } from "@/modules/planning";
 
 /** Modification envoyée à la demande (corps du PATCH, hors `expectedStatus`). */
 export interface RequestChange {

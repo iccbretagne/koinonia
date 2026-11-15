@@ -9,7 +9,7 @@ export const justificationActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("accept") }).strict(),
   z.object({ action: z.literal("reject"), reason }).strict(),
   z.object({ action: z.literal("waive"), reason, retainedAmount: money }).strict(),
-  z.object({ action: z.literal("return"), returnedAt: z.string().datetime(), treasuryAccountId: z.string().min(1).max(40).nullish() }).strict(),
+  z.object({ action: z.literal("return"), returnedAt: z.iso.datetime(), treasuryAccountId: z.string().min(1).max(40).nullish() }).strict(),
 ]);
 export type JustificationAction = z.infer<typeof justificationActionSchema>;
 

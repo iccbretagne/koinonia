@@ -281,7 +281,7 @@ export async function notifyInterviewBooked(candidate: CandidateInfo, interview:
     `Rendez-vous le ${when(interview.startsAt)} (${interview.durationMinutes} min), ${place(interview)}${name ? `, avec ${name}` : ""}. Vous pouvez le retrouver, le changer ou l'annuler jusqu'à 24 heures avant depuis le lien ci-dessous.`
   );
   await notifyInterviewer(interview.interviewerId, "SERVING_INTERVIEW_BOOKED", "Entretien réservé", `Entretien avec ${fullName(candidate)} le ${when(interview.startsAt)}.`, candidate);
-  if (previous && previous.interviewerId && previous.interviewerId !== interview.interviewerId) {
+  if (previous?.interviewerId && previous.interviewerId !== interview.interviewerId) {
     await notifyInterviewer(previous.interviewerId, "SERVING_INTERVIEW_CANCELLED", "Entretien déplacé", `L'entretien avec ${fullName(candidate)} du ${when(previous.startsAt)} a été déplacé.`, candidate);
   }
   if (byCandidate) {

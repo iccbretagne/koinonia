@@ -36,7 +36,7 @@ const optText = (max: number) =>
     .trim()
     .max(max, `${max} caractères maximum`)
     .optional()
-    .transform((v) => (v ? v : null));
+    .transform((v) => v || null);
 
 /** Question Oui/Non : sans réponse → `null` (« Non renseigné »), jamais « Non ». */
 const yesNo = z
@@ -81,7 +81,7 @@ export const applicationFormSchema = z.object({
   maritalStatus: z
     .enum([...MARITAL_STATUSES, ""])
     .optional()
-    .transform((v) => (v ? v : null)),
+    .transform((v) => v || null),
   childrenCount: z
     .string()
     .optional()
@@ -102,7 +102,7 @@ export const applicationFormSchema = z.object({
   email: z
     .union([z.literal(""), z.email("Adresse e-mail invalide").max(200)])
     .optional()
-    .transform((v) => (v ? v : null)),
+    .transform((v) => v || null),
   baptized: yesNo,
   baptismDate: optPastDay,
   baptismPlace: optText(200),
@@ -239,7 +239,7 @@ export const publicInterviewActionSchema = z.discriminatedUnion("action", [
 
 export const interviewRecoverSchema = z.object({
   churchSlug: z.string().min(1).max(80),
-  email: z.string().trim().toLowerCase().email().max(200),
+  email: z.string().trim().toLowerCase().max(200).pipe(z.email()),
   turnstileToken: z.string().max(4096).optional(),
 });
 

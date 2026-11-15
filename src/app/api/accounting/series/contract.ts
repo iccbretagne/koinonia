@@ -8,7 +8,7 @@ export const createSchema = z.object({
   amount:            z.number().positive(),
   recurrenceEvery:   z.number().int().min(1).max(99),
   recurrenceUnit:    z.enum(["WEEK", "MONTH"]),
-  firstOccurrenceDate: z.string().datetime(),
+  firstOccurrenceDate: z.iso.datetime(),
 });
 
 export const contract = defineContract({

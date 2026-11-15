@@ -2,7 +2,7 @@ import { z } from "zod";
 import { defineContract } from "@/lib/openapi/contract";
 
 export const releaseSchema = z.object({
-  releasedAt:     z.string().datetime(),
+  releasedAt:     z.iso.datetime(),
   releasedAmount: z.number().positive(),
   note:           z.string().max(500).optional(),
   /** Compte de trésorerie d'où sort le paiement (spec 076) ; absent ou null = compte commun. */

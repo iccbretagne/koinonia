@@ -33,7 +33,7 @@ const norm = (s: string) =>
 export async function findMemberMatches(actor: ServingActor, id: string, search: MemberSearch): Promise<MemberMatch[]> {
   if (!actor.canManage) throw new Error("FORBIDDEN");
   const app = await loadApplication(id);
-  if (!app || app.churchId !== actor.churchId) throw new ApiError(404, "Candidature introuvable");
+  if (app?.churchId !== actor.churchId) throw new ApiError(404, "Candidature introuvable");
 
   const byName = (await search(actor.churchId, app.lastName)).filter(
     (m) => norm(m.lastName) === norm(app.lastName) && norm(m.firstName) === norm(app.firstName)

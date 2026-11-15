@@ -69,7 +69,7 @@ export default function Attendance({ formId, sessions }: { readonly formId: stri
       </div>
       {sheet && <p className="text-[14px] text-ink-muted first-letter:uppercase">{sessionDates(sheet.session)}</p>}
       {error && <Alert tone="danger">{error}</Alert>}
-      {sheet && sheet.rows.length === 0 && <p className="text-ink-muted">Aucun inscrit confirmé dans votre périmètre.</p>}
+      {sheet?.rows.length === 0 && <p className="text-ink-muted">Aucun inscrit confirmé dans votre périmètre.</p>}
       {sheet && sheet.rows.length > 0 && (
         <div className="overflow-x-auto rounded-card border border-line bg-surface">
           <table className="w-full text-left text-[14px]">

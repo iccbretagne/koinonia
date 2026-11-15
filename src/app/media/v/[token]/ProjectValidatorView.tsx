@@ -84,17 +84,17 @@ function ProgressBar({ total, approved, rejected }: { readonly total: number; re
 
 function FileTypeIcon({ mimeType, className = "w-16 h-16" }: { readonly mimeType: string; readonly className?: string }) {
   if (mimeType.startsWith("video/")) return (
-    <svg className={`${className} text-ink-subtle`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg aria-hidden="true" className={`${className} text-ink-subtle`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
     </svg>
   );
   if (mimeType === "application/pdf") return (
-    <svg className={`${className} text-ink-subtle`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg aria-hidden="true" className={`${className} text-ink-subtle`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
     </svg>
   );
   return (
-    <svg className={`${className} text-ink-subtle`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg aria-hidden="true" className={`${className} text-ink-subtle`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
     </svg>
   );
@@ -124,7 +124,7 @@ function ImageLightbox({ file, token, onClose }: { readonly file: ProjectFile; r
     <div className="fixed inset-0 z-50 bg-scrim/95 flex flex-col" role="none" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <button onClick={onClose} className="text-on-brand/70 hover:text-on-brand transition-colors">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -436,7 +436,7 @@ function SummaryView({
                   </span>
                 </div>
                 {actionable && (
-                  <svg className="w-4 h-4 text-ink/30 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg aria-hidden="true" className="w-4 h-4 text-ink/30 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 )}
@@ -479,7 +479,7 @@ function FilePreview({
           onPointerDown={(e) => e.stopPropagation()}
           className="absolute bottom-2 right-2 text-xs text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
         >
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           HD
@@ -859,7 +859,7 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
               aria-label={labels.revision}
               title={labels.revision}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </button>

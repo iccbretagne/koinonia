@@ -99,14 +99,10 @@ export function isOwnApplication(
   return app.assignments.some((a) => WELCOMED_ASSIGNMENT_STATUSES.includes(a.status));
 }
 
-/** Réglages (durées, adresse email du PVS) : Super Admin, Admin, toute l'équipe PVS. */
-export function canEditSettings(
-  user: ServingUser,
-  churchId: string,
-  pvsDeptIds: readonly string[],
-  rolePermissions: RolePermissions
-): boolean {
-  if (user.isSuperAdmin) return true;
-  if (hasPermission(user, churchId, rolePermissions, "serving:manage")) return true;
-  return isPvsTeamMember(user, churchId, pvsDeptIds);
-}
+/**
+ * Réglages (durées, délai de relance, adresse email du PVS) : même règle que l'étude — Super
+ * Admin, Admin, toute l'équipe PVS. Nom distinct, pour qu'une évolution de l'une ne change pas
+ * l'autre en silence.
+ */
+export const canEditSettings: typeof canManageApplications = (user, churchId, pvsDeptIds, rolePermissions) =>
+  canManageApplications(user, churchId, pvsDeptIds, rolePermissions);

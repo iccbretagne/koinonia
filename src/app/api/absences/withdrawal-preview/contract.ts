@@ -3,8 +3,8 @@ import { defineContract } from "@/lib/openapi/contract";
 
 export const querySchema = z
   .object({
-    startDate: z.string().datetime(),
-    endDate: z.string().datetime(),
+    startDate: z.iso.datetime(),
+    endDate: z.iso.datetime(),
     allDepartments: z.enum(["true", "false"]).default("true"),
     departmentIds: z.string().optional(),
   })

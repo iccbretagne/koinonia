@@ -68,7 +68,7 @@ export const familyPatchSchema = z.discriminatedUnion("action", [
     firstName:    z.string().min(1).max(100).optional(),
     lastName:     z.string().min(1).max(100).optional(),
     phone:        z.string().min(1).max(30).optional(),
-    email:        z.string().email().optional().or(z.literal("")).optional(),
+    email:        z.email().optional().or(z.literal("")).optional(),
     address:      z.string().max(500).optional().or(z.literal("")).optional(),
     ageRange:     z.enum(["YOUTH", "YOUNG_ADULT", "ADULT", "SENIOR"]).optional(),
     churchStatus: z.enum(["VISITOR", "REGULAR", "ENGAGED"]).optional(),

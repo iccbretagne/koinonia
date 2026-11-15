@@ -92,7 +92,7 @@ export default function ApplicationAnswers({ app }: { readonly app: Answers }) {
         {/* eslint-disable-next-line @next/next/no-img-element -- photo privée servie par une route authentifiée, sans cache */}
         <img
           src={`/api/serving/applications/${app.id}/photo`}
-          alt={`Photo de ${app.firstName} ${app.lastName}`}
+          alt={`${app.firstName} ${app.lastName}`}
           className="h-40 w-30 rounded-lg border border-line object-cover bg-surface-sunken self-start"
         />
       </section>

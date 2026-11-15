@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { defineContract } from "@/lib/openapi/contract";
 
-const futureOrNull = z.string().datetime({ offset: true }).nullable().describe("Date de fin (future) ou `null` : sans date de fin");
+const futureOrNull = z.iso.datetime({ offset: true }).nullable().describe("Date de fin (future) ou `null` : sans date de fin");
 
 export const createGrantSchema = z.object({
   userId: z.string().min(1),

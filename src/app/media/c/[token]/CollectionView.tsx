@@ -106,7 +106,7 @@ function Lightbox({
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <div className="flex items-center gap-3 min-w-0">
           <button onClick={onClose} className="text-on-brand/70 hover:text-on-brand transition-colors shrink-0">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -123,12 +123,12 @@ function Lightbox({
       {/* Image */}
       <div className="flex-1 flex items-center justify-center relative px-14 overflow-hidden">
         <button onClick={onPrev} disabled={index === 0} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-full p-2.5 transition-all disabled:opacity-20 z-10">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
         <button onClick={onNext} disabled={index === items.length - 1} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-full p-2.5 transition-all disabled:opacity-20 z-10">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
@@ -150,7 +150,7 @@ function Lightbox({
           {downloading ? (
             <span className="w-4 h-4 border-2 border-on-brand/30 border-t-on-brand rounded-full animate-spin" />
           ) : (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
           )}
@@ -293,7 +293,7 @@ export default function CollectionView({ token, data }: { readonly token: string
                             <img src={file.thumbnailUrl} alt={file.filename} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-ink-subtle">
-                              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg aria-hidden="true" className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                               </svg>
                             </div>

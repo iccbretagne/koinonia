@@ -293,7 +293,7 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
                           }`}
                         >
                           {reached && (
-                            <svg
+                            <svg aria-hidden="true"
                               className="w-3 h-3 text-on-brand"
                               fill="none"
                               viewBox="0 0 24 24"

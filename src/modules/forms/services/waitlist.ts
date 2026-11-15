@@ -26,7 +26,7 @@ export async function fillOpenPlaces(tx: Tx, formId: string, now = new Date()): 
       sessions: { select: { levels: { select: { id: true, capacity: true } } } },
     },
   });
-  if (!form || form.status !== "PUBLISHED" || form.deletedAt) return [];
+  if (form?.status !== "PUBLISHED" || form.deletedAt) return [];
 
   const waiting = await tx.formResponse.findMany({
     where: { formId, status: "WAITLISTED" },

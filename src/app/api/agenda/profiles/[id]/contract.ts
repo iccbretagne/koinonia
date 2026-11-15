@@ -3,7 +3,7 @@ import { defineContract } from "@/lib/openapi/contract";
 
 export const updateSchema = z.object({
   name: z.string().min(1).optional(),
-  email: z.string().email().nullable().optional(),
+  email: z.email().nullable().optional(),
   role: z.enum(["PASTEUR", "ASSISTANT_PASTEUR", "BERGER"]).optional(),
   userId: z.string().nullable().optional(),
 });

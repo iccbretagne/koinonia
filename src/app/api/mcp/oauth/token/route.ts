@@ -1,7 +1,7 @@
 /** POST /api/mcp/oauth/token — échange de code et rafraîchissement (spec 081). */
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { OAuthError, exchangeCode, refreshTokens } from "@/modules/mcp";
-import { oauthError, oauthJson, preflight, readParams } from "../_http";
+import { oauthError, oauthJson, readParams } from "../_http";
 import { tokenSchema } from "./contract";
 
 export async function POST(request: Request) {
@@ -26,4 +26,4 @@ export async function POST(request: Request) {
   }
 }
 
-export const OPTIONS = preflight;
+export { preflight as OPTIONS } from "../_http";

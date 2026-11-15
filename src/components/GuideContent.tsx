@@ -912,7 +912,7 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
             className="absolute top-4 right-4 text-ink bg-surface/90 hover:bg-surface rounded-full shadow-float p-2 transition-colors"
             aria-label="Fermer"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>

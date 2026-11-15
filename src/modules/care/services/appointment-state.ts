@@ -52,7 +52,7 @@ export const appointmentPatchSchema = z.discriminatedUnion("action", [
   }),
   z.object({
     action: z.literal("set_date"),
-    scheduledFor: z.string().datetime("Date invalide"),
+    scheduledFor: z.iso.datetime("Date invalide"),
   }),
   z.object({
     action: z.literal("outcome"),

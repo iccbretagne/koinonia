@@ -10,10 +10,10 @@ export const createProfileSchema = z.object({
   hourlyRate:    z.string().max(100).optional().nullable(),
   modality:      modalityEnum.default("REMOTE"),
   location:      z.string().max(150).optional().nullable(),
-  availableFrom: z.string().datetime().optional().nullable(),
+  availableFrom: z.iso.datetime().optional().nullable(),
   description:   z.string().min(1),
-  contactEmail:  z.string().email().max(150).optional().nullable(),
-  contactUrl:    z.string().url().max(500).optional().nullable(),
+  contactEmail:  z.email().max(150).optional().nullable(),
+  contactUrl:    z.url().max(500).optional().nullable(),
 });
 
 export const contract = defineContract({

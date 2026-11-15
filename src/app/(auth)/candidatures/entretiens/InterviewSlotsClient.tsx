@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { CalendarPlus, Pencil, Trash2 } from "lucide-react";
 import { Alert, Button, ConfirmModal, EmptyState, IconButton, Input, Modal, Select, StatusChip } from "@/components/ui";
 import Checkbox from "@/components/ui/Checkbox";
@@ -61,7 +61,7 @@ function SlotForm({
   const [f, setF] = useState(initial);
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setF((p) => ({ ...p, [k]: v }));
   const seriesDays = f.mode === "series" && f.dayFrom && f.dayTo ? expandDays(f.dayFrom, f.dayTo, f.weekdays) : [];
-  function submit(e: FormEvent) {
+  function submit(e: SubmitEvent) {
     e.preventDefault();
     onSubmit(f);
   }

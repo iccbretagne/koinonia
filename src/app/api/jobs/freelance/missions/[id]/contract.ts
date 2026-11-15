@@ -10,8 +10,8 @@ export const patchMissionSchema = z.object({
   modality:     z.enum(["REMOTE", "ONSITE", "HYBRID"]).optional(),
   location:     z.string().max(150).nullable().optional(),
   description:  z.string().min(1).optional(),
-  contactEmail: z.string().email().max(150).nullable().optional(),
-  contactUrl:   z.string().url().max(500).nullable().optional(),
+  contactEmail: z.email().max(150).nullable().optional(),
+  contactUrl:   z.url().max(500).nullable().optional(),
   status:       z.enum(["ACTIVE", "FILLED", "ARCHIVED"]).optional(),
 });
 
