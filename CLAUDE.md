@@ -665,7 +665,10 @@ seule (`ENABLED_MODULES`) :
   pour l'assistant), ce qui garde les routes et leurs tests inchangés. Lot 3c : créer 1 à 12
   événements datés (`events:manage`, `createEvent` + `addEventDepartment`, heure de Paris via
   `parisDateTime`, doublons signalés), salles libres (`rooms_available`) et réservation
-  (`rooms:reserve`, `reserveRoom`, salle prise entre-temps ⇒ 409 de l'écran)
+  (`rooms:reserve`, `reserveRoom`, salle prise entre-temps ⇒ 409 de l'écran). Spec 082 :
+  lectures `serving_myInterviews`/`serving_toPlan`/`serving_freeSlots` et action
+  `create_interview_slots` (équipe Vie des STAR, `serving:manage`), règles de l'écran partagées
+  par `planSlots`/`createSlots` (`@/modules/serving`)
 - Journal sans contenu (`mcp_calls`), 60 appels/min/compte ; révocation par la personne
   (`/profile/assistants`) ou l'Admin d'église ; purge quotidienne (`mcp-maintenance`)
 
@@ -773,6 +776,18 @@ désactivable (`ENABLED_MODULES`) :
   lien seul, copie à `Department.contactEmail` du PVS (liste blanche `sendEmail`)
 - Le module ne peut importer ni `planning` ni `core` : les routes injectent
   `attachMemberToDepartment`/`detachMemberFromDepartment` et le logo de l'église
+- **Entretiens** (spec 082) : le PVS propose des créneaux (`/candidatures/entretiens`, un par
+  un ou en série, à l'heure de Paris via `src/lib/paris-time.ts`, personne qui reçoit = membre du
+  PVS, lieu ou visio, jamais de chevauchement) ; le candidat choisit après l'envoi de sa fiche et
+  gère son rendez-vous par `/entretien/<lien>` (public, jeton dérivé de `SERVING_TOKEN_SECRET`,
+  empreinte seule stockée ; « Retrouver mon rendez-vous » renvoie le lien, même réponse qu'il soit
+  connu ou non), jusqu'à 24 h avant. Un créneau = un candidat (prise conditionnelle sur
+  `bookedAt`). Sans rendez-vous : repère « À planifier » avec raison, relance du PVS tous les
+  `schedulingReminderDays` (14), invitation par email à chaque vague de créneaux (≤ 1/24 h).
+  « À compléter » et « deux absences d'affilée » sont calculés ; l'issue (réalisé, absent,
+  excusé) est toujours notée par une personne. Non-retenue ⇒ rendez-vous annulé, message neutre ;
+  effacement ⇒ créneau libéré sans message. Rappels de la veille, « issue à noter » et relances
+  par la tâche cron `serving`
 
 **Spécificités du Comptable** (`ACCOUNTANT`) :
 - Seul rôle (hors Super Admin/Admin) avec `accounting:manage` : traite les demandes financières

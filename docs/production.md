@@ -54,9 +54,11 @@ SUPER_ADMIN_EMAILS=admin@votre-eglise.com
 ENABLED_MODULES=
 TURNSTILE_SITE_KEY=cle-publique-turnstile
 TURNSTILE_SECRET_KEY=cle-secrete-turnstile
-# Facultatifs (à défaut AUTH_SECRET) : secrets des liens de billetterie et des formulaires
+# Facultatifs (à défaut AUTH_SECRET) : secrets des liens de billetterie, des formulaires et des
+# rendez-vous d'entretien des candidats
 TICKETING_TOKEN_SECRET=
 FORMS_TOKEN_SECRET=
+SERVING_TOKEN_SECRET=
 VAPID_PUBLIC_KEY=cle-publique-vapid
 VAPID_PRIVATE_KEY=cle-privee-vapid
 VAPID_SUBJECT=mailto:contact@votre-domaine.com

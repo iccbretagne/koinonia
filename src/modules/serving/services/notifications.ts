@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { notifyUsers } from "@/lib/notifications";
 import { buildGenericNotificationEmail, sendEmail } from "@/lib/email";
+import { getPvsDepartmentIds } from "../auth";
 
 /**
  * Notifications des candidatures (spec 077), domaine `serving`. Elles ne portent jamais de donnée
@@ -158,24 +159,45 @@ export async function notifyConfirmed(churchId: string, pvsDeptIds: string[], de
   });
 }
 
+/**
+ * Fin d'observation proche, puis échue : le département décide (confirme ou renvoie) ; le PVS
+ * (équipe et boîte du PVS) est prévenu en même temps pour pouvoir relancer.
+ */
 export async function notifyObservationEnding(
   churchId: string,
   departmentId: string,
   departmentName: string,
   who: Who,
-  overdue: boolean
+  overdue: boolean,
+  pvsDeptIds: string[] = []
 ) {
-  await notifyUsers(await departmentLeadIds(churchId, departmentId), {
+  const type = overdue ? "SERVING_OBSERVATION_OVERDUE" : "SERVING_OBSERVATION_ENDING";
+  const title = overdue ? "Période d'observation terminée" : "Fin de période d'observation proche";
+  const link = applicationLink(who.applicationId);
+  const leads = await departmentLeadIds(churchId, departmentId);
+  await notifyUsers(leads, {
     domain: DOMAIN,
-    type: overdue ? "SERVING_OBSERVATION_OVERDUE" : "SERVING_OBSERVATION_ENDING",
-    title: overdue ? "Période d'observation terminée" : "Fin de période d'observation proche",
+    type,
+    title,
     message: overdue
       ? `L'observation de ${fullName(who)} dans ${departmentName} est terminée : confirme-la ou renvoie-la au PVS.`
       : `L'observation de ${fullName(who)} dans ${departmentName} se termine bientôt.`,
-    link: applicationLink(who.applicationId),
+    link,
     entityType: SERVING_ENTITY,
     entityId: who.applicationId,
   });
+  if (pvsDeptIds.length === 0) return;
+  const pvsContent = {
+    title,
+    message: overdue
+      ? `L'observation de ${fullName(who)} dans ${departmentName} est terminée, sans décision du département.`
+      : `L'observation de ${fullName(who)} dans ${departmentName} se termine bientôt.`,
+    link,
+  };
+  const leadSet = new Set(leads);
+  const pvsIds = (await pvsRecipientIds(churchId, pvsDeptIds)).filter((id) => !leadSet.has(id));
+  await notifyUsers(pvsIds, { domain: DOMAIN, type, ...pvsContent, entityType: SERVING_ENTITY, entityId: who.applicationId });
+  await copyToPvsMailboxes(pvsDeptIds, pvsContent);
 }
 
 export async function notifyPurgeWarning(churchId: string, pvsDeptIds: string[], who: Who) {
@@ -188,4 +210,159 @@ export async function notifyPurgeWarning(churchId: string, pvsDeptIds: string[],
     entityType: SERVING_ENTITY,
     entityId: who.applicationId,
   });
+}
+
+// ─── Entretiens (spec 082) ──────────────────────────────────────────────────
+
+export type InterviewInfo = {
+  id: string;
+  startsAt: Date;
+  durationMinutes: number;
+  location: string | null;
+  visioUrl: string | null;
+  interviewerId: string | null;
+};
+
+export type CandidateInfo = Who & {
+  churchId: string;
+  email: string | null;
+  /** Lien de rendez-vous re-dérivé (null : aucun jeton posé). */
+  token: string | null;
+};
+
+const when = (d: Date) =>
+  d.toLocaleString("fr-FR", { timeZone: "Europe/Paris", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+
+export const interviewLink = (token: string) => `/entretien/${token}`;
+
+async function interviewerName(userId: string | null): Promise<string | null> {
+  if (!userId) return null;
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { displayName: true, name: true } });
+  return user?.displayName ?? user?.name ?? null;
+}
+
+function place(i: InterviewInfo): string {
+  if (i.visioUrl) return `en visio (${i.visioUrl})`;
+  return i.location ? `lieu : ${i.location}` : "lieu communiqué par l'équipe";
+}
+
+/**
+ * Email au candidat (sans compte : liste blanche `sendEmail`, spec 053). Contenu : son propre
+ * rendez-vous et son lien. Sans adresse sur la fiche, rien n'est envoyé.
+ */
+async function emailCandidate(candidate: CandidateInfo, title: string, message: string) {
+  if (!candidate.email) return;
+  try {
+    await sendEmail({
+      to: candidate.email,
+      ...buildGenericNotificationEmail({ title, message, link: candidate.token ? interviewLink(candidate.token) : undefined }),
+    });
+  } catch (err) {
+    logger.error({ err, applicationId: candidate.applicationId }, "Email d'entretien au candidat non envoyé");
+  }
+}
+
+async function notifyInterviewer(userId: string | null, type: string, title: string, message: string, who: Who) {
+  if (!userId) return;
+  await notifyUsers([userId], { domain: DOMAIN, type, title, message, link: applicationLink(who.applicationId), entityType: SERVING_ENTITY, entityId: who.applicationId });
+}
+
+async function notifyPvs(churchId: string, type: string, title: string, message: string, who: Who, exclude: (string | null)[] = []) {
+  const ids = (await pvsRecipientIds(churchId, await getPvsDepartmentIds(churchId))).filter((id) => !exclude.includes(id));
+  await notifyUsers(ids, { domain: DOMAIN, type, title, message, link: applicationLink(who.applicationId), entityType: SERVING_ENTITY, entityId: who.applicationId });
+}
+
+/** Rendez-vous réservé (par le candidat ou par le PVS). */
+export async function notifyInterviewBooked(candidate: CandidateInfo, interview: InterviewInfo, byCandidate: boolean, previous?: InterviewInfo | null) {
+  const name = await interviewerName(interview.interviewerId);
+  await emailCandidate(
+    candidate,
+    previous ? "Votre rendez-vous d'entretien est modifié" : "Votre rendez-vous d'entretien est confirmé",
+    `Rendez-vous le ${when(interview.startsAt)} (${interview.durationMinutes} min), ${place(interview)}${name ? `, avec ${name}` : ""}. Vous pouvez le retrouver, le changer ou l'annuler jusqu'à 24 heures avant depuis le lien ci-dessous.`
+  );
+  await notifyInterviewer(interview.interviewerId, "SERVING_INTERVIEW_BOOKED", "Entretien réservé", `Entretien avec ${fullName(candidate)} le ${when(interview.startsAt)}.`, candidate);
+  if (previous && previous.interviewerId && previous.interviewerId !== interview.interviewerId) {
+    await notifyInterviewer(previous.interviewerId, "SERVING_INTERVIEW_CANCELLED", "Entretien déplacé", `L'entretien avec ${fullName(candidate)} du ${when(previous.startsAt)} a été déplacé.`, candidate);
+  }
+  if (byCandidate) {
+    await notifyPvs(
+      candidate.churchId,
+      "SERVING_INTERVIEW_BOOKED",
+      previous ? "Rendez-vous d'entretien changé" : "Rendez-vous d'entretien choisi",
+      `${fullName(candidate)} a choisi un entretien le ${when(interview.startsAt)}.`,
+      candidate,
+      [interview.interviewerId]
+    );
+  }
+}
+
+/** Rendez-vous annulé. `REJECTED` : message neutre ; effacement : jamais de message au candidat. */
+export async function notifyInterviewCancelled(
+  candidate: CandidateInfo,
+  interview: InterviewInfo,
+  reason: "CANDIDATE" | "PVS" | "SLOT_REMOVED" | "REJECTED" | "PURGED"
+) {
+  if (reason === "REJECTED") {
+    await emailCandidate(candidate, "Votre rendez-vous d'entretien est annulé", "Votre rendez-vous est annulé ; l'équipe vous recontactera.");
+  } else if (reason === "PVS" || reason === "SLOT_REMOVED") {
+    await emailCandidate(
+      candidate,
+      "Votre rendez-vous d'entretien est annulé",
+      `Votre rendez-vous du ${when(interview.startsAt)} ne peut pas être maintenu. Choisissez un autre créneau depuis le lien ci-dessous.`
+    );
+  } else if (reason === "CANDIDATE") {
+    await emailCandidate(candidate, "Votre rendez-vous d'entretien est annulé", `Votre rendez-vous du ${when(interview.startsAt)} est annulé. Vous pouvez en choisir un autre depuis le lien ci-dessous.`);
+  }
+  await notifyInterviewer(interview.interviewerId, "SERVING_INTERVIEW_CANCELLED", "Entretien annulé", `L'entretien avec ${fullName(candidate)} du ${when(interview.startsAt)} est annulé.`, candidate);
+  if (reason === "CANDIDATE") {
+    await notifyPvs(candidate.churchId, "SERVING_INTERVIEW_CANCELLED", "Rendez-vous d'entretien annulé", `${fullName(candidate)} a annulé son entretien.`, candidate, [interview.interviewerId]);
+  }
+}
+
+/** Créneau réservé modifié par le PVS (horaire, lieu ou personne qui reçoit). */
+export async function notifyInterviewMoved(candidate: CandidateInfo, before: InterviewInfo, after: InterviewInfo) {
+  const name = await interviewerName(after.interviewerId);
+  await emailCandidate(
+    candidate,
+    "Votre rendez-vous d'entretien est modifié",
+    `Nouveau rendez-vous le ${when(after.startsAt)} (${after.durationMinutes} min), ${place(after)}${name ? `, avec ${name}` : ""}. Vous pouvez le changer ou l'annuler jusqu'à 24 heures avant depuis le lien ci-dessous.`
+  );
+  await notifyInterviewer(after.interviewerId, "SERVING_INTERVIEW_MOVED", "Entretien modifié", `Entretien avec ${fullName(candidate)} le ${when(after.startsAt)}.`, candidate);
+  if (before.interviewerId && before.interviewerId !== after.interviewerId) {
+    await notifyInterviewer(before.interviewerId, "SERVING_INTERVIEW_CANCELLED", "Entretien réattribué", `L'entretien avec ${fullName(candidate)} est confié à une autre personne.`, candidate);
+  }
+}
+
+/** Rappel de la veille : email au candidat, notification à la personne qui reçoit. */
+export async function notifyInterviewReminder(candidate: CandidateInfo, interview: InterviewInfo) {
+  const name = await interviewerName(interview.interviewerId);
+  await emailCandidate(
+    candidate,
+    "Rappel : votre entretien demain",
+    `Rendez-vous le ${when(interview.startsAt)} (${interview.durationMinutes} min), ${place(interview)}${name ? `, avec ${name}` : ""}.`
+  );
+  await notifyInterviewer(interview.interviewerId, "SERVING_INTERVIEW_REMINDER", "Entretien demain", `Entretien avec ${fullName(candidate)} le ${when(interview.startsAt)}.`, candidate);
+}
+
+/** Issue à noter le lendemain : à la personne qui a reçu, à défaut l'équipe PVS. */
+export async function notifyInterviewToComplete(candidate: CandidateInfo, interview: InterviewInfo) {
+  const title = "Issue d'entretien à noter";
+  const message = `Notez si l'entretien avec ${fullName(candidate)} a eu lieu.`;
+  if (interview.interviewerId) await notifyInterviewer(interview.interviewerId, "SERVING_INTERVIEW_TO_COMPLETE", title, message, candidate);
+  else await notifyPvs(candidate.churchId, "SERVING_INTERVIEW_TO_COMPLETE", title, message, candidate);
+}
+
+/** Relance d'une candidature « À planifier » : équipe PVS, prénom, nom et raison. */
+export async function notifySchedulingReminder(candidate: CandidateInfo, reasonLabel: string) {
+  await notifyPvs(candidate.churchId, "SERVING_SCHEDULING_REMINDER", "Candidature à planifier", `${fullName(candidate)} attend un entretien (${reasonLabel}).`, candidate);
+}
+
+/** Invitation à choisir un créneau (nouveaux créneaux ou invitation du PVS). */
+export async function emailSlotsInvitation(candidate: CandidateInfo) {
+  await emailCandidate(candidate, "Choisissez votre créneau d'entretien", "Des créneaux d'entretien sont disponibles : choisissez celui qui vous convient depuis le lien ci-dessous.");
+}
+
+/** « Retrouver mon rendez-vous » : le lien renvoyé à l'adresse de la fiche. */
+export async function emailInterviewLink(candidate: CandidateInfo) {
+  await emailCandidate(candidate, "Votre rendez-vous d'entretien", "Voici le lien pour retrouver, choisir, changer ou annuler votre rendez-vous d'entretien.");
 }

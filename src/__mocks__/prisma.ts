@@ -179,6 +179,8 @@ export const prismaMock = {
   formFacilitator: createModelMock(),
   formFacilitatorScope: createModelMock(),
   formAttendance: createModelMock(),
+  servingInterviewSlot: createModelMock(),
+  servingInterview: createModelMock(),
   $queryRaw: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   $transaction: vi.fn((arg: any) => (Array.isArray(arg) ? Promise.all(arg) : arg(prismaMock))),

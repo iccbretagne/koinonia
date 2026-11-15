@@ -5,14 +5,14 @@ import { getServingSettings } from "@/modules/serving";
 import { requireServingActor } from "@/modules/serving/auth";
 import ServingSettingsForm from "./ServingSettingsForm";
 
-/** Réglages des candidatures (spec 077) : Super Admin, Admin, responsable du PVS. */
+/** Réglages des candidatures (spec 077) : Super Admin, Admin, équipe PVS. */
 export default async function CandidaturesParametresPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
   const actor = await requireServingActor(churchId);
   if (!actor.canEditSettings) {
-    return <EmptyState title="Accès refusé" description="Ces réglages sont réservés à l'administration et au responsable du PVS." />;
+    return <EmptyState title="Accès refusé" description="Ces réglages sont réservés à l'administration et à l'équipe Vie des STAR (PVS)." />;
   }
   const settings = await getServingSettings(churchId, actor.pvsDeptIds);
 

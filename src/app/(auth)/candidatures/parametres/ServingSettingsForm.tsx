@@ -13,6 +13,7 @@ export default function ServingSettingsForm({ churchId, initial }: Props) {
   const toast = useToast();
   const [observationMonths, setObservationMonths] = useState(String(initial.observationMonths));
   const [retentionMonths, setRetentionMonths] = useState(String(initial.retentionMonths));
+  const [reminderDays, setReminderDays] = useState(String(initial.schedulingReminderDays));
   const [emails, setEmails] = useState<Record<string, string>>(
     Object.fromEntries(initial.pvsDepartments.map((d) => [d.id, d.contactEmail ?? ""]))
   );
@@ -31,6 +32,7 @@ export default function ServingSettingsForm({ churchId, initial }: Props) {
           churchId,
           observationMonths: Number(observationMonths),
           retentionMonths: Number(retentionMonths),
+          schedulingReminderDays: Number(reminderDays),
           pvsEmails: initial.pvsDepartments.map((d) => ({ departmentId: d.id, email: emails[d.id]?.trim() || null })),
         }),
       });
@@ -78,6 +80,17 @@ export default function ServingSettingsForm({ churchId, initial }: Props) {
           onChange={(e) => setRetentionMonths(e.target.value)}
           error={errors.retentionMonths}
           hint="Une candidature non retenue, jamais traitée ou renvoyée sans réorientation est effacée, photo comprise, au terme de ce délai. Le PVS est prévenu un mois avant l'effacement d'une candidature jamais traitée."
+        />
+        <Input
+          label="Relance des candidatures « À planifier » (jours)"
+          type="number"
+          min={1}
+          max={60}
+          required
+          value={reminderDays}
+          onChange={(e) => setReminderDays(e.target.value)}
+          error={errors.schedulingReminderDays}
+          hint="Le PVS est relancé quand une candidature reste sans rendez-vous ce nombre de jours, puis à nouveau à chaque nouveau délai."
         />
       </section>
 

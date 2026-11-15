@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import TurnstileWidget from "@/components/TurnstileWidget";
+import InterviewManager from "@/components/serving/InterviewManager";
 import { Alert, Button, Input, Textarea, fieldLabelClasses } from "@/components/ui";
 import Checkbox from "@/components/ui/Checkbox";
 import { MARITAL_STATUSES, MARITAL_STATUS_LABEL, PCNC_TRAININGS, PHOTO_MAX_BYTES } from "@/modules/serving/schemas";
@@ -81,6 +82,7 @@ export default function ServingForm({ churchSlug, churchName, retentionMonths, t
   const uid = useId();
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [manageToken, setManageToken] = useState<string | null>(null);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -149,6 +151,7 @@ export default function ServingForm({ churchSlug, churchName, retentionMonths, t
       const res = await fetch(`/api/serving/public/${encodeURIComponent(churchSlug)}`, { method: "POST", body: fd });
       const json = await res.json().catch(() => ({}));
       if (res.ok) {
+        setManageToken(typeof json.manageToken === "string" ? json.manageToken : null);
         setSuccess(true);
         window.scrollTo({ top: 0 });
         return;
@@ -182,6 +185,17 @@ export default function ServingForm({ churchSlug, churchName, retentionMonths, t
         <p className="text-sm text-ink-muted">
           Ta fiche a bien été reçue. L&apos;équipe Vie des STAR de {churchName} prendra contact avec toi.
         </p>
+        {manageToken && (
+          <div className="space-y-4 border-t border-line pt-4 text-left">
+            <InterviewManager token={manageToken} afterSubmit />
+            <p className="text-[13px] text-ink-muted">
+              Garde ce lien pour retrouver ou changer ton rendez-vous :{" "}
+              <a href={`/entretien/${manageToken}`} className="break-all font-semibold text-brand-text underline">
+                {typeof window === "undefined" ? `/entretien/${manageToken}` : `${window.location.origin}/entretien/${manageToken}`}
+              </a>
+            </p>
+          </div>
+        )}
       </div>
     );
   }

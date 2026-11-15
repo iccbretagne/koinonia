@@ -50,6 +50,13 @@ describe("outils MCP — lot 1", () => {
     expect(acc).not.toContain("reports.recent");
   });
 
+  it("entretiens de candidature : équipe Vie des STAR et Admin seulement", () => {
+    expect(names("STAR", ["pvsTeam"])).toEqual(expect.arrayContaining(["serving.myInterviews", "serving.toPlan", "serving.freeSlots"]));
+    expect(names("ADMIN")).toContain("serving.toPlan");
+    expect(names("STAR", ["linkedStar"])).not.toContain("serving.toPlan");
+    expect(names("SECRETARY")).not.toContain("serving.freeSlots");
+  });
+
   it("nom d'outil MCP stable", () => {
     expect(toolName("planning.myNextService")).toBe("planning_myNextService");
   });

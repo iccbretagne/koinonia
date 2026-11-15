@@ -2317,6 +2317,10 @@ départements, chacun suivant sa propre affectation.
 | `memberId` | String? | Ref vers `members` : fiche STAR rattachée, ou créée au premier accueil (SetNull) |
 | `decidedAt` / `decidedById` / `rejectionReason` | DateTime? / String? | Validation ou non-retenue (motif visible du PVS seul) |
 | `purgeWarnedAt` | DateTime? | Avertissement envoyé au PVS un mois avant l'effacement d'une candidature jamais traitée |
+| `schedulingReason` / `schedulingSince` | `ServingSchedulingReason`? / DateTime? | Repère « À planifier » (spec 082) : `NO_SLOT`, `DECLINED`, `CANDIDATE_CANCELLED`, `SLOT_REMOVED`, `NO_SHOW`, `EXCUSED` ; nul quand un rendez-vous est réservé ou réalisé |
+| `schedulingRemindedAt` | DateTime? | Dernière relance « À planifier » au PVS (délai `schedulingReminderDays`, renouvelée) |
+| `slotsInvitedAt` | DateTime? | Dernière invitation du candidat à choisir un créneau (au plus une par vague et par 24 h) |
+| `manageSalt` / `manageHash` | String? / String? (unique) | Lien « mon rendez-vous » : sel du jeton dérivé (HMAC de `SERVING_TOKEN_SECRET`) et son empreinte SHA-256 — le jeton n'est jamais stocké |
 | `createdAt` / `updatedAt` | DateTime | Horodatages |
 
 #### `serving_assignments`
@@ -2343,10 +2347,43 @@ Une ligne au plus par église ; à défaut, 3 mois d'observation et 12 mois de c
 | `churchId` | String (unique) | Ref vers `churches` |
 | `observationMonths` | Int | Durée d'observation (1 à 12 mois) |
 | `retentionMonths` | Int | Conservation d'une candidature non retenue ou jamais traitée (1 à 36 mois) |
+| `schedulingReminderDays` | Int | Délai de relance « À planifier » au PVS (14 jours par défaut, 1 à 60) |
+| `slotsOpenedAt` | DateTime? | Dernière création de créneaux : ouvre une vague d'invitation des candidatures « À planifier » |
+
+#### `serving_interview_slots`
+
+Créneaux d'entretien proposés par le PVS (spec 082), créés un par un ou en série, à l'heure de Paris.
+
+| Champ | Type | Description |
+|---|---|---|
+| `churchId` | String | Ref vers `churches` (cascade) |
+| `startsAt` / `durationMinutes` | DateTime / Int | Début et durée (30 min par défaut) |
+| `location` / `visioUrl` | String? | Lieu ou lien de visio https, jamais les deux |
+| `interviewerId` | String? | Membre du PVS qui reçoit (SetNull ; absent ou sorti de l'équipe ⇒ « à réattribuer », plus proposé) |
+| `seriesId` | String? | Créneaux saisis ensemble ; chacun reste modifiable seul |
+| `bookedAt` | DateTime? | Non nul : un rendez-vous actif occupe le créneau — pris par une mise à jour conditionnelle (`bookedAt` nul), un seul candidat par créneau |
+| `createdById` | String? | Auteur |
+
+#### `serving_interviews`
+
+Rendez-vous d'une candidature (historique conservé). Il **copie** l'horaire, le lieu et la personne
+qui reçoit : l'historique reste juste si le créneau change ou disparaît.
+
+| Champ | Type | Description |
+|---|---|---|
+| `applicationId` | String | Candidature (cascade) |
+| `slotId` | String? | Créneau (SetNull) |
+| `status` | `ServingInterviewStatus` | `BOOKED`, `DONE`, `NO_SHOW`, `EXCUSED`, `CANCELLED` — « À compléter » est **calculé** (réservé, fin passée) |
+| `startsAt` / `durationMinutes` / `location` / `visioUrl` / `interviewerId` | divers | Copie du créneau à la réservation, mise à jour s'il est déplacé |
+| `cancelReason` | `ServingInterviewCancelReason`? | `CANDIDATE`, `PVS`, `SLOT_REMOVED`, `REJECTED` |
+| `outcomeAt` / `outcomeById` | DateTime? / String? | Issue notée par une personne |
+| `dayBeforeRemindedAt` / `completionRemindedAt` | DateTime? | Rappel de la veille (candidat et personne qui reçoit) et « issue à noter », pris de façon atomique |
 
 Chaque consultation (`VIEW`) et téléchargement PDF (`EXPORT`) d'une fiche est journalisé
 (`audit_logs`, `entityType: "ServingApplication"`). La tâche cron `serving` efface au terme de la
-conservation la photo, puis la ligne et ses notifications.
+conservation la photo, puis la ligne et ses notifications ; un rendez-vous à venir libère son
+créneau, sans message au candidat. Elle envoie aussi les rappels d'entretien de la veille, les
+« issues à noter », les relances « À planifier » et les invitations aux nouveaux créneaux.
 
 ## Seed (données initiales)
 

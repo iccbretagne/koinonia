@@ -4,8 +4,11 @@ import Link from "next/link";
 import { Inbox } from "lucide-react";
 import { DataTable, EmptyState, StatusChip, Tabs } from "@/components/ui";
 import type { ApplicationSummary } from "@/modules/serving";
-import { APPLICATION_STATUS_LABEL } from "@/modules/serving/schemas";
+import { APPLICATION_STATUS_LABEL, SCHEDULING_REASON_LABEL } from "@/modules/serving/schemas";
 import AssignmentChip, { formatDay } from "./AssignmentChip";
+
+const formatInterview = (iso: string) =>
+  new Date(iso).toLocaleString("fr-FR", { timeZone: "Europe/Paris", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
 export type ApplicationsTab = "todo" | "ongoing" | "departments" | "archived";
 
@@ -93,6 +96,13 @@ export default function ApplicationsClient({ tab, tabs, pvs, departments }: Prop
                     ))}
                   </>
                 )}
+                {a.scheduling && <StatusChip tone="warning">À planifier · {SCHEDULING_REASON_LABEL[a.scheduling.reason]}</StatusChip>}
+                {a.interview &&
+                  (a.interview.status === "TO_COMPLETE" ? (
+                    <StatusChip tone="warning">Entretien à compléter</StatusChip>
+                  ) : (
+                    <StatusChip tone="brand">Entretien le {formatInterview(a.interview.startsAt)}</StatusChip>
+                  ))}
               </div>
             ),
           },

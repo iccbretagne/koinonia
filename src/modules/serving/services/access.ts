@@ -99,7 +99,7 @@ export function isOwnApplication(
   return app.assignments.some((a) => WELCOMED_ASSIGNMENT_STATUSES.includes(a.status));
 }
 
-/** Réglages (durées, adresse email du PVS) : Super Admin, Admin, responsable du PVS. */
+/** Réglages (durées, adresse email du PVS) : Super Admin, Admin, toute l'équipe PVS. */
 export function canEditSettings(
   user: ServingUser,
   churchId: string,
@@ -108,7 +108,5 @@ export function canEditSettings(
 ): boolean {
   if (user.isSuperAdmin) return true;
   if (hasPermission(user, churchId, rolePermissions, "serving:manage")) return true;
-  return rolesIn(user, churchId).some(
-    (r) => r.role === "DEPARTMENT_HEAD" && r.departments.some((d) => pvsDeptIds.includes(d.department.id))
-  );
+  return isPvsTeamMember(user, churchId, pvsDeptIds);
 }

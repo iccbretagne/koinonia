@@ -5,19 +5,25 @@ import type { SettingsInput } from "../schemas";
 
 export const DEFAULT_OBSERVATION_MONTHS = 3;
 export const DEFAULT_RETENTION_MONTHS = 12;
+export const DEFAULT_SCHEDULING_REMINDER_DAYS = 14;
 
 export type ServingSettingsView = {
   observationMonths: number;
   retentionMonths: number;
+  /** Relance d'une candidature « À planifier » (spec 082). */
+  schedulingReminderDays: number;
   pvsDepartments: { id: string; name: string; contactEmail: string | null }[];
 };
 
 /** Durées de l'église (valeurs par défaut sans réglage enregistré). */
-export async function getServingDurations(churchId: string): Promise<{ observationMonths: number; retentionMonths: number }> {
+export async function getServingDurations(
+  churchId: string
+): Promise<{ observationMonths: number; retentionMonths: number; schedulingReminderDays: number }> {
   const row = await prisma.servingSettings.findUnique({ where: { churchId } });
   return {
     observationMonths: row?.observationMonths ?? DEFAULT_OBSERVATION_MONTHS,
     retentionMonths: row?.retentionMonths ?? DEFAULT_RETENTION_MONTHS,
+    schedulingReminderDays: row?.schedulingReminderDays ?? DEFAULT_SCHEDULING_REMINDER_DAYS,
   };
 }
 
@@ -43,14 +49,15 @@ export async function updateServingSettings(
   userId: string
 ): Promise<ServingSettingsView> {
   const { churchId, observationMonths, retentionMonths, pvsEmails } = input;
+  const reminder = input.schedulingReminderDays === undefined ? {} : { schedulingReminderDays: input.schedulingReminderDays };
   if (pvsEmails.some((e) => !pvsDeptIds.includes(e.departmentId))) {
     throw new ApiError(400, "Seule l'adresse d'un département Vie des STAR peut être réglée ici.");
   }
   await prisma.$transaction([
     prisma.servingSettings.upsert({
       where: { churchId },
-      create: { churchId, observationMonths, retentionMonths },
-      update: { observationMonths, retentionMonths },
+      create: { churchId, observationMonths, retentionMonths, ...reminder },
+      update: { observationMonths, retentionMonths, ...reminder },
     }),
     ...pvsEmails.map((e) =>
       prisma.department.update({ where: { id: e.departmentId }, data: { contactEmail: e.email } })
@@ -62,7 +69,7 @@ export async function updateServingSettings(
     action: "UPDATE",
     entityType: "ServingSettings",
     entityId: churchId,
-    details: { observationMonths, retentionMonths, pvsEmails },
+    details: { observationMonths, retentionMonths, ...reminder, pvsEmails },
   });
   return getServingSettings(churchId, pvsDeptIds);
 }

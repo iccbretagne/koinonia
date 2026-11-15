@@ -154,6 +154,8 @@ export const settingsSchema = z.object({
   churchId: z.string().min(1),
   observationMonths: z.number().int().min(1).max(12),
   retentionMonths: z.number().int().min(1).max(36),
+  /** Relance d'une candidature « À planifier » (spec 082), en jours. */
+  schedulingReminderDays: z.number().int().min(1).max(60).optional(),
   pvsEmails: z
     .array(
       z.object({
@@ -177,4 +179,99 @@ export const APPLICATION_STATUS_LABEL = {
   RECEIVED: "Reçue",
   VALIDATED: "Validée",
   REJECTED: "Non retenue",
+} as const;
+
+// ─── Entretiens (spec 082) ──────────────────────────────────────────────────
+
+const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Jour AAAA-MM-JJ");
+const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Heure HH:MM");
+const duration = z.number().int().min(5).max(240);
+const location = z.string().trim().max(200).nullable().optional();
+const visioUrl = z
+  .string()
+  .trim()
+  .max(500)
+  .regex(/^https:\/\//, "Lien de visio en https")
+  .nullable()
+  .optional();
+
+export const MAX_SLOTS_PER_REQUEST = 200;
+export const DEFAULT_INTERVIEW_MINUTES = 30;
+/** Le candidat change ou annule au plus tard 24 h avant. */
+export const CANDIDATE_CHANGE_HOURS = 24;
+
+const slotPlace = { location, visioUrl, interviewerId: z.string().min(1).max(40) };
+
+export const slotInputSchema = z.object({ day, time, durationMinutes: duration.default(DEFAULT_INTERVIEW_MINUTES), ...slotPlace });
+export type SlotInput = z.infer<typeof slotInputSchema>;
+
+export const seriesInputSchema = z.object({
+  days: z.array(day).min(1).max(62),
+  from: time,
+  to: time,
+  durationMinutes: duration.default(DEFAULT_INTERVIEW_MINUTES),
+  ...slotPlace,
+});
+export type SeriesInput = z.infer<typeof seriesInputSchema>;
+
+export const createSlotsSchema = z.union([
+  z.object({ churchId: z.string().min(1), slots: z.array(slotInputSchema).min(1).max(MAX_SLOTS_PER_REQUEST) }),
+  z.object({ churchId: z.string().min(1), series: seriesInputSchema }),
+]);
+
+export const updateSlotSchema = z.object({
+  day: day.optional(),
+  time: time.optional(),
+  durationMinutes: duration.optional(),
+  location,
+  visioUrl,
+  interviewerId: z.string().min(1).max(40).optional(),
+});
+
+export const slotsQuerySchema = z.object({ churchId: z.string().min(1), from: day.optional(), to: day.optional() });
+
+/** Actions du candidat sur son lien. */
+export const publicInterviewActionSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("book"), slotId: z.string().min(1).max(40) }),
+  z.object({ action: z.literal("decline") }),
+  z.object({ action: z.literal("cancel") }),
+]);
+
+export const interviewRecoverSchema = z.object({
+  churchSlug: z.string().min(1).max(80),
+  email: z.string().trim().toLowerCase().email().max(200),
+  turnstileToken: z.string().max(4096).optional(),
+});
+
+/** Actions du PVS sur le rendez-vous d'une candidature. */
+export const pvsInterviewActionSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("book"), slotId: z.string().min(1).max(40) }),
+  z.object({ action: z.literal("cancel") }),
+  z.object({ action: z.literal("outcome"), status: z.enum(["DONE", "NO_SHOW", "EXCUSED"]) }),
+  z.object({ action: z.literal("invite") }),
+]);
+
+export const INTERVIEW_STATUS_LABEL = {
+  BOOKED: "Réservé",
+  TO_COMPLETE: "À compléter",
+  DONE: "Réalisé",
+  NO_SHOW: "Absent",
+  EXCUSED: "Excusé",
+  CANCELLED: "Annulé",
+} as const;
+
+export const SCHEDULING_REASON_LABEL = {
+  NO_SLOT: "aucun créneau disponible",
+  DECLINED: "aucun créneau ne convenait",
+  CANDIDATE_CANCELLED: "annulé par le candidat",
+  SLOT_REMOVED: "créneau retiré ou déplacé",
+  NO_SHOW: "absent, à reprogrammer",
+  EXCUSED: "excusé, à reprogrammer",
+} as const;
+
+export const CANCEL_REASON_LABEL = {
+  CANDIDATE: "par le candidat",
+  PVS: "par le PVS",
+  SLOT_REMOVED: "créneau retiré",
+  REJECTED: "candidature non retenue",
 } as const;

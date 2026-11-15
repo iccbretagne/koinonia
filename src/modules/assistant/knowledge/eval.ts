@@ -13,6 +13,10 @@ export interface EvalCase {
 
 export const EVAL_CASES: readonly EvalCase[] = [
   { question: "je suis pas dispo dimanche je fais comment", expected: "KB-021" },
+  { question: "ajouter des créneaux d'entretien pour les candidats", expected: "KB-151" },
+  { question: "quels entretiens je reçois", expected: "D24" },
+  { question: "candidats sans entretien", expected: "D25" },
+  { question: "reste-t-il des créneaux d'entretien libres", expected: "D26" },
   { question: "comment déclarer une absense", expected: "KB-021" },
   { question: "je serai pas là dimanche", expected: "KB-021", semanticOnly: true },
   { question: "dimanche je pourrai pas venir", expected: "KB-021" },

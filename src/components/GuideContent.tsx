@@ -210,7 +210,7 @@ const FEATURES: Feature[] = [
   // ── Absences ─────────────────────────────────────────────────────────────
   {
     name: "Connecter mon assistant IA (MCP)",
-    description: "Depuis « Mon profil › Assistants IA connectés », copiez l'adresse du serveur et ajoutez-la comme connecteur dans votre assistant IA (Claude, ChatGPT, Claude Code). Il vous renvoie vers Koinonia : choisissez l'église et autorisez. L'assistant lit uniquement ce que vous voyez déjà (planning, événements, demandes, comptes rendus, audio, guide), et jamais le suivi pastoral, les coordonnées bancaires ni les coordonnées d'autrui. Si vous cochez la case des actions à l'autorisation, il peut aussi agir pour vous selon vos droits — déclarer une absence, répondre à une demande de disponibilité, et pour un responsable remplir ou recopier un planning, attribuer les tâches, relancer les sans-réponse, publier des consignes, saisir pour un STAR de son périmètre, remplir un compte rendu, créer des événements ou réserver une salle — toujours en deux temps : il vous montre un résumé et n'enregistre qu'après votre accord dans la conversation. Il peut aussi préparer une demande (annonce, visuel, événement) sous forme de lien vers le formulaire prérempli, que vous envoyez vous-même. Vous révoquez l'accès d'un clic ; une connexion inutilisée 90 jours expire. L'administrateur de l'église active la fonction dans les paramètres de l'église, où il voit aussi la liste des comptes connectés.",
+    description: "Depuis « Mon profil › Assistants IA connectés », copiez l'adresse du serveur et ajoutez-la comme connecteur dans votre assistant IA (Claude, ChatGPT, Claude Code). Il vous renvoie vers Koinonia : choisissez l'église et autorisez. L'assistant lit uniquement ce que vous voyez déjà (planning, événements, demandes, comptes rendus, audio, guide), et jamais le suivi pastoral, les coordonnées bancaires ni les coordonnées d'autrui. Si vous cochez la case des actions à l'autorisation, il peut aussi agir pour vous selon vos droits — déclarer une absence, répondre à une demande de disponibilité, et pour un responsable remplir ou recopier un planning, attribuer les tâches, relancer les sans-réponse, publier des consignes, saisir pour un STAR de son périmètre, remplir un compte rendu, créer des événements, réserver une salle ou, pour l'équipe Vie des STAR, proposer des créneaux d'entretien — toujours en deux temps : il vous montre un résumé et n'enregistre qu'après votre accord dans la conversation. Il peut aussi préparer une demande (annonce, visuel, événement) sous forme de lien vers le formulaire prérempli, que vous envoyez vous-même. Vous révoquez l'accès d'un clic ; une connexion inutilisée 90 jours expire. L'administrateur de l'église active la fonction dans les paramètres de l'église, où il voit aussi la liste des comptes connectés.",
     category: "Profil",
     screenshotTitle: "Assistants connectés",
     screenshotFile: "guide-assistants.png",
@@ -483,6 +483,23 @@ const FEATURES: Feature[] = [
     screenshotTitle: "Trésorerie",
     screenshotFile: "guide-tresorerie.png",
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "edit" },
+  },
+  // ── Candidatures au service ─────────────────────────────────────────────
+  {
+    name: "Candidatures au service (Vie des STAR)",
+    description: "Le formulaire public « Servir » recueille les fiches des personnes qui veulent servir. Dans « Candidatures », l'équipe Vie des STAR (PVS) les étudie et les oriente vers un ou plusieurs départements ; le responsable ou le Ministre du département accueille la personne, qui passe en observation (3 mois par défaut) et peut déjà être planifiée, puis il la confirme ou la renvoie au PVS avec un motif. Avant la fin de l'observation, puis chaque semaine sans décision, le département et le PVS reçoivent un rappel. Après l'envoi de sa fiche, le candidat choisit un créneau d'entretien (voir « Entretiens des candidats ») ; la liste montre « Entretien le … » ou « À planifier » avec sa raison. Le bouton « Paramètres », ouvert à toute l'équipe PVS et à l'Admin, règle la durée d'observation, la conservation des fiches, le délai de relance « À planifier » et l'adresse email du PVS. Accès : l'équipe PVS et l'Admin voient toutes les fiches ; un responsable ou un Ministre voit celles orientées vers ses départements.",
+    category: "Membres",
+    screenshotTitle: "Candidatures",
+    screenshotFile: "guide-candidatures.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Entretiens des candidats",
+    description: "Depuis « Candidatures », le bouton « Entretiens » ouvre les créneaux proposés aux candidats. « Ajouter des créneaux » en crée un, ou une série (du … au …, jours de la semaine, plage horaire, 30 min par défaut), avec la personne de l'équipe Vie des STAR qui reçoit et un lieu ou un lien de visio ; chaque créneau reste modifiable ou retirable seul. Après l'envoi de sa fiche, le candidat choisit un créneau libre (un seul candidat par créneau) ou indique qu'aucun ne lui convient ; il reçoit un email avec son lien « mon rendez-vous » pour changer ou annuler jusqu'à 24 h avant, et un rappel la veille, comme la personne qui le reçoit. Sans rendez-vous, la fiche est « À planifier » : le PVS est relancé tous les 14 jours (réglable) et les candidats sont invités par email quand de nouveaux créneaux s'ouvrent. Sur la fiche, le bloc « Entretien » permet de fixer, déplacer ou annuler le rendez-vous, d'inviter le candidat, puis, l'heure passée, de noter l'issue : réalisé, absent ou excusé (deux absences d'affilée sont signalées). Déplacer ou retirer un créneau réservé prévient le candidat ; une candidature non retenue annule son rendez-vous avec un message neutre.",
+    category: "Membres",
+    screenshotTitle: "Entretiens",
+    screenshotFile: "guide-candidatures-entretiens.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   // ── Formulaires ─────────────────────────────────────────────────────────
   {

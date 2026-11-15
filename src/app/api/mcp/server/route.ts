@@ -38,6 +38,7 @@ const ACTION_LABELS: Record<string, string> = {
   fill_report: "remplir le compte rendu d'un événement",
   create_events: "créer des événements",
   reserve_room: "réserver une salle",
+  create_interview_slots: "créer des créneaux d'entretien pour les candidats au service",
 };
 
 const PLANNING_HINT =

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { CalendarClock, Settings } from "lucide-react";
+import { buttonClasses } from "@/components/ui/button-classes";
 import { getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PublicFormBanner from "@/components/PublicFormBanner";
@@ -52,10 +54,19 @@ export default async function CandidaturesPage({
             : "Personnes orientées vers tes départements par l'équipe Vie des STAR."
         }
         actions={
-          actor.canEditSettings ? (
-            <Link href="/candidatures/parametres" className="text-sm text-ink-subtle hover:text-brand-text transition-colors">
-              Paramètres
-            </Link>
+          actor.canManage || actor.canEditSettings ? (
+            <div className="flex flex-wrap gap-2">
+              {actor.canManage && (
+                <Link href="/candidatures/entretiens" className={buttonClasses("secondary", "sm")}>
+                  <CalendarClock className="size-4" aria-hidden="true" /> Entretiens
+                </Link>
+              )}
+              {actor.canEditSettings && (
+                <Link href="/candidatures/parametres" className={buttonClasses("secondary", "sm")}>
+                  <Settings className="size-4" aria-hidden="true" /> Paramètres (observation, email du PVS)
+                </Link>
+              )}
+            </div>
           ) : undefined
         }
       />
