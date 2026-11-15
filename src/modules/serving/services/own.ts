@@ -51,7 +51,7 @@ export type OwnApplicationView = {
   assignments: OwnAssignment[];
 };
 
-type OwnSource = Omit<ApplicationRecord, "member" | "assignments"> & {
+type OwnSource = Omit<ApplicationRecord, "member" | "assignments" | "interviews"> & {
   assignments: { status: ServingAssignmentStatus; observationEndsAt: Date | null; department: { name: string } }[];
 };
 

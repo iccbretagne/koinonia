@@ -23,7 +23,13 @@ export const servingModule = defineModule({
   routes: {
     authenticated: [{ path: "/candidatures" }],
     api: [{ path: "/api/serving" }],
-    public: [{ path: "/servir" }, { path: "/api/serving/public", method: "POST" }],
+    public: [
+      { path: "/servir" },
+      { path: "/api/serving/public", method: "POST" },
+      // Rendez-vous d'entretien du candidat, par son lien (spec 082)
+      { path: "/entretien" },
+      { path: "/api/serving/public/interview" },
+    ],
   },
 
   permissions: {

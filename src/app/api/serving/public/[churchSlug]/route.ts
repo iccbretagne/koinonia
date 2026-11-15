@@ -50,8 +50,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ chu
     if (photo.size > PHOTO_MAX_BYTES) throw new ApiError(400, "Photo trop lourde (8 Mo maximum).");
     const jpeg = await normalizePhoto(Buffer.from(new Uint8Array(await photo.arrayBuffer())));
 
-    await submitApplication(church.id, church.pvsDeptIds, data, jpeg);
-    return successResponse({ ok: true }, 201);
+    const { manageToken } = await submitApplication(church.id, church.pvsDeptIds, data, jpeg);
+    // Lien de rendez-vous (spec 082) : rendu à la personne qui vient d'envoyer sa fiche.
+    return successResponse({ ok: true, manageToken }, 201);
   } catch (error) {
     return errorResponse(error);
   }

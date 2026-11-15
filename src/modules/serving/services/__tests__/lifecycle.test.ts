@@ -58,6 +58,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   prismaMock.servingAssignment.findMany.mockResolvedValue([]);
   prismaMock.servingApplication.findMany.mockResolvedValue([]);
+  prismaMock.servingInterview.findMany.mockResolvedValue([]);
+  prismaMock.servingInterview.findFirst.mockResolvedValue(null);
+  prismaMock.servingSettings.findMany.mockResolvedValue([]);
   prismaMock.servingAssignment.updateMany.mockResolvedValue({ count: 1 });
   prismaMock.servingApplication.updateMany.mockResolvedValue({ count: 1 });
   prismaMock.servingSettings.findUnique.mockResolvedValue({ observationMonths: 3, retentionMonths: 12 });

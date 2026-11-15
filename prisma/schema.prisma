@@ -152,6 +152,7 @@ model Church {
   // Candidatures au service (spec 077)
   servingApplications ServingApplication[]
   servingSettings     ServingSettings?
+  servingInterviewSlots ServingInterviewSlot[]
 
   @@map("churches")
 }
@@ -276,6 +277,7 @@ model User {
   // (relation superviseur église déplacée vers PastoralProfile)
 
   availabilityEntries AvailabilityResponse[] @relation("AvailabilityEnteredBy")
+  servingInterviewSlots ServingInterviewSlot[] @relation("ServingInterviewer")
 
   @@map("users")
 }
@@ -2980,6 +2982,85 @@ enum ServingApplicationStatus {
   REJECTED // non retenue
 }
 
+/// Créneau d'entretien tenu par le PVS (spec 082). Un seul rendez-vous actif : prise atomique par `bookedAt`.
+model ServingInterviewSlot {
+  id              String    @id @default(cuid())
+  churchId        String
+  startsAt        DateTime
+  durationMinutes Int       @default(30)
+  location        String?   @db.VarChar(200)
+  visioUrl        String?   @db.VarChar(500)
+  /// Membre du PVS qui reçoit ; null si son compte est supprimé (« à réattribuer »)
+  interviewerId   String?
+  /// Créneaux créés ensemble (saisie en série)
+  seriesId        String?   @db.VarChar(40)
+  /// Non nul : un rendez-vous actif occupe le créneau
+  bookedAt        DateTime?
+  createdById     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  church      Church             @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  interviewer User?              @relation("ServingInterviewer", fields: [interviewerId], references: [id], onDelete: SetNull)
+  interviews  ServingInterview[]
+
+  @@index([churchId, startsAt])
+  @@index([interviewerId, startsAt])
+  @@map("serving_interview_slots")
+}
+
+/// Rendez-vous d'entretien d'une candidature (un par essai, historisé). Copie l'horaire du créneau.
+model ServingInterview {
+  id                   String                        @id @default(cuid())
+  applicationId        String
+  slotId               String?
+  status               ServingInterviewStatus        @default(BOOKED)
+  startsAt             DateTime
+  durationMinutes      Int
+  location             String?                       @db.VarChar(200)
+  visioUrl             String?                       @db.VarChar(500)
+  interviewerId        String?
+  cancelReason         ServingInterviewCancelReason?
+  outcomeAt            DateTime?
+  outcomeById          String?
+  dayBeforeRemindedAt  DateTime?
+  completionRemindedAt DateTime?
+  createdAt            DateTime                      @default(now())
+  updatedAt            DateTime                      @updatedAt
+
+  application ServingApplication    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  slot        ServingInterviewSlot? @relation(fields: [slotId], references: [id], onDelete: SetNull)
+
+  @@index([applicationId, createdAt])
+  @@index([status, startsAt])
+  @@index([slotId])
+  @@map("serving_interviews")
+}
+
+enum ServingInterviewStatus {
+  BOOKED // réservé (« À compléter » une fois la fin passée : calculé)
+  DONE
+  NO_SHOW
+  EXCUSED
+  CANCELLED
+}
+
+enum ServingInterviewCancelReason {
+  CANDIDATE
+  PVS
+  SLOT_REMOVED
+  REJECTED
+}
+
+enum ServingSchedulingReason {
+  NO_SLOT
+  DECLINED
+  CANDIDATE_CANCELLED
+  SLOT_REMOVED
+  NO_SHOW
+  EXCUSED
+}
+
 enum ServingAssignmentStatus {
   PENDING // affectée, en attente d'accueil par le département
   OBSERVATION // accueillie : STAR du département, en observation
@@ -3044,9 +3125,20 @@ model ServingApplication {
   rejectionReason String?   @db.Text
   purgeWarnedAt   DateTime?
 
+  /// Entretien (spec 082) : repère « À planifier » (null = rendez-vous réservé ou réalisé, ou aucune étape)
+  schedulingReason     ServingSchedulingReason?
+  schedulingSince      DateTime?
+  schedulingRemindedAt DateTime?
+  /// Dernière invitation « nouveaux créneaux »
+  slotsInvitedAt       DateTime?
+  /// Lien de rendez-vous du candidat : jeton dérivé, sel et empreinte seulement
+  manageSalt           String?                  @db.VarChar(32)
+  manageHash           String?                  @unique @db.VarChar(64)
+
   church      Church              @relation(fields: [churchId], references: [id])
   member      Member?             @relation(fields: [memberId], references: [id], onDelete: SetNull)
   assignments ServingAssignment[]
+  interviews  ServingInterview[]
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
 
@@ -3090,6 +3182,10 @@ model ServingSettings {
   churchId          String   @unique
   observationMonths Int      @default(3)
   retentionMonths   Int      @default(12)
+  /// Relance d'une candidature « À planifier » (spec 082), en jours
+  schedulingReminderDays Int       @default(14)
+  /// Dernière ouverture de créneaux : déclenche l'invitation des candidatures « À planifier »
+  slotsOpenedAt          DateTime?
   church            Church   @relation(fields: [churchId], references: [id])
   updatedAt         DateTime @updatedAt
 

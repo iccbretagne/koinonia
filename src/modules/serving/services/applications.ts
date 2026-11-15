@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { Prisma, ServingAssignmentStatus } from "@/generated/prisma/client";
+import type { Prisma, ServingAssignmentStatus, ServingSchedulingReason } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
@@ -11,6 +11,8 @@ import { ACTIVE_ASSIGNMENT_STATUSES, hasPendingSendBack, needsPvsAction } from "
 import { deletePhoto, readPhoto, servingPhotoKey, storePhoto } from "./photo";
 import { renderApplicationPdf } from "./pdf";
 import { notifyNewApplication, SERVING_ENTITY } from "./notifications";
+import { manageTokenPair, newSalt } from "./tokens";
+import { cancelInterview, displayStatus, hasRepeatedNoShow, type InterviewDisplayStatus } from "./interviews";
 
 /**
  * Candidatures au service (spec 077) : dépôt public, listes PVS et département, consultation
@@ -27,20 +29,33 @@ export async function submitApplication(
   churchId: string,
   pvsDeptIds: string[],
   data: ApplicationData,
-  photoJpeg: Buffer
-): Promise<void> {
+  photoJpeg: Buffer,
+  now = new Date()
+): Promise<{ manageToken: string }> {
   const photoKey = servingPhotoKey(churchId, randomUUID());
   await storePhoto(photoKey, photoJpeg);
 
+  // Lien de rendez-vous (spec 082) ; sans créneau libre, la candidature est « À planifier ».
+  const id = randomUUID();
+  const salt = newSalt();
+  const pair = manageTokenPair(id, salt);
+  const freeSlot = await prisma.servingInterviewSlot.findFirst({
+    where: { churchId, bookedAt: null, startsAt: { gt: now }, interviewerId: { not: null } },
+    select: { id: true },
+  });
   let app: { id: string; firstName: string; lastName: string };
   try {
     app = await prisma.servingApplication.create({
       data: {
         ...data,
+        id,
         pcncTrainings: data.pcncTrainings,
         churchId,
         photoKey,
-        consentAt: new Date(),
+        consentAt: now,
+        manageSalt: salt,
+        manageHash: pair.hash,
+        ...(freeSlot ? {} : { schedulingReason: "NO_SLOT" as const, schedulingSince: now }),
       },
       select: { id: true, firstName: true, lastName: true },
     });
@@ -55,6 +70,7 @@ export async function submitApplication(
     // La candidature est enregistrée : un échec de notification ne doit pas la faire repartir.
     logger.error({ err }, "Notification de nouvelle candidature échouée");
   }
+  return { manageToken: pair.token };
 }
 
 // ── Listes ──────────────────────────────────────────────────────────────────
@@ -84,6 +100,9 @@ export type ApplicationSummary = {
   /** Fiche consultable par l'appelant (faux pour la seule trace d'un renvoi). */
   canOpen: boolean;
   assignments: AssignmentSummary[];
+  /** Entretien (spec 082, vue PVS) : rendez-vous à venir ou repère « À planifier ». */
+  interview: { startsAt: string; status: InterviewDisplayStatus } | null;
+  scheduling: { reason: ServingSchedulingReason; since: string | null } | null;
 };
 
 const assignmentInclude = {
@@ -132,9 +151,10 @@ export async function listApplications(actor: ServingActor, view: "pvs" | "depar
     if (!actor.canManage) throw new Error("FORBIDDEN");
     const apps = await prisma.servingApplication.findMany({
       where: { churchId: actor.churchId },
-      include: assignmentInclude,
+      include: { ...assignmentInclude, interviews: { where: { status: "BOOKED" }, orderBy: { startsAt: "desc" }, take: 1 } },
       orderBy: { createdAt: "desc" },
     });
+    const now = new Date();
     return apps.map((app) => ({
       id: app.id,
       firstName: app.firstName,
@@ -144,6 +164,9 @@ export async function listApplications(actor: ServingActor, view: "pvs" | "depar
       bucket: bucketOf(app),
       canOpen: true,
       assignments: app.assignments.map(toAssignmentSummary),
+      interview: app.interviews[0] ? { startsAt: app.interviews[0].startsAt.toISOString(), status: displayStatus(app.interviews[0], now) } : null,
+      scheduling:
+        app.status === "RECEIVED" && app.schedulingReason ? { reason: app.schedulingReason, since: app.schedulingSince?.toISOString() ?? null } : null,
     }));
   }
 
@@ -167,6 +190,8 @@ export async function listApplications(actor: ServingActor, view: "pvs" | "depar
       bucket: ongoing ? "ongoing" : "archived",
       canOpen,
       assignments: mine.map(toAssignmentSummary),
+      interview: null,
+      scheduling: null,
     };
   });
 }
@@ -186,6 +211,7 @@ export async function hasServingAccess(actor: ServingActor): Promise<boolean> {
 
 const detailInclude = {
   ...assignmentInclude,
+  interviews: { orderBy: { startsAt: "desc" } },
   member: { select: { id: true, firstName: true, lastName: true, email: true } },
 } satisfies Prisma.ServingApplicationInclude;
 
@@ -211,7 +237,23 @@ export async function requireViewableApplication(actor: ServingActor, id: string
 
 export type ApplicationDetail = Omit<
   ApplicationRecord,
-  "assignments" | "member" | "photoKey" | "birthDate" | "baptismDate" | "consentAt" | "decidedAt" | "createdAt" | "updatedAt" | "purgeWarnedAt"
+  | "assignments"
+  | "member"
+  | "photoKey"
+  | "birthDate"
+  | "baptismDate"
+  | "consentAt"
+  | "decidedAt"
+  | "createdAt"
+  | "updatedAt"
+  | "purgeWarnedAt"
+  | "interviews"
+  | "manageSalt"
+  | "manageHash"
+  | "schedulingReason"
+  | "schedulingSince"
+  | "schedulingRemindedAt"
+  | "slotsInvitedAt"
 > & {
   birthDate: string;
   baptismDate: string | null;
@@ -225,10 +267,38 @@ export type ApplicationDetail = Omit<
   hasPendingSendBack: boolean;
   /** Droits de l'appelant sur cette fiche, pour l'interface. */
   canManage: boolean;
+  /** Entretiens (spec 082) : PVS seulement, du plus récent au plus ancien. */
+  interviews: {
+    id: string;
+    status: InterviewDisplayStatus;
+    startsAt: string;
+    durationMinutes: number;
+    location: string | null;
+    visioUrl: string | null;
+    interviewerId: string | null;
+    interviewerName: string | null;
+    cancelReason: string | null;
+  }[];
+  scheduling: { reason: ServingSchedulingReason; since: string | null } | null;
+  repeatedNoShow: boolean;
+  hasEmail: boolean;
 };
 
-function toDetail(actor: ServingActor, app: ApplicationRecord): ApplicationDetail {
-  const { photoKey: _photoKey, purgeWarnedAt: _purge, updatedAt: _u, ...rest } = app;
+function toDetail(actor: ServingActor, app: ApplicationRecord, names: ReadonlyMap<string, string> = new Map()): ApplicationDetail {
+  const {
+    photoKey: _photoKey,
+    purgeWarnedAt: _purge,
+    updatedAt: _u,
+    manageSalt: _salt,
+    manageHash: _hash,
+    schedulingReason: _sr,
+    schedulingSince: _ss,
+    schedulingRemindedAt: _srm,
+    slotsInvitedAt: _si,
+    interviews: allInterviews,
+    ...rest
+  } = app;
+  const now = new Date();
   // Hors PVS : ni motif de non-retenue, ni affectations des autres départements.
   const visible = actor.canManage
     ? app.assignments
@@ -250,6 +320,25 @@ function toDetail(actor: ServingActor, app: ApplicationRecord): ApplicationDetai
     bucket: bucketOf(app),
     hasPendingSendBack: hasPendingSendBack(app),
     canManage: actor.canManage,
+    interviews: actor.canManage
+      ? allInterviews.map((i) => ({
+          id: i.id,
+          status: displayStatus(i, now),
+          startsAt: i.startsAt.toISOString(),
+          durationMinutes: i.durationMinutes,
+          location: i.location,
+          visioUrl: i.visioUrl,
+          interviewerId: i.interviewerId,
+          interviewerName: i.interviewerId ? (names.get(i.interviewerId) ?? null) : null,
+          cancelReason: i.cancelReason,
+        }))
+      : [],
+    scheduling:
+      actor.canManage && app.status === "RECEIVED" && app.schedulingReason
+        ? { reason: app.schedulingReason, since: app.schedulingSince?.toISOString() ?? null }
+        : null,
+    repeatedNoShow: actor.canManage && hasRepeatedNoShow(allInterviews),
+    hasEmail: !!app.email,
   };
 }
 
@@ -263,7 +352,9 @@ export async function getApplication(actor: ServingActor, id: string): Promise<A
     entityType: SERVING_ENTITY,
     entityId: app.id,
   });
-  return toDetail(actor, app);
+  const ids = actor.canManage ? [...new Set(app.interviews.map((i) => i.interviewerId).filter((x): x is string => !!x))] : [];
+  const users = ids.length ? await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } }) : [];
+  return toDetail(actor, app, new Map(users.map((u) => [u.id, u.name ?? ""])));
 }
 
 // ── Décisions PVS ───────────────────────────────────────────────────────────
@@ -304,6 +395,12 @@ export async function rejectApplication(actor: ServingActor, id: string, reason:
     entityId: id,
     details: { action: "reject" },
   });
+  // Rendez-vous à venir annulé : créneau libéré, message neutre au candidat (spec 082).
+  try {
+    await cancelInterview(id, "REJECTED", { now });
+  } catch (err) {
+    logger.error({ err, applicationId: id }, "Annulation du rendez-vous d'une candidature non retenue échouée");
+  }
 }
 
 /**

@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { getTurnstileSiteKey } from "@/lib/turnstile";
 import PublicFormUnavailable from "@/components/PublicFormUnavailable";
 import { getServingDurations, resolvePublicChurch } from "@/modules/serving";
+import RecoverInterview from "@/components/serving/RecoverInterview";
 import ServingForm from "./ServingForm";
 
 export const metadata: Metadata = {
@@ -39,12 +40,15 @@ export default async function ServirPublicPage({ params }: { readonly params: Pr
 
       <main className="flex-1 max-w-xl mx-auto w-full px-4 py-8">
         {church && turnstileSiteKey ? (
+          <div className="space-y-5">
+          <RecoverInterview churchSlug={churchSlug} turnstileSiteKey={turnstileSiteKey} />
           <ServingForm
             churchSlug={churchSlug}
             churchName={church.name}
             retentionMonths={retentionMonths}
             turnstileSiteKey={turnstileSiteKey}
           />
+          </div>
         ) : (
           <PublicFormUnavailable churchName={church?.name ?? "l'église"} />
         )}

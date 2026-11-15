@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
+process.env.SERVING_TOKEN_SECRET = "secret-de-test";
 vi.mock("next-auth", () => ({
   default: () => ({ auth: vi.fn(), handlers: {}, signIn: vi.fn(), signOut: vi.fn() }),
 }));
@@ -99,6 +100,7 @@ function record(overrides: Record<string, unknown> = {}) {
     memberId: null,
     member: null,
     assignments: [],
+    interviews: [],
     ...overrides,
   };
 }

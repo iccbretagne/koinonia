@@ -12,6 +12,7 @@ import AssignmentChip, { formatDay } from "../AssignmentChip";
 import ApplicationActions from "./ApplicationActions";
 import AssignModal from "./AssignModal";
 import AssignmentActions from "./AssignmentActions";
+import InterviewBlock from "./InterviewBlock";
 
 /**
  * Fiche de candidature (spec 077). L'église qui fait foi est celle de la candidature ; chaque
@@ -76,6 +77,19 @@ export default async function CandidaturePage({ params }: { readonly params: Pro
         <Alert tone="info" title="Non retenue">
           {app.rejectionReason ? `Motif : ${app.rejectionReason}` : "Aucun motif renseigné."}
         </Alert>
+      )}
+
+      {app.canManage && (app.status === "RECEIVED" || app.interviews.length > 0) && (
+        <InterviewBlock
+          churchId={churchId}
+          applicationId={app.id}
+          name={name}
+          open={app.status === "RECEIVED"}
+          interviews={app.interviews}
+          scheduling={app.scheduling}
+          repeatedNoShow={app.repeatedNoShow}
+          hasEmail={app.hasEmail}
+        />
       )}
 
       {app.assignments.length > 0 && (
