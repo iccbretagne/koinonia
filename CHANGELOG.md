@@ -6,6 +6,8 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.37.0] - 2026-11-15
+
 ### Ajouté
 
 - Candidatures au service (spec 082) : **entretiens sur rendez-vous**. Dans « Candidatures › Entretiens », l'équipe Vie des STAR propose des créneaux, un par un ou en série (jours, plage horaire, 30 min par défaut), avec la personne qui reçoit et un lieu ou un lien de visio. Après l'envoi de sa fiche, le candidat choisit un créneau libre (un seul candidat par créneau) ou indique qu'aucun ne lui convient ; un lien « mon rendez-vous » lui permet de changer ou d'annuler jusqu'à 24 h avant, et « Retrouver mon rendez-vous » le renvoie à son adresse. Rappel la veille au candidat et à la personne qui le reçoit ; déplacer ou retirer un créneau réservé prévient le candidat. Sans rendez-vous, la fiche est « À planifier » avec sa raison : le PVS est relancé tous les 14 jours (réglable dans « Paramètres ») et les candidats sont invités par email quand de nouveaux créneaux s'ouvrent, au plus une fois par jour. Sur la fiche, le bloc « Entretien » fixe, déplace ou annule le rendez-vous, invite le candidat et, l'heure passée, note l'issue (réalisé, absent, excusé) ; un entretien sans issue est « À compléter » et le PVS est prévenu le lendemain, deux absences d'affilée sont signalées. Une candidature non retenue annule son rendez-vous avec un message neutre.
