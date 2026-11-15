@@ -1,19 +1,14 @@
 import { z } from "zod";
 import { defineContract } from "@/lib/openapi/contract";
+import { seekerFields } from "@/modules/jobs/schemas";
 
 export const createSeekerSchema = z
   .object({
-    title:          z.string().min(1).max(200),
-    wantEmploi:     z.boolean().default(false),
-    wantStage:      z.boolean().default(false),
+    ...seekerFields,
+    wantEmploi: z.boolean().default(false),
+    wantStage: z.boolean().default(false),
     wantAlternance: z.boolean().default(false),
-    sector:         z.string().max(150).optional().nullable(),
-    location:       z.string().max(150).optional().nullable(),
-    remote:         z.boolean().default(false),
-    availableFrom:  z.string().datetime().optional().nullable(),
-    description:    z.string().min(1),
-    contactEmail:   z.string().email().max(150).optional().nullable(),
-    contactUrl:     z.string().url().max(500).optional().nullable(),
+    remote: z.boolean().default(false),
   })
   .refine((d) => d.wantEmploi || d.wantStage || d.wantAlternance, {
     message: "Au moins un type de contrat doit être sélectionné",

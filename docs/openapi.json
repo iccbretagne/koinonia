@@ -18573,15 +18573,6 @@
                     "nullable": true,
                     "maxLength": 100
                   },
-                  "modality": {
-                    "type": "string",
-                    "enum": [
-                      "REMOTE",
-                      "ONSITE",
-                      "HYBRID"
-                    ],
-                    "default": "REMOTE"
-                  },
                   "location": {
                     "type": "string",
                     "nullable": true,
@@ -18602,6 +18593,15 @@
                     "nullable": true,
                     "maxLength": 500,
                     "format": "uri"
+                  },
+                  "modality": {
+                    "type": "string",
+                    "enum": [
+                      "REMOTE",
+                      "ONSITE",
+                      "HYBRID"
+                    ],
+                    "default": "REMOTE"
                   }
                 },
                 "required": [
@@ -18727,14 +18727,6 @@
                     "nullable": true,
                     "maxLength": 100
                   },
-                  "modality": {
-                    "type": "string",
-                    "enum": [
-                      "REMOTE",
-                      "ONSITE",
-                      "HYBRID"
-                    ]
-                  },
                   "location": {
                     "type": "string",
                     "nullable": true,
@@ -18755,6 +18747,14 @@
                     "nullable": true,
                     "maxLength": 500,
                     "format": "uri"
+                  },
+                  "modality": {
+                    "type": "string",
+                    "enum": [
+                      "REMOTE",
+                      "ONSITE",
+                      "HYBRID"
+                    ]
                   },
                   "status": {
                     "type": "string",
@@ -18897,15 +18897,6 @@
                     "nullable": true,
                     "maxLength": 100
                   },
-                  "modality": {
-                    "type": "string",
-                    "enum": [
-                      "REMOTE",
-                      "ONSITE",
-                      "HYBRID"
-                    ],
-                    "default": "REMOTE"
-                  },
                   "location": {
                     "type": "string",
                     "nullable": true,
@@ -18931,6 +18922,15 @@
                     "nullable": true,
                     "maxLength": 500,
                     "format": "uri"
+                  },
+                  "modality": {
+                    "type": "string",
+                    "enum": [
+                      "REMOTE",
+                      "ONSITE",
+                      "HYBRID"
+                    ],
+                    "default": "REMOTE"
                   }
                 },
                 "required": [
@@ -19051,14 +19051,6 @@
                     "nullable": true,
                     "maxLength": 100
                   },
-                  "modality": {
-                    "type": "string",
-                    "enum": [
-                      "REMOTE",
-                      "ONSITE",
-                      "HYBRID"
-                    ]
-                  },
                   "location": {
                     "type": "string",
                     "nullable": true,
@@ -19084,6 +19076,14 @@
                     "nullable": true,
                     "maxLength": 500,
                     "format": "uri"
+                  },
+                  "modality": {
+                    "type": "string",
+                    "enum": [
+                      "REMOTE",
+                      "ONSITE",
+                      "HYBRID"
+                    ]
                   },
                   "status": {
                     "type": "string",
@@ -19228,18 +19228,6 @@
                     "minLength": 1,
                     "maxLength": 200
                   },
-                  "wantEmploi": {
-                    "type": "boolean",
-                    "default": false
-                  },
-                  "wantStage": {
-                    "type": "boolean",
-                    "default": false
-                  },
-                  "wantAlternance": {
-                    "type": "boolean",
-                    "default": false
-                  },
                   "sector": {
                     "type": "string",
                     "nullable": true,
@@ -19249,10 +19237,6 @@
                     "type": "string",
                     "nullable": true,
                     "maxLength": 150
-                  },
-                  "remote": {
-                    "type": "boolean",
-                    "default": false
                   },
                   "availableFrom": {
                     "type": "string",
@@ -19274,6 +19258,22 @@
                     "nullable": true,
                     "maxLength": 500,
                     "format": "uri"
+                  },
+                  "wantEmploi": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "wantStage": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "wantAlternance": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "remote": {
+                    "type": "boolean",
+                    "default": false
                   }
                 },
                 "required": [
@@ -19378,15 +19378,6 @@
                     "minLength": 1,
                     "maxLength": 200
                   },
-                  "wantEmploi": {
-                    "type": "boolean"
-                  },
-                  "wantStage": {
-                    "type": "boolean"
-                  },
-                  "wantAlternance": {
-                    "type": "boolean"
-                  },
                   "sector": {
                     "type": "string",
                     "nullable": true,
@@ -19396,9 +19387,6 @@
                     "type": "string",
                     "nullable": true,
                     "maxLength": 150
-                  },
-                  "remote": {
-                    "type": "boolean"
                   },
                   "availableFrom": {
                     "type": "string",
@@ -19420,6 +19408,18 @@
                     "nullable": true,
                     "maxLength": 500,
                     "format": "uri"
+                  },
+                  "wantEmploi": {
+                    "type": "boolean"
+                  },
+                  "wantStage": {
+                    "type": "boolean"
+                  },
+                  "wantAlternance": {
+                    "type": "boolean"
+                  },
+                  "remote": {
+                    "type": "boolean"
                   },
                   "status": {
                     "type": "string",
