@@ -99,7 +99,7 @@ export function aggregate(form: FormWithQuestions, rows: { answers: { questionId
       case "LONG_TEXT":
       case "DATE": {
         const texts = values.filter((v): v is string => typeof v === "string" && v.trim() !== "");
-        return { kind: "texts", ...base, texts: texts.sort((a, b) => a.localeCompare(b, "fr")).slice(0, MAX_TEXTS) };
+        return { kind: "texts", ...base, texts: [...texts].sort((a, b) => a.localeCompare(b, "fr")).slice(0, MAX_TEXTS) };
       }
       default:
         // Email, téléphone : coordonnées, jamais listées dans les résultats.
