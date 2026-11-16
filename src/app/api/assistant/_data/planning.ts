@@ -61,7 +61,7 @@ async function validatedMemberIds(userId: string, churchId: string): Promise<str
 const NO_LINK = "Votre compte n'est pas encore lié à une fiche STAR : ouvrez « Mon profil » pour demander la liaison.";
 
 /** Départements du périmètre de la grille, sans les départements système. */
-async function scopedDepartmentIds(session: Session, churchId: string): Promise<string[] | null> {
+function scopedDepartmentIds(session: Session, churchId: string): string[] | null {
   const scope = getUserDepartmentScope(session, churchId);
   return scope.scoped ? scope.departmentIds : null;
 }
@@ -251,7 +251,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
     async run({ viewer, session, churchId }) {
       if (!can(viewer, "planning:department")) return REFUSED;
       const base = { title: "Consignes du prochain événement", href: "/dashboard", hrefLabel: "Planning" };
-      const departmentIds = await scopedDepartmentIds(session, churchId);
+      const departmentIds = scopedDepartmentIds(session, churchId);
       if (departmentIds?.length === 0) return boundedAnswer({ ...base, items: [], empty: "Aucun département dans votre périmètre." });
       const notices = await prisma.departmentNotice.findMany({
         where: {
@@ -321,7 +321,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
     params: paramsSchema,
     async run({ viewer, session, churchId, params }) {
       if (!can(viewer, "planning:department")) return REFUSED;
-      const departmentIds = await scopedDepartmentIds(session, churchId);
+      const departmentIds = scopedDepartmentIds(session, churchId);
       const { day, events } = await eventsOnDay(churchId, params.day, new Date());
       const base = { title: day ? `En service · ${formatDay(new Date(`${day}T12:00:00Z`))}` : "En service", href: "/dashboard", hrefLabel: "Planning" };
       if (events.length === 0 || departmentIds?.length === 0) return boundedAnswer({ ...base, items: [], empty: "Aucun service prévu ce jour-là dans votre périmètre." });
@@ -353,7 +353,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
     params: paramsSchema,
     async run({ viewer, session, churchId, params }) {
       if (!can(viewer, "planning:department")) return REFUSED;
-      const departmentIds = await scopedDepartmentIds(session, churchId);
+      const departmentIds = scopedDepartmentIds(session, churchId);
       const { day, events } = await eventsOnDay(churchId, params.day, new Date());
       const base = { title: day ? `Indisponibles · ${formatDay(new Date(`${day}T12:00:00Z`))}` : "Indisponibles", href: "/dashboard", hrefLabel: "Planning" };
       if (events.length === 0 || departmentIds?.length === 0) return boundedAnswer({ ...base, items: [], empty: "Aucun événement ce jour-là dans votre périmètre." });
@@ -386,7 +386,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
     params: paramsSchema,
     async run({ viewer, session, churchId }) {
       if (!can(viewer, "planning:edit")) return REFUSED;
-      const departmentIds = await scopedDepartmentIds(session, churchId);
+      const departmentIds = scopedDepartmentIds(session, churchId);
       const base = { title: "Services à remplacer", href: "/dashboard", hrefLabel: "Planning" };
       if (departmentIds?.length === 0) return boundedAnswer({ ...base, items: [], empty: "Aucun département dans votre périmètre." });
       const withdrawals = await prisma.serviceWithdrawal.findMany({
@@ -418,7 +418,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
       if (!can(viewer, "absences:view")) return REFUSED;
       const month = params.month ?? today().slice(0, 7);
       const base = { title: `Absences · ${formatMonth(month)}`, href: "/disponibilites", hrefLabel: "Disponibilités" };
-      const departmentIds = await scopedDepartmentIds(session, churchId);
+      const departmentIds = scopedDepartmentIds(session, churchId);
       if (departmentIds?.length === 0) return boundedAnswer({ ...base, items: [], empty: "Aucun département dans votre périmètre." });
       const { from, to } = monthRange(month);
       const absences = await prisma.absence.findMany({

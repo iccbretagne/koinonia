@@ -112,9 +112,11 @@ export async function bookSlot(applicationId: string, slotId: string, opts: { by
     await setScheduling(tx, applicationId, null, now);
     return { created, previous: current, unchanged: false };
   });
-  if (unchanged) return created; // déjà réservé sur ce créneau : rien à notifier
-  await ensureManageToken(applicationId);
-  await notifyInterviewBooked(await loadCandidate(applicationId), toInfo(created), opts.byCandidate, previous ? toInfo(previous) : null);
+  // Déjà réservé sur ce créneau : rien à notifier.
+  if (!unchanged) {
+    await ensureManageToken(applicationId);
+    await notifyInterviewBooked(await loadCandidate(applicationId), toInfo(created), opts.byCandidate, previous ? toInfo(previous) : null);
+  }
   return created;
 }
 
