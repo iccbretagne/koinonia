@@ -289,20 +289,25 @@ sous-domaines ne sont pas eux aussi servis en HTTPS.
 
 ## Sites d'événement : sous-domaines et domaines dédiés (spec 084, ADR-0031)
 
+**Activation en production** (le build de la CI ne pose pas de drapeau) : dans `shared/.env`,
+`TICKETING_SITES_ENABLED=true` et `SITE_BASE_DOMAIN=evenements.iccbzh.fr`, puis redémarrer le
+service (`sudo systemctl restart koinonia`) — aucune reconstruction. Ensuite DNS joker et certificat
+ci-dessous, puis activation par l'Admin de l'église (Paramètres de l'église › Sites d'événement).
+
 Variables (lues à l'exécution, par environnement) :
 
 | Variable | Rôle |
 |---|---|
-| `SITE_BASE_DOMAIN` | Domaine dont les sous-domaines servent les sites (`<slug>.evenements.iccrennes.fr`). Sans lui, aucun hôte n'est reconnu comme site. |
+| `SITE_BASE_DOMAIN` | Domaine dont les sous-domaines servent les sites (`<slug>.evenements.iccbzh.fr`). Sans lui, aucun hôte n'est reconnu comme site. |
 | `SITE_TARGET_HOST` | Nom d'hôte vers lequel un domaine dédié doit pointer (CNAME, ou mêmes adresses A/AAAA) ; sert à la vérification DNS. |
 | `TRAEFIK_PROVIDER_TOKEN` | Jeton porteur de `/api/internal/traefik` et `/api/internal/site-hosts`. **Sans lui, les domaines dédiés sont désactivés** (les deux adresses répondent 404 et le proxy sert l'application sur tout hôte, comme avant). |
 | `TRAEFIK_APP_SERVICE_URL` | Facultative : URL du service applicatif dans la configuration renvoyée à Traefik (défaut `http://127.0.0.1:$PORT`). |
 
-**Sous-domaines** : enregistrement DNS joker `*.evenements.iccrennes.fr` vers le serveur et
+**Sous-domaines** : enregistrement DNS joker `*.evenements.iccbzh.fr` vers le serveur et
 certificat joker obtenu par **défi DNS** (un joker ne s'obtient pas par défi HTTP) : résolveur
 Traefik dédié (`dnsChallenge`, fournisseur DNS de la zone) référencé par le routeur
-`Host(`evenements.iccrennes.fr`) || HostRegexp(`^[a-z0-9-]+\.evenements\.iccrennes\.fr$`)` avec
-`tls.domains: [{ main: "evenements.iccrennes.fr", sans: ["*.evenements.iccrennes.fr"] }]`.
+`Host(`evenements.iccbzh.fr`) || HostRegexp(`^[a-z0-9-]+\.evenements\.iccbzh\.fr$`)` avec
+`tls.domains: [{ main: "evenements.iccbzh.fr", sans: ["*.evenements.iccbzh.fr"] }]`.
 
 **Domaines dédiés** : Traefik interroge l'application pour connaître les domaines approuvés
 (fournisseur HTTP), et obtient un certificat Let's Encrypt par domaine (résolveur `letsencrypt`
