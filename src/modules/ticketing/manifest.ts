@@ -27,6 +27,8 @@ export const ticketingModule = defineModule({
       { path: "/inscription" },
       { path: "/reservation" },
       { path: "/billet" },
+      // Site d'un événement (spec 084) : servi par son hôte seulement, le proxy répond 404 ailleurs.
+      { path: "/site" },
       { path: "/api/ticketing/public" },
     ],
   },
