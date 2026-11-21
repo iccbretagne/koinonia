@@ -99,11 +99,11 @@
 
 ## Lot 4 — Assistants IA (sous-PR 5)
 
-- [ ] **T28** — `src/app/api/mcp/_actions/site.ts` : lecture `ticketing_site` et actions
+- [x] **T28** — `src/app/api/mcp/_actions/site.ts` : lecture `ticketing_site` et actions
       `edit_ticketing_site_theme`, `edit_ticketing_site_page`, `edit_ticketing_site_block`,
       `publish_ticketing_site`, `request_ticketing_site_domain` via `eventAction` ; branchées dans
       `MCP_ACTIONS` ; libellés dans `ACTION_LABELS`.
-- [ ] **T29** — Tests : rôle Communication autorisé sur le site et refusé sur le domaine ;
+- [x] **T29** — Tests : rôle Communication autorisé sur le site et refusé sur le domaine ;
       observateur et STAR sans rôle refusés ; contraste ou lien interdit refusés dès l'aperçu ;
       changement concurrent ⇒ `CHANGED` ; texte Markdown converti en arbre.
 
