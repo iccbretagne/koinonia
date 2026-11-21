@@ -11,6 +11,9 @@ import type {
 import { ibanError, normalizeIban } from "@/lib/iban";
 
 export { blockingChecks, readinessChecks, type ReadinessCheck, type ReadinessEvent } from "./readiness";
+export * from "./site-schemas";
+export { RichTextError, parseInline, parseRichText, richTextToMarkdown } from "./rich-text";
+export { MIN_CONTRAST, contrastIssues, contrastRatio, hexToRgb, luminance, surfaceColors, worstContrast, type ContrastIssue } from "./contrast";
 
 /**
  * Schémas purs de la billetterie (spec 074), partagés par les contrats d'API (ADR-0023), les
@@ -35,13 +38,14 @@ export const EVENT_STATUS_LABEL: Record<TicketingEventStatus, string> = {
   ARCHIVED: "Clôturé",
 };
 
-export const ROLES = ["ORGANIZER", "TREASURER", "RECEPTION", "CATERING", "OBSERVER"] as const satisfies readonly TicketingRole[];
+export const ROLES = ["ORGANIZER", "TREASURER", "RECEPTION", "CATERING", "OBSERVER", "COMMUNICATION"] as const satisfies readonly TicketingRole[];
 export const ROLE_LABEL: Record<TicketingRole, string> = {
   ORGANIZER: "Organisateur",
   TREASURER: "Trésorier",
   RECEPTION: "Accueil / sécurité",
   CATERING: "Restauration",
   OBSERVER: "Observateur",
+  COMMUNICATION: "Communication (site)",
 };
 
 export const OPTION_TYPES = ["CHOICE", "QUANTITY", "CHECKBOX"] as const satisfies readonly TicketingOptionType[];

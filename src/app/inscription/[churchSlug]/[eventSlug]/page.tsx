@@ -6,7 +6,9 @@ import { getTurnstileSiteKey } from "@/lib/turnstile";
 import PublicFormUnavailable from "@/components/PublicFormUnavailable";
 import PublicShell from "@/components/ticketing/PublicShell";
 import { dateAndPlace } from "@/components/ticketing/format";
-import { getPublicEvent } from "@/modules/ticketing";
+import { getPublicEvent, publishedTheme } from "@/modules/ticketing";
+import { fontClasses } from "@/app/site/_components/fonts";
+import { registrationThemeStyle } from "@/app/site/_components/theme";
 import BookingForm from "./BookingForm";
 
 type Params = { readonly params: Promise<{ churchSlug: string; eventSlug: string }> };
@@ -24,11 +26,13 @@ export default async function RegistrationPage({ params }: Params) {
   const event = await getPublicEvent(churchSlug, eventSlug);
   if (!event) notFound();
   const siteKey = getTurnstileSiteKey();
+  // Habillage par le thème du site publié (spec 084) : couleurs, polices et logo, rien d'autre.
+  const theme = await publishedTheme(churchSlug, eventSlug);
   const session = await auth().catch(() => null);
   const prefill = session?.user ? { name: session.user.name ?? "", email: session.user.email ?? "" } : null;
 
-  return (
-    <PublicShell eyebrow={event.churchName} title={event.title} subtitle={dateAndPlace(event.startsAt, event.location)}>
+  const page = (
+    <PublicShell logoUrl={theme?.logoAssetId ? `/api/ticketing/public/site-assets/${theme.logoAssetId}` : undefined} eyebrow={event.churchName} title={event.title} subtitle={dateAndPlace(event.startsAt, event.location)}>
       <div className="space-y-6">
         {event.hasPoster && (
           // eslint-disable-next-line @next/next/no-img-element -- affiche servie par l'API publique, dimensions inconnues
@@ -46,5 +50,11 @@ export default async function RegistrationPage({ params }: Params) {
         )}
       </div>
     </PublicShell>
+  );
+  if (!theme) return page;
+  return (
+    <div className={fontClasses(theme.fonts.heading, theme.fonts.body)} style={registrationThemeStyle(theme)}>
+      {page}
+    </div>
   );
 }

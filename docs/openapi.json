@@ -18145,6 +18145,48 @@
         }
       }
     },
+    "/api/internal/site-hosts": {
+      "get": {
+        "tags": [
+          "noyau"
+        ],
+        "summary": "Domaines dédiés approuvés (usage interne du proxy)",
+        "description": "**Accès** : jeton de partage dans l'adresse — boucle locale uniquement et en-tête `Authorization: Bearer <TRAEFIK_PROVIDER_TOKEN>` (404 si le jeton n'est pas configuré, 403 sinon).\n\nHôte → adresse du site, pour les domaines dédiés approuvés. Lue par le proxy au plus une fois par minute pour remplir son cache ; jamais appelée depuis Internet.",
+        "security": [],
+        "x-access": "token",
+        "responses": {
+          "200": {
+            "description": "Objet `{ \"<hôte>\": \"<adresse du site>\" }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/internal/traefik": {
+      "get": {
+        "tags": [
+          "noyau"
+        ],
+        "summary": "Fournisseur HTTP de Traefik (domaines dédiés des sites)",
+        "description": "**Accès** : jeton de partage dans l'adresse — boucle locale uniquement et en-tête `Authorization: Bearer <TRAEFIK_PROVIDER_TOKEN>` (404 si le jeton n'est pas configuré, 403 sinon).\n\nConfiguration dynamique Traefik : un routeur par domaine dédié approuvé, certificat Let's Encrypt, service vers l'application. Interrogée par Traefik lui-même (provider HTTP) ; jamais depuis Internet.",
+        "security": [],
+        "x-access": "token",
+        "responses": {
+          "200": {
+            "description": "Configuration dynamique Traefik (`http.routers`, `http.services`)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/jobs": {
       "get": {
         "tags": [
@@ -28710,6 +28752,107 @@
         }
       }
     },
+    "/api/ticketing/church/{churchId}/sites": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Billetterie : sites d'événement activés dans l'église",
+        "description": "**Accès** : permission `church:settings`.\n\nInterrupteur des sites d'événement de l'église (spec 084), coupé par défaut.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "church:settings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ enabled }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Billetterie : activer ou couper les sites d'événement de l'église",
+        "description": "**Accès** : permission `church:settings`.\n\nCoupé, aucun site d'événement de l'église n'est servi ; la page d'inscription standard reste disponible. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "church:settings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "enabled"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ enabled }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
     "/api/ticketing/events": {
       "get": {
         "tags": [
@@ -30972,7 +31115,8 @@
                             "TREASURER",
                             "RECEPTION",
                             "CATERING",
-                            "OBSERVER"
+                            "OBSERVER",
+                            "COMMUNICATION"
                           ]
                         }
                       },
@@ -31003,6 +31147,1730 @@
           },
           "400": {
             "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/site": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Site de l'événement : brouillon et état",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nCrée le site au premier appel (document de départ, adresse dérivée de l'événement). Renvoie le brouillon, l'état de publication et les problèmes de lisibilité à corriger avant de publier.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Site : adresse, brouillon, publié, `issues`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Enregistrement du brouillon du site",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nValide le document (thème, pages, blocs), la lisibilité des textes sur leurs fonds et l'appartenance des images au site ; refuse en 400 avec les messages. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "theme": {
+                    "type": "object",
+                    "properties": {
+                      "colors": {
+                        "type": "object",
+                        "properties": {
+                          "primary": {
+                            "type": "string",
+                            "pattern": "^#[0-9a-fA-F]{6}$"
+                          },
+                          "secondary": {
+                            "type": "string",
+                            "pattern": "^#[0-9a-fA-F]{6}$"
+                          },
+                          "accent": {
+                            "type": "string",
+                            "pattern": "^#[0-9a-fA-F]{6}$"
+                          },
+                          "background": {
+                            "type": "string",
+                            "pattern": "^#[0-9a-fA-F]{6}$"
+                          },
+                          "text": {
+                            "type": "string",
+                            "pattern": "^#[0-9a-fA-F]{6}$"
+                          }
+                        },
+                        "required": [
+                          "primary",
+                          "secondary",
+                          "accent",
+                          "background",
+                          "text"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "fonts": {
+                        "type": "object",
+                        "properties": {
+                          "heading": {
+                            "type": "string",
+                            "enum": [
+                              "montserrat",
+                              "playfair",
+                              "cormorant",
+                              "lora",
+                              "inter",
+                              "sourceSans"
+                            ]
+                          },
+                          "body": {
+                            "type": "string",
+                            "enum": [
+                              "montserrat",
+                              "playfair",
+                              "cormorant",
+                              "lora",
+                              "inter",
+                              "sourceSans"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "heading",
+                          "body"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "logoAssetId": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9]{20,40}$"
+                      },
+                      "headerAssetId": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9]{20,40}$"
+                      },
+                      "background": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "none"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "kind"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "color"
+                                ]
+                              },
+                              "color": {
+                                "type": "string",
+                                "enum": [
+                                  "primary",
+                                  "secondary",
+                                  "accent",
+                                  "background",
+                                  "text"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "color"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "gradient"
+                                ]
+                              },
+                              "stops": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": [
+                                    "primary",
+                                    "secondary",
+                                    "accent",
+                                    "background",
+                                    "text"
+                                  ]
+                                },
+                                "minItems": 2,
+                                "maxItems": 3
+                              },
+                              "direction": {
+                                "type": "string",
+                                "enum": [
+                                  "vertical",
+                                  "horizontal",
+                                  "diagonal",
+                                  "radial"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "stops",
+                              "direction"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "image"
+                                ]
+                              },
+                              "assetId": {
+                                "type": "string",
+                                "pattern": "^[a-z0-9]{20,40}$"
+                              },
+                              "veil": {
+                                "type": "string",
+                                "enum": [
+                                  "primary",
+                                  "secondary",
+                                  "accent",
+                                  "background",
+                                  "text"
+                                ]
+                              },
+                              "opacity": {
+                                "type": "number",
+                                "minimum": 0.2,
+                                "maximum": 0.9
+                              },
+                              "fixed": {
+                                "type": "boolean",
+                                "default": false
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "assetId",
+                              "veil",
+                              "opacity"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ],
+                        "default": {
+                          "kind": "none"
+                        }
+                      }
+                    },
+                    "required": [
+                      "colors",
+                      "fonts"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "pages": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 60
+                        },
+                        "slug": {
+                          "type": "string",
+                          "maxLength": 40,
+                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                        },
+                        "inMenu": {
+                          "type": "boolean",
+                          "default": true
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "content",
+                            "tickets",
+                            "menus",
+                            "practical"
+                          ]
+                        },
+                        "sections": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "background": {
+                                "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "none"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "color"
+                                        ]
+                                      },
+                                      "color": {
+                                        "type": "string",
+                                        "enum": [
+                                          "primary",
+                                          "secondary",
+                                          "accent",
+                                          "background",
+                                          "text"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "color"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "gradient"
+                                        ]
+                                      },
+                                      "stops": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "enum": [
+                                            "primary",
+                                            "secondary",
+                                            "accent",
+                                            "background",
+                                            "text"
+                                          ]
+                                        },
+                                        "minItems": 2,
+                                        "maxItems": 3
+                                      },
+                                      "direction": {
+                                        "type": "string",
+                                        "enum": [
+                                          "vertical",
+                                          "horizontal",
+                                          "diagonal",
+                                          "radial"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "stops",
+                                      "direction"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "image"
+                                        ]
+                                      },
+                                      "assetId": {
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9]{20,40}$"
+                                      },
+                                      "veil": {
+                                        "type": "string",
+                                        "enum": [
+                                          "primary",
+                                          "secondary",
+                                          "accent",
+                                          "background",
+                                          "text"
+                                        ]
+                                      },
+                                      "opacity": {
+                                        "type": "number",
+                                        "minimum": 0.2,
+                                        "maximum": 0.9
+                                      },
+                                      "fixed": {
+                                        "type": "boolean",
+                                        "default": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "assetId",
+                                      "veil",
+                                      "opacity"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                ],
+                                "default": {
+                                  "kind": "none"
+                                }
+                              },
+                              "textColor": {
+                                "type": "string",
+                                "enum": [
+                                  "primary",
+                                  "secondary",
+                                  "accent",
+                                  "background",
+                                  "text"
+                                ],
+                                "default": "text"
+                              },
+                              "blocks": {
+                                "type": "array",
+                                "items": {
+                                  "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "hero"
+                                          ]
+                                        },
+                                        "title": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 120
+                                        },
+                                        "tagline": {
+                                          "type": "string",
+                                          "maxLength": 240
+                                        },
+                                        "showDateLocation": {
+                                          "type": "boolean",
+                                          "default": true
+                                        },
+                                        "showCountdown": {
+                                          "type": "boolean",
+                                          "default": false
+                                        },
+                                        "buttonLabel": {
+                                          "type": "string",
+                                          "maxLength": 40
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "title"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "richText"
+                                          ]
+                                        },
+                                        "content": {
+                                          "type": "array",
+                                          "items": {
+                                            "oneOf": [
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "type": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                      "p",
+                                                      "h2",
+                                                      "h3"
+                                                    ]
+                                                  },
+                                                  "children": {
+                                                    "type": "array",
+                                                    "items": {
+                                                      "type": "object",
+                                                      "properties": {
+                                                        "text": {
+                                                          "type": "string",
+                                                          "maxLength": 2000
+                                                        },
+                                                        "bold": {
+                                                          "type": "boolean"
+                                                        },
+                                                        "italic": {
+                                                          "type": "boolean"
+                                                        },
+                                                        "href": {
+                                                          "type": "string",
+                                                          "maxLength": 500
+                                                        }
+                                                      },
+                                                      "required": [
+                                                        "text"
+                                                      ],
+                                                      "additionalProperties": false
+                                                    },
+                                                    "maxItems": 200
+                                                  }
+                                                },
+                                                "required": [
+                                                  "type",
+                                                  "children"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "type": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                      "ul",
+                                                      "ol"
+                                                    ]
+                                                  },
+                                                  "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                      "type": "array",
+                                                      "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                          "text": {
+                                                            "type": "string",
+                                                            "maxLength": 2000
+                                                          },
+                                                          "bold": {
+                                                            "type": "boolean"
+                                                          },
+                                                          "italic": {
+                                                            "type": "boolean"
+                                                          },
+                                                          "href": {
+                                                            "type": "string",
+                                                            "maxLength": 500
+                                                          }
+                                                        },
+                                                        "required": [
+                                                          "text"
+                                                        ],
+                                                        "additionalProperties": false
+                                                      },
+                                                      "maxItems": 200
+                                                    },
+                                                    "minItems": 1,
+                                                    "maxItems": 30
+                                                  }
+                                                },
+                                                "required": [
+                                                  "type",
+                                                  "items"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            ]
+                                          },
+                                          "maxItems": 60
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "content"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "image"
+                                          ]
+                                        },
+                                        "image": {
+                                          "type": "object",
+                                          "properties": {
+                                            "assetId": {
+                                              "type": "string",
+                                              "pattern": "^[a-z0-9]{20,40}$"
+                                            },
+                                            "alt": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 200
+                                            },
+                                            "caption": {
+                                              "type": "string",
+                                              "maxLength": 200
+                                            }
+                                          },
+                                          "required": [
+                                            "assetId",
+                                            "alt"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "image"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "gallery"
+                                          ]
+                                        },
+                                        "title": {
+                                          "type": "string",
+                                          "maxLength": 120
+                                        },
+                                        "images": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "assetId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9]{20,40}$"
+                                              },
+                                              "alt": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 200
+                                              },
+                                              "caption": {
+                                                "type": "string",
+                                                "maxLength": 200
+                                              }
+                                            },
+                                            "required": [
+                                              "assetId",
+                                              "alt"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "minItems": 1,
+                                          "maxItems": 24
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "images"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "palette"
+                                          ]
+                                        },
+                                        "title": {
+                                          "type": "string",
+                                          "maxLength": 120
+                                        },
+                                        "swatches": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "label": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 60
+                                              },
+                                              "color": {
+                                                "type": "string",
+                                                "pattern": "^#[0-9a-fA-F]{6}$"
+                                              }
+                                            },
+                                            "required": [
+                                              "label",
+                                              "color"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "minItems": 1,
+                                          "maxItems": 8
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "swatches"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "cards"
+                                          ]
+                                        },
+                                        "cards": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "title": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 120
+                                              },
+                                              "icon": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "shirt",
+                                                  "gem",
+                                                  "users",
+                                                  "camera",
+                                                  "check",
+                                                  "x",
+                                                  "star",
+                                                  "heart",
+                                                  "music",
+                                                  "utensils",
+                                                  "coffee",
+                                                  "cake",
+                                                  "gift",
+                                                  "calendar",
+                                                  "clock",
+                                                  "map-pin",
+                                                  "car",
+                                                  "bus",
+                                                  "parking-circle",
+                                                  "accessibility",
+                                                  "baby",
+                                                  "ticket",
+                                                  "phone",
+                                                  "mail",
+                                                  "info",
+                                                  "sparkles",
+                                                  "sun",
+                                                  "moon",
+                                                  "flame",
+                                                  "crown"
+                                                ]
+                                              },
+                                              "image": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "assetId": {
+                                                    "type": "string",
+                                                    "pattern": "^[a-z0-9]{20,40}$"
+                                                  },
+                                                  "alt": {
+                                                    "type": "string",
+                                                    "minLength": 1,
+                                                    "maxLength": 200
+                                                  },
+                                                  "caption": {
+                                                    "type": "string",
+                                                    "maxLength": 200
+                                                  }
+                                                },
+                                                "required": [
+                                                  "assetId",
+                                                  "alt"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              "items": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 200
+                                                },
+                                                "maxItems": 12
+                                              }
+                                            },
+                                            "required": [
+                                              "title",
+                                              "items"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "minItems": 1,
+                                          "maxItems": 6
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "cards"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "doDont"
+                                          ]
+                                        },
+                                        "doTitle": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 80
+                                        },
+                                        "doItems": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 200
+                                          },
+                                          "maxItems": 12
+                                        },
+                                        "dontTitle": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 80
+                                        },
+                                        "dontItems": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 200
+                                          },
+                                          "maxItems": 12
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "doTitle",
+                                        "doItems",
+                                        "dontTitle",
+                                        "dontItems"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "icons"
+                                          ]
+                                        },
+                                        "title": {
+                                          "type": "string",
+                                          "maxLength": 120
+                                        },
+                                        "items": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "icon": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "shirt",
+                                                  "gem",
+                                                  "users",
+                                                  "camera",
+                                                  "check",
+                                                  "x",
+                                                  "star",
+                                                  "heart",
+                                                  "music",
+                                                  "utensils",
+                                                  "coffee",
+                                                  "cake",
+                                                  "gift",
+                                                  "calendar",
+                                                  "clock",
+                                                  "map-pin",
+                                                  "car",
+                                                  "bus",
+                                                  "parking-circle",
+                                                  "accessibility",
+                                                  "baby",
+                                                  "ticket",
+                                                  "phone",
+                                                  "mail",
+                                                  "info",
+                                                  "sparkles",
+                                                  "sun",
+                                                  "moon",
+                                                  "flame",
+                                                  "crown"
+                                                ]
+                                              },
+                                              "label": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 120
+                                              }
+                                            },
+                                            "required": [
+                                              "icon",
+                                              "label"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "minItems": 1,
+                                          "maxItems": 12
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "items"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "faq"
+                                          ]
+                                        },
+                                        "items": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "question": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 200
+                                              },
+                                              "answer": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 2000
+                                              }
+                                            },
+                                            "required": [
+                                              "question",
+                                              "answer"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "minItems": 1,
+                                          "maxItems": 20
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "items"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "button"
+                                          ]
+                                        },
+                                        "label": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 40
+                                        },
+                                        "target": {
+                                          "anyOf": [
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "page": {
+                                                  "type": "string",
+                                                  "maxLength": 40,
+                                                  "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                }
+                                              },
+                                              "required": [
+                                                "page"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "booking": {
+                                                  "type": "boolean",
+                                                  "enum": [
+                                                    true
+                                                  ]
+                                                }
+                                              },
+                                              "required": [
+                                                "booking"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "label",
+                                        "target"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "banner"
+                                          ]
+                                        },
+                                        "background": {
+                                          "oneOf": [
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "none"
+                                                  ]
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "color"
+                                                  ]
+                                                },
+                                                "color": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "primary",
+                                                    "secondary",
+                                                    "accent",
+                                                    "background",
+                                                    "text"
+                                                  ]
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "color"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "gradient"
+                                                  ]
+                                                },
+                                                "stops": {
+                                                  "type": "array",
+                                                  "items": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                      "primary",
+                                                      "secondary",
+                                                      "accent",
+                                                      "background",
+                                                      "text"
+                                                    ]
+                                                  },
+                                                  "minItems": 2,
+                                                  "maxItems": 3
+                                                },
+                                                "direction": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "vertical",
+                                                    "horizontal",
+                                                    "diagonal",
+                                                    "radial"
+                                                  ]
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "stops",
+                                                "direction"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "image"
+                                                  ]
+                                                },
+                                                "assetId": {
+                                                  "type": "string",
+                                                  "pattern": "^[a-z0-9]{20,40}$"
+                                                },
+                                                "veil": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "primary",
+                                                    "secondary",
+                                                    "accent",
+                                                    "background",
+                                                    "text"
+                                                  ]
+                                                },
+                                                "opacity": {
+                                                  "type": "number",
+                                                  "minimum": 0.2,
+                                                  "maximum": 0.9
+                                                },
+                                                "fixed": {
+                                                  "type": "boolean",
+                                                  "default": false
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "assetId",
+                                                "veil",
+                                                "opacity"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          ]
+                                        },
+                                        "title": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 120
+                                        },
+                                        "tagline": {
+                                          "type": "string",
+                                          "maxLength": 240
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "background",
+                                        "title"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "separator"
+                                          ]
+                                        },
+                                        "style": {
+                                          "type": "string",
+                                          "enum": [
+                                            "line",
+                                            "goldDiamond",
+                                            "wave"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "style"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "maxItems": 20
+                              }
+                            },
+                            "required": [
+                              "blocks"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "maxItems": 12,
+                          "default": []
+                        }
+                      },
+                      "required": [
+                        "title",
+                        "slug",
+                        "kind"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 1,
+                    "maxItems": 8
+                  }
+                },
+                "required": [
+                  "theme",
+                  "pages"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Site enregistré",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Durée d'affichage après la clôture",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nNombre de jours (1 à 365) pendant lesquels le site affiche « Événement terminé » après la clôture de l'événement, puis répond 404. 30 par défaut.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "afterCloseDays": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                },
+                "required": [
+                  "afterCloseDays"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Site mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/site/assets": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Dépôt d'une image du site",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nFormulaire multipart, champ `file` : JPEG, PNG ou WebP, 8 Mo au plus, type vérifié sur le contenu. L'image est redressée, réduite à 2400 px au plus, convertie en WebP et dépouillée de toute métadonnée. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "description": "Champ `file` : l'image",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ id, width, height }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/site/assets/{assetId}": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Image du site (équipe)",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nImage d'un site pour l'aperçu du brouillon, publiée ou non. 404 si l'image n'appartient pas au site de l'événement.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "assetId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image WebP",
+            "content": {
+              "image/webp": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/site/domain": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Domaine dédié du site",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement (rôle `configure`) : le domaine engage l'église, la Communication n'y a pas accès.\n\nÉtat du domaine (en attente, vérifié, approuvé, suspendu), dernier message d'erreur et enregistrements DNS à créer. `null` sans demande.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domaine ou `null`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Demande d'un domaine dédié",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement (rôle `configure`) : le domaine engage l'église, la Communication n'y a pas accès.\n\nUn domaine par site, cinq par église (hors suspendus). Refuse un domaine invalide, déjà pris, sous le domaine des sites ou celui de l'application. Renvoie le jeton de preuve à publier en TXT.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "host": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 253
+                  }
+                },
+                "required": [
+                  "host"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Domaine demandé et enregistrements DNS",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Suppression du domaine dédié",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement (rôle `configure`) : le domaine engage l'église, la Communication n'y a pas accès.\n\nLe site redevient servi par son adresse Koinonia.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rien",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/site/domain/verify": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Vérification DNS du domaine dédié",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement (rôle `configure`).\n\nContrôle l'enregistrement TXT `_koinonia.<domaine>` (jeton de preuve) et que le domaine pointe vers Koinonia (CNAME, ou mêmes adresses). Réussite : « vérifié » (le Super Admin doit encore l'approuver) ; échec : le motif est renvoyé dans `lastError`.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domaine avec son nouvel état",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/site/publish": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Publication du site",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nFige le brouillon en version publiée, après nouvelle validation (schéma, lisibilité, images). Le site n'est visible que si l'église a activé les sites et que l'événement n'est plus en brouillon. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Site publié",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Dépublication du site",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nRetire la version publiée : le site répond 404. Le brouillon est conservé. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Site dépublié",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
           },
           "401": {
             "description": "Session absente"
@@ -32422,6 +34290,37 @@
         }
       }
     },
+    "/api/ticketing/public/site-assets/{assetId}": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Image d'un site d'événement publié",
+        "description": "**Accès** : public, sans session.\n\nServie seulement si l'image est référencée par la version publiée d'un site actif (église ayant activé les sites, événement hors brouillon) ; sinon 404.",
+        "security": [],
+        "x-access": "public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "assetId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image WebP",
+            "content": {
+              "image/webp": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/ticketing/public/tickets/{token}": {
       "get": {
         "tags": [
@@ -32449,6 +34348,107 @@
                 "schema": {}
               }
             }
+          }
+        }
+      }
+    },
+    "/api/ticketing/site-domains": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Demandes de domaines dédiés (toutes églises)",
+        "description": "**Accès** : Super Admin.\n\nÉcran d'approbation : église, événement, domaine, état et dernier contrôle DNS.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "responses": {
+          "200": {
+            "description": "Liste des domaines",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/site-domains/{domainId}": {
+      "patch": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Approbation ou refus d'un domaine dédié",
+        "description": "**Accès** : Super Admin.\n\nApprouver exige un DNS vérifié ; le domaine est alors servi (cache du proxy rafraîchi en une minute). Refuser supprime la demande, avec un motif facultatif transmis à l'organisateur. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "domainId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "decision": {
+                    "type": "string",
+                    "enum": [
+                      "approve",
+                      "reject"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 300
+                  }
+                },
+                "required": [
+                  "decision"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rien",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
           }
         }
       }

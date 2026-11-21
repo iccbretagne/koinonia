@@ -287,6 +287,50 @@ automatiquement, aucune ressource en HTTP) : un navigateur qui a reçu l'en-têt
 site en HTTP pendant toute sa durée. `stsIncludeSubdomains` reste à `false` tant que tous les
 sous-domaines ne sont pas eux aussi servis en HTTPS.
 
+## Sites d'événement : sous-domaines et domaines dédiés (spec 084, ADR-0031)
+
+Variables (lues à l'exécution, par environnement) :
+
+| Variable | Rôle |
+|---|---|
+| `SITE_BASE_DOMAIN` | Domaine dont les sous-domaines servent les sites (`<slug>.evenements.iccrennes.fr`). Sans lui, aucun hôte n'est reconnu comme site. |
+| `SITE_TARGET_HOST` | Nom d'hôte vers lequel un domaine dédié doit pointer (CNAME, ou mêmes adresses A/AAAA) ; sert à la vérification DNS. |
+| `TRAEFIK_PROVIDER_TOKEN` | Jeton porteur de `/api/internal/traefik` et `/api/internal/site-hosts`. **Sans lui, les domaines dédiés sont désactivés** (les deux adresses répondent 404 et le proxy sert l'application sur tout hôte, comme avant). |
+| `TRAEFIK_APP_SERVICE_URL` | Facultative : URL du service applicatif dans la configuration renvoyée à Traefik (défaut `http://127.0.0.1:$PORT`). |
+
+**Sous-domaines** : enregistrement DNS joker `*.evenements.iccrennes.fr` vers le serveur et
+certificat joker obtenu par **défi DNS** (un joker ne s'obtient pas par défi HTTP) : résolveur
+Traefik dédié (`dnsChallenge`, fournisseur DNS de la zone) référencé par le routeur
+`Host(`evenements.iccrennes.fr`) || HostRegexp(`^[a-z0-9-]+\.evenements\.iccrennes\.fr$`)` avec
+`tls.domains: [{ main: "evenements.iccrennes.fr", sans: ["*.evenements.iccrennes.fr"] }]`.
+
+**Domaines dédiés** : Traefik interroge l'application pour connaître les domaines approuvés
+(fournisseur HTTP), et obtient un certificat Let's Encrypt par domaine (résolveur `letsencrypt`
+existant, défi HTTP). Dans la configuration **statique** de Traefik :
+
+```yaml
+providers:
+  http:
+    endpoint: "http://127.0.0.1:3001/api/internal/traefik"   # adapter au PORT de l'application
+    pollInterval: "30s"
+    headers:
+      Authorization: "Bearer <TRAEFIK_PROVIDER_TOKEN>"
+```
+
+Verrous de `/api/internal/*` : la requête doit arriver en **boucle locale** (hôte `127.0.0.1`/`localhost`
+et aucun en-tête `X-Forwarded-*`, que Traefik pose toujours sur une requête venue d'Internet) **et**
+porter le jeton (comparaison à temps constant). Ne jamais configurer Traefik pour retirer les
+en-têtes `X-Forwarded-*`, ni exposer ces adresses par un routeur. Le proxy de l'application relit
+la liste des domaines approuvés au plus une fois par minute (cache mémoire) : un domaine approuvé
+est servi dans la minute, un domaine suspendu ou supprimé cesse de l'être dans la minute. Avant le
+premier chargement, un hôte étranger reçoit 404.
+
+Cycle d'un domaine : demande par l'organisateur (jeton de preuve) → enregistrements DNS
+`TXT _koinonia.<domaine>` (jeton) et `CNAME <domaine> → SITE_TARGET_HOST` → « Vérifier » →
+approbation du Super Admin (`/admin/site-domains`). La tâche cron `ticketing-site-domains`
+(quotidienne) refait le contrôle : un échec suspend le domaine et prévient l'organisateur.
+Cinq domaines non suspendus au plus par église.
+
 ## Politique de sécurité du contenu (ADR-0022)
 
 L'application publie elle-même sa CSP (nonce par requête, `src/lib/csp.ts`) — **ne pas** en

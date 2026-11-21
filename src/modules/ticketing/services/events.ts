@@ -1,4 +1,4 @@
-import { Prisma, type TicketingEvent, type TicketingOptionScope, type TicketingRole } from "@/generated/prisma/client";
+import { Prisma, type TicketingEvent, type TicketingEventStatus, type TicketingOptionScope, type TicketingRole } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/errors";
 import {
   enabledMethods,
@@ -403,10 +403,10 @@ export function closedReason(
 }
 
 /** Événement publié (ouvert ou clos), avec places et stock restants ; sinon `null`. */
-export async function getPublicEvent(churchSlug: string, eventSlug: string): Promise<PublicEvent | null> {
+export async function getPublicEvent(churchSlug: string, eventSlug: string, anyStatus = false): Promise<PublicEvent | null> {
   const prisma = await db();
   const event = await prisma.ticketingEvent.findFirst({
-    where: { slug: eventSlug, church: { slug: churchSlug }, status: { in: ["OPEN", "CLOSED"] } },
+    where: { slug: eventSlug, church: { slug: churchSlug }, ...(anyStatus ? {} : { status: { in: ["OPEN", "CLOSED"] as TicketingEventStatus[] } }) },
     include: {
       church: { select: { slug: true, name: true } },
       tariffs: true,
@@ -468,7 +468,7 @@ export async function getPublicEvent(churchSlug: string, eventSlug: string): Pro
 
 const POSTER_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 
-function sniffImage(buffer: Buffer): string | null {
+export function sniffImage(buffer: Buffer): string | null {
   if (buffer.length > 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return "image/jpeg";
   if (buffer.length > 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return "image/png";
   if (buffer.length > 12 && buffer.subarray(0, 4).toString() === "RIFF" && buffer.subarray(8, 12).toString() === "WEBP") return "image/webp";

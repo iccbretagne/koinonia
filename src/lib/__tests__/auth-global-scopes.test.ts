@@ -44,7 +44,8 @@ function findGlobalScopeUsages(guardName: string): string[] {
 // évaluée dans l'église (Admin de l'église). L'icône de l'application (spec 069) vaut pour toute
 // l'instance : réglage de plateforme, jamais évalué dans une église. La base de l'assistant
 // (spec 075) est commune à l'instance : son administration aussi. L'interrupteur d'instance des
-// assistants IA (MCP, spec 081) aussi : chaque église l'active ensuite pour elle-même.
+// assistants IA (MCP, spec 081) aussi : chaque église l'active ensuite pour elle-même. L'approbation des
+// domaines dédiés des sites d'événement (spec 084) est une décision de plateforme.
 const EXPECTED_SUPER_ADMIN_FILES = [
   "(auth)/admin/assistant/page.tsx",
   "(auth)/admin/mcp/page.tsx",
@@ -54,6 +55,8 @@ const EXPECTED_SUPER_ADMIN_FILES = [
   "api/admin/app-icon/route.ts",
   "api/assistant/_shared.ts",
   "api/mcp/settings/route.ts",
+  "api/ticketing/site-domains/[domainId]/route.ts",
+  "api/ticketing/site-domains/route.ts",
 ].sort();
 
 const EXPECTED_PLATFORM_PERMISSION_FILES = [

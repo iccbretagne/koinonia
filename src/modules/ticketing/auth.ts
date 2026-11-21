@@ -25,6 +25,8 @@ export const EVENT_ACTIONS = {
   catering: ["ORGANIZER", "CATERING"],
   menu: ["ORGANIZER", "CATERING"],
   read: ["ORGANIZER", "TREASURER", "RECEPTION", "CATERING", "OBSERVER"],
+  /** Site de l'événement (spec 084) : la Communication n'a que ce geste. */
+  site: ["ORGANIZER", "COMMUNICATION"],
 } as const satisfies Record<string, readonly TicketingRole[]>;
 export type EventAction = keyof typeof EVENT_ACTIONS;
 

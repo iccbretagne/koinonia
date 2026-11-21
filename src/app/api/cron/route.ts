@@ -84,6 +84,12 @@ async function runTicketingDeadlines() {
   return run();
 }
 
+/** Recontrôle DNS des domaines dédiés des sites d'événement (spec 084) : suspension en cas d'échec. */
+async function runTicketingSiteDomains() {
+  const { recheckDomains } = await import("@/modules/ticketing");
+  return recheckDomains();
+}
+
 /** Résumé hebdomadaire des questions posées à l'assistant qui attendent une réponse (spec 075). */
 async function runAssistantDigest() {
   const { runAssistantDigest: run } = await import("@/modules/assistant");
@@ -426,6 +432,8 @@ function cronTasks(appUrl: string): CronTask[] {
     { key: "system-messages", module: "messages", schedule: { kind: "every-run" }, run: runSystemMessages },
     // Billetterie (spec 074) : idempotente (horodatages par réservation), précision au quart d'heure.
     { key: "ticketing", module: "ticketing", schedule: { kind: "interval", minutes: 15 }, run: runTicketingDeadlines },
+    // Domaines dédiés des sites (spec 084) : une fois par jour.
+    { key: "ticketing-site-domains", module: "ticketing", schedule: { kind: "daily", hour: 4 }, run: runTicketingSiteDomains },
     // Assistant (spec 075) : une fois par semaine, prévient les Super Admins s'il reste des questions à traiter.
     { key: "assistant-digest", module: "assistant", schedule: { kind: "interval", minutes: 7 * 24 * 60 }, run: runAssistantDigest },
     // Justificatifs après la remise des fonds (spec 078) : idempotente (échéance prise de façon atomique).

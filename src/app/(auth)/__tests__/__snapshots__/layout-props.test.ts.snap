@@ -1374,6 +1374,10 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
       "label": "Icône de l'application",
     },
     {
+      "href": "/admin/site-domains",
+      "label": "Domaines des sites",
+    },
+    {
       "href": "/admin/assistant",
       "label": "Assistant",
     },
@@ -1552,6 +1556,10 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
     {
       "href": "/admin/app-icon",
       "label": "Icône de l'application",
+    },
+    {
+      "href": "/admin/site-domains",
+      "label": "Domaines des sites",
     },
     {
       "href": "/admin/assistant",
