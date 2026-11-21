@@ -99,6 +99,8 @@ export interface Prepared<P> {
   /** Lignes de l'aperçu. */
   lines: string[];
   payload: P;
+  /** Champs ajoutés à la réponse structurée de l'aperçu (avertissements…). */
+  structured?: Record<string, unknown>;
 }
 
 interface EventActionSpec<I extends z.ZodObject<z.ZodRawShape>, P extends { eventId?: string }> {
@@ -124,6 +126,8 @@ interface Executed {
   eventId?: string;
   vue?: string;
   data?: unknown;
+  /** Champs ajoutés à la réponse structurée de la confirmation. */
+  structured?: Record<string, unknown>;
 }
 interface AuditEntry {
   action: "CREATE" | "UPDATE" | "DELETE";
@@ -171,7 +175,7 @@ export function eventAction<I extends z.ZodObject<z.ZodRawShape>, P extends { ev
     const { token, expiresAt } = await createConfirmation(ctx.grantId, spec.action, stored as unknown as Prisma.InputJsonValue);
     return {
       text: previewText(prepared.lines, token),
-      structured: { done: false, action: spec.action, confirmation: token, expiresAt: expiresAt.toISOString() },
+      structured: { done: false, action: spec.action, confirmation: token, expiresAt: expiresAt.toISOString(), ...prepared.structured },
     };
   }
 
@@ -197,7 +201,7 @@ export function eventAction<I extends z.ZodObject<z.ZodRawShape>, P extends { ev
     }
     const eventId = result.eventId ?? stored.payload.eventId;
     const url = eventId ? link(eventId, result.vue) : `${publicOrigin()}/billetterie`;
-    return { text: `${result.text}\nVoir dans Koinonia : ${url}`, structured: { done: true, action: spec.action, link: url } };
+    return { text: `${result.text}\nVoir dans Koinonia : ${url}`, structured: { done: true, action: spec.action, link: url, ...result.structured } };
   }
 
   const available = (viewer: ActionContext["viewer"]) =>

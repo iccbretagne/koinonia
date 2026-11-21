@@ -28,6 +28,7 @@ let roles = new Set<string>(["COMMUNICATION"]);
 let updatedAt = "2099-01-01T00:00:00.000Z";
 let published = false;
 let draft = defaultSiteDocument("Nuit de la traversée");
+let siteStatus: { url: string | null; warnings: string[] } = { url: "https://nuit.recette.test", warnings: [] };
 let assetStateValue: { pending: boolean } | null = { pending: true };
 let assets: { id: string; name: string; alt: string; width: number; height: number; bytes: number; variants: { w: number; bytes: number }[]; usedIn: { draft: string[]; published: string[] }; createdAt: string }[] = [];
 const fetchImage = vi.fn(async (_url: string) => Buffer.from("png"));
@@ -51,6 +52,7 @@ const svc = {
   requestDomain: vi.fn(async (_e: string, _u: string, host: string) => ({ id: "d1", host, status: "PENDING", records: [{ type: "TXT", name: `_koinonia.${host}`, value: "tok" }] })),
   verifyDomain: vi.fn(async () => ({ host: "fete.exemple.org", status: "VERIFIED", lastError: null })),
   removeDomain: vi.fn(async () => undefined),
+  getSiteStatus: vi.fn(async () => siteStatus),
   listAssets: vi.fn(async () => assets),
   stageAsset: vi.fn(async (_s: string, _b: Buffer, meta: { alt: string; name?: string }) => ({ id: "a".repeat(25), name: meta.name ?? "", alt: meta.alt, mime: "image/webp", width: 1280, height: 720, bytes: 51200, source: "png", variants: [{ w: 640, bytes: 1 }, { w: 1280, bytes: 2 }] })),
   confirmAsset: vi.fn(async () => ({ id: "a".repeat(25), width: 1280, height: 720 })),
@@ -63,7 +65,7 @@ vi.mock("@/lib/audit", () => ({ logAudit: vi.fn(), withAuditContext: async (_e: 
 
 const s = await import("../_actions/site");
 const A = (name: string) => s.SITE_ACTIONS.find((a) => a.name === name)!;
-const ctx = { session: { user: { id: "user-1" } } as never, churchId: "c1", viewer: viewerFor("STAR", { predicates: ["ticketing"] }), grantId: "g1" };
+const ctx = { session: { user: { id: "user-1" } } as never, churchId: "c1", viewer: viewerFor("STAR", { predicates: ["ticketing", "ticketingSites"] }), grantId: "g1" };
 const preview = (action: string, input: unknown) => A(`${action}_preview`).run(input as never, ctx);
 const confirm = (action: string, token = lastToken) => A(`${action}_confirm`).run({ confirmation: token } as never, ctx);
 
@@ -75,6 +77,7 @@ beforeEach(() => {
   draft = defaultSiteDocument("Nuit de la traversée");
   domain = null;
   assetStateValue = { pending: true };
+  siteStatus = { url: "https://nuit.recette.test", warnings: [] };
   assets = [];
   stored = {};
   lastToken = "";
@@ -117,6 +120,21 @@ describe("droits", () => {
   it("jamais proposées à un compte sans le prédicat billetterie", () => {
     expect(A("edit_ticketing_site_block_preview").available(viewerFor("STAR"))).toBe(false);
     expect(A("edit_ticketing_site_block_preview").available(ctx.viewer)).toBe(true);
+  });
+
+  it("drapeau d'église : sites non activés ⇒ aucun outil du site ; activés ⇒ tous proposés", () => {
+    const off = viewerFor("STAR", { predicates: ["ticketing"] });
+    const on = viewerFor("STAR", { predicates: ["ticketing", "ticketingSites"] });
+    expect(s.SITE_ACTIONS.length).toBeGreaterThan(15);
+    expect(s.SITE_ACTIONS.filter((a) => a.available(off))).toEqual([]);
+    expect(s.SITE_ACTIONS.filter((a) => a.available(on))).toHaveLength(s.SITE_ACTIONS.length);
+    for (const name of ["ticketing_site", "ticketing_site_assets", "describe_site_blocks", "edit_ticketing_site_batch_preview", "upload_ticketing_site_asset_confirm", "publish_ticketing_site_preview", "request_ticketing_site_domain_preview"]) {
+      expect(A(name).available(off), name).toBe(false);
+      expect(A(name).available(on), name).toBe(true);
+    }
+    // Les autres outils de billetterie ne dépendent pas du drapeau (voir ticketing-actions).
+    expect(viewerFor("STAR", { predicates: ["ticketingSites"] }).predicates).not.toContain("ticketing");
+    expect(A("ticketing_site").available(viewerFor("STAR", { predicates: ["ticketingSites"] }))).toBe(false);
   });
 });
 
@@ -363,6 +381,36 @@ describe("confirmation", () => {
     const out = await confirm("edit_ticketing_site_theme");
     expect(out.text).toContain("ont changé");
     expect(svc.saveDraft).not.toHaveBeenCalled();
+  });
+
+  it("publication : adresse finale à l'aperçu, sans avertissement quand tout est en place", async () => {
+    const out = await preview("publish_ticketing_site", { event: "tk-1", op: "publish" });
+    expect(out.text).toContain("Adresse publique : https://nuit.recette.test");
+    expect(out.text).not.toContain("ATTENTION");
+    expect(out.structured).toMatchObject({ warnings: [], address: "https://nuit.recette.test" });
+    const done = await confirm("publish_ticketing_site");
+    expect(done.text).toContain("Adresse publique : https://nuit.recette.test");
+    expect(done.structured).toMatchObject({ done: true, warnings: [], address: "https://nuit.recette.test" });
+  });
+
+  it("publication : avertissement explicite en tête de l'aperçu, dans structured et dans le résultat, mais publication possible", async () => {
+    siteStatus = { url: null, warnings: ["L'Admin de l'église n'a pas activé les sites d'événement : le site ne sera visible du public qu'une fois activés.", "L'adresse des sites n'est pas configurée sur cette instance (SITE_BASE_DOMAIN)."] };
+    const out = await preview("publish_ticketing_site", { event: "tk-1", op: "publish" });
+    expect(out.text.split("\n")[1]).toContain("ATTENTION : L'Admin de l'église n'a pas activé");
+    expect(out.text).toContain("Adresse publique : aucune pour l'instant");
+    expect((out.structured.warnings as string[]).length).toBe(2);
+    expect(out.structured.confirmation).toMatch(/^kmx_tok/);
+    const done = await confirm("publish_ticketing_site");
+    expect(svc.publishSite).toHaveBeenCalled();
+    expect(done.text).toContain("ATTENTION");
+    expect((done.structured.warnings as string[]).length).toBe(2);
+  });
+
+  it("lecture du site : avertissements et adresse", async () => {
+    siteStatus = { url: null, warnings: ["L'événement est encore en brouillon."] };
+    const out = await A("ticketing_site").run({ event: "tk-1" } as never, ctx);
+    expect(out.text).toContain("ATTENTION : L'événement est encore en brouillon.");
+    expect(out.structured).toMatchObject({ address: null, warnings: ["L'événement est encore en brouillon."] });
   });
 
   it("publication puis dépublication ; dépublier un site non publié est refusé", async () => {

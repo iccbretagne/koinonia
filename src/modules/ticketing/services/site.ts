@@ -121,6 +121,34 @@ export async function unpublish(eventId: string, userId: string): Promise<SiteVi
   return getSite(eventId);
 }
 
+export interface SiteStatus {
+  /** Adresse publique finale (domaine dédié approuvé, sinon sous-domaine) ; `null` sans adresse. */
+  url: string | null;
+  /** Raisons pour lesquelles le site ne sera pas accessible (publier reste possible). */
+  warnings: string[];
+}
+
+/** Adresse publique et conditions manquantes : fonction pure, testée seule. */
+export function siteReachability(input: { slug: string; sitesEnabled: boolean; baseDomain?: string; eventStatus: string; dedicatedHost: string | null }): SiteStatus {
+  const url = input.dedicatedHost ? `https://${input.dedicatedHost}` : input.baseDomain ? `https://${input.slug}.${input.baseDomain}` : null;
+  const warnings: string[] = [];
+  if (!input.sitesEnabled) warnings.push("L'Admin de l'église n'a pas activé les sites d'événement : le site ne sera visible du public qu'une fois activés.");
+  if (!url) warnings.push("L'adresse des sites n'est pas configurée sur cette instance (SITE_BASE_DOMAIN) et aucun domaine dédié n'est approuvé : le site n'a pas d'adresse publique.");
+  if (input.eventStatus === "DRAFT") warnings.push("L'événement est encore en brouillon : le site ne sera visible qu'une fois les inscriptions ouvertes.");
+  return { url, warnings };
+}
+
+/** État d'accessibilité du site d'un événement (adresse finale et avertissements). */
+export async function getSiteStatus(eventId: string): Promise<SiteStatus> {
+  const site = await getSite(eventId);
+  const prisma = await db();
+  const [event, domain] = await Promise.all([
+    prisma.ticketingEvent.findUniqueOrThrow({ where: { id: eventId }, select: { status: true, churchId: true } }),
+    prisma.ticketingSiteDomain.findFirst({ where: { siteId: site.id, status: "APPROVED" }, select: { host: true } }),
+  ]);
+  return siteReachability({ slug: site.slug, sitesEnabled: await getSitesEnabled(event.churchId), baseDomain: process.env.SITE_BASE_DOMAIN, eventStatus: event.status, dedicatedHost: domain?.host ?? null });
+}
+
 /** Site servi pour un hôte : sous-domaine de `SITE_BASE_DOMAIN`, ou domaine dédié approuvé. */
 export async function resolveSiteByHost(host: string): Promise<{ slug: string } | null> {
   const prisma = await db();

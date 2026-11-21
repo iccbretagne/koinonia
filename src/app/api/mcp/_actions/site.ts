@@ -43,12 +43,6 @@ const jsonify = <T>(v: T): T => JSON.parse(JSON.stringify(v));
 
 const eventInput = z.object({ event: eventRef });
 
-function siteUrl(slug: string, dedicated: string | null): string {
-  if (dedicated) return `https://${dedicated}`;
-  const base = process.env.SITE_BASE_DOMAIN;
-  return base ? `https://${slug}.${base}` : "(adresse des sites non configurée)";
-}
-
 /** Contenu complet d'un bloc pour l'assistant : JSON compact, ou Markdown pour un texte riche. */
 function blockText(b: { kind: string; block: number; markdown?: string } & Record<string, unknown>): string {
   const { block: _rank, markdown, ...rest } = b;
@@ -75,8 +69,10 @@ async function readSite(input: z.infer<typeof eventInput>, ctx: ActionContext): 
       blocks: s.blocks.map((b, block) => ({ block, ...b, ...(b.kind === "richText" ? { markdown: richTextToMarkdown(b.content) } : {}) })),
     })),
   }));
+  const status = await m.getSiteStatus(found.id);
   const lines = [
-    `Site de « ${found.title} » — ${site.published ? "publié" : "non publié"} (adresse ${siteUrl(site.slug, null)})`,
+    `Site de « ${found.title} » — ${site.published ? "publié" : "non publié"} (adresse ${status.url ?? "aucune pour l'instant"})`,
+    ...status.warnings.map((w) => `ATTENTION : ${w}`),
     `Thème : couleurs ${Object.entries(site.draft.theme.colors).map(([k, v]) => `${k} ${v}`).join(", ")} ; polices ${site.draft.theme.fonts.heading} / ${site.draft.theme.fonts.body}`,
     ...pages.flatMap((p) => [
       `Page « ${p.title} » [${p.slug}] (${p.kind}${p.inMenu ? "" : ", hors menu"}) : ${p.sections.map((s) => `bande ${s.band} (${s.blocks.map((b) => b.kind).join(", ") || "vide"})`).join(" ; ") || "—"}`,
@@ -95,7 +91,8 @@ async function readSite(input: z.infer<typeof eventInput>, ctx: ActionContext): 
       published: site.published,
       publishedAt: site.publishedAt,
       updatedAt: site.updatedAt,
-      address: siteUrl(site.slug, domain?.status === "APPROVED" ? domain.host : null),
+      address: status.url,
+      warnings: status.warnings,
       theme: site.draft.theme,
       pages,
       images: [...assetIdsOf(site.draft)],
@@ -542,14 +539,24 @@ const publishAction = eventAction({
     }
     const checked = validateDocument(site.draft);
     if (typeof checked === "string") return checked;
-    return { lines: [`${site.published ? "Republier" : "Publier"} le brouillon du site de « ${event!.title} » : il devient visible du public`], payload: { eventId: event!.id, op: "publish" } };
+    const { url, warnings } = await (await ticketing()).getSiteStatus(event!.id);
+    return {
+      lines: [
+        ...warnings.map((w) => `ATTENTION : ${w}`),
+        `${site.published ? "Republier" : "Publier"} le brouillon du site de « ${event!.title} » : ${warnings.length ? "la version publiée sera servie dès que ces conditions seront remplies" : "il devient visible du public"}`,
+        `Adresse publique : ${url ?? "aucune pour l'instant"}`,
+      ],
+      payload: { eventId: event!.id, op: "publish" },
+      structured: { warnings, address: url },
+    };
   },
   state: publishState,
   execute: async (p, ctx) => {
     const m = await ticketing();
     if (p.op === "publish") {
       await m.publishSite(p.eventId, ctx.session.user.id);
-      return { text: "Site publié.", vue: "site" };
+      const { url, warnings } = await m.getSiteStatus(p.eventId);
+      return { text: `Site publié. Adresse publique : ${url ?? "aucune pour l'instant"}.${warnings.map((w) => `\nATTENTION : ${w}`).join("")}`, vue: "site", structured: { warnings, address: url } };
     }
     await m.unpublishSite(p.eventId, ctx.session.user.id);
     return { text: "Site dépublié.", vue: "site" };
@@ -596,4 +603,10 @@ const domainAction = eventAction({
   },
 });
 
-export const SITE_ACTIONS: McpActionDef[] = [...SITE_READS, ...themeAction, ...pageAction, ...blockAction, ...batchAction, ...uploadAction, ...deleteAssetAction, ...publishAction, ...domainAction];
+/**
+ * Les outils du site ne sont proposés que si l'église a activé les sites d'événement (coupés par
+ * défaut) : prédicat `ticketingSites`, calculé côté serveur (`assistant/_viewer.ts`).
+ */
+const whenSitesEnabled = (def: McpActionDef): McpActionDef => ({ ...def, available: (viewer) => def.available(viewer) && viewer.predicates.includes("ticketingSites") });
+
+export const SITE_ACTIONS: McpActionDef[] = [...SITE_READS, ...themeAction, ...pageAction, ...blockAction, ...batchAction, ...uploadAction, ...deleteAssetAction, ...publishAction, ...domainAction].map(whenSitesEnabled);
