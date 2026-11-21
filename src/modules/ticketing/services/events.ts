@@ -1,4 +1,4 @@
-import { Prisma, type TicketingEvent, type TicketingOptionScope, type TicketingRole } from "@/generated/prisma/client";
+import { Prisma, type TicketingEvent, type TicketingEventStatus, type TicketingOptionScope, type TicketingRole } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/errors";
 import {
   enabledMethods,
@@ -403,10 +403,10 @@ export function closedReason(
 }
 
 /** Événement publié (ouvert ou clos), avec places et stock restants ; sinon `null`. */
-export async function getPublicEvent(churchSlug: string, eventSlug: string): Promise<PublicEvent | null> {
+export async function getPublicEvent(churchSlug: string, eventSlug: string, anyStatus = false): Promise<PublicEvent | null> {
   const prisma = await db();
   const event = await prisma.ticketingEvent.findFirst({
-    where: { slug: eventSlug, church: { slug: churchSlug }, status: { in: ["OPEN", "CLOSED"] } },
+    where: { slug: eventSlug, church: { slug: churchSlug }, ...(anyStatus ? {} : { status: { in: ["OPEN", "CLOSED"] as TicketingEventStatus[] } }) },
     include: {
       church: { select: { slug: true, name: true } },
       tariffs: true,

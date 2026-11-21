@@ -1,7 +1,8 @@
+import { Prisma } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/errors";
 import { RESERVED_SITE_SLUGS, normalizeHost, siteSlugFromHost } from "@/lib/site-host";
 import { contrastIssues } from "../contrast";
-import { assetIdsOf, defaultSiteDocument, siteDocumentSchema, type SiteDocument } from "../site-schemas";
+import { assetIdsOf, defaultSiteDocument, siteDocumentSchema, type SiteDocument, type SiteTheme } from "../site-schemas";
 import type { PublicEvent } from "../schemas";
 import { getPublicEvent, slugify } from "./events";
 import { getSitesEnabled } from "./site-settings";
@@ -107,8 +108,6 @@ export async function publish(eventId: string, userId: string): Promise<SiteView
 export async function unpublish(eventId: string, userId: string): Promise<SiteView> {
   const prisma = await db();
   const site = await prisma.ticketingSite.findUniqueOrThrow({ where: { eventId } });
-  // Prisma.DbNull : `published` est une colonne JSON nullable.
-  const { Prisma } = await import("@/generated/prisma/client");
   await prisma.ticketingSite.update({ where: { id: site.id }, data: { published: Prisma.DbNull, publishedAt: null, publishedById: null } });
   await audit(userId, site.churchId, "UPDATE", site.id, { published: false });
   return getSite(eventId);
@@ -159,4 +158,21 @@ export async function publicSiteView(slug: string, now: Date = new Date()): Prom
   }
   const publicEvent = await getPublicEvent(event.church.slug, event.slug);
   return publicEvent ? { ...base, event: publicEvent, ended: false } : null;
+}
+
+/** Données de l'événement pour l'aperçu de l'éditeur, quel que soit son état (équipe seulement). */
+export async function previewEvent(eventId: string): Promise<PublicEvent | null> {
+  const event = await (await db()).ticketingEvent.findUniqueOrThrow({ where: { id: eventId }, select: { slug: true, church: { select: { slug: true } } } });
+  return event.church.slug ? getPublicEvent(event.church.slug, event.slug, true) : null;
+}
+
+/** Thème du site **publié** d'un événement, pour la page d'inscription ; `null` sans site visible. */
+export async function publishedTheme(churchSlug: string, eventSlug: string): Promise<SiteTheme | null> {
+  const site = await (await db()).ticketingSite.findFirst({
+    where: { event: { slug: eventSlug, church: { slug: churchSlug }, status: { not: "DRAFT" } }, published: { not: Prisma.DbNull } },
+    select: { churchId: true, published: true },
+  });
+  if (!site || !(await getSitesEnabled(site.churchId))) return null;
+  const parsed = siteDocumentSchema.safeParse(site.published);
+  return parsed.success ? parsed.data.theme : null;
 }
