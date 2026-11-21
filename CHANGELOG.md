@@ -6,6 +6,23 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.38.0] - 2026-11-21
+
+### Ajouté
+
+- Assistants IA connectés (spec 083) : **conduire un événement de billetterie**. Selon votre rôle sur l'événement, l'assistant peut créer l'événement, régler ses tarifs, ses places, ses moyens de paiement (l'IBAN se saisit mais n'est jamais relu), ses options et ses plats, composer l'équipe (rôles, postes, affectations), l'ouvrir ou le clôturer, confirmer ou refuser une série de « J'ai payé », enregistrer un encaissement ou un remboursement, annuler une réservation, ajouter des personnes sur place et gérer la remise et la vente à la restauration. Toujours après un aperçu et votre confirmation, sans jamais afficher email ni téléphone des participants, et journalisé « via l'assistant IA ».
+- Billetterie : **PayPal** parmi les moyens de paiement d'un événement. L'organisateur renseigne un lien de paiement (paypal.me…) ; le participant voit « Payer avec PayPal » sur sa réservation, le retrouve dans l'email de confirmation et peut le choisir dans « J'ai payé ».
+- Assistant (Nia / Koï) et assistants IA connectés : « mes événements de billetterie » et « paiements de billetterie à traiter » pour l'organisation et la trésorerie des événements.
+- Mon profil › Assistants IA connectés : procédure ChatGPT à jour (Paramètres › Plugins, ou mode développeur sur l'ancien affichage ; offres Plus et supérieures, sur le web).
+
+### Modifié
+
+- Dépendances mises à jour (SDK AWS S3, lucide-react, recharts, swagger-ui-react) et nettoyage du code (alertes Sonar, doublons factorisés) sans changement de comportement.
+
+### Sécurité
+
+- Dépendance transitive `effect` (Prisma) forcée en 3.22.1 ou plus (GHSA-7589-6fvf-x4pw).
+
 ## [v1.37.0] - 2026-11-15
 
 ### Ajouté

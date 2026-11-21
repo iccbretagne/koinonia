@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readinessChecks } from "../readiness";
+import { readinessChecks } from "../schemas";
 
 type Input = Parameters<typeof readinessChecks>[0];
 const variant = (closed = false) => ({ id: "v", label: "Poulet", closed }) as unknown as Input["options"][number]["variants"][number];
@@ -32,8 +32,8 @@ describe("checklist d'ouverture de la billetterie", () => {
   it("exige un moyen de paiement seulement si quelque chose est payant", () => {
     const none = { wero: null, revolut: null, transfer: null, cash: false, cheque: false } as Input["paymentMethods"];
     expect(blocking(base({ paymentMethods: none }))).toEqual(["payment"]);
-    expect(blocking(base({ paymentMethods: none, tariffs: [{ ageGroup: "ADULT", price: 0 }] }))).toEqual([]);
-    expect(blocking(base({ paymentMethods: none, tariffs: [{ ageGroup: "ADULT", price: 0 }], options: [option({})] }))).toEqual(["payment"]);
+    expect(blocking(base({ paymentMethods: none, tariffs: [{ price: 0 }] }))).toEqual([]);
+    expect(blocking(base({ paymentMethods: none, tariffs: [{ price: 0 }], options: [option({})] }))).toEqual(["payment"]);
   });
 
   it("un menu proposé sans plat ouvert bloque ; un menu désactivé non", () => {

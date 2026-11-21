@@ -5,7 +5,7 @@ import { CheckCircle2, Circle, CircleAlert } from "lucide-react";
 import { Button } from "@/components/ui";
 import type { TicketingEventStatus } from "@/generated/prisma/enums";
 import { useApi } from "../../use-api";
-import type { ReadinessCheck } from "./readiness";
+import type { ReadinessCheck } from "@/modules/ticketing/schemas";
 
 /**
  * Publication de l'événement : avant l'ouverture, ce qu'il reste à régler (bloquant ou conseillé)

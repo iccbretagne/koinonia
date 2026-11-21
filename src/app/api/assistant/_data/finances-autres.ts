@@ -40,7 +40,62 @@ export const TICKETING_QUESTIONS: DataQuestion[] = [
       });
     },
   },
+  {
+    key: "ticketing.myEvents",
+    description: "Événements de billetterie que la personne organise ou dont elle fait partie de l'équipe : dates, état, inscrits et places.",
+    params: paramsSchema,
+    async run({ session, churchId, viewer }) {
+      if (!viewer.predicates.includes("ticketing")) return REFUSED;
+      const { isTicketingManager, listEvents } = await import("@/modules/ticketing");
+      const events = await listEvents(churchId, viewer.userId, await isTicketingManager(session, churchId));
+      return boundedAnswer({
+        title: "Mes événements de billetterie",
+        href: "/billetterie",
+        hrefLabel: "Billetterie",
+        items: events.map((e) => ({
+          label: `${formatDay(e.startsAt)} · ${e.title}`,
+          detail: `${TICKETING_STATUS[e.status] ?? e.status} · ${e.seatsTaken} inscrits / ${e.seatsOpen} places`,
+          href: `/billetterie/${e.id}`,
+        })),
+        empty: "Aucun événement de billetterie pour vous dans cette église.",
+      });
+    },
+  },
+  {
+    key: "ticketing.paymentsToHandle",
+    description: "Paiements de billetterie à traiter par le trésorier ou l'organisateur : « J'ai payé » à confirmer et remboursements à faire.",
+    params: paramsSchema,
+    async run({ session, churchId, viewer }) {
+      if (!viewer.predicates.includes("ticketing")) return REFUSED;
+      const m = await import("@/modules/ticketing");
+      const events = await m.listEvents(churchId, viewer.userId, await m.isTicketingManager(session, churchId));
+      const items: { label: string; detail: string; href: string }[] = [];
+      let treasurer = false;
+      for (const e of events.filter((x) => x.status !== "ARCHIVED")) {
+        const access = await m.getEventAccess(session, e.id).catch(() => null);
+        if (!access || !m.canDo(access, "payments")) continue;
+        treasurer = true;
+        const [payments, bookings] = await Promise.all([m.listPayments(e.id), m.listBookings(e.id, false)]);
+        for (const p of payments.filter((x) => x.kind === "DECLARATION" && x.status === "PENDING")) {
+          items.push({ label: `${e.title} · ${p.reference} · ${p.contactName}`, detail: `À confirmer : ${formatEuros(p.amount)} (${p.method}), déclaré le ${formatDay(new Date(p.createdAt))}`, href: `/billetterie/${e.id}?vue=reglements` });
+        }
+        for (const b of bookings.filter((x) => x.balances.refundDue > 0)) {
+          items.push({ label: `${e.title} · ${b.reference} · ${b.contact.name}`, detail: `À rembourser : ${formatEuros(b.balances.refundDue)}`, href: `/billetterie/${e.id}?vue=reglements` });
+        }
+      }
+      if (!treasurer) return REFUSED;
+      return boundedAnswer({
+        title: "Paiements de billetterie à traiter",
+        href: "/billetterie",
+        hrefLabel: "Billetterie",
+        items,
+        empty: "Aucun paiement à confirmer ni remboursement à faire.",
+      });
+    },
+  },
 ];
+
+const TICKETING_STATUS: Record<string, string> = { DRAFT: "Brouillon", OPEN: "Inscriptions ouvertes", CLOSED: "Inscriptions closes", ARCHIVED: "Clôturé" };
 
 export const ROOMS_QUESTIONS: DataQuestion[] = [
   {

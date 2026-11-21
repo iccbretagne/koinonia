@@ -10,6 +10,8 @@ import type {
 } from "@/generated/prisma/enums";
 import { ibanError, normalizeIban } from "@/lib/iban";
 
+export { blockingChecks, readinessChecks, type ReadinessCheck, type ReadinessEvent } from "./readiness";
+
 /**
  * Schémas purs de la billetterie (spec 074), partagés par les contrats d'API (ADR-0023), les
  * services et les écrans. Les montants se saisissent en euros.

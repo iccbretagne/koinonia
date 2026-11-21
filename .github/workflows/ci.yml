@@ -9,8 +9,48 @@ on:
 permissions:
   contents: read
 
+# Un nouveau push sur une PR annule le run devenu obsolète ; main et les tags vont toujours au bout.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  # Ce que touche une PR : une PR de documentation seule (specs, docs, *.md) ne relance ni tests
+  # ni build ; le rejeu des migrations ne tourne que si le schéma ou Prisma change. Sur main et
+  # les tags, tout est considéré comme touché. Aucun check n'est requis par la protection de
+  # branche : un job sauté ne bloque pas le merge.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      pull-requests: read
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+      prisma: ${{ steps.diff.outputs.prisma }}
+    steps:
+      # Liste des fichiers de la PR par l'API (pas de checkout : rapide et sans historique).
+      - id: diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"; echo "prisma=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          files=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/files" --paginate --jq '.[].filename')
+          printf '%s\n' "$files"
+          # docs/openapi.json est vérifié par les tests : ce n'est pas de la documentation seule.
+          code=$(printf '%s\n' "$files" | grep -vE '^(specs/|docs/)|\.md$' | grep -c . || true)
+          code=$((code + $(printf '%s\n' "$files" | grep -c '^docs/openapi\.json$' || true)))
+          prisma=$(printf '%s\n' "$files" | grep -cE '^(prisma/|prisma\.config\.ts$|package(-lock)?\.json$)' || true)
+          echo "code=$([ "$code" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "prisma=$([ "$prisma" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+  # Sur un tag, le commit est déjà passé par ce job sur main : release.yml n'étiquette qu'un
+  # commit dont la CI de main est verte. Seul le build (artefact) est refait.
   lint-test:
+    needs: changes
+    if: needs.changes.outputs.code == 'true' && !startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -93,6 +133,8 @@ jobs:
   # Le job lint-test tourne sur une DATABASE_URL factice et ne voit ni migration invalide, ni
   # conflit d'historique, ni schéma modifié sans migration.
   migrations:
+    needs: changes
+    if: needs.changes.outputs.prisma == 'true' && !startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
@@ -123,8 +165,11 @@ jobs:
       - name: Check schema.prisma matches migrations
         run: npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
 
+  # En parallèle de lint-test : le build ne dépend pas de ses résultats, et le run échoue de
+  # toute façon si l'un des deux échoue.
   build:
-    needs: lint-test
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 18
     env:

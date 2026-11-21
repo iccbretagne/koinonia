@@ -17,6 +17,8 @@ export const EVAL_CASES: readonly EvalCase[] = [
   { question: "quels entretiens je reçois", expected: "D24" },
   { question: "candidats sans entretien", expected: "D25" },
   { question: "reste-t-il des créneaux d'entretien libres", expected: "D26" },
+  { question: "combien d'inscrits à mes événements de billetterie", expected: "D27" },
+  { question: "quels paiements de billetterie sont à confirmer", expected: "D28" },
   { question: "comment déclarer une absense", expected: "KB-021" },
   { question: "je serai pas là dimanche", expected: "KB-021", semanticOnly: true },
   { question: "dimanche je pourrai pas venir", expected: "KB-021" },
