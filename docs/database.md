@@ -1534,7 +1534,7 @@ jeton étant dérivé à la demande d'un sel (`tokenSalt`) et d'un secret serveu
 - **`ticketing_events`** : `slug` (unique par église), titre, description, lieu, `posterKey`,
   `startsAt`/`endsAt`, `registrationDeadline`, `capacity` (jauge, équipe comprise), `seatsOpen`,
   `status` (`DRAFT`, `OPEN`, `CLOSED`, `ARCHIVED` ; « complet » est calculé), `paymentMethods`
-  (JSON : Wero, Revolut, IBAN propre à l'événement, espèces, chèque), `optionPaymentDeadline`,
+  (JSON : Wero, Revolut, PayPal, IBAN propre à l'événement, espèces, chèque), `optionPaymentDeadline`,
   `reminderDaysBefore`, `allowOnsitePayment`, `allowUnaccompaniedMinors`, `allowWalkIns`,
   `entryRefundable`/`entryRefundDeadline`, `questions` (JSON), `referencePrefix` et
   `nextReference` (compteur, verrou de l'inscription), `retentionDays`, `capacityAlertLevel` et

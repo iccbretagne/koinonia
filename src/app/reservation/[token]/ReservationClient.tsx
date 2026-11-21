@@ -234,6 +234,13 @@ export default function ReservationClient({
               </a>
             </p>
           )}
+          {instructions.paypal && (
+            <p className="text-[15px]">
+              <a className="font-semibold text-brand-text underline" href={instructions.paypal} target="_blank" rel="noopener noreferrer">
+                Payer avec PayPal
+              </a>
+            </p>
+          )}
           {instructions.transfer && (
             <>
               <CopyRow label="IBAN de l'événement" display={instructions.transfer.iban.replace(/(.{4})/g, "$1 ").trim()} value={instructions.transfer.iban} mono />

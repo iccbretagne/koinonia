@@ -12,7 +12,7 @@ import { defineModule } from "@/core/module-registry";
  *   - public sans compte : inscription, « Ma réservation » et billet, par jetons secrets dont
  *     seule l'empreinte est stockée
  *
- * Koinonia n'encaisse rien : les paiements se font hors de l'application (Wero, Revolut,
+ * Koinonia n'encaisse rien : les paiements se font hors de l'application (Wero, Revolut, PayPal,
  * virement sur le compte de l'événement, espèces, chèque) et sont déclarés puis confirmés.
  */
 export const ticketingModule = defineModule({

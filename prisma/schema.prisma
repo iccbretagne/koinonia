@@ -3381,6 +3381,7 @@ enum TicketingPaymentStatus {
 enum TicketingPaymentMethod {
   WERO
   REVOLUT
+  PAYPAL
   TRANSFER
   CASH
   CHEQUE
@@ -3424,7 +3425,7 @@ model TicketingEvent {
   /// Places ouvertes à l'inscription.
   seatsOpen                Int
   status                   TicketingEventStatus @default(DRAFT)
-  /// Moyens de paiement et instructions : { wero?, revolut?, transfer?, onsite }.
+  /// Moyens de paiement et instructions : { wero?, revolut?, paypal?, transfer?, onsite }.
   paymentMethods           Json
   optionPaymentDeadline    DateTime?
   reminderDaysBefore       Int                  @default(3)

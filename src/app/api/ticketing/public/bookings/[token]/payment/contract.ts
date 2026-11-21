@@ -7,7 +7,7 @@ export const contract = defineContract({
   POST: {
     summary: "« J'ai payé »",
     description:
-      "Les éléments à régler passent à déclaré avec le moyen indiqué (Wero, Revolut, virement) ; le trésorier est prévenu. 409 s'il n'y a rien à régler.",
+      "Les éléments à régler passent à déclaré avec le moyen indiqué (Wero, Revolut, PayPal, virement) ; le trésorier est prévenu. 409 s'il n'y a rien à régler.",
     access: "token",
     body: declarePaymentSchema,
     status: 201,

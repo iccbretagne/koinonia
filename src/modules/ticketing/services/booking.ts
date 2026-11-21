@@ -372,7 +372,7 @@ export async function getBookingView(bookingId: string) {
       createdAt: p.createdAt.toISOString(),
     })),
     instructions: paymentInstructions(booking.reference, config),
-    remoteMethods: (["WERO", "REVOLUT", "TRANSFER"] as const).filter((m) => !!{ WERO: config.wero, REVOLUT: config.revolut, TRANSFER: config.transfer }[m]),
+    remoteMethods: (["WERO", "REVOLUT", "PAYPAL", "TRANSFER"] as const).filter((m) => !!{ WERO: config.wero, REVOLUT: config.revolut, PAYPAL: config.paypal, TRANSFER: config.transfer }[m]),
     can: {
       editOptions: active && event.status !== "ARCHIVED" && !optionDeadlinePassed && now < event.startsAt,
       addParticipant: active && closedReason(event, seatsLeft, now) === null,

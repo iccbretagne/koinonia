@@ -54,16 +54,17 @@ export const OPTION_SCOPE_LABEL: Record<TicketingOptionScope, string> = {
   BOOKING: "Par réservation",
 };
 
-export const PAYMENT_METHODS = ["WERO", "REVOLUT", "TRANSFER", "CASH", "CHEQUE"] as const satisfies readonly TicketingPaymentMethod[];
+export const PAYMENT_METHODS = ["WERO", "REVOLUT", "PAYPAL", "TRANSFER", "CASH", "CHEQUE"] as const satisfies readonly TicketingPaymentMethod[];
 export const PAYMENT_METHOD_LABEL: Record<TicketingPaymentMethod, string> = {
   WERO: "Wero",
   REVOLUT: "Revolut",
+  PAYPAL: "PayPal",
   TRANSFER: "Virement",
   CASH: "Espèces",
   CHEQUE: "Chèque",
 };
 /** Moyens réglés à distance (déclarés par « J'ai payé »). */
-export const REMOTE_METHODS = ["WERO", "REVOLUT", "TRANSFER"] as const;
+export const REMOTE_METHODS = ["WERO", "REVOLUT", "PAYPAL", "TRANSFER"] as const;
 /** Moyens encaissés en direct (accueil, restauration, trésorier). */
 export const DIRECT_METHODS = ["CASH", "CHEQUE"] as const;
 
@@ -102,6 +103,7 @@ export const paymentMethodsSchema = z
   .object({
     wero: z.object({ target: text(120) }).nullish(),
     revolut: z.object({ link: httpsUrl }).nullish(),
+    paypal: z.object({ link: httpsUrl }).nullish(),
     transfer: z
       .object({
         iban: z
@@ -133,6 +135,7 @@ export function enabledMethods(config: PaymentMethodsConfig): TicketingPaymentMe
   const out: TicketingPaymentMethod[] = [];
   if (config.wero) out.push("WERO");
   if (config.revolut) out.push("REVOLUT");
+  if (config.paypal) out.push("PAYPAL");
   if (config.transfer) out.push("TRANSFER");
   if (config.cash) out.push("CASH");
   if (config.cheque) out.push("CHEQUE");
@@ -445,6 +448,7 @@ export interface PaymentInstructions {
   reference: string;
   wero: string | null;
   revolut: string | null;
+  paypal: string | null;
   transfer: { iban: string; holder: string } | null;
   cash: boolean;
   cheque: boolean;
@@ -455,6 +459,7 @@ export function paymentInstructions(reference: string, config: PaymentMethodsCon
     reference,
     wero: config.wero?.target ?? null,
     revolut: config.revolut?.link ?? null,
+    paypal: config.paypal?.link ?? null,
     transfer: config.transfer ? { iban: config.transfer.iban, holder: config.transfer.holder } : null,
     cash: config.cash,
     cheque: config.cheque,

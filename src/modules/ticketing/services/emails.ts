@@ -80,6 +80,7 @@ function instructionsBlock(due: number, i: PaymentInstructions | null): string {
   const lines: string[] = [];
   if (i.wero) lines.push(`<li><strong>Wero</strong> : ${esc(i.wero)}</li>`);
   if (i.revolut) lines.push(`<li><strong>Revolut</strong> : <a href="${esc(i.revolut)}">${esc(i.revolut)}</a></li>`);
+  if (i.paypal) lines.push(`<li><strong>PayPal</strong> : <a href="${esc(i.paypal)}">${esc(i.paypal)}</a></li>`);
   if (i.transfer) lines.push(`<li><strong>Virement</strong> : ${esc(i.transfer.iban)} (${esc(i.transfer.holder)})</li>`);
   if (i.cash || i.cheque) lines.push(`<li>${[i.cash ? "Espèces" : "", i.cheque ? "chèque" : ""].filter(Boolean).join(" ou ")} sur place</li>`);
   return `<div style="background: #f5f3ff; padding: 12px 16px; border-radius: 6px; margin: 16px 0;">
