@@ -56,6 +56,7 @@ const ACTION_LABELS: Record<string, string> = {
   edit_ticketing_site_theme: "modifier le thème du site d'un événement de billetterie",
   edit_ticketing_site_page: "gérer les pages du site d'un événement de billetterie",
   edit_ticketing_site_block: "modifier les bandes et blocs du site d'un événement de billetterie",
+  edit_ticketing_site_batch: "modifier d'un coup plusieurs éléments du site d'un événement de billetterie (lot atomique)",
   publish_ticketing_site: "publier ou dépublier le site d'un événement de billetterie",
   request_ticketing_site_domain: "demander, vérifier ou supprimer le domaine dédié du site d'un événement de billetterie",
 };
