@@ -1,9 +1,10 @@
 import type { CSSProperties, ReactNode } from "react";
 import { UserRound } from "lucide-react";
-import { dateAndPlace } from "@/components/ticketing/format";
-import { AGE_GROUP_LABEL, formatEuros } from "@/modules/ticketing/schemas";
+import { dateAndPlace, formatDateTime } from "@/components/ticketing/format";
+import { AGE_GROUP_LABEL, PAYMENT_METHOD_LABEL, formatEuros } from "@/modules/ticketing/schemas";
 import type { PublicEvent, SiteBlock, SiteDocument, SiteSection } from "@/modules/ticketing/schemas";
 import Countdown from "./Countdown";
+import SiteIcon from "./SiteIcon";
 import RichText from "./RichText";
 import { fontClasses } from "./fonts";
 import { backdropLayers, colorVar, themeStyle } from "./theme";
@@ -107,7 +108,6 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
           <ul className="flex flex-wrap gap-4">
             {block.swatches.map((swatch, i) => (
               <li key={i} className="text-center text-sm">
-                { }
                 <span className="mx-auto mb-1 block size-14 rounded-full border border-current" style={{ backgroundColor: swatch.color }} />
                 {swatch.label}
               </li>
@@ -122,7 +122,10 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
             <div key={i} className="space-y-2 rounded-lg border border-current p-4">
               {/* eslint-disable-next-line @next/next/no-img-element -- image du site servie par l'API */}
               {card.image && <img src={ctx.assetUrl(card.image.assetId)} alt={card.image.alt} loading="lazy" className="w-full rounded" />}
-              <Heading as="h3">{card.title}</Heading>
+              <div className="flex items-center gap-2">
+                {card.icon && <SiteIcon name={card.icon} className="size-6 shrink-0" />}
+                <Heading as="h3">{card.title}</Heading>
+              </div>
               <Items items={card.items} />
             </div>
           ))}
@@ -131,15 +134,19 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
     case "doDont":
       return (
         <div className="grid gap-4 sm:grid-cols-2">
-          <div><Heading as="h3">{block.doTitle}</Heading><Items items={block.doItems} /></div>
-          <div><Heading as="h3">{block.dontTitle}</Heading><Items items={block.dontItems} /></div>
+          <div className="space-y-2"><div className="flex items-center gap-2"><SiteIcon name="check" /><Heading as="h3">{block.doTitle}</Heading></div><Items items={block.doItems} /></div>
+          <div className="space-y-2"><div className="flex items-center gap-2"><SiteIcon name="x" /><Heading as="h3">{block.dontTitle}</Heading></div><Items items={block.dontItems} /></div>
         </div>
       );
     case "icons":
       return (
         <div className="space-y-3">
           {block.title && <Heading>{block.title}</Heading>}
-          <Items items={block.items.map((i) => i.label)} />
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {block.items.map((item, i) => (
+              <li key={i} className="flex items-center gap-3"><SiteIcon name={item.icon} className="size-6 shrink-0" />{item.label}</li>
+            ))}
+          </ul>
         </div>
       );
     case "faq":
@@ -219,16 +226,28 @@ function TicketsPage({ ctx }: { readonly ctx: Ctx }) {
   );
 }
 
+/** Pages automatiques : uniquement `PublicEvent` (données publiques), jamais d'inscrit, d'email ni de téléphone. */
 function MenusPage({ ctx }: { readonly ctx: Ctx }) {
-  const options = (ctx.event?.options ?? []).filter((o) => o.variants.length > 0);
+  const options = ctx.event?.options ?? [];
   return (
     <Plain>
       <Heading>Menus</Heading>
       {options.length === 0 && <p>Le menu sera communiqué prochainement.</p>}
       {options.map((o) => (
-        <div key={o.id} className="space-y-1">
-          <Heading as="h3">{o.label}</Heading>
-          <Items items={o.variants.map((v) => v.label)} />
+        <div key={o.id} className="space-y-2">
+          <Heading as="h3">{o.label}{o.price > 0 ? ` · ${formatEuros(o.price)}` : ""}</Heading>
+          {o.description && <p className="whitespace-pre-line">{o.description}</p>}
+          {o.variants.length > 0 && (
+            <ul className="space-y-2">
+              {o.variants.map((v) => (
+                <li key={v.id} className="rounded-lg border border-current p-3">
+                  <p className="font-semibold">{v.label}{v.remaining === 0 && " · épuisé"}</p>
+                  {v.description && <p>{v.description}</p>}
+                  {v.allergens && <p className="text-sm">Allergènes : {v.allergens}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       ))}
     </Plain>
@@ -237,11 +256,24 @@ function MenusPage({ ctx }: { readonly ctx: Ctx }) {
 
 function PracticalPage({ ctx }: { readonly ctx: Ctx }) {
   const event = ctx.event;
+  if (!event) return null;
+  const refundable = event.options.filter((o) => o.refundable);
   return (
     <Plain>
       <Heading>Infos pratiques</Heading>
-      {event && <p className="font-semibold">{dateAndPlace(event.startsAt, event.location)}</p>}
-      {event?.description && <p className="whitespace-pre-line">{event.description}</p>}
+      <dl className="space-y-3">
+        <div><dt className="font-semibold">Quand</dt><dd>{formatDateTime(event.startsAt)} → {formatDateTime(event.endsAt)}</dd></div>
+        {event.location && <div><dt className="font-semibold">Où</dt><dd>{event.location}</dd></div>}
+        {event.registrationDeadline && <div><dt className="font-semibold">Inscriptions jusqu&apos;au</dt><dd>{formatDateTime(event.registrationDeadline)}</dd></div>}
+        <div><dt className="font-semibold">Mineurs</dt><dd>{event.allowUnaccompaniedMinors ? "Les mineurs non accompagnés sont acceptés." : "Les mineurs doivent être accompagnés d'un adulte inscrit."}</dd></div>
+        {event.methods.length > 0 && <div><dt className="font-semibold">Paiement</dt><dd>{event.methods.map((m) => PAYMENT_METHOD_LABEL[m]).join(", ")}</dd></div>}
+        {event.optionPaymentDeadline && <div><dt className="font-semibold">Options à régler avant le</dt><dd>{formatDateTime(event.optionPaymentDeadline)}</dd></div>}
+        <div>
+          <dt className="font-semibold">Annulation</dt>
+          <dd>{refundable.length > 0 ? `Remboursable : ${refundable.map((o) => o.label + (o.refundDeadline ? ` (jusqu'au ${formatDateTime(o.refundDeadline)})` : "")).join(", ")}.` : "Voir les conditions au moment de l'inscription."}</dd>
+        </div>
+      </dl>
+      {event.description && <p className="whitespace-pre-line">{event.description}</p>}
     </Plain>
   );
 }

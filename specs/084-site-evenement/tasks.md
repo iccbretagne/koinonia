@@ -61,22 +61,22 @@
       voit que Aperçu (sans chiffres) et Site.
 - [x] **T15** — ADR-0031 « Sites d'événement : routage par hôte et domaines dédiés ».
       *(fichier : `docs/adr/0031-…md`, index `docs/adr/README.md`)*
-- [ ] **T16** — Tests du lot 1b : assets (faux type refusé, métadonnées absentes), proxy (hôte de
+- [x] **T16** — Tests du lot 1b : assets (faux type refusé, métadonnées absentes), proxy (hôte de
       site ⇒ `/admin`, `/api/users`, `/api/auth/*` en 404 ; pages autorisées réécrites ; CSP ;
       hôte inconnu ⇒ 404), **cookie de session sans attribut `Domain`**, visibilité
       (brouillon/publié), Communication refusé hors `site`.
 
 ## Lot 2 — Pages, blocs, pages automatiques (sous-PR 3)
 
-- [ ] **T17** — Rendu des 11 blocs (texte riche, image, galerie lazy, palette, cartes,
+- [x] **T17** — Rendu des 11 blocs (texte riche, image, galerie lazy, palette, cartes,
       à faire/à éviter, pictos, FAQ, bouton, bannière, séparateur) et des fonds de section.
-- [ ] **T18** — Pages automatiques Billetterie, Menus, Infos pratiques (depuis `getPublicEvent`,
+- [x] **T18** — Pages automatiques Billetterie, Menus, Infos pratiques (depuis `getPublicEvent`,
       aucune donnée personnelle) ; navigation et icône « Retrouver ma réservation ».
-- [ ] **T19** — Éditeur des pages, sections et blocs (ajout, ordre, suppression, formulaire par
+- [x] **T19** — Éditeur des pages, sections et blocs (ajout, ordre, suppression, formulaire par
       type), bornes affichées.
-- [ ] **T20** — « Événement terminé » après clôture, `afterCloseDays` (30 par défaut, réglable),
+- [x] **T20** — « Événement terminé » après clôture, `afterCloseDays` (30 par défaut, réglable),
       puis 404.
-- [ ] **T21** — Tests du lot 2 : chaque bloc rendu sans HTML brut ; pages automatiques à jour
+- [x] **T21** — Tests du lot 2 : chaque bloc rendu sans HTML brut ; pages automatiques à jour
       après changement de tarif/plat/lieu et sans email/téléphone/nom d'inscrit ; « terminé »
       puis 404 ; reconstitution de la page « Dress code » de la maquette (test de document).
 

@@ -32411,6 +32411,68 @@
             "description": "Accès refusé"
           }
         }
+      },
+      "patch": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Durée d'affichage après la clôture",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nNombre de jours (1 à 365) pendant lesquels le site affiche « Événement terminé » après la clôture de l'événement, puis répond 404. 30 par défaut.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "afterCloseDays": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                },
+                "required": [
+                  "afterCloseDays"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Site mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
       }
     },
     "/api/ticketing/events/{id}/site/assets": {

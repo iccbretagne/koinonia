@@ -96,6 +96,14 @@ export async function saveDraft(eventId: string, userId: string, input: unknown)
   return getSite(eventId);
 }
 
+/** Durée d'affichage de « Événement terminé » après la clôture, en jours. */
+export async function setAfterCloseDays(eventId: string, userId: string, days: number): Promise<SiteView> {
+  const site = await getSite(eventId);
+  const row = await (await db()).ticketingSite.update({ where: { id: site.id }, data: { afterCloseDays: days } });
+  await audit(userId, row.churchId, "UPDATE", site.id, { afterCloseDays: days });
+  return getSite(eventId);
+}
+
 export async function publish(eventId: string, userId: string): Promise<SiteView> {
   const prisma = await db();
   const site = await prisma.ticketingSite.findUniqueOrThrow({ where: { eventId } });
