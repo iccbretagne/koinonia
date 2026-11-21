@@ -98,13 +98,13 @@ model TicketingSiteDomain {
   @@map("ticketing_site_domains")
 }
 
-model Church {
-  // …
-  ticketingSitesEnabled Boolean @default(false)   // activation par l'Admin d'église
+model TicketingSiteSettings {             // activation par l'Admin d'église (comme McpChurchSettings)
+  churchId String  @id
+  enabled  Boolean @default(false)
 }
 ```
 
-Migration : `npm run db:migrate` (`add_ticketing_sites`). L'ajout d'une valeur d'enum MariaDB est
+Migration `add_ticketing_sites` (générée par `prisma migrate diff`, rejouée par le job `migrations` de la CI). L'ajout d'une valeur d'enum MariaDB est
 un `ALTER … MODIFY ENUM(…)` sans perte.
 
 ## Document du site (schémas purs, `@/modules/ticketing/schemas`)
@@ -194,7 +194,7 @@ Traefik lit sa configuration dynamique par **fournisseur HTTP** : Koinonia expos
 | `/api/ticketing/events/[id]/site/domain/verify` | POST | rôle `configure` | — | état |
 | `/api/ticketing/site-domains` | GET | Super Admin | — | domaines en attente |
 | `/api/ticketing/site-domains/[domainId]` | PATCH | Super Admin | `{ decision, reason? }` | état |
-| `/api/churches/[churchId]/ticketing-sites` | PUT | `church:settings` | `{ enabled }` | état |
+| `/api/ticketing/church/[churchId]/sites` | GET / PUT | `church:settings` | `{ enabled }` | état |
 | `/api/internal/traefik` | GET | localhost + jeton | — | configuration dynamique Traefik |
 | `/site-assets/[assetId]` | GET | public (asset publié) | — | image |
 

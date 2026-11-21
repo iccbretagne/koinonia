@@ -28710,6 +28710,107 @@
         }
       }
     },
+    "/api/ticketing/church/{churchId}/sites": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Billetterie : sites d'événement activés dans l'église",
+        "description": "**Accès** : permission `church:settings`.\n\nInterrupteur des sites d'événement de l'église (spec 084), coupé par défaut.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "church:settings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ enabled }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Billetterie : activer ou couper les sites d'événement de l'église",
+        "description": "**Accès** : permission `church:settings`.\n\nCoupé, aucun site d'événement de l'église n'est servi ; la page d'inscription standard reste disponible. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "church:settings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "enabled"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ enabled }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
     "/api/ticketing/events": {
       "get": {
         "tags": [
@@ -30972,7 +31073,8 @@
                             "TREASURER",
                             "RECEPTION",
                             "CATERING",
-                            "OBSERVER"
+                            "OBSERVER",
+                            "COMMUNICATION"
                           ]
                         }
                       },

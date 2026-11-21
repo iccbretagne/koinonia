@@ -1,7 +1,7 @@
 # Tâches — Site d'événement de billetterie
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md`
-- **Statut** : À faire
+- **Statut** : En cours
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
@@ -11,30 +11,30 @@
 ## Prérequis
 
 - [x] Branche créée : `feat/site-evenement`
-- [ ] Rebase sur `main` après v1.38.0 (la spec 083 touche `ticketing`)
+- [x] À jour avec `main` après v1.38.0 (merge de `main`)
 - [ ] DNS : `*.evenements.iccrennes.fr` → serveur Koinonia ; certificat joker (défi DNS) — action
       d'exploitation, hors code
 
 ## Lot 1a — Données, rôle, schémas (sous-PR 1)
 
-- [ ] **T1** — Migration `add_ticketing_sites` : `TicketingSite`, `TicketingSiteAsset`,
+- [x] **T1** — Migration `add_ticketing_sites` : `TicketingSite`, `TicketingSiteAsset`,
       `TicketingSiteDomain` (+ enum de statut), `TicketingRole.COMMUNICATION`,
-      `Church.ticketingSitesEnabled`. *(fichiers : `prisma/schema.prisma`, `prisma/migrations/…`)*
-- [ ] **T2** — Rôle `COMMUNICATION` : libellé, `EVENT_ACTIONS.site = ["ORGANIZER", "COMMUNICATION"]`,
+      `TicketingSiteSettings` (une ligne par église, comme `McpChurchSettings`). *(fichiers : `prisma/schema.prisma`, `prisma/migrations/…`)*
+- [x] **T2** — Rôle `COMMUNICATION` : libellé, `EVENT_ACTIONS.site = ["ORGANIZER", "COMMUNICATION"]`,
       absent de `read`/`payments`/`configure`/`reception`/`catering`/`menu` ; attribuable dans
       l'onglet Équipe et par `set_ticketing_roles` (spec 083).
       *(fichiers : `src/modules/ticketing/auth.ts`, `schemas.ts`, onglet Équipe)*
-- [ ] **T3** [P] — Schémas purs du document : thème, `Background`, pages, sections, 11 blocs,
+- [x] **T3** [P] — Schémas purs du document : thème, `Background`, pages, sections, 11 blocs,
       liens autorisés, bornes. *(fichier : `src/modules/ticketing/site-schemas.ts`, exporté par
       `schemas.ts`)*
-- [ ] **T4** [P] — Texte riche : analyseur de Markdown restreint → arbre (h2/h3, paragraphes,
+- [x] **T4** [P] — Texte riche : analyseur de Markdown restreint → arbre (h2/h3, paragraphes,
       listes, gras, italique, liens `https:`/`mailto:`/`page:`). *(fichier :
       `src/modules/ticketing/rich-text.ts`)*
-- [ ] **T5** [P] — Contraste WCAG 2.1 : luminance, ratio, pire cas (dégradé, voile sur
+- [x] **T5** [P] — Contraste WCAG 2.1 : luminance, ratio, pire cas (dégradé, voile sur
       noir/blanc), message et piste. *(fichier : `src/modules/ticketing/contrast.ts`)*
-- [ ] **T6** — Activation par l'église : service + `PUT /api/churches/[churchId]/ticketing-sites`
+- [x] **T6** — Activation par l'église : service + `GET/PUT /api/ticketing/church/[churchId]/sites`
       (`church:settings`) + carte dans les paramètres de l'église. *(contrat, manifeste)*
-- [ ] **T7** — Tests du lot 1a : schémas (liens `javascript:`/`data:`/`http:` refusés, couleur
+- [x] **T7** — Tests du lot 1a : schémas (liens `javascript:`/`data:`/`http:` refusés, couleur
       hors palette refusée, bornes), analyseur (HTML saisi rendu comme texte), contraste (valeurs
       de référence, pire cas), matrice `EVENT_ACTIONS` avec `COMMUNICATION`.
 
