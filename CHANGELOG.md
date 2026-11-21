@@ -6,6 +6,10 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+
+- Assistants IA connectés (spec 083) : **conduire un événement de billetterie**. Selon votre rôle sur l'événement, l'assistant peut créer l'événement, régler ses tarifs, ses places, ses moyens de paiement (l'IBAN se saisit mais n'est jamais relu), ses options et ses plats, composer l'équipe (rôles, postes, affectations), l'ouvrir ou le clôturer, confirmer ou refuser une série de « J'ai payé », enregistrer un encaissement ou un remboursement, annuler une réservation, ajouter des personnes sur place et gérer la remise et la vente à la restauration. Toujours après un aperçu et votre confirmation, sans jamais afficher email ni téléphone des participants, et journalisé « via l'assistant IA ».
+
 ## [v1.37.0] - 2026-11-15
 
 ### Ajouté

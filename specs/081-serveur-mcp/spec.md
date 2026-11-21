@@ -178,7 +178,7 @@ Cas limites propres à ce lot :
 - L'accès sans compte Koinonia, ou par une clé partagée entre plusieurs personnes.
 - La lecture de fichiers (photos, visuels, audio) : seules les informations sont lues.
 - Toute autre action que les trois du second lot et les neuf du troisième (pas de remplacement
-  automatique d'un STAR désisté, pas de suppression d'événement, pas d'action financière).
+  automatique d'un STAR désisté, pas de suppression d'événement, pas d'action financière — sauf la billetterie, voir la spec 083).
 - Toute modification de l'assistant intégré (spec 075).
 - Les intégrations automatiques sans personne derrière (robots, synchronisations).
 

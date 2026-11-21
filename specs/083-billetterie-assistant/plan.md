@@ -1,7 +1,7 @@
 # Plan technique — Billetterie dans les assistants IA connectés
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-11-21
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
@@ -78,7 +78,7 @@ audience `predicates: ["ticketing"]` (déjà calculé par `_viewer.ts`) :
 | `handle_ticketing_payments` (confirmer ou rejeter, 1 à 50) | `payments` | `confirmPayment`/`rejectPayment` |
 | `record_ticketing_receipt` (espèces, chèque) | `payments` | `recordReceipt` |
 | `mark_ticketing_refunded` | `payments` | `markRefunded` |
-| `cancel_ticketing_booking` | `configure` | `cancelByOrganizer` |
+| `cancel_ticketing_booking` | `payments` (comme la route de l'écran) | `cancelByOrganizer` |
 | `add_ticketing_walkin` | `reception` | `createWalkIn` (refusé si `allowWalkIns` faux, comme à l'écran) |
 | `ticketing_catering_sale` (remise d'un article, vente sur place) | `catering` | `deliverItem`/`recordOnsiteSale` |
 

@@ -1,7 +1,7 @@
 # Spec — Billetterie dans les assistants IA connectés
 
 - **Numéro** : 083
-- **Statut** : En revue
+- **Statut** : Implémentée
 - **Créée le** : 2026-11-21
 - **Branche suggérée** : `feat/billetterie-assistant`
 
@@ -39,7 +39,7 @@ rôle qui lui est attribué :
 | Rôle d'événement | Ce que son assistant peut faire |
 |---|---|
 | **Organisateur** | tout : paramétrage, options et plats, équipe, ouverture et clôture, réservations, paiements, restauration, lectures |
-| **Trésorier** | paiements (confirmer, rejeter, encaisser, rembourser), lectures |
+| **Trésorier** | paiements (confirmer, rejeter, encaisser, rembourser), annulation d'une réservation, lectures |
 | **Accueil / sécurité** | ajout sur place (si l'événement l'autorise), lecture du compteur et de la recherche par nom, sans coordonnées |
 | **Restauration** | menu (plats, stock), remise d'un article, vente sur place, lecture du tableau de restauration |
 | **Observateur** | lectures uniquement |
@@ -111,7 +111,7 @@ entre l'aperçu et la confirmation, **rien n'est fait** et l'assistant refait l'
 
 ### Lot 4 — Réservations et restauration
 
-- **Annuler une réservation au nom de l'organisation** (organisateur), avec les remboursements
+- **Annuler une réservation au nom de l'organisation** (organisateur, trésorier — comme à l'écran), avec les remboursements
   qui en découlent, comme à l'écran.
 - **Ajouter une inscription sur place** (organisateur, accueil), si l'événement l'autorise.
 - **Remettre un article** « à retirer sur place » et **enregistrer une vente sur place**
