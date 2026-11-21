@@ -5,6 +5,10 @@ import {
   backgroundSchema,
   blockSchema,
   contrastIssues,
+  describeSite,
+  describeSiteText,
+  explainIssues,
+  SITE_SUBJECTS,
   pageSchema,
   parseRichText,
   richTextToMarkdown,
@@ -44,6 +48,13 @@ function siteUrl(slug: string, dedicated: string | null): string {
   return base ? `https://${slug}.${base}` : "(adresse des sites non configurée)";
 }
 
+/** Contenu complet d'un bloc pour l'assistant : JSON compact, ou Markdown pour un texte riche. */
+function blockText(b: { kind: string; block: number; markdown?: string } & Record<string, unknown>): string {
+  const { block: _rank, markdown, ...rest } = b;
+  if (b.kind === "richText") return `richText\n${(markdown ?? "").split("\n").map((l) => `      ${l}`).join("\n")}`;
+  return JSON.stringify(rest);
+}
+
 async function readSite(input: z.infer<typeof eventInput>, ctx: ActionContext): Promise<ActionResult> {
   const found = await eventFor(ctx, input.event, "site");
   if (typeof found === "string") return refusal(found);
@@ -66,7 +77,13 @@ async function readSite(input: z.infer<typeof eventInput>, ctx: ActionContext): 
   const lines = [
     `Site de « ${found.title} » — ${site.published ? "publié" : "non publié"} (adresse ${siteUrl(site.slug, null)})`,
     `Thème : couleurs ${Object.entries(site.draft.theme.colors).map(([k, v]) => `${k} ${v}`).join(", ")} ; polices ${site.draft.theme.fonts.heading} / ${site.draft.theme.fonts.body}`,
-    ...pages.map((p) => `Page « ${p.title} » [${p.slug}] (${p.kind}${p.inMenu ? "" : ", hors menu"}) : ${p.sections.map((s) => `bande ${s.band} (${s.blocks.map((b) => b.kind).join(", ") || "vide"})`).join(" ; ") || "—"}`),
+    ...pages.flatMap((p) => [
+      `Page « ${p.title} » [${p.slug}] (${p.kind}${p.inMenu ? "" : ", hors menu"}) : ${p.sections.map((s) => `bande ${s.band} (${s.blocks.map((b) => b.kind).join(", ") || "vide"})`).join(" ; ") || "—"}`,
+      ...p.sections.flatMap((s) => [
+        `  Bande ${s.band} : fond ${JSON.stringify(s.background)}, texte ${s.textColor}`,
+        ...s.blocks.map((b) => `    Bloc ${b.block} : ${blockText(b)}`),
+      ]),
+    ]),
     site.issues.length ? `Lisibilité à corriger : ${site.issues.join(" ")}` : "Lisibilité : rien à corriger.",
     ...(domain ? [`Domaine dédié : ${domain.host} (${domain.status})`] : []),
   ];
@@ -87,7 +104,26 @@ async function readSite(input: z.infer<typeof eventInput>, ctx: ActionContext): 
   };
 }
 
+const describeInput = z.object({ subject: z.string().trim().max(40).optional().describe("Un `kind` de bloc, ou theme, band, page, background ; tous par défaut") });
+
+async function describeBlocks(input: z.infer<typeof describeInput>): Promise<ActionResult> {
+  const all = describeSite();
+  const picked = input.subject ? all.filter((d) => d.subject === input.subject) : all;
+  if (!picked.length) return refusal(`« ${input.subject} » inconnu : kind de bloc ${all.filter((d) => d.kind === "block").map((d) => d.subject).join(", ")} ; structures ${SITE_SUBJECTS.join(", ")}.`);
+  return { text: describeSiteText(picked), structured: { subjects: picked } };
+}
+
 export const SITE_READS: McpActionDef[] = [
+  {
+    name: "describe_site_blocks",
+    action: "describe_site_blocks",
+    kind: "read",
+    description:
+      "Description des éléments du site d'événement, générée depuis les schémas de validation : pour chaque kind de bloc (hero, richText, image, gallery, palette, cards, doDont, icons, faq, button, banner, separator) et pour theme, band, page, background : champs, types, obligatoire ou non, bornes, valeurs permises (icônes, polices, clés de palette, directions de dégradé…). À lire avant de composer un `blockData`.",
+    input: describeInput,
+    available: readAvailable,
+    run: describeBlocks as McpActionDef["run"],
+  },
   {
     name: "ticketing_site",
     action: "ticketing_site",
@@ -115,7 +151,7 @@ function moveItem<T>(list: T[], index: number, dir: Direction): string | null {
 /** Document complet validé comme à l'écran : schéma (liens, pages), puis lisibilité. */
 export function validateDocument(input: unknown): SiteDocument | string {
   const parsed = siteDocumentSchema.safeParse(input);
-  if (!parsed.success) return parsed.error.issues.map((i) => `${i.path.join(".") || "document"} : ${i.message}`).join(" ; ");
+  if (!parsed.success) return explainIssues(parsed.error.issues, siteDocumentSchema, input);
   const issues = contrastIssues(parsed.data);
   return issues.length ? issues.map((i) => i.message).join(" ") : parsed.data;
 }
@@ -180,7 +216,9 @@ function applyPage(doc: SiteDocument, o: PageOp): SiteDocument | string {
   const { slug, page, direction: dir } = o;
   if (o.op === "create") {
     if (!page?.title || !page.slug) return "Pour créer une page, indiquez `page.title` et `page.slug`.";
-    next.pages.push(pageSchema.parse({ kind: "content", ...page }));
+    const created = pageSchema.safeParse({ kind: "content", ...page });
+    if (!created.success) return explainIssues(created.error.issues, pageSchema, page);
+    next.pages.push(created.data);
     return next;
   }
   const index = next.pages.findIndex((p) => p.slug === slug);
@@ -207,8 +245,9 @@ function applyBlock(doc: SiteDocument, edit: BlockOp): SiteDocument | string {
 
   if (edit.target === "band") {
     if (edit.op === "create") {
-      const band = sectionSchema.parse({ blocks: [], ...edit.bandFields });
-      page.sections.splice(Math.min(edit.position ?? page.sections.length, page.sections.length), 0, band);
+      const band = sectionSchema.safeParse({ blocks: [], ...edit.bandFields });
+      if (!band.success) return explainIssues(band.error.issues, sectionSchema, edit.bandFields ?? {});
+      page.sections.splice(Math.min(edit.position ?? page.sections.length, page.sections.length), 0, band.data);
       return next;
     }
     const band = edit.band === undefined ? undefined : page.sections[edit.band];
@@ -239,7 +278,7 @@ function applyBlock(doc: SiteDocument, edit: BlockOp): SiteDocument | string {
     }
     if (!data) return "Indiquez `blockData` (ou `markdown` pour un bloc de texte).";
     const parsed = blockSchema.safeParse(data);
-    if (!parsed.success) return parsed.error.issues.map((i) => `${i.path.join(".") || "bloc"} : ${i.message}`).join(" ; ");
+    if (!parsed.success) return explainIssues(parsed.error.issues, blockSchema, data, "bloc");
     if (edit.op === "create") band.blocks.splice(Math.min(edit.position ?? band.blocks.length, band.blocks.length), 0, parsed.data);
     else {
       if (edit.block === undefined || !band.blocks[edit.block]) return `Bloc ${edit.block ?? "?"} introuvable dans cette bande (rangs 0 à ${band.blocks.length - 1}).`;
@@ -363,7 +402,7 @@ const blockAction = eventAction({
   action: "edit_ticketing_site_block",
   role: "site",
   description: previewDesc(
-    "créer, modifier, déplacer ou supprimer une bande (target band : fond, couleur du texte) ou un bloc (target block) d'une page composée. blockData : un bloc complet (kind hero, richText, image, gallery, palette, cards, doDont, icons, faq, button, banner, separator) ; pour un texte, `markdown` (Markdown restreint : ## titre, ### sous-titre, listes, **gras**, *italique*, liens https/mailto/page:adresse, aucun HTML). Rangs à partir de 0, voir ticketing_site"
+    "créer, modifier, déplacer ou supprimer une bande (target band : fond, couleur du texte) ou un bloc (target block) d'une page composée. blockData : un bloc complet (kind hero, richText, image, gallery, palette, cards, doDont, icons, faq, button, banner, separator) ; pour un texte, `markdown` (Markdown restreint : ## titre, ### sous-titre, listes, **gras**, *italique*, liens https/mailto/page:adresse, aucun HTML). Rangs à partir de 0, voir ticketing_site. Champs et valeurs permises de chaque bloc : describe_site_blocks"
   ),
   confirmDescription: confirmDesc("enregistrer les bandes et blocs du brouillon du site"),
   input: z.object({ event: eventRef, ...blockShape }),
@@ -379,7 +418,7 @@ const batchAction = eventAction({
   action: "edit_ticketing_site_batch",
   role: "site",
   description: previewDesc(
-    "appliquer d'un coup 1 à 50 opérations au brouillon du site, dans l'ordre, en tout ou rien (validation finale unique : schéma et lisibilité). Chaque opération a un `type` : theme (clé theme), page (op, slug, page, direction) ou block (op, target, page, band, block, position, direction, bandFields, blockData, markdown), avec les mêmes champs que les outils unitaires"
+    "appliquer d'un coup 1 à 50 opérations au brouillon du site, dans l'ordre, en tout ou rien (validation finale unique : schéma et lisibilité). Chaque opération a un `type` : theme (clé theme), page (op, slug, page, direction) ou block (op, target, page, band, block, position, direction, bandFields, blockData, markdown), avec les mêmes champs que les outils unitaires (describe_site_blocks décrit les blocs)"
   ),
   confirmDescription: confirmDesc("enregistrer d'un coup les opérations du lot sur le brouillon du site"),
   input: z.object({ event: eventRef, operations: z.array(operationSchema).min(1).max(50).describe("Opérations appliquées dans l'ordre") }),

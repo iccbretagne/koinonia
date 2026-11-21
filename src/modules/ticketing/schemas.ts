@@ -12,6 +12,7 @@ import { ibanError, normalizeIban } from "@/lib/iban";
 
 export { blockingChecks, readinessChecks, type ReadinessCheck, type ReadinessEvent } from "./readiness";
 export * from "./site-schemas";
+export * from "./site-describe";
 export { RichTextError, parseInline, parseRichText, richTextToMarkdown } from "./rich-text";
 export { MIN_CONTRAST, contrastIssues, contrastRatio, hexToRgb, luminance, surfaceColors, worstContrast, type ContrastIssue } from "./contrast";
 

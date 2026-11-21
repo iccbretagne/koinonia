@@ -31233,23 +31233,28 @@
                         "properties": {
                           "primary": {
                             "type": "string",
-                            "pattern": "^#[0-9a-fA-F]{6}$"
+                            "pattern": "^#[0-9a-fA-F]{6}$",
+                            "description": "Couleur #RRGGBB"
                           },
                           "secondary": {
                             "type": "string",
-                            "pattern": "^#[0-9a-fA-F]{6}$"
+                            "pattern": "^#[0-9a-fA-F]{6}$",
+                            "description": "Couleur #RRGGBB"
                           },
                           "accent": {
                             "type": "string",
-                            "pattern": "^#[0-9a-fA-F]{6}$"
+                            "pattern": "^#[0-9a-fA-F]{6}$",
+                            "description": "Couleur #RRGGBB"
                           },
                           "background": {
                             "type": "string",
-                            "pattern": "^#[0-9a-fA-F]{6}$"
+                            "pattern": "^#[0-9a-fA-F]{6}$",
+                            "description": "Couleur #RRGGBB"
                           },
                           "text": {
                             "type": "string",
-                            "pattern": "^#[0-9a-fA-F]{6}$"
+                            "pattern": "^#[0-9a-fA-F]{6}$",
+                            "description": "Couleur #RRGGBB"
                           }
                         },
                         "required": [
@@ -31273,7 +31278,8 @@
                               "lora",
                               "inter",
                               "sourceSans"
-                            ]
+                            ],
+                            "description": "Police des titres"
                           },
                           "body": {
                             "type": "string",
@@ -31284,7 +31290,8 @@
                               "lora",
                               "inter",
                               "sourceSans"
-                            ]
+                            ],
+                            "description": "Police du texte"
                           }
                         },
                         "required": [
@@ -31295,11 +31302,13 @@
                       },
                       "logoAssetId": {
                         "type": "string",
-                        "pattern": "^[a-z0-9]{20,40}$"
+                        "pattern": "^[a-z0-9]{20,40}$",
+                        "description": "Logo (image du site)"
                       },
                       "headerAssetId": {
                         "type": "string",
-                        "pattern": "^[a-z0-9]{20,40}$"
+                        "pattern": "^[a-z0-9]{20,40}$",
+                        "description": "Image d'en-tête (image du site)"
                       },
                       "background": {
                         "oneOf": [
@@ -31335,7 +31344,8 @@
                                   "accent",
                                   "background",
                                   "text"
-                                ]
+                                ],
+                                "description": "Clé de la palette du thème (jamais une couleur libre)"
                               }
                             },
                             "required": [
@@ -31363,10 +31373,12 @@
                                     "accent",
                                     "background",
                                     "text"
-                                  ]
+                                  ],
+                                  "description": "Clé de la palette du thème (jamais une couleur libre)"
                                 },
                                 "minItems": 2,
-                                "maxItems": 3
+                                "maxItems": 3,
+                                "description": "2 ou 3 clés de palette, dans l'ordre du dégradé"
                               },
                               "direction": {
                                 "type": "string",
@@ -31375,7 +31387,8 @@
                                   "horizontal",
                                   "diagonal",
                                   "radial"
-                                ]
+                                ],
+                                "description": "Sens du dégradé"
                               }
                             },
                             "required": [
@@ -31396,7 +31409,8 @@
                               },
                               "assetId": {
                                 "type": "string",
-                                "pattern": "^[a-z0-9]{20,40}$"
+                                "pattern": "^[a-z0-9]{20,40}$",
+                                "description": "Identifiant d'une image déjà téléversée sur le site"
                               },
                               "veil": {
                                 "type": "string",
@@ -31406,16 +31420,19 @@
                                   "accent",
                                   "background",
                                   "text"
-                                ]
+                                ],
+                                "description": "Couleur du voile posé sur l'image (lisibilité du texte)"
                               },
                               "opacity": {
                                 "type": "number",
                                 "minimum": 0.2,
-                                "maximum": 0.9
+                                "maximum": 0.9,
+                                "description": "Opacité du voile, de 0.2 à 0.9"
                               },
                               "fixed": {
                                 "type": "boolean",
-                                "default": false
+                                "default": false,
+                                "description": "Image fixe au défilement (désactivé sur mobile)"
                               }
                             },
                             "required": [
@@ -31429,7 +31446,8 @@
                         ],
                         "default": {
                           "kind": "none"
-                        }
+                        },
+                        "description": "Fond de page"
                       }
                     },
                     "required": [
@@ -31446,16 +31464,19 @@
                         "title": {
                           "type": "string",
                           "minLength": 1,
-                          "maxLength": 60
+                          "maxLength": 60,
+                          "description": "Titre de la page"
                         },
                         "slug": {
                           "type": "string",
                           "maxLength": 40,
-                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                          "description": "Adresse de la page (minuscules, chiffres, tirets), unique"
                         },
                         "inMenu": {
                           "type": "boolean",
-                          "default": true
+                          "default": true,
+                          "description": "Page présente dans le menu"
                         },
                         "kind": {
                           "type": "string",
@@ -31464,7 +31485,8 @@
                             "tickets",
                             "menus",
                             "practical"
-                          ]
+                          ],
+                          "description": "content : page composée de bandes et blocs ; tickets, menus, practical : pages automatiques"
                         },
                         "sections": {
                           "type": "array",
@@ -31505,7 +31527,8 @@
                                           "accent",
                                           "background",
                                           "text"
-                                        ]
+                                        ],
+                                        "description": "Clé de la palette du thème (jamais une couleur libre)"
                                       }
                                     },
                                     "required": [
@@ -31533,10 +31556,12 @@
                                             "accent",
                                             "background",
                                             "text"
-                                          ]
+                                          ],
+                                          "description": "Clé de la palette du thème (jamais une couleur libre)"
                                         },
                                         "minItems": 2,
-                                        "maxItems": 3
+                                        "maxItems": 3,
+                                        "description": "2 ou 3 clés de palette, dans l'ordre du dégradé"
                                       },
                                       "direction": {
                                         "type": "string",
@@ -31545,7 +31570,8 @@
                                           "horizontal",
                                           "diagonal",
                                           "radial"
-                                        ]
+                                        ],
+                                        "description": "Sens du dégradé"
                                       }
                                     },
                                     "required": [
@@ -31566,7 +31592,8 @@
                                       },
                                       "assetId": {
                                         "type": "string",
-                                        "pattern": "^[a-z0-9]{20,40}$"
+                                        "pattern": "^[a-z0-9]{20,40}$",
+                                        "description": "Identifiant d'une image déjà téléversée sur le site"
                                       },
                                       "veil": {
                                         "type": "string",
@@ -31576,16 +31603,19 @@
                                           "accent",
                                           "background",
                                           "text"
-                                        ]
+                                        ],
+                                        "description": "Couleur du voile posé sur l'image (lisibilité du texte)"
                                       },
                                       "opacity": {
                                         "type": "number",
                                         "minimum": 0.2,
-                                        "maximum": 0.9
+                                        "maximum": 0.9,
+                                        "description": "Opacité du voile, de 0.2 à 0.9"
                                       },
                                       "fixed": {
                                         "type": "boolean",
-                                        "default": false
+                                        "default": false,
+                                        "description": "Image fixe au défilement (désactivé sur mobile)"
                                       }
                                     },
                                     "required": [
@@ -31599,7 +31629,8 @@
                                 ],
                                 "default": {
                                   "kind": "none"
-                                }
+                                },
+                                "description": "Fond de la bande"
                               },
                               "textColor": {
                                 "type": "string",
@@ -31610,7 +31641,8 @@
                                   "background",
                                   "text"
                                 ],
-                                "default": "text"
+                                "default": "text",
+                                "description": "Couleur du texte posé sur ce fond (contrôle de lisibilité)"
                               },
                               "blocks": {
                                 "type": "array",
@@ -31628,23 +31660,28 @@
                                         "title": {
                                           "type": "string",
                                           "minLength": 1,
-                                          "maxLength": 120
+                                          "maxLength": 120,
+                                          "description": "Titre du bandeau"
                                         },
                                         "tagline": {
                                           "type": "string",
-                                          "maxLength": 240
+                                          "maxLength": 240,
+                                          "description": "Phrase d'accroche sous le titre"
                                         },
                                         "showDateLocation": {
                                           "type": "boolean",
-                                          "default": true
+                                          "default": true,
+                                          "description": "Afficher la date et le lieu (vrai par défaut)"
                                         },
                                         "showCountdown": {
                                           "type": "boolean",
-                                          "default": false
+                                          "default": false,
+                                          "description": "Afficher un compte à rebours"
                                         },
                                         "buttonLabel": {
                                           "type": "string",
-                                          "maxLength": 40
+                                          "maxLength": 40,
+                                          "description": "Libellé du bouton d'inscription"
                                         }
                                       },
                                       "required": [
@@ -31762,7 +31799,8 @@
                                               }
                                             ]
                                           },
-                                          "maxItems": 60
+                                          "maxItems": 60,
+                                          "description": "Arbre de texte (outil MCP : fournir `markdown`)"
                                         }
                                       },
                                       "required": [
@@ -31785,16 +31823,19 @@
                                           "properties": {
                                             "assetId": {
                                               "type": "string",
-                                              "pattern": "^[a-z0-9]{20,40}$"
+                                              "pattern": "^[a-z0-9]{20,40}$",
+                                              "description": "Identifiant d'une image déjà téléversée sur le site"
                                             },
                                             "alt": {
                                               "type": "string",
                                               "minLength": 1,
-                                              "maxLength": 200
+                                              "maxLength": 200,
+                                              "description": "Texte alternatif (accessibilité), obligatoire"
                                             },
                                             "caption": {
                                               "type": "string",
-                                              "maxLength": 200
+                                              "maxLength": 200,
+                                              "description": "Légende sous l'image"
                                             }
                                           },
                                           "required": [
@@ -31821,7 +31862,8 @@
                                         },
                                         "title": {
                                           "type": "string",
-                                          "maxLength": 120
+                                          "maxLength": 120,
+                                          "description": "Titre de la galerie"
                                         },
                                         "images": {
                                           "type": "array",
@@ -31830,16 +31872,19 @@
                                             "properties": {
                                               "assetId": {
                                                 "type": "string",
-                                                "pattern": "^[a-z0-9]{20,40}$"
+                                                "pattern": "^[a-z0-9]{20,40}$",
+                                                "description": "Identifiant d'une image déjà téléversée sur le site"
                                               },
                                               "alt": {
                                                 "type": "string",
                                                 "minLength": 1,
-                                                "maxLength": 200
+                                                "maxLength": 200,
+                                                "description": "Texte alternatif (accessibilité), obligatoire"
                                               },
                                               "caption": {
                                                 "type": "string",
-                                                "maxLength": 200
+                                                "maxLength": 200,
+                                                "description": "Légende sous l'image"
                                               }
                                             },
                                             "required": [
@@ -31869,7 +31914,8 @@
                                         },
                                         "title": {
                                           "type": "string",
-                                          "maxLength": 120
+                                          "maxLength": 120,
+                                          "description": "Titre du bloc"
                                         },
                                         "swatches": {
                                           "type": "array",
@@ -31879,11 +31925,13 @@
                                               "label": {
                                                 "type": "string",
                                                 "minLength": 1,
-                                                "maxLength": 60
+                                                "maxLength": 60,
+                                                "description": "Nom de la couleur"
                                               },
                                               "color": {
                                                 "type": "string",
-                                                "pattern": "^#[0-9a-fA-F]{6}$"
+                                                "pattern": "^#[0-9a-fA-F]{6}$",
+                                                "description": "Couleur #RRGGBB"
                                               }
                                             },
                                             "required": [
@@ -31893,7 +31941,8 @@
                                             "additionalProperties": false
                                           },
                                           "minItems": 1,
-                                          "maxItems": 8
+                                          "maxItems": 8,
+                                          "description": "Pastilles de couleur"
                                         }
                                       },
                                       "required": [
@@ -31919,7 +31968,8 @@
                                               "title": {
                                                 "type": "string",
                                                 "minLength": 1,
-                                                "maxLength": 120
+                                                "maxLength": 120,
+                                                "description": "Titre de la carte"
                                               },
                                               "icon": {
                                                 "type": "string",
@@ -31954,30 +32004,35 @@
                                                   "moon",
                                                   "flame",
                                                   "crown"
-                                                ]
+                                                ],
+                                                "description": "Pictogramme de la carte"
                                               },
                                               "image": {
                                                 "type": "object",
                                                 "properties": {
                                                   "assetId": {
                                                     "type": "string",
-                                                    "pattern": "^[a-z0-9]{20,40}$"
+                                                    "pattern": "^[a-z0-9]{20,40}$",
+                                                    "description": "Identifiant d'une image déjà téléversée sur le site"
                                                   },
                                                   "alt": {
                                                     "type": "string",
                                                     "minLength": 1,
-                                                    "maxLength": 200
+                                                    "maxLength": 200,
+                                                    "description": "Texte alternatif (accessibilité), obligatoire"
                                                   },
                                                   "caption": {
                                                     "type": "string",
-                                                    "maxLength": 200
+                                                    "maxLength": 200,
+                                                    "description": "Légende sous l'image"
                                                   }
                                                 },
                                                 "required": [
                                                   "assetId",
                                                   "alt"
                                                 ],
-                                                "additionalProperties": false
+                                                "additionalProperties": false,
+                                                "description": "Image de la carte"
                                               },
                                               "items": {
                                                 "type": "array",
@@ -31986,7 +32041,8 @@
                                                   "minLength": 1,
                                                   "maxLength": 200
                                                 },
-                                                "maxItems": 12
+                                                "maxItems": 12,
+                                                "description": "Lignes de la carte"
                                               }
                                             },
                                             "required": [
@@ -31996,7 +32052,8 @@
                                             "additionalProperties": false
                                           },
                                           "minItems": 1,
-                                          "maxItems": 6
+                                          "maxItems": 6,
+                                          "description": "Cartes côte à côte"
                                         }
                                       },
                                       "required": [
@@ -32017,7 +32074,8 @@
                                         "doTitle": {
                                           "type": "string",
                                           "minLength": 1,
-                                          "maxLength": 80
+                                          "maxLength": 80,
+                                          "description": "Titre de la colonne « à faire »"
                                         },
                                         "doItems": {
                                           "type": "array",
@@ -32026,12 +32084,14 @@
                                             "minLength": 1,
                                             "maxLength": 200
                                           },
-                                          "maxItems": 12
+                                          "maxItems": 12,
+                                          "description": "Éléments à faire"
                                         },
                                         "dontTitle": {
                                           "type": "string",
                                           "minLength": 1,
-                                          "maxLength": 80
+                                          "maxLength": 80,
+                                          "description": "Titre de la colonne « à éviter »"
                                         },
                                         "dontItems": {
                                           "type": "array",
@@ -32040,7 +32100,8 @@
                                             "minLength": 1,
                                             "maxLength": 200
                                           },
-                                          "maxItems": 12
+                                          "maxItems": 12,
+                                          "description": "Éléments à éviter"
                                         }
                                       },
                                       "required": [
@@ -32063,7 +32124,8 @@
                                         },
                                         "title": {
                                           "type": "string",
-                                          "maxLength": 120
+                                          "maxLength": 120,
+                                          "description": "Titre du bloc"
                                         },
                                         "items": {
                                           "type": "array",
@@ -32103,12 +32165,14 @@
                                                   "moon",
                                                   "flame",
                                                   "crown"
-                                                ]
+                                                ],
+                                                "description": "Pictogramme"
                                               },
                                               "label": {
                                                 "type": "string",
                                                 "minLength": 1,
-                                                "maxLength": 120
+                                                "maxLength": 120,
+                                                "description": "Libellé"
                                               }
                                             },
                                             "required": [
@@ -32144,12 +32208,14 @@
                                               "question": {
                                                 "type": "string",
                                                 "minLength": 1,
-                                                "maxLength": 200
+                                                "maxLength": 200,
+                                                "description": "Question"
                                               },
                                               "answer": {
                                                 "type": "string",
                                                 "minLength": 1,
-                                                "maxLength": 2000
+                                                "maxLength": 2000,
+                                                "description": "Réponse (texte simple)"
                                               }
                                             },
                                             "required": [
@@ -32180,7 +32246,8 @@
                                         "label": {
                                           "type": "string",
                                           "minLength": 1,
-                                          "maxLength": 40
+                                          "maxLength": 40,
+                                          "description": "Texte du bouton"
                                         },
                                         "target": {
                                           "anyOf": [
@@ -32266,7 +32333,8 @@
                                                     "accent",
                                                     "background",
                                                     "text"
-                                                  ]
+                                                  ],
+                                                  "description": "Clé de la palette du thème (jamais une couleur libre)"
                                                 }
                                               },
                                               "required": [
@@ -32294,10 +32362,12 @@
                                                       "accent",
                                                       "background",
                                                       "text"
-                                                    ]
+                                                    ],
+                                                    "description": "Clé de la palette du thème (jamais une couleur libre)"
                                                   },
                                                   "minItems": 2,
-                                                  "maxItems": 3
+                                                  "maxItems": 3,
+                                                  "description": "2 ou 3 clés de palette, dans l'ordre du dégradé"
                                                 },
                                                 "direction": {
                                                   "type": "string",
@@ -32306,7 +32376,8 @@
                                                     "horizontal",
                                                     "diagonal",
                                                     "radial"
-                                                  ]
+                                                  ],
+                                                  "description": "Sens du dégradé"
                                                 }
                                               },
                                               "required": [
@@ -32327,7 +32398,8 @@
                                                 },
                                                 "assetId": {
                                                   "type": "string",
-                                                  "pattern": "^[a-z0-9]{20,40}$"
+                                                  "pattern": "^[a-z0-9]{20,40}$",
+                                                  "description": "Identifiant d'une image déjà téléversée sur le site"
                                                 },
                                                 "veil": {
                                                   "type": "string",
@@ -32337,16 +32409,19 @@
                                                     "accent",
                                                     "background",
                                                     "text"
-                                                  ]
+                                                  ],
+                                                  "description": "Couleur du voile posé sur l'image (lisibilité du texte)"
                                                 },
                                                 "opacity": {
                                                   "type": "number",
                                                   "minimum": 0.2,
-                                                  "maximum": 0.9
+                                                  "maximum": 0.9,
+                                                  "description": "Opacité du voile, de 0.2 à 0.9"
                                                 },
                                                 "fixed": {
                                                   "type": "boolean",
-                                                  "default": false
+                                                  "default": false,
+                                                  "description": "Image fixe au défilement (désactivé sur mobile)"
                                                 }
                                               },
                                               "required": [
@@ -32362,11 +32437,13 @@
                                         "title": {
                                           "type": "string",
                                           "minLength": 1,
-                                          "maxLength": 120
+                                          "maxLength": 120,
+                                          "description": "Titre de la bannière"
                                         },
                                         "tagline": {
                                           "type": "string",
-                                          "maxLength": 240
+                                          "maxLength": 240,
+                                          "description": "Phrase sous le titre"
                                         }
                                       },
                                       "required": [
@@ -32391,7 +32468,8 @@
                                             "line",
                                             "goldDiamond",
                                             "wave"
-                                          ]
+                                          ],
+                                          "description": "Style du séparateur"
                                         }
                                       },
                                       "required": [

@@ -42,13 +42,20 @@ export const SITE_LIMITS = { pages: 8, sections: 12, blocks: 20, gallery: 24, ca
 
 const hex = z
   .string()
+  .describe("Couleur #RRGGBB")
   .trim()
   .regex(/^#[0-9a-fA-F]{6}$/, "Couleur au format #RRGGBB")
   .transform((v) => v.toLowerCase());
-const assetId = z.string().regex(/^[a-z0-9]{20,40}$/, "Image inconnue");
-const line = (max: number) => z.string().trim().min(1).max(max);
-const optionalLine = (max: number) => z.string().trim().max(max).optional();
-const palette = z.enum(PALETTE_KEYS);
+const assetId = z.string().regex(/^[a-z0-9]{20,40}$/, "Image inconnue").describe("Identifiant d'une image déjà téléversée sur le site");
+const line = (max: number, d?: string) => {
+  const f = z.string().trim().min(1).max(max);
+  return d ? f.describe(d) : f;
+};
+const optionalLine = (max: number, d?: string) => {
+  const f = z.string().trim().max(max).optional();
+  return d ? f.describe(d) : f;
+};
+const palette = z.enum(PALETTE_KEYS).describe("Clé de la palette du thème (jamais une couleur libre)");
 export const pageSlug = z
   .string()
   .trim()
@@ -63,17 +70,17 @@ export const backgroundSchema = z.discriminatedUnion("kind", [
   z
     .object({
       kind: z.literal("gradient"),
-      stops: z.array(palette).min(2).max(3),
-      direction: z.enum(GRADIENT_DIRECTIONS),
+      stops: z.array(palette).min(2).max(3).describe("2 ou 3 clés de palette, dans l'ordre du dégradé"),
+      direction: z.enum(GRADIENT_DIRECTIONS).describe("Sens du dégradé"),
     })
     .strict(),
   z
     .object({
       kind: z.literal("image"),
       assetId,
-      veil: palette,
-      opacity: z.number().min(0.2).max(0.9),
-      fixed: z.boolean().default(false),
+      veil: palette.describe("Couleur du voile posé sur l'image (lisibilité du texte)"),
+      opacity: z.number().min(0.2).max(0.9).describe("Opacité du voile, de 0.2 à 0.9"),
+      fixed: z.boolean().default(false).describe("Image fixe au défilement (désactivé sur mobile)"),
     })
     .strict(),
 ]);
@@ -109,60 +116,60 @@ export const richTextSchema = z.array(richNodeSchema).max(60);
 
 // ─── Blocs ───────────────────────────────────────────────────────────────────
 
-const imageRef = z.object({ assetId, alt: line(200), caption: optionalLine(200) }).strict();
+const imageRef = z.object({ assetId, alt: line(200, "Texte alternatif (accessibilité), obligatoire"), caption: optionalLine(200, "Légende sous l'image") }).strict();
 const items = z.array(line(200)).max(SITE_LIMITS.listItems);
 
 export const blockSchema = z.discriminatedUnion("kind", [
   z
     .object({
       kind: z.literal("hero"),
-      title: line(120),
-      tagline: optionalLine(240),
-      showDateLocation: z.boolean().default(true),
-      showCountdown: z.boolean().default(false),
-      buttonLabel: optionalLine(40),
+      title: line(120, "Titre du bandeau"),
+      tagline: optionalLine(240, "Phrase d'accroche sous le titre"),
+      showDateLocation: z.boolean().default(true).describe("Afficher la date et le lieu (vrai par défaut)"),
+      showCountdown: z.boolean().default(false).describe("Afficher un compte à rebours"),
+      buttonLabel: optionalLine(40, "Libellé du bouton d'inscription"),
     })
     .strict(),
-  z.object({ kind: z.literal("richText"), content: richTextSchema }).strict(),
+  z.object({ kind: z.literal("richText"), content: richTextSchema.describe("Arbre de texte (outil MCP : fournir `markdown`)") }).strict(),
   z.object({ kind: z.literal("image"), image: imageRef }).strict(),
-  z.object({ kind: z.literal("gallery"), title: optionalLine(120), images: z.array(imageRef).min(1).max(SITE_LIMITS.gallery) }).strict(),
+  z.object({ kind: z.literal("gallery"), title: optionalLine(120, "Titre de la galerie"), images: z.array(imageRef).min(1).max(SITE_LIMITS.gallery) }).strict(),
   z
     .object({
       kind: z.literal("palette"),
-      title: optionalLine(120),
+      title: optionalLine(120, "Titre du bloc"),
       // Seule couleur libre : affichée en pastille, jamais appliquée au texte ni à un fond.
-      swatches: z.array(z.object({ label: line(60), color: hex }).strict()).min(1).max(SITE_LIMITS.swatches),
+      swatches: z.array(z.object({ label: line(60, "Nom de la couleur"), color: hex }).strict()).describe("Pastilles de couleur").min(1).max(SITE_LIMITS.swatches),
     })
     .strict(),
   z
     .object({
       kind: z.literal("cards"),
-      cards: z.array(z.object({ title: line(120), icon: z.enum(SITE_ICONS).optional(), image: imageRef.optional(), items }).strict()).min(1).max(SITE_LIMITS.cards),
+      cards: z.array(z.object({ title: line(120, "Titre de la carte"), icon: z.enum(SITE_ICONS).optional().describe("Pictogramme de la carte"), image: imageRef.optional().describe("Image de la carte"), items: items.describe("Lignes de la carte") }).strict()).min(1).max(SITE_LIMITS.cards).describe("Cartes côte à côte"),
     })
     .strict(),
-  z.object({ kind: z.literal("doDont"), doTitle: line(80), doItems: items, dontTitle: line(80), dontItems: items }).strict(),
+  z.object({ kind: z.literal("doDont"), doTitle: line(80, "Titre de la colonne « à faire »"), doItems: items.describe("Éléments à faire"), dontTitle: line(80, "Titre de la colonne « à éviter »"), dontItems: items.describe("Éléments à éviter") }).strict(),
   z
     .object({
       kind: z.literal("icons"),
-      title: optionalLine(120),
-      items: z.array(z.object({ icon: z.enum(SITE_ICONS), label: line(120) }).strict()).min(1).max(SITE_LIMITS.listItems),
+      title: optionalLine(120, "Titre du bloc"),
+      items: z.array(z.object({ icon: z.enum(SITE_ICONS).describe("Pictogramme"), label: line(120, "Libellé") }).strict()).min(1).max(SITE_LIMITS.listItems),
     })
     .strict(),
   z
     .object({
       kind: z.literal("faq"),
-      items: z.array(z.object({ question: line(200), answer: z.string().trim().min(1).max(2000) }).strict()).min(1).max(SITE_LIMITS.faq),
+      items: z.array(z.object({ question: line(200, "Question"), answer: z.string().trim().min(1).max(2000).describe("Réponse (texte simple)") }).strict()).min(1).max(SITE_LIMITS.faq),
     })
     .strict(),
   z
     .object({
       kind: z.literal("button"),
-      label: line(40),
+      label: line(40, "Texte du bouton"),
       target: z.union([z.object({ page: pageSlug }).strict(), z.object({ booking: z.literal(true) }).strict()]),
     })
     .strict(),
-  z.object({ kind: z.literal("banner"), background: backgroundSchema, title: line(120), tagline: optionalLine(240) }).strict(),
-  z.object({ kind: z.literal("separator"), style: z.enum(SEPARATOR_STYLES) }).strict(),
+  z.object({ kind: z.literal("banner"), background: backgroundSchema, title: line(120, "Titre de la bannière"), tagline: optionalLine(240, "Phrase sous le titre") }).strict(),
+  z.object({ kind: z.literal("separator"), style: z.enum(SEPARATOR_STYLES).describe("Style du séparateur") }).strict(),
 ]);
 export type SiteBlock = z.infer<typeof blockSchema>;
 export type SiteBlockKind = SiteBlock["kind"];
@@ -171,9 +178,9 @@ export type SiteBlockKind = SiteBlock["kind"];
 
 export const sectionSchema = z
   .object({
-    background: backgroundSchema.default(NONE),
+    background: backgroundSchema.default(NONE).describe("Fond de la bande"),
     /** Couleur du texte posé sur ce fond (contrôle de lisibilité). */
-    textColor: palette.default("text"),
+    textColor: palette.default("text").describe("Couleur du texte posé sur ce fond (contrôle de lisibilité)"),
     blocks: z.array(blockSchema).max(SITE_LIMITS.blocks),
   })
   .strict();
@@ -189,10 +196,10 @@ export const PAGE_KIND_LABEL: Record<(typeof PAGE_KINDS)[number], string> = {
 
 export const pageSchema = z
   .object({
-    title: line(60),
-    slug: pageSlug,
-    inMenu: z.boolean().default(true),
-    kind: z.enum(PAGE_KINDS),
+    title: line(60, "Titre de la page"),
+    slug: pageSlug.describe("Adresse de la page (minuscules, chiffres, tirets), unique"),
+    inMenu: z.boolean().default(true).describe("Page présente dans le menu"),
+    kind: z.enum(PAGE_KINDS).describe("content : page composée de bandes et blocs ; tickets, menus, practical : pages automatiques"),
     sections: z.array(sectionSchema).max(SITE_LIMITS.sections).default([]),
   })
   .strict();
@@ -201,10 +208,10 @@ export type SitePage = z.infer<typeof pageSchema>;
 export const themeSchema = z
   .object({
     colors: z.object(Object.fromEntries(PALETTE_KEYS.map((k) => [k, hex])) as Record<PaletteKey, typeof hex>).strict(),
-    fonts: z.object({ heading: z.enum(SITE_FONTS), body: z.enum(SITE_FONTS) }).strict(),
-    logoAssetId: assetId.optional(),
-    headerAssetId: assetId.optional(),
-    background: backgroundSchema.default(NONE),
+    fonts: z.object({ heading: z.enum(SITE_FONTS).describe("Police des titres"), body: z.enum(SITE_FONTS).describe("Police du texte") }).strict(),
+    logoAssetId: assetId.optional().describe("Logo (image du site)"),
+    headerAssetId: assetId.optional().describe("Image d'en-tête (image du site)"),
+    background: backgroundSchema.default(NONE).describe("Fond de page"),
   })
   .strict();
 export type SiteTheme = z.infer<typeof themeSchema>;

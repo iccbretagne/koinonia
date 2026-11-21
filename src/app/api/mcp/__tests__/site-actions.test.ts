@@ -192,6 +192,37 @@ describe("jetons indépendants", () => {
   });
 });
 
+describe("schémas documentés", () => {
+  it("describe_site_blocks : disponible comme les lectures du site, un kind ou tout", async () => {
+    expect(A("describe_site_blocks").available(ctx.viewer)).toBe(true);
+    expect(A("describe_site_blocks").available(viewerFor("STAR"))).toBe(false);
+    const all = await A("describe_site_blocks").run({} as never, ctx);
+    expect((all.structured.subjects as unknown[]).length).toBeGreaterThan(12);
+    const one = await A("describe_site_blocks").run({ subject: "hero" } as never, ctx);
+    expect(one.text).toContain("Bloc « hero »");
+    expect((await A("describe_site_blocks").run({ subject: "zzz" } as never, ctx)).text).toContain("inconnu");
+  });
+
+  it("clé refusée dans un bloc : le refus liste les clés permises", async () => {
+    const out = await preview("edit_ticketing_site_block", { event: "tk-1", op: "create", target: "block", page: "accueil", band: 0, blockData: { kind: "hero", title: "T", subtitle: "x" } });
+    expect(out.text).toContain("`hero.subtitle` refusé : clés permises kind, title, tagline");
+    const unknown = await preview("edit_ticketing_site_block", { event: "tk-1", op: "create", target: "block", page: "accueil", band: 0, blockData: { kind: "carrousel" } });
+    expect(unknown.text).toContain("valeurs permises hero, richText");
+  });
+
+  it("ticketing_site : le texte contient le contenu complet des blocs", async () => {
+    draft.pages[0].sections[0].blocks.push({ kind: "richText", content: [{ type: "h2", children: [{ text: "Dress code" }] }] });
+    const out = await A("ticketing_site").run({ event: "tk-1" } as never, ctx);
+    expect(out.text).toContain('"title":"Nuit de la traversée"');
+    expect(out.text).toContain("## Dress code");
+  });
+
+  it("outils d'édition : renvoient à describe_site_blocks", () => {
+    expect(A("edit_ticketing_site_block_preview").description).toContain("describe_site_blocks");
+    expect(A("edit_ticketing_site_batch_preview").description).toContain("describe_site_blocks");
+  });
+});
+
 describe("lot", () => {
   it("opérations appliquées dans l'ordre, un seul jeton, un seul enregistrement", async () => {
     const p = await preview("edit_ticketing_site_batch", { event: "tk-1", operations: [op.page("infos"), op.hero("Premier"), op.hero("Second")] });
