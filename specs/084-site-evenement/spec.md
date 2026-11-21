@@ -46,8 +46,14 @@ jamais permettre d'y injecter du code** ni d'y exposer une donnée personnelle.
    - 3 à 5 **couleurs** (principale, secondaire, accent, fond, texte) ;
    - une **police** de titres et une de texte, choisies dans une liste fermée ;
    - un **logo** et une **image d'en-tête** (téléversés).
-   Koinonia **vérifie la lisibilité** (contraste du texte sur le fond) et refuse une combinaison
-   illisible, avec la raison.
+   - un **fond de page** : couleur unie, **dégradé** ou **image** ;
+     - dégradé : 2 ou 3 couleurs **prises dans la palette du thème**, linéaire (vertical,
+       horizontal, diagonal) ou radial ;
+     - image : téléversée, fixe au défilement si on le souhaite, toujours recouverte d'un **voile**
+       teinté (couleur du thème, opacité réglable) pour garder le texte lisible.
+   Koinonia **vérifie la lisibilité** (contraste du texte sur le fond, mesuré au point le moins
+   favorable : chaque couleur d'un dégradé, le voile d'une image) et refuse une combinaison
+   illisible, avec la raison et une piste (voile plus sombre, autre couleur de texte).
 3. Il compose la **page d'accueil** : titre, accroche, date et lieu (repris de l'événement),
    bouton « Je m'inscris », compte à rebours facultatif.
 4. La **page d'inscription existante** prend le thème de l'événement (couleurs, logo, en-tête),
@@ -67,6 +73,13 @@ jamais permettre d'y injecter du code** ni d'y exposer une donnée personnelle.
    - **pictogrammes et légendes** (choisis dans une bibliothèque fournie) ;
    - **questions fréquentes** ;
    - **bouton** vers une autre page du site ou vers l'inscription.
+   Chaque bloc, ou groupe de blocs formant une **bande**, peut avoir son propre **fond** : aucun,
+   couleur du thème, dégradé ou image avec voile (mêmes choix et même contrôle de lisibilité que
+   le fond de page). S'y ajoutent :
+   - la **bannière** pleine largeur : image ou dégradé, titre et accroche par-dessus (ex. l'en-tête
+     « Dress code » ou la bande « Autres inspirations » de la maquette) ;
+   - les **séparateurs décoratifs**, choisis dans une petite bibliothèque (filet, filet doré avec
+     losange, vague), dans la couleur d'accent.
 2. Des **pages automatiques**, toujours à jour, peuvent être ajoutées au menu :
    - **Billetterie** : tarifs par tranche d'âge, places restantes, bouton d'inscription ;
    - **Menus** : options et plats, descriptions et allergènes, ceux qui sont fermés ou épuisés
@@ -122,7 +135,9 @@ jamais permettre d'y injecter du code** ni d'y exposer une donnée personnelle.
 ### Sécurité et données personnelles
 
 - L'organisateur ne fournit **jamais de code** (HTML, CSS, script) : seulement des blocs typés et
-  des choix dans des listes fermées.
+  des choix dans des listes fermées. Dégradés, fonds et séparateurs se composent uniquement à partir
+  des couleurs du thème, de directions et motifs prédéfinis et d'images téléversées et vérifiées :
+  jamais une valeur de style saisie ni une image externe.
 - Le site n'affiche **aucune donnée personnelle** : ni inscrits, ni équipe, ni coordonnées.
 - Un domaine dédié ne donne accès **qu'au site et à la billetterie publique** de son événement :
   jamais à la connexion, à l'administration ni à l'application ; la session Koinonia n'y est
@@ -134,7 +149,10 @@ jamais permettre d'y injecter du code** ni d'y exposer une donnée personnelle.
 - [ ] Un organisateur compose le thème et la page d'accueil, prévisualise et publie ; le site
       est servi sur une adresse Koinonia propre à l'événement, sans compte.
 - [ ] La page d'inscription existante prend le thème de l'événement, sans changement de règles.
-- [ ] Une combinaison de couleurs au contraste insuffisant est refusée.
+- [ ] Une combinaison de couleurs au contraste insuffisant est refusée, y compris sur un dégradé
+      ou une image de fond (contrôle au point le moins favorable).
+- [ ] Le fond de page et le fond de chaque bloc ou bande acceptent couleur, dégradé ou image avec
+      voile, uniquement à partir du thème et d'images téléversées.
 - [ ] La page « Dress code » de la maquette de la Nuit de la traversée se compose avec les
       blocs fournis.
 - [ ] Les pages Billetterie, Menus et Infos pratiques reflètent sans délai un changement de
