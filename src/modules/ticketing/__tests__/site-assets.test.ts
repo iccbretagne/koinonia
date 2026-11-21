@@ -12,7 +12,7 @@ vi.mock("@/lib/file-storage", () => ({ storeFile: (...a: unknown[]) => storeFile
 const getSitesEnabled = vi.fn();
 vi.mock("../services/site-settings", () => ({ getSitesEnabled: (...a: unknown[]) => getSitesEnabled(...a) }));
 
-const { copyAssets, exportAssets, discardSiteAssets, uploadAsset, stageAsset, confirmAsset, purgePendingAssets, deleteAsset, listAssets, decodeBase64Image, readAsset } = await import("../services/site-assets");
+const { sniffSvg, copyAssets, exportAssets, discardSiteAssets, uploadAsset, stageAsset, confirmAsset, purgePendingAssets, deleteAsset, listAssets, decodeBase64Image, readAsset } = await import("../services/site-assets");
 const { defaultSiteDocument, remapAssetIds, assetIdsOf } = await import("../site-schemas");
 
 beforeEach(() => {
@@ -287,5 +287,20 @@ describe("copie, export et nettoyage", () => {
     const next = remapAssetIds(doc, new Map([[A, "1".repeat(25)], [B, "2".repeat(25)]]));
     expect([...assetIdsOf(next)].sort()).toEqual(["1".repeat(25), "2".repeat(25)]);
     expect([...assetIdsOf(doc)].sort()).toEqual([A, B]);
+  });
+});
+
+describe("sniffSvg", () => {
+  const svg = (s: string) => sniffSvg(Buffer.from(s));
+  it("prologue, commentaires et doctype avant <svg>", () => {
+    expect(svg('<?xml version="1.0"?>\n<!-- a --><!-- b -->\n<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN">\n<svg xmlns="x">')).toBe(true);
+    expect(svg("<svg>")).toBe(true);
+    expect(svg("<html><svg>")).toBe(false);
+    expect(svg("<!-- jamais fermé <svg>")).toBe(false);
+  });
+  it("pas de backtracking sur des commentaires répétés", () => {
+    const start = performance.now();
+    expect(svg("<!--" + "--><!--".repeat(2000) + "x")).toBe(false);
+    expect(performance.now() - start).toBeLessThan(200);
   });
 });

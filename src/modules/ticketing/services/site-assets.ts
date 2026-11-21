@@ -34,8 +34,19 @@ async function db() {
 
 /** SVG ? Le contenu doit commencer (prologue XML, commentaires, doctype) par `<svg`. */
 export function sniffSvg(buffer: Buffer): boolean {
-  const head = buffer.subarray(0, 4096).toString("utf8").replace(/^﻿/, "");
-  return /^\s*(<\?xml[^>]*\?>\s*)?(<!--[\s\S]*?-->\s*)*(<!DOCTYPE[^>[]*>\s*)?<svg[\s>]/i.test(head);
+  // Lecture pas à pas plutôt qu'une regex à répétitions imbriquées (backtracking exponentiel).
+  let rest = buffer.subarray(0, 4096).toString("utf8").replace(/^﻿/, "").trimStart();
+  const skip = (open: string, close: string): boolean => {
+    if (!rest.toLowerCase().startsWith(open)) return false;
+    const end = rest.indexOf(close, open.length);
+    if (end < 0) return false;
+    rest = rest.slice(end + close.length).trimStart();
+    return true;
+  };
+  skip("<?xml", "?>");
+  while (skip("<!--", "-->"));
+  if (/^<!doctype[^>[]*>/i.test(rest)) rest = rest.slice(rest.indexOf(">") + 1).trimStart();
+  return /^<svg[\s>]/i.test(rest);
 }
 
 /** Un SVG ne doit rien charger ni exécuter : ni entité, ni script, ni objet étranger, ni référence externe. */
