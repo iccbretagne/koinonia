@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { UserRound } from "lucide-react";
 import { dateAndPlace, formatDateTime } from "@/components/ticketing/format";
 import { AGE_GROUP_LABEL, PAYMENT_METHOD_LABEL, formatEuros } from "@/modules/ticketing/schemas";
+import { buttonTargetSchema, type ButtonTarget, type SiteButton } from "@/modules/ticketing/schemas";
 import type { PublicEvent, SiteBlock, SiteDocument, SiteSection } from "@/modules/ticketing/schemas";
 import Countdown from "./Countdown";
 import SiteIcon from "./SiteIcon";
@@ -58,15 +59,33 @@ function Backdrop({ background, assetUrl }: { readonly background: SiteSection["
 
 const bookingHref = (ctx: Ctx) => `/inscription/${ctx.churchSlug}/${ctx.eventSlug}`;
 const buttonClass = "inline-block rounded-full px-6 py-3 font-semibold no-underline";
-const buttonStyle: CSSProperties = { backgroundColor: colorVar("primary"), color: "var(--site-on-primary)", fontFamily: "var(--site-font-heading)" };
+const FILLED: CSSProperties = { backgroundColor: colorVar("primary"), color: "var(--site-on-primary)", fontFamily: "var(--site-font-heading)" };
+// Contour et discret : texte et trait en couleur principale, dont la lisibilité sur le fond est contrôlée (contrast.ts).
+const OUTLINE: CSSProperties = { border: `2px solid ${colorVar("primary")}`, color: colorVar("primary"), fontFamily: "var(--site-font-heading)" };
+const SUBTLE: CSSProperties = { color: colorVar("primary"), fontFamily: "var(--site-font-heading)" };
+const BUTTON_LOOK = {
+  filled: { className: buttonClass, style: FILLED },
+  outline: { className: buttonClass, style: OUTLINE },
+  subtle: { className: "inline-block px-2 py-2 font-semibold underline underline-offset-4", style: SUBTLE },
+} as const;
+
+/** Bouton vers n'importe quelle destination permise ; la cible est revérifiée ici, comme à l'écriture. */
+function LinkButton({ ctx, label, target, style = "filled" }: { readonly ctx: Ctx; readonly label: string; readonly target: ButtonTarget; readonly style?: SiteButton["style"] }) {
+  const parsed = buttonTargetSchema.safeParse(target);
+  if (!parsed.success) return null;
+  const look = BUTTON_LOOK[style ?? "filled"];
+  const t = parsed.data;
+  if ("booking" in t) {
+    if (ctx.event && !ctx.event.open) return <p className="font-semibold">{ctx.event.closedReason ?? "Inscriptions fermées"}</p>;
+    return <a href={bookingHref(ctx)} className={look.className} style={look.style}>{label}</a>;
+  }
+  if ("url" in t) return <a href={t.url} target="_blank" rel="noopener noreferrer" className={look.className} style={look.style}>{label}</a>;
+  const href = "page" in t ? ctx.pageHref(t.page) : "mailto" in t ? `mailto:${t.mailto}` : "tel" in t ? `tel:${t.tel.replace(/[ .-]/g, "")}` : `#${t.anchor}`;
+  return <a href={href} className={look.className} style={look.style}>{label}</a>;
+}
 
 function BookingButton({ ctx, label }: { readonly ctx: Ctx; readonly label?: string }) {
-  if (ctx.event && !ctx.event.open) return <p className="font-semibold">{ctx.event.closedReason ?? "Inscriptions fermées"}</p>;
-  return (
-    <a href={bookingHref(ctx)} className={buttonClass} style={buttonStyle}>
-      {label || "Je m'inscris"}
-    </a>
-  );
+  return <LinkButton ctx={ctx} label={label || "Je m'inscris"} target={{ booking: true }} />;
 }
 
 function Heading({ children, as: Tag = "h2" }: { readonly children: ReactNode; readonly as?: "h1" | "h2" | "h3" }) {
@@ -83,6 +102,9 @@ function Items({ items }: { readonly items: string[] }) {
   );
 }
 
+// Classes littérales (Tailwind ne génère pas de classe composée) ; 2 colonnes par défaut.
+const CARD_COLUMNS: Record<number, string> = { 2: "@min-[40rem]:grid-cols-2", 3: "@min-[40rem]:grid-cols-3", 4: "@min-[40rem]:grid-cols-2 @min-[56rem]:grid-cols-4" };
+
 function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx }) {
   switch (block.kind) {
     case "hero":
@@ -93,7 +115,7 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
           {block.tagline && <p className="text-lg">{block.tagline}</p>}
           {block.showDateLocation && ctx.event && <p className="font-semibold">{dateAndPlace(ctx.event.startsAt, ctx.event.location)}</p>}
           {block.showCountdown && ctx.event && <Countdown target={ctx.event.startsAt} />}
-          <div className="pt-2"><BookingButton ctx={ctx} label={block.buttonLabel} /></div>
+          <div className="pt-2">{block.button ? <LinkButton ctx={ctx} label={block.button.label} target={block.button.target} style={block.button.style} /> : <BookingButton ctx={ctx} label={block.buttonLabel} />}</div>
         </div>
       );
     case "richText":
@@ -104,11 +126,21 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
       return (
         <div className="space-y-3">
           {block.title && <Heading>{block.title}</Heading>}
-          <div className="grid grid-cols-2 gap-2 @min-[40rem]:grid-cols-3">
-            {block.images.map((image, i) => (
-              <SiteImage key={i} id={image.assetId} alt={image.alt} assetUrl={ctx.assetUrl} sizes="(min-width: 48rem) 16rem, 50vw" className="aspect-square w-full rounded-lg object-cover object-center" />
-            ))}
-          </div>
+          {block.layout === "round" ? (
+            <ul className="flex flex-wrap justify-center gap-4">
+              {block.images.map((image, i) => (
+                <li key={i}>
+                  <SiteImage id={image.assetId} alt={image.alt} assetUrl={ctx.assetUrl} sizes="10rem" className="size-24 rounded-full object-cover object-center @min-[40rem]:size-36" />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 @min-[40rem]:grid-cols-3">
+              {block.images.map((image, i) => (
+                <SiteImage key={i} id={image.assetId} alt={image.alt} assetUrl={ctx.assetUrl} sizes="(min-width: 48rem) 16rem, 50vw" className="aspect-square w-full rounded-lg object-cover object-center" />
+              ))}
+            </div>
+          )}
         </div>
       );
     case "palette":
@@ -125,9 +157,9 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
           </ul>
         </div>
       );
-    case "cards":
-      return (
-        <div className="grid gap-4 @min-[40rem]:grid-cols-2">
+    case "cards": {
+      const grid = (
+        <div className={`grid gap-4 ${CARD_COLUMNS[block.columns ?? 2]}`}>
           {block.cards.map((card, i) => (
             <div key={i} className="space-y-2 rounded-lg border border-current p-4">
               {card.image && <SiteImage id={card.image.assetId} alt={card.image.alt} assetUrl={ctx.assetUrl} sizes="(min-width: 48rem) 24rem, 100vw" className="w-full rounded" />}
@@ -135,11 +167,21 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
                 {card.icon && <SiteIcon name={card.icon} className="size-6 shrink-0" />}
                 <Heading as="h3">{card.title}</Heading>
               </div>
+              {card.text && <p>{card.text}</p>}
               <Items items={card.items} />
             </div>
           ))}
         </div>
       );
+      return block.title ? (
+        <div className="space-y-3">
+          <Heading>{block.title}</Heading>
+          {grid}
+        </div>
+      ) : (
+        grid
+      );
+    }
     case "doDont":
       return (
         <div className="grid gap-4 @min-[40rem]:grid-cols-2">
@@ -153,7 +195,10 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
           {block.title && <Heading>{block.title}</Heading>}
           <ul className="grid gap-3 @min-[40rem]:grid-cols-2">
             {block.items.map((item, i) => (
-              <li key={i} className="flex items-center gap-3"><SiteIcon name={item.icon} className="size-6 shrink-0" />{item.label}</li>
+              <li key={i} className="flex items-center gap-3">
+                <SiteIcon name={item.icon} className="size-6 shrink-0" />
+                {item.description ? <span>{item.label}<span className="block text-sm opacity-80">{item.description}</span></span> : item.label}
+              </li>
             ))}
           </ul>
         </div>
@@ -161,6 +206,7 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
     case "faq":
       return (
         <div className="space-y-2">
+          {block.title && <Heading>{block.title}</Heading>}
           {block.items.map((item, i) => (
             <details key={i} className="rounded-lg border border-current p-3">
               <summary className="cursor-pointer font-semibold">{item.question}</summary>
@@ -172,11 +218,7 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
     case "button":
       return (
         <div className="text-center">
-          {"booking" in block.target ? (
-            <BookingButton ctx={ctx} label={block.label} />
-          ) : (
-            <a href={ctx.pageHref(block.target.page)} className={buttonClass} style={buttonStyle}>{block.label}</a>
-          )}
+          <LinkButton ctx={ctx} label={block.label} target={block.target} style={block.style} />
         </div>
       );
     case "banner":
@@ -186,6 +228,8 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
           <div className="relative space-y-2">
             <Heading>{block.title}</Heading>
             {block.tagline && <p>{block.tagline}</p>}
+            {block.secondary && <p className="text-sm opacity-90">{block.secondary}</p>}
+            {block.button && <div className="pt-2"><LinkButton ctx={ctx} label={block.button.label} target={block.button.target} style={block.button.style} /></div>}
           </div>
         </div>
       );
@@ -200,12 +244,18 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
 
 function Section({ section, ctx }: { readonly section: SiteSection; readonly ctx: Ctx }) {
   return (
-    <section className="relative isolate px-4 py-8" style={{ color: colorVar(section.textColor) }}>
+    <section id={section.anchor} className={`relative isolate px-4 py-8${section.anchor ? " scroll-mt-4" : ""}`} style={{ color: colorVar(section.textColor) }}>
       <Backdrop background={section.background} assetUrl={ctx.assetUrl} />
       <div className="relative mx-auto max-w-3xl space-y-6">
-        {section.blocks.map((block, i) => (
-          <Block key={i} block={block} ctx={ctx} />
-        ))}
+        {section.blocks.map((block, i) =>
+          block.anchor ? (
+            <div key={i} id={block.anchor} className="scroll-mt-4">
+              <Block block={block} ctx={ctx} />
+            </div>
+          ) : (
+            <Block key={i} block={block} ctx={ctx} />
+          )
+        )}
       </div>
     </section>
   );

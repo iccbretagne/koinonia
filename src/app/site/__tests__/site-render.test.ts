@@ -216,3 +216,70 @@ describe("images : variantes et fonds", () => {
     expect(assetUsagesOf(doc)[0].where).toBe("Accueil › bande 1 › bloc 1 (hero) › fond");
   });
 });
+
+describe("boutons, ancres et blocs enrichis", () => {
+  const page = (blocks: unknown[], section: Record<string, unknown> = {}) =>
+    siteDocumentSchema.parse({ theme, pages: [{ title: "Accueil", slug: "accueil", kind: "content", sections: [{ blocks, ...section }] }, { title: "Infos", slug: "infos", kind: "practical" }] });
+  const btn = (target: unknown, style?: string) => ({ kind: "button", label: "Aller", target, ...(style ? { style } : {}) });
+
+  it("lien externe : nouvel onglet, noopener noreferrer ; autres liens sans target", () => {
+    const html = render(page([btn({ url: "https://exemple.org/x" }), btn({ mailto: "a@b.fr" }), btn({ tel: "+33 6 12 34 56 78" }), btn({ page: "infos" })]));
+    expect(html).toMatch(/<a href="https:\/\/exemple.org\/x" target="_blank" rel="noopener noreferrer"/);
+    expect(html).toContain('href="mailto:a@b.fr"');
+    expect(html).toContain('href="tel:+33612345678"');
+    expect(html).toContain('href="/infos"');
+    expect(html.match(/target="_blank"/g)).toHaveLength(1);
+  });
+
+  it("ancres : id sur la bande et sur le bloc, lien #ancre", () => {
+    const html = render(page([{ kind: "hero", title: "T", anchor: "haut" }, btn({ anchor: "haut" })], { anchor: "bande" }));
+    expect(html).toMatch(/<section id="bande"/);
+    expect(html).toMatch(/<div id="haut"/);
+    expect(html).toContain('href="#haut"');
+  });
+
+  it("styles : plein (défaut), contour, discret", () => {
+    const html = render(page([btn({ booking: true }), btn({ booking: true }, "outline"), btn({ booking: true }, "subtle")]));
+    expect(html).toContain("background-color:var(--site-primary)");
+    expect(html).toContain("border:2px solid var(--site-primary)");
+    expect(html).toContain("underline-offset-4");
+  });
+
+  it("bandeau : bouton personnalisé à la place de l'inscription ; sinon comportement actuel", () => {
+    const custom = render(page([{ kind: "hero", title: "T", button: { label: "Programme", target: { url: "https://exemple.org/p" } } }]));
+    expect(custom).toContain("Programme");
+    expect(custom).not.toContain("inscris");
+    const legacy = render(page([{ kind: "hero", title: "T", buttonLabel: "Je réserve" }]));
+    expect(legacy).toContain("Je réserve");
+    expect(legacy).toContain('href="/inscription/icc/nuit" class="inline-block rounded-full');
+  });
+
+  it("bannière : ligne secondaire et bouton", () => {
+    const html = render(page([{ kind: "banner", background: { kind: "color", color: "primary" }, title: "T", secondary: "Ligne 2", button: { label: "Go", target: { mailto: "a@b.fr" } } }], { textColor: "background" }));
+    expect(html).toContain("Ligne 2");
+    expect(html).toContain('href="mailto:a@b.fr"');
+  });
+
+  it("cartes : titre, texte, colonnes ; pictogrammes : description ; questions : titre", () => {
+    const html = render(page([
+      { kind: "cards", title: "Tenues", columns: 3, cards: [{ title: "Elle", text: "Sobre", items: ["Robe"] }] },
+      { kind: "icons", items: [{ icon: "star", label: "Parking", description: "Gratuit" }] },
+      { kind: "faq", title: "Questions", items: [{ question: "Q", answer: "R" }] },
+    ]));
+    for (const text of ["Tenues", "Sobre", "grid-cols-3", "Gratuit", "Questions"]) expect(html).toContain(text);
+    expect(render(page([{ kind: "cards", cards: [{ title: "A", items: ["x"] }] }]))).toContain("@min-[40rem]:grid-cols-2");
+  });
+
+  it("galerie ronde : vignettes arrondies ; grille par défaut", () => {
+    const images = [{ assetId: A, alt: "Un" }, { assetId: B, alt: "Deux" }];
+    expect(render(page([{ kind: "gallery", layout: "round", images }]))).toContain("rounded-full");
+    const grid = render(page([{ kind: "gallery", images }]));
+    expect(grid).not.toContain("rounded-full");
+    expect(grid).toContain("aspect-square");
+  });
+
+  it("jamais de HTML saisi dans les libellés ni les textes", () => {
+    const html = render(page([btn({ url: "https://exemple.org" }), { kind: "cards", cards: [{ title: RAW, text: RAW, items: [RAW] }] }, { kind: "icons", items: [{ icon: "star", label: RAW, description: RAW }] }]));
+    expect(html).not.toContain("<b>x</b>");
+  });
+});
