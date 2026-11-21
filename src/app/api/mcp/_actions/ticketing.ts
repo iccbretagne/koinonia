@@ -1210,7 +1210,7 @@ const cancelAction = eventAction({
   },
   execute: async (p) => {
     const r = await (await ticketing()).cancelByOrganizer(p.bookingId, p.participantId);
-    return { text: r.message, vue: "reservations" };
+    return { text: r.message, vue: "inscrits" };
   },
   audit: (p) => ({ action: "UPDATE", entityType: "TicketingBooking", entityId: p.bookingId, details: { eventId: p.eventId, cancelled: p.participantId ?? "all" } }),
 });
