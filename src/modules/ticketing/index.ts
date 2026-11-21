@@ -63,3 +63,5 @@ export { applyOperations, type OpResult } from "./services/sync";
 export { cateringBoard, type CateringBoard } from "./services/catering";
 export { addVariant, deleteVariant, updateVariant } from "./services/menu";
 export { listLabels, markPrinted, type LabelRow, type LabelSet } from "./services/labels";
+
+export { getSitesEnabled, setSitesEnabled } from "./services/site-settings";

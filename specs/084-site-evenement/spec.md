@@ -103,6 +103,23 @@ jamais permettre d'y injecter du code** ni d'y exposer une donnée personnelle.
 4. Les emails de la billetterie (confirmation, billets, gestion de la réservation) pointent vers
    le domaine dédié ; ils continuent d'être **envoyés par l'adresse de Koinonia**.
 
+### Lot 4 — Par les assistants IA connectés (spec 081, 083)
+
+Le site se conduit aussi depuis son assistant, **dans les mêmes droits** (Organisateur et
+Communication pour le site, Organisateur seul pour le domaine), toujours en **aperçu puis
+confirmation**, journalisé « via l'assistant IA » :
+
+- **lire** le site : thème, pages, sections et blocs avec leurs identifiants, état (brouillon,
+  publié), adresse, problèmes de lisibilité ;
+- **régler le thème** : couleurs, polices, fond (couleur, dégradé, image déjà téléversée + voile) ;
+- **ajouter, modifier, déplacer, supprimer** une page, une bande ou un bloc — le texte se rédige
+  en Markdown restreint, comme dans l'éditeur ;
+- **publier** et **dépublier** ;
+- **demander un domaine dédié** et lancer sa vérification (Organisateur).
+
+Mêmes contrôles qu'à l'écran : contraste, liens, bornes, images appartenant au site. L'aperçu
+montre ce qui change (avant → après) et les problèmes de lisibilité éventuels.
+
 ### Cycle de vie
 
 - Un site n'est visible que **publié** et pour un événement **ouvert ou clos aux inscriptions**.
@@ -171,6 +188,9 @@ jamais permettre d'y injecter du code** ni d'y exposer une donnée personnelle.
 - [ ] Le site d'un événement clôturé affiche « Événement terminé » 30 jours (ou la durée réglée),
       puis n'est plus servi.
 - [ ] Une église ne peut pas avoir plus de 5 domaines dédiés en service.
+- [ ] Depuis un assistant connecté, un compte Organisateur ou Communication règle le thème,
+      compose les pages et publie le site, après aperçu et confirmation, avec les mêmes contrôles
+      qu'à l'écran ; un compte sans ce rôle ne se voit proposer aucune de ces actions.
 
 ## Hors périmètre
 
@@ -180,6 +200,8 @@ jamais permettre d'y injecter du code** ni d'y exposer une donnée personnelle.
 - Site pour autre chose qu'un événement de billetterie (site de l'église, d'un ministère).
 - Paiement en ligne (Koinonia n'encaisse toujours rien).
 - Statistiques de visite.
+- Téléversement d'images par un assistant IA (les images se déposent dans l'éditeur ; l'assistant
+  réutilise celles du site).
 - Traduction du site en plusieurs langues.
 
 ## Questions ouvertes
@@ -190,5 +212,5 @@ Tranché le 21 novembre 2026 :
 - **Un domaine dédié par événement, 5 au plus par église.**
 - Adresse par défaut : **sous-domaine** de Koinonia ; domaine dédié en option (lot 3).
 
-Ordre de livraison : lot 1, puis lot 2, puis lot 3 — chaque lot utile seul. À planifier après la
+Ordre de livraison : lot 1, puis lot 2, puis lot 3, puis lot 4 (assistants) — chaque lot utile seul. À planifier après la
 release v1.38.0.
