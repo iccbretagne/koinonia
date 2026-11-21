@@ -41,7 +41,15 @@ vi.mock("@/modules/planning", () => ({
   loadRequestQueue: vi.fn(async () => ({ open: [{ type: "VISUEL", deadline: "2020-01-01" }] })),
   resolveRequestQueueAccess: vi.fn(async () => ({ allowed: true })),
 }));
-vi.mock("@/modules/ticketing", () => ({ listAssignmentsForUser: vi.fn(async () => []) }));
+vi.mock("@/modules/ticketing", () => ({
+  listAssignmentsForUser: vi.fn(async () => []),
+  isTicketingManager: vi.fn(async () => true),
+  listEvents: vi.fn(async () => [{ id: "tk-1", title: "Nuit de la traversée", startsAt: new Date("2026-12-31T19:00:00Z"), status: "OPEN", seatsTaken: 3, seatsOpen: 100 }]),
+  getEventAccess: vi.fn(async () => ({ roles: new Set(["ORGANIZER"]) })),
+  canDo: vi.fn(() => true),
+  listPayments: vi.fn(async () => [{ kind: "DECLARATION", status: "PENDING", reference: "NDT-001", contactName: "Jean Dupont", amount: 15, method: "WERO", createdAt: "2026-11-20T10:00:00Z" }]),
+  listBookings: vi.fn(async () => [{ reference: "NDT-002", contact: { name: "Marie Durand", email: null, phone: null }, balances: { refundDue: 8 } }]),
+}));
 vi.mock("@/modules/audio", () => ({
   listPublishedServices: vi.fn(async () => [{ title: "Culte de rentrée", serviceDate: new Date("2026-11-01T10:00:00Z"), speaker: "Pasteur A", series: null }]),
 }));
@@ -97,7 +105,7 @@ function stubDatabase() {
   ]);
 }
 
-const FULL = viewerFor("SUPER_ADMIN", { predicates: ["linkedStar", "pastoral"] });
+const FULL = viewerFor("SUPER_ADMIN", { predicates: ["linkedStar", "pastoral", "ticketing"] });
 
 describe("catalogue des questions de données (spec 075)", () => {
   beforeEach(() => {
@@ -280,5 +288,19 @@ describe("périmètre identique à l'écran (spec 075)", () => {
     const { getShuttleAccess } = await import("@/modules/shuttle");
     vi.mocked(getShuttleAccess).mockResolvedValueOnce({ manager: false, member: true } as never);
     expect(await run("shuttle.balance", viewerFor("STAR"))).toMatchObject({ items: [{ label: expect.stringContaining("120") }] });
+  });
+});
+
+describe("billetterie (spec 083)", () => {
+  it("événements et paiements à traiter : réservés à l'équipe, sans coordonnées", async () => {
+    const star = viewerFor("STAR");
+    expect(isDataRefusal(await run("ticketing.myEvents", star))).toBe(true);
+    expect(isDataRefusal(await run("ticketing.paymentsToHandle", star))).toBe(true);
+    const events = JSON.stringify(await run("ticketing.myEvents", FULL));
+    expect(events).toContain("Nuit de la traversée");
+    expect(events).toContain("3 inscrits / 100 places");
+    const payments = JSON.stringify(await run("ticketing.paymentsToHandle", FULL));
+    expect(payments).toContain("NDT-001");
+    expect(payments).toContain("À rembourser");
   });
 });

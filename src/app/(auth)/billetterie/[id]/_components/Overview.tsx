@@ -4,7 +4,7 @@ import WhatsAppShare from "@/components/WhatsAppShare";
 import type { BookingRow, EventDetail } from "@/modules/ticketing";
 import { AGE_GROUP_LABEL, formatEuros } from "@/modules/ticketing/schemas";
 import OpeningChecklist from "./OpeningChecklist";
-import { readinessChecks } from "./readiness";
+import { readinessChecks } from "@/modules/ticketing/schemas";
 
 function Stat({ label, value, hint }: { readonly label: string; readonly value: string; readonly hint?: string }) {
   return (

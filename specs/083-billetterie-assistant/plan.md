@@ -99,7 +99,7 @@ candidats — spec « plusieurs événements au même nom »).
      `src/app/(auth)/billetterie/[id]/_components/readiness.ts` vers
      `src/modules/ticketing/readiness.ts`, exportée par `@/modules/ticketing/schemas` (pure, sans
      Prisma). L'écran et l'assistant l'importent tous deux ; le test existant suit le fichier.
-  2. **IBAN masqué** : `maskIban(iban)` (`FR76 •••• 1234`) dans `@/modules/ticketing/schemas`,
+  2. **IBAN masqué** : `maskIban(iban)` (`FR76 •••• 1234`) dans `src/lib/iban.ts` (fonctions IBAN pures),
      appliqué à toute sortie MCP (lecture, aperçu, résultat). L'IBAN dicté n'apparaît en clair
      que dans l'entrée de l'outil, jamais dans une réponse.
 - **Empreintes** (`fingerprint`) :
