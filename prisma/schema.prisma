@@ -4564,10 +4564,17 @@ model TicketingSite {
 model TicketingSiteAsset {
   id        String   @id @default(cuid())
   siteId    String
+  /// Clé de la plus grande variante ; `pending` tant que l'image n'est pas confirmée (purgée sinon).
   key       String   @db.VarChar(255)
   width     Int
   height    Int
   bytes     Int
+  /// Nom lisible (nom du fichier ou fourni).
+  name      String   @default("") @db.VarChar(120)
+  /// Texte alternatif (accessibilité), obligatoire pour toute nouvelle image.
+  alt       String   @default("") @db.VarChar(200)
+  /// Variantes WebP générées : [{ w, key, bytes }].
+  variants  Json?
   createdAt DateTime @default(now())
 
   site TicketingSite @relation(fields: [siteId], references: [id], onDelete: Cascade)

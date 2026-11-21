@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Alert, Button, Checkbox, Input, Select, StatusChip, useToast } from "@/components/ui";
 import SitePagesEditor from "./SitePagesEditor";
 import { BackgroundFields, ImageField } from "./SiteFields";
@@ -31,9 +31,10 @@ function Card({ title, children }: { readonly title: string; readonly children: 
 }
 
 /** Téléverse une image du site ; renvoie son identifiant. */
-async function uploadImage(eventId: string, file: File): Promise<string> {
+async function uploadImage(eventId: string, file: File, alt: string): Promise<string> {
   const body = new FormData();
   body.set("file", file);
+  body.set("alt", alt);
   const res = await fetch(`/api/ticketing/events/${eventId}/site/assets`, { method: "POST", body });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error ?? "Dépôt refusé");
@@ -76,9 +77,10 @@ export default function SiteTab({
   const [previewPage, setPreviewPage] = useState<string | undefined>();
   const [fullPreview, setFullPreview] = useState(false);
   const [uploaded, setUploaded] = useState<string[]>([]);
+  const [library, setLibrary] = useState<{ id: string; name: string; alt: string }[]>([]);
   const [afterClose, setAfterClose] = useState(site.afterCloseDays);
 
-  const assetUrl = (id: string) => `/api/ticketing/events/${eventId}/site/assets/${id}`;
+  const assetUrl = (id: string, width?: number) => `/api/ticketing/events/${eventId}/site/assets/${id}${width ? `?w=${width}` : ""}`;
   const issues = contrastIssues(doc).map((i) => i.message);
   const edit = (fn: (d: SiteDocument) => void) => {
     setDoc((prev) => {
@@ -88,18 +90,33 @@ export default function SiteTab({
     });
     setDirty(true);
   };
-  const upload = async (file: File, then: (id: string) => void) => {
+  const upload = async (file: File, alt: string, then: (id: string) => void) => {
     try {
-      const id = await uploadImage(eventId, file);
+      const id = await uploadImage(eventId, file, alt);
       setUploaded((u) => [...u, id]);
+      setLibrary((l) => [...l, { id, name: file.name, alt }]);
       then(id);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Dépôt refusé");
     }
   };
 
+  // Images déjà téléversées sur le site (y compris par l'assistant) : proposées dans les sélecteurs.
+  useEffect(() => {
+    let live = true;
+    fetch(`/api/ticketing/events/${eventId}/site/assets`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body: { id: string; name: string; alt: string }[] | null) => {
+        if (live && Array.isArray(body)) setLibrary(body.map(({ id, name, alt }) => ({ id, name, alt })));
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [eventId]);
+
   const hero = doc.pages[0].sections.flatMap((s) => s.blocks).find((b) => b.kind === "hero");
-  const tools = { assetUrl, upload, pool: [...new Set([...assetIdsOf(doc), ...uploaded])] };
+  const tools = { assetUrl, upload, library, pool: [...new Set([...assetIdsOf(doc), ...library.map((a) => a.id), ...uploaded])] };
 
   async function save() {
     const saved = await call<SiteView>(`/api/ticketing/events/${eventId}/site`, "PUT", doc, "Brouillon enregistré");

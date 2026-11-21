@@ -21,7 +21,8 @@ describe("describeSite", () => {
     expect(f.tagline.required).toBe(false);
     expect(f.showCountdown).toMatchObject({ type: "booléen", required: false, default: false });
     expect(f.title.description).toBeTruthy();
-    expect(Object.keys(f)).toEqual(["kind", "title", "tagline", "showDateLocation", "showCountdown", "buttonLabel"]);
+    expect(Object.keys(f).filter((k) => !k.startsWith("background"))).toEqual(["kind", "title", "tagline", "showDateLocation", "showCountdown", "buttonLabel"]);
+    expect(f.background.required).toBe(false);
   });
 
   it("valeurs permises issues des schémas : icônes, polices, palette, dégradés, séparateurs", () => {
@@ -48,7 +49,7 @@ describe("explainIssues", () => {
     const r = blockSchema.safeParse(input);
     expect(r.success).toBe(false);
     const msg = explainIssues(r.error!.issues, blockSchema, input, "bloc");
-    expect(msg).toContain("`hero.subtitle` refusé : clés permises kind, title, tagline, showDateLocation, showCountdown, buttonLabel");
+    expect(msg).toContain("`hero.subtitle` refusé : clés permises kind, title, tagline, showDateLocation, showCountdown, buttonLabel, background");
   });
 
   it("kind inconnu : liste les kind permis", () => {

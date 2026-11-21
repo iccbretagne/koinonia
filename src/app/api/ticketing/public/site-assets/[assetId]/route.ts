@@ -6,7 +6,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ asse
   try {
     requireRateLimit(request, { prefix: `ticketing-site-asset:${getClientIp(request)}`, windowMs: 60_000, max: 300 });
     const { assetId } = await params;
-    const asset = await readAsset(assetId, { publishedOnly: true });
+    const w = Number(new URL(request.url).searchParams.get("w"));
+    const asset = await readAsset(assetId, { publishedOnly: true }, Number.isInteger(w) && w > 0 ? w : undefined);
     if (!asset) return Response.json({ error: "Introuvable" }, { status: 404 });
     return new Response(new Uint8Array(asset.buffer), {
       headers: { "Content-Type": "image/webp", "Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff" },

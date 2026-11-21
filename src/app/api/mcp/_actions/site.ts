@@ -18,6 +18,7 @@ import {
   type SiteDocument,
 } from "@/modules/ticketing/schemas";
 import { ApiError } from "@/lib/api-utils";
+import { safeFetchImage } from "@/lib/safe-fetch";
 import { type ActionContext, type ActionResult, type McpActionDef, refusal } from "./common";
 import { eventAction, eventFor, eventRef, type Prepared } from "./ticketing";
 
@@ -113,7 +114,29 @@ async function describeBlocks(input: z.infer<typeof describeInput>): Promise<Act
   return { text: describeSiteText(picked), structured: { subjects: picked } };
 }
 
+async function readAssets(input: z.infer<typeof eventInput>, ctx: ActionContext): Promise<ActionResult> {
+  const found = await eventFor(ctx, input.event, "site");
+  if (typeof found === "string") return refusal(found);
+  const m = await ticketing();
+  const site = await m.getSite(found.id);
+  const assets = await m.listAssets(site.id);
+  const where = (a: (typeof assets)[number]) => [...a.usedIn.draft.map((w) => `brouillon › ${w}`), ...a.usedIn.published.map((w) => `publié › ${w}`)];
+  const lines = assets.map(
+    (a) => `- ${a.id} « ${a.name || "sans nom"} » ${a.width}×${a.height}, ${Math.round(a.bytes / 1024)} Ko, variantes ${a.variants.map((v) => v.w).join("/") || "aucune"} ; texte alternatif : ${a.alt || "(aucun)"} ; ${where(a).length ? `utilisée : ${where(a).join(" ; ")}` : "inutilisée"}`
+  );
+  return { text: assets.length ? `Images du site de « ${found.title} » :\n${lines.join("\n")}` : `Aucune image sur le site de « ${found.title} ».`, structured: { images: assets.map((a) => ({ ...a, usedIn: a.usedIn })) } };
+}
+
 export const SITE_READS: McpActionDef[] = [
+  {
+    name: "ticketing_site_assets",
+    action: "ticketing_site_assets",
+    kind: "read",
+    description: "Images du site d'un événement : identifiant (à utiliser dans theme.logoAssetId, headerAssetId, un fond ou un bloc image), nom, dimensions, poids, texte alternatif, variantes et emplacements qui les utilisent (brouillon et version publiée).",
+    input: eventInput,
+    available: readAvailable,
+    run: readAssets as McpActionDef["run"],
+  },
   {
     name: "describe_site_blocks",
     action: "describe_site_blocks",
@@ -402,7 +425,7 @@ const blockAction = eventAction({
   action: "edit_ticketing_site_block",
   role: "site",
   description: previewDesc(
-    "créer, modifier, déplacer ou supprimer une bande (target band : fond, couleur du texte) ou un bloc (target block) d'une page composée. blockData : un bloc complet (kind hero, richText, image, gallery, palette, cards, doDont, icons, faq, button, banner, separator) ; pour un texte, `markdown` (Markdown restreint : ## titre, ### sous-titre, listes, **gras**, *italique*, liens https/mailto/page:adresse, aucun HTML). Rangs à partir de 0, voir ticketing_site. Champs et valeurs permises de chaque bloc : describe_site_blocks"
+    "créer, modifier, déplacer ou supprimer une bande (target band : fond, couleur du texte) ou un bloc (target block) d'une page composée. blockData : un bloc complet (kind hero, richText, image, gallery, palette, cards, doDont, icons, faq, button, banner, separator) ; pour un texte, `markdown` (Markdown restreint : ## titre, ### sous-titre, listes, **gras**, *italique*, liens https/mailto/page:adresse, aucun HTML). Rangs à partir de 0, voir ticketing_site. Champs et valeurs permises de chaque bloc : describe_site_blocks ; images du site : ticketing_site_assets, upload_ticketing_site_asset"
   ),
   confirmDescription: confirmDesc("enregistrer les bandes et blocs du brouillon du site"),
   input: z.object({ event: eventRef, ...blockShape }),
@@ -425,6 +448,79 @@ const batchAction = eventAction({
   prepare: (input, _ctx, event) => prepareOps(event!, input.operations),
   state: opsState,
   execute: saveOps,
+});
+
+const IMAGE_HINT = "JPEG, PNG, WebP ou SVG (rastérisé), 8 Mo au plus, 16 à 8000 px";
+
+const uploadAction = eventAction({
+  action: "upload_ticketing_site_asset",
+  role: "site",
+  description: previewDesc(
+    `ajouter une image au site d'un événement, depuis une adresse https publique (source.url) ou en base64 (source.base64, data-URL acceptée, filename facultatif) ; ${IMAGE_HINT}. Le texte alternatif (alt, 1 à 200 caractères) est obligatoire. L'aperçu télécharge, vérifie et traite l'image (variantes WebP 640, 1280 et 2400 px, sans métadonnées) ; elle n'est ajoutée qu'à la confirmation, qui renvoie l'identifiant à utiliser`
+  ),
+  confirmDescription: confirmDesc("ajouter l'image au site (identifiant renvoyé)"),
+  input: z.object({
+    event: eventRef,
+    source: z.union([
+      z.object({ url: z.string().trim().min(1).max(2000).describe("Adresse https publique de l'image (aucune redirection suivie)") }).strict(),
+      z.object({ base64: z.string().min(1).max(11_500_000).describe("Contenu de l'image en base64 ou data-URL"), filename: z.string().trim().max(120).optional() }).strict(),
+    ]),
+    alt: z.string().trim().min(1).max(200).describe("Texte alternatif de l'image (accessibilité), obligatoire"),
+    name: z.string().trim().max(120).optional().describe("Nom lisible de l'image"),
+  }),
+  prepare: async (input, _ctx, event): Promise<Prepared<{ eventId: string; siteId: string; assetId: string }> | string> => {
+    const m = await ticketing();
+    const site = await m.getSite(event!.id);
+    const source = input.source;
+    const buffer = "url" in source ? await safeFetchImage(source.url) : m.decodeBase64Image(source.base64);
+    const fallbackName = "url" in source ? (() => {
+      try {
+        return decodeURIComponent(new URL(source.url).pathname.split("/").pop() ?? "");
+      } catch {
+        return "";
+      }
+    })() : (source.filename ?? "");
+    const staged = await m.stageAsset(site.id, buffer, { alt: input.alt, name: input.name || fallbackName });
+    return {
+      lines: [
+        `Ajouter l'image « ${staged.name || "sans nom"} » au site de « ${event!.title} » (${staged.source} → WebP ${staged.width}×${staged.height}, ${Math.round(staged.bytes / 1024)} Ko)`,
+        `Variantes : ${staged.variants.map((v) => `${v.w} px`).join(", ")}`,
+        `Texte alternatif : ${staged.alt}`,
+        "L'image n'est ajoutée qu'à la confirmation (en attente 1 heure au plus).",
+      ],
+      payload: { eventId: event!.id, siteId: site.id, assetId: staged.id },
+    };
+  },
+  state: async (p) => (await ticketing()).assetState(p.siteId, p.assetId),
+  execute: async (p, ctx) => {
+    const done = await (await ticketing()).confirmAsset(p.siteId, p.assetId, ctx.session.user.id);
+    return { text: `Image ajoutée au site (identifiant ${done.id}, ${done.width}×${done.height}). Utilisez cet identifiant comme assetId (logo, en-tête, fond, bloc image).`, vue: "site", data: done };
+  },
+});
+
+const deleteAssetAction = eventAction({
+  action: "delete_ticketing_site_asset",
+  role: "site",
+  description: previewDesc("supprimer une image du site ; refusée si elle est utilisée dans le brouillon ou la version publiée (l'aperçu indique où)"),
+  confirmDescription: confirmDesc("supprimer l'image du site"),
+  input: z.object({ event: eventRef, assetId: z.string().trim().min(1).max(40).describe("Identifiant de l'image, voir ticketing_site_assets") }),
+  prepare: async (input, _ctx, event): Promise<Prepared<{ eventId: string; siteId: string; assetId: string }> | string> => {
+    const m = await ticketing();
+    const site = await m.getSite(event!.id);
+    const asset = (await m.listAssets(site.id)).find((a) => a.id === input.assetId);
+    if (!asset) return "Image introuvable sur ce site : voir ticketing_site_assets.";
+    const used = [...asset.usedIn.draft.map((w) => `brouillon › ${w}`), ...asset.usedIn.published.map((w) => `version publiée › ${w}`)];
+    if (used.length) return `Image utilisée, suppression refusée : ${used.join(" ; ")}. Retirez-la d'abord (et republiez si elle est dans la version publiée).`;
+    return { lines: [`Supprimer l'image « ${asset.name || asset.id} » (${asset.width}×${asset.height}) du site de « ${event!.title} » : définitif`], payload: { eventId: event!.id, siteId: site.id, assetId: asset.id } };
+  },
+  state: async (p) => {
+    const asset = (await (await ticketing()).listAssets(p.siteId)).find((a) => a.id === p.assetId);
+    return asset && { id: asset.id, usedIn: asset.usedIn };
+  },
+  execute: async (p, ctx) => {
+    await (await ticketing()).deleteAsset(p.siteId, p.assetId, ctx.session.user.id);
+    return { text: "Image supprimée.", vue: "site" };
+  },
 });
 
 const publishState = async (p: { eventId?: string }) => {
@@ -500,4 +596,4 @@ const domainAction = eventAction({
   },
 });
 
-export const SITE_ACTIONS: McpActionDef[] = [...SITE_READS, ...themeAction, ...pageAction, ...blockAction, ...batchAction, ...publishAction, ...domainAction];
+export const SITE_ACTIONS: McpActionDef[] = [...SITE_READS, ...themeAction, ...pageAction, ...blockAction, ...batchAction, ...uploadAction, ...deleteAssetAction, ...publishAction, ...domainAction];

@@ -31682,6 +31682,142 @@
                                           "type": "string",
                                           "maxLength": 40,
                                           "description": "Libellé du bouton d'inscription"
+                                        },
+                                        "background": {
+                                          "oneOf": [
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "none"
+                                                  ]
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "color"
+                                                  ]
+                                                },
+                                                "color": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "primary",
+                                                    "secondary",
+                                                    "accent",
+                                                    "background",
+                                                    "text"
+                                                  ],
+                                                  "description": "Clé de la palette du thème (jamais une couleur libre)"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "color"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "gradient"
+                                                  ]
+                                                },
+                                                "stops": {
+                                                  "type": "array",
+                                                  "items": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                      "primary",
+                                                      "secondary",
+                                                      "accent",
+                                                      "background",
+                                                      "text"
+                                                    ],
+                                                    "description": "Clé de la palette du thème (jamais une couleur libre)"
+                                                  },
+                                                  "minItems": 2,
+                                                  "maxItems": 3,
+                                                  "description": "2 ou 3 clés de palette, dans l'ordre du dégradé"
+                                                },
+                                                "direction": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "vertical",
+                                                    "horizontal",
+                                                    "diagonal",
+                                                    "radial"
+                                                  ],
+                                                  "description": "Sens du dégradé"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "stops",
+                                                "direction"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "image"
+                                                  ]
+                                                },
+                                                "assetId": {
+                                                  "type": "string",
+                                                  "pattern": "^[a-z0-9]{20,40}$",
+                                                  "description": "Identifiant d'une image déjà téléversée sur le site"
+                                                },
+                                                "veil": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "primary",
+                                                    "secondary",
+                                                    "accent",
+                                                    "background",
+                                                    "text"
+                                                  ],
+                                                  "description": "Couleur du voile posé sur l'image (lisibilité du texte)"
+                                                },
+                                                "opacity": {
+                                                  "type": "number",
+                                                  "minimum": 0.2,
+                                                  "maximum": 0.9,
+                                                  "description": "Opacité du voile, de 0.2 à 0.9"
+                                                },
+                                                "fixed": {
+                                                  "type": "boolean",
+                                                  "default": false,
+                                                  "description": "Image fixe au défilement (désactivé sur mobile)"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "assetId",
+                                                "veil",
+                                                "opacity"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          ],
+                                          "description": "Fond du bandeau (couleur, dégradé ou image sous voile)"
                                         }
                                       },
                                       "required": [
@@ -32596,12 +32732,51 @@
       }
     },
     "/api/ticketing/events/{id}/site/assets": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Images du site",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nImages confirmées du site : identifiant, nom, texte alternatif, dimensions, poids, variantes générées et emplacements du brouillon et de la version publiée qui les utilisent.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste d'images avec `usedIn.draft` et `usedIn.published`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
       "post": {
         "tags": [
           "ticketing"
         ],
         "summary": "Dépôt d'une image du site",
-        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nFormulaire multipart, champ `file` : JPEG, PNG ou WebP, 8 Mo au plus, type vérifié sur le contenu. L'image est redressée, réduite à 2400 px au plus, convertie en WebP et dépouillée de toute métadonnée. Journalisé.",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nFormulaire multipart : `file` (JPEG, PNG, WebP ou SVG, 8 Mo au plus, type vérifié sur le contenu), `alt` (texte alternatif, 1 à 200 caractères, obligatoire) et `name` (facultatif, 120 caractères, le nom du fichier par défaut). 16 px au moins et 8000 px, 40 millions de pixels au plus. L'image est redressée, un SVG est rastérisé (aucun SVG n'est stocké ni servi), puis converties en variantes WebP de 640, 1280 et 2400 px de large (sans agrandissement) dépouillées de toute métadonnée. Journalisé.",
         "security": [
           {
             "session": []
@@ -32619,7 +32794,7 @@
           }
         ],
         "requestBody": {
-          "description": "Champ `file` : l'image",
+          "description": "Champs `file`, `alt`, `name`",
           "content": {
             "multipart/form-data": {
               "schema": {
@@ -34385,6 +34560,17 @@
             "required": true,
             "name": "assetId",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "nullable": true,
+              "description": "Largeur voulue : 640, 1280 ou 2400 (variante la plus proche par le haut)"
+            },
+            "required": false,
+            "description": "Largeur voulue : 640, 1280 ou 2400 (variante la plus proche par le haut)",
+            "name": "w",
+            "in": "query"
           }
         ],
         "responses": {

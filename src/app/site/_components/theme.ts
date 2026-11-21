@@ -36,8 +36,26 @@ export function themeStyle(theme: SiteTheme): CSSProperties {
 
 const GRADIENT_ANGLE = { vertical: "linear-gradient(180deg,", horizontal: "linear-gradient(90deg,", diagonal: "linear-gradient(135deg,", radial: "radial-gradient(circle," } as const;
 
-/** Calques de fond (couleur, dégradé, image + voile) à poser dans un conteneur `relative`. */
-export function backdropLayers(background: SiteBackground, assetUrl: (id: string) => string): { key: string; style: CSSProperties }[] {
+export type AssetUrl = (id: string, width?: number) => string;
+
+/** Largeurs des variantes générées (`VARIANT_WIDTHS` côté service) : `w` absente ou inconnue ⇒ variante la plus proche. */
+export const SRC_WIDTHS = [640, 1280, 2400] as const;
+export const srcSetOf = (assetUrl: AssetUrl, id: string) => SRC_WIDTHS.map((w) => `${assetUrl(id, w)} ${w}w`).join(", ");
+
+export interface BackdropLayer {
+  key: string;
+  style?: CSSProperties;
+  className?: string;
+  /** Image de fond affichée par un `<img>` (srcset, lazy, `object-fit: cover`, centrée). */
+  imageId?: string;
+}
+
+/**
+ * Calques de fond (couleur, dégradé, image + voile) à poser dans un conteneur `relative`. Une image
+ * fixe au défilement reste en CSS, mais seulement à partir de 40 rem de large : le rendu est
+ * mauvais sur mobile, où elle défile avec la page.
+ */
+export function backdropLayers(background: SiteBackground, assetUrl: AssetUrl): BackdropLayer[] {
   switch (background.kind) {
     case "none":
       return [];
@@ -45,19 +63,12 @@ export function backdropLayers(background: SiteBackground, assetUrl: (id: string
       return [{ key: "color", style: { backgroundColor: colorVar(background.color) } }];
     case "gradient":
       return [{ key: "gradient", style: { backgroundImage: `${GRADIENT_ANGLE[background.direction]} ${background.stops.map(colorVar).join(", ")})` } }];
-    case "image":
-      return [
-        {
-          key: "image",
-          style: {
-            backgroundImage: `url("${assetUrl(background.assetId)}")`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundAttachment: background.fixed ? "fixed" : "scroll",
-          },
-        },
-        { key: "veil", style: { backgroundColor: colorVar(background.veil), opacity: background.opacity } },
-      ];
+    case "image": {
+      const image: BackdropLayer = background.fixed
+        ? { key: "image", style: { backgroundImage: `url("${assetUrl(background.assetId, 2400)}")` }, className: "bg-cover bg-center bg-scroll @min-[40rem]:bg-fixed" }
+        : { key: "image", imageId: background.assetId };
+      return [image, { key: "veil", style: { backgroundColor: colorVar(background.veil), opacity: background.opacity } }];
+    }
   }
 }
 

@@ -8,7 +8,7 @@ import SiteRenderer from "../../_components/SiteRenderer";
 
 type Params = { readonly params: Promise<{ siteSlug: string; page?: string[] }> };
 
-const assetUrl = (id: string) => `/api/ticketing/public/site-assets/${id}`;
+const assetUrl = (id: string, width?: number) => `/api/ticketing/public/site-assets/${id}${width ? `?w=${width}` : ""}`;
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { siteSlug } = await params;

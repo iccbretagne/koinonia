@@ -10,14 +10,24 @@ export const paletteOptions = PALETTE_KEYS.map((k) => ({ value: k, label: PALETT
 const DIRECTION_LABEL = { vertical: "Vertical", horizontal: "Horizontal", diagonal: "Diagonal", radial: "Radial" } as const;
 
 export interface ImageTools {
-  readonly assetUrl: (id: string) => string;
+  readonly assetUrl: (id: string, width?: number) => string;
   /** Images du site déjà disponibles (référencées ou téléversées). */
   readonly pool: string[];
-  readonly upload: (file: File, then: (id: string) => void) => void;
+  /** Images déjà téléversées (nom et texte alternatif) pour les libeller. */
+  readonly library: readonly { id: string; name: string; alt: string }[];
+  /** Dépôt : le texte alternatif est obligatoire. */
+  readonly upload: (file: File, alt: string, then: (id: string) => void) => void;
 }
 
 export function ImageField({ label, current, tools, onPick, onClear }: { readonly label: string; readonly current?: string; readonly tools: ImageTools; readonly onPick: (id: string) => void; readonly onClear?: () => void }) {
-  const options = [{ value: "", label: "Choisir une image du site…" }, ...tools.pool.map((id, i) => ({ value: id, label: `Image ${i + 1}` }))];
+  const [alt, setAlt] = useState("");
+  const options = [
+    { value: "", label: "Choisir une image du site…" },
+    ...tools.pool.map((id, i) => {
+      const known = tools.library.find((a) => a.id === id);
+      return { value: id, label: known?.name || known?.alt || `Image ${i + 1}` };
+    }),
+  ];
   return (
     <div className="space-y-1.5">
       <span className="text-sm font-medium text-ink">{label}</span>
@@ -27,7 +37,20 @@ export function ImageField({ label, current, tools, onPick, onClear }: { readonl
           <img src={tools.assetUrl(current)} alt="" className="h-12 w-auto rounded border border-line" />
         )}
         {tools.pool.length > 0 && <Select label="" aria-label={`${label} : image du site`} value={current ?? ""} options={options} onChange={(e) => e.target.value && onPick(e.target.value)} />}
-        <input type="file" accept="image/jpeg,image/png,image/webp" aria-label={`${label} : téléverser`} onChange={(e) => e.target.files?.[0] && tools.upload(e.target.files[0], onPick)} className="text-sm text-ink-muted" />
+        <Input label="Texte alternatif de la nouvelle image (obligatoire)" value={alt} maxLength={200} onChange={(e) => setAlt(e.target.value)} />
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/svg+xml"
+          aria-label={`${label} : téléverser (JPEG, PNG, WebP ou SVG, 8 Mo au plus)`}
+          disabled={!alt.trim()}
+          title={alt.trim() ? undefined : "Saisissez d'abord le texte alternatif"}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) tools.upload(file, alt.trim(), onPick);
+            e.target.value = "";
+          }}
+          className="text-sm text-ink-muted"
+        />
         {current && onClear && <Button type="button" variant="ghost" size="sm" onClick={onClear}>Retirer</Button>}
       </div>
     </div>
