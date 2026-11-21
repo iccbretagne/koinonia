@@ -47,7 +47,7 @@ async function reservedOf(variantId: string): Promise<number> {
 export async function addVariant(eventId: string, optionId: string, userId: string, input: z.infer<typeof variantCreateSchema>) {
   const option = await optionInEvent(eventId, optionId);
   const prisma = await db();
-  const position = await prisma.ticketingVariant.count({ where: { optionId } });
+  const position = input.position ?? (await prisma.ticketingVariant.count({ where: { optionId } }));
   const variant = await prisma.ticketingVariant.create({
     data: { optionId, label: input.label, description: input.description, allergens: input.allergens, stock: input.stock ?? null, position },
   });

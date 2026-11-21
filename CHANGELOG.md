@@ -10,6 +10,16 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 - Billetterie : **site d'événement** (spec 084). Depuis l'onglet « Site », l'organisateur et le nouveau rôle d'événement **Communication** composent un site public aux couleurs de l'événement (thème, pages, blocs, pages automatiques Billetterie, Menus et Infos pratiques, contrôle de lisibilité), le publient sur son adresse, et peuvent le faire piloter par un assistant IA connecté. L'organisateur peut demander un **domaine dédié**, vérifié par DNS puis approuvé par la plateforme.
 
+### Outils MCP du site d'événement
+
+- `edit_ticketing_site_theme`/`_page`/`_block` : le jeton garde l'opération, réappliquée sur le brouillon courant à la confirmation ; plusieurs aperçus sur des endroits différents restent valides.
+- `edit_ticketing_site_batch` : 1 à 50 opérations (`type` theme, page ou block), dans l'ordre, tout ou rien, validation finale unique (schéma et lisibilité).
+- `describe_site_blocks` (lecture) : champs, bornes et valeurs permises de chaque bloc, du thème, de la bande, de la page et des fonds, générés depuis les schémas ; les refus listent les clés et `kind` permis. `ticketing_site` renvoie le contenu complet des blocs.
+- `ticketing_site_assets` (lecture), `upload_ticketing_site_asset` (`source` : `{ url }` https ou `{ base64, filename? }`, `alt` obligatoire, `name`) et `delete_ticketing_site_asset` (refusée si l'image est utilisée, brouillon ou publié) : variantes WebP 640/1280/2400, SVG rastérisé.
+- `publish_ticketing_site` : adresse publique finale et avertissements (sites non activés, `SITE_BASE_DOMAIN` absent, événement en brouillon). Tous les outils du site ne sont proposés que si l'église a activé les sites d'événement.
+- `duplicate_ticketing_event` (`event`, `startsAt`, `title?`, `endsAt?`), `export_ticketing_event` et `import_ticketing_event` (`data` : JSON `koinonia-ticketing-event`) : copie ou transfert en brouillon, sans inscrit, paiement, rôle, affectation ni IBAN. `create_ticketing_event` accepte `location` et `description`, `edit_ticketing_dish` une `position` à la création.
+- Site : boutons vers lien https, email, téléphone, ancre, en style plein, contour ou discret ; ancres sur bandes et blocs ; bandeau avec fond et bouton ; bannière avec ligne secondaire et bouton ; cartes (titre, texte, colonnes), pictogrammes (description), questions (titre), galerie ronde ; police Cinzel ; texte alternatif obligatoire des images, `srcset` des variantes.
+
 ## [v1.38.0] - 2026-11-21
 
 ### Ajouté
