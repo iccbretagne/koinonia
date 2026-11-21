@@ -1,7 +1,7 @@
 import { successResponse, errorResponse } from "@/lib/api-utils";
-import { getSite, saveDraft } from "@/modules/ticketing";
+import { getSite, saveDraft, setAfterCloseDays } from "@/modules/ticketing";
 import { requireEventAction } from "@/modules/ticketing/auth";
-import { siteDocumentSchema } from "./contract";
+import { afterCloseSchema, siteDocumentSchema } from "./contract";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -21,6 +21,17 @@ export async function PUT(request: Request, { params }: Params) {
     const { session } = await requireEventAction(id, "site");
     const doc = siteDocumentSchema.parse(await request.json());
     return successResponse(await saveDraft(id, session.user.id, doc));
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+export async function PATCH(request: Request, { params }: Params) {
+  try {
+    const { id } = await params;
+    const { session } = await requireEventAction(id, "site");
+    const { afterCloseDays } = afterCloseSchema.parse(await request.json());
+    return successResponse(await setAfterCloseDays(id, session.user.id, afterCloseDays));
   } catch (error) {
     return errorResponse(error);
   }

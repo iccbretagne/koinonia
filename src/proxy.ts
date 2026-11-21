@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { isApprovedSiteHost, siteSlugFromHost } from "@/lib/site-host";
+import { approvedSiteSlug, isForeignHost, refreshSiteHosts, siteSlugFromHost } from "@/lib/site-host";
 import { resolveRouteOwner, isPublicRoute } from "@/lib/module-routes";
 import { buildCsp, buildSiteCsp, cspHeaderName, generateNonce, storageOrigins, CSP_REPORT_PATH } from "@/lib/csp";
 
@@ -27,8 +27,10 @@ export const SESSION_COOKIE_NAMES = [
  */
 export function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? request.nextUrl.host;
-  const siteSlug = siteSlugFromHost(host, process.env.SITE_BASE_DOMAIN);
-  if (siteSlug || isApprovedSiteHost(host)) return siteHostRoute(request, siteSlug);
+  refreshSiteHosts();
+  const siteSlug = siteSlugFromHost(host, process.env.SITE_BASE_DOMAIN) ?? approvedSiteSlug(host);
+  // Domaine dédié (ADR-0031) : site approuvé, sinon 404 — jamais l'application sur un hôte étranger.
+  if (siteSlug || isForeignHost(host, process.env.SITE_BASE_DOMAIN)) return siteHostRoute(request, siteSlug);
 
   const pathname = request.nextUrl.pathname;
   // Fichiers statiques (`public/`) : jamais interceptés, comme avant l'élargissement du matcher.
@@ -101,6 +103,8 @@ function isOpenWithoutSession(pathname: string, method: string): boolean {
     // — ce n'est pas une adresse de module (NOYAU_ROUTES), donc pas déclarable via
     // `routes.public` d'un manifeste.
     pathname.startsWith("/api/cron") ||
+    // Fournisseur Traefik et liste des domaines du proxy : boucle locale + jeton, vérifiés dans le handler.
+    pathname.startsWith("/api/internal/") ||
     // Rapports de violation CSP : envoyés par le navigateur, session ou non (ADR-0022).
     pathname === CSP_REPORT_PATH ||
     // NextAuth gère sa propre poignée de main (signin, callback, csrf, session) : ces

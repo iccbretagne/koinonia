@@ -18145,6 +18145,48 @@
         }
       }
     },
+    "/api/internal/site-hosts": {
+      "get": {
+        "tags": [
+          "noyau"
+        ],
+        "summary": "Domaines dédiés approuvés (usage interne du proxy)",
+        "description": "**Accès** : jeton de partage dans l'adresse — boucle locale uniquement et en-tête `Authorization: Bearer <TRAEFIK_PROVIDER_TOKEN>` (404 si le jeton n'est pas configuré, 403 sinon).\n\nHôte → adresse du site, pour les domaines dédiés approuvés. Lue par le proxy au plus une fois par minute pour remplir son cache ; jamais appelée depuis Internet.",
+        "security": [],
+        "x-access": "token",
+        "responses": {
+          "200": {
+            "description": "Objet `{ \"<hôte>\": \"<adresse du site>\" }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/internal/traefik": {
+      "get": {
+        "tags": [
+          "noyau"
+        ],
+        "summary": "Fournisseur HTTP de Traefik (domaines dédiés des sites)",
+        "description": "**Accès** : jeton de partage dans l'adresse — boucle locale uniquement et en-tête `Authorization: Bearer <TRAEFIK_PROVIDER_TOKEN>` (404 si le jeton n'est pas configuré, 403 sinon).\n\nConfiguration dynamique Traefik : un routeur par domaine dédié approuvé, certificat Let's Encrypt, service vers l'application. Interrogée par Traefik lui-même (provider HTTP) ; jamais depuis Internet.",
+        "security": [],
+        "x-access": "token",
+        "responses": {
+          "200": {
+            "description": "Configuration dynamique Traefik (`http.routers`, `http.services`)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/jobs": {
       "get": {
         "tags": [
@@ -32411,6 +32453,68 @@
             "description": "Accès refusé"
           }
         }
+      },
+      "patch": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Durée d'affichage après la clôture",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nNombre de jours (1 à 365) pendant lesquels le site affiche « Événement terminé » après la clôture de l'événement, puis répond 404. 30 par défaut.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "afterCloseDays": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                },
+                "required": [
+                  "afterCloseDays"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Site mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
       }
     },
     "/api/ticketing/events/{id}/site/assets": {
@@ -32501,6 +32605,189 @@
             "description": "Image WebP",
             "content": {
               "image/webp": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/site/domain": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Domaine dédié du site",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement (rôle `configure`) : le domaine engage l'église, la Communication n'y a pas accès.\n\nÉtat du domaine (en attente, vérifié, approuvé, suspendu), dernier message d'erreur et enregistrements DNS à créer. `null` sans demande.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domaine ou `null`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Demande d'un domaine dédié",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement (rôle `configure`) : le domaine engage l'église, la Communication n'y a pas accès.\n\nUn domaine par site, cinq par église (hors suspendus). Refuse un domaine invalide, déjà pris, sous le domaine des sites ou celui de l'application. Renvoie le jeton de preuve à publier en TXT.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "host": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 253
+                  }
+                },
+                "required": [
+                  "host"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Domaine demandé et enregistrements DNS",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Suppression du domaine dédié",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement (rôle `configure`) : le domaine engage l'église, la Communication n'y a pas accès.\n\nLe site redevient servi par son adresse Koinonia.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rien",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/site/domain/verify": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Vérification DNS du domaine dédié",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement (rôle `configure`).\n\nContrôle l'enregistrement TXT `_koinonia.<domaine>` (jeton de preuve) et que le domaine pointe vers Koinonia (CNAME, ou mêmes adresses). Réussite : « vérifié » (le Super Admin doit encore l'approuver) ; échec : le motif est renvoyé dans `lastError`.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domaine avec son nouvel état",
+            "content": {
+              "application/json": {
                 "schema": {}
               }
             }
@@ -34061,6 +34348,107 @@
                 "schema": {}
               }
             }
+          }
+        }
+      }
+    },
+    "/api/ticketing/site-domains": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Demandes de domaines dédiés (toutes églises)",
+        "description": "**Accès** : Super Admin.\n\nÉcran d'approbation : église, événement, domaine, état et dernier contrôle DNS.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "responses": {
+          "200": {
+            "description": "Liste des domaines",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/site-domains/{domainId}": {
+      "patch": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Approbation ou refus d'un domaine dédié",
+        "description": "**Accès** : Super Admin.\n\nApprouver exige un DNS vérifié ; le domaine est alors servi (cache du proxy rafraîchi en une minute). Refuser supprime la demande, avec un motif facultatif transmis à l'organisateur. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "domainId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "decision": {
+                    "type": "string",
+                    "enum": [
+                      "approve",
+                      "reject"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 300
+                  }
+                },
+                "required": [
+                  "decision"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rien",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
           }
         }
       }

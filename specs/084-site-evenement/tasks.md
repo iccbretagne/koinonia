@@ -61,55 +61,55 @@
       voit que Aperçu (sans chiffres) et Site.
 - [x] **T15** — ADR-0031 « Sites d'événement : routage par hôte et domaines dédiés ».
       *(fichier : `docs/adr/0031-…md`, index `docs/adr/README.md`)*
-- [ ] **T16** — Tests du lot 1b : assets (faux type refusé, métadonnées absentes), proxy (hôte de
+- [x] **T16** — Tests du lot 1b : assets (faux type refusé, métadonnées absentes), proxy (hôte de
       site ⇒ `/admin`, `/api/users`, `/api/auth/*` en 404 ; pages autorisées réécrites ; CSP ;
       hôte inconnu ⇒ 404), **cookie de session sans attribut `Domain`**, visibilité
       (brouillon/publié), Communication refusé hors `site`.
 
 ## Lot 2 — Pages, blocs, pages automatiques (sous-PR 3)
 
-- [ ] **T17** — Rendu des 11 blocs (texte riche, image, galerie lazy, palette, cartes,
+- [x] **T17** — Rendu des 11 blocs (texte riche, image, galerie lazy, palette, cartes,
       à faire/à éviter, pictos, FAQ, bouton, bannière, séparateur) et des fonds de section.
-- [ ] **T18** — Pages automatiques Billetterie, Menus, Infos pratiques (depuis `getPublicEvent`,
+- [x] **T18** — Pages automatiques Billetterie, Menus, Infos pratiques (depuis `getPublicEvent`,
       aucune donnée personnelle) ; navigation et icône « Retrouver ma réservation ».
-- [ ] **T19** — Éditeur des pages, sections et blocs (ajout, ordre, suppression, formulaire par
+- [x] **T19** — Éditeur des pages, sections et blocs (ajout, ordre, suppression, formulaire par
       type), bornes affichées.
-- [ ] **T20** — « Événement terminé » après clôture, `afterCloseDays` (30 par défaut, réglable),
+- [x] **T20** — « Événement terminé » après clôture, `afterCloseDays` (30 par défaut, réglable),
       puis 404.
-- [ ] **T21** — Tests du lot 2 : chaque bloc rendu sans HTML brut ; pages automatiques à jour
+- [x] **T21** — Tests du lot 2 : chaque bloc rendu sans HTML brut ; pages automatiques à jour
       après changement de tarif/plat/lieu et sans email/téléphone/nom d'inscrit ; « terminé »
       puis 404 ; reconstitution de la page « Dress code » de la maquette (test de document).
 
 ## Lot 3 — Domaines dédiés (sous-PR 4)
 
-- [ ] **T22** — `site-domains.ts` : demande (1 par site, 5 par église, refus des sous-domaines de
+- [x] **T22** — `site-domains.ts` : demande (1 par site, 5 par église, refus des sous-domaines de
       `SITE_BASE_DOMAIN` et de l'hôte de l'application), vérification DNS (TXT + CNAME/A),
       approbation/refus Super Admin, `approvedHosts`.
-- [ ] **T23** — API : `site/domain` (GET/POST/DELETE), `site/domain/verify`,
+- [x] **T23** — API : `site/domain` (GET/POST/DELETE), `site/domain/verify`,
       `/api/ticketing/site-domains` et `[domainId]` (Super Admin) ; écran d'approbation Super Admin ;
       guide DNS dans l'onglet Site.
-- [ ] **T24** — Recontrôle quotidien branché au cron : échec ⇒ `SUSPENDED` + notification de
+- [x] **T24** — Recontrôle quotidien branché au cron : échec ⇒ `SUSPENDED` + notification de
       l'organisateur (domaine `ticketing` existant) ; redirection de l'adresse Koinonia vers le
       domaine approuvé ; liens des emails vers le domaine dédié.
-- [ ] **T25** — Fournisseur HTTP Traefik `GET /api/internal/traefik` (127.0.0.1 + jeton
+- [x] **T25** — Fournisseur HTTP Traefik `GET /api/internal/traefik` (127.0.0.1 + jeton
       `TRAEFIK_PROVIDER_TOKEN`) ; documentation `docs/production.md` (fournisseur, joker, DNS).
-- [ ] **T26** — Tests du lot 3 : TXT absent ⇒ `PENDING` ; 6e domaine refusé ; recontrôle en échec ⇒
+- [x] **T26** — Tests du lot 3 : TXT absent ⇒ `PENDING` ; 6e domaine refusé ; recontrôle en échec ⇒
       `SUSPENDED` + notification ; domaine non approuvé ⇒ 404 ; fournisseur refusé sans jeton ou
       hors localhost.
 
 ## Lot 4 — Assistants IA (sous-PR 5)
 
-- [ ] **T28** — `src/app/api/mcp/_actions/site.ts` : lecture `ticketing_site` et actions
+- [x] **T28** — `src/app/api/mcp/_actions/site.ts` : lecture `ticketing_site` et actions
       `edit_ticketing_site_theme`, `edit_ticketing_site_page`, `edit_ticketing_site_block`,
       `publish_ticketing_site`, `request_ticketing_site_domain` via `eventAction` ; branchées dans
       `MCP_ACTIONS` ; libellés dans `ACTION_LABELS`.
-- [ ] **T29** — Tests : rôle Communication autorisé sur le site et refusé sur le domaine ;
+- [x] **T29** — Tests : rôle Communication autorisé sur le site et refusé sur le domaine ;
       observateur et STAR sans rôle refusés ; contraste ou lien interdit refusés dès l'aperçu ;
       changement concurrent ⇒ `CHANGED` ; texte Markdown converti en arbre.
 
 ## Documentation
 
-- [ ] **T27** [P] — Guide utilisateur (fiche « Site d'événement »), fiches de Nia, `docs/auth.md`
+- [x] **T27** [P] — Guide utilisateur (fiche « Site d'événement »), fiches de Nia, `docs/auth.md`
       (rôle Communication), `docs/database.md`, `CLAUDE.md` (rôle Communication, site d'événement),
       CHANGELOG.
 

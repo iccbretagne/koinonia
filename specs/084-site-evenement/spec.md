@@ -1,7 +1,7 @@
 # Spec — Site d'événement de billetterie
 
 - **Numéro** : 084
-- **Statut** : En revue
+- **Statut** : Implémentée
 - **Créée le** : 2026-11-21
 - **Branche suggérée** : `feat/site-evenement`
 

@@ -21,7 +21,7 @@ export const ticketingModule = defineModule({
   dependsOn: ["core", "planning"],
 
   routes: {
-    authenticated: [{ path: "/billetterie" }],
+    authenticated: [{ path: "/billetterie" }, { path: "/admin/site-domains" }],
     api: [{ path: "/api/ticketing" }],
     public: [
       { path: "/inscription" },

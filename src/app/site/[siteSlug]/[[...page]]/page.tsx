@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { headers } from "next/headers";
+import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
+import { normalizeHost } from "@/lib/site-host";
 import { publicSiteView } from "@/modules/ticketing";
 import SiteRenderer from "../../_components/SiteRenderer";
 
@@ -22,6 +24,9 @@ export default async function SitePage({ params }: Params) {
   const view = await publicSiteView(siteSlug);
   if (!view) notFound();
   const pageSlug = page?.[0];
+  // Domaine dédié approuvé : l'adresse Koinonia y redirige (le domaine dédié lui-même est servi tel quel).
+  const host = normalizeHost((await headers()).get("host"));
+  if (view.dedicatedHost && host !== view.dedicatedHost) redirect(`https://${view.dedicatedHost}${pageSlug ? `/${pageSlug}` : "/"}`);
   if (pageSlug && !view.document.pages.some((p) => p.slug === pageSlug)) notFound();
   const first = view.document.pages[0].slug;
   return (

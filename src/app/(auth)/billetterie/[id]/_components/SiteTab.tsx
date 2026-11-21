@@ -2,24 +2,23 @@
 
 import { useState, type ReactNode } from "react";
 import { Alert, Button, Checkbox, Input, Select, StatusChip, useToast } from "@/components/ui";
+import SitePagesEditor from "./SitePagesEditor";
+import { BackgroundFields, ImageField } from "./SiteFields";
 import SiteRenderer from "@/app/site/_components/SiteRenderer";
 import {
-  GRADIENT_DIRECTIONS,
   PALETTE_KEYS,
   PALETTE_LABEL,
   SITE_FONTS,
   SITE_FONT_LABEL,
+  assetIdsOf,
   contrastIssues,
-  type PaletteKey,
   type PublicEvent,
-  type SiteBackground,
   type SiteDocument,
 } from "@/modules/ticketing/schemas";
 import type { SiteView } from "@/modules/ticketing";
 import { useApi } from "../../use-api";
-
-const DIRECTION_LABEL = { vertical: "Vertical", horizontal: "Horizontal", diagonal: "Diagonal", radial: "Radial" } as const;
-const paletteOptions = PALETTE_KEYS.map((k) => ({ value: k, label: PALETTE_LABEL[k] }));
+import DomainCard from "./DomainCard";
+import type { DomainView } from "@/modules/ticketing";
 
 function Card({ title, children }: { readonly title: string; readonly children: ReactNode }) {
   return (
@@ -40,26 +39,6 @@ async function uploadImage(eventId: string, file: File): Promise<string> {
   return data.id as string;
 }
 
-function ImageField({ label, current, onUpload, onClear, assetUrl }: { readonly label: string; readonly current?: string; readonly onUpload: (file: File) => void; readonly onClear: () => void; readonly assetUrl: (id: string) => string }) {
-  return (
-    <div className="space-y-1.5">
-      <span className="text-sm font-medium text-ink">{label}</span>
-      <div className="flex flex-wrap items-center gap-3">
-        {current && (
-          // eslint-disable-next-line @next/next/no-img-element -- miniature servie par l'API de l'équipe
-          <img src={assetUrl(current)} alt="" className="h-12 w-auto rounded border border-line" />
-        )}
-        <input type="file" accept="image/jpeg,image/png,image/webp" aria-label={label} onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])} className="text-sm text-ink-muted" />
-        {current && (
-          <Button type="button" variant="ghost" size="sm" onClick={onClear}>
-            Retirer
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-}
-
 /**
  * Onglet « Site » (spec 084) : thème, accueil, aperçu (mêmes composants que le site public, sur le
  * brouillon), publication. Ouvert aux rôles Organisateur et Communication.
@@ -73,6 +52,8 @@ export default function SiteTab({
   eventSlug,
   sitesEnabled,
   baseDomain,
+  canConfigure = false,
+  domain = null,
 }: {
   readonly eventId: string;
   readonly site: SiteView;
@@ -82,6 +63,9 @@ export default function SiteTab({
   readonly eventSlug: string;
   readonly sitesEnabled: boolean;
   readonly baseDomain?: string;
+  /** Organisateur : peut demander un domaine dédié. */
+  readonly canConfigure?: boolean;
+  readonly domain?: DomainView | null;
 }) {
   const { call, busy } = useApi();
   const toast = useToast();
@@ -89,6 +73,8 @@ export default function SiteTab({
   const [dirty, setDirty] = useState(false);
   const [published, setPublished] = useState(site.published);
   const [previewPage, setPreviewPage] = useState<string | undefined>();
+  const [uploaded, setUploaded] = useState<string[]>([]);
+  const [afterClose, setAfterClose] = useState(site.afterCloseDays);
 
   const assetUrl = (id: string) => `/api/ticketing/events/${eventId}/site/assets/${id}`;
   const issues = contrastIssues(doc).map((i) => i.message);
@@ -102,15 +88,16 @@ export default function SiteTab({
   };
   const upload = async (file: File, then: (id: string) => void) => {
     try {
-      then(await uploadImage(eventId, file));
+      const id = await uploadImage(eventId, file);
+      setUploaded((u) => [...u, id]);
+      then(id);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Dépôt refusé");
     }
   };
 
   const hero = doc.pages[0].sections.flatMap((s) => s.blocks).find((b) => b.kind === "hero");
-  const bg = doc.theme.background;
-  const setBg = (b: SiteBackground) => edit((d) => void (d.theme.background = b));
+  const tools = { assetUrl, upload, pool: [...new Set([...assetIdsOf(doc), ...uploaded])] };
 
   async function save() {
     const saved = await call<SiteView>(`/api/ticketing/events/${eventId}/site`, "PUT", doc, "Brouillon enregistré");
@@ -161,44 +148,9 @@ export default function SiteTab({
             <Select label="Texte" value={doc.theme.fonts.body} options={SITE_FONTS.map((f) => ({ value: f, label: SITE_FONT_LABEL[f] }))} onChange={(e) => edit((d) => void (d.theme.fonts.body = e.target.value as (typeof SITE_FONTS)[number]))} />
           </Card>
           <Card title="Images et fond">
-            <ImageField label="Logo" current={doc.theme.logoAssetId} assetUrl={assetUrl} onUpload={(f) => upload(f, (id) => edit((d) => void (d.theme.logoAssetId = id)))} onClear={() => edit((d) => void delete d.theme.logoAssetId)} />
-            <ImageField label="Image d'en-tête" current={doc.theme.headerAssetId} assetUrl={assetUrl} onUpload={(f) => upload(f, (id) => edit((d) => void (d.theme.headerAssetId = id)))} onClear={() => edit((d) => void delete d.theme.headerAssetId)} />
-            <Select
-              label="Fond de page"
-              value={bg.kind}
-              options={[{ value: "none", label: "Couleur du fond" }, { value: "color", label: "Couleur unie" }, { value: "gradient", label: "Dégradé" }, { value: "image", label: "Image" }]}
-              onChange={(e) => {
-                const kind = e.target.value;
-                if (kind === "none") setBg({ kind: "none" });
-                else if (kind === "color") setBg({ kind: "color", color: "background" });
-                else if (kind === "gradient") setBg({ kind: "gradient", stops: ["background", "secondary"], direction: "vertical" });
-                else if (bg.kind !== "image") setBg({ kind: "none" });
-              }}
-            />
-            {bg.kind === "color" && <Select label="Couleur" value={bg.color} options={paletteOptions} onChange={(e) => setBg({ ...bg, color: e.target.value as PaletteKey })} />}
-            {bg.kind === "gradient" && (
-              <>
-                <Select label="Première couleur" value={bg.stops[0]} options={paletteOptions} onChange={(e) => setBg({ ...bg, stops: [e.target.value as PaletteKey, ...bg.stops.slice(1)] })} />
-                <Select label="Seconde couleur" value={bg.stops[1]} options={paletteOptions} onChange={(e) => setBg({ ...bg, stops: [bg.stops[0], e.target.value as PaletteKey] })} />
-                <Select label="Direction" value={bg.direction} options={GRADIENT_DIRECTIONS.map((d) => ({ value: d, label: DIRECTION_LABEL[d] }))} onChange={(e) => setBg({ ...bg, direction: e.target.value as (typeof GRADIENT_DIRECTIONS)[number] })} />
-              </>
-            )}
-            {(bg.kind === "image" || bg.kind === "none") && (
-              <ImageField
-                label="Image de fond"
-                current={bg.kind === "image" ? bg.assetId : undefined}
-                assetUrl={assetUrl}
-                onUpload={(f) => upload(f, (id) => setBg({ kind: "image", assetId: id, veil: bg.kind === "image" ? bg.veil : "background", opacity: bg.kind === "image" ? bg.opacity : 0.7, fixed: false }))}
-                onClear={() => setBg({ kind: "none" })}
-              />
-            )}
-            {bg.kind === "image" && (
-              <>
-                <Select label="Couleur du voile" value={bg.veil} options={paletteOptions} onChange={(e) => setBg({ ...bg, veil: e.target.value as PaletteKey })} />
-                <Input label={`Opacité du voile : ${Math.round(bg.opacity * 100)} %`} type="range" min={20} max={90} value={Math.round(bg.opacity * 100)} onChange={(e) => setBg({ ...bg, opacity: Number(e.target.value) / 100 })} />
-                <label className="flex items-center gap-2 text-sm text-ink"><Checkbox checked={bg.fixed} onChange={(e) => setBg({ ...bg, fixed: e.target.checked })} /> Image fixe au défilement</label>
-              </>
-            )}
+            <ImageField label="Logo" current={doc.theme.logoAssetId} tools={tools} onPick={(id) => edit((d) => void (d.theme.logoAssetId = id))} onClear={() => edit((d) => void delete d.theme.logoAssetId)} />
+            <ImageField label="Image d'en-tête" current={doc.theme.headerAssetId} tools={tools} onPick={(id) => edit((d) => void (d.theme.headerAssetId = id))} onClear={() => edit((d) => void delete d.theme.headerAssetId)} />
+            <BackgroundFields label="Fond de page" value={doc.theme.background} tools={tools} onChange={(bg) => edit((d) => void (d.theme.background = bg))} />
           </Card>
           <Card title="Accueil">
             {hero ? (
@@ -213,6 +165,12 @@ export default function SiteTab({
               <p className="text-sm text-ink-muted">La page d&apos;accueil n&apos;a pas de bandeau d&apos;accueil.</p>
             )}
           </Card>
+          <Card title="Après l'événement">
+            <Input label="Jours d'affichage de « Événement terminé » (1 à 365)" type="number" min={1} max={365} value={afterClose} onChange={(e) => setAfterClose(Number(e.target.value))} />
+            <Button type="button" variant="secondary" size="sm" disabled={busy || afterClose === site.afterCloseDays || !(afterClose >= 1 && afterClose <= 365)} onClick={() => call<SiteView>(`/api/ticketing/events/${eventId}/site`, "PATCH", { afterCloseDays: afterClose }, "Durée enregistrée")}>Enregistrer la durée</Button>
+          </Card>
+          <SitePagesEditor doc={doc} edit={edit} tools={tools} />
+          {canConfigure && <DomainCard eventId={eventId} domain={domain} />}
         </div>
 
         <div className="min-w-0 space-y-2">

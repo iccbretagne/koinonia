@@ -17,6 +17,7 @@ import {
   listChurchAccounts,
   listChurchDepartments,
   listPayments,
+  getDomain,
   getSite,
   getSitesEnabled,
   previewEvent,
@@ -98,6 +99,7 @@ export default async function TicketingEventPage({
   const site = view === "site" ? await getSite(id) : null;
   const sitePreview = view === "site" ? await previewEvent(id) : null;
   const sitesEnabled = view === "site" ? await getSitesEnabled(access.churchId) : false;
+  const domain = view === "site" && can.configure ? await getDomain(id) : null;
   const forms = view === "apercu" && registry.has("forms") ? await (await import("@/modules/forms")).listFormsForEvent({ ticketingEventId: id }) : [];
   const formsManager = forms.length > 0 && (await hasChurchPermission(session, "forms:manage", access.churchId));
   const publicUrl = `${appUrl()}/inscription/${event.church.slug}/${event.slug}`;
@@ -148,7 +150,7 @@ export default async function TicketingEventPage({
       {view === "presences" && presence && <PresenceTab eventId={id} presence={presence} canExport={can.reception} />}
       {view === "restauration" && board && <CateringTab board={board} />}
       {view === "site" && site && (
-        <SiteTab eventId={id} site={site} event={sitePreview} title={event.title} churchSlug={event.church.slug ?? ""} eventSlug={event.slug} sitesEnabled={sitesEnabled} baseDomain={process.env.SITE_BASE_DOMAIN} />
+        <SiteTab eventId={id} site={site} event={sitePreview} title={event.title} churchSlug={event.church.slug ?? ""} eventSlug={event.slug} sitesEnabled={sitesEnabled} baseDomain={process.env.SITE_BASE_DOMAIN} canConfigure={can.configure} domain={domain} />
       )}
     </div>
   );

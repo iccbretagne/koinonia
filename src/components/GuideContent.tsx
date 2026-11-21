@@ -551,6 +551,14 @@ const FEATURES: Feature[] = [
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
+    name: "Site d'événement",
+    description: "Depuis l'onglet « Site » d'un événement de billetterie, l'organisateur et le rôle Communication composent un site public dans les couleurs de l'événement : thème (cinq couleurs, polices, logo, fond uni, dégradé ou image), pages (jusqu'à 8, dont les pages automatiques Billetterie, Menus et Infos pratiques) et blocs (texte, images, galerie, palette de couleurs, cartes, à faire / à éviter, pictogrammes, questions fréquentes, boutons, bannière). Un contrôle de lisibilité refuse les textes illisibles sur leur fond. L'aperçu montre le brouillon ; « Publier » le met en ligne sur l'adresse du site, une fois que l'administrateur de l'église a activé les sites d'événement dans ses paramètres. Après la clôture, le site affiche « Événement terminé » pendant la durée réglée (30 jours par défaut), puis disparaît. Seul l'organisateur peut demander un domaine dédié (par exemple fete.exemple.org) : il crée deux enregistrements DNS, clique sur « Vérifier », puis la plateforme approuve le domaine. Avec un assistant IA connecté (actions confirmées), on peut aussi demander de modifier le thème, les pages et les blocs, de publier ou de dépublier, toujours après un aperçu et votre accord.",
+    category: "Événements",
+    screenshotTitle: "Billetterie",
+    screenshotFile: "guide-billetterie.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
     name: "Billetterie : contrôle des entrées et restauration",
     description: "Avec un rôle Accueil, l'écran « Contrôle » de l'événement scanne les billets, codes de réservation et badges (Entrée, Sortie ou Auto), cherche un nom, compte +1 / −1 avec un motif et ajoute une personne sur place : le compteur de présents suit la jauge et alerte à 90 % et 100 %. Avec un rôle Restauration, l'écran « Restauration » compose le menu (plats, allergènes, stock), distribue les repas en scannant le billet ou l'étiquette, encaisse ce qui reste à régler, vend sur place et imprime les étiquettes de préparation. Les deux écrans fonctionnent sans réseau et se synchronisent au retour de la connexion. L'organisateur compose l'équipe dans l'onglet « Équipe » : postes, personnes retrouvées par département ou par nom, horaires, avec un planning par poste qu'il modifie à tout moment. Une affectation apparaît dans « Mon planning » avec son badge.",
     category: "Événements",

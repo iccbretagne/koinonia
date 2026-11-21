@@ -96,6 +96,14 @@ export async function saveDraft(eventId: string, userId: string, input: unknown)
   return getSite(eventId);
 }
 
+/** Durée d'affichage de « Événement terminé » après la clôture, en jours. */
+export async function setAfterCloseDays(eventId: string, userId: string, days: number): Promise<SiteView> {
+  const site = await getSite(eventId);
+  const row = await (await db()).ticketingSite.update({ where: { id: site.id }, data: { afterCloseDays: days } });
+  await audit(userId, row.churchId, "UPDATE", site.id, { afterCloseDays: days });
+  return getSite(eventId);
+}
+
 export async function publish(eventId: string, userId: string): Promise<SiteView> {
   const prisma = await db();
   const site = await prisma.ticketingSite.findUniqueOrThrow({ where: { eventId } });
@@ -135,6 +143,8 @@ export interface PublicSiteView {
   eventSlug: string;
   churchName: string;
   afterCloseDays: number;
+  /** Domaine dédié approuvé : l'adresse Koinonia y redirige. */
+  dedicatedHost: string | null;
 }
 
 /** Ce que le public voit, ou `null` (404) : église coupée, non publié, brouillon, trop ancien. */
@@ -142,7 +152,10 @@ export async function publicSiteView(slug: string, now: Date = new Date()): Prom
   const prisma = await db();
   const site = await prisma.ticketingSite.findUnique({
     where: { slug },
-    include: { event: { select: { slug: true, title: true, status: true, closedAt: true, church: { select: { slug: true, name: true } } } } },
+    include: {
+      event: { select: { slug: true, title: true, status: true, closedAt: true, church: { select: { slug: true, name: true } } } },
+      domain: { select: { host: true, status: true } },
+    },
   });
   if (!site?.published || !site.event.church.slug) return null;
   if (!(await getSitesEnabled(site.churchId))) return null;
@@ -150,7 +163,7 @@ export async function publicSiteView(slug: string, now: Date = new Date()): Prom
   if (event.status === "DRAFT") return null;
   const parsed = siteDocumentSchema.safeParse(site.published);
   if (!parsed.success) return null;
-  const base = { document: parsed.data, title: event.title, churchSlug: event.church.slug, eventSlug: event.slug, churchName: event.church.name, afterCloseDays: site.afterCloseDays };
+  const base = { document: parsed.data, title: event.title, churchSlug: event.church.slug, eventSlug: event.slug, churchName: event.church.name, afterCloseDays: site.afterCloseDays, dedicatedHost: site.domain?.status === "APPROVED" ? site.domain.host : null };
   if (event.status === "ARCHIVED") {
     const closedAt = event.closedAt ?? site.updatedAt;
     if (now.getTime() > closedAt.getTime() + site.afterCloseDays * DAY_MS) return null;

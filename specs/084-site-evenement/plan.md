@@ -1,7 +1,7 @@
 # Plan technique — Site d'événement de billetterie
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-11-21
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
