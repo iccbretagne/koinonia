@@ -75,7 +75,7 @@ function siteHostRoute(request: NextRequest, siteSlug: string | null): NextRespo
   const page = pathname === "/" || SITE_PAGE.test(pathname);
   if (!passthrough && !(page && siteSlug)) return notFoundResponse(pathname);
   // Module de la billetterie désactivé : l'hôte de site ne sert rien non plus.
-  if (resolveRouteOwner(passthrough ? pathname : "/site").kind === "orphan") return notFoundResponse(pathname);
+  if (!underPrefix(pathname, "/_next") && resolveRouteOwner(passthrough ? pathname : "/site").kind === "orphan") return notFoundResponse(pathname);
 
   if (!pathname.startsWith("/api/") && !pathname.startsWith("/_next")) {
     const headerName = cspHeaderName();
