@@ -932,7 +932,7 @@ const rolesAction = eventAction({
       payload: { eventId: e.id, roles: next },
     };
   },
-  state: async (p) => (await detailOf(p.eventId!)).roles.map(roleKey).sort(),
+  state: async (p) => (await detailOf(p.eventId!)).roles.map(roleKey).sort(byText),
   execute: async (p, ctx) => {
     const { roles } = rolesSchema.parse({ roles: p.roles });
     await (await ticketing()).setRoles(p.eventId!, userId(ctx), roles);
