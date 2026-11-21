@@ -34,6 +34,8 @@ export const MCP_TOOLS: Readonly<Record<string, { permissions?: string[] } | nul
   "accounting.awaitingPayment": null,
   "rooms.myReservations": null,
   "ticketing.myAssignments": null,
+  "ticketing.myEvents": null,
+  "ticketing.paymentsToHandle": null,
   "shuttle.balance": null,
   "audio.recentSermons": { permissions: ["audio:listen"] },
   "reports.recent": { permissions: ["reports:view"] },

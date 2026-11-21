@@ -213,6 +213,16 @@ d'autre n'accepte ce jeton.
 - **Événements et salles** (lot 3c) : créer 1 à 12 événements (`events:manage`) avec leurs
   départements ; réserver une salle (`rooms:reserve`, salle autorisée pour l'église, créneau
   revérifié par `reserveRoom`).
+- **Billetterie** (spec 083) : l'exclusion « pas d'action financière » est levée **pour la
+  billetterie seule** (les demandes de compta, la trésorerie et les dons restent hors d'atteinte).
+  Conduire un événement de sa création à sa clôture : créer, paramétrer, ouvrir/fermer/clôturer,
+  options et plats, rôles, postes et affectations, confirmation ou refus de « J'ai payé » en série
+  (50 au plus, tout ou rien), encaissement, remboursement, annulation, ajout sur place, remise et
+  vente à la restauration. Le droit est le **rôle d'événement** (`EVENT_ACTIONS`, dans l'église de
+  l'événement) ; créer un événement exige `ticketing:manage`. Chaque action appelle les services et
+  schémas de l'écran (`src/app/api/mcp/_actions/ticketing.ts`), journalisée « via l'assistant IA ».
+  Jamais d'email ni de téléphone de participant en lecture ; l'IBAN se saisit mais n'est **jamais
+  relu** (masqué `FR76 •••• 1234`, payload de confirmation effacé dès sa lecture).
 - Révocation : par la personne (« Mon profil › Assistants connectés »), par l'Admin de l'église
   (`church:settings`), ou en coupant la fonction (Super Admin pour l'instance, Admin pour l'église).
 

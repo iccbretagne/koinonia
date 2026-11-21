@@ -29,13 +29,14 @@ export async function createConfirmation(
 /**
  * Consomme un jeton : même connexion, même action, non expiré, jamais utilisé. La prise est
  * atomique (`updateMany` conditionnel) : deux confirmations simultanées n'exécutent qu'une fois.
- * `null` sinon, sans dire pourquoi.
+ * `null` sinon, sans dire pourquoi. `erase` vide le payload de la ligne une fois lu.
  */
 export async function consumeConfirmation(
   grantId: string,
   action: string,
   token: string,
-  now = new Date()
+  now = new Date(),
+  options: { erase?: boolean } = {}
 ): Promise<Prisma.JsonValue | null> {
   if (!token.startsWith("kmx_")) return null;
   const hash = hashToken(token);
@@ -45,5 +46,7 @@ export async function consumeConfirmation(
   });
   if (taken.count !== 1) return null;
   const row = await prisma.mcpConfirmation.findUnique({ where: { hash }, select: { payload: true } });
+  // Payload sensible (IBAN dicté, spec 083) : effacé dès qu'il est lu, sans attendre la purge.
+  if (options.erase) await prisma.mcpConfirmation.update({ where: { hash }, data: { payload: {} } });
   return row?.payload ?? null;
 }

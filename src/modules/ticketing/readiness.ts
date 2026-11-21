@@ -1,4 +1,4 @@
-import type { EventDetail } from "@/modules/ticketing";
+import type { PaymentMethodsConfig } from "./schemas";
 
 export interface ReadinessCheck {
   key: string;
@@ -10,10 +10,18 @@ export interface ReadinessCheck {
   href: string;
 }
 
-type ReadinessEvent = Pick<
-  EventDetail,
-  "id" | "tariffs" | "seatsOpen" | "paymentMethods" | "options" | "optionPaymentDeadline" | "roles" | "posterKey" | "location"
->;
+/** Ce que la vérification lit d'un événement (structure de `EventDetail`, sans dépendre du service). */
+export interface ReadinessEvent {
+  id: string;
+  tariffs: readonly { price: number }[];
+  seatsOpen: number;
+  paymentMethods: PaymentMethodsConfig;
+  options: readonly { label: string; type: string; active: boolean; price: number; variants: readonly { closed: boolean }[] }[];
+  optionPaymentDeadline: Date | string | null;
+  roles: readonly unknown[];
+  posterKey: string | null;
+  location: string | null;
+}
 
 /**
  * Ce qu'il reste à régler avant d'ouvrir les inscriptions (spec 074) : les points bloquants
@@ -55,3 +63,6 @@ export function readinessChecks(event: ReadinessEvent): ReadinessCheck[] {
     { key: "poster", label: "Affiche", done: !!event.posterKey, required: false, href: tab("parametres") },
   ];
 }
+
+/** Points bloquants restants (l'ouverture est refusée tant qu'il en reste). */
+export const blockingChecks = (event: ReadinessEvent) => readinessChecks(event).filter((c) => c.required && !c.done);

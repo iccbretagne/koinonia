@@ -39,6 +39,20 @@ const ACTION_LABELS: Record<string, string> = {
   create_events: "créer des événements",
   reserve_room: "réserver une salle",
   create_interview_slots: "créer des créneaux d'entretien pour les candidats au service",
+  create_ticketing_event: "créer un événement de billetterie",
+  update_ticketing_event: "modifier le paramétrage d'un événement de billetterie",
+  set_ticketing_status: "ouvrir, fermer ou clôturer un événement de billetterie",
+  edit_ticketing_option: "créer, modifier ou supprimer une option d'un événement de billetterie",
+  edit_ticketing_dish: "gérer les plats du menu d'un événement de billetterie",
+  set_ticketing_roles: "attribuer ou retirer un rôle d'événement de billetterie",
+  edit_ticketing_post: "gérer les postes de l'équipe d'un événement de billetterie",
+  edit_ticketing_assignment: "affecter des personnes à l'équipe d'un événement de billetterie",
+  handle_ticketing_payments: "confirmer ou refuser des déclarations de paiement de billetterie",
+  record_ticketing_receipt: "enregistrer un encaissement de billetterie",
+  mark_ticketing_refunded: "marquer des remboursements de billetterie",
+  cancel_ticketing_booking: "annuler une réservation de billetterie",
+  add_ticketing_walkin: "ajouter des personnes sur place à un événement de billetterie",
+  ticketing_catering_sale: "remettre un article ou vendre sur place à la restauration",
 };
 
 const PLANNING_HINT =
