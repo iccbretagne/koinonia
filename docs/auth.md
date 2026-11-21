@@ -761,7 +761,7 @@ seule (`ENABLED_MODULES`) :
   (HMAC de `TICKETING_TOKEN_SECRET`, à défaut `AUTH_SECRET`), seule leur **empreinte** SHA-256
   est stockée ; QR : billet = URL, réservation `KOINONIA-RESA:`, badge `KOINONIA-BADGE:`,
   étiquette `KOINONIA-REPAS:` (jamais accepté au contrôle d'entrée)
-- Koinonia n'encaisse rien : Wero, Revolut, virement sur un IBAN **propre à l'événement** (jamais
+- Koinonia n'encaisse rien : Wero, Revolut, PayPal, virement sur un IBAN **propre à l'événement** (jamais
   celui de l'église), espèces, chèque. État de paiement **par élément** (entrée, option) ;
   « J'ai payé » → déclaré → confirmé ou refusé par le trésorier ; encaissement direct borné par
   rôle ; annulation libre, remboursement selon les règles de chaque élément

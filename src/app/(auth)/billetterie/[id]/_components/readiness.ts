@@ -25,7 +25,7 @@ export function readinessChecks(event: ReadinessEvent): ReadinessCheck[] {
   const pm = event.paymentMethods;
   const offered = event.options.filter((o) => o.active);
   const paid = event.tariffs.some((t) => t.price > 0) || offered.some((o) => o.price > 0);
-  const hasMethod = !!(pm.wero || pm.revolut || pm.transfer || pm.cash || pm.cheque);
+  const hasMethod = !!(pm.wero || pm.revolut || pm.paypal || pm.transfer || pm.cash || pm.cheque);
   const emptyMenus = offered.filter((o) => o.type === "CHOICE" && !o.variants.some((v) => !v.closed));
   const paidOptions = offered.some((o) => o.price > 0);
   return [

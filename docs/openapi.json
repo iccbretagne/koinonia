@@ -28986,6 +28986,19 @@
                           "link"
                         ]
                       },
+                      "paypal": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                          "link": {
+                            "type": "string",
+                            "maxLength": 300
+                          }
+                        },
+                        "required": [
+                          "link"
+                        ]
+                      },
                       "transfer": {
                         "type": "object",
                         "nullable": true,
@@ -29560,6 +29573,7 @@
                     "enum": [
                       "WERO",
                       "REVOLUT",
+                      "PAYPAL",
                       "TRANSFER",
                       "CASH",
                       "CHEQUE"
@@ -29670,6 +29684,7 @@
                     "enum": [
                       "WERO",
                       "REVOLUT",
+                      "PAYPAL",
                       "TRANSFER",
                       "CASH",
                       "CHEQUE"
@@ -32355,7 +32370,7 @@
           "ticketing"
         ],
         "summary": "« J'ai payé »",
-        "description": "**Accès** : jeton de partage dans l'adresse.\n\nLes éléments à régler passent à déclaré avec le moyen indiqué (Wero, Revolut, virement) ; le trésorier est prévenu. 409 s'il n'y a rien à régler.",
+        "description": "**Accès** : jeton de partage dans l'adresse.\n\nLes éléments à régler passent à déclaré avec le moyen indiqué (Wero, Revolut, PayPal, virement) ; le trésorier est prévenu. 409 s'il n'y a rien à régler.",
         "security": [],
         "x-access": "token",
         "parameters": [
@@ -32379,6 +32394,7 @@
                     "enum": [
                       "WERO",
                       "REVOLUT",
+                      "PAYPAL",
                       "TRANSFER"
                     ]
                   }

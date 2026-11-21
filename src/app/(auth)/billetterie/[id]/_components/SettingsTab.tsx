@@ -83,6 +83,7 @@ export default function SettingsTab({ event }: { readonly event: EventDetail }) 
     retentionDays: String(event.retentionDays),
     wero: pm.wero?.target ?? "",
     revolut: pm.revolut?.link ?? "",
+    paypal: pm.paypal?.link ?? "",
     iban: pm.transfer?.iban ?? "",
     holder: pm.transfer?.holder ?? "",
     cash: pm.cash,
@@ -114,6 +115,7 @@ export default function SettingsTab({ event }: { readonly event: EventDetail }) 
         paymentMethods: {
           wero: f.wero ? { target: f.wero } : null,
           revolut: f.revolut ? { link: f.revolut } : null,
+          paypal: f.paypal ? { link: f.paypal } : null,
           transfer: f.iban ? { iban: f.iban, holder: f.holder } : null,
           cash: f.cash,
           cheque: f.cheque,
@@ -199,10 +201,11 @@ export default function SettingsTab({ event }: { readonly event: EventDetail }) 
         <p className="text-[13px] text-ink-muted">0 = gratuit. Une tranche non cochée n&apos;est pas proposée.</p>
       </Section>
 
-      <Section title="Moyens de paiement" summary="Wero, Revolut, virement, espèces, chèque" open>
+      <Section title="Moyens de paiement" summary="Wero, Revolut, PayPal, virement, espèces, chèque" open>
         <p className="text-[13px] text-ink-muted">Jamais les coordonnées bancaires de l&apos;église : seulement celles du bénéficiaire de l&apos;événement.</p>
         <Input label="Wero — téléphone ou email du bénéficiaire" value={f.wero} onChange={(e) => set("wero", e.target.value)} />
         <Input label="Revolut — lien de paiement (https)" value={f.revolut} onChange={(e) => set("revolut", e.target.value)} />
+        <Input label="PayPal — lien de paiement (https, ex. paypal.me)" value={f.paypal} onChange={(e) => set("paypal", e.target.value)} />
         <div className="grid gap-3 sm:grid-cols-2">
           <Input label="Virement — IBAN propre à l'événement" value={f.iban} onChange={(e) => set("iban", e.target.value)} />
           <Input label="Titulaire du compte" value={f.holder} onChange={(e) => set("holder", e.target.value)} />
