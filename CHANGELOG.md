@@ -6,6 +6,10 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+
+- Billetterie : **site d'événement** (spec 084). Depuis l'onglet « Site », l'organisateur et le nouveau rôle d'événement **Communication** composent un site public aux couleurs de l'événement (thème, pages, blocs, pages automatiques Billetterie, Menus et Infos pratiques, contrôle de lisibilité), le publient sur son adresse, et peuvent le faire piloter par un assistant IA connecté. L'organisateur peut demander un **domaine dédié**, vérifié par DNS puis approuvé par la plateforme.
+
 ## [v1.38.0] - 2026-11-21
 
 ### Ajouté

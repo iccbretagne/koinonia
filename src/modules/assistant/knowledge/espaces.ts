@@ -115,6 +115,25 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     screens: ["/billetterie"],
   },
   {
+    key: "KB-SITE-EVT",
+    kind: "howto",
+    title: "Site d'un événement de billetterie",
+    questions: [
+      "Créer un site pour l'événement",
+      "site de la soirée",
+      "publier le site de l'événement",
+      "domaine dédié pour le site",
+      "rôle communication billetterie",
+    ],
+    answer:
+      "Dans l'onglet « Site » d'un événement de billetterie, l'organisateur et le rôle Communication règlent le thème (couleurs, polices, fond), les pages et les blocs, vérifient l'aperçu puis cliquent sur « Publier ». L'administrateur de l'église doit avoir activé les sites d'événement dans ses paramètres. Seul l'organisateur demande un domaine dédié (deux enregistrements DNS, puis approbation de la plateforme).",
+    href: "/billetterie",
+    hrefLabel: "Billetterie",
+    audience: { predicates: ["ticketing"] },
+    otherwise: "Le site d'un événement est géré par son organisateur et par le rôle Communication de l'événement.",
+    screens: ["/billetterie"],
+  },
+  {
     key: "KB-144",
     kind: "howto",
     title: "Publier un message système",

@@ -223,6 +223,12 @@ d'autre n'accepte ce jeton.
   schémas de l'écran (`src/app/api/mcp/_actions/ticketing.ts`), journalisée « via l'assistant IA ».
   Jamais d'email ni de téléphone de participant en lecture ; l'IBAN se saisit mais n'est **jamais
   relu** (masqué `FR76 •••• 1234`, payload de confirmation effacé dès sa lecture).
+- **Site d'événement** (spec 084, lot 4, `src/app/api/mcp/_actions/site.ts`) : lecture `ticketing_site`
+  et actions `edit_ticketing_site_theme`/`_page`/`_block`, `publish_ticketing_site` (rôle `site` :
+  Organisateur, Communication) et `request_ticketing_site_domain` (rôle `configure` : Organisateur
+  seulement). Chaque aperçu valide le **document complet** (schéma, liens, lisibilité) et refuse dès
+  l'aperçu ; empreinte = `updatedAt` du brouillon ; texte riche en Markdown restreint ; pas de
+  téléversement (images déjà présentes sur le site).
 - Révocation : par la personne (« Mon profil › Assistants connectés »), par l'Admin de l'église
   (`church:settings`), ou en coupant la fonction (Super Admin pour l'instance, Admin pour l'église).
 

@@ -109,7 +109,7 @@
 
 ## Documentation
 
-- [ ] **T27** [P] — Guide utilisateur (fiche « Site d'événement »), fiches de Nia, `docs/auth.md`
+- [x] **T27** [P] — Guide utilisateur (fiche « Site d'événement »), fiches de Nia, `docs/auth.md`
       (rôle Communication), `docs/database.md`, `CLAUDE.md` (rôle Communication, site d'événement),
       CHANGELOG.
 
