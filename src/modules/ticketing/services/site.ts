@@ -53,6 +53,8 @@ export interface SiteView {
 
 /** Site de l'événement ; créé au premier appel avec le document de départ. */
 export async function getSite(eventId: string): Promise<SiteView> {
+  const { ticketingSitesEnabled } = await import("@/lib/ticketing-sites-flag");
+  if (!ticketingSitesEnabled()) throw new ApiError(404, "Sites d'événement non disponibles sur cette instance");
   const prisma = await db();
   let site = await prisma.ticketingSite.findUnique({ where: { eventId } });
   if (!site) {

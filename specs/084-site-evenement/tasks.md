@@ -122,7 +122,7 @@
 - [x] **T34** [P] — Rendu `srcset`, fonds recadrés, fond fixe réservé au grand écran, fond du bandeau, éditeur (texte alternatif, images du site).
 - [x] **T35** — Boutons (cibles, styles), ancres, bandeau et bannière enrichis, cartes, pictogrammes, questions, galerie ronde, police Cinzel, contraste des boutons.
 - [x] **T36** — Adresse publique et avertissements de publication (aperçu, résultat, `ticketing_site`, onglet Site).
-- [x] **T37** — Prédicat `ticketingSites` : outils du site proposés seulement si l'église a activé les sites ; `docs/staging.md`.
+- [x] **T37** — Prédicat `ticketingSites` : outils du site proposés seulement si le drapeau d'instance `TICKETING_SITES_ENABLED` est actif (coupé par défaut, posé au build de recette) ; `docs/staging.md`.
 - [x] **T38** — Lieu, description et position de plat à la création.
 - [x] **T39** — Duplication, export et import JSON d'un événement (brouillon, sans donnée personnelle ni IBAN).
 - [x] **T40** [P] — Documentation : spec (addendum), CHANGELOG, `CLAUDE.md`, `docs/auth.md`, `docs/database.md`, `docs/staging.md`, guide et fiches de l'assistant.

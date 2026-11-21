@@ -8,6 +8,8 @@ async function db() {
 }
 
 export async function getSitesEnabled(churchId: string): Promise<boolean> {
+  const { ticketingSitesEnabled } = await import("@/lib/ticketing-sites-flag");
+  if (!ticketingSitesEnabled()) return false;
   const row = await (await db()).ticketingSiteSettings.findUnique({ where: { churchId } });
   return row?.enabled ?? false;
 }

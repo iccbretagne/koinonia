@@ -9,6 +9,8 @@ vi.mock("../services/site-settings", () => ({ getSitesEnabled: (...a: unknown[])
 const getPublicEvent = vi.fn();
 vi.mock("../services/events", async (orig) => ({ ...(await orig<typeof import("../services/events")>()), getPublicEvent: (...a: unknown[]) => getPublicEvent(...a) }));
 
+// Drapeau d'instance des sites : actif pour ces tests (coupé par défaut).
+process.env.TICKETING_SITES_ENABLED = "true";
 const { getSite, saveDraft, publicSiteView, siteSlugBase, resolveSiteByHost } = await import("../services/site");
 const { defaultSiteDocument } = await import("../site-schemas");
 
@@ -130,5 +132,17 @@ describe("resolveSiteByHost", () => {
     prismaMock.ticketingSiteDomain.findFirst.mockResolvedValue(null);
     expect(await resolveSiteByHost("fete.exemple.fr")).toBeNull();
     expect(prismaMock.ticketingSiteDomain.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { host: "fete.exemple.fr", status: "APPROVED" } }));
+  });
+});
+
+describe("drapeau d'instance des sites", () => {
+  it("coupé : getSite répond 404, rien n'est créé", async () => {
+    process.env.TICKETING_SITES_ENABLED = "false";
+    try {
+      await expect(getSite("ev-1")).rejects.toMatchObject({ statusCode: 404 });
+      expect(prismaMock.ticketingSite.create).not.toHaveBeenCalled();
+    } finally {
+      process.env.TICKETING_SITES_ENABLED = "true";
+    }
   });
 });

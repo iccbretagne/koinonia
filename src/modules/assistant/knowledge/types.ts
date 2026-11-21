@@ -13,7 +13,7 @@
  * - `secretariatTeam`, `mediaTeam`, `integrationTeam` : membre d'un département de fonction
  * - `pastoral` : profil pastoral dans l'église courante
  * - `announcementSheet` : lecture de la trame des annonces (`canReadAnnouncementSheet`)
- * - `ticketingSites` : l'Admin de l'église a activé les sites d'événement (spec 084) ; coupés par défaut
+ * - `ticketingSites` : sites d'événement actifs sur l'instance (spec 084, drapeau `TICKETING_SITES_ENABLED`) ; coupés par défaut
  * - `mediaGallery` : accès à la galerie médias (`requireMediaGalleryAccess`, spec 080)
  */
 export const PREDICATES = [

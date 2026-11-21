@@ -239,7 +239,11 @@ d'autre n'accepte ce jeton.
   `delete_ticketing_site_asset` (refusée si l'image sert au brouillon ou à la version publiée).
   `publish_ticketing_site` renvoie l'adresse publique finale et les avertissements (sites non activés,
   `SITE_BASE_DOMAIN` absent, événement en brouillon). **Tous les outils du site ne sont proposés que si
-  l'église a activé les sites d'événement** (prédicat `ticketingSites`, `assistant/_viewer.ts`).
+  le drapeau d'instance des sites est actif** (prédicat `ticketingSites`, `assistant/_viewer.ts`,
+  `src/lib/ticketing-sites-flag.ts`) : coupé par défaut (production), actif en recette
+  (`NEXT_PUBLIC_TICKETING_SITES_ENABLED=true` posé au build par `deploy-staging.yml`) ou par
+  `TICKETING_SITES_ENABLED=true` dans le `.env` du serveur. L'activation par l'Admin d'église ne décide
+  que de la diffusion publique (avertissement à la publication si elle est coupée).
 - **Duplication, export et import d'un événement** (spec 084, `_actions/event-transfer.ts`) :
   `duplicate_ticketing_event` (rôle `configure` sur la source **et** `ticketing:manage` : copie en
   brouillon, sans IBAN, inscrit, paiement, rôle ni affectation), `export_ticketing_event` (lecture, rôle

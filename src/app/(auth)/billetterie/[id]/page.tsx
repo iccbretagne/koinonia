@@ -1,3 +1,4 @@
+import { ticketingSitesEnabled } from "@/lib/ticketing-sites-flag";
 import { notFound } from "next/navigation";
 import { hasChurchPermission, requireAuth } from "@/lib/auth";
 import { qrPath } from "@/lib/qr";
@@ -58,7 +59,8 @@ export default async function TicketingEventPage({
   if (!access) notFound();
   // Communication (spec 084) : pas de `read`, seulement l'aperçu allégé et l'onglet Site.
   const read = canDo(access, "read");
-  const siteAccess = canDo(access, "site");
+  // Sites d'événement : drapeau d'instance (coupé par défaut).
+  const siteAccess = canDo(access, "site") && ticketingSitesEnabled();
   if (!read && !siteAccess) return <p className="p-4 text-ink-muted">Accès non autorisé.</p>;
 
   const can = {

@@ -211,8 +211,9 @@ Retours de la recette, livrés en six lots empilés (aucune nouvelle table, sauf
   texte, colonnes), pictogrammes avec description, titre de questions, galerie ronde ; police Cinzel.
 - **Publication** : l'aperçu et le résultat indiquent l'adresse publique finale et un **avertissement**
   explicite si le site ne sera pas accessible (sites non activés, adresse non configurée, événement en
-  brouillon) ; la publication reste possible. Les outils du site ne sont proposés à l'assistant que si
-  l'église a activé les sites d'événement.
+  brouillon) ; la publication reste possible. Les sites d'événement (outils de l'assistant, onglet
+  Site, sites servis) dépendent d'un **réglage de l'instance**, coupé par défaut en production et
+  actif en recette ; l'activation par l'Admin d'église décide ensuite de la diffusion publique.
 - **Écarts d'outils** : lieu et description dès la création d'un événement, position d'un plat à la création,
   **duplication** d'un événement en brouillon (sans inscrits, paiements, rôles, affectations ni IBAN),
   **export et import JSON** entre instances (sans donnée personnelle).

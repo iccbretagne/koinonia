@@ -7,6 +7,7 @@ import ChurchAssistantToggle from "./ChurchAssistantToggle";
 import ChurchMcpCard from "./ChurchMcpCard";
 import ChurchSitesCard from "./ChurchSitesCard";
 import { registry } from "@/lib/registry";
+import { ticketingSitesEnabled } from "@/lib/ticketing-sites-flag";
 
 export default async function ChurchDetailPage({
   params,
@@ -55,8 +56,8 @@ export default async function ChurchDetailPage({
     ? await import("@/modules/assistant").then(({ getChurchSetting }) => getChurchSetting(churchId)).catch(() => null)
     : null;
 
-  // Sites d'événement (spec 084) : carte proposée si la billetterie est active.
-  const sites = registry.has("ticketing")
+  // Sites d'événement (spec 084) : carte proposée si la billetterie et le drapeau d'instance sont actifs.
+  const sites = registry.has("ticketing") && ticketingSitesEnabled()
     ? await import("@/modules/ticketing").then(({ getSitesEnabled }) => getSitesEnabled(churchId)).catch(() => null)
     : null;
 

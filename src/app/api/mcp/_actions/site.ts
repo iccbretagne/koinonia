@@ -604,8 +604,9 @@ const domainAction = eventAction({
 });
 
 /**
- * Les outils du site ne sont proposés que si l'église a activé les sites d'événement (coupés par
- * défaut) : prédicat `ticketingSites`, calculé côté serveur (`assistant/_viewer.ts`).
+ * Les outils du site ne sont proposés que si le drapeau d'instance des sites est actif (coupé par
+ * défaut, actif en recette) : prédicat `ticketingSites`, calculé côté serveur
+ * (`assistant/_viewer.ts`). La diffusion publique dépend en plus de l'activation par l'église.
  */
 const whenSitesEnabled = (def: McpActionDef): McpActionDef => ({ ...def, available: (viewer) => def.available(viewer) && viewer.predicates.includes("ticketingSites") });
 
