@@ -111,8 +111,11 @@ describe("uploadAsset", () => {
       `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100"><image xlink:href="file:///etc/passwd"/></svg>`,
       `<?xml version="1.0"?><!DOCTYPE svg [<!ENTITY x SYSTEM "file:///etc/passwd">]><svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><text>&x;</text></svg>`,
       `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect style="fill:url(http://exemple.org/x)" width="100" height="100"/></svg>`,
+      `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><style>@import "http://exemple.org/x.css";</style><rect width="100" height="100"/></svg>`,
     ];
     for (const svg of bad) await expect(uploadAsset("s1", "u1", Buffer.from(svg), ALT), svg).rejects.toMatchObject({ statusCode: 400 });
+    // UTF-16 : les contrôles textuels ne verraient rien, l'image est refusée.
+    await expect(uploadAsset("s1", "u1", Buffer.from(`\uFEFF${SVG.replace("<text", "<script>alert(1)</script><text")}`, "utf16le"), ALT)).rejects.toMatchObject({ statusCode: 400 });
     expect(storeFile).not.toHaveBeenCalled();
   });
 

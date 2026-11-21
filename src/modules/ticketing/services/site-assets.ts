@@ -41,6 +41,9 @@ export function sniffSvg(buffer: Buffer): boolean {
 /** Un SVG ne doit rien charger ni exécuter : ni entité, ni script, ni objet étranger, ni référence externe. */
 export function assertSafeSvg(buffer: Buffer): void {
   const text = buffer.toString("utf8");
+  // UTF-16 ou octets nuls : les contrôles textuels ci-dessous ne verraient rien.
+  if (buffer.includes(0) || text.includes("\uFFFD")) throw new ApiError(400, "SVG refusé : encodage non pris en charge (UTF-8 attendu)");
+  if (/@import/i.test(text)) throw new ApiError(400, "SVG refusé : références externes non autorisées");
   if (/<!ENTITY|<script|<foreignObject|<iframe|<embed|<object/i.test(text)) throw new ApiError(400, "SVG refusé : contenu actif ou entités non autorisés");
   for (const m of text.matchAll(/(?:xlink:)?href\s*=\s*["']([^"']*)["']/gi)) {
     if (!/^(#|data:image\/(png|jpe?g|webp);)/i.test(m[1].trim())) throw new ApiError(400, "SVG refusé : références externes non autorisées");
