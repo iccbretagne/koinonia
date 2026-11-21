@@ -60,3 +60,9 @@ export function normalizeBic(value: string): string {
 export function isValidBic(value: string): boolean {
   return /^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(normalizeBic(value));
 }
+
+/** IBAN affiché sans être lisible : pays, clé et 4 derniers caractères (« FR76 •••• 1234 »). */
+export function maskIban(value: string): string {
+  const iban = normalizeIban(value);
+  return iban.length < 8 ? "••••" : `${iban.slice(0, 4)} •••• ${iban.slice(-4)}`;
+}

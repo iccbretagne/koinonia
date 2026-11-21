@@ -33,6 +33,16 @@ describe("jeton de confirmation", () => {
     });
   });
 
+  it("erase : le payload (IBAN dicté, spec 083) est vidé dès sa lecture ; sans l'option, gardé", async () => {
+    prismaMock.mcpConfirmation.updateMany.mockResolvedValue({ count: 1 });
+    prismaMock.mcpConfirmation.findUnique.mockResolvedValue({ payload: { iban: "FR7630006000011234567890189" } });
+    expect(await consumeConfirmation("g1", "update_ticketing_event", "kmx_abc", now, { erase: true })).toEqual({ iban: "FR7630006000011234567890189" });
+    expect(prismaMock.mcpConfirmation.update).toHaveBeenCalledWith({ where: { hash: hashToken("kmx_abc") }, data: { payload: {} } });
+    prismaMock.mcpConfirmation.update.mockClear();
+    await consumeConfirmation("g1", "answer_service", "kmx_abc", now);
+    expect(prismaMock.mcpConfirmation.update).not.toHaveBeenCalled();
+  });
+
   it("rejouée, expirée, d'une autre connexion ou d'une autre action : refus sans rien renvoyer", async () => {
     prismaMock.mcpConfirmation.updateMany.mockResolvedValue({ count: 0 });
     expect(await consumeConfirmation("g1", "answer_service", "kmx_abc", now)).toBeNull();
