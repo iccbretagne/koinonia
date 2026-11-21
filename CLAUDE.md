@@ -705,6 +705,13 @@ seule (`ENABLED_MODULES`) :
   d'empreintes, file IndexedDB, synchronisation idempotente (`…/sync`), présences **calculées** à
   partir des passages, seuils de jauge 90 % et 100 % notifiés une fois. L'équipe (postes,
   affectations, badges) est propre à l'événement ; « Mon planning » la lit seulement
+- **Site et assistants IA** (spec 084, ADR-0031) : les outils MCP du site (`_actions/site.ts`) ne sont
+  proposés que si l'église a activé les sites (prédicat `ticketingSites`) ; le jeton garde l'**opération**,
+  réappliquée sur le brouillon courant, avec une empreinte limitée à la portion touchée (lot atomique
+  `edit_ticketing_site_batch`). Images : variantes WebP 640/1280/2400, SVG rastérisé (jamais stocké),
+  `alt` obligatoire, téléversement par URL via `src/lib/safe-fetch.ts` (garde SSRF : IP vérifiée et
+  épinglée, https, aucune redirection) ; images en attente (`key = "pending"`) purgées par la tâche
+  billetterie. `duplicate/export/import_ticketing_event` : brouillon, jamais d'IBAN ni de donnée personnelle
 - Planning de l'équipe (onglet Équipe) : vue par poste, affectation modifiable (poste, créneau ;
   la personne est prévenue), comptes filtrés par département (responsabilité ou fiche STAR liée,
   lus en base sans importer `planning`) — aide à la recherche, jamais une restriction

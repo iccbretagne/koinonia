@@ -227,8 +227,25 @@ d'autre n'accepte ce jeton.
   et actions `edit_ticketing_site_theme`/`_page`/`_block`, `publish_ticketing_site` (rôle `site` :
   Organisateur, Communication) et `request_ticketing_site_domain` (rôle `configure` : Organisateur
   seulement). Chaque aperçu valide le **document complet** (schéma, liens, lisibilité) et refuse dès
-  l'aperçu ; empreinte = `updatedAt` du brouillon ; texte riche en Markdown restreint ; pas de
-  téléversement (images déjà présentes sur le site).
+  l'aperçu ; texte riche en Markdown restreint. Le jeton stocke **l'opération** (thème, page, bande,
+  bloc), réappliquée sur le brouillon courant à la confirmation (revalidée, refus explicite si le
+  document devient invalide ou illisible) ; l'empreinte ne porte que sur la **portion touchée**, si
+  bien que des aperçus sur des endroits différents restent valides l'un après l'autre.
+  `edit_ticketing_site_batch` (1 à 50 opérations, dans l'ordre, tout ou rien, validation finale unique)
+  et `describe_site_blocks` (lecture : champs, bornes et valeurs permises **générés depuis les schémas
+  Zod** ; les refus listent les clés ou `kind` permis). Images (rôle `site`) : `ticketing_site_assets`
+  (lecture, avec les emplacements d'usage), `upload_ticketing_site_asset` (URL https avec garde SSRF :
+  IP vérifiée et épinglée, aucune redirection, 10 s, 8 Mo ; ou base64) et
+  `delete_ticketing_site_asset` (refusée si l'image sert au brouillon ou à la version publiée).
+  `publish_ticketing_site` renvoie l'adresse publique finale et les avertissements (sites non activés,
+  `SITE_BASE_DOMAIN` absent, événement en brouillon). **Tous les outils du site ne sont proposés que si
+  l'église a activé les sites d'événement** (prédicat `ticketingSites`, `assistant/_viewer.ts`).
+- **Duplication, export et import d'un événement** (spec 084, `_actions/event-transfer.ts`) :
+  `duplicate_ticketing_event` (rôle `configure` sur la source **et** `ticketing:manage` : copie en
+  brouillon, sans IBAN, inscrit, paiement, rôle ni affectation), `export_ticketing_event` (lecture, rôle
+  `configure` : JSON `koinonia-ticketing-event` v1 sans donnée personnelle) et
+  `import_ticketing_event` (`ticketing:manage` dans l'église de la connexion : JSON validé strictement,
+  brouillon, images retraitées).
 - Révocation : par la personne (« Mon profil › Assistants connectés »), par l'Admin de l'église
   (`church:settings`), ou en coupant la fonction (Super Admin pour l'instance, Admin pour l'église).
 

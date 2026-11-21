@@ -1567,7 +1567,7 @@ jeton étant dérivé à la demande d'un sel (`tokenSalt`) et d'un secret serveu
 
 - **Sites d'événement (spec 084)** : **`ticketing_sites`** (un par événement : `slug` unique = sous-domaine,
   `draft` et `published` en JSON validés par `siteDocumentSchema`, `afterCloseDays`) ;
-  **`ticketing_site_assets`** (images vérifiées, converties en WebP, sans métadonnées) ;
+  **`ticketing_site_assets`** (images vérifiées, converties en WebP, sans métadonnées : `key` = plus grande variante, `pending` tant que l'image n'est pas confirmée (purgée après 1 h par la tâche billetterie) ; `name` (120), `alt` texte alternatif (200, obligatoire à tout nouveau dépôt, vide pour les anciennes images), `variants` JSON `[{ w, key, bytes }]` : largeurs 640, 1280 et 2400 px sans agrandissement ; un SVG est rastérisé, jamais stocké) ;
   **`ticketing_site_domains`** (un domaine dédié par site : `host` unique, `proofToken`, `status` `PENDING`,
   `VERIFIED`, `APPROVED`, `SUSPENDED`, `lastCheckedAt`, `lastError`, `approvedById`) ;
   **`ticketing_site_settings`** (une ligne par église : activation des sites). Rôle d'événement

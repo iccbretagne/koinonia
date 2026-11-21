@@ -192,6 +192,42 @@ montre ce qui change (avant → après) et les problèmes de lisibilité éventu
       compose les pages et publie le site, après aperçu et confirmation, avec les mêmes contrôles
       qu'à l'écran ; un compte sans ce rôle ne se voit proposer aucune de ces actions.
 
+## Addendum du 21 novembre 2026 : évolutions après recette
+
+Retours de la recette, livrés en six lots empilés (aucune nouvelle table, sauf trois colonnes sur les images) :
+
+- **Édition par lot par l'assistant** : un outil applique 1 à 50 opérations dans l'ordre, tout ou rien ;
+  les aperçus indépendants ne s'invalident plus entre eux (le jeton garde l'opération, l'empreinte ne
+  porte que sur la portion touchée). L'assistant dispose d'une description générée des blocs et reçoit
+  les clés ou `kind` permis quand il se trompe.
+- **Images par l'assistant** (le « téléversement » devient possible, ce qui lève l'exclusion
+  correspondante ci-dessous) : par adresse https publique ou en base64, texte alternatif obligatoire, JPEG,
+  PNG, WebP ou **SVG rastérisé** (aucun SVG n'est stocké ni servi), variantes 640, 1280 et 2400 px, suppression
+  refusée tant que l'image sert au brouillon ou à la version publiée. Le téléchargement par adresse est
+  protégé contre le SSRF (adresse vérifiée et épinglée, aucune redirection, délai et poids bornés).
+- **Boutons et blocs** : boutons vers une page, un lien https, un email, un téléphone, une ancre de la
+  page ou l'inscription, en style plein, contour ou discret (lisibilité contrôlée) ; ancres sur bandes et
+  blocs ; bandeau avec fond et bouton propre ; bannière avec ligne secondaire et bouton ; cartes (titre,
+  texte, colonnes), pictogrammes avec description, titre de questions, galerie ronde ; police Cinzel.
+- **Publication** : l'aperçu et le résultat indiquent l'adresse publique finale et un **avertissement**
+  explicite si le site ne sera pas accessible (sites non activés, adresse non configurée, événement en
+  brouillon) ; la publication reste possible. Les outils du site ne sont proposés à l'assistant que si
+  l'église a activé les sites d'événement.
+- **Écarts d'outils** : lieu et description dès la création d'un événement, position d'un plat à la création,
+  **duplication** d'un événement en brouillon (sans inscrits, paiements, rôles, affectations ni IBAN),
+  **export et import JSON** entre instances (sans donnée personnelle).
+
+Critères d'acceptation ajoutés :
+
+- [ ] Deux aperçus du site sur des endroits différents se confirment l'un après l'autre ; sur le même endroit,
+      le second est refusé.
+- [ ] Un lot dont une opération est invalide, ou qui rend le site illisible, ne change rien.
+- [ ] Une adresse d'image pointant vers un réseau privé, ou redirigée, est refusée ; aucun SVG n'est servi.
+- [ ] Une image utilisée ne se supprime pas ; sans texte alternatif, une image n'est pas acceptée.
+- [ ] Église sans activation des sites : aucun outil du site n'est proposé à l'assistant.
+- [ ] Une copie ou un import d'événement est un brouillon sans inscrit, paiement, rôle, affectation ni IBAN ;
+      un export ne contient aucune donnée personnelle.
+
 ## Hors périmètre
 
 - Code personnalisé (HTML, CSS, scripts), thèmes importés, polices hors liste.
@@ -200,8 +236,7 @@ montre ce qui change (avant → après) et les problèmes de lisibilité éventu
 - Site pour autre chose qu'un événement de billetterie (site de l'église, d'un ministère).
 - Paiement en ligne (Koinonia n'encaisse toujours rien).
 - Statistiques de visite.
-- Téléversement d'images par un assistant IA (les images se déposent dans l'éditeur ; l'assistant
-  réutilise celles du site).
+- ~~Téléversement d'images par un assistant IA~~ : levé par l'addendum du 21 novembre 2026.
 - Traduction du site en plusieurs langues.
 
 ## Questions ouvertes

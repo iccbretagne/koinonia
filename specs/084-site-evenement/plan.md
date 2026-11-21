@@ -279,6 +279,27 @@ est refusé dès l'aperçu, comme à l'enregistrement dans l'éditeur. Pas de t�
 4. Lot 3 : domaines dédiés (vérification, approbation, cron, fournisseur Traefik, documentation).
 5. Lot 4 : actions MCP du site (lecture, thème, pages, blocs, publication, domaine).
 
+## Évolutions après recette (21 novembre 2026)
+
+Six branches empilées, une par PR (`feat/site-mcp-lot` → `feat/site-ecarts`), chacune verte seule.
+
+1. **Édition par opérations** (`_actions/site.ts`) : le jeton stocke l'opération (`SiteOperation`), réappliquée
+   sur le brouillon courant (`applyOperations`, une seule validation finale) ; `portionOf` calcule l'empreinte
+   de la seule portion touchée ; `edit_ticketing_site_batch` partage ce code.
+2. **Schémas documentés** : `.describe()` en français, `site-describe.ts` (`z.toJSONSchema`) pour
+   `describe_site_blocks` et `explainIssues` (clés et `kind` permis).
+3. **Images** : migration `ticketing_site_assets` (`name`, `alt`, `variants`) ; `processImage` (sharp, SVG
+   rastérisé après contrôle du contenu), `stageAsset`/`confirmAsset` (ligne `pending`, purge horaire),
+   `src/lib/safe-fetch.ts` (SSRF), `srcset` côté rendu, fond fixe à partir de 40 rem seulement.
+4. **Blocs** : cibles de bouton, styles, ancres (unicité et existence validées dans `siteDocumentSchema`),
+   champs enrichis, police Cinzel ; `contrastIssues` étendu aux boutons contour et discret.
+5. **Publication** : `getSiteStatus`/`siteReachability`, prédicat `ticketingSites`, `docs/staging.md`.
+6. **Écarts** : `eventCreateSchema` (`location`, `description`), `variantCreateSchema.position`,
+   `services/exchange.ts` (duplication, export, import par un seul chemin de création), `_actions/event-transfer.ts`.
+
+Choix : l'image en attente d'un aperçu est **stockée traitée** (clé `pending`, purgée au bout d'une heure) plutôt
+que dans le jeton ; un import garde son JSON (images comprises, 14 M de caractères au plus) dans le jeton.
+
 ## Stratégie de tests
 
 - **Schémas** : chaque bloc valide/invalide ; liens refusés (`javascript:`, `data:`, `http:`) ;
