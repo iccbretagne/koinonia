@@ -31277,7 +31277,8 @@
                               "cormorant",
                               "lora",
                               "inter",
-                              "sourceSans"
+                              "sourceSans",
+                              "cinzel"
                             ],
                             "description": "Police des titres"
                           },
@@ -31289,7 +31290,8 @@
                               "cormorant",
                               "lora",
                               "inter",
-                              "sourceSans"
+                              "sourceSans",
+                              "cinzel"
                             ],
                             "description": "Police du texte"
                           }
@@ -31818,6 +31820,130 @@
                                             }
                                           ],
                                           "description": "Fond du bandeau (couleur, dégradé ou image sous voile)"
+                                        },
+                                        "button": {
+                                          "type": "object",
+                                          "properties": {
+                                            "label": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 40,
+                                              "description": "Texte du bouton"
+                                            },
+                                            "target": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "page": {
+                                                      "type": "string",
+                                                      "maxLength": 40,
+                                                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "page"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "maxLength": 500,
+                                                      "pattern": "^https:\\/\\/[^\\s]+$",
+                                                      "description": "Lien externe, https seulement"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "mailto": {
+                                                      "type": "string",
+                                                      "maxLength": 200,
+                                                      "pattern": "^[^\\s@<>\"]+@[^\\s@<>\"]+\\.[^\\s@<>\"]+$",
+                                                      "description": "Adresse email"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "mailto"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "tel": {
+                                                      "type": "string",
+                                                      "pattern": "^\\+?[0-9][0-9 .-]{3,24}$",
+                                                      "description": "Numéro de téléphone (chiffres, espaces, +, -, .)"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "tel"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "anchor": {
+                                                      "type": "string",
+                                                      "maxLength": 40,
+                                                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                                      "description": "Ancre d'une bande ou d'un bloc de la même page"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "anchor"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "booking": {
+                                                      "type": "boolean",
+                                                      "enum": [
+                                                        true
+                                                      ]
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "booking"
+                                                  ],
+                                                  "additionalProperties": false
+                                                }
+                                              ]
+                                            },
+                                            "style": {
+                                              "type": "string",
+                                              "enum": [
+                                                "filled",
+                                                "outline",
+                                                "subtle"
+                                              ],
+                                              "description": "Plein (défaut), contour ou discret"
+                                            }
+                                          },
+                                          "required": [
+                                            "label",
+                                            "target"
+                                          ],
+                                          "additionalProperties": false,
+                                          "description": "Bouton du bandeau ; à défaut, le bouton d'inscription (buttonLabel)"
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
                                         }
                                       },
                                       "required": [
@@ -31937,6 +32063,12 @@
                                           },
                                           "maxItems": 60,
                                           "description": "Arbre de texte (outil MCP : fournir `markdown`)"
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
                                         }
                                       },
                                       "required": [
@@ -31979,6 +32111,12 @@
                                             "alt"
                                           ],
                                           "additionalProperties": false
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
                                         }
                                       },
                                       "required": [
@@ -32000,6 +32138,14 @@
                                           "type": "string",
                                           "maxLength": 120,
                                           "description": "Titre de la galerie"
+                                        },
+                                        "layout": {
+                                          "type": "string",
+                                          "enum": [
+                                            "grid",
+                                            "round"
+                                          ],
+                                          "description": "grid (défaut) : grille carrée ; round : vignettes rondes"
                                         },
                                         "images": {
                                           "type": "array",
@@ -32031,6 +32177,12 @@
                                           },
                                           "minItems": 1,
                                           "maxItems": 24
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
                                         }
                                       },
                                       "required": [
@@ -32079,6 +32231,12 @@
                                           "minItems": 1,
                                           "maxItems": 8,
                                           "description": "Pastilles de couleur"
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
                                         }
                                       },
                                       "required": [
@@ -32096,6 +32254,17 @@
                                             "cards"
                                           ]
                                         },
+                                        "title": {
+                                          "type": "string",
+                                          "maxLength": 120,
+                                          "description": "Titre de la section de cartes"
+                                        },
+                                        "columns": {
+                                          "type": "integer",
+                                          "minimum": 2,
+                                          "maximum": 4,
+                                          "description": "Nombre de colonnes sur grand écran : 2 (défaut), 3 ou 4"
+                                        },
                                         "cards": {
                                           "type": "array",
                                           "items": {
@@ -32106,6 +32275,11 @@
                                                 "minLength": 1,
                                                 "maxLength": 120,
                                                 "description": "Titre de la carte"
+                                              },
+                                              "text": {
+                                                "type": "string",
+                                                "maxLength": 300,
+                                                "description": "Texte court sous le titre"
                                               },
                                               "icon": {
                                                 "type": "string",
@@ -32190,6 +32364,12 @@
                                           "minItems": 1,
                                           "maxItems": 6,
                                           "description": "Cartes côte à côte"
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
                                         }
                                       },
                                       "required": [
@@ -32238,6 +32418,12 @@
                                           },
                                           "maxItems": 12,
                                           "description": "Éléments à éviter"
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
                                         }
                                       },
                                       "required": [
@@ -32309,6 +32495,11 @@
                                                 "minLength": 1,
                                                 "maxLength": 120,
                                                 "description": "Libellé"
+                                              },
+                                              "description": {
+                                                "type": "string",
+                                                "maxLength": 200,
+                                                "description": "Précision sous le libellé"
                                               }
                                             },
                                             "required": [
@@ -32319,6 +32510,12 @@
                                           },
                                           "minItems": 1,
                                           "maxItems": 12
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
                                         }
                                       },
                                       "required": [
@@ -32335,6 +32532,11 @@
                                           "enum": [
                                             "faq"
                                           ]
+                                        },
+                                        "title": {
+                                          "type": "string",
+                                          "maxLength": 120,
+                                          "description": "Titre de la section de questions"
                                         },
                                         "items": {
                                           "type": "array",
@@ -32362,6 +32564,12 @@
                                           },
                                           "minItems": 1,
                                           "maxItems": 20
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
                                         }
                                       },
                                       "required": [
@@ -32404,6 +32612,65 @@
                                             {
                                               "type": "object",
                                               "properties": {
+                                                "url": {
+                                                  "type": "string",
+                                                  "maxLength": 500,
+                                                  "pattern": "^https:\\/\\/[^\\s]+$",
+                                                  "description": "Lien externe, https seulement"
+                                                }
+                                              },
+                                              "required": [
+                                                "url"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "mailto": {
+                                                  "type": "string",
+                                                  "maxLength": 200,
+                                                  "pattern": "^[^\\s@<>\"]+@[^\\s@<>\"]+\\.[^\\s@<>\"]+$",
+                                                  "description": "Adresse email"
+                                                }
+                                              },
+                                              "required": [
+                                                "mailto"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "tel": {
+                                                  "type": "string",
+                                                  "pattern": "^\\+?[0-9][0-9 .-]{3,24}$",
+                                                  "description": "Numéro de téléphone (chiffres, espaces, +, -, .)"
+                                                }
+                                              },
+                                              "required": [
+                                                "tel"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "anchor": {
+                                                  "type": "string",
+                                                  "maxLength": 40,
+                                                  "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                                  "description": "Ancre d'une bande ou d'un bloc de la même page"
+                                                }
+                                              },
+                                              "required": [
+                                                "anchor"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
                                                 "booking": {
                                                   "type": "boolean",
                                                   "enum": [
@@ -32417,6 +32684,21 @@
                                               "additionalProperties": false
                                             }
                                           ]
+                                        },
+                                        "style": {
+                                          "type": "string",
+                                          "enum": [
+                                            "filled",
+                                            "outline",
+                                            "subtle"
+                                          ],
+                                          "description": "Plein (défaut), contour ou discret"
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
                                         }
                                       },
                                       "required": [
@@ -32580,6 +32862,135 @@
                                           "type": "string",
                                           "maxLength": 240,
                                           "description": "Phrase sous le titre"
+                                        },
+                                        "secondary": {
+                                          "type": "string",
+                                          "maxLength": 240,
+                                          "description": "Ligne secondaire sous la phrase"
+                                        },
+                                        "button": {
+                                          "type": "object",
+                                          "properties": {
+                                            "label": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 40,
+                                              "description": "Texte du bouton"
+                                            },
+                                            "target": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "page": {
+                                                      "type": "string",
+                                                      "maxLength": 40,
+                                                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "page"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "maxLength": 500,
+                                                      "pattern": "^https:\\/\\/[^\\s]+$",
+                                                      "description": "Lien externe, https seulement"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "mailto": {
+                                                      "type": "string",
+                                                      "maxLength": 200,
+                                                      "pattern": "^[^\\s@<>\"]+@[^\\s@<>\"]+\\.[^\\s@<>\"]+$",
+                                                      "description": "Adresse email"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "mailto"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "tel": {
+                                                      "type": "string",
+                                                      "pattern": "^\\+?[0-9][0-9 .-]{3,24}$",
+                                                      "description": "Numéro de téléphone (chiffres, espaces, +, -, .)"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "tel"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "anchor": {
+                                                      "type": "string",
+                                                      "maxLength": 40,
+                                                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                                      "description": "Ancre d'une bande ou d'un bloc de la même page"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "anchor"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "booking": {
+                                                      "type": "boolean",
+                                                      "enum": [
+                                                        true
+                                                      ]
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "booking"
+                                                  ],
+                                                  "additionalProperties": false
+                                                }
+                                              ]
+                                            },
+                                            "style": {
+                                              "type": "string",
+                                              "enum": [
+                                                "filled",
+                                                "outline",
+                                                "subtle"
+                                              ],
+                                              "description": "Plein (défaut), contour ou discret"
+                                            }
+                                          },
+                                          "required": [
+                                            "label",
+                                            "target"
+                                          ],
+                                          "additionalProperties": false,
+                                          "description": "Bouton de la bannière"
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
                                         }
                                       },
                                       "required": [
@@ -32606,6 +33017,12 @@
                                             "wave"
                                           ],
                                           "description": "Style du séparateur"
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
                                         }
                                       },
                                       "required": [
@@ -32617,6 +33034,12 @@
                                   ]
                                 },
                                 "maxItems": 20
+                              },
+                              "anchor": {
+                                "type": "string",
+                                "maxLength": 40,
+                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
                               }
                             },
                             "required": [

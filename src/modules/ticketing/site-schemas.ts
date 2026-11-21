@@ -17,7 +17,7 @@ export const PALETTE_LABEL: Record<PaletteKey, string> = {
   text: "Texte",
 };
 
-export const SITE_FONTS = ["montserrat", "playfair", "cormorant", "lora", "inter", "sourceSans"] as const;
+export const SITE_FONTS = ["montserrat", "playfair", "cormorant", "lora", "inter", "sourceSans", "cinzel"] as const;
 export type SiteFont = (typeof SITE_FONTS)[number];
 export const SITE_FONT_LABEL: Record<SiteFont, string> = {
   montserrat: "Montserrat",
@@ -26,9 +26,13 @@ export const SITE_FONT_LABEL: Record<SiteFont, string> = {
   lora: "Lora",
   inter: "Inter",
   sourceSans: "Source Sans 3",
+  cinzel: "Cinzel",
 };
 
 export const GRADIENT_DIRECTIONS = ["vertical", "horizontal", "diagonal", "radial"] as const;
+export const BUTTON_STYLES = ["filled", "outline", "subtle"] as const;
+export const BUTTON_STYLE_LABEL: Record<(typeof BUTTON_STYLES)[number], string> = { filled: "Plein", outline: "Contour", subtle: "Discret" };
+export const GALLERY_LAYOUTS = ["grid", "round"] as const;
 export const SEPARATOR_STYLES = ["line", "goldDiamond", "wave"] as const;
 
 /** Pictogrammes proposés (bibliothèque fermée, noms lucide). */
@@ -56,6 +60,13 @@ const optionalLine = (max: number, d?: string) => {
   return d ? f.describe(d) : f;
 };
 const palette = z.enum(PALETTE_KEYS).describe("Clé de la palette du thème (jamais une couleur libre)");
+/** Identifiant d'ancre d'une bande ou d'un bloc (cible d'un bouton `{ anchor }`). */
+export const anchorSlug = z
+  .string()
+  .trim()
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Ancre : lettres minuscules, chiffres et tirets")
+  .max(40);
+const anchorField = { anchor: anchorSlug.optional().describe("Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène") };
 export const pageSlug = z
   .string()
   .trim()
@@ -119,6 +130,21 @@ export const richTextSchema = z.array(richNodeSchema).max(60);
 const imageRef = z.object({ assetId, alt: line(200, "Texte alternatif (accessibilité), obligatoire"), caption: optionalLine(200, "Légende sous l'image") }).strict();
 const items = z.array(line(200)).max(SITE_LIMITS.listItems);
 
+/** Destination d'un bouton : page du site, lien https, courriel, téléphone, ancre de la page, ou inscription. */
+export const buttonTargetSchema = z.union([
+  z.object({ page: pageSlug }).strict(),
+  z.object({ url: z.string().trim().max(500).regex(/^https:\/\/[^\s]+$/, "Lien externe en https seulement").describe("Lien externe, https seulement") }).strict(),
+  z.object({ mailto: z.string().trim().max(200).regex(/^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/, "Adresse email invalide").describe("Adresse email") }).strict(),
+  z.object({ tel: z.string().trim().regex(/^\+?[0-9][0-9 .-]{3,24}$/, "Numéro : chiffres, espaces, +, - et . seulement").describe("Numéro de téléphone (chiffres, espaces, +, -, .)") }).strict(),
+  z.object({ anchor: anchorSlug.describe("Ancre d'une bande ou d'un bloc de la même page") }).strict(),
+  z.object({ booking: z.literal(true) }).strict(),
+]);
+export type ButtonTarget = z.infer<typeof buttonTargetSchema>;
+const buttonStyle = z.enum(BUTTON_STYLES).optional().describe("Plein (défaut), contour ou discret");
+/** Bouton imbriqué (bandeau, bannière). */
+export const buttonSchema = z.object({ label: line(40, "Texte du bouton"), target: buttonTargetSchema, style: buttonStyle }).strict();
+export type SiteButton = z.infer<typeof buttonSchema>;
+
 export const blockSchema = z.discriminatedUnion("kind", [
   z
     .object({
@@ -129,48 +155,103 @@ export const blockSchema = z.discriminatedUnion("kind", [
       showCountdown: z.boolean().default(false).describe("Afficher un compte à rebours"),
       buttonLabel: optionalLine(40, "Libellé du bouton d'inscription"),
       background: backgroundSchema.optional().describe("Fond du bandeau (couleur, dégradé ou image sous voile)"),
+      button: buttonSchema.optional().describe("Bouton du bandeau ; à défaut, le bouton d'inscription (buttonLabel)"),
+      ...anchorField,
     })
     .strict(),
-  z.object({ kind: z.literal("richText"), content: richTextSchema.describe("Arbre de texte (outil MCP : fournir `markdown`)") }).strict(),
-  z.object({ kind: z.literal("image"), image: imageRef }).strict(),
-  z.object({ kind: z.literal("gallery"), title: optionalLine(120, "Titre de la galerie"), images: z.array(imageRef).min(1).max(SITE_LIMITS.gallery) }).strict(),
+  z.object({ kind: z.literal("richText"), content: richTextSchema.describe("Arbre de texte (outil MCP : fournir `markdown`)"), ...anchorField }).strict(),
+  z.object({ kind: z.literal("image"), image: imageRef, ...anchorField }).strict(),
+  z
+    .object({
+      kind: z.literal("gallery"),
+      title: optionalLine(120, "Titre de la galerie"),
+      layout: z.enum(GALLERY_LAYOUTS).optional().describe("grid (défaut) : grille carrée ; round : vignettes rondes"),
+      images: z.array(imageRef).min(1).max(SITE_LIMITS.gallery),
+      ...anchorField,
+    })
+    .strict(),
   z
     .object({
       kind: z.literal("palette"),
       title: optionalLine(120, "Titre du bloc"),
       // Seule couleur libre : affichée en pastille, jamais appliquée au texte ni à un fond.
       swatches: z.array(z.object({ label: line(60, "Nom de la couleur"), color: hex }).strict()).describe("Pastilles de couleur").min(1).max(SITE_LIMITS.swatches),
+      ...anchorField,
     })
     .strict(),
   z
     .object({
       kind: z.literal("cards"),
-      cards: z.array(z.object({ title: line(120, "Titre de la carte"), icon: z.enum(SITE_ICONS).optional().describe("Pictogramme de la carte"), image: imageRef.optional().describe("Image de la carte"), items: items.describe("Lignes de la carte") }).strict()).min(1).max(SITE_LIMITS.cards).describe("Cartes côte à côte"),
+      title: optionalLine(120, "Titre de la section de cartes"),
+      columns: z.number().int().min(2).max(4).optional().describe("Nombre de colonnes sur grand écran : 2 (défaut), 3 ou 4"),
+      cards: z
+        .array(
+          z
+            .object({
+              title: line(120, "Titre de la carte"),
+              text: optionalLine(300, "Texte court sous le titre"),
+              icon: z.enum(SITE_ICONS).optional().describe("Pictogramme de la carte"),
+              image: imageRef.optional().describe("Image de la carte"),
+              items: items.describe("Lignes de la carte"),
+            })
+            .strict()
+        )
+        .min(1)
+        .max(SITE_LIMITS.cards)
+        .describe("Cartes côte à côte"),
+      ...anchorField,
     })
     .strict(),
-  z.object({ kind: z.literal("doDont"), doTitle: line(80, "Titre de la colonne « à faire »"), doItems: items.describe("Éléments à faire"), dontTitle: line(80, "Titre de la colonne « à éviter »"), dontItems: items.describe("Éléments à éviter") }).strict(),
+  z
+    .object({
+      kind: z.literal("doDont"),
+      doTitle: line(80, "Titre de la colonne « à faire »"),
+      doItems: items.describe("Éléments à faire"),
+      dontTitle: line(80, "Titre de la colonne « à éviter »"),
+      dontItems: items.describe("Éléments à éviter"),
+      ...anchorField,
+    })
+    .strict(),
   z
     .object({
       kind: z.literal("icons"),
       title: optionalLine(120, "Titre du bloc"),
-      items: z.array(z.object({ icon: z.enum(SITE_ICONS).describe("Pictogramme"), label: line(120, "Libellé") }).strict()).min(1).max(SITE_LIMITS.listItems),
+      items: z
+        .array(z.object({ icon: z.enum(SITE_ICONS).describe("Pictogramme"), label: line(120, "Libellé"), description: optionalLine(200, "Précision sous le libellé") }).strict())
+        .min(1)
+        .max(SITE_LIMITS.listItems),
+      ...anchorField,
     })
     .strict(),
   z
     .object({
       kind: z.literal("faq"),
+      title: optionalLine(120, "Titre de la section de questions"),
       items: z.array(z.object({ question: line(200, "Question"), answer: z.string().trim().min(1).max(2000).describe("Réponse (texte simple)") }).strict()).min(1).max(SITE_LIMITS.faq),
+      ...anchorField,
     })
     .strict(),
   z
     .object({
       kind: z.literal("button"),
       label: line(40, "Texte du bouton"),
-      target: z.union([z.object({ page: pageSlug }).strict(), z.object({ booking: z.literal(true) }).strict()]),
+      target: buttonTargetSchema,
+      style: buttonStyle,
+      ...anchorField,
     })
     .strict(),
-  z.object({ kind: z.literal("banner"), background: backgroundSchema, title: line(120, "Titre de la bannière"), tagline: optionalLine(240, "Phrase sous le titre") }).strict(),
-  z.object({ kind: z.literal("separator"), style: z.enum(SEPARATOR_STYLES).describe("Style du séparateur") }).strict(),
+  z
+    .object({
+      kind: z.literal("banner"),
+      background: backgroundSchema,
+      title: line(120, "Titre de la bannière"),
+      tagline: optionalLine(240, "Phrase sous le titre"),
+      secondary: optionalLine(240, "Ligne secondaire sous la phrase"),
+      button: buttonSchema.optional().describe("Bouton de la bannière"),
+      ...anchorField,
+    })
+    .strict(),
+  z.object({ kind: z.literal("separator"), style: z.enum(SEPARATOR_STYLES).describe("Style du séparateur"), ...anchorField }).strict(),
 ]);
 export type SiteBlock = z.infer<typeof blockSchema>;
 export type SiteBlockKind = SiteBlock["kind"];
@@ -183,6 +264,7 @@ export const sectionSchema = z
     /** Couleur du texte posé sur ce fond (contrôle de lisibilité). */
     textColor: palette.default("text").describe("Couleur du texte posé sur ce fond (contrôle de lisibilité)"),
     blocks: z.array(blockSchema).max(SITE_LIMITS.blocks),
+    ...anchorField,
   })
   .strict();
 export type SiteSection = z.infer<typeof sectionSchema>;
@@ -239,24 +321,43 @@ export const siteDocumentSchema = z
       if (slugs.indexOf(slug) !== i) ctx.addIssue({ code: "custom", path: ["pages", i, "slug"], message: `Adresse de page en double : « ${slug} »` });
     });
     const known = new Set(slugs);
-    doc.pages.forEach((page, p) =>
-      page.sections.forEach((section, s) =>
+    doc.pages.forEach((page, p) => {
+      const anchors = new Set<string>();
+      const buttons: { target: ButtonTarget; path: (string | number)[] }[] = [];
+      const declare = (anchor: string | undefined, path: (string | number)[]) => {
+        if (!anchor) return;
+        if (anchors.has(anchor)) ctx.addIssue({ code: "custom", path: [...path, "anchor"], message: `Ancre en double sur la page « ${page.slug} » : « ${anchor} »` });
+        anchors.add(anchor);
+      };
+      page.sections.forEach((section, s) => {
+        declare(section.anchor, ["pages", p, "sections", s]);
         section.blocks.forEach((block, b) => {
           const path = ["pages", p, "sections", s, "blocks", b];
-          const targets =
-            block.kind === "button" && "page" in block.target
-              ? [block.target.page]
-              : block.kind === "richText"
-                ? linksOf(block.content).filter((h) => h.startsWith("page:")).map((h) => h.slice(5))
-                : [];
-          for (const t of targets) if (!known.has(t)) ctx.addIssue({ code: "custom", path, message: `Lien vers une page qui n'existe pas : « ${t} »` });
-        })
-      )
-    );
+          declare(block.anchor, path);
+          if (block.kind === "button") buttons.push({ target: block.target, path: [...path, "target"] });
+          if ((block.kind === "hero" || block.kind === "banner") && block.button) buttons.push({ target: block.button.target, path: [...path, "button", "target"] });
+          if (block.kind === "richText") {
+            for (const h of linksOf(block.content).filter((h) => h.startsWith("page:"))) if (!known.has(h.slice(5))) ctx.addIssue({ code: "custom", path, message: `Lien vers une page qui n'existe pas : « ${h.slice(5)} »` });
+          }
+        });
+      });
+      for (const { target, path } of buttons) {
+        if ("page" in target && !known.has(target.page)) ctx.addIssue({ code: "custom", path, message: `Lien vers une page qui n'existe pas : « ${target.page} »` });
+        if ("anchor" in target && !anchors.has(target.anchor)) ctx.addIssue({ code: "custom", path, message: `Ancre introuvable sur cette page : « ${target.anchor} » (ancres existantes : ${[...anchors].join(", ") || "aucune"})` });
+      }
+    });
   });
 export type SiteDocument = z.infer<typeof siteDocumentSchema>;
 
 /** Fonds du document, avec leur emplacement et la couleur de texte posée dessus. */
+/** Boutons d'un bloc, avec le fond sur lequel leur texte est posé. */
+function buttonsOf(block: SiteBlock, sectionBg: SiteBackground): { label: string; style: (typeof BUTTON_STYLES)[number]; on: SiteBackground }[] {
+  if (block.kind === "button") return [{ label: block.label, style: block.style ?? "filled", on: sectionBg }];
+  if (block.kind === "hero" && block.button) return [{ label: block.button.label, style: block.button.style ?? "filled", on: block.background ?? sectionBg }];
+  if (block.kind === "banner" && block.button) return [{ label: block.button.label, style: block.button.style ?? "filled", on: block.background }];
+  return [];
+}
+
 export function backgroundsOf(doc: SiteDocument): { where: string; background: SiteBackground; text: PaletteKey }[] {
   const out: { where: string; background: SiteBackground; text: PaletteKey }[] = [{ where: "Fond de page", background: doc.theme.background, text: "text" }];
   for (const page of doc.pages) {
@@ -264,6 +365,10 @@ export function backgroundsOf(doc: SiteDocument): { where: string; background: S
       out.push({ where: `${page.title} › bande ${i + 1}`, background: section.background, text: section.textColor });
       section.blocks.forEach((block) => {
         if (block.kind === "hero" && block.background) out.push({ where: `${page.title} › bandeau « ${block.title} »`, background: block.background, text: section.textColor });
+        // Bouton « contour » ou « discret » : son texte est la couleur principale, posée sur le fond du bloc.
+        for (const b of buttonsOf(block, section.background)) {
+          if (b.style !== "filled") out.push({ where: `${page.title} › bouton « ${b.label} »`, background: b.on, text: "primary" });
+        }
         if (block.kind === "banner") out.push({ where: `${page.title} › bannière « ${block.title} »`, background: block.background, text: section.textColor });
       });
     });

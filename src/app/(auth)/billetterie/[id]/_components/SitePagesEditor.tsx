@@ -4,6 +4,9 @@ import { useState, type ReactNode } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { Button, Checkbox, IconButton, Input, Select } from "@/components/ui";
 import {
+  BUTTON_STYLES,
+  BUTTON_STYLE_LABEL,
+  GALLERY_LAYOUTS,
   PAGE_KINDS,
   PAGE_KIND_LABEL,
   SEPARATOR_STYLES,
@@ -11,8 +14,10 @@ import {
   SITE_LIMITS,
   parseRichText,
   richTextToMarkdown,
+  type ButtonTarget,
   type SiteBlock,
   type SiteBlockKind,
+  type SiteButton,
   type SiteDocument,
   type SitePage,
   type SiteSection,
@@ -53,6 +58,60 @@ function Box({ title, actions, children }: { readonly title: string; readonly ac
   );
 }
 
+const TARGET_KINDS = [
+  { value: "booking", label: "Page d'inscription" },
+  { value: "page", label: "Page du site" },
+  { value: "url", label: "Lien externe (https)" },
+  { value: "mailto", label: "Adresse email" },
+  { value: "tel", label: "Téléphone" },
+  { value: "anchor", label: "Ancre de cette page" },
+];
+const STYLE_OPTIONS = BUTTON_STYLES.map((v) => ({ value: v, label: BUTTON_STYLE_LABEL[v] }));
+
+/** Destination d'un bouton : type puis valeur (la validation fait foi à l'enregistrement). */
+function TargetFields({ target, onChange, pages, anchors }: { readonly target: ButtonTarget; readonly onChange: (t: ButtonTarget) => void; readonly pages: SitePage[]; readonly anchors: string[] }) {
+  const kind = Object.keys(target)[0];
+  const value = Object.values(target)[0] as string | boolean;
+  return (
+    <>
+      <Select
+        label="Destination"
+        value={kind}
+        options={TARGET_KINDS}
+        onChange={(e) => {
+          const k = e.target.value;
+          onChange(k === "booking" ? { booking: true } : k === "page" ? { page: pages[0]?.slug ?? "" } : k === "url" ? { url: "https://" } : k === "mailto" ? { mailto: "" } : k === "tel" ? { tel: "" } : { anchor: anchors[0] ?? "" });
+        }}
+      />
+      {kind === "page" && <Select label="Page" value={String(value)} options={pages.map((p) => ({ value: p.slug, label: p.title }))} onChange={(e) => onChange({ page: e.target.value })} />}
+      {kind === "url" && <Input label="Adresse https" value={String(value)} maxLength={500} onChange={(e) => onChange({ url: e.target.value })} />}
+      {kind === "mailto" && <Input label="Adresse email" type="email" value={String(value)} maxLength={200} onChange={(e) => onChange({ mailto: e.target.value })} />}
+      {kind === "tel" && <Input label="Numéro de téléphone" type="tel" value={String(value)} maxLength={30} onChange={(e) => onChange({ tel: e.target.value })} />}
+      {kind === "anchor" && <Input label="Ancre" hint={anchors.length ? `Ancres de la page : ${anchors.join(", ")}` : "Aucune ancre sur cette page : ajoutez-en une à une bande ou un bloc."} value={String(value)} maxLength={40} onChange={(e) => onChange({ anchor: e.target.value })} />}
+    </>
+  );
+}
+
+function ButtonFields({ button, onChange, pages, anchors }: { readonly button: SiteButton; readonly onChange: (fn: (b: SiteButton) => void) => void; readonly pages: SitePage[]; readonly anchors: string[] }) {
+  return (
+    <>
+      <Input label="Texte du bouton" value={button.label} maxLength={40} onChange={(e) => onChange((b) => void (b.label = e.target.value))} />
+      <TargetFields target={button.target} pages={pages} anchors={anchors} onChange={(t) => onChange((b) => void (b.target = t))} />
+      <Select label="Style" value={button.style ?? "filled"} options={STYLE_OPTIONS} onChange={(e) => onChange((b) => void (b.style = e.target.value as SiteButton["style"]))} />
+    </>
+  );
+}
+
+/** Bouton facultatif d'un bandeau ou d'une bannière. */
+function OptionalButton({ button, fallbackLabel, onChange, pages, anchors }: { readonly button?: SiteButton; readonly fallbackLabel: string; readonly onChange: (b: SiteButton | undefined) => void; readonly pages: SitePage[]; readonly anchors: string[] }) {
+  return (
+    <>
+      <label className="flex items-center gap-2 text-sm text-ink"><Checkbox checked={!!button} onChange={(e) => onChange(e.target.checked ? { label: fallbackLabel, target: { booking: true } } : undefined)} /> Bouton personnalisé</label>
+      {button && <ButtonFields button={button} pages={pages} anchors={anchors} onChange={(fn) => { const next = structuredClone(button); fn(next); onChange(next); }} />}
+    </>
+  );
+}
+
 function newBlock(kind: SiteBlockKind, firstImage?: string): SiteBlock {
   const image = { assetId: firstImage ?? "", alt: "Description de l'image" };
   switch (kind) {
@@ -86,7 +145,7 @@ function ListEditor<T>({ items, max, add, onChange, render, what }: { readonly i
   );
 }
 
-function BlockForm({ block, update, tools, pages }: { readonly block: SiteBlock; readonly update: (fn: (b: SiteBlock) => void) => void; readonly tools: ImageTools; readonly pages: SitePage[] }) {
+function BlockForm({ block, update, tools, pages, anchors }: { readonly block: SiteBlock; readonly update: (fn: (b: SiteBlock) => void) => void; readonly tools: ImageTools; readonly pages: SitePage[]; readonly anchors: string[] }) {
   const u = <K extends SiteBlockKind>(fn: (b: Extract<SiteBlock, { kind: K }>) => void) => update(fn as (b: SiteBlock) => void);
   const imageFields = (image: { assetId: string; alt: string; caption?: string }, set: (fn: (i: typeof image) => void) => void) => (
     <>
@@ -104,6 +163,7 @@ function BlockForm({ block, update, tools, pages }: { readonly block: SiteBlock;
           <Input label="Texte du bouton" value={block.buttonLabel ?? ""} maxLength={40} onChange={(e) => u<"hero">((b) => void (b.buttonLabel = e.target.value || undefined))} />
           <label className="flex items-center gap-2 text-sm text-ink"><Checkbox checked={block.showDateLocation} onChange={(e) => u<"hero">((b) => void (b.showDateLocation = e.target.checked))} /> Date et lieu</label>
           <label className="flex items-center gap-2 text-sm text-ink"><Checkbox checked={block.showCountdown} onChange={(e) => u<"hero">((b) => void (b.showCountdown = e.target.checked))} /> Compte à rebours</label>
+          <OptionalButton button={block.button} fallbackLabel={block.buttonLabel || "Je m'inscris"} pages={pages} anchors={anchors} onChange={(btn) => u<"hero">((b) => void (b.button = btn))} />
           <BackgroundFields label="Fond du bandeau" value={block.background ?? { kind: "none" }} tools={tools} onChange={(bg) => u<"hero">((b) => void (b.background = bg.kind === "none" ? undefined : bg))} />
         </>
       );
@@ -125,6 +185,7 @@ function BlockForm({ block, update, tools, pages }: { readonly block: SiteBlock;
       return (
         <>
           <Input label="Titre" value={block.title ?? ""} maxLength={120} onChange={(e) => u<"gallery">((b) => void (b.title = e.target.value || undefined))} />
+          <Select label="Présentation" value={block.layout ?? "grid"} options={GALLERY_LAYOUTS.map((l) => ({ value: l, label: l === "grid" ? "Grille" : "Vignettes rondes" }))} onChange={(e) => u<"gallery">((b) => void (b.layout = e.target.value === "grid" ? undefined : (e.target.value as "round")))} />
           <ListEditor what="une image" max={SITE_LIMITS.gallery} items={block.images} add={() => ({ assetId: tools.pool[0] ?? "", alt: "Description de l'image" })} onChange={(images) => u<"gallery">((b) => void (b.images = images))} render={(img, set) => imageFields(img, set)} />
         </>
       );
@@ -142,13 +203,18 @@ function BlockForm({ block, update, tools, pages }: { readonly block: SiteBlock;
       );
     case "cards":
       return (
+        <>
+        <Input label="Titre de la section" value={block.title ?? ""} maxLength={120} onChange={(e) => u<"cards">((b) => void (b.title = e.target.value || undefined))} />
+        <Select label="Colonnes" value={String(block.columns ?? 2)} options={[2, 3, 4].map((n) => ({ value: String(n), label: `${n} colonnes` }))} onChange={(e) => u<"cards">((b) => void (b.columns = Number(e.target.value) === 2 ? undefined : Number(e.target.value)))} />
         <ListEditor<Extract<SiteBlock, { kind: "cards" }>["cards"][number]> what="une carte" max={SITE_LIMITS.cards} items={block.cards} add={() => ({ title: "Titre", items: ["Élément"] })} onChange={(cards) => u<"cards">((b) => void (b.cards = cards))} render={(c, set) => (
           <>
             <Input label="Titre" value={c.title} maxLength={120} onChange={(e) => set((x) => void (x.title = e.target.value))} />
+            <Input label="Texte court" value={c.text ?? ""} maxLength={300} onChange={(e) => set((x) => void (x.text = e.target.value || undefined))} />
             <Select label="Pictogramme" value={c.icon ?? ""} options={[{ value: "", label: "Aucun" }, ...ICON_OPTIONS]} onChange={(e) => set((x) => void (x.icon = (e.target.value || undefined) as typeof x.icon))} />
             <ParsedTextarea label={`Éléments (un par ligne, ${SITE_LIMITS.listItems} au plus)`} value={c.items} format={(v) => v.join("\n")} parse={linesOf} onChange={(items) => set((x) => void (x.items = items))} />
           </>
         )} />
+        </>
       );
     case "doDont":
       return (
@@ -167,36 +233,32 @@ function BlockForm({ block, update, tools, pages }: { readonly block: SiteBlock;
             <div className="flex items-end gap-2">
               <Select label="Pictogramme" value={it.icon} options={ICON_OPTIONS} onChange={(e) => set((x) => void (x.icon = e.target.value as typeof x.icon))} />
               <Input label="Libellé" value={it.label} maxLength={120} onChange={(e) => set((x) => void (x.label = e.target.value))} />
+              <Input label="Description" value={it.description ?? ""} maxLength={200} onChange={(e) => set((x) => void (x.description = e.target.value || undefined))} />
             </div>
           )} />
         </>
       );
     case "faq":
       return (
+        <>
+        <Input label="Titre" value={block.title ?? ""} maxLength={120} onChange={(e) => u<"faq">((b) => void (b.title = e.target.value || undefined))} />
         <ListEditor what="une question" max={SITE_LIMITS.faq} items={block.items} add={() => ({ question: "Question", answer: "Réponse" })} onChange={(items) => u<"faq">((b) => void (b.items = items))} render={(it, set) => (
           <>
             <Input label="Question" value={it.question} maxLength={200} onChange={(e) => set((x) => void (x.question = e.target.value))} />
             <Input label="Réponse" value={it.answer} maxLength={2000} onChange={(e) => set((x) => void (x.answer = e.target.value))} />
           </>
         )} />
-      );
-    case "button":
-      return (
-        <>
-          <Input label="Texte du bouton" value={block.label} maxLength={40} onChange={(e) => u<"button">((b) => void (b.label = e.target.value))} />
-          <Select
-            label="Destination"
-            value={"booking" in block.target ? "booking" : block.target.page}
-            options={[{ value: "booking", label: "Page d'inscription" }, ...pages.map((p) => ({ value: p.slug, label: `Page « ${p.title} »` }))]}
-            onChange={(e) => u<"button">((b) => void (b.target = e.target.value === "booking" ? { booking: true } : { page: e.target.value }))}
-          />
         </>
       );
+    case "button":
+      return <ButtonFields button={block} pages={pages} anchors={anchors} onChange={(fn) => update((b) => fn(b as unknown as SiteButton))} />;
     case "banner":
       return (
         <>
           <Input label="Titre" value={block.title} maxLength={120} onChange={(e) => u<"banner">((b) => void (b.title = e.target.value))} />
           <Input label="Accroche" value={block.tagline ?? ""} maxLength={240} onChange={(e) => u<"banner">((b) => void (b.tagline = e.target.value || undefined))} />
+          <Input label="Ligne secondaire" value={block.secondary ?? ""} maxLength={240} onChange={(e) => u<"banner">((b) => void (b.secondary = e.target.value || undefined))} />
+          <OptionalButton button={block.button} fallbackLabel="En savoir plus" pages={pages} anchors={anchors} onChange={(btn) => u<"banner">((b) => void (b.button = btn))} />
           <BackgroundFields label="Fond de la bannière" value={block.background} tools={tools} onChange={(bg) => u<"banner">((b) => void (b.background = bg))} />
         </>
       );
@@ -208,13 +270,16 @@ function BlockForm({ block, update, tools, pages }: { readonly block: SiteBlock;
 function SectionEditor({ section, p, s, count, edit, tools, pages }: { readonly section: SiteSection; readonly p: number; readonly s: number; readonly count: number; readonly edit: Edit; readonly tools: ImageTools; readonly pages: SitePage[] }) {
   const [kind, setKind] = useState<SiteBlockKind>("richText");
   const sec = (d: SiteDocument) => d.pages[p].sections[s];
+  const anchors = pages[p].sections.flatMap((x) => [x.anchor, ...x.blocks.map((b) => b.anchor)]).filter((a): a is string => !!a);
   return (
     <Box title={`Bande ${s + 1}`} actions={<Move index={s} count={count} what={`la bande ${s + 1}`} onMove={(dir) => edit((d) => swap(d.pages[p].sections, s, dir))} onDelete={() => edit((d) => void d.pages[p].sections.splice(s, 1))} />}>
       <BackgroundFields label="Fond de la bande" value={section.background} tools={tools} onChange={(bg) => edit((d) => void (sec(d).background = bg))} />
+      <Input label="Ancre de la bande (facultatif)" hint="Identifiant court (minuscules, chiffres, tirets) pour qu'un bouton y mène." value={section.anchor ?? ""} maxLength={40} onChange={(e) => edit((d) => void (sec(d).anchor = e.target.value || undefined))} />
       <Select label="Couleur du texte" value={section.textColor} options={paletteOptions} onChange={(e) => edit((d) => void (sec(d).textColor = e.target.value as SiteSection["textColor"]))} />
       {section.blocks.map((block, b) => (
         <Box key={b} title={`${BLOCK_LABEL[block.kind]} (bloc ${b + 1})`} actions={<Move index={b} count={section.blocks.length} what={`le bloc ${b + 1}`} onMove={(dir) => edit((d) => swap(sec(d).blocks, b, dir))} onDelete={() => edit((d) => void sec(d).blocks.splice(b, 1))} />}>
-          <BlockForm block={block} tools={tools} pages={pages} update={(fn) => edit((d) => fn(sec(d).blocks[b]))} />
+          <BlockForm block={block} tools={tools} pages={pages} anchors={anchors} update={(fn) => edit((d) => fn(sec(d).blocks[b]))} />
+          <Input label="Ancre du bloc (facultatif)" value={block.anchor ?? ""} maxLength={40} onChange={(e) => edit((d) => void (sec(d).blocks[b].anchor = e.target.value || undefined))} />
         </Box>
       ))}
       {section.blocks.length < SITE_LIMITS.blocks && (
