@@ -104,6 +104,7 @@ function BlockForm({ block, update, tools, pages }: { readonly block: SiteBlock;
           <Input label="Texte du bouton" value={block.buttonLabel ?? ""} maxLength={40} onChange={(e) => u<"hero">((b) => void (b.buttonLabel = e.target.value || undefined))} />
           <label className="flex items-center gap-2 text-sm text-ink"><Checkbox checked={block.showDateLocation} onChange={(e) => u<"hero">((b) => void (b.showDateLocation = e.target.checked))} /> Date et lieu</label>
           <label className="flex items-center gap-2 text-sm text-ink"><Checkbox checked={block.showCountdown} onChange={(e) => u<"hero">((b) => void (b.showCountdown = e.target.checked))} /> Compte à rebours</label>
+          <BackgroundFields label="Fond du bandeau" value={block.background ?? { kind: "none" }} tools={tools} onChange={(bg) => u<"hero">((b) => void (b.background = bg.kind === "none" ? undefined : bg))} />
         </>
       );
     case "richText":

@@ -66,6 +66,6 @@ export { listLabels, markPrinted, type LabelRow, type LabelSet } from "./service
 
 export { getSitesEnabled, setSitesEnabled } from "./services/site-settings";
 export { getSite, saveDraft, setAfterCloseDays, publish as publishSite, unpublish as unpublishSite, resolveSiteByHost, publicSiteView, publishedTheme, previewEvent, siteSlugBase, type SiteView, type PublicSiteView } from "./services/site";
-export { uploadAsset, readAsset, deleteAsset } from "./services/site-assets";
+export { uploadAsset, stageAsset, confirmAsset, assetState, purgePendingAssets, readAsset, listAssets, deleteAsset, decodeBase64Image, type AssetView, type StagedAsset } from "./services/site-assets";
 export { approveDomain, approvedHostOfEvent, approvedHosts, getDomain, listDomains, recheckDomains, rejectDomain, removeDomain, requestDomain, verifyDomain, type DomainRow, type DomainView } from "./services/site-domains";
 export { traefikConfig } from "./traefik";

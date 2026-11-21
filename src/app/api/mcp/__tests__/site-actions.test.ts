@@ -28,6 +28,10 @@ let roles = new Set<string>(["COMMUNICATION"]);
 let updatedAt = "2099-01-01T00:00:00.000Z";
 let published = false;
 let draft = defaultSiteDocument("Nuit de la traversée");
+let assetStateValue: { pending: boolean } | null = { pending: true };
+let assets: { id: string; name: string; alt: string; width: number; height: number; bytes: number; variants: { w: number; bytes: number }[]; usedIn: { draft: string[]; published: string[] }; createdAt: string }[] = [];
+const fetchImage = vi.fn(async (_url: string) => Buffer.from("png"));
+vi.mock("@/lib/safe-fetch", () => ({ safeFetchImage: (u: string) => fetchImage(u) }));
 let domain: { id: string; host: string; status: string; records: unknown[] } | null = null;
 const siteView = () => ({ id: "s1", slug: "nuit", draft, published, publishedAt: null, afterCloseDays: 30, issues: [], updatedAt });
 
@@ -47,6 +51,12 @@ const svc = {
   requestDomain: vi.fn(async (_e: string, _u: string, host: string) => ({ id: "d1", host, status: "PENDING", records: [{ type: "TXT", name: `_koinonia.${host}`, value: "tok" }] })),
   verifyDomain: vi.fn(async () => ({ host: "fete.exemple.org", status: "VERIFIED", lastError: null })),
   removeDomain: vi.fn(async () => undefined),
+  listAssets: vi.fn(async () => assets),
+  stageAsset: vi.fn(async (_s: string, _b: Buffer, meta: { alt: string; name?: string }) => ({ id: "a".repeat(25), name: meta.name ?? "", alt: meta.alt, mime: "image/webp", width: 1280, height: 720, bytes: 51200, source: "png", variants: [{ w: 640, bytes: 1 }, { w: 1280, bytes: 2 }] })),
+  confirmAsset: vi.fn(async () => ({ id: "a".repeat(25), width: 1280, height: 720 })),
+  assetState: vi.fn(async () => assetStateValue),
+  deleteAsset: vi.fn(async () => undefined),
+  decodeBase64Image: vi.fn(() => Buffer.from("octets")),
 };
 vi.mock("@/modules/ticketing", () => svc);
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn(), withAuditContext: async (_e: unknown, fn: () => Promise<unknown>) => fn() }));
@@ -64,6 +74,8 @@ beforeEach(() => {
   published = false;
   draft = defaultSiteDocument("Nuit de la traversée");
   domain = null;
+  assetStateValue = { pending: true };
+  assets = [];
   stored = {};
   lastToken = "";
 });
@@ -220,6 +232,77 @@ describe("schémas documentés", () => {
   it("outils d'édition : renvoient à describe_site_blocks", () => {
     expect(A("edit_ticketing_site_block_preview").description).toContain("describe_site_blocks");
     expect(A("edit_ticketing_site_batch_preview").description).toContain("describe_site_blocks");
+  });
+});
+
+const ASSET = { id: "b".repeat(25), name: "logo", alt: "Logo", width: 800, height: 400, bytes: 2048, variants: [{ w: 640, bytes: 1 }, { w: 800, bytes: 2 }], createdAt: "2030-01-01T00:00:00.000Z" };
+
+describe("images", () => {
+  it("ticketing_site_assets : images, variantes et emplacements d'usage", async () => {
+    assets = [{ ...ASSET, usedIn: { draft: ["thème › logo"], published: [] } }];
+    const out = await A("ticketing_site_assets").run({ event: "tk-1" } as never, ctx);
+    expect(out.text).toContain(ASSET.id);
+    expect(out.text).toContain("brouillon › thème › logo");
+    expect((out.structured.images as unknown[]).length).toBe(1);
+  });
+
+  it("téléversement par URL : l'aperçu télécharge et traite, la confirmation finalise et renvoie l'identifiant", async () => {
+    const p = await preview("upload_ticketing_site_asset", { event: "tk-1", source: { url: "https://exemple.org/img/salle.png" }, alt: "La salle" });
+    expect(fetchImage).toHaveBeenCalledWith("https://exemple.org/img/salle.png");
+    expect(svc.stageAsset).toHaveBeenCalledWith("s1", expect.any(Buffer), { alt: "La salle", name: "salle.png" });
+    expect(p.text).toContain("640 px, 1280 px");
+    expect(svc.confirmAsset).not.toHaveBeenCalled();
+    const done = await confirm("upload_ticketing_site_asset");
+    expect(svc.confirmAsset).toHaveBeenCalledWith("s1", "a".repeat(25), "user-1");
+    expect(done.text).toContain("a".repeat(25));
+  });
+
+  it("téléversement en base64 (nom fourni), alt obligatoire", async () => {
+    await preview("upload_ticketing_site_asset", { event: "tk-1", source: { base64: "AAAA", filename: "affiche.webp" }, alt: "Affiche", name: "Affiche 2030" });
+    expect(svc.decodeBase64Image).toHaveBeenCalledWith("AAAA");
+    expect(svc.stageAsset).toHaveBeenCalledWith("s1", expect.any(Buffer), { alt: "Affiche", name: "Affiche 2030" });
+    const schema = A("upload_ticketing_site_asset_preview").input;
+    expect(schema.safeParse({ event: "x", source: { url: "https://a.b/c.png" } }).success).toBe(false);
+    expect(schema.safeParse({ event: "x", source: { url: "https://a.b/c.png" }, alt: "" }).success).toBe(false);
+    expect(schema.safeParse({ event: "x", source: { url: "https://a.b/c.png", base64: "AA" }, alt: "a" }).success).toBe(false);
+  });
+
+  it("URL refusée par la garde (réseau privé…) : refus lisible, rien d'enregistré", async () => {
+    const { ApiError } = await import("@/lib/api-utils");
+    fetchImage.mockRejectedValueOnce(new ApiError(400, "Adresse refusée : elle pointe vers un réseau privé ou réservé"));
+    const out = await preview("upload_ticketing_site_asset", { event: "tk-1", source: { url: "https://127.0.0.1/x.png" }, alt: "x" });
+    expect(out.text).toContain("réseau privé");
+    expect(svc.stageAsset).not.toHaveBeenCalled();
+    expect(mcp.createConfirmation).not.toHaveBeenCalled();
+  });
+
+  it("image en attente purgée entre l'aperçu et la confirmation : refus", async () => {
+    await preview("upload_ticketing_site_asset", { event: "tk-1", source: { url: "https://exemple.org/a.png" }, alt: "A" });
+    assetStateValue = null;
+    expect((await confirm("upload_ticketing_site_asset")).text).toContain("ont changé");
+    expect(svc.confirmAsset).not.toHaveBeenCalled();
+  });
+
+  it("observateur : refusé", async () => {
+    roles = new Set(["OBSERVER"]);
+    expect((await preview("upload_ticketing_site_asset", { event: "tk-1", source: { url: "https://exemple.org/a.png" }, alt: "A" })).structured.done).toBe(false);
+    expect(fetchImage).not.toHaveBeenCalled();
+  });
+
+  it("suppression refusée si l'image est utilisée (brouillon ou publié), avec l'endroit", async () => {
+    assets = [{ ...ASSET, usedIn: { draft: ["Accueil › bande 1 › fond"], published: [] } }];
+    expect((await preview("delete_ticketing_site_asset", { event: "tk-1", assetId: ASSET.id })).text).toContain("brouillon › Accueil › bande 1 › fond");
+    assets = [{ ...ASSET, usedIn: { draft: [], published: ["thème › en-tête"] } }];
+    expect((await preview("delete_ticketing_site_asset", { event: "tk-1", assetId: ASSET.id })).text).toContain("version publiée › thème › en-tête");
+    expect(mcp.createConfirmation).not.toHaveBeenCalled();
+  });
+
+  it("suppression d'une image inutilisée ; image inconnue refusée", async () => {
+    assets = [{ ...ASSET, usedIn: { draft: [], published: [] } }];
+    await preview("delete_ticketing_site_asset", { event: "tk-1", assetId: ASSET.id });
+    await confirm("delete_ticketing_site_asset");
+    expect(svc.deleteAsset).toHaveBeenCalledWith("s1", ASSET.id, "user-1");
+    expect((await preview("delete_ticketing_site_asset", { event: "tk-1", assetId: "inconnue" })).text).toContain("introuvable");
   });
 });
 

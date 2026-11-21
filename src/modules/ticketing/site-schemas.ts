@@ -128,6 +128,7 @@ export const blockSchema = z.discriminatedUnion("kind", [
       showDateLocation: z.boolean().default(true).describe("Afficher la date et le lieu (vrai par défaut)"),
       showCountdown: z.boolean().default(false).describe("Afficher un compte à rebours"),
       buttonLabel: optionalLine(40, "Libellé du bouton d'inscription"),
+      background: backgroundSchema.optional().describe("Fond du bandeau (couleur, dégradé ou image sous voile)"),
     })
     .strict(),
   z.object({ kind: z.literal("richText"), content: richTextSchema.describe("Arbre de texte (outil MCP : fournir `markdown`)") }).strict(),
@@ -262,6 +263,7 @@ export function backgroundsOf(doc: SiteDocument): { where: string; background: S
     page.sections.forEach((section, i) => {
       out.push({ where: `${page.title} › bande ${i + 1}`, background: section.background, text: section.textColor });
       section.blocks.forEach((block) => {
+        if (block.kind === "hero" && block.background) out.push({ where: `${page.title} › bandeau « ${block.title} »`, background: block.background, text: section.textColor });
         if (block.kind === "banner") out.push({ where: `${page.title} › bannière « ${block.title} »`, background: block.background, text: section.textColor });
       });
     });
@@ -269,21 +271,33 @@ export function backgroundsOf(doc: SiteDocument): { where: string; background: S
   return out;
 }
 
+/** Emplacements où chaque image est utilisée : thème (logo, en-tête, fond), page › bande › bloc. */
+export function assetUsagesOf(doc: SiteDocument): { assetId: string; where: string }[] {
+  const out: { assetId: string; where: string }[] = [];
+  const add = (assetId: string | undefined, where: string) => assetId && out.push({ assetId, where });
+  const bg = (b: SiteBackground | undefined, where: string) => b?.kind === "image" && add(b.assetId, where);
+  add(doc.theme.logoAssetId, "thème › logo");
+  add(doc.theme.headerAssetId, "thème › en-tête");
+  bg(doc.theme.background, "thème › fond de page");
+  for (const page of doc.pages)
+    page.sections.forEach((section, s) => {
+      const band = `${page.title} › bande ${s + 1}`;
+      bg(section.background, `${band} › fond`);
+      section.blocks.forEach((block, b) => {
+        const at = `${band} › bloc ${b + 1} (${block.kind})`;
+        if (block.kind === "image") add(block.image.assetId, at);
+        if (block.kind === "gallery") block.images.forEach((i) => add(i.assetId, at));
+        if (block.kind === "cards") block.cards.forEach((c) => add(c.image?.assetId, at));
+        if (block.kind === "banner") bg(block.background, `${at} › fond`);
+        if (block.kind === "hero") bg(block.background, `${at} › fond`);
+      });
+    });
+  return out;
+}
+
 /** Images référencées par le document (thème, fonds, blocs). */
 export function assetIdsOf(doc: SiteDocument): Set<string> {
-  const ids = new Set<string>();
-  const bg = (b: SiteBackground) => b.kind === "image" && ids.add(b.assetId);
-  if (doc.theme.logoAssetId) ids.add(doc.theme.logoAssetId);
-  if (doc.theme.headerAssetId) ids.add(doc.theme.headerAssetId);
-  for (const { background } of backgroundsOf(doc)) bg(background);
-  for (const page of doc.pages)
-    for (const section of page.sections)
-      for (const block of section.blocks) {
-        if (block.kind === "image") ids.add(block.image.assetId);
-        if (block.kind === "gallery") block.images.forEach((i) => ids.add(i.assetId));
-        if (block.kind === "cards") block.cards.forEach((c) => c.image && ids.add(c.image.assetId));
-      }
-  return ids;
+  return new Set(assetUsagesOf(doc).map((u) => u.assetId));
 }
 
 /** Document de départ d'un nouveau site : thème sobre lisible, accueil avec bandeau, page Billetterie. */

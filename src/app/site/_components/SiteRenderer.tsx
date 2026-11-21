@@ -7,7 +7,7 @@ import Countdown from "./Countdown";
 import SiteIcon from "./SiteIcon";
 import RichText from "./RichText";
 import { fontClasses } from "./fonts";
-import { backdropLayers, colorVar, themeStyle } from "./theme";
+import { backdropLayers, colorVar, srcSetOf, themeStyle, type AssetUrl } from "./theme";
 
 /**
  * Rendu d'un site d'événement (spec 084), partagé par le site public et l'aperçu de l'éditeur :
@@ -26,7 +26,8 @@ export interface SiteRenderProps {
   readonly ended: boolean;
   /** Page affichée ; la première (accueil) par défaut. */
   readonly pageSlug?: string;
-  readonly assetUrl: (id: string) => string;
+  /** Adresse d'une image ; `width` : variante demandée (640, 1280 ou 2400). */
+  readonly assetUrl: AssetUrl;
   readonly pageHref: (slug: string) => string;
   /** Aperçu de l'éditeur : navigation sans changer d'adresse. */
   readonly onNavigate?: (slug: string) => void;
@@ -35,12 +36,22 @@ export interface SiteRenderProps {
 
 type Ctx = Pick<SiteRenderProps, "event" | "title" | "churchSlug" | "eventSlug" | "assetUrl" | "pageHref">;
 
-function Backdrop({ background, assetUrl }: { readonly background: SiteSection["background"]; readonly assetUrl: Ctx["assetUrl"] }) {
+/** Image du site avec ses variantes (`srcset`) ; les anciennes images sans variantes retombent sur l'original côté serveur. */
+function SiteImage({ id, alt, assetUrl, sizes = "(min-width: 48rem) 48rem, 100vw", eager = false, className }: { readonly id: string; readonly alt: string; readonly assetUrl: AssetUrl; readonly sizes?: string; readonly eager?: boolean; readonly className?: string }) {
+  // eslint-disable-next-line @next/next/no-img-element -- image du site servie par l'API, variantes en srcset
+  return <img src={assetUrl(id, 1280)} srcSet={srcSetOf(assetUrl, id)} sizes={sizes} alt={alt} loading={eager ? undefined : "lazy"} decoding="async" className={className} />;
+}
+
+function Backdrop({ background, assetUrl }: { readonly background: SiteSection["background"]; readonly assetUrl: AssetUrl }) {
   return (
     <>
-      {backdropLayers(background, assetUrl).map((layer) => (
-        <div key={layer.key} aria-hidden="true" className="pointer-events-none absolute inset-0" style={layer.style} />
-      ))}
+      {backdropLayers(background, assetUrl).map((layer) =>
+        layer.imageId ? (
+          <SiteImage key={layer.key} id={layer.imageId} alt="" assetUrl={assetUrl} sizes="100vw" className="pointer-events-none absolute inset-0 size-full object-cover object-center" />
+        ) : (
+          <div key={layer.key} aria-hidden="true" className={`pointer-events-none absolute inset-0 ${layer.className ?? ""}`} style={layer.style} />
+        )
+      )}
     </>
   );
 }
@@ -76,7 +87,8 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
   switch (block.kind) {
     case "hero":
       return (
-        <div className="space-y-4 py-10 text-center">
+        <div className="relative isolate space-y-4 overflow-hidden rounded-lg px-4 py-10 text-center">
+          {block.background && <Backdrop background={block.background} assetUrl={ctx.assetUrl} />}
           <h1 className="text-4xl font-bold @min-[40rem]:text-5xl" style={{ fontFamily: "var(--site-font-heading)" }}>{block.title}</h1>
           {block.tagline && <p className="text-lg">{block.tagline}</p>}
           {block.showDateLocation && ctx.event && <p className="font-semibold">{dateAndPlace(ctx.event.startsAt, ctx.event.location)}</p>}
@@ -87,16 +99,14 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
     case "richText":
       return <RichText nodes={block.content} pageHref={ctx.pageHref} />;
     case "image":
-      // eslint-disable-next-line @next/next/no-img-element -- image du site servie par l'API, dimensions déclarées par l'organisateur
-      return <figure><img src={ctx.assetUrl(block.image.assetId)} alt={block.image.alt} loading="lazy" className="w-full rounded-lg" />{block.image.caption && <figcaption className="mt-1 text-sm">{block.image.caption}</figcaption>}</figure>;
+      return <figure><SiteImage id={block.image.assetId} alt={block.image.alt} assetUrl={ctx.assetUrl} className="w-full rounded-lg" />{block.image.caption && <figcaption className="mt-1 text-sm">{block.image.caption}</figcaption>}</figure>;
     case "gallery":
       return (
         <div className="space-y-3">
           {block.title && <Heading>{block.title}</Heading>}
           <div className="grid grid-cols-2 gap-2 @min-[40rem]:grid-cols-3">
             {block.images.map((image, i) => (
-              // eslint-disable-next-line @next/next/no-img-element -- image du site servie par l'API
-              <img key={i} src={ctx.assetUrl(image.assetId)} alt={image.alt} loading="lazy" className="aspect-square w-full rounded-lg object-cover" />
+              <SiteImage key={i} id={image.assetId} alt={image.alt} assetUrl={ctx.assetUrl} sizes="(min-width: 48rem) 16rem, 50vw" className="aspect-square w-full rounded-lg object-cover object-center" />
             ))}
           </div>
         </div>
@@ -120,8 +130,7 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
         <div className="grid gap-4 @min-[40rem]:grid-cols-2">
           {block.cards.map((card, i) => (
             <div key={i} className="space-y-2 rounded-lg border border-current p-4">
-              {/* eslint-disable-next-line @next/next/no-img-element -- image du site servie par l'API */}
-              {card.image && <img src={ctx.assetUrl(card.image.assetId)} alt={card.image.alt} loading="lazy" className="w-full rounded" />}
+              {card.image && <SiteImage id={card.image.assetId} alt={card.image.alt} assetUrl={ctx.assetUrl} sizes="(min-width: 48rem) 24rem, 100vw" className="w-full rounded" />}
               <div className="flex items-center gap-2">
                 {card.icon && <SiteIcon name={card.icon} className="size-6 shrink-0" />}
                 <Heading as="h3">{card.title}</Heading>
@@ -293,8 +302,7 @@ export default function SiteRenderer(props: SiteRenderProps) {
       <Backdrop background={theme.background} assetUrl={props.assetUrl} />
       <header className="relative flex flex-wrap items-center justify-between gap-3 px-4 py-3">
         <a href={props.pageHref(doc.pages[0].slug)} onClick={onNavigate && ((e) => { e.preventDefault(); onNavigate(doc.pages[0].slug); })} className="flex items-center gap-2 font-bold no-underline" style={{ fontFamily: "var(--site-font-heading)" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- logo du site servi par l'API */}
-          {theme.logoAssetId && <img src={props.assetUrl(theme.logoAssetId)} alt="" className="h-9 w-auto" />}
+          {theme.logoAssetId && <SiteImage id={theme.logoAssetId} alt="" assetUrl={props.assetUrl} sizes="9rem" eager className="h-9 w-auto" />}
           {props.title}
         </a>
         {!ended && (
@@ -319,8 +327,7 @@ export default function SiteRenderer(props: SiteRenderProps) {
         ) : (
           <>
             {theme.headerAssetId && page === doc.pages[0] && (
-              // eslint-disable-next-line @next/next/no-img-element -- en-tête du site servi par l'API
-              <img src={props.assetUrl(theme.headerAssetId)} alt="" className="max-h-80 w-full object-cover" />
+              <SiteImage id={theme.headerAssetId} alt="" assetUrl={props.assetUrl} sizes="100vw" eager className="max-h-80 w-full object-cover object-center" />
             )}
             {page.kind === "content" && page.sections.map((section, i) => <Section key={i} section={section} ctx={ctx} />)}
             {page.kind === "tickets" && <TicketsPage ctx={ctx} />}

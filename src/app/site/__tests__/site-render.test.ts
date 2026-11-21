@@ -5,7 +5,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
-import { contrastIssues, siteDocumentSchema, defaultSiteDocument, SITE_ICONS, type PublicEvent, type SiteDocument } from "@/modules/ticketing/schemas";
+import { assetIdsOf, assetUsagesOf, contrastIssues, siteDocumentSchema, defaultSiteDocument, SITE_ICONS, type PublicEvent, type SiteDocument } from "@/modules/ticketing/schemas";
 
 vi.mock("../_components/fonts", () => ({ fontClasses: () => "", fontFamily: () => "sans-serif" }));
 const { default: SiteRenderer } = await import("../_components/SiteRenderer");
@@ -32,7 +32,7 @@ const EVENT = {
 } as unknown as PublicEvent;
 
 function render(document: SiteDocument, pageSlug?: string, event: PublicEvent | null = EVENT, ended = false) {
-  return renderToString(createElement(SiteRenderer, { document, event, title: "Nuit", churchSlug: "icc", eventSlug: "nuit", ended, pageSlug, assetUrl: (id: string) => `/a/${id}`, pageHref: (s: string) => `/${s}` }));
+  return renderToString(createElement(SiteRenderer, { document, event, title: "Nuit", churchSlug: "icc", eventSlug: "nuit", ended, pageSlug, assetUrl: (id: string, w?: number) => `/a/${id}${w ? `?w=${w}` : ""}`, pageHref: (s: string) => `/${s}` }));
 }
 
 const theme = defaultSiteDocument("Nuit").theme;
@@ -156,5 +156,63 @@ describe("page « Dress code » de la Nuit de la traversée", () => {
     expect(contrastIssues(doc)).toEqual([]);
     const html = render(doc, "dress-code");
     for (const text of ["Notre palette", "Bordeaux", "Elle", "Inspirations", "À éviter"]) expect(html).toContain(text);
+  });
+
+  // Rétrocompatibilité : les évolutions du schéma ne changent ni le document analysé ni son rendu.
+  it("document existant : analyse et rendu inchangés d'une évolution à l'autre", () => {
+    const doc = siteDocumentSchema.parse(dressCode);
+    expect(JSON.stringify(doc)).toMatchSnapshot("document");
+    expect(render(doc, "dress-code")).toMatchSnapshot("rendu");
+  });
+});
+
+describe("images : variantes et fonds", () => {
+  const withBlocks = (blocks: unknown[], section: Record<string, unknown> = {}) =>
+    siteDocumentSchema.parse({ theme, pages: [{ title: "Accueil", slug: "accueil", kind: "content", sections: [{ blocks, ...section }] }] });
+
+  it("une image porte un srcset des trois variantes, en chargement différé", () => {
+    const html = render(withBlocks([{ kind: "image", image: { assetId: A, alt: "Salle" } }]));
+    expect(html).toContain(`/a/${A}?w=640 640w, /a/${A}?w=1280 1280w, /a/${A}?w=2400 2400w`);
+    expect(html).toContain('loading="lazy"');
+    expect(html).toContain("sizes=");
+  });
+
+  it("logo et en-tête : srcset, jamais différés ; en-tête centré et recadré", () => {
+    const doc = withBlocks([{ kind: "separator", style: "line" }]);
+    doc.theme.logoAssetId = A;
+    doc.theme.headerAssetId = B;
+    const html = render(doc);
+    const header = html.match(/<img[^>]*\/a\/b{25}[^>]*>/)![0];
+    expect(header).toContain("object-cover object-center");
+    expect(header).not.toContain("lazy");
+    expect(html.match(/<img[^>]*\/a\/a{25}[^>]*>/)![0]).not.toContain("lazy");
+  });
+
+  it("fond image : <img> recadré (cover, centré) sous un voile, en chargement différé", () => {
+    const html = render(withBlocks([{ kind: "separator", style: "line" }], { background: { kind: "image", assetId: A, veil: "background", opacity: 0.7, fixed: false } }));
+    expect(html).toMatch(/<img[^>]*srcSet|<img[^>]*srcset/i);
+    expect(html).toContain("size-full object-cover object-center");
+    expect(html).toContain("opacity:0.7");
+  });
+
+  it("fond fixe : seulement à partir de 40 rem (défilant sur mobile)", () => {
+    const html = render(withBlocks([{ kind: "separator", style: "line" }], { background: { kind: "image", assetId: A, veil: "background", opacity: 0.7, fixed: true } }));
+    expect(html).toContain("bg-scroll @min-[40rem]:bg-fixed");
+    expect(html).toContain("bg-cover bg-center");
+  });
+
+  it("hero avec fond : rendu sous voile, contraste vérifié sur ce fond", () => {
+    const bg = { kind: "image", assetId: A, veil: "background", opacity: 0.8, fixed: false };
+    const doc = withBlocks([{ kind: "hero", title: "Nuit", background: bg }]);
+    expect(contrastIssues(doc)).toEqual([]);
+    expect(render(doc)).toContain(`/a/${A}?w=1280`);
+    const bad = withBlocks([{ kind: "hero", title: "Nuit", background: { kind: "color", color: "text" } }]);
+    expect(contrastIssues(bad).some((i) => i.message.includes("bandeau"))).toBe(true);
+  });
+
+  it("l'image d'un fond de hero compte parmi les images du document", () => {
+    const doc = withBlocks([{ kind: "hero", title: "Nuit", background: { kind: "image", assetId: A, veil: "background", opacity: 0.8, fixed: false } }]);
+    expect([...assetIdsOf(doc)]).toEqual([A]);
+    expect(assetUsagesOf(doc)[0].where).toBe("Accueil › bande 1 › bloc 1 (hero) › fond");
   });
 });
