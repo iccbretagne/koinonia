@@ -6,13 +6,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { viewerFor } from "../../assistant/__tests__/viewers";
 
-let stored: unknown = null;
+let stored: Record<string, unknown> = {};
+let lastToken = "";
 const mcp = {
   createConfirmation: vi.fn(async (_g: string, _a: string, payload: unknown) => {
-    stored = payload;
-    return { token: "kmx_tok", expiresAt: new Date("2099-01-01T00:05:00Z") };
+    lastToken = `kmx_tok_${Object.keys(stored).length + 1}`;
+    stored[lastToken] = payload;
+    return { token: lastToken, expiresAt: new Date("2099-01-01T00:05:00Z") };
   }),
-  consumeConfirmation: vi.fn(async () => stored),
+  consumeConfirmation: vi.fn(async (_g: string, _a: string, token: string) => stored[token] ?? null),
   publicOrigin: () => "https://koinonia.test",
 };
 vi.mock("@/modules/mcp", () => mcp);
@@ -35,7 +37,10 @@ const svc = {
   getEventAccess: vi.fn(async (_s: unknown, id: string) => ({ eventId: id, churchId: "c1", status: "OPEN", manager: false, roles })),
   canDo: (access: { roles: Set<string> }, action: string) => MATRIX[action].some((r) => access.roles.has(r)),
   getSite: vi.fn(async () => siteView()),
-  saveDraft: vi.fn(async () => siteView()),
+  saveDraft: vi.fn(async (_e: string, _u: string, doc: typeof draft) => {
+    draft = doc;
+    return siteView();
+  }),
   publishSite: vi.fn(async () => siteView()),
   unpublishSite: vi.fn(async () => siteView()),
   getDomain: vi.fn(async () => domain),
@@ -49,9 +54,8 @@ vi.mock("@/lib/audit", () => ({ logAudit: vi.fn(), withAuditContext: async (_e: 
 const s = await import("../_actions/site");
 const A = (name: string) => s.SITE_ACTIONS.find((a) => a.name === name)!;
 const ctx = { session: { user: { id: "user-1" } } as never, churchId: "c1", viewer: viewerFor("STAR", { predicates: ["ticketing"] }), grantId: "g1" };
-const TOKEN = { confirmation: "kmx_tok_123456" };
 const preview = (action: string, input: unknown) => A(`${action}_preview`).run(input as never, ctx);
-const confirm = (action: string) => A(`${action}_confirm`).run(TOKEN as never, ctx);
+const confirm = (action: string, token = lastToken) => A(`${action}_confirm`).run({ confirmation: token } as never, ctx);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -60,14 +64,15 @@ beforeEach(() => {
   published = false;
   draft = defaultSiteDocument("Nuit de la traversée");
   domain = null;
-  stored = null;
+  stored = {};
+  lastToken = "";
 });
 
 describe("droits", () => {
   it("Communication : lit et modifie le site, publie ; refusée sur le domaine", async () => {
     expect((await A("ticketing_site").run({ event: "tk-1" } as never, ctx)).structured.id).toBe("tk-1");
-    expect((await preview("edit_ticketing_site_theme", { event: "tk-1", theme: { colors: { accent: "#8b0000" } } })).structured.confirmation).toBe("kmx_tok");
-    expect((await preview("publish_ticketing_site", { event: "tk-1", op: "publish" })).structured.confirmation).toBe("kmx_tok");
+    expect((await preview("edit_ticketing_site_theme", { event: "tk-1", theme: { colors: { accent: "#8b0000" } } })).structured.confirmation).toMatch(/^kmx_tok/);
+    expect((await preview("publish_ticketing_site", { event: "tk-1", op: "publish" })).structured.confirmation).toMatch(/^kmx_tok/);
     expect((await preview("request_ticketing_site_domain", { event: "tk-1", op: "request", host: "fete.exemple.org" })).text).toBe("Vous n'avez pas ce rôle sur cet événement dans Koinonia.");
     expect(svc.requestDomain).not.toHaveBeenCalled();
   });
@@ -81,7 +86,7 @@ describe("droits", () => {
 
   it("organisateur : demande un domaine", async () => {
     roles = new Set(["ORGANIZER"]);
-    expect((await preview("request_ticketing_site_domain", { event: "tk-1", op: "request", host: "fete.exemple.org" })).structured.confirmation).toBe("kmx_tok");
+    expect((await preview("request_ticketing_site_domain", { event: "tk-1", op: "request", host: "fete.exemple.org" })).structured.confirmation).toMatch(/^kmx_tok/);
     const done = await confirm("request_ticketing_site_domain");
     expect(done.text).toContain("TXT _koinonia.fete.exemple.org");
     expect(svc.requestDomain).toHaveBeenCalledWith("tk-1", "user-1", "fete.exemple.org");
@@ -142,6 +147,87 @@ function siteDocument1() {
   return d;
 }
 
+const heroTitle = () => (draft.pages[0].sections[0].blocks[0] as { title: string }).title;
+const op = {
+  hero: (title: string) => ({ type: "block", op: "update", target: "block", page: "accueil", band: 0, block: 0, blockData: { kind: "hero", title } }),
+  band: (textColor: string) => ({ type: "block", op: "update", target: "band", page: "accueil", band: 0, bandFields: { textColor } }),
+  page: (slug: string) => ({ type: "page", op: "create", page: { title: slug, slug } }),
+};
+
+describe("jetons indépendants", () => {
+  it("deux aperçus sur des endroits différents, confirmés l'un après l'autre : tous deux appliqués", async () => {
+    await preview("edit_ticketing_site_theme", { event: "tk-1", theme: { colors: { accent: "#8b0000" } } });
+    const t1 = lastToken;
+    await preview("edit_ticketing_site_page", { event: "tk-1", op: "create", page: { title: "Infos", slug: "infos" } });
+    const t2 = lastToken;
+    await preview("edit_ticketing_site_block", { event: "tk-1", op: "update", target: "block", page: "accueil", band: 0, block: 0, blockData: { kind: "hero", title: "Nouveau" } });
+    const t3 = lastToken;
+    expect((await confirm("edit_ticketing_site_theme", t1)).structured.done).toBe(true);
+    expect((await confirm("edit_ticketing_site_page", t2)).structured.done).toBe(true);
+    expect((await confirm("edit_ticketing_site_block", t3)).structured.done).toBe(true);
+    expect(draft.theme.colors.accent).toBe("#8b0000");
+    expect(draft.pages.map((p) => p.slug)).toContain("infos");
+    expect(heroTitle()).toBe("Nouveau");
+  });
+
+  it("deux aperçus sur la même bande : le second est refusé", async () => {
+    await preview("edit_ticketing_site_block", { event: "tk-1", op: "update", target: "block", page: "accueil", band: 0, block: 0, blockData: { kind: "hero", title: "A" } });
+    const t1 = lastToken;
+    await preview("edit_ticketing_site_block", { event: "tk-1", op: "update", target: "block", page: "accueil", band: 0, block: 0, blockData: { kind: "hero", title: "B" } });
+    const t2 = lastToken;
+    expect((await confirm("edit_ticketing_site_block", t1)).structured.done).toBe(true);
+    expect((await confirm("edit_ticketing_site_block", t2)).text).toContain("ont changé");
+    expect(heroTitle()).toBe("A");
+  });
+
+  it("confirmation devenue illisible sur le brouillon courant : refus explicite, rien d'enregistré", async () => {
+    await preview("edit_ticketing_site_block", { event: "tk-1", op: "update", target: "band", page: "accueil", band: 0, bandFields: { textColor: "secondary" } });
+    const t1 = lastToken;
+    // Changement hors de la portion touchée (thème) qui rend le texte illisible.
+    draft.theme.colors.secondary = "#fafafa";
+    const out = await confirm("edit_ticketing_site_block", t1);
+    expect(out.structured.done).toBe(false);
+    expect(out.text).toContain("Rien n'est fait");
+    expect(svc.saveDraft).not.toHaveBeenCalled();
+  });
+});
+
+describe("lot", () => {
+  it("opérations appliquées dans l'ordre, un seul jeton, un seul enregistrement", async () => {
+    const p = await preview("edit_ticketing_site_batch", { event: "tk-1", operations: [op.page("infos"), op.hero("Premier"), op.hero("Second")] });
+    expect(p.text).toContain("1. Page : create");
+    expect(p.text).toContain("3. Bloc");
+    expect((await confirm("edit_ticketing_site_batch")).structured.done).toBe(true);
+    expect(svc.saveDraft).toHaveBeenCalledTimes(1);
+    expect(heroTitle()).toBe("Second");
+    expect(draft.pages.map((p) => p.slug)).toContain("infos");
+  });
+
+  it("atomique : une opération invalide ⇒ aucun jeton, rien d'enregistré", async () => {
+    const out = await preview("edit_ticketing_site_batch", { event: "tk-1", operations: [op.hero("Ok"), { type: "block", op: "delete", target: "block", page: "nope", band: 0, block: 0 }] });
+    expect(out.text).toContain("Opération 2");
+    expect(mcp.createConfirmation).not.toHaveBeenCalled();
+    expect(svc.saveDraft).not.toHaveBeenCalled();
+  });
+
+  it("un lot qui rend le site illisible est refusé dès l'aperçu", async () => {
+    const out = await preview("edit_ticketing_site_batch", { event: "tk-1", operations: [op.hero("Ok"), { type: "theme", theme: { colors: { text: "#fafafa" } } }] });
+    expect(out.text).toContain("peu lisible");
+    expect(mcp.createConfirmation).not.toHaveBeenCalled();
+  });
+
+  it("l'ordre compte : un lot qui crée puis remplit une page passe, l'inverse est refusé", async () => {
+    const fill = { type: "block", op: "create", target: "band", page: "infos" };
+    expect((await preview("edit_ticketing_site_batch", { event: "tk-1", operations: [op.page("infos"), fill] })).structured.confirmation).toMatch(/^kmx_tok/);
+    expect((await preview("edit_ticketing_site_batch", { event: "tk-1", operations: [fill, op.page("infos")] })).text).toContain("Opération 1");
+  });
+
+  it("51 opérations ou lot vide : refusés par le schéma", () => {
+    expect(A("edit_ticketing_site_batch_preview").input.safeParse({ event: "x", operations: [] }).success).toBe(false);
+    expect(A("edit_ticketing_site_batch_preview").input.safeParse({ event: "x", operations: Array(51).fill(op.hero("x")) }).success).toBe(false);
+  });
+});
+
 describe("confirmation", () => {
   it("Markdown converti en arbre, enregistré en brouillon", async () => {
     await preview("edit_ticketing_site_block", { event: "tk-1", op: "create", target: "block", page: "accueil", band: 0, markdown: "## Dress code\n\nSoyez **élégants**.\n\n- Robe longue\n- Costume" });
@@ -159,7 +245,7 @@ describe("confirmation", () => {
 
   it("brouillon modifié depuis l'aperçu ⇒ refus CHANGED, rien d'enregistré", async () => {
     await preview("edit_ticketing_site_theme", { event: "tk-1", theme: { colors: { accent: "#8b0000" } } });
-    updatedAt = "2099-01-02T00:00:00.000Z";
+    draft.theme.colors.accent = "#006400";
     const out = await confirm("edit_ticketing_site_theme");
     expect(out.text).toContain("ont changé");
     expect(svc.saveDraft).not.toHaveBeenCalled();

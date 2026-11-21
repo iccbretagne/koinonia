@@ -13,6 +13,7 @@ import {
   themeSchema,
   type SiteDocument,
 } from "@/modules/ticketing/schemas";
+import { ApiError } from "@/lib/api-utils";
 import { type ActionContext, type ActionResult, type McpActionDef, refusal } from "./common";
 import { eventAction, eventFor, eventRef, type Prepared } from "./ticketing";
 
@@ -129,7 +130,40 @@ const themePatch = z
   })
   .strict();
 
-export function applyTheme(doc: SiteDocument, patch: z.infer<typeof themePatch>): SiteDocument | string {
+const pageFields = pageSchema.pick({ title: true, slug: true, inMenu: true, kind: true }).partial();
+const bandFields = sectionSchema.pick({ background: true, textColor: true }).partial();
+
+const pageShape = {
+  op: z.enum(["create", "update", "move", "delete"]),
+  slug: z.string().trim().max(40).optional().describe("Adresse de la page visée (update, move, delete), voir ticketing_site"),
+  page: pageFields.optional().describe("create : title et slug ; update : champs à changer (title, slug, inMenu, kind)"),
+  direction: direction.optional().describe("move : up ou down"),
+};
+const blockShape = {
+  op: z.enum(["create", "update", "move", "delete"]),
+  target: z.enum(["band", "block"]),
+  page: z.string().trim().max(40).describe("Adresse (slug) de la page"),
+  band: z.number().int().min(0).optional().describe("Rang de la bande (tout sauf la création d'une bande)"),
+  block: z.number().int().min(0).optional().describe("Rang du bloc (update, move, delete)"),
+  position: z.number().int().min(0).optional().describe("create : rang d'insertion, à la fin par défaut"),
+  direction: direction.optional(),
+  bandFields: bandFields.optional().describe("Bande : background, textColor"),
+  blockData: z.record(z.string(), z.unknown()).optional().describe("Bloc complet avec son `kind`"),
+  markdown: z.string().max(20000).optional().describe("Texte riche d'un bloc richText, en Markdown restreint"),
+};
+
+/** Une opération : mêmes formes que les outils unitaires, réutilisée par l'outil par lot. */
+const operationSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("theme"), theme: themePatch }).strict(),
+  z.object({ type: z.literal("page"), ...pageShape }).strict(),
+  z.object({ type: z.literal("block"), ...blockShape }).strict(),
+]);
+export type SiteOperation = z.infer<typeof operationSchema>;
+type PageOp = Extract<SiteOperation, { type: "page" }>;
+type BlockOp = Extract<SiteOperation, { type: "block" }>;
+
+/** Les fonctions `apply*` modifient une copie sans la valider : la validation est unique, en fin de lot. */
+function applyTheme(doc: SiteDocument, patch: z.infer<typeof themePatch>): SiteDocument | string {
   const next = structuredClone(doc);
   if (patch.colors) Object.assign(next.theme.colors, patch.colors);
   if (patch.fonts) Object.assign(next.theme.fonts, patch.fonts);
@@ -138,24 +172,23 @@ export function applyTheme(doc: SiteDocument, patch: z.infer<typeof themePatch>)
     if (patch[key] === null) delete next.theme[key];
     else if (patch[key]) next.theme[key] = patch[key];
   }
-  return validateDocument(next);
+  return next;
 }
 
-const pageFields = pageSchema.pick({ title: true, slug: true, inMenu: true, kind: true }).partial();
-
-export function applyPage(doc: SiteDocument, op: "create" | "update" | "move" | "delete", slug: string | undefined, page: z.infer<typeof pageFields> | undefined, dir?: Direction): SiteDocument | string {
+function applyPage(doc: SiteDocument, o: PageOp): SiteDocument | string {
   const next = structuredClone(doc);
-  if (op === "create") {
+  const { slug, page, direction: dir } = o;
+  if (o.op === "create") {
     if (!page?.title || !page.slug) return "Pour créer une page, indiquez `page.title` et `page.slug`.";
     next.pages.push(pageSchema.parse({ kind: "content", ...page }));
-    return validateDocument(next);
+    return next;
   }
   const index = next.pages.findIndex((p) => p.slug === slug);
   if (index < 0) return `Page « ${slug ?? ""} » introuvable : pages existantes ${next.pages.map((p) => p.slug).join(", ")}.`;
-  if (op === "delete") {
+  if (o.op === "delete") {
     if (next.pages.length === 1) return "Un site garde au moins une page.";
     next.pages.splice(index, 1);
-  } else if (op === "move") {
+  } else if (o.op === "move") {
     if (!dir) return "Indiquez `direction` (up ou down).";
     const error = moveItem(next.pages, index, dir);
     if (error) return error;
@@ -163,25 +196,10 @@ export function applyPage(doc: SiteDocument, op: "create" | "update" | "move" | 
     if (!page || Object.keys(page).length === 0) return "Indiquez les champs de `page` à modifier.";
     Object.assign(next.pages[index], page);
   }
-  return validateDocument(next);
+  return next;
 }
 
-const bandFields = sectionSchema.pick({ background: true, textColor: true }).partial();
-
-export interface BlockEdit {
-  op: "create" | "update" | "move" | "delete";
-  target: "band" | "block";
-  page: string;
-  band?: number;
-  block?: number;
-  position?: number;
-  direction?: Direction;
-  bandFields?: z.infer<typeof bandFields>;
-  blockData?: Record<string, unknown>;
-  markdown?: string;
-}
-
-export function applyBlock(doc: SiteDocument, edit: BlockEdit): SiteDocument | string {
+function applyBlock(doc: SiteDocument, edit: BlockOp): SiteDocument | string {
   const next = structuredClone(doc);
   const page = next.pages.find((p) => p.slug === edit.page);
   if (!page) return `Page « ${edit.page} » introuvable : pages existantes ${next.pages.map((p) => p.slug).join(", ")}.`;
@@ -191,7 +209,7 @@ export function applyBlock(doc: SiteDocument, edit: BlockEdit): SiteDocument | s
     if (edit.op === "create") {
       const band = sectionSchema.parse({ blocks: [], ...edit.bandFields });
       page.sections.splice(Math.min(edit.position ?? page.sections.length, page.sections.length), 0, band);
-      return validateDocument(next);
+      return next;
     }
     const band = edit.band === undefined ? undefined : page.sections[edit.band];
     if (!band) return `Bande ${edit.band ?? "?"} introuvable : la page en compte ${page.sections.length} (rangs 0 à ${page.sections.length - 1}).`;
@@ -204,7 +222,7 @@ export function applyBlock(doc: SiteDocument, edit: BlockEdit): SiteDocument | s
       if (!edit.bandFields || Object.keys(edit.bandFields).length === 0) return "Indiquez les champs de `bandFields` à modifier.";
       Object.assign(band, edit.bandFields);
     }
-    return validateDocument(next);
+    return next;
   }
 
   const band = edit.band === undefined ? undefined : page.sections[edit.band];
@@ -227,7 +245,7 @@ export function applyBlock(doc: SiteDocument, edit: BlockEdit): SiteDocument | s
       if (edit.block === undefined || !band.blocks[edit.block]) return `Bloc ${edit.block ?? "?"} introuvable dans cette bande (rangs 0 à ${band.blocks.length - 1}).`;
       band.blocks[edit.block] = parsed.data;
     }
-    return validateDocument(next);
+    return next;
   }
   if (edit.block === undefined || !band.blocks[edit.block]) return `Bloc ${edit.block ?? "?"} introuvable dans cette bande (rangs 0 à ${band.blocks.length - 1}).`;
   if (edit.op === "delete") band.blocks.splice(edit.block, 1);
@@ -236,29 +254,83 @@ export function applyBlock(doc: SiteDocument, edit: BlockEdit): SiteDocument | s
     const error = moveItem(band.blocks, edit.block, edit.direction);
     if (error) return error;
   }
-  return validateDocument(next);
+  return next;
+}
+
+function applyOne(doc: SiteDocument, op: SiteOperation): SiteDocument | string {
+  try {
+    return op.type === "theme" ? applyTheme(doc, op.theme) : op.type === "page" ? applyPage(doc, op) : applyBlock(doc, op);
+  } catch (error) {
+    if (error instanceof z.ZodError) return error.issues.map((i) => `${i.path.join(".") || "saisie"} : ${i.message}`).join(" ; ");
+    throw error;
+  }
+}
+
+/** Opérations appliquées dans l'ordre sur une copie, puis une seule validation (schéma et lisibilité) : tout ou rien. */
+export function applyOperations(doc: SiteDocument, ops: SiteOperation[]): SiteDocument | string {
+  let current = doc;
+  for (const [i, op] of ops.entries()) {
+    const next = applyOne(current, op);
+    if (typeof next === "string") return ops.length > 1 ? `Opération ${i + 1} : ${next}` : next;
+    current = next;
+  }
+  return validateDocument(current);
+}
+
+/**
+ * Portion du brouillon qu'une opération touche : seule elle est comparée entre l'aperçu et la
+ * confirmation, si bien que deux aperçus sur des endroits différents restent valides l'un après l'autre.
+ */
+function portionOf(doc: SiteDocument, op: SiteOperation): unknown {
+  if (op.type === "theme") return { theme: doc.theme };
+  const slugs = doc.pages.map((p) => p.slug);
+  if (op.type === "page") {
+    const page = doc.pages.find((p) => p.slug === op.slug);
+    return { slugs, page: op.op === "create" || !page ? null : op.op === "delete" ? page : { ...page, sections: undefined } };
+  }
+  const page = doc.pages.find((p) => p.slug === op.page);
+  if (!page) return { slugs, page: null };
+  const base = { slug: op.page, kind: page.kind };
+  if (op.target === "band" && op.op === "create") return { ...base, bands: page.sections.length };
+  if (op.band === undefined) return { ...base, band: null };
+  const neighbour = op.target === "band" && op.op === "move" ? page.sections[op.direction === "up" ? op.band - 1 : op.band + 1] : undefined;
+  return { ...base, band: page.sections[op.band] ?? null, neighbour };
 }
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
-interface DocPayload {
+interface OpsPayload {
   eventId: string;
-  doc: SiteDocument;
+  ops: SiteOperation[];
   [key: string]: unknown;
 }
 
-/** Empreinte : le brouillon n'a pas bougé depuis l'aperçu. */
-const draftState = async (p: { eventId?: string }) => (await (await ticketing()).getSite(p.eventId!)).updatedAt;
+/** Empreinte : la portion du brouillon que les opérations touchent n'a pas bougé depuis l'aperçu. */
+const opsState = async (p: { eventId?: string; ops?: SiteOperation[] }) => {
+  const { draft } = await (await ticketing()).getSite(p.eventId!);
+  return (p.ops ?? []).map((op) => portionOf(draft, op));
+};
 
-async function prepareEdit(eventId: string, title: string, compute: (doc: SiteDocument) => SiteDocument | string, summary: string[]): Promise<Prepared<DocPayload> | string> {
-  const site = await (await ticketing()).getSite(eventId);
-  const next = compute(site.draft);
+const describeOp = (op: SiteOperation): string => {
+  if (op.type === "theme") return `Thème : ${JSON.stringify(op.theme)}`;
+  if (op.type === "page") return `Page : ${op.op}${op.slug ? ` « ${op.slug} »` : ""}${op.page ? ` ${JSON.stringify(op.page)}` : ""}${op.direction ? ` (${op.direction})` : ""}`;
+  return `${op.target === "band" ? "Bande" : "Bloc"} : ${op.op} sur la page « ${op.page} »${op.band !== undefined ? `, bande ${op.band}` : ""}${op.block !== undefined ? `, bloc ${op.block}` : ""}`;
+};
+
+async function prepareOps(event: { id: string; title: string }, ops: SiteOperation[]): Promise<Prepared<OpsPayload> | string> {
+  const site = await (await ticketing()).getSite(event.id);
+  const next = applyOperations(site.draft, ops);
   if (typeof next === "string") return next;
-  return { lines: [`Site de « ${title} » (brouillon, non publié tant que vous ne le publiez pas)`, ...summary], payload: { eventId, doc: jsonify(next) } };
+  const lines = ops.length === 1 ? [describeOp(ops[0])] : ops.map((op, i) => `${i + 1}. ${describeOp(op)}`);
+  return { lines: [`Site de « ${event.title} » (brouillon, non publié tant que vous ne le publiez pas)`, ...lines], payload: { eventId: event.id, ops: jsonify(ops) } };
 }
 
-async function saveEdit(p: DocPayload, ctx: ActionContext) {
-  await (await ticketing()).saveDraft(p.eventId, ctx.session.user.id, p.doc);
+/** Les opérations sont réappliquées sur le brouillon courant : un document devenu invalide ou illisible est refusé. */
+async function saveOps(p: OpsPayload, ctx: ActionContext) {
+  const m = await ticketing();
+  const next = applyOperations((await m.getSite(p.eventId)).draft, p.ops);
+  if (typeof next === "string") throw new ApiError(422, next);
+  await m.saveDraft(p.eventId, ctx.session.user.id, next);
   return { text: "Brouillon du site enregistré (pas encore publié).", vue: "site" };
 }
 
@@ -268,9 +340,9 @@ const themeAction = eventAction({
   description: previewDesc("modifier le thème du site d'un événement (couleurs #RRGGBB, polices, fond, logo, en-tête parmi les images du site) ; refuse un texte peu lisible dès l'aperçu"),
   confirmDescription: confirmDesc("enregistrer le thème du brouillon du site"),
   input: z.object({ event: eventRef, theme: themePatch }),
-  prepare: (input, _ctx, event) => prepareEdit(event!.id, event!.title, (doc) => applyTheme(doc, input.theme), [`Thème : ${JSON.stringify(input.theme)}`]),
-  state: draftState,
-  execute: saveEdit,
+  prepare: (input, _ctx, event) => prepareOps(event!, [{ type: "theme", theme: input.theme }]),
+  state: opsState,
+  execute: saveOps,
 });
 
 const pageAction = eventAction({
@@ -278,17 +350,13 @@ const pageAction = eventAction({
   role: "site",
   description: previewDesc("créer, modifier, déplacer ou supprimer une page du site (8 au plus ; types content, tickets, menus, practical) ; la première page est l'accueil"),
   confirmDescription: confirmDesc("enregistrer les pages du brouillon du site"),
-  input: z.object({
-    event: eventRef,
-    op: z.enum(["create", "update", "move", "delete"]),
-    slug: z.string().trim().max(40).optional().describe("Adresse de la page visée (update, move, delete), voir ticketing_site"),
-    page: pageFields.optional().describe("create : title et slug ; update : champs à changer (title, slug, inMenu, kind)"),
-    direction: direction.optional().describe("move : up ou down"),
-  }),
-  prepare: (input, _ctx, event) =>
-    prepareEdit(event!.id, event!.title, (doc) => applyPage(doc, input.op, input.slug, input.page, input.direction), [`Page : ${input.op}${input.slug ? ` « ${input.slug} »` : ""}${input.page ? ` ${JSON.stringify(input.page)}` : ""}${input.direction ? ` (${input.direction})` : ""}`]),
-  state: draftState,
-  execute: saveEdit,
+  input: z.object({ event: eventRef, ...pageShape }),
+  prepare: (input, _ctx, event) => {
+    const { event: _e, ...rest } = input;
+    return prepareOps(event!, [{ type: "page", ...rest }]);
+  },
+  state: opsState,
+  execute: saveOps,
 });
 
 const blockAction = eventAction({
@@ -298,28 +366,26 @@ const blockAction = eventAction({
     "créer, modifier, déplacer ou supprimer une bande (target band : fond, couleur du texte) ou un bloc (target block) d'une page composée. blockData : un bloc complet (kind hero, richText, image, gallery, palette, cards, doDont, icons, faq, button, banner, separator) ; pour un texte, `markdown` (Markdown restreint : ## titre, ### sous-titre, listes, **gras**, *italique*, liens https/mailto/page:adresse, aucun HTML). Rangs à partir de 0, voir ticketing_site"
   ),
   confirmDescription: confirmDesc("enregistrer les bandes et blocs du brouillon du site"),
-  input: z.object({
-    event: eventRef,
-    op: z.enum(["create", "update", "move", "delete"]),
-    target: z.enum(["band", "block"]),
-    page: z.string().trim().max(40).describe("Adresse (slug) de la page"),
-    band: z.number().int().min(0).optional().describe("Rang de la bande (tout sauf la création d'une bande)"),
-    block: z.number().int().min(0).optional().describe("Rang du bloc (update, move, delete)"),
-    position: z.number().int().min(0).optional().describe("create : rang d'insertion, à la fin par défaut"),
-    direction: direction.optional(),
-    bandFields: bandFields.optional().describe("Bande : background, textColor"),
-    blockData: z.record(z.string(), z.unknown()).optional().describe("Bloc complet avec son `kind`"),
-    markdown: z.string().max(20000).optional().describe("Texte riche d'un bloc richText, en Markdown restreint"),
-  }),
-  prepare: (input, _ctx, event) =>
-    prepareEdit(
-      event!.id,
-      event!.title,
-      (doc) => applyBlock(doc, { ...input, bandFields: input.bandFields, blockData: input.blockData }),
-      [`${input.target === "band" ? "Bande" : "Bloc"} : ${input.op} sur la page « ${input.page} »${input.band !== undefined ? `, bande ${input.band}` : ""}${input.block !== undefined ? `, bloc ${input.block}` : ""}`]
-    ),
-  state: draftState,
-  execute: saveEdit,
+  input: z.object({ event: eventRef, ...blockShape }),
+  prepare: (input, _ctx, event) => {
+    const { event: _e, ...rest } = input;
+    return prepareOps(event!, [{ type: "block", ...rest }]);
+  },
+  state: opsState,
+  execute: saveOps,
+});
+
+const batchAction = eventAction({
+  action: "edit_ticketing_site_batch",
+  role: "site",
+  description: previewDesc(
+    "appliquer d'un coup 1 à 50 opérations au brouillon du site, dans l'ordre, en tout ou rien (validation finale unique : schéma et lisibilité). Chaque opération a un `type` : theme (clé theme), page (op, slug, page, direction) ou block (op, target, page, band, block, position, direction, bandFields, blockData, markdown), avec les mêmes champs que les outils unitaires"
+  ),
+  confirmDescription: confirmDesc("enregistrer d'un coup les opérations du lot sur le brouillon du site"),
+  input: z.object({ event: eventRef, operations: z.array(operationSchema).min(1).max(50).describe("Opérations appliquées dans l'ordre") }),
+  prepare: (input, _ctx, event) => prepareOps(event!, input.operations),
+  state: opsState,
+  execute: saveOps,
 });
 
 const publishState = async (p: { eventId?: string }) => {
@@ -395,4 +461,4 @@ const domainAction = eventAction({
   },
 });
 
-export const SITE_ACTIONS: McpActionDef[] = [...SITE_READS, ...themeAction, ...pageAction, ...blockAction, ...publishAction, ...domainAction];
+export const SITE_ACTIONS: McpActionDef[] = [...SITE_READS, ...themeAction, ...pageAction, ...blockAction, ...batchAction, ...publishAction, ...domainAction];
