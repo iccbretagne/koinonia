@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isApprovedSiteHost, siteSlugFromHost } from "@/lib/site-host";
 import { resolveRouteOwner, isPublicRoute } from "@/lib/module-routes";
-import { buildCsp, cspHeaderName, generateNonce, storageOrigins, CSP_REPORT_PATH } from "@/lib/csp";
+import { buildCsp, buildSiteCsp, cspHeaderName, generateNonce, storageOrigins, CSP_REPORT_PATH } from "@/lib/csp";
 
 /**
  * Noms du cookie de session posé par Auth.js — variante non préfixée (HTTP,
@@ -25,7 +26,16 @@ export const SESSION_COOKIE_NAMES = [
  * Next.js le lit pour l'apposer sur ses propres scripts (et `headers()` pour le layout racine).
  */
 export function proxy(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith("/api/")) return route(request);
+  const host = request.headers.get("host") ?? request.nextUrl.host;
+  const siteSlug = siteSlugFromHost(host, process.env.SITE_BASE_DOMAIN);
+  if (siteSlug || isApprovedSiteHost(host)) return siteHostRoute(request, siteSlug);
+
+  const pathname = request.nextUrl.pathname;
+  // Fichiers statiques (`public/`) : jamais interceptés, comme avant l'élargissement du matcher.
+  if (/\.[a-z0-9]+$/i.test(pathname)) return NextResponse.next();
+  // Le site d'un événement n'est servi que par son hôte (ADR-0031) ; l'aperçu passe par l'onglet Site.
+  if (pathname === "/site" || pathname.startsWith("/site/")) return notFoundResponse(pathname);
+  if (pathname.startsWith("/api/")) return route(request);
 
   const headerName = cspHeaderName();
   const policy = buildCsp({
@@ -39,6 +49,49 @@ export function proxy(request: NextRequest) {
   const response = route(request, forwarded);
   response.headers.set(headerName, policy);
   return response;
+}
+
+function notFoundResponse(pathname: string): NextResponse {
+  return pathname.startsWith("/api/") ? NextResponse.json({ error: "Not found" }, { status: 404 }) : new NextResponse("Not found", { status: 404 });
+}
+
+/** Chemins qu'un hôte de site laisse passer tels quels (liste blanche, ADR-0031). */
+const SITE_HOST_PASSTHROUGH = ["/inscription", "/reservation", "/billet", "/api/ticketing/public", "/_next"] as const;
+const underPrefix = (path: string, prefix: string) => path === prefix || path.startsWith(`${prefix}/`);
+/** Page du site : un seul segment, sans point (les fichiers n'existent pas sur un hôte de site). */
+const SITE_PAGE = /^\/[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/**
+ * Hôte de site d'événement (spec 084, ADR-0031) : liste blanche stricte, tout le reste répond 404
+ * — jamais d'accès à l'application, à ses API ni à Auth.js depuis cet hôte. Aucun cookie n'est lu
+ * (pas de session) et le cookie éventuel est retiré de la requête transmise.
+ */
+function siteHostRoute(request: NextRequest, siteSlug: string | null): NextResponse {
+  const pathname = request.nextUrl.pathname;
+  const forwarded = new Headers(request.headers);
+  forwarded.delete("cookie");
+
+  const passthrough = pathname === "/favicon.ico" || SITE_HOST_PASSTHROUGH.some((p) => underPrefix(pathname, p));
+  const page = pathname === "/" || SITE_PAGE.test(pathname);
+  if (!passthrough && !(page && siteSlug)) return notFoundResponse(pathname);
+  // Module de la billetterie désactivé : l'hôte de site ne sert rien non plus.
+  if (!underPrefix(pathname, "/_next") && resolveRouteOwner(passthrough ? pathname : "/site").kind === "orphan") return notFoundResponse(pathname);
+
+  if (!pathname.startsWith("/api/") && !pathname.startsWith("/_next")) {
+    const headerName = cspHeaderName();
+    const policy = buildSiteCsp({
+      nonce: generateNonce(),
+      isDev: process.env.NODE_ENV === "development",
+      turnstile: underPrefix(pathname, "/inscription"),
+    });
+    forwarded.set(headerName, policy);
+    const response = passthrough
+      ? NextResponse.next({ request: { headers: forwarded } })
+      : NextResponse.rewrite(new URL(`/site/${siteSlug}${pathname === "/" ? "" : pathname}`, request.url), { request: { headers: forwarded } });
+    response.headers.set(headerName, policy);
+    return response;
+  }
+  return NextResponse.next({ request: { headers: forwarded } });
 }
 
 /** Adresses joignables sans session ; toutes les autres exigent d'être connecté. */
@@ -114,6 +167,7 @@ function route(request: NextRequest, forwarded?: Headers): NextResponse {
 export const config = {
   // Toute page authentifiée doit traverser le proxy pour que le contrôle de module
   // s'applique — un matcher trop étroit laisserait joignables les pages des modules non
-  // couverts (spec 038). Exclusions : assets Next.js et fichiers statiques.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
+  // couverts (spec 038). Exclusions : assets Next.js. Les fichiers statiques (avec extension) traversent le proxy pour que
+  // les hôtes de site les refusent (ADR-0031) ; sur l'hôte de l'application ils sont relayés tels quels.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

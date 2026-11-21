@@ -5,17 +5,23 @@ export default function PublicShell({
   eyebrow,
   title,
   subtitle,
+  logoUrl,
   children,
 }: {
   readonly eyebrow: string;
   readonly title: string;
   readonly subtitle?: ReactNode;
+  readonly logoUrl?: string;
   readonly children: ReactNode;
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-surface-sunken">
       <header className="bg-brand px-4 py-5">
         <div className="mx-auto max-w-xl">
+          {logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- logo du site servi par l'API publique
+            <img src={logoUrl} alt="" className="mb-2 h-10 w-auto" />
+          )}
           <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-on-brand/60">{eyebrow}</p>
           <h1 className="text-xl font-bold text-on-brand">{title}</h1>
           {subtitle && <p className="mt-0.5 text-sm text-on-brand/80">{subtitle}</p>}

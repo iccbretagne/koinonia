@@ -40,26 +40,26 @@
 
 ## Lot 1b — Images, routage, accueil, publication (sous-PR 2)
 
-- [ ] **T8** — `site-assets.ts` : téléversement (8 Mo, `sniffImage`, `sharp` rotate/≤2400 px/WebP,
+- [x] **T8** — `site-assets.ts` : téléversement (8 Mo, `sniffImage`, `sharp` rotate/≤2400 px/WebP,
       métadonnées supprimées), lecture limitée aux assets publiés ou à l'équipe.
-- [ ] **T9** — `site.ts` : `createSite` (sous-domaine unique, mots réservés), `saveDraft`
+- [x] **T9** — `site.ts` : `createSite` (sous-domaine unique, mots réservés), `saveDraft`
       (Zod + contraste + assets du site), `publish`/`unpublish` (instantané, audit),
       `resolveSiteByHost`, `publicSiteView` (visibilité brouillon/publié/terminé).
-- [ ] **T10** — API d'édition : `site` (GET/POST/PUT), `site/publish` (POST/DELETE),
+- [x] **T10** — API d'édition : `site` (GET/POST/PUT), `site/publish` (POST/DELETE),
       `site/assets` (POST), `/site-assets/[assetId]` (GET public) — contrats ADR-0023, manifeste
       ADR-0012, `npm run openapi`.
-- [ ] **T11** — Routage par hôte dans `src/proxy.ts` : `SITE_BASE_DOMAIN`, liste blanche des
+- [x] **T11** — Routage par hôte dans `src/proxy.ts` : `SITE_BASE_DOMAIN`, liste blanche des
       chemins, réécriture vers `/site/[siteSlug]/…`, CSP propre aux sites, 404 sinon ; cache des
       hôtes. *(fichiers : `src/proxy.ts`, `src/lib/csp.ts`, `.env.example`)*
-- [ ] **T12** — Site public : `src/app/site/[siteSlug]/[[...page]]/page.tsx`, variables CSS du
+- [x] **T12** — Site public : `src/app/site/[siteSlug]/[[...page]]/page.tsx`, variables CSS du
       thème, polices `next/font` (liste fermée), fonds (couleur, dégradé, image + voile), page
       d'accueil (titre, accroche, date, lieu, bouton, compte à rebours).
-- [ ] **T13** — Thème appliqué à la page d'inscription existante (couleurs, logo, en-tête), sans
+- [x] **T13** — Thème appliqué à la page d'inscription existante (couleurs, logo, en-tête), sans
       changement de règles. *(fichier : `src/app/inscription/[churchSlug]/[eventSlug]/…`)*
-- [ ] **T14** — Onglet « Site » : thème (pastilles, polices, fond), accueil, aperçu (mêmes
+- [x] **T14** — Onglet « Site » : thème (pastilles, polices, fond), accueil, aperçu (mêmes
       composants que le site), Publier/Dépublier, messages de lisibilité ; rôle Communication ne
       voit que Aperçu (sans chiffres) et Site.
-- [ ] **T15** — ADR-0031 « Sites d'événement : routage par hôte et domaines dédiés ».
+- [x] **T15** — ADR-0031 « Sites d'événement : routage par hôte et domaines dédiés ».
       *(fichier : `docs/adr/0031-…md`, index `docs/adr/README.md`)*
 - [ ] **T16** — Tests du lot 1b : assets (faux type refusé, métadonnées absentes), proxy (hôte de
       site ⇒ `/admin`, `/api/users`, `/api/auth/*` en 404 ; pages autorisées réécrites ; CSP ;
