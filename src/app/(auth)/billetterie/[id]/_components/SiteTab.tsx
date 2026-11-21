@@ -52,8 +52,8 @@ export default function SiteTab({
   title,
   churchSlug,
   eventSlug,
-  sitesEnabled,
-  baseDomain,
+  publicUrl,
+  warnings,
   canConfigure = false,
   domain = null,
 }: {
@@ -63,8 +63,10 @@ export default function SiteTab({
   readonly title: string;
   readonly churchSlug: string;
   readonly eventSlug: string;
-  readonly sitesEnabled: boolean;
-  readonly baseDomain?: string;
+  /** Adresse publique finale ; `null` sans adresse. */
+  readonly publicUrl: string | null;
+  /** Raisons pour lesquelles le site ne sera pas accessible (publier reste possible). */
+  readonly warnings: readonly string[];
   /** Organisateur : peut demander un domaine dédié. */
   readonly canConfigure?: boolean;
   readonly domain?: DomainView | null;
@@ -133,7 +135,12 @@ export default function SiteTab({
 
   return (
     <div className="space-y-6">
-      {!sitesEnabled && <Alert tone="info" title="Sites d'événement désactivés.">L&apos;administrateur de l&apos;église ne les a pas activés : le site est modifiable mais n&apos;est pas visible du public.</Alert>}
+      {warnings.length > 0 && (
+        <Alert tone="warning" title="Le site ne sera pas accessible au public pour l'instant.">
+          <ul className="list-disc pl-5">{warnings.map((w) => <li key={w}>{w}</li>)}</ul>
+          <p className="mt-1">Vous pouvez publier : la version publiée sera servie dès que ces conditions seront remplies.</p>
+        </Alert>
+      )}
       {issues.length > 0 && (
         <Alert tone="danger" title="Textes peu lisibles.">
           <ul className="list-disc pl-5">{issues.map((m) => <li key={m}>{m}</li>)}</ul>
@@ -141,7 +148,7 @@ export default function SiteTab({
       )}
       <div className="flex flex-wrap items-center gap-3">
         <StatusChip tone={published ? "success" : "neutral"}>{published ? "Publié" : "Non publié"}</StatusChip>
-        <span className="text-[13px] text-ink-muted">Adresse : {site.slug}{baseDomain ? `.${baseDomain}` : ""}</span>
+        <span className="break-all text-[13px] text-ink-muted">Adresse : {publicUrl ?? "aucune pour l'instant"}</span>
         <div className="ml-auto flex flex-wrap gap-2">
           <Button type="button" variant="secondary" disabled={busy || !dirty} onClick={save}>Enregistrer le brouillon</Button>
           <Button type="button" disabled={busy || dirty || issues.length > 0} onClick={publish}>{published ? "Republier" : "Publier"}</Button>

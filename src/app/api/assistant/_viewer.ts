@@ -55,6 +55,9 @@ export async function buildViewer(session: Session, churchId: string): Promise<A
   if (registry.has("ticketing")) {
     const { isTicketingVisible } = await import("@/modules/ticketing");
     if (await isTicketingVisible(session, churchId).catch(() => false)) predicates.push("ticketing");
+    // Sites d'événement (spec 084) : coupés par défaut, activés par l'Admin de l'église.
+    const { getSitesEnabled } = await import("@/modules/ticketing");
+    if (await getSitesEnabled(churchId).catch(() => false)) predicates.push("ticketingSites");
   }
   if (registry.has("planning") && permissions.includes("planning:view")) {
     const { canReadAnnouncementSheet } = await import("@/modules/planning");

@@ -19,7 +19,7 @@ import {
   listPayments,
   getDomain,
   getSite,
-  getSitesEnabled,
+  getSiteStatus,
   previewEvent,
 } from "@/modules/ticketing";
 import { EVENT_STATUS_LABEL } from "@/modules/ticketing/schemas";
@@ -83,7 +83,7 @@ export default async function TicketingEventPage({
   const requested = VIEWS.find((v) => v === query.vue);
   const view: View = requested && allowed[requested] ? requested : "apercu";
 
-  if (!read) return <RestrictedEvent id={id} view={view} churchId={access.churchId} />;
+  if (!read) return <RestrictedEvent id={id} view={view} />;
 
   const [event, bookings, payments, accounts, departments, team, presence, board] = await Promise.all([
     getEventDetail(id),
@@ -98,7 +98,7 @@ export default async function TicketingEventPage({
   // Formulaires rattachés (spec 079, lot 3).
   const site = view === "site" ? await getSite(id) : null;
   const sitePreview = view === "site" ? await previewEvent(id) : null;
-  const sitesEnabled = view === "site" ? await getSitesEnabled(access.churchId) : false;
+  const siteStatus = view === "site" ? await getSiteStatus(id) : null;
   const domain = view === "site" && can.configure ? await getDomain(id) : null;
   const forms = view === "apercu" && registry.has("forms") ? await (await import("@/modules/forms")).listFormsForEvent({ ticketingEventId: id }) : [];
   const formsManager = forms.length > 0 && (await hasChurchPermission(session, "forms:manage", access.churchId));
@@ -150,7 +150,7 @@ export default async function TicketingEventPage({
       {view === "presences" && presence && <PresenceTab eventId={id} presence={presence} canExport={can.reception} />}
       {view === "restauration" && board && <CateringTab board={board} />}
       {view === "site" && site && (
-        <SiteTab eventId={id} site={site} event={sitePreview} title={event.title} churchSlug={event.church.slug ?? ""} eventSlug={event.slug} sitesEnabled={sitesEnabled} baseDomain={process.env.SITE_BASE_DOMAIN} canConfigure={can.configure} domain={domain} />
+        <SiteTab eventId={id} site={site} event={sitePreview} title={event.title} churchSlug={event.church.slug ?? ""} eventSlug={event.slug} publicUrl={siteStatus?.url ?? null} warnings={siteStatus?.warnings ?? []} canConfigure={can.configure} domain={domain} />
       )}
     </div>
   );
@@ -160,7 +160,7 @@ export default async function TicketingEventPage({
  * Vue du rôle Communication (spec 084) : aperçu sans chiffres d'inscription ni coordonnées, et
  * onglet Site. Seules des données publiques de l'événement sont lues.
  */
-async function RestrictedEvent({ id, view, churchId }: { readonly id: string; readonly view: View; readonly churchId: string }) {
+async function RestrictedEvent({ id, view }: { readonly id: string; readonly view: View }) {
   const event = await previewEvent(id);
   if (!event) notFound();
   const tabs = [
@@ -168,14 +168,14 @@ async function RestrictedEvent({ id, view, churchId }: { readonly id: string; re
     { href: `/billetterie/${id}?vue=site`, label: "Site", active: view === "site" },
   ];
   const site = view === "site" ? await getSite(id) : null;
-  const sitesEnabled = view === "site" ? await getSitesEnabled(churchId) : false;
+  const siteStatus = view === "site" ? await getSiteStatus(id) : null;
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Billetterie" title={event.title} description={dateAndPlace(event.startsAt, event.location)} actions={<StatusChip tone={event.status === "OPEN" ? "success" : "neutral"}>{EVENT_STATUS_LABEL[event.status]}</StatusChip>}>
         <Tabs tabs={tabs} ariaLabel="Événement" />
       </PageHeader>
       {view === "site" && site ? (
-        <SiteTab eventId={id} site={site} event={event} title={event.title} churchSlug={event.churchSlug} eventSlug={event.slug} sitesEnabled={sitesEnabled} baseDomain={process.env.SITE_BASE_DOMAIN} />
+        <SiteTab eventId={id} site={site} event={event} title={event.title} churchSlug={event.churchSlug} eventSlug={event.slug} publicUrl={siteStatus?.url ?? null} warnings={siteStatus?.warnings ?? []} />
       ) : (
         <div className="space-y-2 rounded-card border border-line bg-surface p-4">
           <p className="text-[15px] text-ink">Page d&apos;inscription : <span className="break-all text-ink-muted">{`${appUrl()}/inscription/${event.churchSlug}/${event.slug}`}</span></p>
