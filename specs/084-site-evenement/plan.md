@@ -233,11 +233,14 @@ Traefik lit sa configuration dynamique par **fournisseur HTTP** : Koinonia expos
 
 ## Risques & points d'attention
 
-- **Sous-domaine du même domaine que l'application** : même « site » au sens des cookies
-  `SameSite` ⇒ une requête du site vers l'application porterait les cookies `Lax`. Mitigé : aucun
-  script fourni par l'organisateur, CSP stricte, pas de formulaire vers l'application. **Recommandé
-  en production : `SITE_BASE_DOMAIN` sur un domaine enregistrable distinct** (ex.
-  `koinonia-evenements.fr`) — à trancher avant le lot 1 (configuration, pas de code).
+- **Domaine des sites** (tranché le 21 novembre 2026) : `SITE_BASE_DOMAIN=evenements.iccbretagne.fr`
+  (sites en `*.evenements.iccbretagne.fr`). Même domaine enregistrable que l'application : les
+  sites sont « même site » au sens des cookies `SameSite`. Conditions **obligatoires**, testées :
+  - cookies de session Auth.js **sans attribut `Domain`** (jamais `.iccbretagne.fr`) : ils ne sont
+    pas envoyés aux sites ; test qui échoue si un `Domain` apparaît ;
+  - aucun script ni style fourni par l'organisateur, CSP stricte sur les hôtes de site ;
+  - aucun formulaire ni appel des sites vers les routes authentifiées de l'application ;
+  - certificat joker `*.evenements.iccbretagne.fr` (défi DNS sur la zone `iccbretagne.fr`).
 - **Quota Let's Encrypt** : 5 domaines par église, certificats demandés seulement après
   approbation.
 - **Poids des pages** : images converties en WebP ≤ 2400 px ; galeries en `loading="lazy"`.
