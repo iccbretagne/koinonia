@@ -97,6 +97,16 @@
       `SUSPENDED` + notification ; domaine non approuvé ⇒ 404 ; fournisseur refusé sans jeton ou
       hors localhost.
 
+## Lot 4 — Assistants IA (sous-PR 5)
+
+- [ ] **T28** — `src/app/api/mcp/_actions/site.ts` : lecture `ticketing_site` et actions
+      `edit_ticketing_site_theme`, `edit_ticketing_site_page`, `edit_ticketing_site_block`,
+      `publish_ticketing_site`, `request_ticketing_site_domain` via `eventAction` ; branchées dans
+      `MCP_ACTIONS` ; libellés dans `ACTION_LABELS`.
+- [ ] **T29** — Tests : rôle Communication autorisé sur le site et refusé sur le domaine ;
+      observateur et STAR sans rôle refusés ; contraste ou lien interdit refusés dès l'aperçu ;
+      changement concurrent ⇒ `CHANGED` ; texte Markdown converti en arbre.
+
 ## Documentation
 
 - [ ] **T27** [P] — Guide utilisateur (fiche « Site d'événement »), fiches de Nia, `docs/auth.md`
@@ -127,4 +137,5 @@
   - rôle Communication → T2, T14, T16
   - « terminé » 30 jours → T20, T21
   - 5 domaines max → T22, T26
+  - site piloté par l'assistant → T28, T29
 - [ ] PR finale `feat/site-evenement` → `main`

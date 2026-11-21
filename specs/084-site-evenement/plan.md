@@ -214,6 +214,25 @@ Traefik lit sa configuration dynamique par **fournisseur HTTP** : Koinonia expos
 - **Site public** : `src/app/site/[siteSlug]/[[...page]]/page.tsx` + composants de rendu ; polices
   par `next/font` (liste fermée déclarée statiquement).
 
+## Lot 4 — Assistants IA (MCP)
+
+Nouveau fichier `src/app/api/mcp/_actions/site.ts`, branché dans `MCP_ACTIONS`, qui réutilise le
+constructeur `eventAction` de `ticketing.ts` (rôle d'événement `site` ou `configure`, empreinte,
+jeton effacé, audit « via mcp ») :
+
+| Outil | Rôle | Service |
+|---|---|---|
+| `ticketing_site` (lecture) | `site` | `getSite` : document avec identifiants (pages par `slug`, bandes et blocs par index), état, adresse, `contrastIssues` |
+| `edit_ticketing_site_theme` | `site` | `saveDraft` (thème modifié) |
+| `edit_ticketing_site_page` (`create`/`update`/`move`/`delete`) | `site` | `saveDraft` |
+| `edit_ticketing_site_block` (`create`/`update`/`move`/`delete`, bande ou bloc ; texte en Markdown restreint → `parseRichText`) | `site` | `saveDraft` |
+| `publish_ticketing_site` (`publish`/`unpublish`) | `site` | `publish`/`unpublish` |
+| `request_ticketing_site_domain` (`request`/`verify`/`remove`) | `configure` | `site-domains.ts` |
+
+Empreinte = `updatedAt` du site (un changement concurrent dans l'éditeur refuse la confirmation).
+L'aperçu liste les changements et les problèmes de lisibilité ; un document invalide ou illisible
+est refusé dès l'aperçu, comme à l'enregistrement dans l'éditeur. Pas de téléversement d'image.
+
 ## Décisions & alternatives écartées
 
 - **Choix** : blocs typés + texte riche en arbre — *Pourquoi* : aucune surface d'injection ; le
@@ -258,6 +277,7 @@ Traefik lit sa configuration dynamique par **fournisseur HTTP** : Koinonia expos
    éditeur thème + accueil, publication. **ADR-0031.**
 3. Lot 2 : pages, sections, blocs, pages automatiques, navigation, « Événement terminé ».
 4. Lot 3 : domaines dédiés (vérification, approbation, cron, fournisseur Traefik, documentation).
+5. Lot 4 : actions MCP du site (lecture, thème, pages, blocs, publication, domaine).
 
 ## Stratégie de tests
 
