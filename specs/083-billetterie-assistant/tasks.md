@@ -58,18 +58,18 @@
 
 ### Lot B — Créer et paramétrer (sous-PR 2)
 
-- [ ] **T10** — `create_ticketing_event` (`ticketing:manage` dans l'église ; `createEvent` ;
+- [x] **T10** — `create_ticketing_event` (`ticketing:manage` dans l'église ; `createEvent` ;
       aperçu : événement en brouillon et adresse publique).
-- [ ] **T11** — `update_ticketing_event` : corps partiel `eventUpdateSchema` sans `status`
+- [x] **T11** — `update_ticketing_event` : corps partiel `eventUpdateSchema` sans `status`
       (infos, jauge, places, tarifs, moyens de paiement, règles) ; aperçu « avant → après » par
       champ, IBAN masqué ; empreinte `updatedAt`.
-- [ ] **T12** — `set_ticketing_status` (`open`/`close`/`reopen`/`archive`) : ouverture refusée si
+- [x] **T12** — `set_ticketing_status` (`open`/`close`/`reopen`/`archive`) : ouverture refusée si
       un point bloquant de `readinessChecks` ; clôture annonce la fin des rôles et la lecture seule.
-- [ ] **T13** — `edit_ticketing_option` (`op` create/update/delete) via
+- [x] **T13** — `edit_ticketing_option` (`op` create/update/delete) via
       `createOption`/`updateOption`/`deleteOption`.
-- [ ] **T14** — `edit_ticketing_dish` (`op` create/update/close/delete, droit `menu`) via
+- [x] **T14** — `edit_ticketing_dish` (`op` create/update/close/delete, droit `menu`) via
       `addVariant`/`updateVariant`/`deleteVariant`.
-- [ ] **T15** — Tests du lot B : parcours organisateur complet (créer → paramétrer → options →
+- [x] **T15** — Tests du lot B : parcours organisateur complet (créer → paramétrer → options →
       plats → ouvrir) par le seul assistant ; places sous les inscrits refusées ; ouverture avec
       point bloquant refusée ; IBAN jamais en clair dans aperçu ni résultat ; restauration peut
       éditer un plat mais pas l'événement.
@@ -79,34 +79,34 @@
 
 ### Lot C — Équipe (sous-PR 3)
 
-- [ ] **T16** — `set_ticketing_roles` (attribuer/retirer un rôle à un compte) : liste complète
+- [x] **T16** — `set_ticketing_roles` (attribuer/retirer un rôle à un compte) : liste complète
       recalculée et montrée dans l'aperçu ; empreinte sur la liste existante ; `setRoles`.
-- [ ] **T17** — `edit_ticketing_post` (create/rename/delete) et `edit_ticketing_assignment`
+- [x] **T17** — `edit_ticketing_post` (create/rename/delete) et `edit_ticketing_assignment`
       (create/update/delete, poste + créneau) via les services `team`.
-- [ ] **T18** — Tests du lot C : changement concurrent des rôles ⇒ `CHANGED` ; la personne
+- [x] **T18** — Tests du lot C : changement concurrent des rôles ⇒ `CHANGED` ; la personne
       affectée est notifiée comme à l'écran (service appelé, pas de notification en plus).
 
 ### Lot D — Paiements (sous-PR 4)
 
-- [ ] **T19** — `handle_ticketing_payments` : 1 à 50 identifiants, `confirm` ou `reject` (+ motif) ;
+- [x] **T19** — `handle_ticketing_payments` : 1 à 50 identifiants, `confirm` ou `reject` (+ motif) ;
       aperçu : référence, nom, moyen, montant ; empreinte sur `id`/`status`/`amount` ; tout ou rien.
-- [ ] **T20** — `record_ticketing_receipt` (espèces, chèque) et `mark_ticketing_refunded`.
-- [ ] **T21** — Tests du lot D : série de 3 confirmée en une fois ; un paiement déjà traité ⇒ rien
+- [x] **T20** — `record_ticketing_receipt` (espèces, chèque) et `mark_ticketing_refunded`.
+- [x] **T21** — Tests du lot D : série de 3 confirmée en une fois ; un paiement déjà traité ⇒ rien
       n'est fait ; > 50 ⇒ refus ; trésorier autorisé, accueil et observateur refusés.
 
 ### Lot E — Réservations, restauration, textes (sous-PR 5)
 
-- [ ] **T22** — `cancel_ticketing_booking` (`configure`, `cancelByOrganizer`) ; aperçu avec les
+- [x] **T22** — `cancel_ticketing_booking` (`configure`, `cancelByOrganizer`) ; aperçu avec les
       remboursements qui en découlent.
-- [ ] **T23** — `add_ticketing_walkin` (`reception`, refusé si l'ajout sur place n'est pas permis).
-- [ ] **T24** — `ticketing_catering_sale` (remise d'un article, vente sur place ; `catering`).
-- [ ] **T25** — Test de la matrice des rôles : chaque action × organisateur / trésorier / accueil /
+- [x] **T23** — `add_ticketing_walkin` (`reception`, refusé si l'ajout sur place n'est pas permis).
+- [x] **T24** — `ticketing_catering_sale` (remise d'un article, vente sur place ; `catering`).
+- [x] **T25** — Test de la matrice des rôles : chaque action × organisateur / trésorier / accueil /
       restauration / observateur / sans rôle / STAR sans aucun rôle ⇒ conforme à `EVENT_ACTIONS`.
-- [ ] **T26** [P] — Libellés des actions dans `ACTION_LABELS` (instructions du serveur) ; mise à
+- [x] **T26** [P] — Libellés des actions dans `ACTION_LABELS` (instructions du serveur) ; mise à
       jour de `server.test.ts` / `tools.test.ts`. *(fichier : `src/app/api/mcp/server/route.ts`)*
-- [ ] **T27** [P] — Textes utilisateur : page Assistants IA connectés, `GuideContent.tsx`, fiche
+- [x] **T27** [P] — Textes utilisateur : page Assistants IA connectés, `GuideContent.tsx`, fiche
       KB-111 et fiches billetterie d'`espaces.ts`.
-- [ ] **T28** [P] — Documentation : `docs/auth.md` (section MCP, levée de l'exclusion financière
+- [x] **T28** [P] — Documentation : `docs/auth.md` (section MCP, levée de l'exclusion financière
       pour la billetterie), « Hors périmètre » de `specs/081-serveur-mcp/spec.md` → renvoi à 083,
       CHANGELOG « Non publié ».
 
