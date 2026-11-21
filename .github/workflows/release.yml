@@ -30,6 +30,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: release
@@ -41,7 +42,7 @@ env:
 jobs:
   release:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 25
     environment: release
     steps:
       - name: Check inputs
@@ -104,6 +105,24 @@ jobs:
             exit 1
           fi
           cat release-notes.md
+
+      # La CI du tag ne rejoue ni tests ni migrations (ci.yml) : on n'étiquette qu'un commit dont
+      # la CI de main est verte. Attend jusqu'à 20 min un run encore en cours.
+      - name: Require green CI on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHA=$(git rev-parse HEAD)
+          for _ in $(seq 1 40); do
+            RUN=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${SHA}&event=push&per_page=1" --jq '.workflow_runs[0] | "\(.status) \(.conclusion)"')
+            case "$RUN" in
+              "completed success") echo "CI de main verte sur $SHA"; exit 0 ;;
+              completed*) echo "::error::La CI de main a échoué sur $SHA ($RUN) : corriger avant de publier."; exit 1 ;;
+            esac
+            echo "CI de main : ${RUN:-pas encore lancée}, nouvel essai dans 30 s"; sleep 30
+          done
+          echo "::error::La CI de main n'a pas fini en 20 minutes sur $SHA."; exit 1
 
       - name: Tag
         env:
