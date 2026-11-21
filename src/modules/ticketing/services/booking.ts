@@ -16,6 +16,7 @@ import {
   cancelledEmail,
   deliverToContact,
   manageUrl,
+  publicBase,
   recoverEmail,
   ticketUrl,
   type BookingMail,
@@ -216,7 +217,7 @@ async function maybeAlertSeats(eventId: string, seatsLeft: number) {
 // ── Lecture d'une réservation ────────────────────────────────────────────────
 
 const BOOKING_INCLUDE = {
-  event: { include: EVENT_INCLUDE },
+  event: { include: { ...EVENT_INCLUDE, site: { select: { domain: { select: { host: true, status: true } } } } } },
   participants: { orderBy: { createdAt: "asc" } },
   items: { orderBy: { createdAt: "asc" }, include: { option: true, variant: true } },
   payments: { orderBy: { createdAt: "desc" } },
@@ -268,14 +269,15 @@ export function chargesOf(booking: Pick<FullBooking, "participants" | "items">):
 export function bookingMail(booking: FullBooking): BookingMail {
   const config = readPaymentMethods(booking.event.paymentMethods);
   const b = balances(chargesOf(booking));
+  const base = publicBase(booking.event);
   return {
     event: { title: booking.event.title, startsAt: booking.event.startsAt, location: booking.event.location, churchName: booking.event.church.name },
     contactName: booking.contactName,
     reference: booking.reference,
-    manageUrl: manageUrl(deriveToken("manage", booking.id, booking.tokenSalt)),
+    manageUrl: manageUrl(deriveToken("manage", booking.id, booking.tokenSalt), base),
     tickets: booking.participants
       .filter((p) => p.status === "ACTIVE")
-      .map((p) => ({ name: `${p.firstName} ${p.lastName}`, url: ticketUrl(deriveToken("ticket", p.id, booking.tokenSalt)) })),
+      .map((p) => ({ name: `${p.firstName} ${p.lastName}`, url: ticketUrl(deriveToken("ticket", p.id, booking.tokenSalt), base) })),
     balances: b,
     instructions: paymentInstructions(booking.reference, config),
   };
@@ -604,13 +606,13 @@ export async function recoverBooking(eventId: string, email: string): Promise<vo
   const prisma = await db();
   const bookings = await prisma.ticketingBooking.findMany({
     where: { eventId, contactEmail: email, status: "ACTIVE" },
-    include: { event: { include: { church: { select: { name: true } } } } },
+    include: { event: { include: { church: { select: { name: true } }, site: { select: { domain: { select: { host: true, status: true } } } } } } },
   });
   if (bookings.length === 0) return;
   const event = bookings[0].event;
   const mail = recoverEmail(
     { title: event.title, startsAt: event.startsAt, location: event.location, churchName: event.church.name },
-    bookings.map((b) => ({ reference: b.reference, url: manageUrl(deriveToken("manage", b.id, b.tokenSalt)) }))
+    bookings.map((b) => ({ reference: b.reference, url: manageUrl(deriveToken("manage", b.id, b.tokenSalt), publicBase(event)) }))
   );
   await deliverToContact({ userId: null, email }, mail, { type: "TICKETING_RECOVER", title: event.title, message: "Vos réservations" });
 }

@@ -62,6 +62,14 @@ describe("accès à un événement de billetterie (spec 074)", () => {
     expect(EVENT_ACTIONS.read).toContain("OBSERVER");
   });
 
+  it("Communication (spec 084) : le site seulement, ni lecture des inscrits, ni paiements, ni paramétrage", () => {
+    expect(EVENT_ACTIONS.site).toEqual(["ORGANIZER", "COMMUNICATION"]);
+    const communication = { roles: new Set(["COMMUNICATION"] as const) } as never;
+    for (const action of Object.keys(EVENT_ACTIONS) as (keyof typeof EVENT_ACTIONS)[]) {
+      expect(canDo(communication, action), action).toBe(action === "site");
+    }
+  });
+
   it("un événement d'une autre église répond 404, même pour un Admin", async () => {
     prismaMock.ticketingEvent.findUnique.mockResolvedValue({ id: "ev-2", churchId: "church-2", status: "OPEN" });
     expect(await status(getEventAccess(session("ADMIN"), "ev-2", prismaMock as never))).toBe(404);

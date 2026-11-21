@@ -223,6 +223,33 @@ d'autre n'accepte ce jeton.
   schémas de l'écran (`src/app/api/mcp/_actions/ticketing.ts`), journalisée « via l'assistant IA ».
   Jamais d'email ni de téléphone de participant en lecture ; l'IBAN se saisit mais n'est **jamais
   relu** (masqué `FR76 •••• 1234`, payload de confirmation effacé dès sa lecture).
+- **Site d'événement** (spec 084, lot 4, `src/app/api/mcp/_actions/site.ts`) : lecture `ticketing_site`
+  et actions `edit_ticketing_site_theme`/`_page`/`_block`, `publish_ticketing_site` (rôle `site` :
+  Organisateur, Communication) et `request_ticketing_site_domain` (rôle `configure` : Organisateur
+  seulement). Chaque aperçu valide le **document complet** (schéma, liens, lisibilité) et refuse dès
+  l'aperçu ; texte riche en Markdown restreint. Le jeton stocke **l'opération** (thème, page, bande,
+  bloc), réappliquée sur le brouillon courant à la confirmation (revalidée, refus explicite si le
+  document devient invalide ou illisible) ; l'empreinte ne porte que sur la **portion touchée**, si
+  bien que des aperçus sur des endroits différents restent valides l'un après l'autre.
+  `edit_ticketing_site_batch` (1 à 50 opérations, dans l'ordre, tout ou rien, validation finale unique)
+  et `describe_site_blocks` (lecture : champs, bornes et valeurs permises **générés depuis les schémas
+  Zod** ; les refus listent les clés ou `kind` permis). Images (rôle `site`) : `ticketing_site_assets`
+  (lecture, avec les emplacements d'usage), `upload_ticketing_site_asset` (URL https avec garde SSRF :
+  IP vérifiée et épinglée, aucune redirection, 10 s, 8 Mo ; ou base64) et
+  `delete_ticketing_site_asset` (refusée si l'image sert au brouillon ou à la version publiée).
+  `publish_ticketing_site` renvoie l'adresse publique finale et les avertissements (sites non activés,
+  `SITE_BASE_DOMAIN` absent, événement en brouillon). **Tous les outils du site ne sont proposés que si
+  le drapeau d'instance des sites est actif** (prédicat `ticketingSites`, `assistant/_viewer.ts`,
+  `src/lib/ticketing-sites-flag.ts`) : coupé par défaut (production), actif en recette
+  (`NEXT_PUBLIC_TICKETING_SITES_ENABLED=true` posé au build par `deploy-staging.yml`) ou par
+  `TICKETING_SITES_ENABLED=true` dans le `.env` du serveur. L'activation par l'Admin d'église ne décide
+  que de la diffusion publique (avertissement à la publication si elle est coupée).
+- **Duplication, export et import d'un événement** (spec 084, `_actions/event-transfer.ts`) :
+  `duplicate_ticketing_event` (rôle `configure` sur la source **et** `ticketing:manage` : copie en
+  brouillon, sans IBAN, inscrit, paiement, rôle ni affectation), `export_ticketing_event` (lecture, rôle
+  `configure` : JSON `koinonia-ticketing-event` v1 sans donnée personnelle) et
+  `import_ticketing_event` (`ticketing:manage` dans l'église de la connexion : JSON validé strictement,
+  brouillon, images retraitées).
 - Révocation : par la personne (« Mon profil › Assistants connectés »), par l'Admin de l'église
   (`church:settings`), ou en coupant la fonction (Super Admin pour l'instance, Admin pour l'église).
 

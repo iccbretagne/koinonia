@@ -705,9 +705,31 @@ seule (`ENABLED_MODULES`) :
   d'empreintes, file IndexedDB, synchronisation idempotente (`…/sync`), présences **calculées** à
   partir des passages, seuils de jauge 90 % et 100 % notifiés une fois. L'équipe (postes,
   affectations, badges) est propre à l'événement ; « Mon planning » la lit seulement
+- **Site et assistants IA** (spec 084, ADR-0031) : les outils MCP du site (`_actions/site.ts`) ne sont
+  proposés que si le drapeau d'instance des sites est actif (prédicat `ticketingSites`,
+  `src/lib/ticketing-sites-flag.ts` : `TICKETING_SITES_ENABLED`, coupé par défaut ; posé au build
+  par `deploy-staging.yml`, absent du build de production) ; coupé, ni onglet Site, ni carte
+  d'activation, ni site servi. L'activation par l'église ne décide que de la diffusion publique ; le jeton garde l'**opération**,
+  réappliquée sur le brouillon courant, avec une empreinte limitée à la portion touchée (lot atomique
+  `edit_ticketing_site_batch`). Images : variantes WebP 640/1280/2400, SVG rastérisé (jamais stocké),
+  `alt` obligatoire, téléversement par URL via `src/lib/safe-fetch.ts` (garde SSRF : IP vérifiée et
+  épinglée, https, aucune redirection) ; images en attente (`key = "pending"`) purgées par la tâche
+  billetterie. `duplicate/export/import_ticketing_event` : brouillon, jamais d'IBAN ni de donnée personnelle
 - Planning de l'équipe (onglet Équipe) : vue par poste, affectation modifiable (poste, créneau ;
   la personne est prévenue), comptes filtrés par département (responsabilité ou fiche STAR liée,
   lus en base sans importer `planning`) — aide à la recherche, jamais une restriction
+- **Site d'événement** (spec 084, [ADR-0031](docs/adr/0031-sites-evenement-routage-par-hote.md)) :
+  onglet « Site » (thème, pages, blocs en document JSON validé par `siteDocumentSchema`, texte riche en
+  Markdown restreint, contrôle de contraste), publié sur `<slug>.SITE_BASE_DOMAIN` si l'Admin de l'église
+  a activé les sites (`church:settings`, coupé par défaut). **Rôle d'événement Communication** : seul geste
+  `site` (avec l'Organisateur) ; ni chiffres, ni paiements, ni domaine. Un hôte de site ne sert qu'une
+  liste blanche (jamais l'application ni Auth.js, aucun cookie). **Domaine dédié** : demande par
+  l'Organisateur (`configure`), vérification DNS, approbation du Super Admin (`/admin/site-domains`),
+  recontrôle quotidien (cron `ticketing-site-domains`) ; le proxy lit un cache mémoire (60 s) fourni
+  par `/api/internal/site-hosts`, et Traefik interroge `/api/internal/traefik` — ces deux adresses
+  exigent la boucle locale **et** `TRAEFIK_PROVIDER_TOKEN`. Pages automatiques (Billetterie, Menus,
+  Infos pratiques) construites sur `getPublicEvent` seulement : aucune donnée personnelle. Pilotable
+  par l'assistant IA (`_actions/site.ts`)
 
 **Spécificités du module formulaires** (spec 079, [ADR-0030](docs/adr/0030-moteur-de-formulaires.md)) —
 désactivable (`ENABLED_MODULES`) :

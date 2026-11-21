@@ -65,6 +65,33 @@ export function buildCsp({
   return directives.map((d) => d.replace(/\s+/g, " ").trim()).join("; ");
 }
 
+/**
+ * Politique des **sites d'événement** (spec 084, ADR-0031), servis sur leur propre hôte : aucune
+ * origine externe (images, polices et scripts viennent du site lui-même), aucun cadre, aucune
+ * base ni cible de formulaire étrangère. `turnstile` n'est ajouté que pour la page d'inscription
+ * (anti-robot) — jamais sur les pages composées par l'organisateur. Pas de `report-uri` : le
+ * rapport de violation n'est pas dans la liste blanche des chemins d'un hôte de site.
+ */
+export function buildSiteCsp({ nonce, isDev, turnstile }: { readonly nonce: string; readonly isDev: boolean; readonly turnstile: boolean }): string {
+  const t = turnstile ? ` ${TURNSTILE_ORIGIN}` : "";
+  const directives = [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    "font-src 'self' data:",
+    `connect-src 'self'${t}`,
+    `frame-src${turnstile ? t : " 'none'"}`,
+    "media-src 'none'",
+    "worker-src 'none'",
+    "object-src 'none'",
+    "base-uri 'none'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ];
+  return directives.join("; ");
+}
+
 /** En-tête de réponse : bloquant seulement si `CSP_ENFORCE=true`. */
 export function cspHeaderName(env: Record<string, string | undefined> = process.env): string {
   return env.CSP_ENFORCE === "true" ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only";

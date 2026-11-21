@@ -276,6 +276,40 @@ et demandes sur la structure réelle.
 Redéployer la recette depuis `main` et rejouer le seed habituel, ou restaurer un backup — la base de
 formation n'a pas vocation à survivre à la session.
 
+## Sites d'événement en recette
+
+Les sites d'événement (spec 084, [ADR-0031](adr/0031-sites-evenement-routage-par-hote.md)) se testent
+en recette sous un domaine **propre à la recette**, jamais celui de production. Principe : même
+mécanisme que la production ([docs/production.md](production.md#sites-dévénement--sous-domaines-et-domaines-dédiés-spec-084-adr-0031)),
+variables et zone DNS distinctes.
+
+0. **Drapeau d'instance** : déjà actif en recette — `deploy-staging.yml` pose
+   `NEXT_PUBLIC_TICKETING_SITES_ENABLED=true` au build (onglet Site, outils MCP du site). Coupé en
+   production (build de la CI sans ce drapeau) ; pour l'y activer plus tard sans reconstruire :
+   `TICKETING_SITES_ENABLED=true` dans le `.env` du serveur. La diffusion publique dépend ensuite de
+   l'activation par l'Admin d'église (Paramètres de l'église › Sites d'événement).
+1. **Variable** dans `shared/.env` de la recette : `SITE_BASE_DOMAIN=recette-evenements.iccrennes.fr`
+   (sans elle, aucun hôte n'est reconnu comme site et l'outil MCP de publication avertit qu'il n'y a
+   pas d'adresse publique). Ne pas réutiliser `evenements.iccrennes.fr`.
+2. **DNS joker** : `*.recette-evenements.iccrennes.fr` et `recette-evenements.iccrennes.fr` vers la VM
+   de recette (même adresse que `recette.iccrennes.fr`).
+3. **Traefik de la recette** : un routeur dédié
+   `Host(`recette-evenements.iccrennes.fr`) || HostRegexp(`^[a-z0-9-]+\.recette-evenements\.iccrennes\.fr$`)`
+   vers le service de l'application, avec un **certificat joker obtenu par défi DNS** (résolveur
+   Traefik `dnsChallenge` du fournisseur de la zone ; un joker ne s'obtient pas par défi HTTP) et
+   `tls.domains: [{ main: "recette-evenements.iccrennes.fr", sans: ["*.recette-evenements.iccrennes.fr"] }]`.
+   Les domaines dédiés (`TRAEFIK_PROVIDER_TOKEN`) restent désactivés en recette tant qu'on ne les teste
+   pas : pas de jeton, pas de fournisseur HTTP.
+4. **Activation par l'Admin de l'église** : les sites sont **coupés par défaut**, église par église
+   (Administration, paramètres de l'église). Tant qu'ils ne sont pas activés, aucun site n'est servi,
+   l'onglet Site affiche un avertissement et les outils MCP du site ne sont pas proposés à
+   l'assistant.
+5. Vérifier : créer un événement, ouvrir les inscriptions, publier le site (onglet Site ou outil MCP
+   `publish_ticketing_site`) puis ouvrir `https://<slug>.recette-evenements.iccrennes.fr`.
+
+La recette n'envoie aucun vrai email (garde-fous ci-dessous) : les emails de réservation des sites
+de test partent vers le catch-all comme le reste.
+
 ## Garde-fous
 
 > **À respecter systématiquement lors de toute manipulation sur la recette :**

@@ -85,6 +85,7 @@ model Church {
   mediaGalleryGrants             MediaGalleryGrant[]
   mcpGrants                      McpGrant[]
   mcpSettings                    McpChurchSettings?
+  ticketingSiteSettings          TicketingSiteSettings?
   // Module agenda
   pastoralProfiles               PastoralProfile[]               @relation("ChurchPastoralProfiles")
   appointmentRequests            AppointmentRequest[]
@@ -3364,6 +3365,8 @@ enum TicketingRole {
   RECEPTION
   CATERING
   OBSERVER
+  /// Site de l'événement seulement (spec 084) : ni inscrits, ni paiements, ni paramétrage.
+  COMMUNICATION
 }
 
 enum TicketingPaymentKind {
@@ -3462,6 +3465,7 @@ model TicketingEvent {
   onsiteSales  TicketingOnsiteSale[]
   payments     TicketingPayment[]
   participants TicketingParticipant[]
+  site         TicketingSite?
 
   @@unique([churchId, slug])
   @@index([createdById])
@@ -4516,4 +4520,92 @@ model FormAttendance {
 enum FormHalfDay {
   AM
   PM
+}
+
+// ─── Site d'événement (spec 084) ───────────────────────────────────────────
+
+/// Activation des sites d'événement par l'Admin de l'église (coupée par défaut).
+model TicketingSiteSettings {
+  churchId  String   @id
+  church    Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  enabled   Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+
+  @@map("ticketing_site_settings")
+}
+
+/// Site d'un événement de billetterie : document (thème, pages, blocs) en brouillon et publié.
+model TicketingSite {
+  id             String    @id @default(cuid())
+  eventId        String    @unique
+  churchId       String
+  /// Sous-domaine sous SITE_BASE_DOMAIN.
+  slug           String    @unique @db.VarChar(63)
+  /// Document en cours d'édition (validé par le schéma du module).
+  draft          Json
+  /// Instantané publié, servi au public.
+  published      Json?
+  publishedAt    DateTime?
+  publishedById  String?
+  /// Jours de « Événement terminé » après la clôture.
+  afterCloseDays Int       @default(30)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  event  TicketingEvent       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  assets TicketingSiteAsset[]
+  domain TicketingSiteDomain?
+
+  @@index([churchId])
+  @@map("ticketing_sites")
+}
+
+/// Image téléversée pour un site (vérifiée, convertie en WebP, sans métadonnées).
+model TicketingSiteAsset {
+  id        String   @id @default(cuid())
+  siteId    String
+  /// Clé de la plus grande variante ; `pending` tant que l'image n'est pas confirmée (purgée sinon).
+  key       String   @db.VarChar(255)
+  width     Int
+  height    Int
+  bytes     Int
+  /// Nom lisible (nom du fichier ou fourni).
+  name      String   @default("") @db.VarChar(120)
+  /// Texte alternatif (accessibilité), obligatoire pour toute nouvelle image.
+  alt       String   @default("") @db.VarChar(200)
+  /// Variantes WebP générées : [{ w, key, bytes }].
+  variants  Json?
+  createdAt DateTime @default(now())
+
+  site TicketingSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId])
+  @@map("ticketing_site_assets")
+}
+
+enum TicketingSiteDomainStatus {
+  PENDING
+  VERIFIED
+  APPROVED
+  SUSPENDED
+}
+
+/// Domaine dédié d'un site : servi seulement vérifié (DNS) puis approuvé par le Super Admin.
+model TicketingSiteDomain {
+  id            String                    @id @default(cuid())
+  siteId        String                    @unique
+  churchId      String
+  host          String                    @unique @db.VarChar(253)
+  proofToken    String                    @db.VarChar(64)
+  status        TicketingSiteDomainStatus @default(PENDING)
+  lastCheckedAt DateTime?
+  lastError     String?                   @db.VarChar(300)
+  approvedById  String?
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+
+  site TicketingSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([churchId, status])
+  @@map("ticketing_site_domains")
 }

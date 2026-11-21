@@ -23,8 +23,14 @@ export function appUrl(): string {
   return process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
 }
 
-export const manageUrl = (token: string) => `${appUrl()}/reservation/${token}`;
-export const ticketUrl = (token: string) => `${appUrl()}/billet/${token}`;
+/** Base des liens publics d'un événement : son domaine dédié approuvé (spec 084), sinon l'application. */
+export function publicBase(event: { site?: { domain?: { host: string; status: string } | null } | null }): string {
+  const domain = event.site?.domain;
+  return domain?.status === "APPROVED" ? `https://${domain.host}` : appUrl();
+}
+
+export const manageUrl = (token: string, base: string = appUrl()) => `${base}/reservation/${token}`;
+export const ticketUrl = (token: string, base: string = appUrl()) => `${base}/billet/${token}`;
 
 const DATE_FMT = new Intl.DateTimeFormat("fr-FR", {
   weekday: "long",

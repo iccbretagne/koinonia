@@ -1565,6 +1565,14 @@ jeton étant dérivé à la demande d'un sel (`tokenSalt`) et d'un secret serveu
   (horloge corrigée), `receivedAt`, `anomaly`. Les présences sont calculées à partir de cette
   table, jamais stockées. **`ticketing_onsite_sales`** : ventes sur place de la restauration.
 
+- **Sites d'événement (spec 084)** : **`ticketing_sites`** (un par événement : `slug` unique = sous-domaine,
+  `draft` et `published` en JSON validés par `siteDocumentSchema`, `afterCloseDays`) ;
+  **`ticketing_site_assets`** (images vérifiées, converties en WebP, sans métadonnées : `key` = plus grande variante, `pending` tant que l'image n'est pas confirmée (purgée après 1 h par la tâche billetterie) ; `name` (120), `alt` texte alternatif (200, obligatoire à tout nouveau dépôt, vide pour les anciennes images), `variants` JSON `[{ w, key, bytes }]` : largeurs 640, 1280 et 2400 px sans agrandissement ; un SVG est rastérisé, jamais stocké) ;
+  **`ticketing_site_domains`** (un domaine dédié par site : `host` unique, `proofToken`, `status` `PENDING`,
+  `VERIFIED`, `APPROVED`, `SUSPENDED`, `lastCheckedAt`, `lastError`, `approvedById`) ;
+  **`ticketing_site_settings`** (une ligne par église : activation des sites). Rôle d'événement
+  supplémentaire : `COMMUNICATION`.
+
 Purge après `closedAt + retentionDays` : noms, contacts, réponses et motifs anonymisés, compteurs
 et montants gardés.
 

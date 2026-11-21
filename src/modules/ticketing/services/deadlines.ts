@@ -177,5 +177,6 @@ export async function runTicketingDeadlines(now = new Date()) {
     dayBefore: await sendDayBeforeReminders(now),
     archived: await archiveFinishedEvents(now),
     purged: await purgeExpiredEvents(now),
+    pendingAssets: await (await import("./site-assets")).purgePendingAssets(now),
   };
 }

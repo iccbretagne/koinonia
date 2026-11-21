@@ -18145,6 +18145,48 @@
         }
       }
     },
+    "/api/internal/site-hosts": {
+      "get": {
+        "tags": [
+          "noyau"
+        ],
+        "summary": "Domaines dédiés approuvés (usage interne du proxy)",
+        "description": "**Accès** : jeton de partage dans l'adresse — boucle locale uniquement et en-tête `Authorization: Bearer <TRAEFIK_PROVIDER_TOKEN>` (404 si le jeton n'est pas configuré, 403 sinon).\n\nHôte → adresse du site, pour les domaines dédiés approuvés. Lue par le proxy au plus une fois par minute pour remplir son cache ; jamais appelée depuis Internet.",
+        "security": [],
+        "x-access": "token",
+        "responses": {
+          "200": {
+            "description": "Objet `{ \"<hôte>\": \"<adresse du site>\" }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/internal/traefik": {
+      "get": {
+        "tags": [
+          "noyau"
+        ],
+        "summary": "Fournisseur HTTP de Traefik (domaines dédiés des sites)",
+        "description": "**Accès** : jeton de partage dans l'adresse — boucle locale uniquement et en-tête `Authorization: Bearer <TRAEFIK_PROVIDER_TOKEN>` (404 si le jeton n'est pas configuré, 403 sinon).\n\nConfiguration dynamique Traefik : un routeur par domaine dédié approuvé, certificat Let's Encrypt, service vers l'application. Interrogée par Traefik lui-même (provider HTTP) ; jamais depuis Internet.",
+        "security": [],
+        "x-access": "token",
+        "responses": {
+          "200": {
+            "description": "Configuration dynamique Traefik (`http.routers`, `http.services`)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/jobs": {
       "get": {
         "tags": [
@@ -28710,6 +28752,107 @@
         }
       }
     },
+    "/api/ticketing/church/{churchId}/sites": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Billetterie : sites d'événement activés dans l'église",
+        "description": "**Accès** : permission `church:settings`.\n\nInterrupteur des sites d'événement de l'église (spec 084), coupé par défaut.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "church:settings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ enabled }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Billetterie : activer ou couper les sites d'événement de l'église",
+        "description": "**Accès** : permission `church:settings`.\n\nCoupé, aucun site d'événement de l'église n'est servi ; la page d'inscription standard reste disponible. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "church:settings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "enabled"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ enabled }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
     "/api/ticketing/events": {
       "get": {
         "tags": [
@@ -28777,6 +28920,16 @@
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 100000
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 5000
+                  },
+                  "location": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 200
                   }
                 },
                 "required": [
@@ -30324,6 +30477,12 @@
                     "nullable": true,
                     "minimum": 0,
                     "maximum": 100000
+                  },
+                  "position": {
+                    "type": "integer",
+                    "nullable": true,
+                    "minimum": 0,
+                    "maximum": 1000
                   }
                 },
                 "required": [
@@ -30972,7 +31131,8 @@
                             "TREASURER",
                             "RECEPTION",
                             "CATERING",
-                            "OBSERVER"
+                            "OBSERVER",
+                            "COMMUNICATION"
                           ]
                         }
                       },
@@ -31003,6 +31163,2406 @@
           },
           "400": {
             "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/site": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Site de l'événement : brouillon et état",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nCrée le site au premier appel (document de départ, adresse dérivée de l'événement). Renvoie le brouillon, l'état de publication et les problèmes de lisibilité à corriger avant de publier.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Site : adresse, brouillon, publié, `issues`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Enregistrement du brouillon du site",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nValide le document (thème, pages, blocs), la lisibilité des textes sur leurs fonds et l'appartenance des images au site ; refuse en 400 avec les messages. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "theme": {
+                    "type": "object",
+                    "properties": {
+                      "colors": {
+                        "type": "object",
+                        "properties": {
+                          "primary": {
+                            "type": "string",
+                            "pattern": "^#[0-9a-fA-F]{6}$",
+                            "description": "Couleur #RRGGBB"
+                          },
+                          "secondary": {
+                            "type": "string",
+                            "pattern": "^#[0-9a-fA-F]{6}$",
+                            "description": "Couleur #RRGGBB"
+                          },
+                          "accent": {
+                            "type": "string",
+                            "pattern": "^#[0-9a-fA-F]{6}$",
+                            "description": "Couleur #RRGGBB"
+                          },
+                          "background": {
+                            "type": "string",
+                            "pattern": "^#[0-9a-fA-F]{6}$",
+                            "description": "Couleur #RRGGBB"
+                          },
+                          "text": {
+                            "type": "string",
+                            "pattern": "^#[0-9a-fA-F]{6}$",
+                            "description": "Couleur #RRGGBB"
+                          }
+                        },
+                        "required": [
+                          "primary",
+                          "secondary",
+                          "accent",
+                          "background",
+                          "text"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "fonts": {
+                        "type": "object",
+                        "properties": {
+                          "heading": {
+                            "type": "string",
+                            "enum": [
+                              "montserrat",
+                              "playfair",
+                              "cormorant",
+                              "lora",
+                              "inter",
+                              "sourceSans",
+                              "cinzel"
+                            ],
+                            "description": "Police des titres"
+                          },
+                          "body": {
+                            "type": "string",
+                            "enum": [
+                              "montserrat",
+                              "playfair",
+                              "cormorant",
+                              "lora",
+                              "inter",
+                              "sourceSans",
+                              "cinzel"
+                            ],
+                            "description": "Police du texte"
+                          }
+                        },
+                        "required": [
+                          "heading",
+                          "body"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "logoAssetId": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9]{20,40}$",
+                        "description": "Logo (image du site)"
+                      },
+                      "headerAssetId": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9]{20,40}$",
+                        "description": "Image d'en-tête (image du site)"
+                      },
+                      "background": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "none"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "kind"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "color"
+                                ]
+                              },
+                              "color": {
+                                "type": "string",
+                                "enum": [
+                                  "primary",
+                                  "secondary",
+                                  "accent",
+                                  "background",
+                                  "text"
+                                ],
+                                "description": "Clé de la palette du thème (jamais une couleur libre)"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "color"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "gradient"
+                                ]
+                              },
+                              "stops": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": [
+                                    "primary",
+                                    "secondary",
+                                    "accent",
+                                    "background",
+                                    "text"
+                                  ],
+                                  "description": "Clé de la palette du thème (jamais une couleur libre)"
+                                },
+                                "minItems": 2,
+                                "maxItems": 3,
+                                "description": "2 ou 3 clés de palette, dans l'ordre du dégradé"
+                              },
+                              "direction": {
+                                "type": "string",
+                                "enum": [
+                                  "vertical",
+                                  "horizontal",
+                                  "diagonal",
+                                  "radial"
+                                ],
+                                "description": "Sens du dégradé"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "stops",
+                              "direction"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "image"
+                                ]
+                              },
+                              "assetId": {
+                                "type": "string",
+                                "pattern": "^[a-z0-9]{20,40}$",
+                                "description": "Identifiant d'une image déjà téléversée sur le site"
+                              },
+                              "veil": {
+                                "type": "string",
+                                "enum": [
+                                  "primary",
+                                  "secondary",
+                                  "accent",
+                                  "background",
+                                  "text"
+                                ],
+                                "description": "Couleur du voile posé sur l'image (lisibilité du texte)"
+                              },
+                              "opacity": {
+                                "type": "number",
+                                "minimum": 0.2,
+                                "maximum": 0.9,
+                                "description": "Opacité du voile, de 0.2 à 0.9"
+                              },
+                              "fixed": {
+                                "type": "boolean",
+                                "default": false,
+                                "description": "Image fixe au défilement (désactivé sur mobile)"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "assetId",
+                              "veil",
+                              "opacity"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ],
+                        "default": {
+                          "kind": "none"
+                        },
+                        "description": "Fond de page"
+                      }
+                    },
+                    "required": [
+                      "colors",
+                      "fonts"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "pages": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 60,
+                          "description": "Titre de la page"
+                        },
+                        "slug": {
+                          "type": "string",
+                          "maxLength": 40,
+                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                          "description": "Adresse de la page (minuscules, chiffres, tirets), unique"
+                        },
+                        "inMenu": {
+                          "type": "boolean",
+                          "default": true,
+                          "description": "Page présente dans le menu"
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "content",
+                            "tickets",
+                            "menus",
+                            "practical"
+                          ],
+                          "description": "content : page composée de bandes et blocs ; tickets, menus, practical : pages automatiques"
+                        },
+                        "sections": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "background": {
+                                "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "none"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "color"
+                                        ]
+                                      },
+                                      "color": {
+                                        "type": "string",
+                                        "enum": [
+                                          "primary",
+                                          "secondary",
+                                          "accent",
+                                          "background",
+                                          "text"
+                                        ],
+                                        "description": "Clé de la palette du thème (jamais une couleur libre)"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "color"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "gradient"
+                                        ]
+                                      },
+                                      "stops": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "enum": [
+                                            "primary",
+                                            "secondary",
+                                            "accent",
+                                            "background",
+                                            "text"
+                                          ],
+                                          "description": "Clé de la palette du thème (jamais une couleur libre)"
+                                        },
+                                        "minItems": 2,
+                                        "maxItems": 3,
+                                        "description": "2 ou 3 clés de palette, dans l'ordre du dégradé"
+                                      },
+                                      "direction": {
+                                        "type": "string",
+                                        "enum": [
+                                          "vertical",
+                                          "horizontal",
+                                          "diagonal",
+                                          "radial"
+                                        ],
+                                        "description": "Sens du dégradé"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "stops",
+                                      "direction"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "image"
+                                        ]
+                                      },
+                                      "assetId": {
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9]{20,40}$",
+                                        "description": "Identifiant d'une image déjà téléversée sur le site"
+                                      },
+                                      "veil": {
+                                        "type": "string",
+                                        "enum": [
+                                          "primary",
+                                          "secondary",
+                                          "accent",
+                                          "background",
+                                          "text"
+                                        ],
+                                        "description": "Couleur du voile posé sur l'image (lisibilité du texte)"
+                                      },
+                                      "opacity": {
+                                        "type": "number",
+                                        "minimum": 0.2,
+                                        "maximum": 0.9,
+                                        "description": "Opacité du voile, de 0.2 à 0.9"
+                                      },
+                                      "fixed": {
+                                        "type": "boolean",
+                                        "default": false,
+                                        "description": "Image fixe au défilement (désactivé sur mobile)"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "assetId",
+                                      "veil",
+                                      "opacity"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                ],
+                                "default": {
+                                  "kind": "none"
+                                },
+                                "description": "Fond de la bande"
+                              },
+                              "textColor": {
+                                "type": "string",
+                                "enum": [
+                                  "primary",
+                                  "secondary",
+                                  "accent",
+                                  "background",
+                                  "text"
+                                ],
+                                "default": "text",
+                                "description": "Couleur du texte posé sur ce fond (contrôle de lisibilité)"
+                              },
+                              "blocks": {
+                                "type": "array",
+                                "items": {
+                                  "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "hero"
+                                          ]
+                                        },
+                                        "title": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 120,
+                                          "description": "Titre du bandeau"
+                                        },
+                                        "tagline": {
+                                          "type": "string",
+                                          "maxLength": 240,
+                                          "description": "Phrase d'accroche sous le titre"
+                                        },
+                                        "showDateLocation": {
+                                          "type": "boolean",
+                                          "default": true,
+                                          "description": "Afficher la date et le lieu (vrai par défaut)"
+                                        },
+                                        "showCountdown": {
+                                          "type": "boolean",
+                                          "default": false,
+                                          "description": "Afficher un compte à rebours"
+                                        },
+                                        "buttonLabel": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "description": "Libellé du bouton d'inscription"
+                                        },
+                                        "background": {
+                                          "oneOf": [
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "none"
+                                                  ]
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "color"
+                                                  ]
+                                                },
+                                                "color": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "primary",
+                                                    "secondary",
+                                                    "accent",
+                                                    "background",
+                                                    "text"
+                                                  ],
+                                                  "description": "Clé de la palette du thème (jamais une couleur libre)"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "color"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "gradient"
+                                                  ]
+                                                },
+                                                "stops": {
+                                                  "type": "array",
+                                                  "items": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                      "primary",
+                                                      "secondary",
+                                                      "accent",
+                                                      "background",
+                                                      "text"
+                                                    ],
+                                                    "description": "Clé de la palette du thème (jamais une couleur libre)"
+                                                  },
+                                                  "minItems": 2,
+                                                  "maxItems": 3,
+                                                  "description": "2 ou 3 clés de palette, dans l'ordre du dégradé"
+                                                },
+                                                "direction": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "vertical",
+                                                    "horizontal",
+                                                    "diagonal",
+                                                    "radial"
+                                                  ],
+                                                  "description": "Sens du dégradé"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "stops",
+                                                "direction"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "image"
+                                                  ]
+                                                },
+                                                "assetId": {
+                                                  "type": "string",
+                                                  "pattern": "^[a-z0-9]{20,40}$",
+                                                  "description": "Identifiant d'une image déjà téléversée sur le site"
+                                                },
+                                                "veil": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "primary",
+                                                    "secondary",
+                                                    "accent",
+                                                    "background",
+                                                    "text"
+                                                  ],
+                                                  "description": "Couleur du voile posé sur l'image (lisibilité du texte)"
+                                                },
+                                                "opacity": {
+                                                  "type": "number",
+                                                  "minimum": 0.2,
+                                                  "maximum": 0.9,
+                                                  "description": "Opacité du voile, de 0.2 à 0.9"
+                                                },
+                                                "fixed": {
+                                                  "type": "boolean",
+                                                  "default": false,
+                                                  "description": "Image fixe au défilement (désactivé sur mobile)"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "assetId",
+                                                "veil",
+                                                "opacity"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          ],
+                                          "description": "Fond du bandeau (couleur, dégradé ou image sous voile)"
+                                        },
+                                        "button": {
+                                          "type": "object",
+                                          "properties": {
+                                            "label": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 40,
+                                              "description": "Texte du bouton"
+                                            },
+                                            "target": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "page": {
+                                                      "type": "string",
+                                                      "maxLength": 40,
+                                                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "page"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "maxLength": 500,
+                                                      "pattern": "^https:\\/\\/[^\\s]+$",
+                                                      "description": "Lien externe, https seulement"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "mailto": {
+                                                      "type": "string",
+                                                      "maxLength": 200,
+                                                      "pattern": "^[^\\s@<>\"]+@[^\\s@<>\"]+\\.[^\\s@<>\"]+$",
+                                                      "description": "Adresse email"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "mailto"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "tel": {
+                                                      "type": "string",
+                                                      "pattern": "^\\+?[0-9][0-9 .-]{3,24}$",
+                                                      "description": "Numéro de téléphone (chiffres, espaces, +, -, .)"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "tel"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "anchor": {
+                                                      "type": "string",
+                                                      "maxLength": 40,
+                                                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                                      "description": "Ancre d'une bande ou d'un bloc de la même page"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "anchor"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "booking": {
+                                                      "type": "boolean",
+                                                      "enum": [
+                                                        true
+                                                      ]
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "booking"
+                                                  ],
+                                                  "additionalProperties": false
+                                                }
+                                              ]
+                                            },
+                                            "style": {
+                                              "type": "string",
+                                              "enum": [
+                                                "filled",
+                                                "outline",
+                                                "subtle"
+                                              ],
+                                              "description": "Plein (défaut), contour ou discret"
+                                            }
+                                          },
+                                          "required": [
+                                            "label",
+                                            "target"
+                                          ],
+                                          "additionalProperties": false,
+                                          "description": "Bouton du bandeau ; à défaut, le bouton d'inscription (buttonLabel)"
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "title"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "richText"
+                                          ]
+                                        },
+                                        "content": {
+                                          "type": "array",
+                                          "items": {
+                                            "oneOf": [
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "type": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                      "p",
+                                                      "h2",
+                                                      "h3"
+                                                    ]
+                                                  },
+                                                  "children": {
+                                                    "type": "array",
+                                                    "items": {
+                                                      "type": "object",
+                                                      "properties": {
+                                                        "text": {
+                                                          "type": "string",
+                                                          "maxLength": 2000
+                                                        },
+                                                        "bold": {
+                                                          "type": "boolean"
+                                                        },
+                                                        "italic": {
+                                                          "type": "boolean"
+                                                        },
+                                                        "href": {
+                                                          "type": "string",
+                                                          "maxLength": 500
+                                                        }
+                                                      },
+                                                      "required": [
+                                                        "text"
+                                                      ],
+                                                      "additionalProperties": false
+                                                    },
+                                                    "maxItems": 200
+                                                  }
+                                                },
+                                                "required": [
+                                                  "type",
+                                                  "children"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "type": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                      "ul",
+                                                      "ol"
+                                                    ]
+                                                  },
+                                                  "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                      "type": "array",
+                                                      "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                          "text": {
+                                                            "type": "string",
+                                                            "maxLength": 2000
+                                                          },
+                                                          "bold": {
+                                                            "type": "boolean"
+                                                          },
+                                                          "italic": {
+                                                            "type": "boolean"
+                                                          },
+                                                          "href": {
+                                                            "type": "string",
+                                                            "maxLength": 500
+                                                          }
+                                                        },
+                                                        "required": [
+                                                          "text"
+                                                        ],
+                                                        "additionalProperties": false
+                                                      },
+                                                      "maxItems": 200
+                                                    },
+                                                    "minItems": 1,
+                                                    "maxItems": 30
+                                                  }
+                                                },
+                                                "required": [
+                                                  "type",
+                                                  "items"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            ]
+                                          },
+                                          "maxItems": 60,
+                                          "description": "Arbre de texte (outil MCP : fournir `markdown`)"
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "content"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "image"
+                                          ]
+                                        },
+                                        "image": {
+                                          "type": "object",
+                                          "properties": {
+                                            "assetId": {
+                                              "type": "string",
+                                              "pattern": "^[a-z0-9]{20,40}$",
+                                              "description": "Identifiant d'une image déjà téléversée sur le site"
+                                            },
+                                            "alt": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 200,
+                                              "description": "Texte alternatif (accessibilité), obligatoire"
+                                            },
+                                            "caption": {
+                                              "type": "string",
+                                              "maxLength": 200,
+                                              "description": "Légende sous l'image"
+                                            }
+                                          },
+                                          "required": [
+                                            "assetId",
+                                            "alt"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "image"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "gallery"
+                                          ]
+                                        },
+                                        "title": {
+                                          "type": "string",
+                                          "maxLength": 120,
+                                          "description": "Titre de la galerie"
+                                        },
+                                        "layout": {
+                                          "type": "string",
+                                          "enum": [
+                                            "grid",
+                                            "round"
+                                          ],
+                                          "description": "grid (défaut) : grille carrée ; round : vignettes rondes"
+                                        },
+                                        "images": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "assetId": {
+                                                "type": "string",
+                                                "pattern": "^[a-z0-9]{20,40}$",
+                                                "description": "Identifiant d'une image déjà téléversée sur le site"
+                                              },
+                                              "alt": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 200,
+                                                "description": "Texte alternatif (accessibilité), obligatoire"
+                                              },
+                                              "caption": {
+                                                "type": "string",
+                                                "maxLength": 200,
+                                                "description": "Légende sous l'image"
+                                              }
+                                            },
+                                            "required": [
+                                              "assetId",
+                                              "alt"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "minItems": 1,
+                                          "maxItems": 24
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "images"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "palette"
+                                          ]
+                                        },
+                                        "title": {
+                                          "type": "string",
+                                          "maxLength": 120,
+                                          "description": "Titre du bloc"
+                                        },
+                                        "swatches": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "label": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 60,
+                                                "description": "Nom de la couleur"
+                                              },
+                                              "color": {
+                                                "type": "string",
+                                                "pattern": "^#[0-9a-fA-F]{6}$",
+                                                "description": "Couleur #RRGGBB"
+                                              }
+                                            },
+                                            "required": [
+                                              "label",
+                                              "color"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "minItems": 1,
+                                          "maxItems": 8,
+                                          "description": "Pastilles de couleur"
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "swatches"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "cards"
+                                          ]
+                                        },
+                                        "title": {
+                                          "type": "string",
+                                          "maxLength": 120,
+                                          "description": "Titre de la section de cartes"
+                                        },
+                                        "columns": {
+                                          "type": "integer",
+                                          "minimum": 2,
+                                          "maximum": 4,
+                                          "description": "Nombre de colonnes sur grand écran : 2 (défaut), 3 ou 4"
+                                        },
+                                        "cards": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "title": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 120,
+                                                "description": "Titre de la carte"
+                                              },
+                                              "text": {
+                                                "type": "string",
+                                                "maxLength": 300,
+                                                "description": "Texte court sous le titre"
+                                              },
+                                              "icon": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "shirt",
+                                                  "gem",
+                                                  "users",
+                                                  "camera",
+                                                  "check",
+                                                  "x",
+                                                  "star",
+                                                  "heart",
+                                                  "music",
+                                                  "utensils",
+                                                  "coffee",
+                                                  "cake",
+                                                  "gift",
+                                                  "calendar",
+                                                  "clock",
+                                                  "map-pin",
+                                                  "car",
+                                                  "bus",
+                                                  "parking-circle",
+                                                  "accessibility",
+                                                  "baby",
+                                                  "ticket",
+                                                  "phone",
+                                                  "mail",
+                                                  "info",
+                                                  "sparkles",
+                                                  "sun",
+                                                  "moon",
+                                                  "flame",
+                                                  "crown"
+                                                ],
+                                                "description": "Pictogramme de la carte"
+                                              },
+                                              "image": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "assetId": {
+                                                    "type": "string",
+                                                    "pattern": "^[a-z0-9]{20,40}$",
+                                                    "description": "Identifiant d'une image déjà téléversée sur le site"
+                                                  },
+                                                  "alt": {
+                                                    "type": "string",
+                                                    "minLength": 1,
+                                                    "maxLength": 200,
+                                                    "description": "Texte alternatif (accessibilité), obligatoire"
+                                                  },
+                                                  "caption": {
+                                                    "type": "string",
+                                                    "maxLength": 200,
+                                                    "description": "Légende sous l'image"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "assetId",
+                                                  "alt"
+                                                ],
+                                                "additionalProperties": false,
+                                                "description": "Image de la carte"
+                                              },
+                                              "items": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 200
+                                                },
+                                                "maxItems": 12,
+                                                "description": "Lignes de la carte"
+                                              }
+                                            },
+                                            "required": [
+                                              "title",
+                                              "items"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "minItems": 1,
+                                          "maxItems": 6,
+                                          "description": "Cartes côte à côte"
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "cards"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "doDont"
+                                          ]
+                                        },
+                                        "doTitle": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 80,
+                                          "description": "Titre de la colonne « à faire »"
+                                        },
+                                        "doItems": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 200
+                                          },
+                                          "maxItems": 12,
+                                          "description": "Éléments à faire"
+                                        },
+                                        "dontTitle": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 80,
+                                          "description": "Titre de la colonne « à éviter »"
+                                        },
+                                        "dontItems": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 200
+                                          },
+                                          "maxItems": 12,
+                                          "description": "Éléments à éviter"
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "doTitle",
+                                        "doItems",
+                                        "dontTitle",
+                                        "dontItems"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "icons"
+                                          ]
+                                        },
+                                        "title": {
+                                          "type": "string",
+                                          "maxLength": 120,
+                                          "description": "Titre du bloc"
+                                        },
+                                        "items": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "icon": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "shirt",
+                                                  "gem",
+                                                  "users",
+                                                  "camera",
+                                                  "check",
+                                                  "x",
+                                                  "star",
+                                                  "heart",
+                                                  "music",
+                                                  "utensils",
+                                                  "coffee",
+                                                  "cake",
+                                                  "gift",
+                                                  "calendar",
+                                                  "clock",
+                                                  "map-pin",
+                                                  "car",
+                                                  "bus",
+                                                  "parking-circle",
+                                                  "accessibility",
+                                                  "baby",
+                                                  "ticket",
+                                                  "phone",
+                                                  "mail",
+                                                  "info",
+                                                  "sparkles",
+                                                  "sun",
+                                                  "moon",
+                                                  "flame",
+                                                  "crown"
+                                                ],
+                                                "description": "Pictogramme"
+                                              },
+                                              "label": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 120,
+                                                "description": "Libellé"
+                                              },
+                                              "description": {
+                                                "type": "string",
+                                                "maxLength": 200,
+                                                "description": "Précision sous le libellé"
+                                              }
+                                            },
+                                            "required": [
+                                              "icon",
+                                              "label"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "minItems": 1,
+                                          "maxItems": 12
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "items"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "faq"
+                                          ]
+                                        },
+                                        "title": {
+                                          "type": "string",
+                                          "maxLength": 120,
+                                          "description": "Titre de la section de questions"
+                                        },
+                                        "items": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "question": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 200,
+                                                "description": "Question"
+                                              },
+                                              "answer": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 2000,
+                                                "description": "Réponse (texte simple)"
+                                              }
+                                            },
+                                            "required": [
+                                              "question",
+                                              "answer"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "minItems": 1,
+                                          "maxItems": 20
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "items"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "button"
+                                          ]
+                                        },
+                                        "label": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 40,
+                                          "description": "Texte du bouton"
+                                        },
+                                        "target": {
+                                          "anyOf": [
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "page": {
+                                                  "type": "string",
+                                                  "maxLength": 40,
+                                                  "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                }
+                                              },
+                                              "required": [
+                                                "page"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "url": {
+                                                  "type": "string",
+                                                  "maxLength": 500,
+                                                  "pattern": "^https:\\/\\/[^\\s]+$",
+                                                  "description": "Lien externe, https seulement"
+                                                }
+                                              },
+                                              "required": [
+                                                "url"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "mailto": {
+                                                  "type": "string",
+                                                  "maxLength": 200,
+                                                  "pattern": "^[^\\s@<>\"]+@[^\\s@<>\"]+\\.[^\\s@<>\"]+$",
+                                                  "description": "Adresse email"
+                                                }
+                                              },
+                                              "required": [
+                                                "mailto"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "tel": {
+                                                  "type": "string",
+                                                  "pattern": "^\\+?[0-9][0-9 .-]{3,24}$",
+                                                  "description": "Numéro de téléphone (chiffres, espaces, +, -, .)"
+                                                }
+                                              },
+                                              "required": [
+                                                "tel"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "anchor": {
+                                                  "type": "string",
+                                                  "maxLength": 40,
+                                                  "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                                  "description": "Ancre d'une bande ou d'un bloc de la même page"
+                                                }
+                                              },
+                                              "required": [
+                                                "anchor"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "booking": {
+                                                  "type": "boolean",
+                                                  "enum": [
+                                                    true
+                                                  ]
+                                                }
+                                              },
+                                              "required": [
+                                                "booking"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          ]
+                                        },
+                                        "style": {
+                                          "type": "string",
+                                          "enum": [
+                                            "filled",
+                                            "outline",
+                                            "subtle"
+                                          ],
+                                          "description": "Plein (défaut), contour ou discret"
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "label",
+                                        "target"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "banner"
+                                          ]
+                                        },
+                                        "background": {
+                                          "oneOf": [
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "none"
+                                                  ]
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "color"
+                                                  ]
+                                                },
+                                                "color": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "primary",
+                                                    "secondary",
+                                                    "accent",
+                                                    "background",
+                                                    "text"
+                                                  ],
+                                                  "description": "Clé de la palette du thème (jamais une couleur libre)"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "color"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "gradient"
+                                                  ]
+                                                },
+                                                "stops": {
+                                                  "type": "array",
+                                                  "items": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                      "primary",
+                                                      "secondary",
+                                                      "accent",
+                                                      "background",
+                                                      "text"
+                                                    ],
+                                                    "description": "Clé de la palette du thème (jamais une couleur libre)"
+                                                  },
+                                                  "minItems": 2,
+                                                  "maxItems": 3,
+                                                  "description": "2 ou 3 clés de palette, dans l'ordre du dégradé"
+                                                },
+                                                "direction": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "vertical",
+                                                    "horizontal",
+                                                    "diagonal",
+                                                    "radial"
+                                                  ],
+                                                  "description": "Sens du dégradé"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "stops",
+                                                "direction"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "image"
+                                                  ]
+                                                },
+                                                "assetId": {
+                                                  "type": "string",
+                                                  "pattern": "^[a-z0-9]{20,40}$",
+                                                  "description": "Identifiant d'une image déjà téléversée sur le site"
+                                                },
+                                                "veil": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "primary",
+                                                    "secondary",
+                                                    "accent",
+                                                    "background",
+                                                    "text"
+                                                  ],
+                                                  "description": "Couleur du voile posé sur l'image (lisibilité du texte)"
+                                                },
+                                                "opacity": {
+                                                  "type": "number",
+                                                  "minimum": 0.2,
+                                                  "maximum": 0.9,
+                                                  "description": "Opacité du voile, de 0.2 à 0.9"
+                                                },
+                                                "fixed": {
+                                                  "type": "boolean",
+                                                  "default": false,
+                                                  "description": "Image fixe au défilement (désactivé sur mobile)"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "assetId",
+                                                "veil",
+                                                "opacity"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          ]
+                                        },
+                                        "title": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 120,
+                                          "description": "Titre de la bannière"
+                                        },
+                                        "tagline": {
+                                          "type": "string",
+                                          "maxLength": 240,
+                                          "description": "Phrase sous le titre"
+                                        },
+                                        "secondary": {
+                                          "type": "string",
+                                          "maxLength": 240,
+                                          "description": "Ligne secondaire sous la phrase"
+                                        },
+                                        "button": {
+                                          "type": "object",
+                                          "properties": {
+                                            "label": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 40,
+                                              "description": "Texte du bouton"
+                                            },
+                                            "target": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "page": {
+                                                      "type": "string",
+                                                      "maxLength": 40,
+                                                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "page"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "url": {
+                                                      "type": "string",
+                                                      "maxLength": 500,
+                                                      "pattern": "^https:\\/\\/[^\\s]+$",
+                                                      "description": "Lien externe, https seulement"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "url"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "mailto": {
+                                                      "type": "string",
+                                                      "maxLength": 200,
+                                                      "pattern": "^[^\\s@<>\"]+@[^\\s@<>\"]+\\.[^\\s@<>\"]+$",
+                                                      "description": "Adresse email"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "mailto"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "tel": {
+                                                      "type": "string",
+                                                      "pattern": "^\\+?[0-9][0-9 .-]{3,24}$",
+                                                      "description": "Numéro de téléphone (chiffres, espaces, +, -, .)"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "tel"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "anchor": {
+                                                      "type": "string",
+                                                      "maxLength": 40,
+                                                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                                      "description": "Ancre d'une bande ou d'un bloc de la même page"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "anchor"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "booking": {
+                                                      "type": "boolean",
+                                                      "enum": [
+                                                        true
+                                                      ]
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "booking"
+                                                  ],
+                                                  "additionalProperties": false
+                                                }
+                                              ]
+                                            },
+                                            "style": {
+                                              "type": "string",
+                                              "enum": [
+                                                "filled",
+                                                "outline",
+                                                "subtle"
+                                              ],
+                                              "description": "Plein (défaut), contour ou discret"
+                                            }
+                                          },
+                                          "required": [
+                                            "label",
+                                            "target"
+                                          ],
+                                          "additionalProperties": false,
+                                          "description": "Bouton de la bannière"
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "background",
+                                        "title"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "separator"
+                                          ]
+                                        },
+                                        "style": {
+                                          "type": "string",
+                                          "enum": [
+                                            "line",
+                                            "goldDiamond",
+                                            "wave"
+                                          ],
+                                          "description": "Style du séparateur"
+                                        },
+                                        "anchor": {
+                                          "type": "string",
+                                          "maxLength": 40,
+                                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                          "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "style"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "maxItems": 20
+                              },
+                              "anchor": {
+                                "type": "string",
+                                "maxLength": 40,
+                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                "description": "Ancre (identifiant court, unique sur la page) pour qu'un bouton y mène"
+                              }
+                            },
+                            "required": [
+                              "blocks"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "maxItems": 12,
+                          "default": []
+                        }
+                      },
+                      "required": [
+                        "title",
+                        "slug",
+                        "kind"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 1,
+                    "maxItems": 8
+                  }
+                },
+                "required": [
+                  "theme",
+                  "pages"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Site enregistré",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Durée d'affichage après la clôture",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nNombre de jours (1 à 365) pendant lesquels le site affiche « Événement terminé » après la clôture de l'événement, puis répond 404. 30 par défaut.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "afterCloseDays": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                },
+                "required": [
+                  "afterCloseDays"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Site mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/site/assets": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Images du site",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nImages confirmées du site : identifiant, nom, texte alternatif, dimensions, poids, variantes générées et emplacements du brouillon et de la version publiée qui les utilisent.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste d'images avec `usedIn.draft` et `usedIn.published`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Dépôt d'une image du site",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nFormulaire multipart : `file` (JPEG, PNG, WebP ou SVG, 8 Mo au plus, type vérifié sur le contenu), `alt` (texte alternatif, 1 à 200 caractères, obligatoire) et `name` (facultatif, 120 caractères, le nom du fichier par défaut). 16 px au moins et 8000 px, 40 millions de pixels au plus. L'image est redressée, un SVG est rastérisé (aucun SVG n'est stocké ni servi), puis converties en variantes WebP de 640, 1280 et 2400 px de large (sans agrandissement) dépouillées de toute métadonnée. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "description": "Champs `file`, `alt`, `name`",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ id, width, height }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/site/assets/{assetId}": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Image du site (équipe)",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nImage d'un site pour l'aperçu du brouillon, publiée ou non. 404 si l'image n'appartient pas au site de l'événement.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "assetId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image WebP",
+            "content": {
+              "image/webp": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/site/domain": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Domaine dédié du site",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement (rôle `configure`) : le domaine engage l'église, la Communication n'y a pas accès.\n\nÉtat du domaine (en attente, vérifié, approuvé, suspendu), dernier message d'erreur et enregistrements DNS à créer. `null` sans demande.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domaine ou `null`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Demande d'un domaine dédié",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement (rôle `configure`) : le domaine engage l'église, la Communication n'y a pas accès.\n\nUn domaine par site, cinq par église (hors suspendus). Refuse un domaine invalide, déjà pris, sous le domaine des sites ou celui de l'application. Renvoie le jeton de preuve à publier en TXT.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "host": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 253
+                  }
+                },
+                "required": [
+                  "host"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Domaine demandé et enregistrements DNS",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Suppression du domaine dédié",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement (rôle `configure`) : le domaine engage l'église, la Communication n'y a pas accès.\n\nLe site redevient servi par son adresse Koinonia.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rien",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/site/domain/verify": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Vérification DNS du domaine dédié",
+        "description": "**Accès** : toute personne connectée — organisateur de l'événement (rôle `configure`).\n\nContrôle l'enregistrement TXT `_koinonia.<domaine>` (jeton de preuve) et que le domaine pointe vers Koinonia (CNAME, ou mêmes adresses). Réussite : « vérifié » (le Super Admin doit encore l'approuver) ; échec : le motif est renvoyé dans `lastError`.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domaine avec son nouvel état",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/site/publish": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Publication du site",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nFige le brouillon en version publiée, après nouvelle validation (schéma, lisibilité, images). Le site n'est visible que si l'église a activé les sites et que l'événement n'est plus en brouillon. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Site publié",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Dépublication du site",
+        "description": "**Accès** : toute personne connectée — organisateur ou communication de l'événement (rôle `site`).\n\nRetire la version publiée : le site répond 404. Le brouillon est conservé. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Site dépublié",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
           },
           "401": {
             "description": "Session absente"
@@ -32422,6 +34982,48 @@
         }
       }
     },
+    "/api/ticketing/public/site-assets/{assetId}": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Image d'un site d'événement publié",
+        "description": "**Accès** : public, sans session.\n\nServie seulement si l'image est référencée par la version publiée d'un site actif (église ayant activé les sites, événement hors brouillon) ; sinon 404.",
+        "security": [],
+        "x-access": "public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "assetId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "nullable": true,
+              "description": "Largeur voulue : 640, 1280 ou 2400 (variante la plus proche par le haut)"
+            },
+            "required": false,
+            "description": "Largeur voulue : 640, 1280 ou 2400 (variante la plus proche par le haut)",
+            "name": "w",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image WebP",
+            "content": {
+              "image/webp": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/ticketing/public/tickets/{token}": {
       "get": {
         "tags": [
@@ -32449,6 +35051,107 @@
                 "schema": {}
               }
             }
+          }
+        }
+      }
+    },
+    "/api/ticketing/site-domains": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Demandes de domaines dédiés (toutes églises)",
+        "description": "**Accès** : Super Admin.\n\nÉcran d'approbation : église, événement, domaine, état et dernier contrôle DNS.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "responses": {
+          "200": {
+            "description": "Liste des domaines",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/site-domains/{domainId}": {
+      "patch": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Approbation ou refus d'un domaine dédié",
+        "description": "**Accès** : Super Admin.\n\nApprouver exige un DNS vérifié ; le domaine est alors servi (cache du proxy rafraîchi en une minute). Refuser supprime la demande, avec un motif facultatif transmis à l'organisateur. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "superAdmin",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "domainId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "decision": {
+                    "type": "string",
+                    "enum": [
+                      "approve",
+                      "reject"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 300
+                  }
+                },
+                "required": [
+                  "decision"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rien",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
           }
         }
       }

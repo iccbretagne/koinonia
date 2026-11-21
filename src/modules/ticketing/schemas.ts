@@ -9,8 +9,13 @@ import type {
   TicketingRole,
 } from "@/generated/prisma/enums";
 import { ibanError, normalizeIban } from "@/lib/iban";
+import { assetIdsOf, siteDocumentSchema } from "./site-schemas";
 
 export { blockingChecks, readinessChecks, type ReadinessCheck, type ReadinessEvent } from "./readiness";
+export * from "./site-schemas";
+export * from "./site-describe";
+export { RichTextError, parseInline, parseRichText, richTextToMarkdown } from "./rich-text";
+export { MIN_CONTRAST, contrastIssues, contrastRatio, hexToRgb, luminance, surfaceColors, worstContrast, type ContrastIssue } from "./contrast";
 
 /**
  * Schémas purs de la billetterie (spec 074), partagés par les contrats d'API (ADR-0023), les
@@ -35,13 +40,14 @@ export const EVENT_STATUS_LABEL: Record<TicketingEventStatus, string> = {
   ARCHIVED: "Clôturé",
 };
 
-export const ROLES = ["ORGANIZER", "TREASURER", "RECEPTION", "CATERING", "OBSERVER"] as const satisfies readonly TicketingRole[];
+export const ROLES = ["ORGANIZER", "TREASURER", "RECEPTION", "CATERING", "OBSERVER", "COMMUNICATION"] as const satisfies readonly TicketingRole[];
 export const ROLE_LABEL: Record<TicketingRole, string> = {
   ORGANIZER: "Organisateur",
   TREASURER: "Trésorier",
   RECEPTION: "Accueil / sécurité",
   CATERING: "Restauration",
   OBSERVER: "Observateur",
+  COMMUNICATION: "Communication (site)",
 };
 
 export const OPTION_TYPES = ["CHOICE", "QUANTITY", "CHECKBOX"] as const satisfies readonly TicketingOptionType[];
@@ -167,6 +173,8 @@ export const eventCreateSchema = z
     startsAt: isoDate,
     endsAt: isoDate,
     capacity: z.coerce.number().int().min(1).max(100_000),
+    description: optionalText(5000),
+    location: optionalText(200),
   })
   .refine((d) => d.endsAt > d.startsAt, { message: "La fin doit suivre le début", path: ["endsAt"] });
 
@@ -236,6 +244,8 @@ export const variantCreateSchema = z
     description: optionalText(300),
     allergens: optionalText(200),
     stock: z.coerce.number().int().min(0).max(100_000).nullish(),
+    /** Rang dans l'option ; à la fin par défaut. */
+    position: z.coerce.number().int().min(0).max(1000).optional(),
   })
   .strict();
 
@@ -621,3 +631,103 @@ export const labelsQuerySchema = z.object({
   bookingId: z.string().min(1).max(64).optional(),
 });
 export const markPrintedSchema = z.object({ itemIds: z.array(z.string().min(1).max(64)).min(1).max(1000) }).strict();
+
+// ── Export et import d'un événement (JSON versionné, entre instances) ────────
+
+export const EXPORT_FORMAT = "koinonia-ticketing-event";
+export const EXPORT_VERSION = 1;
+/** Poids total des images (base64) d'un import : borné pour tenir dans la confirmation de l'assistant. */
+export const MAX_IMPORT_IMAGES_CHARS = 14_000_000;
+
+const exportId = z.string().regex(/^o\d{1,3}$/, "Identifiant d'option de la forme o1, o2…");
+const rank = z.coerce.number().int().min(0).max(1000);
+const stockOrNull = z.coerce.number().int().min(0).max(100_000).nullable();
+
+/**
+ * Format d'échange : aucune donnée personnelle, aucun IBAN, aucun identifiant de compte ni
+ * d'inscrit ; les moyens de paiement se réduisent à espèces et chèque (le reste est à ressaisir).
+ * Mêmes bornes que les écrans ; tout champ inconnu est refusé.
+ */
+export const eventExportSchema = z
+  .object({
+    format: z.literal(EXPORT_FORMAT),
+    version: z.literal(EXPORT_VERSION),
+    event: z
+      .object({
+        title: text(150),
+        description: optionalText(5000),
+        location: optionalText(200),
+        startsAt: isoDate,
+        endsAt: isoDate,
+        registrationDeadline: isoDate.nullable(),
+        capacity: z.coerce.number().int().min(1).max(100_000),
+        seatsOpen: z.coerce.number().int().min(0).max(100_000),
+        optionPaymentDeadline: isoDate.nullable(),
+        reminderDaysBefore: z.coerce.number().int().min(0).max(30),
+        allowOnsitePayment: z.boolean(),
+        allowUnaccompaniedMinors: z.boolean(),
+        allowWalkIns: z.boolean(),
+        entryRefundable: z.boolean(),
+        entryRefundDeadline: isoDate.nullable(),
+        questions: questionsSchema,
+        retentionDays: z.coerce.number().int().min(7).max(730),
+        paymentMethods: z.object({ cash: z.boolean(), cheque: z.boolean() }).strict(),
+      })
+      .strict(),
+    tariffs: z.array(tariffSchema.strict()).max(4),
+    options: z
+      .array(
+        z
+          .object({
+            id: exportId,
+            label: text(120),
+            description: optionalText(500),
+            type: z.enum(OPTION_TYPES),
+            scope: z.enum(OPTION_SCOPES),
+            price: money,
+            stock: stockOrNull,
+            pickup: z.boolean(),
+            namedPrep: z.boolean(),
+            refundable: z.boolean(),
+            refundDeadline: isoDate.nullable(),
+            active: z.boolean(),
+            position: rank,
+            choiceGroup: optionalText(60),
+          })
+          .strict()
+      )
+      .max(30),
+    variants: z
+      .array(z.object({ optionId: exportId, label: text(120), description: optionalText(300), allergens: optionalText(200), stock: stockOrNull, position: rank }).strict())
+      .max(300),
+    posts: z.array(z.object({ name: text(120), position: rank }).strict()).max(50),
+    site: z.object({ document: siteDocumentSchema, afterCloseDays: z.coerce.number().int().min(1).max(365) }).strict().nullable(),
+    assets: z
+      .array(
+        z
+          .object({
+            id: z.string().regex(/^[a-z0-9]{20,40}$/, "Identifiant d'image invalide"),
+            name: z.string().trim().max(120),
+            alt: text(200),
+            mime: z.literal("image/webp"),
+            base64: z.string().min(1).max(11_500_000),
+          })
+          .strict()
+      )
+      .max(60),
+  })
+  .strict()
+  .superRefine((d, ctx) => {
+    const issue = (path: (string | number)[], message: string) => ctx.addIssue({ code: "custom", path, message });
+    if (d.event.endsAt <= d.event.startsAt) issue(["event", "endsAt"], "La fin doit suivre le début");
+    if (d.event.seatsOpen > d.event.capacity) issue(["event", "seatsOpen"], "Les places ouvertes ne dépassent pas la jauge");
+    if (new Set(d.tariffs.map((t) => t.ageGroup)).size !== d.tariffs.length) issue(["tariffs"], "Un tarif par tranche d'âge");
+    const optionIds = new Set(d.options.map((o) => o.id));
+    if (optionIds.size !== d.options.length) issue(["options"], "Identifiants d'option en double");
+    d.variants.forEach((v, i) => !optionIds.has(v.optionId) && issue(["variants", i, "optionId"], `Option inconnue : « ${v.optionId} »`));
+    const assetIds = new Set(d.assets.map((a) => a.id));
+    if (assetIds.size !== d.assets.length) issue(["assets"], "Identifiants d'image en double");
+    if (d.assets.reduce((n, a) => n + a.base64.length, 0) > MAX_IMPORT_IMAGES_CHARS) issue(["assets"], "Images trop lourdes ensemble (10 Mo environ au plus)");
+    if (d.site) for (const id of assetIdsOf(d.site.document)) if (!assetIds.has(id)) issue(["site", "document"], `Image « ${id} » absente de la liste assets`);
+  });
+export type EventExport = z.infer<typeof eventExportSchema>;

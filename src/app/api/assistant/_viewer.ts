@@ -55,6 +55,10 @@ export async function buildViewer(session: Session, churchId: string): Promise<A
   if (registry.has("ticketing")) {
     const { isTicketingVisible } = await import("@/modules/ticketing");
     if (await isTicketingVisible(session, churchId).catch(() => false)) predicates.push("ticketing");
+    // Sites d'événement (spec 084) : drapeau d'instance, coupé par défaut (actif en recette).
+    // L'activation par l'Admin d'église ne décide que de la diffusion publique.
+    const { ticketingSitesEnabled } = await import("@/lib/ticketing-sites-flag");
+    if (ticketingSitesEnabled()) predicates.push("ticketingSites");
   }
   if (registry.has("planning") && permissions.includes("planning:view")) {
     const { canReadAnnouncementSheet } = await import("@/modules/planning");

@@ -99,6 +99,8 @@ export interface Prepared<P> {
   /** Lignes de l'aperçu. */
   lines: string[];
   payload: P;
+  /** Champs ajoutés à la réponse structurée de l'aperçu (avertissements…). */
+  structured?: Record<string, unknown>;
 }
 
 interface EventActionSpec<I extends z.ZodObject<z.ZodRawShape>, P extends { eventId?: string }> {
@@ -124,6 +126,8 @@ interface Executed {
   eventId?: string;
   vue?: string;
   data?: unknown;
+  /** Champs ajoutés à la réponse structurée de la confirmation. */
+  structured?: Record<string, unknown>;
 }
 interface AuditEntry {
   action: "CREATE" | "UPDATE" | "DELETE";
@@ -171,7 +175,7 @@ export function eventAction<I extends z.ZodObject<z.ZodRawShape>, P extends { ev
     const { token, expiresAt } = await createConfirmation(ctx.grantId, spec.action, stored as unknown as Prisma.InputJsonValue);
     return {
       text: previewText(prepared.lines, token),
-      structured: { done: false, action: spec.action, confirmation: token, expiresAt: expiresAt.toISOString() },
+      structured: { done: false, action: spec.action, confirmation: token, expiresAt: expiresAt.toISOString(), ...prepared.structured },
     };
   }
 
@@ -197,7 +201,7 @@ export function eventAction<I extends z.ZodObject<z.ZodRawShape>, P extends { ev
     }
     const eventId = result.eventId ?? stored.payload.eventId;
     const url = eventId ? link(eventId, result.vue) : `${publicOrigin()}/billetterie`;
-    return { text: `${result.text}\nVoir dans Koinonia : ${url}`, structured: { done: true, action: spec.action, link: url } };
+    return { text: `${result.text}\nVoir dans Koinonia : ${url}`, structured: { done: true, action: spec.action, link: url, ...result.structured } };
   }
 
   const available = (viewer: ActionContext["viewer"]) =>
@@ -558,7 +562,7 @@ type DishPayload = { eventId: string; op: "create" | "update" | "delete"; option
 type PostPayload = { eventId: string; op: "create" | "rename" | "delete"; postId?: string; name?: string };
 type AssignmentPayload = { eventId: string; op: "create" | "update" | "delete"; assignmentId?: string; data?: Record<string, unknown> };
 type SalePayload = { eventId: string; opId: string; op: "deliver" | "sale"; itemId?: string; delivered?: number; optionId?: string; variantId?: string | null; quantity?: number; method: "CASH" | "CHEQUE" | null };
-type CreatePayload = { eventId?: string; title: string; startsAt: string; endsAt: string; capacity: number };
+type CreatePayload = { eventId?: string; title: string; startsAt: string; endsAt: string; capacity: number; location?: string | null; description?: string | null };
 
 // Événement : création -----------------------------------------------------------------------
 
@@ -567,25 +571,28 @@ const createEventInput = z.object({
   startsAt: localField("Début"),
   endsAt: localField("Fin"),
   capacity: z.number().int().min(1).max(100_000).describe("Jauge : nombre de places au total"),
+  location: z.string().trim().max(200).optional().describe("Lieu (facultatif)"),
+  description: z.string().trim().max(5000).optional().describe("Description publique (facultatif)"),
 });
 
 const createEventAction = eventAction({
   action: "create_ticketing_event",
   role: "manager",
-  description: previewDesc("créer un événement de billetterie en brouillon (titre, dates, jauge)"),
+  description: previewDesc("créer un événement de billetterie en brouillon (titre, dates, jauge, lieu et description facultatifs)"),
   confirmDescription: confirmDesc("créer l'événement de billetterie"),
   input: createEventInput,
   prepare: async (input): Promise<Prepared<CreatePayload> | string> => {
-    const data = eventCreateSchema.parse({ title: input.title, startsAt: parisLocal(input.startsAt), endsAt: parisLocal(input.endsAt), capacity: input.capacity });
+    const data = eventCreateSchema.parse({ title: input.title, startsAt: parisLocal(input.startsAt), endsAt: parisLocal(input.endsAt), capacity: input.capacity, location: input.location, description: input.description });
     const { slugify } = await ticketing();
     return {
       lines: [
         `Créer l'événement « ${data.title} »`,
-        `Du ${when(data.startsAt)} au ${when(data.endsAt)}, jauge ${data.capacity}`,
+        `Du ${when(data.startsAt)} au ${when(data.endsAt)}, jauge ${data.capacity}${data.location ? `, lieu : ${data.location}` : ""}`,
+        ...(data.description ? [`Description : ${data.description.length > 120 ? `${data.description.slice(0, 120)}…` : data.description}`] : []),
         "Il sera créé en brouillon : personne ne peut encore s'inscrire (tarif adulte gratuit, aucun moyen de paiement).",
         `Adresse publique : ${publicOrigin()}/inscription/<église>/${slugify(data.title)} (suffixe numérique si l'adresse existe déjà)`,
       ],
-      payload: jsonify({ title: data.title, startsAt: data.startsAt, endsAt: data.endsAt, capacity: data.capacity }) as unknown as CreatePayload,
+      payload: jsonify({ title: data.title, startsAt: data.startsAt, endsAt: data.endsAt, capacity: data.capacity, location: data.location, description: data.description }) as unknown as CreatePayload,
     };
   },
   state: async () => null,
@@ -860,7 +867,7 @@ const dishAction = eventAction({
       if (!option) return "Option introuvable : utilisez l'identifiant donné par ticketing_event.";
       const data = variantCreateSchema.parse(raw);
       return {
-        lines: [`Ajouter le plat « ${data.label} » à l'option « ${option.label} »${data.stock != null ? ` (stock ${data.stock})` : ""}${data.allergens ? `, allergènes : ${data.allergens}` : ""}`],
+        lines: [`Ajouter le plat « ${data.label} » à l'option « ${option.label} »${data.stock != null ? ` (stock ${data.stock})` : ""}${data.position != null ? `, rang ${data.position}` : ""}${data.allergens ? `, allergènes : ${data.allergens}` : ""}`],
         payload: { eventId: e.id, op: "create" as const, optionId: option.id, data: jsonify(data) as Record<string, unknown> },
       };
     }

@@ -292,6 +292,21 @@ const MENU = {
 };
 
 describe("lot B : événement, état, options, plats", () => {
+  it("création : lieu et description facultatifs dès l'aperçu, passés au service ; position d'un plat à la création", async () => {
+    manager = true;
+    const created = await full("create_ticketing_event", { title: "Nuit", startsAt: "2099-12-31 20:00", endsAt: "2100-01-01 06:00", capacity: 150, location: "Salle des fêtes, Rennes", description: "Une soirée." });
+    expect(created.p.text).toContain("lieu : Salle des fêtes, Rennes");
+    expect(created.p.text).toContain("Description : Une soirée.");
+    expect(svc.createEvent).toHaveBeenLastCalledWith("c1", "user-1", expect.objectContaining({ location: "Salle des fêtes, Rennes", description: "Une soirée." }));
+    // Sans eux : comportement inchangé.
+    await full("create_ticketing_event", { title: "Nuit", startsAt: "2099-12-31 20:00", endsAt: "2100-01-01 06:00", capacity: 150 });
+    expect(svc.createEvent).toHaveBeenLastCalledWith("c1", "user-1", expect.objectContaining({ location: null, description: null }));
+    detail.options = [MENU];
+    const dish = await full("edit_ticketing_dish", { event: "tk-1", op: "create", optionId: "o1", dish: { label: "Dessert", position: 2 } });
+    expect(dish.p.text).toContain("rang 2");
+    expect(svc.addVariant).toHaveBeenLastCalledWith("tk-1", "o1", "user-1", expect.objectContaining({ label: "Dessert", position: 2 }));
+  });
+
   it("parcours organisateur : créer, paramétrer, option, plat, ouvrir", async () => {
     manager = true;
     const created = await full("create_ticketing_event", { title: "Nuit de la traversée", startsAt: "2099-12-31 20:00", endsAt: "2100-01-01 06:00", capacity: 150 });

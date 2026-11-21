@@ -5,7 +5,9 @@ import { notFound } from "next/navigation";
 import ChurchEditClient from "./ChurchEditClient";
 import ChurchAssistantToggle from "./ChurchAssistantToggle";
 import ChurchMcpCard from "./ChurchMcpCard";
+import ChurchSitesCard from "./ChurchSitesCard";
 import { registry } from "@/lib/registry";
+import { ticketingSitesEnabled } from "@/lib/ticketing-sites-flag";
 
 export default async function ChurchDetailPage({
   params,
@@ -54,6 +56,11 @@ export default async function ChurchDetailPage({
     ? await import("@/modules/assistant").then(({ getChurchSetting }) => getChurchSetting(churchId)).catch(() => null)
     : null;
 
+  // Sites d'événement (spec 084) : carte proposée si la billetterie et le drapeau d'instance sont actifs.
+  const sites = registry.has("ticketing") && ticketingSitesEnabled()
+    ? await import("@/modules/ticketing").then(({ getSitesEnabled }) => getSitesEnabled(churchId)).catch(() => null)
+    : null;
+
   // Assistants IA (spec 081) : carte proposée seulement si l'instance a activé la fonction.
   const mcp = registry.has("mcp")
     ? await import("@/modules/mcp")
@@ -100,6 +107,7 @@ export default async function ChurchDetailPage({
       />
       {assistant?.instanceEnabled && <ChurchAssistantToggle churchId={churchId} disabled={assistant.disabled} />}
       {mcp && <ChurchMcpCard churchId={churchId} enabled={mcp.enabled} connections={mcp.connections} />}
+      {sites !== null && <ChurchSitesCard churchId={churchId} enabled={sites} />}
     </div>
   );
 }

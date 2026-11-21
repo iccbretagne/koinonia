@@ -53,6 +53,16 @@ const ACTION_LABELS: Record<string, string> = {
   cancel_ticketing_booking: "annuler une réservation de billetterie",
   add_ticketing_walkin: "ajouter des personnes sur place à un événement de billetterie",
   ticketing_catering_sale: "remettre un article ou vendre sur place à la restauration",
+  edit_ticketing_site_theme: "modifier le thème du site d'un événement de billetterie",
+  edit_ticketing_site_page: "gérer les pages du site d'un événement de billetterie",
+  edit_ticketing_site_block: "modifier les bandes et blocs du site d'un événement de billetterie",
+  edit_ticketing_site_batch: "modifier d'un coup plusieurs éléments du site d'un événement de billetterie (lot atomique)",
+  upload_ticketing_site_asset: "ajouter une image au site d'un événement de billetterie",
+  delete_ticketing_site_asset: "supprimer une image du site d'un événement de billetterie",
+  duplicate_ticketing_event: "dupliquer un événement de billetterie en brouillon",
+  import_ticketing_event: "importer un événement de billetterie en brouillon depuis un export JSON",
+  publish_ticketing_site: "publier ou dépublier le site d'un événement de billetterie",
+  request_ticketing_site_domain: "demander, vérifier ou supprimer le domaine dédié du site d'un événement de billetterie",
 };
 
 const PLANNING_HINT =

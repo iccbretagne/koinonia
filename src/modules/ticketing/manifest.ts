@@ -21,12 +21,14 @@ export const ticketingModule = defineModule({
   dependsOn: ["core", "planning"],
 
   routes: {
-    authenticated: [{ path: "/billetterie" }],
+    authenticated: [{ path: "/billetterie" }, { path: "/admin/site-domains" }],
     api: [{ path: "/api/ticketing" }],
     public: [
       { path: "/inscription" },
       { path: "/reservation" },
       { path: "/billet" },
+      // Site d'un événement (spec 084) : servi par son hôte seulement, le proxy répond 404 ailleurs.
+      { path: "/site" },
       { path: "/api/ticketing/public" },
     ],
   },
