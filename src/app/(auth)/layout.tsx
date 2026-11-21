@@ -39,6 +39,7 @@ const configLinksDef = [
   { href: "/admin/backups",               label: "Sauvegardes",       permissions: [], superAdminOnly: true },
   { href: "/admin/api",                   label: "API",               permissions: [], superAdminOnly: true },
   { href: "/admin/app-icon",              label: "Icône de l'application", permissions: [], superAdminOnly: true },
+  ...(registry.has("ticketing") ? [{ href: "/admin/site-domains", label: "Domaines des sites", permissions: [] as string[], superAdminOnly: true }] : []),
   // Assistant de prise en main (spec 075) : base commune à l'instance
   ...(registry.has("assistant") ? [{ href: "/admin/assistant", label: "Assistant", permissions: [] as string[], superAdminOnly: true }] : []),
   ...(registry.has("mcp") ? [{ href: "/admin/mcp", label: "Assistants IA (MCP)", permissions: [] as string[], superAdminOnly: true }] : []),

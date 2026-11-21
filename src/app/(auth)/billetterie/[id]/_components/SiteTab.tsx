@@ -17,6 +17,8 @@ import {
 } from "@/modules/ticketing/schemas";
 import type { SiteView } from "@/modules/ticketing";
 import { useApi } from "../../use-api";
+import DomainCard from "./DomainCard";
+import type { DomainView } from "@/modules/ticketing";
 
 function Card({ title, children }: { readonly title: string; readonly children: ReactNode }) {
   return (
@@ -50,6 +52,8 @@ export default function SiteTab({
   eventSlug,
   sitesEnabled,
   baseDomain,
+  canConfigure = false,
+  domain = null,
 }: {
   readonly eventId: string;
   readonly site: SiteView;
@@ -59,6 +63,9 @@ export default function SiteTab({
   readonly eventSlug: string;
   readonly sitesEnabled: boolean;
   readonly baseDomain?: string;
+  /** Organisateur : peut demander un domaine dédié. */
+  readonly canConfigure?: boolean;
+  readonly domain?: DomainView | null;
 }) {
   const { call, busy } = useApi();
   const toast = useToast();
@@ -163,6 +170,7 @@ export default function SiteTab({
             <Button type="button" variant="secondary" size="sm" disabled={busy || afterClose === site.afterCloseDays || !(afterClose >= 1 && afterClose <= 365)} onClick={() => call<SiteView>(`/api/ticketing/events/${eventId}/site`, "PATCH", { afterCloseDays: afterClose }, "Durée enregistrée")}>Enregistrer la durée</Button>
           </Card>
           <SitePagesEditor doc={doc} edit={edit} tools={tools} />
+          {canConfigure && <DomainCard eventId={eventId} domain={domain} />}
         </div>
 
         <div className="min-w-0 space-y-2">

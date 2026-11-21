@@ -82,18 +82,18 @@
 
 ## Lot 3 — Domaines dédiés (sous-PR 4)
 
-- [ ] **T22** — `site-domains.ts` : demande (1 par site, 5 par église, refus des sous-domaines de
+- [x] **T22** — `site-domains.ts` : demande (1 par site, 5 par église, refus des sous-domaines de
       `SITE_BASE_DOMAIN` et de l'hôte de l'application), vérification DNS (TXT + CNAME/A),
       approbation/refus Super Admin, `approvedHosts`.
-- [ ] **T23** — API : `site/domain` (GET/POST/DELETE), `site/domain/verify`,
+- [x] **T23** — API : `site/domain` (GET/POST/DELETE), `site/domain/verify`,
       `/api/ticketing/site-domains` et `[domainId]` (Super Admin) ; écran d'approbation Super Admin ;
       guide DNS dans l'onglet Site.
-- [ ] **T24** — Recontrôle quotidien branché au cron : échec ⇒ `SUSPENDED` + notification de
+- [x] **T24** — Recontrôle quotidien branché au cron : échec ⇒ `SUSPENDED` + notification de
       l'organisateur (domaine `ticketing` existant) ; redirection de l'adresse Koinonia vers le
       domaine approuvé ; liens des emails vers le domaine dédié.
-- [ ] **T25** — Fournisseur HTTP Traefik `GET /api/internal/traefik` (127.0.0.1 + jeton
+- [x] **T25** — Fournisseur HTTP Traefik `GET /api/internal/traefik` (127.0.0.1 + jeton
       `TRAEFIK_PROVIDER_TOKEN`) ; documentation `docs/production.md` (fournisseur, joker, DNS).
-- [ ] **T26** — Tests du lot 3 : TXT absent ⇒ `PENDING` ; 6e domaine refusé ; recontrôle en échec ⇒
+- [x] **T26** — Tests du lot 3 : TXT absent ⇒ `PENDING` ; 6e domaine refusé ; recontrôle en échec ⇒
       `SUSPENDED` + notification ; domaine non approuvé ⇒ 404 ; fournisseur refusé sans jeton ou
       hors localhost.
 

@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
 import { proxy } from "./proxy";
+import { resetSiteHostsCache } from "@/lib/site-host";
 
 const SITE = "fete.evenements.example.org";
 const APP = "koinonia.example.org";
@@ -123,5 +124,44 @@ describe("proxy — hôte de l'application", () => {
   it("sans SITE_BASE_DOMAIN, aucun hôte n'est un site", () => {
     delete process.env.SITE_BASE_DOMAIN;
     expect(proxy(req(SITE, "/accueil")).status).toBe(307);
+  });
+});
+
+describe("proxy — domaine dédié (cache des domaines approuvés)", () => {
+  const FOREIGN = "fete.exemple.org";
+  beforeEach(() => {
+    process.env.TRAEFIK_PROVIDER_TOKEN = "t";
+    process.env.APP_URL = `https://${APP}`;
+    resetSiteHostsCache(null);
+    // Pas de rechargement réseau pendant le test
+    (globalThis as { fetch: typeof fetch }).fetch = (async () => new Response("{}", { status: 500 })) as typeof fetch;
+  });
+  afterEach(() => {
+    delete process.env.TRAEFIK_PROVIDER_TOKEN;
+    delete process.env.APP_URL;
+    resetSiteHostsCache(null);
+  });
+
+  it("domaine non approuvé (cache vide ou absent) ⇒ 404, jamais l'application", () => {
+    for (const path of ["/", "/billetterie", "/api/users", "/accueil"]) expect(proxy(req(FOREIGN, path)).status).toBe(404);
+    resetSiteHostsCache({ "autre.exemple.org": "nuit" });
+    expect(proxy(req(FOREIGN, "/")).status).toBe(404);
+  });
+
+  it("domaine approuvé ⇒ site réécrit, liste blanche appliquée", () => {
+    resetSiteHostsCache({ [FOREIGN]: "nuit" });
+    expect(proxy(req(FOREIGN, "/")).headers.get("x-middleware-rewrite")).toBe(`http://${FOREIGN}/site/nuit`);
+    expect(proxy(req(FOREIGN, "/api/users")).status).toBe(404);
+    expect(proxy(req(FOREIGN, "/admin/users")).status).toBe(404);
+  });
+
+  it("l'hôte de l'application et la boucle locale ne sont pas concernés", () => {
+    expect(proxy(req(APP, "/dashboard")).status).not.toBe(404);
+    expect(proxy(req("127.0.0.1:3001", "/api/internal/site-hosts")).status).toBe(200);
+  });
+
+  it("sans jeton configuré, comportement inchangé pour les hôtes étrangers", () => {
+    delete process.env.TRAEFIK_PROVIDER_TOKEN;
+    expect(proxy(req(FOREIGN, "/dashboard")).status).not.toBe(404);
   });
 });
