@@ -275,3 +275,71 @@ export async function deleteAsset(siteId: string, assetId: string, userId: strin
   const { logAudit } = await import("@/lib/audit");
   await logAudit({ userId, churchId: asset.site.churchId, action: "DELETE", entityType: "TicketingSiteAsset", entityId: assetId });
 }
+
+// ─── Duplication, export et import ───────────────────────────────────────────
+
+/** Copie les images confirmées d'un site vers un autre (fichiers compris) ; renvoie ancien → nouvel identifiant. */
+export async function copyAssets(fromSiteId: string, toSiteId: string): Promise<Map<string, string>> {
+  const prisma = await db();
+  const [rows, target] = await Promise.all([
+    prisma.ticketingSiteAsset.findMany({ where: { siteId: fromSiteId, key: { not: "pending" } }, orderBy: { createdAt: "asc" } }),
+    prisma.ticketingSite.findUniqueOrThrow({ where: { id: toSiteId }, select: { churchId: true, eventId: true } }),
+  ]);
+  const { readStoredFile, storeFile } = await import("@/lib/file-storage");
+  const map = new Map<string, string>();
+  for (const row of rows) {
+    const variants = variantList(row.variants);
+    const files = variants.length ? variants : [{ w: row.width, key: row.key, bytes: row.bytes }];
+    const created = await prisma.ticketingSiteAsset.create({ data: { siteId: toSiteId, key: "pending", width: row.width, height: row.height, bytes: row.bytes, name: row.name, alt: row.alt } });
+    const base = `ticketing/${target.churchId}/${target.eventId}/site/${created.id}`;
+    const copied: StoredVariant[] = [];
+    for (const [i, file] of files.entries()) {
+      const buffer = await readStoredFile(file.key);
+      if (!buffer) continue;
+      const key = i === files.length - 1 ? `${base}.webp` : `${base}-${file.w}.webp`;
+      await storeFile(key, buffer, "image/webp");
+      copied.push({ w: file.w, key, bytes: file.bytes });
+    }
+    if (!copied.length) {
+      await prisma.ticketingSiteAsset.delete({ where: { id: created.id } });
+      continue;
+    }
+    // La plus grande variante copiée porte la clé principale.
+    const last = copied[copied.length - 1];
+    await prisma.ticketingSiteAsset.update({ where: { id: created.id }, data: { key: last.key, variants: copied as unknown as object } });
+    map.set(row.id, created.id);
+  }
+  return map;
+}
+
+/** Supprime fichiers et lignes des images d'un site (nettoyage d'une duplication ou d'un import interrompu). */
+export async function discardSiteAssets(siteId: string): Promise<void> {
+  const prisma = await db();
+  const rows = await prisma.ticketingSiteAsset.findMany({ where: { siteId }, select: { id: true, key: true, variants: true } });
+  const { deleteFile } = await import("@/lib/file-storage");
+  for (const row of rows) for (const key of new Set([row.key, ...variantList(row.variants).map((v) => v.key)])) if (key !== "pending") await deleteFile(key).catch(() => undefined);
+  await prisma.ticketingSiteAsset.deleteMany({ where: { siteId } });
+}
+
+export interface ExportedAsset {
+  id: string;
+  name: string;
+  alt: string;
+  mime: "image/webp";
+  base64: string;
+}
+
+/** Images demandées, en WebP : variante de 1280 px au plus (la plus grande), l'original sinon. */
+export async function exportAssets(siteId: string, ids: string[]): Promise<ExportedAsset[]> {
+  if (!ids.length) return [];
+  const rows = await (await db()).ticketingSiteAsset.findMany({ where: { siteId, id: { in: ids }, key: { not: "pending" } } });
+  const { readStoredFile } = await import("@/lib/file-storage");
+  const out: ExportedAsset[] = [];
+  for (const row of rows) {
+    const variants = variantList(row.variants);
+    const key = (variants.filter((v) => v.w <= 1280).at(-1) ?? variants[0])?.key ?? row.key;
+    const buffer = await readStoredFile(key);
+    if (buffer) out.push({ id: row.id, name: row.name, alt: row.alt, mime: "image/webp", base64: buffer.toString("base64") });
+  }
+  return out;
+}

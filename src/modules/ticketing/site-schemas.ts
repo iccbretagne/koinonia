@@ -400,6 +400,29 @@ export function assetUsagesOf(doc: SiteDocument): { assetId: string; where: stri
   return out;
 }
 
+/** Copie du document dont chaque identifiant d'image est remplacé (duplication, import) ; un identifiant absent de la table est conservé. */
+export function remapAssetIds(doc: SiteDocument, map: ReadonlyMap<string, string>): SiteDocument {
+  const next = structuredClone(doc);
+  const id = (value: string) => map.get(value) ?? value;
+  const bg = (b: SiteBackground | undefined) => {
+    if (b?.kind === "image") b.assetId = id(b.assetId);
+  };
+  if (next.theme.logoAssetId) next.theme.logoAssetId = id(next.theme.logoAssetId);
+  if (next.theme.headerAssetId) next.theme.headerAssetId = id(next.theme.headerAssetId);
+  bg(next.theme.background);
+  for (const page of next.pages)
+    for (const section of page.sections) {
+      bg(section.background);
+      for (const block of section.blocks) {
+        if (block.kind === "image") block.image.assetId = id(block.image.assetId);
+        if (block.kind === "gallery") block.images.forEach((i) => void (i.assetId = id(i.assetId)));
+        if (block.kind === "cards") block.cards.forEach((c) => c.image && void (c.image.assetId = id(c.image.assetId)));
+        if (block.kind === "banner" || block.kind === "hero") bg(block.background);
+      }
+    }
+  return next;
+}
+
 /** Images référencées par le document (thème, fonds, blocs). */
 export function assetIdsOf(doc: SiteDocument): Set<string> {
   return new Set(assetUsagesOf(doc).map((u) => u.assetId));

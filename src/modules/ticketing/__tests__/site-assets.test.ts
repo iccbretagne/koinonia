@@ -12,8 +12,8 @@ vi.mock("@/lib/file-storage", () => ({ storeFile: (...a: unknown[]) => storeFile
 const getSitesEnabled = vi.fn();
 vi.mock("../services/site-settings", () => ({ getSitesEnabled: (...a: unknown[]) => getSitesEnabled(...a) }));
 
-const { uploadAsset, stageAsset, confirmAsset, purgePendingAssets, deleteAsset, listAssets, decodeBase64Image, readAsset } = await import("../services/site-assets");
-const { defaultSiteDocument } = await import("../site-schemas");
+const { copyAssets, exportAssets, discardSiteAssets, uploadAsset, stageAsset, confirmAsset, purgePendingAssets, deleteAsset, listAssets, decodeBase64Image, readAsset } = await import("../services/site-assets");
+const { defaultSiteDocument, remapAssetIds, assetIdsOf } = await import("../site-schemas");
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -240,5 +240,49 @@ describe("readAsset", () => {
     withVariants(null);
     await readAsset(id, { publishedOnly: false, siteId: "s1" }, 640);
     expect(readStoredFile).toHaveBeenLastCalledWith("k/orig.webp");
+  });
+});
+
+describe("copie, export et nettoyage", () => {
+  const row = (id: string, extra = {}) => ({ id, siteId: "src", key: `k/${id}.webp`, name: "logo", alt: "Logo", width: 1200, height: 600, bytes: 9, variants: [{ w: 640, key: `k/${id}-640.webp`, bytes: 4 }, { w: 1200, key: `k/${id}.webp`, bytes: 9 }], createdAt: new Date(), ...extra });
+
+  it("copyAssets : fichiers et lignes copiés vers le site cible, ancien → nouvel identifiant", async () => {
+    prismaMock.ticketingSiteAsset.findMany.mockResolvedValue([row("x".repeat(25))]);
+    prismaMock.ticketingSite.findUniqueOrThrow.mockResolvedValue({ churchId: "c1", eventId: "ev-new" });
+    prismaMock.ticketingSiteAsset.create.mockResolvedValue({ id: "y".repeat(25) });
+    readStoredFile.mockResolvedValue(Buffer.from("webp"));
+    const map = await copyAssets("src", "dst");
+    expect(map.get("x".repeat(25))).toBe("y".repeat(25));
+    expect(storeFile.mock.calls.map((c) => c[0])).toEqual([`ticketing/c1/ev-new/site/${"y".repeat(25)}-640.webp`, `ticketing/c1/ev-new/site/${"y".repeat(25)}.webp`]);
+    expect(prismaMock.ticketingSiteAsset.create.mock.calls[0][0].data).toMatchObject({ siteId: "dst", key: "pending", name: "logo", alt: "Logo" });
+    expect(prismaMock.ticketingSiteAsset.update.mock.calls.at(-1)![0].data.key).toBe(`ticketing/c1/ev-new/site/${"y".repeat(25)}.webp`);
+  });
+
+  it("exportAssets : variante de 1280 px au plus, en WebP base64 ; rien sans identifiant", async () => {
+    expect(await exportAssets("src", [])).toEqual([]);
+    prismaMock.ticketingSiteAsset.findMany.mockResolvedValue([row("x".repeat(25), { variants: [{ w: 640, key: "k/640" }, { w: 1280, key: "k/1280" }, { w: 2400, key: "k/2400" }] })]);
+    readStoredFile.mockResolvedValue(Buffer.from("webp"));
+    const [out] = await exportAssets("src", ["x".repeat(25)]);
+    expect(readStoredFile).toHaveBeenLastCalledWith("k/1280");
+    expect(out).toEqual({ id: "x".repeat(25), name: "logo", alt: "Logo", mime: "image/webp", base64: Buffer.from("webp").toString("base64") });
+  });
+
+  it("discardSiteAssets : fichiers puis lignes supprimés", async () => {
+    prismaMock.ticketingSiteAsset.findMany.mockResolvedValue([{ id: "p", key: "k/p.webp", variants: [{ w: 640, key: "k/p-640.webp" }, { w: 900, key: "k/p.webp" }] }]);
+    await discardSiteAssets("dst");
+    expect(deleteFile.mock.calls.map((c) => c[0]).sort()).toEqual(["k/p-640.webp", "k/p.webp"]);
+    expect(prismaMock.ticketingSiteAsset.deleteMany).toHaveBeenCalledWith({ where: { siteId: "dst" } });
+  });
+
+  it("remapAssetIds : toutes les références sont remplacées (thème, fonds, blocs), l'original intact", () => {
+    const A = "a".repeat(25);
+    const B = "b".repeat(25);
+    const doc = defaultSiteDocument("N");
+    doc.theme.logoAssetId = A;
+    doc.theme.background = { kind: "image", assetId: A, veil: "background", opacity: 0.5, fixed: false };
+    doc.pages[0].sections[0].blocks.push({ kind: "gallery", images: [{ assetId: A, alt: "x" }, { assetId: B, alt: "y" }] }, { kind: "hero", title: "T", showDateLocation: true, showCountdown: false, background: { kind: "image", assetId: B, veil: "background", opacity: 0.5, fixed: false } });
+    const next = remapAssetIds(doc, new Map([[A, "1".repeat(25)], [B, "2".repeat(25)]]));
+    expect([...assetIdsOf(next)].sort()).toEqual(["1".repeat(25), "2".repeat(25)]);
+    expect([...assetIdsOf(doc)].sort()).toEqual([A, B]);
   });
 });
