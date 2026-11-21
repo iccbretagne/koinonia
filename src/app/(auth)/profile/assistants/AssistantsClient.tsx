@@ -17,7 +17,7 @@ const dayFmt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long",
 
 const GUIDES = [
   { name: "Claude", steps: "Paramètres › Connecteurs › Ajouter un connecteur personnalisé, collez l'adresse, puis « Se connecter »." },
-  { name: "ChatGPT", steps: "Paramètres › Connecteurs (mode développeur) › Créer, collez l'adresse, authentification OAuth." },
+  { name: "ChatGPT", steps: "Sur chatgpt.com (pas l'application) : Paramètres › Plugins › Ajouter un serveur MCP personnalisé, collez l'adresse, authentification OAuth. Ancien affichage : Paramètres › Connecteurs › Avancé › activez le mode développeur, puis Créer. Offres Plus et supérieures (pas Free ni Go) ; dans un espace d'équipe, l'administrateur doit l'autoriser." },
   { name: "Claude Code", steps: "Dans un terminal : claude mcp add --transport http koinonia <adresse>, puis /mcp pour vous connecter." },
 ];
 
