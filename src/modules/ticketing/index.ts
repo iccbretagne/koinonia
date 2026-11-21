@@ -11,6 +11,7 @@ export {
   type ChurchAccount,
   listEvents,
   readPoster,
+  slugify,
   removePoster,
   setPoster,
   setRoles,
