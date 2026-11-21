@@ -6,11 +6,11 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.39.0] - 2026-11-21
+
 ### Ajouté
 
 - Billetterie : **site d'événement** (spec 084). Depuis l'onglet « Site », l'organisateur et le nouveau rôle d'événement **Communication** composent un site public aux couleurs de l'événement (thème, pages, blocs, pages automatiques Billetterie, Menus et Infos pratiques, contrôle de lisibilité), le publient sur son adresse, et peuvent le faire piloter par un assistant IA connecté. L'organisateur peut demander un **domaine dédié**, vérifié par DNS puis approuvé par la plateforme.
-
-### Outils MCP du site d'événement
 
 - `edit_ticketing_site_theme`/`_page`/`_block` : le jeton garde l'opération, réappliquée sur le brouillon courant à la confirmation ; plusieurs aperçus sur des endroits différents restent valides.
 - `edit_ticketing_site_batch` : 1 à 50 opérations (`type` theme, page ou block), dans l'ordre, tout ou rien, validation finale unique (schéma et lisibilité).
@@ -19,6 +19,10 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 - `publish_ticketing_site` : adresse publique finale et avertissements (sites non activés, `SITE_BASE_DOMAIN` absent, événement en brouillon). Les sites d'événement (outils MCP, onglet Site, sites servis) dépendent d'un drapeau d'instance, coupé par défaut et actif en recette ; l'activation par l'église ne décide que de la diffusion publique. Export et duplication indiquent l'état réel du site de la source (publié le …, ou jamais publié).
 - `duplicate_ticketing_event` (`event`, `startsAt`, `title?`, `endsAt?`), `export_ticketing_event` et `import_ticketing_event` (`data` : JSON `koinonia-ticketing-event`) : copie ou transfert en brouillon, sans inscrit, paiement, rôle, affectation ni IBAN. `create_ticketing_event` accepte `location` et `description`, `edit_ticketing_dish` une `position` à la création.
 - Site : boutons vers lien https, email, téléphone, ancre, en style plein, contour ou discret ; ancres sur bandes et blocs ; bandeau avec fond et bouton ; bannière avec ligne secondaire et bouton ; cartes (titre, texte, colonnes), pictogrammes (description), questions (titre), galerie ronde ; police Cinzel ; texte alternatif obligatoire des images, `srcset` des variantes.
+
+### Sécurité
+
+- Détection des fichiers SVG déposés sur un site d'événement sans expression régulière vulnérable au backtracking (alerte CodeQL).
 
 ## [v1.38.0] - 2026-11-21
 
