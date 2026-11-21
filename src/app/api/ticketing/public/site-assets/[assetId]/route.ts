@@ -9,7 +9,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ asse
     const asset = await readAsset(assetId, { publishedOnly: true });
     if (!asset) return Response.json({ error: "Introuvable" }, { status: 404 });
     return new Response(new Uint8Array(asset.buffer), {
-      headers: { "Content-Type": "image/webp", "Cache-Control": "public, max-age=31536000, immutable", "X-Content-Type-Options": "nosniff" },
+      headers: { "Content-Type": "image/webp", "Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff" },
     });
   } catch (error) {
     return errorResponse(error);
