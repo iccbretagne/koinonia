@@ -75,6 +75,8 @@ jobs:
       - run: npm run build
         env:
           NEXT_PUBLIC_BUILD_VERSION: ${{ steps.version.outputs.version }}
+          # Sites d'événement (spec 084) : actifs en recette, coupés en production (build de la CI sans ce drapeau).
+          NEXT_PUBLIC_TICKETING_SITES_ENABLED: "true"
 
       # Élague les devDependencies APRÈS le build : l'archive n'embarque plus typescript,
       # vitest, eslint, esbuild… La CLI `prisma` est en `dependencies` (requise sur le serveur

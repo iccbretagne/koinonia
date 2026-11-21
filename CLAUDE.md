@@ -706,7 +706,10 @@ seule (`ENABLED_MODULES`) :
   partir des passages, seuils de jauge 90 % et 100 % notifiés une fois. L'équipe (postes,
   affectations, badges) est propre à l'événement ; « Mon planning » la lit seulement
 - **Site et assistants IA** (spec 084, ADR-0031) : les outils MCP du site (`_actions/site.ts`) ne sont
-  proposés que si l'église a activé les sites (prédicat `ticketingSites`) ; le jeton garde l'**opération**,
+  proposés que si le drapeau d'instance des sites est actif (prédicat `ticketingSites`,
+  `src/lib/ticketing-sites-flag.ts` : `TICKETING_SITES_ENABLED`, coupé par défaut ; posé au build
+  par `deploy-staging.yml`, absent du build de production) ; coupé, ni onglet Site, ni carte
+  d'activation, ni site servi. L'activation par l'église ne décide que de la diffusion publique ; le jeton garde l'**opération**,
   réappliquée sur le brouillon courant, avec une empreinte limitée à la portion touchée (lot atomique
   `edit_ticketing_site_batch`). Images : variantes WebP 640/1280/2400, SVG rastérisé (jamais stocké),
   `alt` obligatoire, téléversement par URL via `src/lib/safe-fetch.ts` (garde SSRF : IP vérifiée et

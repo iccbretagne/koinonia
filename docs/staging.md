@@ -283,6 +283,11 @@ en recette sous un domaine **propre à la recette**, jamais celui de production.
 mécanisme que la production ([docs/production.md](production.md#sites-dévénement--sous-domaines-et-domaines-dédiés-spec-084-adr-0031)),
 variables et zone DNS distinctes.
 
+0. **Drapeau d'instance** : déjà actif en recette — `deploy-staging.yml` pose
+   `NEXT_PUBLIC_TICKETING_SITES_ENABLED=true` au build (onglet Site, outils MCP du site). Coupé en
+   production (build de la CI sans ce drapeau) ; pour l'y activer plus tard sans reconstruire :
+   `TICKETING_SITES_ENABLED=true` dans le `.env` du serveur. La diffusion publique dépend ensuite de
+   l'activation par l'Admin d'église (Paramètres de l'église › Sites d'événement).
 1. **Variable** dans `shared/.env` de la recette : `SITE_BASE_DOMAIN=recette-evenements.iccrennes.fr`
    (sans elle, aucun hôte n'est reconnu comme site et l'outil MCP de publication avertit qu'il n'y a
    pas d'adresse publique). Ne pas réutiliser `evenements.iccrennes.fr`.

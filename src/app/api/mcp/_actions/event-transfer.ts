@@ -27,8 +27,17 @@ const parisLocal = (v: string) => new Date(parisDateTime(v.slice(0, 10), v.slice
 const hasManage = (viewer: ActionContext["viewer"]) => viewer.isSuperAdmin || viewer.permissions.includes("ticketing:manage");
 const ticketingAvailable = (viewer: ActionContext["viewer"]) => viewer.modules.includes("ticketing") && viewer.predicates.includes("ticketing");
 
+/** Ce qui sera (ou a été) créé : la copie a toujours son site en brouillon non publié. */
 const SUMMARY = (s: { options: number; variants: number; posts: number; images: number; site: boolean }) =>
-  `${s.options} option(s), ${s.variants} plat(s), ${s.posts} poste(s) sans affectation, ${s.site ? `site en brouillon non publié (${s.images} image(s))` : "pas de site"}`;
+  `${s.options} option(s), ${s.variants} plat(s), ${s.posts} poste(s) sans affectation, ${s.site ? `site repris (${s.images} image(s)), créé en brouillon non publié dans la copie` : "pas de site"}`;
+
+/** État du site de la **source**, distinct de ce que deviendra la copie. */
+const SOURCE = (s: { exists: boolean; publishedAt: Date | null; draftChanged: boolean }) =>
+  !s.exists
+    ? "Source : pas de site."
+    : s.publishedAt
+      ? `Source : site publié le ${when(s.publishedAt)}${s.draftChanged ? " ; son brouillon a été modifié depuis — c'est le brouillon (version la plus récente) qui est repris" : ""}.`
+      : "Source : site en brouillon, jamais publié.";
 
 // ─── Duplication ─────────────────────────────────────────────────────────────
 
@@ -61,7 +70,8 @@ const duplicateAction = eventAction({
     return {
       lines: [
         `Dupliquer « ${source.title} » en brouillon : « ${title} », du ${when(startsAt)} au ${when(end)} (décalage de ${Math.round(delta / 86_400_000)} jour(s) pour les échéances)`,
-        `Repris : paramétrage, jauge ${source.capacity}, tarifs, règles, ${summary.options} option(s) et ${summary.variants} plat(s), postes (sans affectations), site en brouillon non publié avec ses images`,
+        `Repris : paramétrage, jauge ${source.capacity}, tarifs, règles, ${summary.options} option(s) et ${summary.variants} plat(s), postes (sans affectations), site avec ses images (créé en brouillon non publié dans la copie)`,
+        SOURCE(await m.siteSourceState(event!.id)),
         "Non repris : inscrits, paiements, rôles, affectations, IBAN (à ressaisir dans le paramétrage)",
         "La copie est en brouillon : personne ne peut encore s'inscrire.",
       ],
@@ -102,10 +112,11 @@ async function exportEvent(input: z.infer<typeof exportInput>, ctx: ActionContex
   const checked = eventExportSchema.safeParse(json);
   if (!checked.success) return refusal(`Export impossible : ${checked.error.issues.map((i) => `${i.path.join(".") || "export"} : ${i.message}`).join(" ; ")}`);
   const summary = m.summarizeImport(checked.data);
+  const source = await m.siteSourceState(found.id);
   const text = JSON.stringify(json);
   return {
-    text: `Export de « ${found.title} » : ${SUMMARY(summary)}. Aucune donnée personnelle ni IBAN ; moyens de paiement réduits à espèces et chèque ; images en WebP (1280 px au plus). Passez ce JSON tel quel au champ \`data\` de import_ticketing_event_preview :\n${text}`,
-    structured: { format: json.format, version: json.version, summary, export: json },
+    text: `Export de « ${found.title} » : ${SUMMARY(summary)}. ${SOURCE(source)} Aucune donnée personnelle ni IBAN ; moyens de paiement réduits à espèces et chèque ; images en WebP (1280 px au plus). Passez ce JSON tel quel au champ \`data\` de import_ticketing_event_preview :\n${text}`,
+    structured: { format: json.format, version: json.version, summary, sourceSite: { published: !!source.publishedAt, publishedAt: source.publishedAt, draftChanged: source.draftChanged }, export: json },
   };
 }
 

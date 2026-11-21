@@ -185,6 +185,15 @@ export async function duplicateEvent(sourceId: string, churchId: string, userId:
 // ─── Export ──────────────────────────────────────────────────────────────────
 
 /** JSON versionné d'un événement : sans donnée personnelle, sans IBAN, images en WebP (1280 px au plus). */
+/** État du site de l'événement source (publié ou non, brouillon modifié depuis), pour les résumés. */
+export async function siteSourceState(eventId: string): Promise<{ exists: boolean; publishedAt: Date | null; draftChanged: boolean }> {
+  const prisma = await db();
+  const site = await prisma.ticketingSite.findUnique({ where: { eventId }, select: { draft: true, published: true, publishedAt: true } });
+  if (!site) return { exists: false, publishedAt: null, draftChanged: false };
+  const published = site.published ? site.publishedAt : null;
+  return { exists: true, publishedAt: published, draftChanged: !!site.published && JSON.stringify(site.draft) !== JSON.stringify(site.published) };
+}
+
 export async function buildEventExport(eventId: string): Promise<Record<string, unknown>> {
   const prisma = await db();
   const content = await readContent(eventId, "export");

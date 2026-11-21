@@ -57,6 +57,7 @@ const svc = {
   getEventDetail: vi.fn(async () => DETAIL),
   duplicateEvent: vi.fn(async (_s: string, _c: string, _u: string, input: { title?: string }) => ({ event: { id: "tk-2", title: input.title ?? "Nuit de la traversée (copie)" }, summary: { options: 1, variants: 1, posts: 1, images: 1, site: true } })),
   buildEventExport: vi.fn(async () => EXPORT()),
+  siteSourceState: vi.fn(async () => ({ exists: true, publishedAt: new Date("2026-11-20T10:00:00Z"), draftChanged: false })),
   summarizeImport: vi.fn(() => ({ options: 1, variants: 1, posts: 1, images: 1, site: true })),
   importEvent: vi.fn(async (_c: string, _u: string, data: { event: { title: string } }) => ({ event: { id: "tk-9", title: data.event.title }, summary: { options: 1, variants: 1, posts: 1, images: 1, site: true } })),
 };

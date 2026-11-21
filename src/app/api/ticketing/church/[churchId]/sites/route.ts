@@ -3,12 +3,19 @@ import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { getSitesEnabled, setSitesEnabled } from "@/modules/ticketing";
 import { sitesSettingsSchema } from "./contract";
+import { ApiError } from "@/lib/api-utils";
+import { ticketingSitesEnabled } from "@/lib/ticketing-sites-flag";
+
+const assertFlag = () => {
+  if (!ticketingSitesEnabled()) throw new ApiError(404, "Sites d'événement non disponibles sur cette instance");
+};
 
 type Params = { params: Promise<{ churchId: string }> };
 
 export async function GET(_request: Request, { params }: Params) {
   try {
     const { churchId } = await params;
+    assertFlag();
     await requireChurchPermission("church:settings", churchId);
     return successResponse({ enabled: await getSitesEnabled(churchId) });
   } catch (error) {
@@ -19,6 +26,7 @@ export async function GET(_request: Request, { params }: Params) {
 export async function PUT(request: Request, { params }: Params) {
   try {
     const { churchId } = await params;
+    assertFlag();
     const data = sitesSettingsSchema.parse(await request.json());
     const session = await requireChurchPermission("church:settings", churchId);
     await setSitesEnabled(churchId, data.enabled, session.user.id);
