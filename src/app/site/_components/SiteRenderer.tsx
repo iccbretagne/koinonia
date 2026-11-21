@@ -77,7 +77,7 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
     case "hero":
       return (
         <div className="space-y-4 py-10 text-center">
-          <h1 className="text-4xl font-bold sm:text-5xl" style={{ fontFamily: "var(--site-font-heading)" }}>{block.title}</h1>
+          <h1 className="text-4xl font-bold @min-[40rem]:text-5xl" style={{ fontFamily: "var(--site-font-heading)" }}>{block.title}</h1>
           {block.tagline && <p className="text-lg">{block.tagline}</p>}
           {block.showDateLocation && ctx.event && <p className="font-semibold">{dateAndPlace(ctx.event.startsAt, ctx.event.location)}</p>}
           {block.showCountdown && ctx.event && <Countdown target={ctx.event.startsAt} />}
@@ -93,7 +93,7 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
       return (
         <div className="space-y-3">
           {block.title && <Heading>{block.title}</Heading>}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 @min-[40rem]:grid-cols-3">
             {block.images.map((image, i) => (
               // eslint-disable-next-line @next/next/no-img-element -- image du site servie par l'API
               <img key={i} src={ctx.assetUrl(image.assetId)} alt={image.alt} loading="lazy" className="aspect-square w-full rounded-lg object-cover" />
@@ -117,7 +117,7 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
       );
     case "cards":
       return (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 @min-[40rem]:grid-cols-2">
           {block.cards.map((card, i) => (
             <div key={i} className="space-y-2 rounded-lg border border-current p-4">
               {/* eslint-disable-next-line @next/next/no-img-element -- image du site servie par l'API */}
@@ -133,7 +133,7 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
       );
     case "doDont":
       return (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 @min-[40rem]:grid-cols-2">
           <div className="space-y-2"><div className="flex items-center gap-2"><SiteIcon name="check" /><Heading as="h3">{block.doTitle}</Heading></div><Items items={block.doItems} /></div>
           <div className="space-y-2"><div className="flex items-center gap-2"><SiteIcon name="x" /><Heading as="h3">{block.dontTitle}</Heading></div><Items items={block.dontItems} /></div>
         </div>
@@ -142,7 +142,7 @@ function Block({ block, ctx }: { readonly block: SiteBlock; readonly ctx: Ctx })
       return (
         <div className="space-y-3">
           {block.title && <Heading>{block.title}</Heading>}
-          <ul className="grid gap-3 sm:grid-cols-2">
+          <ul className="grid gap-3 @min-[40rem]:grid-cols-2">
             {block.items.map((item, i) => (
               <li key={i} className="flex items-center gap-3"><SiteIcon name={item.icon} className="size-6 shrink-0" />{item.label}</li>
             ))}
@@ -287,7 +287,7 @@ export default function SiteRenderer(props: SiteRenderProps) {
 
   return (
     <div
-      className={`relative isolate flex flex-col ${fontClasses(theme.fonts.heading, theme.fonts.body)} ${props.fullHeight ? "min-h-screen" : ""}`}
+      className={`@container relative isolate flex flex-col ${fontClasses(theme.fonts.heading, theme.fonts.body)} ${props.fullHeight ? "min-h-screen" : ""}`}
       style={themeStyle(theme)}
     >
       <Backdrop background={theme.background} assetUrl={props.assetUrl} />

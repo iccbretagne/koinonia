@@ -5,6 +5,7 @@ import { Alert, Button, Checkbox, Input, Select, StatusChip, useToast } from "@/
 import SitePagesEditor from "./SitePagesEditor";
 import { BackgroundFields, ImageField } from "./SiteFields";
 import SiteRenderer from "@/app/site/_components/SiteRenderer";
+import SitePreviewDialog from "./SitePreviewDialog";
 import {
   PALETTE_KEYS,
   PALETTE_LABEL,
@@ -73,6 +74,7 @@ export default function SiteTab({
   const [dirty, setDirty] = useState(false);
   const [published, setPublished] = useState(site.published);
   const [previewPage, setPreviewPage] = useState<string | undefined>();
+  const [fullPreview, setFullPreview] = useState(false);
   const [uploaded, setUploaded] = useState<string[]>([]);
   const [afterClose, setAfterClose] = useState(site.afterCloseDays);
 
@@ -174,7 +176,12 @@ export default function SiteTab({
         </div>
 
         <div className="min-w-0 space-y-2">
-          <h2 className="font-semibold text-ink">Aperçu du brouillon</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-semibold text-ink">Aperçu du brouillon</h2>
+            <Button type="button" size="sm" variant="secondary" onClick={() => setFullPreview(true)}>
+              Plein écran
+            </Button>
+          </div>
           <div className="max-h-[80vh] overflow-auto rounded-card border border-line">
             <SiteRenderer
               document={doc}
@@ -189,6 +196,11 @@ export default function SiteTab({
               onNavigate={setPreviewPage}
             />
           </div>
+          <SitePreviewDialog
+            open={fullPreview}
+            onClose={() => setFullPreview(false)}
+            renderer={{ document: doc, event, title, churchSlug, eventSlug, assetUrl, pageHref: () => "#" }}
+          />
         </div>
       </div>
     </div>
