@@ -233,14 +233,16 @@ Traefik lit sa configuration dynamique par **fournisseur HTTP** : Koinonia expos
 
 ## Risques & points d'attention
 
-- **Domaine des sites** (tranché le 21 novembre 2026) : `SITE_BASE_DOMAIN=evenements.iccbretagne.fr`
-  (sites en `*.evenements.iccbretagne.fr`). Même domaine enregistrable que l'application : les
-  sites sont « même site » au sens des cookies `SameSite`. Conditions **obligatoires**, testées :
-  - cookies de session Auth.js **sans attribut `Domain`** (jamais `.iccbretagne.fr`) : ils ne sont
-    pas envoyés aux sites ; test qui échoue si un `Domain` apparaît ;
+- **Domaine des sites** (tranché le 21 novembre 2026) : `SITE_BASE_DOMAIN=evenements.iccrennes.fr`
+  (sites en `*.evenements.iccrennes.fr`). Si l'application n'est pas servie sous `iccrennes.fr`,
+  les sites sont sur un **domaine enregistrable distinct** : ils ne sont pas « même site » que
+  l'application et ne reçoivent jamais ses cookies — meilleure isolation. Conditions maintenues et
+  testées quoi qu'il en soit :
+  - cookies de session Auth.js **sans attribut `Domain`** : test qui échoue si un `Domain`
+    apparaît ;
   - aucun script ni style fourni par l'organisateur, CSP stricte sur les hôtes de site ;
   - aucun formulaire ni appel des sites vers les routes authentifiées de l'application ;
-  - certificat joker `*.evenements.iccbretagne.fr` (défi DNS sur la zone `iccbretagne.fr`).
+  - certificat joker `*.evenements.iccrennes.fr` (défi DNS sur la zone `iccrennes.fr`).
 - **Quota Let's Encrypt** : 5 domaines par église, certificats demandés seulement après
   approbation.
 - **Poids des pages** : images converties en WebP ≤ 2400 px ; galeries en `loading="lazy"`.

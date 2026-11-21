@@ -12,7 +12,7 @@
 
 - [x] Branche créée : `feat/site-evenement`
 - [ ] Rebase sur `main` après v1.38.0 (la spec 083 touche `ticketing`)
-- [ ] DNS : `*.evenements.iccbretagne.fr` → serveur Koinonia ; certificat joker (défi DNS) — action
+- [ ] DNS : `*.evenements.iccrennes.fr` → serveur Koinonia ; certificat joker (défi DNS) — action
       d'exploitation, hors code
 
 ## Lot 1a — Données, rôle, schémas (sous-PR 1)
