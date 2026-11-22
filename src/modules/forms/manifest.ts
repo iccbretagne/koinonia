@@ -7,6 +7,8 @@ import { defineModule } from "@/core/module-registry";
  * Accès :
  *   - `forms:manage` (Super Admin, Admin, Secrétaire) construit, publie, ferme, supprime, consulte
  *     et exporte les formulaires de son église
+ *   - accès délégué (spec 085) : donnée, pas une permission — un compte autorisé gère ses propres
+ *     formulaires et ceux partagés avec lui (`@/modules/forms/auth`)
  *   - répondants : formulaire public (sans compte, anti-robot et limite de débit) ou réservé aux
  *     comptes connectés de l'église ; chacun gère sa propre réponse (jeton ou compte)
  *

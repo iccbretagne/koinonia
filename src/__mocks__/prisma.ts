@@ -180,6 +180,8 @@ export const prismaMock = {
   formAnonymousReceipt: createModelMock(),
   formSession: createModelMock(),
   formLevel: createModelMock(),
+  formsGrant: createModelMock(),
+  formManager: createModelMock(),
   formFacilitator: createModelMock(),
   formFacilitatorScope: createModelMock(),
   formAttendance: createModelMock(),

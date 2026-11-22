@@ -3,7 +3,7 @@ import { prismaMock } from "@/__mocks__/prisma";
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
-const { assertSafeEdit, slugify, updateForm, duplicateForm, createForm } = await import("../builder");
+const { assertSafeEdit, slugify, updateForm, duplicateForm, createForm, listForms } = await import("../builder");
 const { changeStatus, loadAnswerableForm, acceptsResponses } = await import("../lifecycle");
 
 const choice = (id: string, capacity: number | null = null) => ({ id, questionId: "q1", position: 0, label: id.toUpperCase(), capacity });
@@ -248,5 +248,20 @@ describe("cycle de vie", () => {
     prismaMock.formResponse.count.mockResolvedValueOnce(9);
     expect(await loadAnswerableForm("rennes", "pcnc")).not.toBeNull();
     expect(prismaMock.form.findFirst.mock.calls[0][0].where).toMatchObject({ deletedAt: null, status: "PUBLISHED", church: { slug: "rennes" } });
+  });
+});
+
+describe("liste (spec 085)", () => {
+  it("avec périmètre : ses formulaires et ceux partagés avec lui seulement", async () => {
+    prismaMock.form.findMany.mockResolvedValue([]);
+    prismaMock.formResponse.groupBy.mockResolvedValue([]);
+    await listForms("c1", { userId: "u2" });
+    expect(prismaMock.form.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { churchId: "c1", deletedAt: null, OR: [{ createdById: "u2" }, { managers: { some: { userId: "u2" } } }] },
+      })
+    );
+    await listForms("c1");
+    expect(prismaMock.form.findMany).toHaveBeenLastCalledWith(expect.objectContaining({ where: { churchId: "c1", deletedAt: null } }));
   });
 });

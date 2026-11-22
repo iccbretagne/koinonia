@@ -75,18 +75,18 @@ describe("conservation", () => {
 describe("signal regroupé au secrétariat", () => {
   it("nombre de nouvelles réponses, sans nom, pris une seule fois", async () => {
     prismaMock.form.findMany.mockResolvedValue([
-      { id: "f1", churchId: "c1", title: "PCNC — novembre", createdById: "u9", notifiedCount: 4, _count: { responses: 7 } },
-      { id: "f2", churchId: "c1", title: "Sondage", createdById: "u9", notifiedCount: 2, _count: { responses: 2 } },
+      { id: "f1", churchId: "c1", title: "PCNC — novembre", createdById: "u9", managers: [{ userId: "u10" }, { userId: "u9" }], notifiedCount: 4, _count: { responses: 7 } },
+      { id: "f2", churchId: "c1", title: "Sondage", createdById: "u9", managers: [], notifiedCount: 2, _count: { responses: 2 } },
     ]);
     prismaMock.form.updateMany.mockResolvedValue({ count: 1 });
     expect(await signalNewResponses()).toBe(3);
     expect(prismaMock.form.updateMany).toHaveBeenCalledWith({ where: { id: "f1", notifiedCount: 4 }, data: { notifiedCount: 7 } });
     expect(notifyUsers).toHaveBeenCalledTimes(1);
-    expect(notifyUsers).toHaveBeenCalledWith(["u9"], expect.objectContaining({ domain: "forms", title: "PCNC — novembre", message: "3 nouvelles réponses" }));
+    expect(notifyUsers).toHaveBeenCalledWith(["u9", "u10"], expect.objectContaining({ domain: "forms", title: "PCNC — novembre", message: "3 nouvelles réponses" }));
   });
 
   it("déjà pris par un autre passage : rien n'est envoyé ; sans auteur : Admins et Secrétaires", async () => {
-    prismaMock.form.findMany.mockResolvedValue([{ id: "f1", churchId: "c1", title: "T", createdById: null, notifiedCount: 0, _count: { responses: 1 } }]);
+    prismaMock.form.findMany.mockResolvedValue([{ id: "f1", churchId: "c1", title: "T", createdById: null, managers: [], notifiedCount: 0, _count: { responses: 1 } }]);
     prismaMock.form.updateMany.mockResolvedValueOnce({ count: 0 });
     expect(await signalNewResponses()).toBe(0);
     expect(notifyUsers).not.toHaveBeenCalled();
