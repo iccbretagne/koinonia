@@ -6,6 +6,8 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.41.0] - 2026-11-22
+
 ### Ajouté
 
 - Compta : **demander une pièce** (spec 086). La compta demande une pièce sur une demande financière (message facultatif, relances sans limite, annulation) ; le demandeur est notifié et peut alors déposer une ou plusieurs pièces même si la demande n'est plus « Soumise ». La mention disparaît au dépôt et la compta est prévenue. Repérage par pastille et filtre « Pièce demandée ». Même principe pour le justificatif d'une ligne de la navette, redéposable par son auteur hors du délai de 48 h. Tout est journalisé.
