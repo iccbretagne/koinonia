@@ -5,7 +5,10 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 const requireAuth = vi.fn();
 vi.mock("@/lib/auth", () => ({ requireAuth: () => requireAuth() }));
 const submitPieces = vi.fn();
-vi.mock("@/modules/accounting", () => ({ submitPieces: (...a: unknown[]) => submitPieces(...a) }));
+vi.mock("@/modules/accounting", () => ({
+  submitPieces: (...a: unknown[]) => submitPieces(...a),
+  getRequestChurchId: async (id: string) => ((await prismaMock.financialRequest.findUnique({ where: { id } } as never)) as { churchId: string } | null)?.churchId ?? null,
+}));
 
 const { POST } = await import("../route");
 

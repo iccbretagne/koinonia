@@ -112,6 +112,12 @@ async function notifyAccounting(churchId: string, req: { id: string; label: stri
  * Dépôt par lot du demandeur. L'état est refermé dans la même transaction que les pièces, par une
  * prise conditionnelle : un double envoi ne notifie qu'une fois.
  */
+/** Église d'une demande, `null` si elle n'existe pas (garde de la route de dépôt). */
+export async function getRequestChurchId(requestId: string): Promise<string | null> {
+  const row = await (await db()).financialRequest.findUnique({ where: { id: requestId }, select: { churchId: true } });
+  return row?.churchId ?? null;
+}
+
 export async function submitPieces(requestId: string, actor: PieceActor, files: File[]) {
   const req = await load(requestId);
   if (req.submittedById !== actor.id) throw new ApiError(403, "Accès refusé");
