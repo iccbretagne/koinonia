@@ -8,18 +8,20 @@
 import path from "node:path";
 import fs from "node:fs/promises";
 
-export const S3_CONFIGURED = !!(
-  process.env.ACCOUNTING_S3_BUCKET &&
-  process.env.ACCOUNTING_S3_ACCESS_KEY &&
-  process.env.ACCOUNTING_S3_SECRET_KEY
-);
+// Les deux nommages sont acceptés : `…_ACCESS_KEY`/`…_SECRET_KEY` (historique) et
+// `…_ACCESS_KEY_ID`/`…_SECRET_ACCESS_KEY` (celui de MEDIA_S3_*). Un nom non reconnu faisait
+// retomber silencieusement sur le disque de la release (images de site perdues au déploiement).
+const S3_ACCESS_KEY = process.env.ACCOUNTING_S3_ACCESS_KEY || process.env.ACCOUNTING_S3_ACCESS_KEY_ID;
+const S3_SECRET_KEY = process.env.ACCOUNTING_S3_SECRET_KEY || process.env.ACCOUNTING_S3_SECRET_ACCESS_KEY;
+
+export const S3_CONFIGURED = !!(process.env.ACCOUNTING_S3_BUCKET && S3_ACCESS_KEY && S3_SECRET_KEY);
 
 const LOCAL_BASE = process.env.FILE_STORAGE_DIR
   ? path.resolve(process.env.FILE_STORAGE_DIR)
   : path.join(process.cwd(), "uploads", "accounting");
 
 if (!S3_CONFIGURED && !process.env.FILE_STORAGE_DIR && process.env.NODE_ENV === "production") {
-  console.warn(`[file-storage] ni ACCOUNTING_S3_* ni FILE_STORAGE_DIR : fichiers écrits dans ${LOCAL_BASE}, perdus au prochain déploiement`);
+  console.warn(`[file-storage] ACCOUNTING_S3_* incomplet (BUCKET + ACCESS_KEY[_ID] + SECRET[_ACCESS]_KEY) et FILE_STORAGE_DIR absent : fichiers écrits dans ${LOCAL_BASE}, perdus au prochain déploiement`);
 }
 
 export async function storeFile(s3Key: string, buffer: Buffer, _mimeType: string): Promise<void> {
@@ -79,7 +81,8 @@ export async function readStoredFile(s3Key: string): Promise<Buffer | null> {
       const res = await s3.send(new GetObjectCommand({ Bucket: process.env.ACCOUNTING_S3_BUCKET!, Key: s3Key }));
       if (!res.Body) return null;
       return Buffer.from(await res.Body.transformToByteArray());
-    } catch {
+    } catch (error) {
+      if ((error as { name?: string }).name !== "NoSuchKey") console.error(`[file-storage] lecture S3 ${s3Key} :`, (error as Error).message);
       return null;
     }
   }
@@ -117,8 +120,8 @@ async function makeS3Client() {
     region:   process.env.ACCOUNTING_S3_REGION ?? "eu-west-3",
     endpoint: process.env.ACCOUNTING_S3_ENDPOINT,
     credentials: {
-      accessKeyId:     process.env.ACCOUNTING_S3_ACCESS_KEY!,
-      secretAccessKey: process.env.ACCOUNTING_S3_SECRET_KEY!,
+      accessKeyId:     S3_ACCESS_KEY!,
+      secretAccessKey: S3_SECRET_KEY!,
     },
     forcePathStyle: !!process.env.ACCOUNTING_S3_ENDPOINT,
   });
