@@ -6,6 +6,8 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.42.0] - 2026-11-22
+
 ### Ajouté
 
 - Sites d'événement : **images depuis un assistant IA** (spec 087). Page « Images du site » (`/billetterie/<id>/images`, rôle `site`) pour déposer plusieurs images d'un coup, chacune avec son texte alternatif, et lister les images avec leur identifiant. Nouvel outil de lecture `ticketing_site_upload_link` qui renvoie l'adresse de cette page, et import direct d'un fichier transmis par le client IA (`file`, `openai/fileParams`) dans `upload_ticketing_site_asset`, avec les mêmes contrôles et la même garde réseau.
