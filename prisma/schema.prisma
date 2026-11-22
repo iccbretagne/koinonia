@@ -1852,6 +1852,11 @@ model FinancialRequest {
   justificationId          String?
   /// Note de frais liée : complément d'un dépassement (spec 078).
   overageOfJustificationId String?
+  /// Pièce demandée par la compta (spec 086) : non nul = mention affichée, dépôt ouvert au demandeur.
+  pieceRequestedAt         DateTime?
+  pieceRequestLastAt       DateTime?
+  pieceRequestCount        Int                    @default(0)
+  pieceRequestNote         String?                @db.VarChar(500)
 
   church                 Church                  @relation(fields: [churchId], references: [id])
   justification          FinancialJustification? @relation("RequestJustification", fields: [justificationId], references: [id], onDelete: SetNull)
@@ -1871,6 +1876,7 @@ model FinancialRequest {
   updatedAt DateTime @updatedAt
 
   @@index([churchId, status])
+  @@index([churchId, pieceRequestedAt])
   @@index([churchId, departmentId, status])
   @@index([submittedById])
   @@index([seriesId])
@@ -3263,6 +3269,11 @@ model ShuttleEntry {
   flagNote               String?                 @db.VarChar(300)
   flaggedAt              DateTime?
   flaggedById            String?
+  /// Justificatif demandé à l'auteur par la compta (spec 086).
+  receiptRequestedAt     DateTime?
+  receiptRequestLastAt   DateTime?
+  receiptRequestCount    Int                     @default(0)
+  receiptRequestNote     String?                 @db.VarChar(500)
   createdById            String?
   updatedById            String?
   deletedAt              DateTime?

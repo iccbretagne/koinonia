@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Modal from "@/components/ui/Modal";
 import AttachmentManager from "@/app/(auth)/accounting/components/AttachmentManager";
+import PieceRequestPanel from "./PieceRequestPanel";
 import JustificationPanel, { type Justification } from "./JustificationPanel";
 
 type DateLike = string | Date;
@@ -49,6 +50,10 @@ interface Request {
   priority: string | null;
   priorityNote: string | null;
   rejectionReason: string | null;
+  pieceRequestedAt?: DateLike | null;
+  pieceRequestLastAt?: DateLike | null;
+  pieceRequestCount?: number;
+  pieceRequestNote?: string | null;
   createdAt: DateLike;
   processedAt: DateLike | null;
   department: { id: string; name: string; ministry: { name: string } } | null;
@@ -71,6 +76,8 @@ interface Props {
   readonly justification?: Justification | null;
   /** Arriéré : versée avant le suivi, la compta peut réclamer les justificatifs (spec 078). */
   readonly claimable?: boolean;
+  /** Le demandeur a encore un compte dans l'église (spec 086) : sinon, pas de demande de pièce. */
+  readonly submitterActive?: boolean;
 }
 
 function fmt(d: DateLike | null) {
@@ -125,7 +132,7 @@ function WorkflowBar({ status }: { readonly status: string }) {
   );
 }
 
-export default function RequestDetail({ request: initial, canManage, isOwn, treasuryAccounts = [], justification = null, claimable = false }: Props) {
+export default function RequestDetail({ request: initial, canManage, isOwn, treasuryAccounts = [], justification = null, claimable = false, submitterActive = true }: Props) {
   const router = useRouter();
   const uid = useId();
   const [req, setReq] = useState(initial);
@@ -276,6 +283,18 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
           <p className="text-sm text-ink-muted whitespace-pre-line">{req.description}</p>
         </div>
       )}
+
+      <PieceRequestPanel
+        requestId={req.id}
+        status={req.status}
+        requestedAt={req.pieceRequestedAt ?? null}
+        lastAt={req.pieceRequestLastAt ?? null}
+        count={req.pieceRequestCount ?? 0}
+        note={req.pieceRequestNote ?? null}
+        canManage={canManage}
+        isOwn={isOwn}
+        submitterActive={submitterActive}
+      />
 
       {/* Pièces jointes */}
       {(req.attachments.length > 0 || (isOwn && req.status === "SUBMITTED")) && (

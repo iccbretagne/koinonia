@@ -4,7 +4,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rolePermissions } from "@/lib/registry";
 import { buildAccountingStatusEmail } from "@/lib/email";
 import { createNotification } from "@/lib/notifications";
-import { claimJustification, getAccountingDepartmentScope } from "@/modules/accounting";
+import { cancelPieceRequest, claimJustification, getAccountingDepartmentScope, requestPiece } from "@/modules/accounting";
 import type { z } from "zod";
 import { patchSchema } from "./contract";
 
@@ -61,7 +61,7 @@ export async function GET(
 
 type PatchBody = z.infer<typeof patchSchema>;
 type ExistingRequest = NonNullable<Awaited<ReturnType<typeof prisma.financialRequest.findUnique>>>;
-type ActionContext = { id: string; existing: ExistingRequest; userId: string; churchId: string };
+type ActionContext = { id: string; existing: ExistingRequest; userId: string; userName: string; churchId: string };
 
 /** Seul le demandeur peut annuler, seulement si SUBMITTED. */
 async function cancelRequest({ id, existing, userId, churchId }: ActionContext) {
@@ -157,6 +157,10 @@ function manageAction(context: ActionContext, body: Exclude<PatchBody, { action:
     case "claimJustification":
       // Arriéré (spec 078) : la compta voit toute l'église.
       return claimJustification(context.id, { userId: context.userId, churchId: context.churchId, manage: true, scope: null });
+    case "requestPiece":
+      return requestPiece(context.id, { id: context.userId, name: context.userName }, body.note);
+    case "cancelPieceRequest":
+      return cancelPieceRequest(context.id, { id: context.userId, name: context.userName });
   }
 }
 
@@ -177,7 +181,7 @@ export async function PATCH(
     if (existing?.churchId !== churchId) throw new ApiError(404, "Demande introuvable");
 
     const body = patchSchema.parse(await request.json());
-    const context: ActionContext = { id, existing, userId: session.user.id!, churchId };
+    const context: ActionContext = { id, existing, userId: session.user.id!, userName: session.user.name ?? session.user.email ?? "La comptabilité", churchId };
 
     if (body.action === "cancel") return successResponse(await cancelRequest(context));
 

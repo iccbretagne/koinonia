@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "API Koinonia",
-    "version": "1.39.0",
+    "version": "1.40.1",
     "description": "API interne de Koinonia, appelée par l'application (session NextAuth, même origine). Générée depuis les contrats `contract.ts` des routes — voir `docs/api.md` (conventions) et ADR-0023."
   },
   "components": {
@@ -1628,6 +1628,143 @@
             "description": "Accès refusé"
           }
         }
+      },
+      "post": {
+        "tags": [
+          "shuttle"
+        ],
+        "summary": "Dépôt du justificatif demandé sur une ligne",
+        "description": "**Accès** : permission `shuttle:manage` — ou membre de l'équipe navette, auteur de la ligne.\n\nSpec 086. Multipart `file` (photo ou PDF, 10 Mo, type vérifié sur le contenu). Réservé à l'auteur de la ligne, tant qu'un justificatif est demandé ; permis hors du délai de 48 h, seul le justificatif change. Referme la demande et prévient la compta. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "shuttle:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Identifiant de la ligne",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/navette/entries/{id}/receipt-request": {
+      "put": {
+        "tags": [
+          "shuttle"
+        ],
+        "summary": "Demande du justificatif d'une ligne à son auteur",
+        "description": "**Accès** : permission `shuttle:manage` — dans l'église de la ligne.\n\nSpec 086. Demande ou relance (compteur et date mis à jour) ; l'auteur est notifié et peut redéposer le justificatif même hors du délai de 48 h. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "shuttle:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ligne avec la demande en cours",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "shuttle"
+        ],
+        "summary": "Annulation de la demande de justificatif",
+        "description": "**Accès** : permission `shuttle:manage` — dans l'église de la ligne.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "shuttle:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ligne",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
       }
     },
     "/api/accounting/navette/entries/{id}/reimbursement": {
@@ -2420,7 +2557,7 @@
           "accounting"
         ],
         "summary": "Action sur une demande financière",
-        "description": "**Accès** : toute personne connectée — `cancel` : le demandeur, demande `SUBMITTED` ; `process`, `approve`, `reject`, `claimJustification` : `accounting:manage`.\n\nCycle SUBMITTED → PROCESSING → APPROVED/REJECTED. Approuver une demande récurrente crée l'occurrence suivante. Le demandeur est notifié à chaque étape. `claimJustification` (spec 078) réclame les justificatifs d'une demande entièrement versée avant la mise en service du suivi : relances comme après une remise, première échéance comptée à partir d'aujourd'hui ; 400 si la demande n'en attend pas ou en a déjà.",
+        "description": "**Accès** : toute personne connectée — `cancel` : le demandeur, demande `SUBMITTED` ; `process`, `approve`, `reject`, `claimJustification`, `requestPiece`, `cancelPieceRequest` : `accounting:manage`.\n\nCycle SUBMITTED → PROCESSING → APPROVED/REJECTED. Approuver une demande récurrente crée l'occurrence suivante. Le demandeur est notifié à chaque étape. `claimJustification` (spec 078) réclame les justificatifs d'une demande entièrement versée avant la mise en service du suivi : relances comme après une remise, première échéance comptée à partir d'aujourd'hui ; 400 si la demande n'en attend pas ou en a déjà. `requestPiece` (spec 086) demande ou relance une pièce au demandeur (message facultatif, notification, journalisé) ; 400 si la demande est annulée ou rejetée ou si le demandeur n'est plus membre ; `cancelPieceRequest` retire la mention.",
         "security": [
           {
             "session": []
@@ -2555,6 +2692,38 @@
                     "required": [
                       "action"
                     ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "requestPiece"
+                        ]
+                      },
+                      "note": {
+                        "type": "string",
+                        "maxLength": 500
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "cancelPieceRequest"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ]
                   }
                 ]
               }
@@ -2572,6 +2741,47 @@
           },
           "400": {
             "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/accounting/requests/{id}/pieces": {
+      "post": {
+        "tags": [
+          "accounting"
+        ],
+        "summary": "Dépôt des pièces demandées sur une demande financière",
+        "description": "**Accès** : toute personne connectée — le demandeur de la demande, membre de son église.\n\nSpec 086. Multipart `files` (1 à 10 : JPEG, PNG ou PDF, 5 Mo chacun). Réservé au demandeur, tant qu'une pièce est demandée (demande non annulée ni rejetée), quel que soit l'état de la demande. Referme la demande de pièce et prévient la compta une fois. 400 sans pièce demandée. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Nombre de pièces déposées",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
           },
           "401": {
             "description": "Session absente"

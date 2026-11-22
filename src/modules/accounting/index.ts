@@ -10,6 +10,7 @@ export {
   notifyAccountingNewRequest,
   type LinkedExpenseReportInput,
 } from "./services/requests";
+export { cancelPieceRequest, PIECE_MAX_FILES, requestPiece, submitPieces, type PieceActor } from "./services/piece-requests";
 export { listTreasuryPayments, listTreasuryReturns } from "./services/treasury-link";
 export {
   assertOverageAllowed,
