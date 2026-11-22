@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { ClipboardList } from "lucide-react";
-import { getCurrentChurchId, hasChurchPermission, requireAuth } from "@/lib/auth";
+import { getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { EmptyState, PageHeader, StatusChip } from "@/components/ui";
-import { listFacilitatedForms, listForms } from "@/modules/forms";
+import { getFormsCapability } from "@/modules/forms/auth";
+import { listFacilitatedForms, listForms, listFormsGrants } from "@/modules/forms";
 import { FORM_KIND_LABELS } from "@/modules/forms/schemas";
 import CreateFormButton from "./CreateFormButton";
+import FormsGrantsButton from "./FormsGrantsButton";
 
 const STATUS = {
   DRAFT: { tone: "neutral", label: "Brouillon" },
@@ -21,8 +23,8 @@ const dateFr = (d: Date) => d.toLocaleDateString("fr-FR", { day: "numeric", mont
 export default async function FormsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  const manager = churchId ? await hasChurchPermission(session, "forms:manage", churchId) : false;
-  if (!churchId || !manager) {
+  const capability = churchId ? await getFormsCapability(session, churchId) : null;
+  if (!churchId || !capability) {
     const facilitated = churchId ? await listFacilitatedForms(session.user.id, [churchId]) : [];
     return (
       <div className="space-y-6">
@@ -53,7 +55,11 @@ export default async function FormsPage() {
       </div>
     );
   }
-  const forms = await listForms(churchId);
+  // `own` : accès délégué, ses formulaires et ceux partagés avec lui seulement (spec 085).
+  const [forms, grants] = await Promise.all([
+    listForms(churchId, capability === "own" ? { userId: session.user.id } : undefined),
+    capability === "all" ? listFormsGrants(churchId) : Promise.resolve([]),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -61,7 +67,12 @@ export default async function FormsPage() {
         eyebrow="Agenda"
         title="Formulaires"
         description="Inscriptions, participation aux événements et sondages, publics ou réservés aux comptes de l'église."
-        actions={<CreateFormButton />}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            {capability === "all" && <FormsGrantsButton grants={grants} />}
+            <CreateFormButton />
+          </div>
+        }
       />
       {forms.length === 0 ? (
         <EmptyState icon={ClipboardList} title="Aucun formulaire" description="Créez un premier formulaire : une inscription, une participation ou un sondage." />
@@ -78,6 +89,7 @@ export default async function FormsPage() {
                   {FORM_KIND_LABELS[f.kind]} · {f.access === "PUBLIC" ? "public" : "comptes de l'église"}
                   {f.anonymous ? " · anonyme" : ""}
                   {f.closesAt ? ` · réponses jusqu'au ${dateFr(f.closesAt)}` : ""}
+                  {f.createdBy ? ` · créé par ${f.createdBy.displayName ?? f.createdBy.name}` : ""}
                 </p>
                 <p className="mt-2 text-[13px] text-ink">
                   {f.purgedAt

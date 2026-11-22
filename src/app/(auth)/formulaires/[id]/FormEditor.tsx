@@ -17,6 +17,7 @@ import {
 import { useApi } from "../use-api";
 import SessionsEditor, { type EditorSession } from "./SessionsEditor";
 import FacilitatorsEditor, { type Facilitator } from "./FacilitatorsEditor";
+import ManagersEditor, { type Manager } from "./ManagersEditor";
 import Attendance from "./Attendance";
 import Results from "./Results";
 import type { FormResults } from "@/modules/forms";
@@ -65,6 +66,12 @@ interface Form {
   ticketingEventId: string | null;
   questions: Question[];
   sessions: EditorSession[];
+}
+/** Partage (spec 085) : `owner` = auteur ou gestion ; sinon co-gestionnaire, en lecture. */
+export interface Sharing {
+  owner: boolean;
+  managers: Manager[];
+  candidates: { id: string; name: string }[];
 }
 interface Response {
   id: string;
@@ -456,12 +463,14 @@ function Settings({
   members,
   facilitators,
   linkable,
+  sharing,
 }: {
   readonly form: Form;
   readonly usage: Usage;
   readonly members: { id: string; name: string }[];
   readonly facilitators: Facilitator[];
   readonly linkable: LinkableEvents;
+  readonly sharing: Sharing;
 }) {
   const { call, busy } = useApi();
   const [s, setS] = useState({
@@ -572,6 +581,9 @@ function Settings({
       <Button type="button" disabled={busy || !s.title.trim()} onClick={() => void save()}>
         {busy ? "Enregistrement…" : "Enregistrer les réglages"}
       </Button>
+      <div className="border-t border-line pt-4">
+        <ManagersEditor key={JSON.stringify(sharing.managers)} formId={form.id} editable={sharing.owner} managers={sharing.managers} candidates={sharing.candidates} />
+      </div>
       {form.kind === "REGISTRATION" && form.sessions.length > 0 && (
         <div className="border-t border-line pt-4">
           <FacilitatorsEditor key={JSON.stringify(facilitators)} formId={form.id} sessions={form.sessions} members={members} initial={facilitators} />
@@ -768,6 +780,7 @@ export default function FormEditor({
   members,
   facilitators,
   linkable,
+  sharing,
   results,
 }: {
   readonly tab: EditorTab;
@@ -780,6 +793,7 @@ export default function FormEditor({
   readonly members: { id: string; name: string }[];
   readonly facilitators: Facilitator[];
   readonly linkable: LinkableEvents;
+  readonly sharing: Sharing;
   readonly results: FormResults | null;
 }) {
   const router = useRouter();
@@ -859,9 +873,11 @@ export default function FormEditor({
         >
           <Copy className="size-4" aria-hidden="true" /> Dupliquer
         </Button>
-        <Button type="button" variant="danger" disabled={busy} onClick={() => setConfirmDelete(true)}>
-          <Trash2 className="size-4" aria-hidden="true" /> Supprimer
-        </Button>
+        {sharing.owner && (
+          <Button type="button" variant="danger" disabled={busy} onClick={() => setConfirmDelete(true)}>
+            <Trash2 className="size-4" aria-hidden="true" /> Supprimer
+          </Button>
+        )}
       </div>
       {form.purgedAt && <Alert tone="info" title="Les réponses ont été effacées au terme de la durée de conservation ; seuls les totaux restent." />}
       <Tabs
@@ -876,7 +892,7 @@ export default function FormEditor({
         ]}
       />
       {tab === "construction" && <Construction key={JSON.stringify(form.questions.map((q) => q.id))} form={form} usage={usage} />}
-      {tab === "reglages" && <Settings form={form} usage={usage} members={members} facilitators={facilitators} linkable={linkable} />}
+      {tab === "reglages" && <Settings form={form} usage={usage} members={members} facilitators={facilitators} linkable={linkable} sharing={sharing} />}
       {tab === "resultats" && results && <Results results={results} anonymous={form.anonymous} manage formId={form.id} />}
       {tab === "apercu" && <Preview form={form} usage={usage} />}
       {tab === "reponses" && <Responses form={form} responses={responses} manage />}

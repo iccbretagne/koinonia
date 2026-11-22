@@ -9,7 +9,7 @@ export const contract = defineContract({
     description:
       "publish : brouillon → publié (au moins une question ; un public nominatif reçoit d'office une question Email obligatoire). close : publié → clôturé, la conservation court. reopen : clôturé → publié si la fin des réponses n'est pas passée et les réponses pas effacées. Journalisé.",
     access: "forms:manage",
-    accessNote: "dans l'église du formulaire",
+    accessNote: "dans l'église du formulaire ; ou auteur / co-gestionnaire avec accès délégué (spec 085)",
     body: formStatusSchema,
     response: "Formulaire dans son nouvel état",
   },

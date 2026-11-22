@@ -121,7 +121,7 @@ export interface NavigationInput {
   readonly hasTreasury?: boolean;
   /** Billetterie (spec 074) : `ticketing:manage` ou un rôle sur un événement actif. */
   readonly hasTicketing?: boolean;
-  /** Formulaires (spec 079) : `forms:manage` dans l'église courante. */
+  /** Formulaires (spec 079, 085) : `forms:manage`, intervenant ou accès délégué dans l'église courante. */
   readonly hasForms?: boolean;
   readonly hasJobs?: boolean;
   /** Vue pastorale active (cookie `koinonia-view-mode`). */

@@ -509,16 +509,20 @@ export default async function AuthLayout({
   const hasShuttle = await isShuttleVisible(session, currentChurchId);
   const hasTreasury = await isTreasuryVisible(session, currentChurchId).catch(() => false);
   const hasTicketing = await isTicketingVisible(session, currentChurchId);
-  // Formulaires : la gestion, ou un intervenant désigné sur un formulaire en cours (spec 079, lot 2).
+  // Formulaires : la gestion, un intervenant désigné sur un formulaire en cours (spec 079, lot 2) ou un accès délégué (spec 085).
   const hasForms =
     registry.has("forms") &&
     (userPermissions.has("forms:manage") ||
       (!!currentChurchId &&
-        ((await Promise.resolve(
+        (((await Promise.resolve(
           prisma.formFacilitator.count({
             where: { userId: session.user.id, form: { churchId: currentChurchId, deletedAt: null, status: { not: "CLOSED" } } },
           })
-        ).catch(() => 0)) ?? 0) > 0));
+        ).catch(() => 0)) ?? 0) > 0 ||
+          // Accès délégué (spec 085) : ses formulaires seulement.
+          ((await Promise.resolve(
+            prisma.formsGrant.count({ where: { userId: session.user.id, churchId: currentChurchId } })
+          ).catch(() => 0)) ?? 0) > 0)));
   const hasJobs = userPermissions.has("jobs:view");
   const hasEventsAccess = userPermissions.has("events:view");
   const hasEventsManage = userPermissions.has("events:manage");

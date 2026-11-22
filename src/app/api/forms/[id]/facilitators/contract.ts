@@ -7,7 +7,7 @@ export const contract = defineContract({
   GET: {
     summary: "Intervenants d'un formulaire",
     access: "forms:manage",
-    accessNote: "dans l'église du formulaire",
+    accessNote: "dans l'église du formulaire ; ou auteur / co-gestionnaire avec accès délégué (spec 085)",
     response: "Intervenants, avec tout le formulaire ou leurs sessions et niveaux",
   },
   PUT: {
@@ -15,7 +15,7 @@ export const contract = defineContract({
     description:
       "Remplace la liste. Comptes de l'église seulement ; inscription à sessions seulement ; chacun sur tout le formulaire ou sur des sessions et niveaux du formulaire. Les nouveaux intervenants sont prévenus (domaine forms). Journalisé.",
     access: "forms:manage",
-    accessNote: "dans l'église du formulaire",
+    accessNote: "dans l'église du formulaire ; ou auteur / co-gestionnaire avec accès délégué (spec 085)",
     body: facilitatorsSchema,
     response: "Intervenants enregistrés",
   },

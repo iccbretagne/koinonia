@@ -8,7 +8,7 @@ export const contract = defineContract({
     summary: "Annulation d'une réponse par la gestion",
     description: "La réponse passe à « Annulée » et libère sa place. 409 si elle est déjà close. Journalisé.",
     access: "forms:manage",
-    accessNote: "dans l'église du formulaire",
+    accessNote: "dans l'église du formulaire ; ou auteur / co-gestionnaire avec accès délégué (spec 085)",
     body: responseStatusSchema,
     response: "Réponse mise à jour",
   },
