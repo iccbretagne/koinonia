@@ -157,13 +157,18 @@ export async function createForm(
   });
 }
 
-/** Formulaires d'une église (non supprimés), avec leurs décomptes de réponses. */
-export async function listForms(churchId: string) {
+/** Formulaires d'une église (non supprimés), avec leurs décomptes de réponses ; `scope` : les siens et les partagés (spec 085). */
+export async function listForms(churchId: string, scope?: { userId: string }) {
   const [forms, active] = await Promise.all([
     prisma.form.findMany({
-      where: { churchId, deletedAt: null },
+      where: {
+        churchId,
+        deletedAt: null,
+        ...(scope ? { OR: [{ createdById: scope.userId }, { managers: { some: { userId: scope.userId } } }] } : {}),
+      },
       select: {
         id: true,
+        createdBy: { select: { name: true, displayName: true } },
         title: true,
         slug: true,
         kind: true,

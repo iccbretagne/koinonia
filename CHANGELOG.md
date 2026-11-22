@@ -6,6 +6,10 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+
+- Formulaires : **accès à la demande** (spec 085). Le Secrétaire et l'administration donnent à un compte l'accès « Formulaires » (bouton « Accès ») : il crée et gère ses propres formulaires sans voir ceux des autres, et peut les partager avec d'autres comptes autorisés (co-gestionnaires : tout sauf supprimer et gérer le partage). Les accès et partages sont notifiés et journalisés ; retirer un accès laisse les formulaires en ligne. Le signal de nouvelles réponses atteint aussi les co-gestionnaires.
+
 ## [v1.39.0] - 2026-11-21
 
 ### Ajouté

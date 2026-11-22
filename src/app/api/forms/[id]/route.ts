@@ -33,7 +33,7 @@ export async function PATCH(request: Request, { params }: Params) {
     const { id } = await params;
     const { session, churchId } = await requireFormManage(id);
     const data = formUpdateSchema.parse(await request.json());
-    await assertLinkableEvents(churchId, data);
+    await assertLinkableEvents(session, churchId, data);
     const form = await updateForm(id, data);
     await logAudit({
       userId: session.user.id,
@@ -57,7 +57,7 @@ export async function PATCH(request: Request, { params }: Params) {
 export async function DELETE(_request: Request, { params }: Params) {
   try {
     const { id } = await params;
-    const { session, churchId } = await requireFormManage(id);
+    const { session, churchId } = await requireFormManage(id, { owner: true });
     await deleteForm(id);
     await logAudit({ userId: session.user.id, churchId, action: "DELETE", entityType: "Form", entityId: id });
     return successResponse({ deleted: true });

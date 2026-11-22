@@ -1,5 +1,5 @@
 import type { Session } from "next-auth";
-import { requireAuth, requireChurchPermission } from "@/lib/auth";
+import { getCurrentChurchId, requireAuth, requireCurrentChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
 
@@ -15,13 +15,6 @@ export async function resolveFormChurchId(formId: string): Promise<string> {
   return form.churchId;
 }
 
-/** `forms:manage` dans l'église du formulaire ; renvoie la session et l'église. */
-export async function requireFormManage(formId: string) {
-  const churchId = await resolveFormChurchId(formId);
-  const session = await requireChurchPermission("forms:manage", churchId);
-  return { session, churchId };
-}
-
 /** Le compte appartient-il à l'église (un rôle, quel qu'il soit) ? Formulaires « comptes connectés ». */
 export function isChurchMember(session: Session | null, churchId: string): boolean {
   if (!session?.user) return false;
@@ -35,7 +28,8 @@ export interface FormScope {
 }
 
 export type FormAccess =
-  | { kind: "manage"; session: Session; churchId: string }
+  /** `via` : droit de rôle, auteur ou co-gestionnaire (accès délégué, spec 085). */
+  | { kind: "manage"; session: Session; churchId: string; via: "role" | "author" | "comanager" }
   /** `scopes` nul : tout le formulaire. */
   | { kind: "facilitator"; session: Session; churchId: string; scopes: FormScope[] | null };
 
@@ -47,16 +41,32 @@ async function hasFormsManage(session: Session, churchId: string): Promise<boole
   return roles.some((r) => (rolePermissions[r.role] ?? []).includes("forms:manage"));
 }
 
+/** Le compte a-t-il l'accès délégué aux formulaires dans cette église (spec 085) ? */
+async function hasFormsGrant(session: Session, churchId: string): Promise<boolean> {
+  if (!isChurchMember(session, churchId)) return false;
+  const grant = await prisma.formsGrant.findUnique({
+    where: { churchId_userId: { churchId, userId: session.user.id } },
+    select: { id: true },
+  });
+  return !!grant;
+}
+
 /**
- * Droits d'un compte sur un formulaire (lot 2) : gestion (`forms:manage` dans l'église du
- * formulaire) ou intervenant — donnée attribuée formulaire par formulaire, valable tant que le
+ * Droits d'un compte sur un formulaire : gestion (`forms:manage` dans l'église du formulaire, ou
+ * auteur / co-gestionnaire avec accès délégué, spec 085) ou intervenant — donnée attribuée formulaire par formulaire, valable tant que le
  * formulaire n'est pas clôturé et que le compte appartient à l'église. Sinon null (404 pour
  * l'appelant, comme un formulaire inexistant).
  */
 export async function getFormAccess(session: Session, formId: string): Promise<FormAccess | null> {
-  const form = await prisma.form.findFirst({ where: { id: formId, deletedAt: null }, select: { churchId: true, status: true } });
+  const form = await prisma.form.findFirst({ where: { id: formId, deletedAt: null }, select: { churchId: true, status: true, createdById: true } });
   if (!form) return null;
-  if (await hasFormsManage(session, form.churchId)) return { kind: "manage", session, churchId: form.churchId };
+  if (await hasFormsManage(session, form.churchId)) return { kind: "manage", session, churchId: form.churchId, via: "role" };
+  // Accès délégué : nécessaire pour l'auteur comme pour le co-gestionnaire (retiré ⇒ partages suspendus).
+  if (await hasFormsGrant(session, form.churchId)) {
+    if (form.createdById === session.user.id) return { kind: "manage", session, churchId: form.churchId, via: "author" };
+    const managed = await prisma.formManager.findUnique({ where: { formId_userId: { formId, userId: session.user.id } }, select: { userId: true } });
+    if (managed) return { kind: "manage", session, churchId: form.churchId, via: "comanager" };
+  }
   if (form.status === "CLOSED" || !isChurchMember(session, form.churchId)) return null;
   const facilitator = await prisma.formFacilitator.findUnique({
     where: { formId_userId: { formId, userId: session.user.id } },
@@ -64,6 +74,37 @@ export async function getFormAccess(session: Session, formId: string): Promise<F
   });
   if (!facilitator) return null;
   return { kind: "facilitator", session, churchId: form.churchId, scopes: facilitator.allScope ? null : facilitator.scopes };
+}
+
+/**
+ * Gestion (rôle, auteur ou co-gestionnaire) dans l'église du formulaire ; 404 sinon, comme un
+ * formulaire inexistant. `owner` : réservé au rôle et à l'auteur (suppression, partage).
+ */
+export async function requireFormManage(formId: string, opts: { owner?: boolean } = {}) {
+  const session = await requireAuth();
+  const access = await getFormAccess(session, formId);
+  if (!access || access.kind !== "manage" || (opts.owner && access.via === "comanager")) throw new ApiError(404, "Formulaire introuvable");
+  return { session, churchId: access.churchId, via: access.via };
+}
+
+/** Portée de l'outil dans une église : tout (`forms:manage`), ses formulaires (accès délégué) ou rien. */
+export async function getFormsCapability(session: Session, churchId: string): Promise<"all" | "own" | null> {
+  if (await hasFormsManage(session, churchId)) return "all";
+  return (await hasFormsGrant(session, churchId)) ? "own" : null;
+}
+
+/** Église courante + capacité ; 403 sans accès. */
+export async function requireFormsCapability() {
+  const session = await requireAuth();
+  const churchId = await getCurrentChurchId(session);
+  const capability = churchId ? await getFormsCapability(session, churchId) : null;
+  if (!churchId || !capability) throw new ApiError(403, "Accès aux formulaires non autorisé");
+  return { session, churchId, capability };
+}
+
+/** Octroi des accès délégués : `forms:manage` dans l'église courante. */
+export async function requireFormsGrantAdmin() {
+  return requireCurrentChurchPermission("forms:manage");
 }
 
 /** Gestion ou intervenant ; 404 sinon. */

@@ -10,7 +10,7 @@ vi.mock("@/lib/notifications", () => ({
 }));
 const sendEmail = vi.fn();
 vi.mock("@/lib/email", () => ({ sendEmail: (...a: unknown[]) => sendEmail(...a) }));
-vi.mock("@/lib/auth", () => ({ requireAuth: vi.fn(), requireChurchPermission: vi.fn() }));
+vi.mock("@/lib/auth", () => ({ requireAuth: vi.fn(), requireChurchPermission: vi.fn(), requireCurrentChurchPermission: vi.fn(), getCurrentChurchId: vi.fn() }));
 process.env.FORMS_TOKEN_SECRET = "secret-de-test";
 
 const { submitResponse, respondToOffer, expireOffers } = await import("../responses");

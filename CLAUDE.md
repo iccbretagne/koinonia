@@ -766,6 +766,14 @@ désactivable (`ENABLED_MODULES`) :
   Participation : questions « Je viens » / « Nombre d'accompagnants » (`config.participation`),
   total des participants ; rattachement à un événement d'église ou de billetterie validé par
   `src/app/api/forms/_events.ts` (ADR-0027), bloc `EventFormsBlock` via `listFormsForEvent`
+- **Accès délégué** (spec 085) : un compte reçoit l'accès « Formulaires » de la part de `forms:manage`
+  (`forms_grants`, bouton « Accès » de `/formulaires`) et ne gère que **ses** formulaires
+  (`Form.createdById`) ou ceux **partagés** avec lui (`form_managers`, co-gestionnaire : tout sauf
+  supprimer et gérer le partage). Ce sont des données, pas une permission : `getFormAccess`
+  (`via: "role" | "author" | "comanager"`), `requireFormManage(id, { owner })`, `getFormsCapability`
+  (`"all" | "own" | null`) dans `@/modules/forms/auth` ; formulaire d'autrui ⇒ 404. Retirer l'accès
+  suspend aussi les partages de la personne (lignes conservées). Rattachement à un événement
+  borné par `events:view` / rôle d'événement de billetterie (`_events.ts`)
 
 **Spécificités du module messages** (spec 071) :
 - `messages:publish` (Super Admin, Admin, Secrétaire) ouvre `/admin/messages` : publier, programmer,

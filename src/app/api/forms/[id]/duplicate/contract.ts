@@ -8,7 +8,7 @@ export const contract = defineContract({
     summary: "Duplication d'un formulaire",
     description: "Copie en brouillon : réglages, questions, choix et conditions, sans aucune réponse. Journalisé.",
     access: "forms:manage",
-    accessNote: "dans l'église du formulaire",
+    accessNote: "dans l'église du formulaire ; ou auteur / co-gestionnaire avec accès délégué (spec 085)",
     body: formDuplicateSchema,
     response: "Nouveau brouillon",
     status: 201,

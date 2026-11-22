@@ -135,7 +135,7 @@ export async function resendManageLink(
 export async function signalNewResponses(): Promise<number> {
   const forms = await prisma.form.findMany({
     where: { deletedAt: null, purgedAt: null, status: { in: ["PUBLISHED", "CLOSED"] } },
-    select: { id: true, churchId: true, title: true, createdById: true, notifiedCount: true, _count: { select: { responses: true } } },
+    select: { id: true, churchId: true, title: true, createdById: true, managers: { select: { userId: true } }, notifiedCount: true, _count: { select: { responses: true } } },
   });
   let signalled = 0;
   for (const form of forms) {
@@ -147,7 +147,7 @@ export async function signalNewResponses(): Promise<number> {
       data: { notifiedCount: form._count.responses },
     });
     if (taken.count === 0) continue;
-    let recipients = form.createdById ? [form.createdById] : [];
+    let recipients = [...new Set([...(form.createdById ? [form.createdById] : []), ...form.managers.map((m) => m.userId)])];
     if (recipients.length === 0) {
       const roles = await prisma.userChurchRole.findMany({
         where: { churchId: form.churchId, role: { in: ["ADMIN", "SECRETARY"] } },

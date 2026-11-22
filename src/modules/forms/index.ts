@@ -48,6 +48,16 @@ export {
 export { fillOpenPlaces } from "./services/waitlist";
 export { listFacilitators, setFacilitators, listFacilitatedForms } from "./services/facilitators";
 export type { FacilitatorInput } from "./services/facilitators";
+export {
+  listFormsGrants,
+  grantFormsAccess,
+  revokeFormsAccess,
+  searchChurchUsersForFormsGrant,
+  listFormManagers,
+  addFormManager,
+  removeFormManager,
+} from "./services/grants";
+export type { FormsGrantView } from "./services/grants";
 export { getAttendanceSheet, saveAttendance, participantName, HALF_LABEL } from "./services/attendance";
 export type { AttendanceCell } from "./services/attendance";
 export type { SubmitResult, Respondent, ResponseWithForm, PublicFormView } from "./services/responses";

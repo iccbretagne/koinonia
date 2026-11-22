@@ -5,7 +5,7 @@ export const contract = defineContract({
     summary: "Export des réponses d'un formulaire",
     description: "Classeur avec une ligne par réponse et une colonne par question, valeurs neutralisées contre l'injection de formules ; aucune identité pour un sondage anonyme. Journalisé.",
     access: "forms:manage",
-    accessNote: "dans l'église du formulaire",
+    accessNote: "dans l'église du formulaire ; ou auteur / co-gestionnaire avec accès délégué (spec 085)",
     response: "Classeur des réponses",
     responseType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   },

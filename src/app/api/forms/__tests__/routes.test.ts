@@ -11,11 +11,13 @@ import { ApiError } from "@/lib/api-utils";
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 const session = { current: null as unknown };
 const requireChurchPermission = vi.fn();
+const requireCurrentChurchPermission = vi.fn();
 vi.mock("@/lib/auth", () => ({
   auth: vi.fn(async () => session.current),
   requireAuth: vi.fn(async () => session.current),
   requireChurchPermission: (...a: unknown[]) => requireChurchPermission(...a),
-  requireCurrentChurchPermission: vi.fn(async () => ({ session: session.current, churchId: "church-1" })),
+  requireCurrentChurchPermission: (...a: unknown[]) => requireCurrentChurchPermission(...a),
+  getCurrentChurchId: vi.fn(async () => "church-1"),
 }));
 const logAudit = vi.fn();
 vi.mock("@/lib/audit", () => ({ logAudit: (...a: unknown[]) => logAudit(...a) }));
@@ -36,10 +38,20 @@ const forms = {
   findMemberResponse: vi.fn(async () => null),
   hasAnonymousReceipt: vi.fn(async () => false),
   answersRecord: vi.fn(),
+  deleteForm: vi.fn(),
+  addFormManager: vi.fn(),
+  listForms: vi.fn(async () => []),
+  createForm: vi.fn(async () => ({ id: "f9", title: "T", kind: "SURVEY" })),
+  grantFormsAccess: vi.fn(async () => ({ created: true })),
+  listFormsGrants: vi.fn(async () => []),
 };
 vi.mock("@/modules/forms", () => forms);
 
 const status = await import("../[id]/status/route");
+const formRoot = await import("../[id]/route");
+const managersRoute = await import("../[id]/managers/route");
+const collection = await import("../route");
+const grantsRoute = await import("../grants/route");
 const exportRoute = await import("../[id]/export/route");
 const publicGet = await import("../public/[churchSlug]/[formSlug]/route");
 const publicPost = await import("../public/[churchSlug]/[formSlug]/responses/route");
@@ -54,31 +66,83 @@ beforeEach(() => {
   vi.clearAllMocks();
   session.current = createSecretarySession();
   requireChurchPermission.mockImplementation(async () => session.current);
+  requireCurrentChurchPermission.mockImplementation(async () => ({ session: session.current, churchId: "church-1" }));
+  prismaMock.form.findFirst.mockResolvedValue({ churchId: "church-1" });
   prismaMock.form.findFirst.mockResolvedValue({ churchId: "church-1" });
   forms.loadAnswerableForm.mockResolvedValue(FORM);
 });
 
 describe("gestion : église du formulaire", () => {
-  it("vérifie forms:manage dans l'église du formulaire, journalise", async () => {
+  it("gestion dans l'église du formulaire, journalise", async () => {
     const res = await status.POST(post({ action: "publish" }), idParams);
     expect(res.status).toBe(200);
-    expect(requireChurchPermission).toHaveBeenCalledWith("forms:manage", "church-1");
     expect(logAudit).toHaveBeenCalledWith(expect.objectContaining({ entityType: "Form", entityId: "f1", details: { status: "publish" } }));
   });
 
-  it("formulaire supprimé, inexistant : 404 avant tout droit ; sans droit : refus", async () => {
+  it("formulaire supprimé, inexistant ou d'autrui : 404, rien n'est exécuté", async () => {
     prismaMock.form.findFirst.mockResolvedValueOnce(null);
     expect((await status.POST(post({ action: "close" }), idParams)).status).toBe(404);
-    expect(requireChurchPermission).not.toHaveBeenCalled();
-    requireChurchPermission.mockRejectedValueOnce(new ApiError(403, "Forbidden"));
-    expect((await status.POST(post({ action: "close" }), idParams)).status).toBe(403);
+    session.current = createStarSession("church-1");
+    prismaMock.formsGrant.findUnique.mockResolvedValue(null);
+    expect((await status.POST(post({ action: "close" }), idParams)).status).toBe(404);
     expect(forms.changeStatus).not.toHaveBeenCalled();
+  });
+
+  it("accès délégué : l'auteur gère son formulaire, pas celui d'un autre", async () => {
+    session.current = createStarSession("church-1");
+    prismaMock.formsGrant.findUnique.mockResolvedValue({ id: "g1" });
+    prismaMock.form.findFirst.mockResolvedValue({ churchId: "church-1", status: "PUBLISHED", createdById: (session.current as { user: { id: string } }).user.id });
+    expect((await status.POST(post({ action: "close" }), idParams)).status).toBe(200);
+    prismaMock.form.findFirst.mockResolvedValue({ churchId: "church-1", status: "PUBLISHED", createdById: "autre" });
+    prismaMock.formManager.findUnique.mockResolvedValue(null);
+    expect((await status.POST(post({ action: "close" }), idParams)).status).toBe(404);
+  });
+
+  it("co-gestionnaire : gère, mais ne supprime pas et ne partage pas", async () => {
+    session.current = createStarSession("church-1");
+    prismaMock.formsGrant.findUnique.mockResolvedValue({ id: "g1" });
+    prismaMock.form.findFirst.mockResolvedValue({ churchId: "church-1", status: "PUBLISHED", createdById: "autre" });
+    prismaMock.formManager.findUnique.mockResolvedValue({ userId: "x" });
+    expect((await status.POST(post({ action: "close" }), idParams)).status).toBe(200);
+    expect((await formRoot.DELETE(new Request("http://test", { method: "DELETE" }), idParams)).status).toBe(404);
+    expect((await managersRoute.POST(post({ userId: "u2" }), idParams)).status).toBe(404);
+    expect(forms.deleteForm).not.toHaveBeenCalled();
+    expect(forms.addFormManager).not.toHaveBeenCalled();
   });
 
   it("export : classeur et journal EXPORT", async () => {
     const res = await exportRoute.GET(new Request("http://test"), idParams);
     expect(res.headers.get("content-type")).toContain("spreadsheetml");
     expect(logAudit).toHaveBeenCalledWith(expect.objectContaining({ action: "EXPORT", details: { responses: 3 } }));
+  });
+});
+
+describe("liste, création et accès délégués", () => {
+  it("compte délégué : liste bornée à ses formulaires, création autorisée", async () => {
+    session.current = createStarSession("church-1");
+    prismaMock.formsGrant.findUnique.mockResolvedValue({ id: "g1" });
+    const uid = (session.current as { user: { id: string } }).user.id;
+    expect((await collection.GET()).status).toBe(200);
+    expect(forms.listForms).toHaveBeenCalledWith("church-1", { userId: uid });
+    expect((await collection.POST(post({ title: "Sondage", kind: "SURVEY", access: "MEMBERS" }))).status).toBe(201);
+  });
+
+  it("gestionnaire : liste complète ; compte sans accès : 403", async () => {
+    expect((await collection.GET()).status).toBe(200);
+    expect(forms.listForms).toHaveBeenLastCalledWith("church-1", undefined);
+    session.current = createStarSession("church-1");
+    prismaMock.formsGrant.findUnique.mockResolvedValue(null);
+    expect((await collection.GET()).status).toBe(403);
+    expect((await collection.POST(post({ title: "T", kind: "SURVEY", access: "MEMBERS" }))).status).toBe(403);
+  });
+
+  it("octroi des accès : réservé à forms:manage dans l'église courante", async () => {
+    expect((await grantsRoute.POST(post({ userId: "u2" }))).status).toBe(201);
+    expect(requireCurrentChurchPermission).toHaveBeenCalledWith("forms:manage");
+    requireCurrentChurchPermission.mockRejectedValueOnce(new ApiError(403, "Forbidden"));
+    expect((await grantsRoute.GET()).status).toBe(403);
+    requireCurrentChurchPermission.mockRejectedValueOnce(new ApiError(403, "Forbidden"));
+    expect((await grantsRoute.POST(post({ userId: "u2" }))).status).toBe(403);
   });
 });
 
