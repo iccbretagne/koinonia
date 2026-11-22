@@ -235,7 +235,7 @@ d'autre n'accepte ce jeton.
   et `describe_site_blocks` (lecture : champs, bornes et valeurs permises **générés depuis les schémas
   Zod** ; les refus listent les clés ou `kind` permis). Images (rôle `site`) : `ticketing_site_assets`
   (lecture, avec les emplacements d'usage), `upload_ticketing_site_asset` (URL https avec garde SSRF :
-  IP vérifiée et épinglée, aucune redirection, 10 s, 8 Mo ; ou base64) et
+  IP vérifiée et épinglée, aucune redirection, 10 s, 8 Mo ; base64 ; ou `file` transmis par le client IA, même garde), `ticketing_site_upload_link` (adresse de la page de dépôt « Images du site ») et
   `delete_ticketing_site_asset` (refusée si l'image sert au brouillon ou à la version publiée).
   `publish_ticketing_site` renvoie l'adresse publique finale et les avertissements (sites non activés,
   `SITE_BASE_DOMAIN` absent, événement en brouillon). **Tous les outils du site ne sont proposés que si

@@ -128,7 +128,7 @@ describe("droits", () => {
     expect(s.SITE_ACTIONS.length).toBeGreaterThan(15);
     expect(s.SITE_ACTIONS.filter((a) => a.available(off))).toEqual([]);
     expect(s.SITE_ACTIONS.filter((a) => a.available(on))).toHaveLength(s.SITE_ACTIONS.length);
-    for (const name of ["ticketing_site", "ticketing_site_assets", "describe_site_blocks", "edit_ticketing_site_batch_preview", "upload_ticketing_site_asset_confirm", "publish_ticketing_site_preview", "request_ticketing_site_domain_preview"]) {
+    for (const name of ["ticketing_site", "ticketing_site_assets", "ticketing_site_upload_link", "describe_site_blocks", "edit_ticketing_site_batch_preview", "upload_ticketing_site_asset_confirm", "publish_ticketing_site_preview", "request_ticketing_site_domain_preview"]) {
       expect(A(name).available(off), name).toBe(false);
       expect(A(name).available(on), name).toBe(true);
     }
@@ -299,6 +299,56 @@ describe("images", () => {
     assetStateValue = null;
     expect((await confirm("upload_ticketing_site_asset")).text).toContain("ont changé");
     expect(svc.confirmAsset).not.toHaveBeenCalled();
+  });
+
+  it("fichier du client : téléchargé par la garde SSRF, nom de repli file_name ; un seul mode de source", async () => {
+    const file = { download_url: "https://files.exemple.org/dl/abc", file_id: "file_1", file_name: "affiche.png" };
+    await preview("upload_ticketing_site_asset", { event: "tk-1", file, alt: "Affiche" });
+    expect(fetchImage).toHaveBeenCalledWith(file.download_url);
+    expect(svc.stageAsset).toHaveBeenCalledWith("s1", expect.any(Buffer), { alt: "Affiche", name: "affiche.png" });
+    vi.clearAllMocks();
+    for (const input of [{ event: "tk-1", alt: "x" }, { event: "tk-1", alt: "x", file, source: { url: "https://exemple.org/a.png" } }]) {
+      const out = await preview("upload_ticketing_site_asset", input);
+      expect(out.text).toContain("exactement une source");
+    }
+    expect(fetchImage).not.toHaveBeenCalled();
+    expect(svc.stageAsset).not.toHaveBeenCalled();
+  });
+
+  it("fichier du client inaccessible : refus qui propose le lien de dépôt", async () => {
+    const { ApiError } = await import("@/lib/api-utils");
+    fetchImage.mockRejectedValueOnce(new ApiError(400, "Téléchargement impossible"));
+    const out = await preview("upload_ticketing_site_asset", { event: "tk-1", file: { download_url: "https://files.exemple.org/x", file_id: "f" }, alt: "x" });
+    expect(out.text).toContain("ticketing_site_upload_link");
+    expect(mcp.createConfirmation).not.toHaveBeenCalled();
+  });
+
+  it("descripteur de l'outil : openai/fileParams et JSON Schema strict du champ file", async () => {
+    const { McpServer } = await import("@modelcontextprotocol/sdk/server/mcp.js");
+    const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");
+    const { InMemoryTransport } = await import("@modelcontextprotocol/sdk/inMemory.js");
+    const def = A("upload_ticketing_site_asset_preview");
+    const server = new McpServer({ name: "t", version: "1" });
+    server.registerTool(def.name, { description: def.description, inputSchema: def.input, _meta: def.meta }, async () => ({ content: [] }));
+    const [a, b] = InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: "c", version: "1" });
+    await Promise.all([server.connect(a), client.connect(b)]);
+    const tool = (await client.listTools()).tools[0];
+    expect(tool._meta).toEqual({ "openai/fileParams": ["file"] });
+    const props = tool.inputSchema.properties as Record<string, { type: string; properties: Record<string, { type: string }>; required: string[]; additionalProperties: boolean }>;
+    expect(props.file.type).toBe("object");
+    expect(Object.keys(props.file.properties).sort()).toEqual(["download_url", "file_id", "file_name", "mime_type"]);
+    expect(props.file.required).toEqual(["download_url", "file_id"]);
+    expect(props.file.additionalProperties).toBe(false);
+    expect(tool.inputSchema.required).not.toContain("file");
+    expect(tool.inputSchema.required).not.toContain("source");
+  });
+
+  it("lien de dépôt : adresse de la page Images, refus sans droit", async () => {
+    const out = await A("ticketing_site_upload_link").run({ event: "tk-1" } as never, ctx);
+    expect(out.structured.url).toBe("https://koinonia.test/billetterie/tk-1/images");
+    roles = new Set(["OBSERVER"]);
+    expect((await A("ticketing_site_upload_link").run({ event: "tk-1" } as never, ctx)).structured.url).toBeUndefined();
   });
 
   it("observateur : refusé", async () => {

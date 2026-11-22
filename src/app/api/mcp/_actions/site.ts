@@ -19,6 +19,7 @@ import {
 } from "@/modules/ticketing/schemas";
 import { ApiError } from "@/lib/api-utils";
 import { safeFetchImage } from "@/lib/safe-fetch";
+import { publicOrigin } from "@/modules/mcp";
 import { type ActionContext, type ActionResult, type McpActionDef, refusal } from "./common";
 import { eventAction, eventFor, eventRef, type Prepared } from "./ticketing";
 
@@ -124,7 +125,26 @@ async function readAssets(input: z.infer<typeof eventInput>, ctx: ActionContext)
   return { text: assets.length ? `Images du site de « ${found.title} » :\n${lines.join("\n")}` : `Aucune image sur le site de « ${found.title} ».`, structured: { images: assets.map((a) => ({ ...a, usedIn: a.usedIn })) } };
 }
 
+async function uploadLink(input: z.infer<typeof eventInput>, ctx: ActionContext): Promise<ActionResult> {
+  const found = await eventFor(ctx, input.event, "site");
+  if (typeof found === "string") return refusal(found);
+  const url = `${publicOrigin()}/billetterie/${found.id}/images`;
+  return {
+    text: `Page de dépôt des images du site de « ${found.title} » : ${url}\nLa personne s'y connecte, dépose ses fichiers avec un texte alternatif pour chacun ; ensuite, relisez ticketing_site_assets pour retrouver les identifiants.`,
+    structured: { url },
+  };
+}
+
 export const SITE_READS: McpActionDef[] = [
+  {
+    name: "ticketing_site_upload_link",
+    action: "ticketing_site_upload_link",
+    kind: "read",
+    description: "Adresse de la page « Images du site » où la personne dépose plusieurs images d'un coup (connexion habituelle). À proposer quand l'import direct d'un fichier n'est pas possible ; relire ensuite ticketing_site_assets.",
+    input: eventInput,
+    available: readAvailable,
+    run: uploadLink as McpActionDef["run"],
+  },
   {
     name: "ticketing_site_assets",
     action: "ticketing_site_assets",
@@ -453,30 +473,58 @@ const uploadAction = eventAction({
   action: "upload_ticketing_site_asset",
   role: "site",
   description: previewDesc(
-    `ajouter une image au site d'un événement, depuis une adresse https publique (source.url) ou en base64 (source.base64, data-URL acceptée, filename facultatif) ; ${IMAGE_HINT}. Le texte alternatif (alt, 1 à 200 caractères) est obligatoire. L'aperçu télécharge, vérifie et traite l'image (variantes WebP 640, 1280 et 2400 px, sans métadonnées) ; elle n'est ajoutée qu'à la confirmation, qui renvoie l'identifiant à utiliser`
+    `ajouter une image au site d'un événement, depuis un fichier de la conversation (file, si le client le transmet), une adresse https publique (source.url) ou en base64 (source.base64, data-URL acceptée, filename facultatif) : un seul de file et source par appel ; ${IMAGE_HINT}. Si l'import direct échoue ou n'est pas disponible, proposer le lien de dépôt de ticketing_site_upload_link. Le texte alternatif (alt, 1 à 200 caractères) est obligatoire. L'aperçu télécharge, vérifie et traite l'image (variantes WebP 640, 1280 et 2400 px, sans métadonnées) ; elle n'est ajoutée qu'à la confirmation, qui renvoie l'identifiant à utiliser`
   ),
   confirmDescription: confirmDesc("ajouter l'image au site (identifiant renvoyé)"),
+  meta: { "openai/fileParams": ["file"] },
   input: z.object({
     event: eventRef,
+    file: z
+      .object({
+        download_url: z.string().url().describe("Adresse de téléchargement du fichier, fournie par le client"),
+        file_id: z.string().describe("Identifiant du fichier côté client"),
+        mime_type: z.string().optional(),
+        file_name: z.string().optional(),
+      })
+      .strict()
+      .optional()
+      .describe("Fichier image de la conversation (client IA compatible)"),
     source: z.union([
       z.object({ url: z.string().trim().min(1).max(2000).describe("Adresse https publique de l'image (aucune redirection suivie)") }).strict(),
       z.object({ base64: z.string().min(1).max(11_500_000).describe("Contenu de l'image en base64 ou data-URL"), filename: z.string().trim().max(120).optional() }).strict(),
-    ]),
+    ]).optional(),
     alt: z.string().trim().min(1).max(200).describe("Texte alternatif de l'image (accessibilité), obligatoire"),
     name: z.string().trim().max(120).optional().describe("Nom lisible de l'image"),
   }),
   prepare: async (input, _ctx, event): Promise<Prepared<{ eventId: string; siteId: string; assetId: string }> | string> => {
     const m = await ticketing();
     const site = await m.getSite(event!.id);
-    const source = input.source;
-    const buffer = "url" in source ? await safeFetchImage(source.url) : m.decodeBase64Image(source.base64);
-    const fallbackName = "url" in source ? (() => {
+    const { source, file } = input;
+    if (Boolean(source) === Boolean(file)) return "Fournissez exactement une source : `file` (fichier de la conversation) ou `source` (url ou base64). À défaut, proposez le lien de ticketing_site_upload_link.";
+    const urlName = (u: string) => {
       try {
-        return decodeURIComponent(new URL(source.url).pathname.split("/").pop() ?? "");
+        return decodeURIComponent(new URL(u).pathname.split("/").pop() ?? "");
       } catch {
         return "";
       }
-    })() : (source.filename ?? "");
+    };
+    let buffer: Buffer;
+    let fallbackName: string;
+    if (file) {
+      try {
+        buffer = await safeFetchImage(file.download_url);
+      } catch (error) {
+        if (error instanceof ApiError) return `${error.message} Fichier inaccessible, expiré ou hors limites : proposez le lien de dépôt de ticketing_site_upload_link.`;
+        throw error;
+      }
+      fallbackName = file.file_name ?? "";
+    } else if ("url" in source!) {
+      buffer = await safeFetchImage(source.url);
+      fallbackName = urlName(source.url);
+    } else {
+      buffer = m.decodeBase64Image(source!.base64);
+      fallbackName = source!.filename ?? "";
+    }
     const staged = await m.stageAsset(site.id, buffer, { alt: input.alt, name: input.name || fallbackName });
     return {
       lines: [

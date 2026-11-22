@@ -734,6 +734,10 @@ seule (`ENABLED_MODULES`) :
   exigent la boucle locale **et** `TRAEFIK_PROVIDER_TOKEN`. Pages automatiques (Billetterie, Menus,
   Infos pratiques) construites sur `getPublicEvent` seulement : aucune donnée personnelle. Pilotable
   par l'assistant IA (`_actions/site.ts`)
+- **Images du site depuis l'assistant** (spec 087) : page `/billetterie/[id]/images` (rôle `site`, dépôt
+  multiple, route d'upload de l'éditeur réutilisée) ; outil `ticketing_site_upload_link` (adresse de
+  cette page) ; `upload_ticketing_site_asset` accepte aussi `file` (`download_url`/`file_id`, client IA
+  compatible, `_meta` `openai/fileParams`) — exactement un de `file`/`source`, même garde `safeFetchImage`
 
 **Spécificités du module formulaires** (spec 079, [ADR-0030](docs/adr/0030-moteur-de-formulaires.md)) —
 désactivable (`ENABLED_MODULES`) :

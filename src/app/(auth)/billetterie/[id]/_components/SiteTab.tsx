@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { Alert, Button, Checkbox, Input, Select, StatusChip, useToast } from "@/components/ui";
 import SitePagesEditor from "./SitePagesEditor";
 import { BackgroundFields, ImageField } from "./SiteFields";
@@ -174,6 +175,7 @@ export default function SiteTab({
             <Select label="Texte" value={doc.theme.fonts.body} options={SITE_FONTS.map((f) => ({ value: f, label: SITE_FONT_LABEL[f] }))} onChange={(e) => edit((d) => void (d.theme.fonts.body = e.target.value as (typeof SITE_FONTS)[number]))} />
           </Card>
           <Card title="Images et fond">
+            <Link href={`/billetterie/${eventId}/images`} className="text-sm text-brand underline">Images du site : déposer plusieurs images d&apos;un coup</Link>
             <ImageField label="Logo" current={doc.theme.logoAssetId} tools={tools} onPick={(id) => edit((d) => void (d.theme.logoAssetId = id))} onClear={() => edit((d) => void delete d.theme.logoAssetId)} />
             <ImageField label="Image d'en-tête" current={doc.theme.headerAssetId} tools={tools} onPick={(id) => edit((d) => void (d.theme.headerAssetId = id))} onClear={() => edit((d) => void delete d.theme.headerAssetId)} />
             <BackgroundFields label="Fond de page" value={doc.theme.background} tools={tools} onChange={(bg) => edit((d) => void (d.theme.background = bg))} />

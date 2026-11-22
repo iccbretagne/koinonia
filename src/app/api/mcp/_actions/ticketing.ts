@@ -111,6 +111,8 @@ interface EventActionSpec<I extends z.ZodObject<z.ZodRawShape>, P extends { even
   description: string;
   confirmDescription: string;
   input: I;
+  /** `_meta` de l'outil d'aperçu (ex. `openai/fileParams`). */
+  meta?: Record<string, unknown>;
   /** Vérifie et résume ; reçoit l'événement résolu (absent pour `manager`). */
   prepare: (input: z.infer<I>, ctx: ActionContext, event: { id: string; title: string; access: EventAccess } | null) => Promise<Prepared<P> | string>;
   /** État relu à l'aperçu et à la confirmation : différent ⇒ rien n'est fait. */
@@ -209,7 +211,7 @@ export function eventAction<I extends z.ZodObject<z.ZodRawShape>, P extends { ev
     (spec.role === "manager" ? viewer.isSuperAdmin || viewer.permissions.includes("ticketing:manage") : viewer.predicates.includes("ticketing"));
 
   return [
-    { name: `${spec.action}_preview`, action: spec.action, kind: "preview", description: spec.description, input: spec.input, available, run: preview as McpActionDef["run"] },
+    { name: `${spec.action}_preview`, action: spec.action, kind: "preview", description: spec.description, input: spec.input, meta: spec.meta, available, run: preview as McpActionDef["run"] },
     { name: `${spec.action}_confirm`, action: spec.action, kind: "confirm", description: spec.confirmDescription, input: confirmInput, available, run: confirm as McpActionDef["run"] },
   ];
 }
