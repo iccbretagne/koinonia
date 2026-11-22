@@ -1,7 +1,9 @@
 /**
  * Abstraction de stockage fichiers pour les pièces jointes comptabilité.
  * - Si ACCOUNTING_S3_BUCKET est défini → S3/MinIO
- * - Sinon → système de fichiers local (dev uniquement, non adapté multi-serveurs)
+ * - Sinon → système de fichiers local : `FILE_STORAGE_DIR` s'il est défini (hors du dossier de la
+ *   release, ex. `/opt/koinonia/shared/uploads`), à défaut `<cwd>/uploads/accounting` (dev
+ *   uniquement : en déploiement, le cwd change à chaque release et les fichiers « disparaissent »)
  */
 import path from "node:path";
 import fs from "node:fs/promises";
@@ -12,7 +14,13 @@ export const S3_CONFIGURED = !!(
   process.env.ACCOUNTING_S3_SECRET_KEY
 );
 
-const LOCAL_BASE = path.join(process.cwd(), "uploads", "accounting");
+const LOCAL_BASE = process.env.FILE_STORAGE_DIR
+  ? path.resolve(process.env.FILE_STORAGE_DIR)
+  : path.join(process.cwd(), "uploads", "accounting");
+
+if (!S3_CONFIGURED && !process.env.FILE_STORAGE_DIR && process.env.NODE_ENV === "production") {
+  console.warn(`[file-storage] ni ACCOUNTING_S3_* ni FILE_STORAGE_DIR : fichiers écrits dans ${LOCAL_BASE}, perdus au prochain déploiement`);
+}
 
 export async function storeFile(s3Key: string, buffer: Buffer, _mimeType: string): Promise<void> {
   if (S3_CONFIGURED) {
@@ -77,6 +85,16 @@ export async function readStoredFile(s3Key: string): Promise<Buffer | null> {
   }
   const localPath = path.join(LOCAL_BASE, ...s3Key.split("/").slice(1));
   return fs.readFile(localPath).catch(() => null);
+}
+
+/** Le fichier existe-t-il dans le stockage ? (contrôle des images d'un site avant publication) */
+export async function storedFileExists(s3Key: string): Promise<boolean> {
+  if (S3_CONFIGURED) {
+    const { HeadObjectCommand } = await import("@aws-sdk/client-s3");
+    const s3 = await makeS3Client();
+    return s3.send(new HeadObjectCommand({ Bucket: process.env.ACCOUNTING_S3_BUCKET!, Key: s3Key })).then(() => true, () => false);
+  }
+  return fs.access(path.join(LOCAL_BASE, ...s3Key.split("/").slice(1))).then(() => true, () => false);
 }
 
 export async function serveLocalFile(s3Key: string): Promise<{ buffer: Buffer; mimeType: string } | null> {

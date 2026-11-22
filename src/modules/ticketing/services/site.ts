@@ -148,7 +148,15 @@ export async function getSiteStatus(eventId: string): Promise<SiteStatus> {
     prisma.ticketingEvent.findUniqueOrThrow({ where: { id: eventId }, select: { status: true, churchId: true } }),
     prisma.ticketingSiteDomain.findFirst({ where: { siteId: site.id, status: "APPROVED" }, select: { host: true } }),
   ]);
-  return siteReachability({ slug: site.slug, sitesEnabled: await getSitesEnabled(event.churchId), baseDomain: process.env.SITE_BASE_DOMAIN, eventStatus: event.status, dedicatedHost: domain?.host ?? null });
+  const status = siteReachability({ slug: site.slug, sitesEnabled: await getSitesEnabled(event.churchId), baseDomain: process.env.SITE_BASE_DOMAIN, eventStatus: event.status, dedicatedHost: domain?.host ?? null });
+  // Fichiers d'image introuvables dans le stockage : le public verrait des images cassées.
+  const { missingAssetFiles } = await import("./site-assets");
+  const row = await prisma.ticketingSite.findUniqueOrThrow({ where: { id: site.id }, select: { published: true } });
+  const publishedDoc = row.published ? siteDocumentSchema.safeParse(row.published) : null;
+  const ids = new Set([...assetIdsOf(site.draft), ...(publishedDoc?.success ? assetIdsOf(publishedDoc.data) : [])]);
+  const missing = await missingAssetFiles(site.id, [...ids]);
+  if (missing.length) status.warnings.push(`Fichier introuvable dans le stockage pour ${missing.length} image(s) (${missing.slice(0, 5).join(", ")}${missing.length > 5 ? "…" : ""}) : elles s'affichent cassées. Téléversez-les à nouveau.`);
+  return status;
 }
 
 /** Site servi pour un hôte : sous-domaine de `SITE_BASE_DOMAIN`, ou domaine dédié approuvé. */
