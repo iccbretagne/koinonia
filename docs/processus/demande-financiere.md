@@ -51,6 +51,17 @@ Une **avance de budget**, ou une **note de frais payée sans pièce**, n'est pas
 - Jamais de relance pour la **Navette** (registre déjà justifié), une note issue de la navette ou une note de frais avec pièce.
 - **Arriéré** : une demande payée avant la mise en service n'est pas relancée d'office. Le comptable **réclame les justificatifs** sur la demande, ou pour toutes d'un coup depuis le filtre « Arriéré » de la liste : la première échéance part alors du jour de la réclamation.
 
+### Demander une pièce (spec 086)
+
+Une fois la demande prise en charge, le demandeur ne peut plus y ajouter de pièce de lui-même. Si une pièce manque ou doit être remplacée, le comptable clique sur **« Demander une pièce »** sur la demande, avec un message facultatif (« Merci de joindre la facture du magasin »).
+
+- Le demandeur est prévenu (cloche, email selon ses préférences, notification sur ses appareils). Sur sa demande, un encart reprend le message et lui permet de déposer **une ou plusieurs pièces**, quel que soit l'état de la demande (sauf annulée ou rejetée).
+- Au dépôt, la mention **« Pièce demandée »** disparaît et le comptable est prévenu.
+- Sans réponse, le même bouton devient **« Relancer »** : la demande affiche la date de la première demande, le nombre de relances et la dernière. Il n'y a pas de relance automatique.
+- Le comptable peut **annuler** la demande de pièce (pièce reçue autrement).
+- La liste des demandes propose le filtre **« Pièce demandée »**.
+- Navette : la comptabilité peut de même **demander le justificatif** d'une ligne à son auteur, qui peut alors le déposer même après le délai de 48 heures, sans modifier le reste de la ligne.
+
 ## Où ça se passe
 
 | Pour… | Aller à… |
@@ -60,6 +71,8 @@ Une **avance de budget**, ou une **note de frais payée sans pièce**, n'est pas
 | Traiter, valider et payer | Demandes → **Comptabilité** |
 | Déposer ses factures après une avance | La demande, bloc **Justificatifs** |
 | Voir ce qui reste à justifier | Demandes → Comptabilité, compteur **À justifier** |
+| Demander ou relancer une pièce manquante | La demande, bouton **Demander une pièce** ; liste, filtre **Pièce demandée** |
+| Déposer la pièce demandée | La demande, encart **Pièce demandée** |
 | Mesurer | Comptabilité, onglet **Statistiques** |
 
 L'écran de traitement affiche les compteurs en tête — en attente, en traitement, validées, rejetées, paiements dus — puis la file à traiter, et enfin la liste complète filtrable par statut et par type, avec le total engagé.
