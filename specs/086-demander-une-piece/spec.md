@@ -1,7 +1,7 @@
 # Spec — Compta : « Demander une pièce »
 
 - **Numéro** : 086
-- **Statut** : Brouillon
+- **Statut** : Implémentée
 - **Créée le** : 2026-11-22
 - **Branche suggérée** : `feat/compta-demander-piece`
 

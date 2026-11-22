@@ -1,7 +1,7 @@
 # Plan technique — Compta : « Demander une pièce »
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Implémenté
 - **Mis à jour le** : 2026-11-22
 
 ## Vérification de conformité (constitution)
