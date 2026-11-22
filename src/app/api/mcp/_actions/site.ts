@@ -500,7 +500,7 @@ const uploadAction = eventAction({
     const m = await ticketing();
     const site = await m.getSite(event!.id);
     const { source, file } = input;
-    if (!source === !file) return "Fournissez exactement une source : `file` (fichier de la conversation) ou `source` (url ou base64). À défaut, proposez le lien de ticketing_site_upload_link.";
+    if (Boolean(source) === Boolean(file)) return "Fournissez exactement une source : `file` (fichier de la conversation) ou `source` (url ou base64). À défaut, proposez le lien de ticketing_site_upload_link.";
     const urlName = (u: string) => {
       try {
         return decodeURIComponent(new URL(u).pathname.split("/").pop() ?? "");

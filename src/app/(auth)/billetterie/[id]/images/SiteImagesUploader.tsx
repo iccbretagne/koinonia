@@ -48,8 +48,9 @@ export default function SiteImagesUploader({ eventId, assets }: { readonly event
       body.set("alt", row.alt.trim());
       body.set("name", row.name.trim());
       try {
-        const res = await fetch(`/api/ticketing/events/${eventId}/site/assets`, { method: "POST", body });
-        const data = await res.json().catch(() => ({}));
+        // Envoi volontairement séquentiel : une image à la fois (8 Mo chacune), état ligne par ligne.
+        const res = await fetch(`/api/ticketing/events/${eventId}/site/assets`, { method: "POST", body }); // NOSONAR
+        const data = await res.json().catch(() => ({})); // NOSONAR
         if (!res.ok) throw new Error(data.error ?? "Dépôt refusé");
         patch(i, { state: "done" });
         sent++;
@@ -93,9 +94,7 @@ export default function SiteImagesUploader({ eventId, assets }: { readonly event
             <div className="min-w-40">
               <Input label="Nom (facultatif)" value={row.name} maxLength={120} disabled={row.state === "done"} onChange={(e) => patch(i, { name: e.target.value })} />
             </div>
-            <p className="w-full text-sm text-ink-muted" role="status">
-              {row.state === "done" ? "Envoyée" : row.state === "sending" ? "Envoi…" : row.state === "error" ? `Refusée : ${row.error}` : row.alt.trim() ? "Prête" : "Texte alternatif manquant : envoi impossible"}
-            </p>
+            <output className="block w-full text-sm text-ink-muted">{rowStatus(row)}</output>
           </div>
         ))}
         {rows.some((r) => r.state === "error") && <Alert tone="danger">Certaines images sont refusées ; les autres sont envoyées.</Alert>}
@@ -126,4 +125,12 @@ export default function SiteImagesUploader({ eventId, assets }: { readonly event
       </section>
     </div>
   );
+}
+
+/** Libellé d'état d'une ligne de dépôt. */
+function rowStatus(row: { state: string; error?: string; alt: string }): string {
+  if (row.state === "done") return "Envoyée";
+  if (row.state === "sending") return "Envoi…";
+  if (row.state === "error") return `Refusée : ${row.error}`;
+  return row.alt.trim() ? "Prête" : "Texte alternatif manquant : envoi impossible";
 }
