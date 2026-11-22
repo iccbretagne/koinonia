@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExternalLink, Flag } from "lucide-react";
-import { Button, ConfirmModal, Modal, StatusChip, Textarea, useToast, type StatusTone } from "@/components/ui";
+import { Alert, Button, ConfirmModal, Modal, StatusChip, Textarea, useToast, type StatusTone } from "@/components/ui";
 import type { LedgerLine } from "@/modules/shuttle";
 import {
   EXPENSE_CATEGORY_LABEL,
@@ -52,12 +52,23 @@ interface HistoryItem {
   details: Record<string, unknown> | null;
 }
 
+const NOTE_LABEL = {
+  flag: "Motif du signalement",
+  retained: "Pourquoi la caution n'est pas restituée",
+  "receipt-request": "Message pour l'auteur (facultatif)",
+} as const;
+const NOTE_SUCCESS = { flag: "Ligne signalée", retained: "Caution marquée non restituée", "receipt-request": "Justificatif demandé" } as const;
+
 const ACTION_LABEL: Record<string, string> = { CREATE: "Création", UPDATE: "Modification", DELETE: "Suppression" };
 
 function historyDetail(item: HistoryItem): string | null {
   const d = item.details ?? {};
   if (typeof d.flag === "string") return `Signalée : ${d.flag}`;
   if ("flag" in d && d.flag === null) return "Signalement levé";
+  if (typeof d.receiptRequest === "string") {
+    const labels: Record<string, string> = { request: "Justificatif demandé", reminder: "Justificatif relancé", cancelled: "Demande de justificatif annulée", submitted: "Justificatif déposé" };
+    return labels[d.receiptRequest] ?? null;
+  }
   if (typeof d.reimbursement === "string") return `Remboursement ${d.reimbursement}`;
   if (typeof d.depositRetained === "string") return `Caution non restituée : ${d.depositRetained}`;
   if (typeof d.label === "string") return d.label;
@@ -159,8 +170,9 @@ export default function EntryDetail({
   const [history, setHistory] = useState<HistoryItem[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [noteFor, setNoteFor] = useState<"flag" | "retained" | null>(null);
+  const [noteFor, setNoteFor] = useState<"flag" | "retained" | "receipt-request" | null>(null);
   const [note, setNote] = useState("");
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (line?.source !== "ledger") return;
@@ -200,11 +212,11 @@ export default function EntryDetail({
   }
 
   async function submitNote() {
-    if (!note.trim() || !noteFor) return;
+    if (!noteFor || (noteFor !== "receipt-request" && !note.trim())) return;
     const ok = await call(
       `${base}/${noteFor}`,
-      { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ note: note.trim() }) },
-      noteFor === "flag" ? "Ligne signalée" : "Caution marquée non restituée"
+      { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ note: note.trim() || undefined }) },
+      NOTE_SUCCESS[noteFor]
     );
     if (ok) onClose();
   }
@@ -215,6 +227,40 @@ export default function EntryDetail({
     <>
       <Modal open onClose={onClose} title={lineTitle(line)} mobileLayout="sheet">
         <div className="space-y-4">
+          {line.receiptRequest && (
+            <Alert
+              tone="warning"
+              title={`Justificatif demandé le ${new Date(line.receiptRequest.at).toLocaleDateString("fr-FR")}${
+                line.receiptRequest.count > 1
+                  ? ` · relancé ${line.receiptRequest.count - 1} fois, le ${new Date(line.receiptRequest.lastAt).toLocaleDateString("fr-FR")}`
+                  : ""
+              }.`}
+            >
+              {line.receiptRequest.note ?? "La comptabilité attend le justificatif de cette ligne."}
+              {isAuthor && (
+                <span className="mt-2 flex flex-wrap items-center gap-2">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    aria-label="Justificatif"
+                    onChange={(e) => setReceiptFile(e.target.files?.[0] ?? null)}
+                    className="text-sm"
+                  />
+                  <Button
+                    size="sm"
+                    disabled={busy || !receiptFile}
+                    onClick={async () => {
+                      const form = new FormData();
+                      form.append("file", receiptFile!);
+                      if (await call(`${base}/receipt`, { method: "POST", body: form }, "Justificatif envoyé")) onClose();
+                    }}
+                  >
+                    Envoyer
+                  </Button>
+                </span>
+              )}
+            </Alert>
+          )}
           {line.flagNote && (
             <p className="flex items-start gap-2 rounded-control bg-warning-soft px-3 py-2 text-sm text-ink">
               <Flag aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
@@ -265,14 +311,14 @@ export default function EntryDetail({
           {noteFor ? (
             <div className="space-y-2">
               <Textarea
-                label={noteFor === "flag" ? "Motif du signalement" : "Pourquoi la caution n'est pas restituée"}
+                label={NOTE_LABEL[noteFor]}
                 rows={2}
                 maxLength={300}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
               />
               <div className="flex gap-2">
-                <Button size="sm" disabled={busy || !note.trim()} onClick={submitNote}>
+                <Button size="sm" disabled={busy || (noteFor !== "receipt-request" && !note.trim())} onClick={submitNote}>
                   Enregistrer
                 </Button>
                 <Button size="sm" variant="secondary" onClick={() => setNoteFor(null)}>
@@ -301,6 +347,21 @@ export default function EntryDetail({
                 <Button size="sm" variant="secondary" onClick={() => setNoteFor("flag")}>
                   Signaler
                 </Button>
+              )}
+              {viewer.manager && line.source === "ledger" && !line.receiptRequest && (
+                <Button size="sm" variant="secondary" onClick={() => setNoteFor("receipt-request")}>
+                  Demander le justificatif
+                </Button>
+              )}
+              {viewer.manager && line.receiptRequest && (
+                <>
+                  <Button size="sm" variant="secondary" onClick={() => setNoteFor("receipt-request")}>
+                    Relancer
+                  </Button>
+                  <Button size="sm" variant="ghost" disabled={busy} onClick={() => call(`${base}/receipt-request`, { method: "DELETE" }, "Demande annulée")}>
+                    Annuler la demande
+                  </Button>
+                </>
               )}
               {viewer.manager && line.flagNote && (
                 <Button size="sm" variant="secondary" disabled={busy} onClick={() => call(`${base}/flag`, { method: "DELETE" }, "Signalement levé")}>

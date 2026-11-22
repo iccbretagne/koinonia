@@ -576,6 +576,10 @@ renommé spec 052) :
   courant calculés à la lecture, suppression logique, historique par `logAudit` (avant/après).
   Toute mutation par l'équipe notifie la compta (domaine `shuttle` : Comptables, à défaut
   Admins) ; le franchissement du seuil de solde bas alerte aussi les responsables
+- **Demander le justificatif** (spec 086) : `shuttle:manage` pose `receiptRequest*` sur une ligne
+  (`PUT/DELETE …/entries/[id]/receipt-request`) ; l'auteur seul redépose alors son justificatif
+  (`POST …/receipt`, `submitRequestedReceipt`) hors du délai de 48 h, sans toucher aux autres
+  champs ; la compta est prévenue
 - Liens avec `accounting` (via son index, jamais l'inverse) : note de frais créée depuis une ligne
   « avance personnelle » (`createLinkedExpenseReport`, justificatif copié, ouverte à l'auteur même
   STAR), avances de budget versées au département Navette **lues** comme entrées du registre, et
@@ -834,6 +838,12 @@ désactivable (`ENABLED_MODULES`) :
   responsables et au Ministre. Jamais de relance pour la Navette, une note issue de la navette ou
   une note liée (`overageOfJustificationId`) ; l'arriéré (payé avant la mise en service) se réclame par la compta (`claimJustification`, action `claimJustification` de `PATCH /api/accounting/requests/[id]`). Les statistiques rangent chaque euro versé dans une
   seule case (`fund-tracking.ts`, versé = somme des cases) sans toucher aux indicateurs existants
+- **Demander une pièce** (spec 086) : `requestPiece`/`cancelPieceRequest` (`PATCH
+  /api/accounting/requests/[id]`, `accounting:manage`) posent un état sur la demande
+  (`pieceRequested*`) ; le demandeur **seul** dépose alors un lot de fichiers par
+  `POST …/requests/[id]/pieces` (`submitPieces`, droit tiré de l'objet : pas de `accounting:submit`
+  exigé, STAR compris), hors de la règle « Soumise » de `POST /api/accounting/attachments`, laissée
+  intacte. Le premier lot referme l'état (prise conditionnelle) et prévient la compta une fois
 - Pas d'accès au planning, aux membres, aux événements, au discipolat ni à la section admin
 - Conserve `audio:listen` et les permissions transverses du module emploi (`jobs:*`, hors
   `jobs:manage`)

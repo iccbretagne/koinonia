@@ -89,6 +89,9 @@ export default async function AccountingRequestDetailPage({
     scope: await getAccountingDepartmentScope(session, churchId),
   });
 
+  const submitterActive =
+    (await prisma.userChurchRole.count({ where: { userId: req.submittedById, churchId } })) > 0;
+
   return (
     <div>
       <div className="flex items-center gap-2 mb-6">
@@ -99,6 +102,8 @@ export default async function AccountingRequestDetailPage({
         <span className="text-sm text-ink-muted font-medium truncate">{req.label}</span>
       </div>
       <RequestDetail
+        key={`${req.attachments.length}-${req.pieceRequestCount}-${req.pieceRequestedAt?.getTime() ?? 0}`}
+        submitterActive={submitterActive}
         request={serialized}
         canManage={canManage}
         isOwn={isOwn}

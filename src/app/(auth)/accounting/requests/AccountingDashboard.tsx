@@ -41,6 +41,8 @@ interface Request {
   justification: { status: string; late: boolean } | null;
   /** Arriéré : versée avant le suivi, justificatifs jamais demandés (compta seulement). */
   claimable?: boolean;
+  /** Pièce demandée par la compta et pas encore déposée (spec 086). */
+  pieceRequestedAt?: string | Date | null;
 }
 
 interface Stats {
@@ -106,6 +108,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
   const [search, setSearch] = useState("");
   const router = useRouter();
   const [claiming, setClaiming] = useState<string | null>(null);
+  const awaitingPiece = useMemo(() => requests.filter((r) => r.pieceRequestedAt).length, [requests]);
   const arrears = useMemo(() => requests.filter((r) => r.claimable), [requests]);
 
   /** Réclame les justificatifs de tout l'arriéré, une demande après l'autre (spec 078). */
@@ -136,6 +139,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
     const q = search.trim().toLowerCase();
     const list = requests.filter((r) => {
       if (statusFilter === "JUSTIFY") { if (!r.justification) return false; }
+      else if (statusFilter === "PIECE") { if (!r.pieceRequestedAt) return false; }
       else if (statusFilter === "ARREARS") { if (!r.claimable) return false; }
       else if (statusFilter && r.status !== statusFilter) return false;
       if (typeFilter && r.type !== typeFilter) return false;
@@ -215,7 +219,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
       <div className="flex items-center gap-4">
         <div className="flex flex-col gap-2 flex-1">
           <div className="flex flex-wrap gap-2">
-            {[...STATUS_FILTERS, ...(arrears.length > 0 ? [{ value: "ARREARS", label: `Arriéré (${arrears.length})` }] : [])].map((f) => (
+            {[...STATUS_FILTERS, ...(awaitingPiece > 0 ? [{ value: "PIECE", label: `Pièce demandée (${awaitingPiece})` }] : []), ...(arrears.length > 0 ? [{ value: "ARREARS", label: `Arriéré (${arrears.length})` }] : [])].map((f) => (
               <button
                 key={f.value}
                 onClick={() => setStatusFilter(f.value)}
@@ -324,6 +328,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
                         {pendingPmts > 0 && (
                           <p className="text-xs text-warning mt-0.5">{pendingPmts} paiement{pendingPmts > 1 ? "s" : ""} à confirmer</p>
                         )}
+                        {r.pieceRequestedAt && <p className="text-xs text-warning mt-0.5">Pièce demandée</p>}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`text-xs ${days >= 7 ? "text-warning font-semibold" : "text-ink-subtle"}`}>{days}j</span>
@@ -359,6 +364,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
                         <span className="text-xs text-ink-muted">{fmtAmount(r.amount)}</span>
                         <span className="text-xs text-ink-subtle">{r.department?.name ?? "Personnel"}</span>
                         <JustificationPill j={r.justification} claimable={r.claimable} />
+                        {r.pieceRequestedAt && <span className="text-xs font-medium text-warning">Pièce demandée</span>}
                       </div>
                     </div>
                     <span className={`text-xs shrink-0 mt-0.5 ${days >= 7 ? "text-warning font-semibold" : "text-ink-subtle"}`}>{days}j</span>

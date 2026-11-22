@@ -305,4 +305,4 @@ export async function notifyEntryAuthor(entry: ShuttleEntry, actorId: string, ti
   await notify([entry.createdById], title, message, `/accounting/navette?ligne=${entry.id}`, type);
 }
 
-export { loadEntry as loadShuttleEntry, fmtEuro };
+export { loadEntry as loadShuttleEntry, fmtEuro, notify as notifyShuttleUsers };
