@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.40.1] - 2026-11-22
+
+### Corrigé
+
+- Stockage des fichiers : les clés `ACCOUNTING_S3_ACCESS_KEY_ID` / `ACCOUNTING_S3_SECRET_ACCESS_KEY` (nommage de `MEDIA_S3_*`) sont reconnues. Sans cela, S3 était ignoré et les pièces jointes (compta, navette, trésorerie) et les images des sites d'événement étaient écrites dans le dossier de la release, donc introuvables après chaque déploiement. Une erreur de lecture S3 est journalisée, et l'onglet Site comme l'assistant IA signalent une image dont le fichier manque.
+
 ## [v1.40.0] - 2026-11-22
 
 ### Ajouté
