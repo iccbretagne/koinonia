@@ -141,6 +141,7 @@ async function buildServer(caller: McpCaller) {
       {
         description: action.description,
         inputSchema: action.input,
+        ...(action.meta ? { _meta: action.meta } : {}),
         annotations: { readOnlyHint: !confirm, destructiveHint: false, idempotentHint: false, openWorldHint: false },
       },
       async (args) => {

@@ -1,7 +1,7 @@
 # Spec — Images du site depuis un assistant IA
 
 - **Numéro** : 087
-- **Statut** : Brouillon
+- **Statut** : Implémentée
 - **Créée le** : 2026-11-22
 - **Branche suggérée** : `feat/site-images-assistant`
 

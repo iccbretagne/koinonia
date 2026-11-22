@@ -76,6 +76,8 @@ export interface McpActionDef {
   /** Le compte peut-il faire cette action dans l'application ? (revérifié à chaque appel). */
   available: (viewer: AssistantViewer) => boolean;
   run: (input: never, ctx: ActionContext) => Promise<ActionResult>;
+  /** `_meta` du descripteur d'outil (ex. `openai/fileParams`). */
+  meta?: Record<string, unknown>;
 }
 
 export const hasPermission = (permission: string) => (viewer: AssistantViewer) => viewer.permissions.includes(permission);
