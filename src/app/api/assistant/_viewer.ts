@@ -60,6 +60,11 @@ export async function buildViewer(session: Session, churchId: string): Promise<A
     const { ticketingSitesEnabled } = await import("@/lib/ticketing-sites-flag");
     if (ticketingSitesEnabled()) predicates.push("ticketingSites");
   }
+  if (registry.has("forms")) {
+    // Formulaires : forms:manage ou accès délégué (spec 085).
+    const { getFormsCapability } = await import("@/modules/forms/auth");
+    if (await getFormsCapability(session, churchId).catch(() => null)) predicates.push("forms");
+  }
   if (registry.has("planning") && permissions.includes("planning:view")) {
     const { canReadAnnouncementSheet } = await import("@/modules/planning");
     if (await canReadAnnouncementSheet(session, churchId).catch(() => false)) predicates.push("announcementSheet");

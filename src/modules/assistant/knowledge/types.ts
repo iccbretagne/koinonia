@@ -29,6 +29,8 @@ export const PREDICATES = [
   "ticketingSites",
   /** Équipe Vie des STAR (département de fonction `VIE_DES_STAR`), spec 077. */
   "pvsTeam",
+  /** Outil de formulaires : `forms:manage` ou accès délégué, spec 085. */
+  "forms",
 ] as const;
 export type Predicate = (typeof PREDICATES)[number];
 
