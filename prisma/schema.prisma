@@ -83,6 +83,7 @@ model Church {
   mediaSettings                  MediaSettings?
   mediaShareTokens               MediaShareToken[]
   mediaGalleryGrants             MediaGalleryGrant[]
+  formsGrants                    FormsGrant[]
   mcpGrants                      McpGrant[]
   mcpSettings                    McpChurchSettings?
   ticketingSiteSettings          TicketingSiteSettings?
@@ -206,6 +207,10 @@ model User {
   formsCreated                      Form[]                        @relation("FormCreatedBy")
   formResponses                     FormResponse[]                @relation("FormResponseUser")
   formFacilitations                 FormFacilitator[]             @relation("FormFacilitatorUser")
+  formsGrants                       FormsGrant[]                  @relation("FormsGrantee")
+  formsGrantsGiven                  FormsGrant[]                  @relation("FormsGrantor")
+  formManagements                   FormManager[]                 @relation("FormManagerUser")
+  formManagersAdded                 FormManager[]                 @relation("FormManagerAddedBy")
   systemMessagesCreated             SystemMessage[]               @relation("SystemMessageCreatedBy")
   systemMessagesUpdated             SystemMessage[]               @relation("SystemMessageUpdatedBy")
   systemMessageReceipts             SystemMessageReceipt[]
@@ -4304,6 +4309,7 @@ model Form {
   receipts       FormAnonymousReceipt[]
   sessions       FormSession[]
   facilitators   FormFacilitator[]
+  managers       FormManager[]
 
   @@unique([churchId, slug])
   @@index([status, closesAt])
@@ -4500,6 +4506,41 @@ model FormFacilitatorScope {
 
   @@index([facilitatorId])
   @@map("form_facilitator_scopes")
+}
+
+/// Accès délégué à l'outil de formulaires (spec 085) : ses formulaires seulement.
+model FormsGrant {
+  id          String   @id @default(cuid())
+  churchId    String
+  userId      String
+  grantedById String?
+  createdAt   DateTime @default(now())
+
+  church    Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  user      User   @relation("FormsGrantee", fields: [userId], references: [id], onDelete: Cascade)
+  grantedBy User?  @relation("FormsGrantor", fields: [grantedById], references: [id], onDelete: SetNull)
+
+  @@unique([churchId, userId])
+  @@index([userId])
+  @@index([grantedById])
+  @@map("forms_grants")
+}
+
+/// Co-gestionnaire d'un formulaire, partagé par son auteur (spec 085).
+model FormManager {
+  formId    String
+  userId    String
+  addedById String?
+  createdAt DateTime @default(now())
+
+  form    Form  @relation(fields: [formId], references: [id], onDelete: Cascade)
+  user    User  @relation("FormManagerUser", fields: [userId], references: [id], onDelete: Cascade)
+  addedBy User? @relation("FormManagerAddedBy", fields: [addedById], references: [id], onDelete: SetNull)
+
+  @@id([formId, userId])
+  @@index([userId])
+  @@index([addedById])
+  @@map("form_managers")
 }
 
 /// Présence d'un inscrit par jour et demi-journée ; la dernière saisie l'emporte.

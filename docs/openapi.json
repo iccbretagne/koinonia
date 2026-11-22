@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "API Koinonia",
-    "version": "1.38.0",
+    "version": "1.39.0",
     "description": "API interne de Koinonia, appelée par l'application (session NextAuth, même origine). Générée depuis les contrats `contract.ts` des routes — voir `docs/api.md` (conventions) et ADR-0023."
   },
   "components": {
@@ -14522,7 +14522,7 @@
           "forms"
         ],
         "summary": "Formulaires de l'église courante",
-        "description": "**Accès** : permission `forms:manage`.",
+        "description": "**Accès** : permission `forms:manage` — ou accès délégué : seulement ses formulaires et ceux partagés avec soi.",
         "security": [
           {
             "session": []
@@ -14551,7 +14551,7 @@
           "forms"
         ],
         "summary": "Création d'un formulaire",
-        "description": "**Accès** : permission `forms:manage`.\n\nCrée un brouillon (inscription, participation ou sondage ; public ou comptes connectés ; seul un sondage peut être anonyme), avec une adresse unique dans l'église. Journalisé.",
+        "description": "**Accès** : permission `forms:manage` — ou accès délégué (spec 085) ; l'appelant devient l'auteur.\n\nCrée un brouillon (inscription, participation ou sondage ; public ou comptes connectés ; seul un sondage peut être anonyme), avec une adresse unique dans l'église. Journalisé.",
         "security": [
           {
             "session": []
@@ -14625,7 +14625,7 @@
           "forms"
         ],
         "summary": "Formulaire à construire",
-        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire ; ou auteur / co-gestionnaire avec accès délégué (spec 085).",
         "security": [
           {
             "session": []
@@ -14664,7 +14664,7 @@
           "forms"
         ],
         "summary": "Modification d'un formulaire",
-        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\nRéglages et, si fournie, liste complète des questions (clé = identifiant existant ou clé provisoire). Dès qu'il y a des réponses : 409 pour supprimer une question répondue ou un choix retenu, changer le type d'une question répondue, baisser des places sous les réponses, changer l'anonymat ou ajouter une question obligatoire. Sessions et niveaux (inscription) : un niveau qui a des inscrits n'est ni supprimé ni ramené sous ses inscrits. Rattachement (participation seulement) : un événement d'église ou de billetterie de l'église du formulaire, sinon 400. Conservation de 1 à 24 mois. Journalisé.",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire ; ou auteur / co-gestionnaire avec accès délégué (spec 085).\n\nRéglages et, si fournie, liste complète des questions (clé = identifiant existant ou clé provisoire). Dès qu'il y a des réponses : 409 pour supprimer une question répondue ou un choix retenu, changer le type d'une question répondue, baisser des places sous les réponses, changer l'anonymat ou ajouter une question obligatoire. Sessions et niveaux (inscription) : un niveau qui a des inscrits n'est ni supprimé ni ramené sous ses inscrits. Rattachement (participation seulement) : un événement d'église ou de billetterie de l'église du formulaire, sinon 400. Conservation de 1 à 24 mois. Journalisé.",
         "security": [
           {
             "session": []
@@ -14993,7 +14993,7 @@
           "forms"
         ],
         "summary": "Suppression d'un formulaire",
-        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\nEfface ses réponses tout de suite ; le formulaire répond ensuite comme une adresse inconnue. Journalisé.",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire ; ou auteur avec accès délégué ; refusé (404) à un co-gestionnaire (spec 085).\n\nEfface ses réponses tout de suite ; le formulaire répond ensuite comme une adresse inconnue. Journalisé.",
         "security": [
           {
             "session": []
@@ -15194,7 +15194,7 @@
           "forms"
         ],
         "summary": "Duplication d'un formulaire",
-        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\nCopie en brouillon : réglages, questions, choix et conditions, sans aucune réponse. Journalisé.",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire ; ou auteur / co-gestionnaire avec accès délégué (spec 085).\n\nCopie en brouillon : réglages, questions, choix et conditions, sans aucune réponse. Journalisé.",
         "security": [
           {
             "session": []
@@ -15254,7 +15254,7 @@
           "forms"
         ],
         "summary": "Export des réponses d'un formulaire",
-        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\nClasseur avec une ligne par réponse et une colonne par question, valeurs neutralisées contre l'injection de formules ; aucune identité pour un sondage anonyme. Journalisé.",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire ; ou auteur / co-gestionnaire avec accès délégué (spec 085).\n\nClasseur avec une ligne par réponse et une colonne par question, valeurs neutralisées contre l'injection de formules ; aucune identité pour un sondage anonyme. Journalisé.",
         "security": [
           {
             "session": []
@@ -15295,7 +15295,7 @@
           "forms"
         ],
         "summary": "Intervenants d'un formulaire",
-        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire ; ou auteur / co-gestionnaire avec accès délégué (spec 085).",
         "security": [
           {
             "session": []
@@ -15334,7 +15334,7 @@
           "forms"
         ],
         "summary": "Désignation des intervenants",
-        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\nRemplace la liste. Comptes de l'église seulement ; inscription à sessions seulement ; chacun sur tout le formulaire ou sur des sessions et niveaux du formulaire. Les nouveaux intervenants sont prévenus (domaine forms). Journalisé.",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire ; ou auteur / co-gestionnaire avec accès délégué (spec 085).\n\nRemplace la liste. Comptes de l'église seulement ; inscription à sessions seulement ; chacun sur tout le formulaire ou sur des sessions et niveaux du formulaire. Les nouveaux intervenants sont prévenus (domaine forms). Journalisé.",
         "security": [
           {
             "session": []
@@ -15431,6 +15431,157 @@
         }
       }
     },
+    "/api/forms/{id}/managers": {
+      "get": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Co-gestionnaires d'un formulaire",
+        "description": "**Accès** : permission `forms:manage` — ou auteur / co-gestionnaire avec accès délégué, dans l'église du formulaire.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comptes avec qui le formulaire est partagé : nom, email, ajouté par, date",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Partager un formulaire avec un compte",
+        "description": "**Accès** : permission `forms:manage` — ou auteur du formulaire avec accès délégué.\n\nRéservé à l'auteur et à `forms:manage`. Le compte doit avoir l'accès délégué ou `forms:manage` dans l'église. Idempotent. Le co-gestionnaire fait tout sauf supprimer le formulaire et gérer le partage. Notifié, journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  }
+                },
+                "required": [
+                  "userId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "`{ created }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/forms/{id}/managers/{userId}": {
+      "delete": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Retirer un co-gestionnaire d'un formulaire",
+        "description": "**Accès** : permission `forms:manage` — ou auteur du formulaire avec accès délégué.\n\nRéservé à l'auteur et à `forms:manage`. Notifié, journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ deleted: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
     "/api/forms/{id}/responses": {
       "get": {
         "tags": [
@@ -15514,7 +15665,7 @@
           "forms"
         ],
         "summary": "Annulation d'une réponse par la gestion",
-        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\nLa réponse passe à « Annulée » et libère sa place. 409 si elle est déjà close. Journalisé.",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire ; ou auteur / co-gestionnaire avec accès délégué (spec 085).\n\nLa réponse passe à « Annulée » et libère sa place. 409 si elle est déjà close. Journalisé.",
         "security": [
           {
             "session": []
@@ -15627,7 +15778,7 @@
           "forms"
         ],
         "summary": "Publication, clôture ou réouverture d'un formulaire",
-        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire.\n\npublish : brouillon → publié (au moins une question ; un public nominatif reçoit d'office une question Email obligatoire). close : publié → clôturé, la conservation court. reopen : clôturé → publié si la fin des réponses n'est pas passée et les réponses pas effacées. Journalisé.",
+        "description": "**Accès** : permission `forms:manage` — dans l'église du formulaire ; ou auteur / co-gestionnaire avec accès délégué (spec 085).\n\npublish : brouillon → publié (au moins une question ; un public nominatif reçoit d'office une question Email obligatoire). close : publié → clôturé, la conservation court. reopen : clôturé → publié si la fin des réponses n'est pas passée et les réponses pas effacées. Journalisé.",
         "security": [
           {
             "session": []
@@ -15677,6 +15828,174 @@
           },
           "400": {
             "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/forms/grants": {
+      "get": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Accès délégués aux formulaires de l'église courante",
+        "description": "**Accès** : permission `forms:manage`.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "responses": {
+          "200": {
+            "description": "Comptes ayant l'accès : nom, email, accordé par, date",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Accorder l'accès aux formulaires à un compte",
+        "description": "**Accès** : permission `forms:manage`.\n\nLe compte doit avoir un rôle dans l'église. Idempotent : un accès déjà accordé ne renotifie pas. Le compte ne voit et ne gère que ses formulaires (et ceux partagés avec lui). Notifié (domaine forms), journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  }
+                },
+                "required": [
+                  "userId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "`{ created }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/forms/grants/{userId}": {
+      "delete": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Retirer l'accès aux formulaires d'un compte",
+        "description": "**Accès** : permission `forms:manage`.\n\nLes formulaires du compte restent en ligne ; ses partages sont suspendus et reviennent si l'accès est rendu. Notifié (domaine forms), journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ deleted: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/forms/grants/users": {
+      "get": {
+        "tags": [
+          "forms"
+        ],
+        "summary": "Formulaires : comptes de l'église à qui donner l'accès",
+        "description": "**Accès** : permission `forms:manage`.\n\n10 comptes au plus, ayant un rôle dans l'église courante.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "forms:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 100,
+              "description": "Nom ou email (2 caractères au moins)"
+            },
+            "required": true,
+            "description": "Nom ou email (2 caractères au moins)",
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste `{ id, name, email }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
           },
           "401": {
             "description": "Session absente"
