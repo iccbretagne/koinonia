@@ -61,6 +61,8 @@ export interface LedgerLine {
   receiptName: string | null;
   receiptMime: string | null;
   flagNote: string | null;
+  /** Justificatif demandé à l'auteur par la compta (spec 086), sinon `null`. */
+  receiptRequest: { at: string; lastAt: string; count: number; note: string | null } | null;
   createdBy: { id: string; name: string } | null;
   createdAt: string;
   updatedAt: string;
@@ -158,6 +160,7 @@ async function loadBudgetAdvanceLines(churchId: string): Promise<LedgerLine[]> {
       receiptName: null,
       receiptMime: null,
       flagNote: null,
+      receiptRequest: null,
       createdBy: null,
       createdAt: releasedAt.toISOString(),
       updatedAt: releasedAt.toISOString(),
@@ -224,6 +227,14 @@ function toLedgerLine(r: LedgerRow, progressById: Map<string, Progress>): Ledger
     receiptName: r.receiptName,
     receiptMime: r.receiptMime,
     flagNote: r.flagNote,
+    receiptRequest: r.receiptRequestedAt
+      ? {
+          at: r.receiptRequestedAt.toISOString(),
+          lastAt: (r.receiptRequestLastAt ?? r.receiptRequestedAt).toISOString(),
+          count: r.receiptRequestCount,
+          note: r.receiptRequestNote,
+        }
+      : null,
     createdBy: r.createdBy ? { id: r.createdBy.id, name: r.createdBy.name ?? r.createdBy.email ?? "—" } : null,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
