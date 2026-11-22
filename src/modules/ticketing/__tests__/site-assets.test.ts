@@ -8,11 +8,12 @@ vi.mock("@/lib/audit", () => ({ logAudit: vi.fn() }));
 const storeFile = vi.fn();
 const readStoredFile = vi.fn();
 const deleteFile = vi.fn(async (..._a: unknown[]) => undefined);
-vi.mock("@/lib/file-storage", () => ({ storeFile: (...a: unknown[]) => storeFile(...a), readStoredFile: (...a: unknown[]) => readStoredFile(...a), deleteFile: (...a: unknown[]) => deleteFile(...a) }));
+const storedFileExists = vi.fn(async (..._a: unknown[]) => true);
+vi.mock("@/lib/file-storage", () => ({ storeFile: (...a: unknown[]) => storeFile(...a), readStoredFile: (...a: unknown[]) => readStoredFile(...a), deleteFile: (...a: unknown[]) => deleteFile(...a), storedFileExists: (...a: unknown[]) => storedFileExists(...a) }));
 const getSitesEnabled = vi.fn();
 vi.mock("../services/site-settings", () => ({ getSitesEnabled: (...a: unknown[]) => getSitesEnabled(...a) }));
 
-const { sniffSvg, copyAssets, exportAssets, discardSiteAssets, uploadAsset, stageAsset, confirmAsset, purgePendingAssets, deleteAsset, listAssets, decodeBase64Image, readAsset } = await import("../services/site-assets");
+const { missingAssetFiles, sniffSvg, copyAssets, exportAssets, discardSiteAssets, uploadAsset, stageAsset, confirmAsset, purgePendingAssets, deleteAsset, listAssets, decodeBase64Image, readAsset } = await import("../services/site-assets");
 const { defaultSiteDocument, remapAssetIds, assetIdsOf } = await import("../site-schemas");
 
 beforeEach(() => {
@@ -302,5 +303,18 @@ describe("sniffSvg", () => {
     const start = performance.now();
     expect(svg("<!--" + "--><!--".repeat(2000) + "x")).toBe(false);
     expect(performance.now() - start).toBeLessThan(200);
+  });
+});
+
+describe("missingAssetFiles", () => {
+  it("signale une image dont une variante manque, absente ou en attente ; rien si tout est stocké", async () => {
+    prismaMock.ticketingSiteAsset.findMany.mockResolvedValue([
+      { id: "ok", key: "k/ok.webp", name: "Bannière", variants: [{ w: 640, key: "k/ok-640.webp" }, { w: 2400, key: "k/ok.webp" }] },
+      { id: "lost", key: "k/lost.webp", name: "Femmes", variants: [{ w: 640, key: "k/lost-640.webp" }, { w: 2400, key: "k/lost.webp" }] },
+      { id: "wait", key: "pending", name: "Enfants", variants: null },
+    ] as never);
+    storedFileExists.mockImplementation(async (k: unknown) => k !== "k/lost-640.webp");
+    expect(await missingAssetFiles("s1", ["ok", "lost", "wait", "gone"])).toEqual(["Femmes", "Enfants", "gone"]);
+    expect(await missingAssetFiles("s1", [])).toEqual([]);
   });
 });

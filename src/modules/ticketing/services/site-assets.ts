@@ -229,6 +229,25 @@ export async function readAsset(assetId: string, opts: { publishedOnly: true } |
   return buffer ? { buffer } : null;
 }
 
+/**
+ * Images référencées par un document dont un fichier manque dans le stockage (asset absent, en
+ * attente, ou variante introuvable) : le public verrait une image cassée. Renvoie leurs noms.
+ */
+export async function missingAssetFiles(siteId: string, ids: readonly string[]): Promise<string[]> {
+  if (ids.length === 0) return [];
+  const rows = await (await db()).ticketingSiteAsset.findMany({ where: { siteId, id: { in: [...ids] } }, select: { id: true, key: true, name: true, variants: true } });
+  const { storedFileExists } = await import("@/lib/file-storage");
+  const missing: string[] = [];
+  for (const id of ids) {
+    const row = rows.find((r) => r.id === id);
+    if (!row || row.key === "pending") { missing.push(row?.name || id); continue; }
+    const keys = new Set([row.key, ...variantList(row.variants).map((v) => v.key)]);
+    const present = await Promise.all([...keys].map((k) => storedFileExists(k)));
+    if (present.includes(false)) missing.push(row.name || id);
+  }
+  return missing;
+}
+
 export interface AssetView {
   id: string;
   name: string;

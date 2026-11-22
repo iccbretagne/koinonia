@@ -76,6 +76,17 @@ Points d'attention :
 - **Clés VAPID distinctes** de celles de production : `npx web-push generate-vapid-keys` (notifications natives, spec 068)
 - **`SUPER_ADMIN_EMAILS`** doit pointer vers des adresses de test, pas les vrais super admins de production
 
+### Fichiers déposés (pièces jointes, images des sites d'événement)
+
+Ils vont sur S3 si `ACCOUNTING_S3_*` est défini (bucket **distinct** de la production), sinon sur
+le disque. **Sans S3, définir `FILE_STORAGE_DIR=/opt/koinonia/shared/uploads`** : par défaut, les
+fichiers sont écrits dans le dossier de la release et sont perdus au déploiement suivant (images
+de site cassées, pièces jointes introuvables).
+
+```bash
+sudo -u koinonia mkdir -p /opt/koinonia/shared/uploads
+```
+
 ### Bucket S3 média séparé
 
 **Ne jamais pointer la recette sur le bucket S3 de production.** Créer un bucket dédié, par exemple `koinonia-media-staging`, avec ses propres credentials S3 :
