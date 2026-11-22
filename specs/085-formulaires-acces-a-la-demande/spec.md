@@ -1,7 +1,7 @@
 # Spec — Formulaires : accès à la demande
 
 - **Numéro** : 085
-- **Statut** : Brouillon
+- **Statut** : Implémentée
 - **Créée le** : 2026-11-22
 - **Branche suggérée** : `feat/formulaires-acces-delegue`
 
