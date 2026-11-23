@@ -8,6 +8,8 @@ import { PageHeader, StatusChip, Tabs } from "@/components/ui";
 import { buttonClasses } from "@/components/ui/button-classes";
 import { dateAndPlace } from "@/components/ticketing/format";
 import {
+  getTicketVisual,
+  listTicketImages,
   canDo,
   getEventAccess,
   getEventDetail,
@@ -24,6 +26,7 @@ import {
   previewEvent,
 } from "@/modules/ticketing";
 import { EVENT_STATUS_LABEL } from "@/modules/ticketing/schemas";
+import TicketVisualTab from "./_components/TicketVisualTab";
 import Overview from "./_components/Overview";
 import SettingsTab from "./_components/SettingsTab";
 import OptionsTab from "./_components/OptionsTab";
@@ -37,7 +40,7 @@ import CateringTab from "./_components/CateringTab";
 import EventFormsBlock from "@/components/forms/EventFormsBlock";
 import { registry } from "@/lib/registry";
 
-const VIEWS = ["apercu", "parametres", "options", "inscrits", "reglements", "equipe", "presences", "restauration", "site"] as const;
+const VIEWS = ["apercu", "parametres", "options", "inscrits", "reglements", "equipe", "presences", "restauration", "site", "billet"] as const;
 type View = (typeof VIEWS)[number];
 
 function appUrl() {
@@ -81,6 +84,7 @@ export default async function TicketingEventPage({
     presences: read,
     restauration: can.catering,
     site: can.site,
+    billet: read,
   };
   const requested = VIEWS.find((v) => v === query.vue);
   const view: View = requested && allowed[requested] ? requested : "apercu";
@@ -98,6 +102,8 @@ export default async function TicketingEventPage({
     view === "restauration" ? cateringBoard(id) : Promise.resolve(null),
   ]);
   // Formulaires rattachés (spec 079, lot 3).
+  const visual = view === "billet" ? await getTicketVisual(id) : null;
+  const ticketImages = view === "billet" ? await listTicketImages(id) : [];
   const site = view === "site" ? await getSite(id) : null;
   const sitePreview = view === "site" ? await previewEvent(id) : null;
   const siteStatus = view === "site" ? await getSiteStatus(id) : null;
@@ -108,7 +114,7 @@ export default async function TicketingEventPage({
   const pending = payments.filter((p) => p.kind === "DECLARATION" && p.status === "PENDING").length;
   const tabs = VIEWS.filter((v) => allowed[v]).map((v) => ({
     href: `/billetterie/${id}?vue=${v}`,
-    label: { apercu: "Aperçu", parametres: "Paramètres", options: "Options", inscrits: "Inscrits", reglements: "Règlements", equipe: "Équipe", presences: "Présences", restauration: "Restauration", site: "Site" }[v],
+    label: { apercu: "Aperçu", parametres: "Paramètres", options: "Options", inscrits: "Inscrits", reglements: "Règlements", equipe: "Équipe", presences: "Présences", restauration: "Restauration", site: "Site", billet: "Visuel du billet" }[v],
     active: v === view,
     count: v === "reglements" && pending > 0 ? pending : undefined,
   }));
@@ -139,6 +145,7 @@ export default async function TicketingEventPage({
       </PageHeader>
       {view === "apercu" && <EventFormsBlock forms={forms} manage={formsManager} />}
       {view === "apercu" && <Overview event={event} bookings={bookings} publicUrl={publicUrl} publicQr={qrPath(publicUrl)} canConfigure={can.configure} />}
+      {view === "billet" && visual && <TicketVisualTab eventId={id} initial={visual} images={ticketImages} canEdit={can.configure} />}
       {view === "parametres" && <SettingsTab event={event} />}
       {view === "options" && <OptionsTab event={event} />}
       {view === "inscrits" && bookings && <BookingsTab eventId={id} bookings={bookings} canManage={can.payments} questions={event.questions} />}

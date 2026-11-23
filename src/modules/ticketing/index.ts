@@ -70,3 +70,6 @@ export { buildEventExport, duplicateEvent, importEvent, siteSourceState, summari
 export { uploadAsset, stageAsset, confirmAsset, assetState, purgePendingAssets, readAsset, listAssets, deleteAsset, decodeBase64Image, type AssetView, type StagedAsset } from "./services/site-assets";
 export { approveDomain, approvedHostOfEvent, approvedHosts, getDomain, listDomains, recheckDomains, rejectDomain, removeDomain, requestDomain, verifyDomain, type DomainRow, type DomainView } from "./services/site-domains";
 export { traefikConfig } from "./traefik";
+
+export { getTicketVisual, listTicketImages, readTicketImage, prepareTicketImage, addTicketImage, validateTicketVisual, saveTicketVisual, unpublishTicketVisual, deleteTicketImage } from "./services/ticket-visual";
+export { previewTicketVisual, publicTicketVisual } from "./services/ticket-render";

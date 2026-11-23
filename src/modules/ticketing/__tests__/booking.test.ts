@@ -193,7 +193,8 @@ describe("réservations (spec 074)", () => {
       event: { ...eventRow() },
     });
     const ticket = await getTicket("b".repeat(64));
-    expect(Object.keys(ticket).sort()).toEqual(["ageGroup", "event", "firstName", "lastName", "qr", "reference", "valid"]);
+    expect(Object.keys(ticket).sort()).toEqual(["ageGroup", "event", "firstName", "hasVisual", "lastName", "qr", "reference", "valid"]);
+    expect(ticket.hasVisual).toBe(false);
     expect(ticket.qr).toMatch(/\/billet\/b{64}$/);
   });
 });

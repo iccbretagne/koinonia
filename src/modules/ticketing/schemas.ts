@@ -175,6 +175,7 @@ export const eventCreateSchema = z
     capacity: z.coerce.number().int().min(1).max(100_000),
     description: optionalText(5000),
     location: optionalText(200),
+    address: optionalText(300),
   })
   .refine((d) => d.endsAt > d.startsAt, { message: "La fin doit suivre le début", path: ["endsAt"] });
 
@@ -185,6 +186,7 @@ export const eventUpdateSchema = z
     title: text(150),
     description: optionalText(5000),
     location: optionalText(200),
+    address: optionalText(300),
     startsAt: isoDate,
     endsAt: isoDate,
     registrationDeadline: isoDate.nullable(),
@@ -657,6 +659,7 @@ export const eventExportSchema = z
         title: text(150),
         description: optionalText(5000),
         location: optionalText(200),
+    address: optionalText(300),
         startsAt: isoDate,
         endsAt: isoDate,
         registrationDeadline: isoDate.nullable(),
@@ -731,3 +734,5 @@ export const eventExportSchema = z
     if (d.site) for (const id of assetIdsOf(d.site.document)) if (!assetIds.has(id)) issue(["site", "document"], `Image « ${id} » absente de la liste assets`);
   });
 export type EventExport = z.infer<typeof eventExportSchema>;
+
+export * from "./ticket-visual-schemas";

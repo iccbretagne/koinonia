@@ -115,6 +115,18 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     screens: ["/billetterie"],
   },
   {
+    key: "KB-BILLET-VISUEL",
+    kind: "howto",
+    title: "Personnaliser le visuel du billet",
+    questions: ["appliquer une maquette au billet", "visuel du billet", "fond du billet d'entrée", "télécharger mon billet en PDF", "personnaliser le billet avec mon assistant IA"],
+    answer: "Dans l'onglet « Visuel du billet » de l'événement, l'organisateur dépose un fond portrait sans nom ni QR, puis règle les vignettes de texte ou d'image. Le nom reste nominatif et le QR est généré par Koinonia. Vérifiez l'aperçu fictif puis publiez : les billets déjà envoyés suivent le visuel actuel et se téléchargent en PNG ou PDF. Le brouillon seul ne change pas les billets. Une image fixe de date, lieu ou adresse ne suit pas les changements de l'événement. Un assistant IA connecté peut déposer, modifier, publier ou retirer le visuel, seulement après aperçu puis confirmation ; il ne suffit pas de lui demander d'activer une image du site.",
+    href: "/billetterie",
+    hrefLabel: "Billetterie",
+    audience: { predicates: ["ticketing"] },
+    otherwise: "Le visuel du billet est réglé et publié par l'organisateur de l'événement.",
+    screens: ["/billetterie", "/profile/assistants"],
+  },
+  {
     key: "KB-SITE-EVT",
     kind: "howto",
     title: "Site d'un événement de billetterie",

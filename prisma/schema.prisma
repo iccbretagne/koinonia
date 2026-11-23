@@ -3435,6 +3435,10 @@ model TicketingEvent {
   title                    String               @db.VarChar(150)
   description              String?              @db.Text
   location                 String?              @db.VarChar(200)
+  address                  String?              @db.VarChar(300)
+  ticketVisualDraft        Json?
+  ticketVisualPublished    Json?
+  ticketImages             TicketingTicketImage[]
   posterKey                String?              @db.VarChar(512)
   startsAt                 DateTime
   endsAt                   DateTime
@@ -4660,4 +4664,19 @@ model TicketingSiteDomain {
 
   @@index([churchId, status])
   @@map("ticketing_site_domains")
+}
+
+/// Images du billet : réencodées, jamais de fichier source ni de donnée nominative.
+model TicketingTicketImage {
+  id        String   @id @default(cuid())
+  eventId   String
+  name      String   @db.VarChar(120)
+  width     Int
+  height    Int
+  data      Bytes    @db.LongBlob
+  createdAt DateTime @default(now())
+  event TicketingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@map("ticketing_ticket_images")
 }

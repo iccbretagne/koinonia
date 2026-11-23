@@ -635,6 +635,7 @@ export async function getTicket(token: string) {
     valid: participant.status === "ACTIVE",
     reference: participant.booking.reference,
     qr: ticketUrl(token),
+    hasVisual: participant.status === "ACTIVE" && !!participant.event.ticketVisualPublished,
     event: {
       title: participant.event.title,
       churchName: participant.event.church.name,

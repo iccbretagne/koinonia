@@ -1,9 +1,9 @@
 # Spec — Visuel du billet d'entrée
 
 - **Numéro** : 088
-- **Statut** : Brouillon
+- **Statut** : Implémentée — recette utilisateur à valider
 - **Créée le** : 2026-11-23
-- **Branche suggérée** : `feat/visuel-billet`
+- **Branche de travail** : `claude/visual-deposit-validation-process-gbyji8` (branche existante reprise à la demande de l’utilisateur)
 
 > ⚠️ Cette spec décrit **QUOI** et **POURQUOI** — jamais **COMMENT**.
 
@@ -61,26 +61,26 @@ vitrine de l'événement, et il doit rester lisible à l'entrée.
 - **Zone du QR trop petite ou sur fond chargé** : l'aperçu le signale ; le QR est toujours
   rendu sur un fond clair avec une marge, pour rester lisible.
 - **Image refusée** (format, poids, contenu non image) : message clair, visuel précédent gardé.
-- **Email de confirmation** : peut montrer une vignette du billet en plus du lien (à trancher).
+- **Email de confirmation** : conserve le lien vers le billet courant, sans vignette ajoutée.
 - **Assistant IA connecté** : peut déposer et placer le visuel, toujours avec aperçu puis
   confirmation, comme les images du site (spec 087).
 
 ## Critères d'acceptation
 
-- [ ] L'organisateur dépose, remplace, retire un visuel de billet pour son événement.
-- [ ] Dans l'éditeur, il place et dimensionne les vignettes QR code, nom, date et heure, lieu,
+- [x] L'organisateur dépose, remplace, retire un visuel de billet pour son événement.
+- [x] Dans l'éditeur, il place et dimensionne les vignettes QR code, nom, date et heure, lieu,
       adresse ; l'aperçu montre un billet fictif.
-- [ ] Chaque vignette de texte se règle en texte (police, taille, couleur, fond, bordure) ou se
+- [x] Chaque vignette de texte se règle en texte (police, taille, couleur, fond, bordure) ou se
       remplace par une image positionnée ; le QR code et le nom restent générés par Koinonia.
-- [ ] Les vignettes en mode texte suivent les changements de l'événement.
-- [ ] Le billet d'un participant affiche le visuel avec son propre QR, ses nom et référence.
-- [ ] Le billet se télécharge en PNG et en PDF ; le QR téléchargé est lu par le contrôle d'entrée.
-- [ ] Le QR reste toujours sur fond clair avec marge, quelle que soit l'image.
-- [ ] Un billet annulé n'affiche ni visuel ni QR et ne se télécharge pas.
-- [ ] Sans visuel, le billet reste celui d'aujourd'hui.
-- [ ] Le contrôle d'entrée et la sécurité du lien du billet sont inchangés.
-- [ ] Seuls les rôles qui gèrent l'événement modifient le visuel ; toute modification est journalisée.
-- [ ] L'assistant IA ne prétend jamais appliquer un visuel qu'il ne peut pas appliquer.
+- [x] Les vignettes en mode texte suivent les changements de l'événement.
+- [x] Le billet d'un participant affiche le visuel avec son propre QR, ses nom et référence.
+- [x] Le billet se télécharge en PNG et en PDF ; le QR téléchargé est lu par le contrôle d'entrée.
+- [x] Le QR reste toujours sur fond clair avec marge, quelle que soit l'image.
+- [x] Un billet annulé n'affiche ni visuel ni QR et ne se télécharge pas.
+- [x] Sans visuel, le billet reste celui d'aujourd'hui.
+- [x] Le contrôle d'entrée et la sécurité du lien du billet sont inchangés.
+- [x] Seuls les rôles qui gèrent l'événement modifient le visuel ; toute modification est journalisée.
+- [x] L'assistant IA ne prétend jamais appliquer un visuel qu'il ne peut pas appliquer.
 
 ## Hors périmètre
 
@@ -90,9 +90,12 @@ vitrine de l'événement, et il doit rester lisible à l'entrée.
   ne règle que les vignettes.
 - Badges de l'équipe et étiquettes repas.
 
-## Questions ouvertes
+## Arbitrages de l’implémentation
 
-- Un visuel propre au billet, ou reprise des couleurs et images du site de l'événement ?
-- Téléchargement PNG seul, ou PNG et PDF ?
-- Vignette du billet dans l'email de confirmation ?
-- Polices proposées : une liste fermée (celles du site de l'événement) ou libre ?
+- Visuel propre au billet, indépendant du site de l’événement.
+- Téléchargements PNG **et** PDF, conformément aux critères d’acceptation.
+- Email inchangé : lien vers le billet courant ; pas de vignette ajoutée.
+- Liste fermée de polices : sans empattement, avec empattement, chasse fixe.
+
+Le plan technique détaille ces choix. La recette dans un navigateur et le test sur un appareil
+réel de contrôle restent à effectuer avant validation de recette.

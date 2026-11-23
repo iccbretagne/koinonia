@@ -66,6 +66,7 @@ export default function SettingsTab({ event }: { readonly event: EventDetail }) 
     title: event.title,
     description: event.description ?? "",
     location: event.location ?? "",
+    address: event.address ?? "",
     startsAt: toLocalInput(event.startsAt),
     endsAt: toLocalInput(event.endsAt),
     registrationDeadline: toLocalInput(event.registrationDeadline),
@@ -103,6 +104,7 @@ export default function SettingsTab({ event }: { readonly event: EventDetail }) 
         title: f.title,
         description: f.description || null,
         location: f.location || null,
+        address: f.address || null,
         startsAt: fromLocalInput(f.startsAt),
         endsAt: fromLocalInput(f.endsAt),
         registrationDeadline: fromLocalInput(f.registrationDeadline),
@@ -153,6 +155,7 @@ export default function SettingsTab({ event }: { readonly event: EventDetail }) 
         <Input label="Titre" value={f.title} onChange={(e) => set("title", e.target.value)} />
         <Textarea label="Description" rows={4} value={f.description} onChange={(e) => set("description", e.target.value)} />
         <Input label="Lieu" value={f.location} onChange={(e) => set("location", e.target.value)} />
+        <Input label="Adresse" value={f.address} onChange={(e) => set("address", e.target.value)} />
         <div className="grid gap-3 sm:grid-cols-2">
           <Input label="Début" type="datetime-local" value={f.startsAt} onChange={(e) => set("startsAt", e.target.value)} />
           <Input label="Fin" type="datetime-local" value={f.endsAt} onChange={(e) => set("endsAt", e.target.value)} />

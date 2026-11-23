@@ -739,6 +739,14 @@ seule (`ENABLED_MODULES`) :
   cette page) ; `upload_ticketing_site_asset` accepte aussi `file` (`download_url`/`file_id`, client IA
   compatible, `_meta` `openai/fileParams`) — exactement un de `file`/`source`, même garde `safeFetchImage`
 
+- **Visuel du billet** (spec 088) : onglet `?vue=billet`, `configure` écrit et `read` consulte.
+  `ticketVisualDraft` et `ticketVisualPublished` sont indépendants ; images WebP réencodées en
+  `TicketingTicketImage`, appartenant à l’événement. PNG/PDF par le jeton existant du billet,
+  actif uniquement, sans cache ; QR inchangé sur fond blanc avec marge. `address` complète le
+  lieu dans les paramètres. MCP : `ticketing_ticket_visual`, `upload_ticketing_ticket_image`,
+  `edit_ticketing_ticket_visual`, `unpublish_ticketing_ticket_visual` (aperçu/confirmation), sans
+  dépendance au drapeau des sites. Email inchangé.
+
 **Spécificités du module formulaires** (spec 079, [ADR-0030](docs/adr/0030-moteur-de-formulaires.md)) —
 désactivable (`ENABLED_MODULES`) :
 - `forms:manage` (Super Admin, Admin, Secrétaire) ouvre `/formulaires` (lien dans l'espace Agenda,
