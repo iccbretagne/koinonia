@@ -1,7 +1,7 @@
 # Tâches — Visuel du billet d'entrée
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md`
-- **Statut** : Terminé — ouverture de PR soumise à accord
+- **Statut** : Terminé — PR [#775](https://github.com/iccbretagne/koinonia/pull/775) ouverte vers `main`
 
 - [x] Branche en attente reprise : `claude/visual-deposit-validation-process-gbyji8`.
 - [x] Plan technique rédigé après lecture des conventions Claude Code et Next.js locales.
@@ -17,7 +17,7 @@
 - [x] `npm run test`
 - [x] Critères d'acceptation relus ; limites de recette consignées.
 - [x] Commit et push de la branche.
-- [ ] PR (accord préalable si non déjà autorisée).
+- [x] PR [#775](https://github.com/iccbretagne/koinonia/pull/775) ouverte vers `main` après accord de l’utilisateur.
 
 ## Vérifications réalisées
 - Migration `20261123112700_ticket_visual` générée avec `prisma migrate dev`, appliquée à MariaDB
