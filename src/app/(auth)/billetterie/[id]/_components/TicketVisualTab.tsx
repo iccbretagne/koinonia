@@ -3,12 +3,14 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Alert, Button, Checkbox, Input, Select, useToast } from "@/components/ui";
-import { defaultTicketVisual, TICKET_FIELDS, TICKET_FONTS, ticketVisualSchema, type TicketVisual, type TicketText } from "@/modules/ticketing/schemas";
+import { defaultTicketVisual, TICKET_FIELDS, TICKET_FONTS, ticketVisualSchema, type TicketVisualV1 as TicketVisual, type TicketText } from "@/modules/ticketing/schemas";
+import TicketVisualV2Tab from "./TicketVisualV2Tab";
+import { convertTicketVisual, type TicketVisual as AnyVisual } from "@/modules/ticketing/schemas";
 import { useApi } from "../../use-api";
 
 type Image = { id: string; name: string; width: number; height: number };
 const labels = { participant: "Nom, référence et catégorie", date: "Date et heure", location: "Lieu", address: "Adresse" };
-export default function TicketVisualTab({ eventId, initial, images: initialImages, canEdit }: {
+export function LegacyTicketVisualTab({ eventId, initial, images: initialImages, canEdit }: {
   readonly eventId: string;
   readonly initial: { draft: TicketVisual | null; published: TicketVisual | null };
   readonly images: Image[];
@@ -127,4 +129,15 @@ export default function TicketVisualTab({ eventId, initial, images: initialImage
       </div>}
     </div>
   );
+}
+
+export default function TicketVisualTab(props: { readonly eventId: string; readonly initial: { draft: AnyVisual | null; published: AnyVisual | null }; readonly images: Image[]; readonly canEdit: boolean }) {
+  const [converted, setConverted] = useState<AnyVisual | null>(null);
+  const current = converted ?? props.initial.draft ?? props.initial.published;
+  if (!current && !props.canEdit) return <p>Aucun visuel personnalisé.</p>;
+  if (!current || current.version === 2) return <TicketVisualV2Tab {...props} initialDocument={current} />;
+  return <div className="space-y-4">
+    {props.canEdit && <><Alert tone="info" title="Modèle V1 conservé">La conversion crée un brouillon V2 ; vérifiez les zones et les bordures avant de publier. Le modèle publié reste inchangé.</Alert><Button onClick={() => setConverted(convertTicketVisual(current))}>Modifier une copie en V2</Button></>}
+    <LegacyTicketVisualTab {...props} initial={{ draft: props.initial.draft?.version === 1 ? props.initial.draft : null, published: props.initial.published?.version === 1 ? props.initial.published : null }} />
+  </div>;
 }

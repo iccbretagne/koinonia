@@ -43,7 +43,7 @@ const upload = eventAction({
 });
 const edit = eventAction({
   action: "edit_ticketing_ticket_visual", role: "configure",
-  description: "Aperçu du visuel du billet : document complet (surface 1000 × 1500, fond portrait >= 600 px de large ; QR obligatoire carré >= 180 px, nom toujours texte). publish=false enregistre seulement le brouillon ; true publie sur tous les billets existants. Images de cet événement seulement. Montrez résumé et lien d'aperçu, attendez l'accord explicite.",
+  description: "Aperçu du visuel du billet : document complet V1 ou V2 à éléments indépendants et variables autorisées (surface 1000 × 1500, fond facultatif en V2, portrait >= 600 px si utilisé ; QR obligatoire carré >= 180 px, nom toujours texte). publish=false enregistre seulement le brouillon ; true publie sur tous les billets existants. Images de cet événement seulement. Montrez résumé et lien d'aperçu, attendez l'accord explicite.",
   confirmDescription: "Enregistrer/publier le visuel du billet après accord explicite, avec le jeton de l'aperçu ; droits et état revérifiés.",
   input: z.object({ event: eventRef, document: ticketVisualSchema, publish: z.boolean().default(false) }),
   prepare: async (i, _ctx, event) => {
@@ -51,12 +51,12 @@ const edit = eventAction({
     const document = await m.validateTicketVisual(event!.id, i.document);
     // Exécute aussi le rendu, comme l'écran, avant de proposer une publication.
     await m.previewTicketVisual(event!.id, document);
-    return { lines: [`${i.publish ? "Publier sur tous les billets" : "Enregistrer le brouillon"} de « ${event!.title} ».`, `Fond ${document.backgroundId} ; QR ${document.qr.size} px à (${document.qr.x}, ${document.qr.y}).`, "Les images fixes ne suivent pas les changements d'événement.", `Éditeur : ${publicOrigin()}/billetterie/${event!.id}?vue=billet`], payload: { eventId: event!.id, document, publish: i.publish }, structured: { document } };
+    return { lines: [`${i.publish ? "Publier sur tous les billets" : "Enregistrer le brouillon"} de « ${event!.title} ».`, document.version === 1 ? `Fond ${document.backgroundId} ; QR ${document.qr.size} px à (${document.qr.x}, ${document.qr.y}).` : `Document V2 : ${document.elements.length} éléments ; QR officiel et textes dynamiques.`, "Les images fixes ne suivent pas les changements d'événement.", `Éditeur : ${publicOrigin()}/billetterie/${event!.id}?vue=billet`], payload: { eventId: event!.id, document, publish: i.publish ?? false }, structured: { document } };
   },
   state: async (p) => {
     const m = await ticketing();
     const e = await m.getEventDetail(p.eventId);
-    return { visual: await m.getTicketVisual(p.eventId), images: await m.listTicketImages(p.eventId), startsAt: e.startsAt, location: e.location, address: e.address };
+    return { visual: await m.getTicketVisual(p.eventId), images: await m.listTicketImages(p.eventId), title: e.title, startsAt: e.startsAt, endsAt: e.endsAt, location: e.location, address: e.address };
   },
   execute: async (p, ctx) => {
     await (await ticketing()).saveTicketVisual(p.eventId, ctx.viewer.userId, p.document, p.publish);

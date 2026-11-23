@@ -42,3 +42,14 @@ it("les téléchargements passent par le jeton existant, sans cache et avec un n
   expect(res.headers.get("content-disposition")).toBe('attachment; filename="billet.pdf"');
   expect((await pub.GET(new Request("http://localhost/visual?format=svg"), { params: Promise.resolve({ token: "secret" }) })).status).toBe(400);
 });
+it("V2 garde les mêmes permissions et n'active pas publish par défaut", async () => {
+  const { defaultTicketVisualV2 } = await import("@/modules/ticketing/schemas");
+  const document = defaultTicketVisualV2();
+  role = "OBSERVER";
+  expect((await route.PUT(request({ document }), params)).status).toBe(403);
+  role = "ORGANIZER";
+  expect((await route.PUT(request({ document }), { params: Promise.resolve({ id: "other-church-event" }) })).status).toBe(403);
+  expect(svc.saveTicketVisual).not.toHaveBeenCalled();
+  expect((await route.PUT(request({ document }), params)).status).toBe(200);
+  expect(svc.saveTicketVisual).toHaveBeenCalledWith("e1", "u1", document, false);
+});

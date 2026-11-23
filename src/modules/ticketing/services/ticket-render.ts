@@ -9,9 +9,11 @@ import { getTicket } from "./booking";
 import { hashToken } from "./tokens";
 import { validateTicketVisual } from "./ticket-visual";
 
+import { renderTicketV2, type TicketVariables } from "./ticket-render-v2";
+
 const db = async () => (await import("@/lib/prisma")).prisma;
 const xml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]!).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "");
-export interface TicketVisualData { participant: string; date: string; location: string; address: string; qr: string }
+export interface TicketVisualData { participant: string; date: string; location: string; address: string; qr: string; variables?: TicketVariables }
 
 /** Texte borné par une boîte et une liste de polices, jamais de markup utilisateur. */
 function textSvg(key: string, box: TicketText, text: string): string {
@@ -44,6 +46,7 @@ function textSvg(key: string, box: TicketText, text: string): string {
 
 /** Composition en PNG : aucune URL externe, uniquement des WebP de cet événement. */
 export async function renderTicketVisual(doc: TicketVisual, data: TicketVisualData, images: Map<string, Buffer>): Promise<Buffer> {
+  if (doc.version === 2) return renderTicketV2(doc, data.variables ?? legacyVariables(data), data.qr, images);
   const image = (id: string) => {
     const buffer = images.get(id);
     if (!buffer) throw new ApiError(409, "Une image du billet est indisponible");
@@ -70,13 +73,25 @@ export async function ticketPng(eventId: string, doc: TicketVisual, data: Ticket
   const rows = await (await db()).ticketingTicketImage.findMany({ where: { eventId, id: { in: ticketImageIds(doc) } }, select: { id: true, data: true } });
   return renderTicketVisual(doc, data, new Map(rows.map((r) => [r.id, Buffer.from(r.data)])));
 }
-function eventText(event: { startsAt: Date; location: string | null; address: string | null }) {
-  return { date: new Intl.DateTimeFormat("fr-FR", { dateStyle: "full", timeStyle: "short", timeZone: "Europe/Paris" }).format(event.startsAt), location: event.location ?? "", address: event.address ?? "" };
+function legacyVariables(data: TicketVisualData): TicketVariables {
+  return { "participant.firstName": data.participant, "participant.lastName": "", "participant.name": data.participant, "ticket.category": "", "ticket.reference": "", "event.title": "", "event.date": data.date, "event.startTime": "", "event.endTime": "", "event.location": data.location, "event.address": data.address };
 }
-export async function previewTicketVisual(eventId: string, input: unknown) {
+function eventText(event: { title?: string; startsAt: Date; endsAt?: Date; location: string | null; address: string | null }) {
+  const format = (date: Date, options: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("fr-FR", { ...options, timeZone: "Europe/Paris" }).format(date);
+  return { date: format(event.startsAt, { dateStyle: "full", timeStyle: "short" }), location: event.location ?? "", address: event.address ?? "", eventVariables: { "event.title": event.title ?? "", "event.date": format(event.startsAt, { dateStyle: "full" }), "event.startTime": format(event.startsAt, { timeStyle: "short" }), "event.endTime": event.endsAt ? format(event.endsAt, { timeStyle: "short" }) : "", "event.location": event.location ?? "", "event.address": event.address ?? "" } };
+}
+export const TICKET_PREVIEW_NAMES = [
+  ["Jean", "Koné"], ["Marie-Claire", "Ouattara"], ["Jean-Baptiste", "Kouamé N'Guessan"],
+  ["Marie-Angélique Jean-Baptiste", "De la Roche Saint-André Kouamé N'Guessan Ouattara"],
+] as const;
+export async function previewTicketVisual(eventId: string, input: unknown, profile = 3, child = false) {
   const doc = await validateTicketVisual(eventId, input);
-  const event = await (await db()).ticketingEvent.findUniqueOrThrow({ where: { id: eventId }, select: { startsAt: true, location: true, address: true } });
-  return ticketPng(eventId, doc, { ...eventText(event), participant: "Marie-Angélique De la Roche Saint-André · Adulte · Réservation EXEMPLE-0042", qr: "https://example.org/billet/apercu-fictif-non-valable" });
+  const event = await (await db()).ticketingEvent.findUniqueOrThrow({ where: { id: eventId }, select: { title: true, startsAt: true, endsAt: true, location: true, address: true } });
+  const data = eventText(event);
+  const [first, last] = TICKET_PREVIEW_NAMES[profile] ?? TICKET_PREVIEW_NAMES[3];
+  const category = child ? "Enfant" : "Adulte";
+  const variables: TicketVariables = { ...data.eventVariables, "participant.firstName": first, "participant.lastName": last, "participant.name": `${first} ${last}`, "ticket.category": category, "ticket.reference": "EXEMPLE-0042" };
+  return ticketPng(eventId, doc, { ...data, participant: `${first} ${last} · ${category} · Réservation EXEMPLE-0042`, qr: "https://example.org/billet/apercu-fictif-non-valable", variables });
 }
 export async function ticketVisualPdf(png: Buffer) {
   return renderToBuffer(createElement(Document, {}, createElement(Page, { size: [400, 600], style: { padding: 0 } }, createElement(Image, { src: { data: png, format: "png" }, style: { width: 400, height: 600 } }))));
@@ -85,10 +100,10 @@ export async function publicTicketVisual(token: string, format: "png" | "pdf") {
   const ticket = await getTicket(token);
   if (!ticket.valid) throw new ApiError(404, "Billet introuvable");
   const prisma = await db();
-  const row = await prisma.ticketingParticipant.findUniqueOrThrow({ where: { ticketTokenHash: hashToken(token) }, select: { eventId: true, event: { select: { ticketVisualPublished: true, startsAt: true, location: true, address: true } } } });
+  const row = await prisma.ticketingParticipant.findUniqueOrThrow({ where: { ticketTokenHash: hashToken(token) }, select: { eventId: true, event: { select: { ticketVisualPublished: true, title: true, endsAt: true, startsAt: true, location: true, address: true } } } });
   if (!row.event.ticketVisualPublished) throw new ApiError(404, "Aucun visuel publié");
   const { ticketVisualSchema } = await import("../ticket-visual-schemas");
-  const png = await ticketPng(row.eventId, ticketVisualSchema.parse(row.event.ticketVisualPublished), { ...eventText(row.event), participant: `${ticket.firstName} ${ticket.lastName} · ${AGE_GROUP_LABEL[ticket.ageGroup]} · Réservation ${ticket.reference}`, qr: ticket.qr });
+  const png = await ticketPng(row.eventId, ticketVisualSchema.parse(row.event.ticketVisualPublished), { ...eventText(row.event), participant: `${ticket.firstName} ${ticket.lastName} · ${AGE_GROUP_LABEL[ticket.ageGroup]} · Réservation ${ticket.reference}`, qr: ticket.qr, variables: { ...eventText(row.event).eventVariables, "participant.firstName": ticket.firstName, "participant.lastName": ticket.lastName, "participant.name": `${ticket.firstName} ${ticket.lastName}`, "ticket.category": AGE_GROUP_LABEL[ticket.ageGroup], "ticket.reference": ticket.reference } });
   // Revérifie après le rendu : ne livre pas un billet annulé pendant la composition.
   const active = await prisma.ticketingParticipant.findUnique({ where: { ticketTokenHash: hashToken(token) }, select: { status: true } });
   if (active?.status !== "ACTIVE") throw new ApiError(404, "Billet introuvable");

@@ -41,21 +41,21 @@ describe("Page de connexion — cookies Auth.js périmés", () => {
     mockPage({ session: null, cookieNames: ["__Secure-authjs.session-token"] });
     const LoginPage = (await import("../page")).default;
 
-    await expect(LoginPage()).rejects.toThrow("REDIRECT:/api/auth/reset");
+    await expect(LoginPage({})).rejects.toThrow("REDIRECT:/api/auth/reset");
   });
 
   it("renvoie vers /api/auth/reset quand des cookies de contrôle OAuth subsistent", async () => {
     mockPage({ session: null, cookieNames: ["authjs.pkce.code_verifier", "authjs.state"] });
     const LoginPage = (await import("../page")).default;
 
-    await expect(LoginPage()).rejects.toThrow("REDIRECT:/api/auth/reset");
+    await expect(LoginPage({})).rejects.toThrow("REDIRECT:/api/auth/reset");
   });
 
   it("affiche la page de connexion quand il n'y a aucun cookie Auth.js", async () => {
     mockPage({ session: null, cookieNames: ["currentChurchId"] });
     const LoginPage = (await import("../page")).default;
 
-    await expect(LoginPage()).resolves.toBeTruthy();
+    await expect(LoginPage({})).resolves.toBeTruthy();
     expect(redirect).not.toHaveBeenCalled();
   });
 
@@ -66,7 +66,7 @@ describe("Page de connexion — cookies Auth.js périmés", () => {
     });
     const LoginPage = (await import("../page")).default;
 
-    await expect(LoginPage()).rejects.toThrow("REDIRECT:/profile");
+    await expect(LoginPage({})).rejects.toThrow("REDIRECT:/profile");
     expect(redirect).not.toHaveBeenCalledWith("/api/auth/reset");
   });
 });

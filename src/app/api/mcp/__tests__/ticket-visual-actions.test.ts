@@ -76,3 +76,12 @@ it("importe un fichier via safeFetchImage après aperçu, aucun ajout avant conf
   expect(svc.addTicketImage).toHaveBeenCalledWith("e1", ctx.viewer.userId, Buffer.from("source"), "Fond");
   expect((await run("upload_ticketing_ticket_image_preview", { event: "e1", name: "Fond" })).structured.done).toBe(false);
 });
+it("V2 suit preview/confirm, publication désactivée par défaut", async () => {
+  const { defaultTicketVisualV2 } = await import("@/modules/ticketing/schemas");
+  const document = defaultTicketVisualV2();
+  const r = await run("edit_ticketing_ticket_visual_preview", { event: "e1", document });
+  expect(r.structured.confirmation).toBe("kmx_visual");
+  expect(svc.saveTicketVisual).not.toHaveBeenCalled();
+  await run("edit_ticketing_ticket_visual_confirm", { confirmation: "kmx_visual" });
+  expect(svc.saveTicketVisual).toHaveBeenCalledWith("e1", ctx.viewer.userId, document, false);
+});

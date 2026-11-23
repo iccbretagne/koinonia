@@ -41,13 +41,18 @@ export async function validateTicketVisual(eventId: string, input: unknown): Pro
   const doc = ticketVisualSchema.parse(input);
   const images = await (await db()).ticketingTicketImage.findMany({ where: { eventId, id: { in: ticketImageIds(doc) } }, select: { id: true, width: true, height: true } });
   if (ticketImageIds(doc).some((id) => !images.some((a) => a.id === id))) throw new ApiError(400, "Une image n'appartient pas à cet événement ou a été supprimée");
-  const bg = images.find((a) => a.id === doc.backgroundId)!;
-  if (bg.height <= bg.width || bg.width < 600) throw new ApiError(400, "Le fond doit être au format portrait, de 600 px de large au moins");
+  const bg = images.find((a) => a.id === doc.backgroundId);
+  if (bg && (bg.height <= bg.width || bg.width < 600)) throw new ApiError(400, "Le fond doit être au format portrait, de 600 px de large au moins");
   return doc;
 }
 export async function saveTicketVisual(eventId: string, userId: string, input: unknown, publish = false) {
   const prisma = await db();
   const doc = await validateTicketVisual(eventId, input);
+  if (doc.version === 2) {
+    // Le même moteur serveur protège aussi les sauvegardes directes API/MCP.
+    const { previewTicketVisual } = await import("./ticket-render");
+    await previewTicketVisual(eventId, doc);
+  }
   await prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM ticketing_events WHERE id = ${eventId} FOR UPDATE`;
     const ids = ticketImageIds(doc);

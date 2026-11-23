@@ -31,7 +31,7 @@ export default async function LoginPage({
   searchParams,
 }: {
   readonly searchParams?: Promise<Record<string, string | string[] | undefined>>;
-} = {}) {
+}) {
   const session = await auth();
   const next = safeNext((await searchParams)?.next);
 

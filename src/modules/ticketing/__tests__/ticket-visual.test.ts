@@ -127,3 +127,96 @@ describe("rendu et contrôle du QR", () => {
     await expect(publicTicketVisual("a".repeat(64), "png")).rejects.toThrow(/publié/);
   });
 });
+
+describe("V2 : mesure réelle, composition et compatibilité", () => {
+  const variables = {
+    "participant.firstName": "Jean-Baptiste", "participant.lastName": "Kouamé N'Guessan",
+    "participant.name": "Jean-Baptiste Kouamé N'Guessan", "ticket.category": "Adulte", "ticket.reference": "RESA-0042",
+    "event.title": "Nuit de la Traversée 2027", "event.date": "jeudi 31 décembre 2026", "event.startTime": "18:00", "event.endTime": "05:00", "event.location": "Auditorium de Pacé", "event.address": "7 rue Charles Croizé, 35740 Pacé",
+  };
+  it("valide V1 et V2, convertit explicitement les positions, refuse variables et géométries dangereuses", async () => {
+    const { defaultTicketVisualV2, convertTicketVisual } = await import("../ticket-visual-schemas");
+    const v2 = defaultTicketVisualV2();
+    expect(ticketVisualSchema.parse(JSON.parse(JSON.stringify(v2)))).toEqual(v2);
+    const converted = convertTicketVisual(doc);
+    expect(ticketVisualSchema.safeParse(converted).success).toBe(true);
+    expect(converted.elements.find((e) => e.id === "participant")).toMatchObject({ x: doc.participant.x, y: doc.participant.y, width: doc.participant.width, height: doc.participant.height });
+    expect(doc.version).toBe(1);
+    for (const patch of [
+      { x: 999 }, { width: 1800 }, { content: "{process.env.SECRET}" }, { content: "{__proto__}" }, { content: "{event.date" }, { x: 350, y: 850 },
+    ]) expect(ticketVisualSchema.safeParse({ ...v2, elements: v2.elements.map((e, i) => i === 0 ? { ...e, ...patch } : e) }).success).toBe(false);
+    expect(ticketVisualSchema.safeParse({ ...v2, elements: v2.elements.filter((e) => e.type !== "qrCode") }).success).toBe(false);
+    expect(ticketVisualSchema.safeParse({ ...v2, elements: v2.elements.map((e) => e.type === "qrCode" ? { ...e, height: 299 } : e) }).success).toBe(false);
+    expect(ticketVisualSchema.safeParse({ ...v2, elements: v2.elements.filter((e) => e.id !== "participant") }).success).toBe(false);
+  });
+  it("adapte le nom entier, conserve les accents et retours explicites et respecte les alignements", async () => {
+    const { ticketTextStyleSchema } = await import("../ticket-visual-schemas");
+    const { layoutTicketText } = await import("../services/ticket-text-layout");
+    const text = "Marie-Angélique Jean-Baptiste De la Roche Saint-André Kouamé N'Guessan Ouattara";
+    const style = ticketTextStyleSchema.parse({ fontSize: 100, minFontSize: 18, maxLines: 4, textAlign: "center", verticalAlign: "middle" });
+    const layout = await layoutTicketText(text, 780, 150, style);
+    expect(layout.fontSize).toBeLessThan(100);
+    expect(layout.lines.map((l) => l.text).join(" ")).toBe(text);
+    for (const line of layout.lines) {
+      expect(line.x).toBeCloseTo((780 - line.width) / 2, 0);
+      expect(line.y).toBeGreaterThanOrEqual(12);
+      expect(line.y + line.height).toBeLessThanOrEqual(138);
+    }
+    for (const align of ["left", "center", "right"] as const) for (const vertical of ["top", "middle", "bottom"] as const) {
+      const r = await layoutTicketText("Jean Koné", 700, 200, { ...style, fontSize: 40, minFontSize: 40, textAlign: align, verticalAlign: vertical });
+      expect(r.lines[0].x).toBe(Math.round(align === "left" ? 12 : align === "center" ? (700 - r.lines[0].width) / 2 : 688 - r.lines[0].width));
+      const top = (await layoutTicketText("Jean Koné", 700, 200, { ...style, fontSize: 40, minFontSize: 40, verticalAlign: "top" })).lines[0].y;
+      expect(r.lines[0].y).toBeGreaterThanOrEqual(top);
+      if (vertical !== "top") expect(r.lines[0].y).toBeGreaterThan(top);
+    }
+    const explicit = await layoutTicketText("Éléonore\nKoné", 400, 200, { ...style, fontSize: 40, autoFit: "wrap" });
+    expect(explicit.lines.map((l) => l.text)).toEqual(["Éléonore", "Koné"]);
+    const unbroken = "Éléonore".repeat(8);
+    const wrapped = await layoutTicketText(unbroken, 260, 600, { ...style, fontSize: 30, maxLines: 30 });
+    expect(wrapped.lines.map((l) => l.text).join("")).toBe(unbroken);
+    for (const autoFit of ["fixed", "wrap", "shrink"] as const) await expect(layoutTicketText(text, 80, 50, { ...style, autoFit, maxLines: 1 })).rejects.toThrow(/aucun nom n'est tronqué/);
+  });
+  it("rend le vrai contenu QR et le PDF avec le même moteur, sans exécuter le texte", async () => {
+    const { defaultTicketVisualV2 } = await import("../ticket-visual-schemas");
+    const { renderTicketV2 } = await import("../services/ticket-render-v2");
+    const payload = `https://koinonia.test/billet/${"b".repeat(64)}`;
+    const d = defaultTicketVisualV2();
+    const png = await renderTicketV2(d, variables, payload, new Map());
+    const throughShared = await renderTicketVisual(d, { participant: variables["participant.name"], date: "", location: "", address: "", qr: payload, variables }, new Map());
+    expect(throughShared.equals(png)).toBe(true);
+    const raw = await sharp(png).ensureAlpha().raw().toBuffer();
+    expect(jsQR(new Uint8ClampedArray(raw), 1000, 1500)?.data).toBe(payload);
+    expect((await ticketVisualPdf(png)).subarray(0, 4).toString()).toBe("%PDF");
+    const escaped = { ...variables, "participant.name": "<b>Éléonore & Koné</b>" };
+    await expect(renderTicketV2(d, escaped, payload, new Map())).resolves.toBeInstanceOf(Buffer);
+  });
+  it("sauvegarde et relit V2 sans modifier le publié V1, refuse les images hors événement", async () => {
+    const { defaultTicketVisualV2 } = await import("../ticket-visual-schemas");
+    const d = defaultTicketVisualV2();
+    prismaMock.ticketingTicketImage.count.mockResolvedValue(0);
+    prismaMock.ticketingTicketImage.findMany.mockResolvedValue([]);
+    prismaMock.ticketingEvent.findUniqueOrThrow.mockResolvedValue({ title: variables["event.title"], startsAt: new Date("2026-12-31T17:00:00Z"), endsAt: new Date("2027-01-01T04:00:00Z"), location: "Auditorium de Pacé", address: "7 rue Charles Croizé", churchId: "c1", ticketVisualDraft: d, ticketVisualPublished: doc });
+    await saveTicketVisual("event", "user", d);
+    expect(prismaMock.ticketingEvent.update).toHaveBeenCalledWith({ where: { id: "event" }, data: { ticketVisualDraft: d } });
+    expect(await getTicketVisual("event")).toEqual({ draft: d, published: doc });
+    const other = { ...d, elements: [...d.elements, { id: "other", name: "Logo", type: "image", imageId: "other-church", x: 0, y: 0, width: 100, height: 100, locked: false }] };
+    await expect(validateTicketVisual("event", other)).rejects.toThrow(/appartient/);
+  });
+});
+
+it("un ancien lien de billet rend V2 après publication, utilise ses données réelles et revérifie l'annulation", async () => {
+  const { defaultTicketVisualV2 } = await import("../ticket-visual-schemas");
+  const d = defaultTicketVisualV2();
+  const token = "c".repeat(64);
+  const event = { title: "Nuit de la Traversée 2027", startsAt: new Date("2026-12-31T17:00:00Z"), endsAt: new Date("2027-01-01T04:00:00Z"), location: "Auditorium de Pacé", address: "7 rue Charles Croizé", church: { name: "ICC Rennes" }, ticketVisualPublished: d };
+  process.env.AUTH_URL = "https://koinonia.test";
+  const participant = { firstName: "Jean", lastName: "Koné", ageGroup: "ADULT", status: "ACTIVE", booking: { reference: "EXEMPLE-0042" }, event };
+  prismaMock.ticketingParticipant.findUnique.mockResolvedValue(participant);
+  prismaMock.ticketingParticipant.findUniqueOrThrow.mockResolvedValue({ eventId: "event", event });
+  prismaMock.ticketingTicketImage.findMany.mockResolvedValue([]);
+  const result = await publicTicketVisual(token, "png");
+  const raw = await sharp(result).ensureAlpha().raw().toBuffer();
+  expect(jsQR(new Uint8ClampedArray(raw), 1000, 1500)?.data).toBe(`https://koinonia.test/billet/${token}`);
+  prismaMock.ticketingParticipant.findUnique.mockResolvedValueOnce(participant).mockResolvedValueOnce({ status: "CANCELLED" });
+  await expect(publicTicketVisual(token, "png")).rejects.toThrow(/introuvable/);
+});

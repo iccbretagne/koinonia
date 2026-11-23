@@ -34654,6 +34654,1177 @@
                 "type": "object",
                 "properties": {
                   "document": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "version": {
+                            "type": "number",
+                            "enum": [
+                              1
+                            ]
+                          },
+                          "backgroundId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 40
+                          },
+                          "qr": {
+                            "type": "object",
+                            "properties": {
+                              "x": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 820
+                              },
+                              "y": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 1320
+                              },
+                              "size": {
+                                "type": "integer",
+                                "minimum": 180,
+                                "maximum": 600
+                              }
+                            },
+                            "required": [
+                              "x",
+                              "y",
+                              "size"
+                            ]
+                          },
+                          "participant": {
+                            "type": "object",
+                            "properties": {
+                              "x": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 1000
+                              },
+                              "y": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 1500
+                              },
+                              "width": {
+                                "type": "integer",
+                                "minimum": 40,
+                                "maximum": 1000
+                              },
+                              "height": {
+                                "type": "integer",
+                                "minimum": 40,
+                                "maximum": 1500
+                              },
+                              "visible": {
+                                "type": "boolean"
+                              },
+                              "mode": {
+                                "type": "string",
+                                "enum": [
+                                  "text",
+                                  "image"
+                                ]
+                              },
+                              "imageId": {
+                                "type": "string",
+                                "nullable": true,
+                                "minLength": 1,
+                                "maxLength": 40
+                              },
+                              "font": {
+                                "type": "string",
+                                "enum": [
+                                  "sans-serif",
+                                  "serif",
+                                  "monospace"
+                                ]
+                              },
+                              "fontSize": {
+                                "type": "integer",
+                                "minimum": 14,
+                                "maximum": 100
+                              },
+                              "color": {
+                                "type": "string",
+                                "pattern": "^#[0-9a-fA-F]{6}$"
+                              },
+                              "background": {
+                                "type": "string",
+                                "nullable": true,
+                                "pattern": "^#[0-9a-fA-F]{6}$"
+                              },
+                              "border": {
+                                "type": "string",
+                                "nullable": true,
+                                "pattern": "^#[0-9a-fA-F]{6}$"
+                              }
+                            },
+                            "required": [
+                              "x",
+                              "y",
+                              "width",
+                              "height",
+                              "visible",
+                              "mode",
+                              "imageId",
+                              "font",
+                              "fontSize",
+                              "color",
+                              "background",
+                              "border"
+                            ]
+                          },
+                          "date": {
+                            "type": "object",
+                            "properties": {
+                              "x": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 1000
+                              },
+                              "y": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 1500
+                              },
+                              "width": {
+                                "type": "integer",
+                                "minimum": 40,
+                                "maximum": 1000
+                              },
+                              "height": {
+                                "type": "integer",
+                                "minimum": 40,
+                                "maximum": 1500
+                              },
+                              "visible": {
+                                "type": "boolean"
+                              },
+                              "mode": {
+                                "type": "string",
+                                "enum": [
+                                  "text",
+                                  "image"
+                                ]
+                              },
+                              "imageId": {
+                                "type": "string",
+                                "nullable": true,
+                                "minLength": 1,
+                                "maxLength": 40
+                              },
+                              "font": {
+                                "type": "string",
+                                "enum": [
+                                  "sans-serif",
+                                  "serif",
+                                  "monospace"
+                                ]
+                              },
+                              "fontSize": {
+                                "type": "integer",
+                                "minimum": 14,
+                                "maximum": 100
+                              },
+                              "color": {
+                                "type": "string",
+                                "pattern": "^#[0-9a-fA-F]{6}$"
+                              },
+                              "background": {
+                                "type": "string",
+                                "nullable": true,
+                                "pattern": "^#[0-9a-fA-F]{6}$"
+                              },
+                              "border": {
+                                "type": "string",
+                                "nullable": true,
+                                "pattern": "^#[0-9a-fA-F]{6}$"
+                              }
+                            },
+                            "required": [
+                              "x",
+                              "y",
+                              "width",
+                              "height",
+                              "visible",
+                              "mode",
+                              "imageId",
+                              "font",
+                              "fontSize",
+                              "color",
+                              "background",
+                              "border"
+                            ]
+                          },
+                          "location": {
+                            "type": "object",
+                            "properties": {
+                              "x": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 1000
+                              },
+                              "y": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 1500
+                              },
+                              "width": {
+                                "type": "integer",
+                                "minimum": 40,
+                                "maximum": 1000
+                              },
+                              "height": {
+                                "type": "integer",
+                                "minimum": 40,
+                                "maximum": 1500
+                              },
+                              "visible": {
+                                "type": "boolean"
+                              },
+                              "mode": {
+                                "type": "string",
+                                "enum": [
+                                  "text",
+                                  "image"
+                                ]
+                              },
+                              "imageId": {
+                                "type": "string",
+                                "nullable": true,
+                                "minLength": 1,
+                                "maxLength": 40
+                              },
+                              "font": {
+                                "type": "string",
+                                "enum": [
+                                  "sans-serif",
+                                  "serif",
+                                  "monospace"
+                                ]
+                              },
+                              "fontSize": {
+                                "type": "integer",
+                                "minimum": 14,
+                                "maximum": 100
+                              },
+                              "color": {
+                                "type": "string",
+                                "pattern": "^#[0-9a-fA-F]{6}$"
+                              },
+                              "background": {
+                                "type": "string",
+                                "nullable": true,
+                                "pattern": "^#[0-9a-fA-F]{6}$"
+                              },
+                              "border": {
+                                "type": "string",
+                                "nullable": true,
+                                "pattern": "^#[0-9a-fA-F]{6}$"
+                              }
+                            },
+                            "required": [
+                              "x",
+                              "y",
+                              "width",
+                              "height",
+                              "visible",
+                              "mode",
+                              "imageId",
+                              "font",
+                              "fontSize",
+                              "color",
+                              "background",
+                              "border"
+                            ]
+                          },
+                          "address": {
+                            "type": "object",
+                            "properties": {
+                              "x": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 1000
+                              },
+                              "y": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 1500
+                              },
+                              "width": {
+                                "type": "integer",
+                                "minimum": 40,
+                                "maximum": 1000
+                              },
+                              "height": {
+                                "type": "integer",
+                                "minimum": 40,
+                                "maximum": 1500
+                              },
+                              "visible": {
+                                "type": "boolean"
+                              },
+                              "mode": {
+                                "type": "string",
+                                "enum": [
+                                  "text",
+                                  "image"
+                                ]
+                              },
+                              "imageId": {
+                                "type": "string",
+                                "nullable": true,
+                                "minLength": 1,
+                                "maxLength": 40
+                              },
+                              "font": {
+                                "type": "string",
+                                "enum": [
+                                  "sans-serif",
+                                  "serif",
+                                  "monospace"
+                                ]
+                              },
+                              "fontSize": {
+                                "type": "integer",
+                                "minimum": 14,
+                                "maximum": 100
+                              },
+                              "color": {
+                                "type": "string",
+                                "pattern": "^#[0-9a-fA-F]{6}$"
+                              },
+                              "background": {
+                                "type": "string",
+                                "nullable": true,
+                                "pattern": "^#[0-9a-fA-F]{6}$"
+                              },
+                              "border": {
+                                "type": "string",
+                                "nullable": true,
+                                "pattern": "^#[0-9a-fA-F]{6}$"
+                              }
+                            },
+                            "required": [
+                              "x",
+                              "y",
+                              "width",
+                              "height",
+                              "visible",
+                              "mode",
+                              "imageId",
+                              "font",
+                              "fontSize",
+                              "color",
+                              "background",
+                              "border"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "version",
+                          "backgroundId",
+                          "qr",
+                          "participant",
+                          "date",
+                          "location",
+                          "address"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "version": {
+                            "type": "number",
+                            "enum": [
+                              2
+                            ]
+                          },
+                          "canvas": {
+                            "type": "object",
+                            "properties": {
+                              "width": {
+                                "type": "number",
+                                "enum": [
+                                  1000
+                                ]
+                              },
+                              "height": {
+                                "type": "number",
+                                "enum": [
+                                  1500
+                                ]
+                              }
+                            },
+                            "required": [
+                              "width",
+                              "height"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "backgroundId": {
+                            "type": "string",
+                            "nullable": true,
+                            "minLength": 1,
+                            "maxLength": 40
+                          },
+                          "backgroundColor": {
+                            "type": "string",
+                            "pattern": "^#[0-9a-fA-F]{6}$"
+                          },
+                          "elements": {
+                            "type": "array",
+                            "items": {
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "x": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 1000
+                                    },
+                                    "y": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 1500
+                                    },
+                                    "width": {
+                                      "type": "integer",
+                                      "minimum": 40,
+                                      "maximum": 1000
+                                    },
+                                    "height": {
+                                      "type": "integer",
+                                      "minimum": 40,
+                                      "maximum": 1500
+                                    },
+                                    "id": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 40
+                                    },
+                                    "name": {
+                                      "type": "string",
+                                      "maxLength": 100,
+                                      "default": "Élément"
+                                    },
+                                    "locked": {
+                                      "type": "boolean",
+                                      "default": false
+                                    },
+                                    "type": {
+                                      "type": "string",
+                                      "enum": [
+                                        "text"
+                                      ]
+                                    },
+                                    "content": {
+                                      "type": "string",
+                                      "maxLength": 2000
+                                    },
+                                    "style": {
+                                      "type": "object",
+                                      "properties": {
+                                        "fontFamily": {
+                                          "type": "string",
+                                          "enum": [
+                                            "sans-serif",
+                                            "serif",
+                                            "monospace"
+                                          ],
+                                          "default": "sans-serif"
+                                        },
+                                        "fontSize": {
+                                          "type": "integer",
+                                          "minimum": 14,
+                                          "maximum": 200,
+                                          "default": 48
+                                        },
+                                        "minFontSize": {
+                                          "type": "integer",
+                                          "minimum": 14,
+                                          "maximum": 200,
+                                          "default": 20
+                                        },
+                                        "fontWeight": {
+                                          "type": "string",
+                                          "enum": [
+                                            "normal",
+                                            "bold"
+                                          ],
+                                          "default": "normal"
+                                        },
+                                        "color": {
+                                          "type": "string",
+                                          "pattern": "^#[0-9a-fA-F]{6}$",
+                                          "default": "#111111"
+                                        },
+                                        "background": {
+                                          "type": "string",
+                                          "nullable": true,
+                                          "pattern": "^#[0-9a-fA-F]{6}$",
+                                          "default": null
+                                        },
+                                        "border": {
+                                          "type": "string",
+                                          "nullable": true,
+                                          "pattern": "^#[0-9a-fA-F]{6}$",
+                                          "default": null
+                                        },
+                                        "textAlign": {
+                                          "type": "string",
+                                          "enum": [
+                                            "left",
+                                            "center",
+                                            "right"
+                                          ],
+                                          "default": "left"
+                                        },
+                                        "verticalAlign": {
+                                          "type": "string",
+                                          "enum": [
+                                            "top",
+                                            "middle",
+                                            "bottom"
+                                          ],
+                                          "default": "top"
+                                        },
+                                        "lineHeight": {
+                                          "type": "number",
+                                          "minimum": 1,
+                                          "maximum": 3,
+                                          "default": 1.25
+                                        },
+                                        "letterSpacing": {
+                                          "type": "number",
+                                          "minimum": -2,
+                                          "maximum": 20,
+                                          "default": 0
+                                        },
+                                        "padding": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 100,
+                                          "default": 12
+                                        },
+                                        "autoFit": {
+                                          "type": "string",
+                                          "enum": [
+                                            "fixed",
+                                            "shrink",
+                                            "wrap"
+                                          ],
+                                          "default": "shrink"
+                                        },
+                                        "maxLines": {
+                                          "type": "integer",
+                                          "minimum": 1,
+                                          "maximum": 30,
+                                          "default": 4
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "required": [
+                                    "x",
+                                    "y",
+                                    "width",
+                                    "height",
+                                    "id",
+                                    "type",
+                                    "content",
+                                    "style"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "x": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 1000
+                                    },
+                                    "y": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 1500
+                                    },
+                                    "width": {
+                                      "type": "integer",
+                                      "minimum": 40,
+                                      "maximum": 1000
+                                    },
+                                    "height": {
+                                      "type": "integer",
+                                      "minimum": 40,
+                                      "maximum": 1500
+                                    },
+                                    "id": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 40
+                                    },
+                                    "name": {
+                                      "type": "string",
+                                      "maxLength": 100,
+                                      "default": "Élément"
+                                    },
+                                    "locked": {
+                                      "type": "boolean",
+                                      "default": false
+                                    },
+                                    "type": {
+                                      "type": "string",
+                                      "enum": [
+                                        "image"
+                                      ]
+                                    },
+                                    "imageId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 40
+                                    }
+                                  },
+                                  "required": [
+                                    "x",
+                                    "y",
+                                    "width",
+                                    "height",
+                                    "id",
+                                    "type",
+                                    "imageId"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "x": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 1000
+                                    },
+                                    "y": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 1500
+                                    },
+                                    "width": {
+                                      "type": "integer",
+                                      "minimum": 40,
+                                      "maximum": 1000
+                                    },
+                                    "height": {
+                                      "type": "integer",
+                                      "minimum": 40,
+                                      "maximum": 1500
+                                    },
+                                    "id": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 40
+                                    },
+                                    "name": {
+                                      "type": "string",
+                                      "maxLength": 100,
+                                      "default": "Élément"
+                                    },
+                                    "locked": {
+                                      "type": "boolean",
+                                      "default": false
+                                    },
+                                    "type": {
+                                      "type": "string",
+                                      "enum": [
+                                        "qrCode"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "x",
+                                    "y",
+                                    "width",
+                                    "height",
+                                    "id",
+                                    "type"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "x": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 1000
+                                    },
+                                    "y": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 1500
+                                    },
+                                    "width": {
+                                      "type": "integer",
+                                      "minimum": 40,
+                                      "maximum": 1000
+                                    },
+                                    "height": {
+                                      "type": "integer",
+                                      "minimum": 40,
+                                      "maximum": 1500
+                                    },
+                                    "id": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 40
+                                    },
+                                    "name": {
+                                      "type": "string",
+                                      "maxLength": 100,
+                                      "default": "Élément"
+                                    },
+                                    "locked": {
+                                      "type": "boolean",
+                                      "default": false
+                                    },
+                                    "type": {
+                                      "type": "string",
+                                      "enum": [
+                                        "shape"
+                                      ]
+                                    },
+                                    "shape": {
+                                      "type": "string",
+                                      "enum": [
+                                        "rectangle",
+                                        "circle",
+                                        "line"
+                                      ]
+                                    },
+                                    "color": {
+                                      "type": "string",
+                                      "pattern": "^#[0-9a-fA-F]{6}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "x",
+                                    "y",
+                                    "width",
+                                    "height",
+                                    "id",
+                                    "type",
+                                    "shape",
+                                    "color"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "minItems": 2,
+                            "maxItems": 50
+                          }
+                        },
+                        "required": [
+                          "version",
+                          "canvas",
+                          "backgroundId",
+                          "backgroundColor",
+                          "elements"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "publish": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "required": [
+                  "document"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ draft, published }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Retirer le visuel publié du billet",
+        "description": "**Accès** : toute personne connectée — organisateur.\n\nLe brouillon est conservé. Les billets reviennent à la présentation standard.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ ok: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/ticket-visual/images": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Images du billet",
+        "description": "**Accès** : toute personne connectée — rôle de lecture sur l'événement.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`[{ id, name, width, height }]`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Déposer une image du billet",
+        "description": "**Accès** : toute personne connectée — organisateur.\n\nType contrôlé sur le contenu, SVG rastérisé, WebP sans métadonnées ; 20 images au plus. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "description": "file (JPEG/PNG/WebP/SVG, 8 Mo au plus) et name facultatif (120 caractères)",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ id, name, width, height }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/ticket-visual/images/{imageId}": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Image du billet (équipe)",
+        "description": "**Accès** : toute personne connectée — rôle de lecture sur l'événement.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "imageId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "WebP",
+            "content": {
+              "image/webp": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Supprimer une image inutilisée du billet",
+        "description": "**Accès** : toute personne connectée — organisateur.\n\n409 si référencée par le brouillon ou la publication ; propriété vérifiée, journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "imageId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ ok: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/ticketing/events/{id}/ticket-visual/preview": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Aperçu fictif du brouillon du billet",
+        "description": "**Accès** : toute personne connectée — rôle de lecture sur l'événement.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1",
+                "2",
+                "3"
+              ],
+              "default": "3"
+            },
+            "required": false,
+            "name": "profile",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "adult",
+                "child"
+              ],
+              "default": "adult"
+            },
+            "required": false,
+            "name": "category",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PNG",
+            "content": {
+              "image/png": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Aperçu sans enregistrement du visuel",
+        "description": "**Accès** : toute personne connectée — organisateur.\n\nDocuments V1/V2. Quatre noms fictifs et catégories adulte/enfant ; QR non valable. Une zone trop petite renvoie une erreur explicite sans troncature. 60 rendus par minute et par compte.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1",
+                "2",
+                "3"
+              ],
+              "default": "3"
+            },
+            "required": false,
+            "name": "profile",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "adult",
+                "child"
+              ],
+              "default": "adult"
+            },
+            "required": false,
+            "name": "category",
+            "in": "query"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
                     "type": "object",
                     "properties": {
                       "version": {
@@ -35032,709 +36203,412 @@
                     ],
                     "additionalProperties": false
                   },
-                  "publish": {
-                    "type": "boolean",
-                    "default": false
+                  {
+                    "type": "object",
+                    "properties": {
+                      "version": {
+                        "type": "number",
+                        "enum": [
+                          2
+                        ]
+                      },
+                      "canvas": {
+                        "type": "object",
+                        "properties": {
+                          "width": {
+                            "type": "number",
+                            "enum": [
+                              1000
+                            ]
+                          },
+                          "height": {
+                            "type": "number",
+                            "enum": [
+                              1500
+                            ]
+                          }
+                        },
+                        "required": [
+                          "width",
+                          "height"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "backgroundId": {
+                        "type": "string",
+                        "nullable": true,
+                        "minLength": 1,
+                        "maxLength": 40
+                      },
+                      "backgroundColor": {
+                        "type": "string",
+                        "pattern": "^#[0-9a-fA-F]{6}$"
+                      },
+                      "elements": {
+                        "type": "array",
+                        "items": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "x": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 1000
+                                },
+                                "y": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 1500
+                                },
+                                "width": {
+                                  "type": "integer",
+                                  "minimum": 40,
+                                  "maximum": 1000
+                                },
+                                "height": {
+                                  "type": "integer",
+                                  "minimum": 40,
+                                  "maximum": 1500
+                                },
+                                "id": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 40
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "maxLength": 100,
+                                  "default": "Élément"
+                                },
+                                "locked": {
+                                  "type": "boolean",
+                                  "default": false
+                                },
+                                "type": {
+                                  "type": "string",
+                                  "enum": [
+                                    "text"
+                                  ]
+                                },
+                                "content": {
+                                  "type": "string",
+                                  "maxLength": 2000
+                                },
+                                "style": {
+                                  "type": "object",
+                                  "properties": {
+                                    "fontFamily": {
+                                      "type": "string",
+                                      "enum": [
+                                        "sans-serif",
+                                        "serif",
+                                        "monospace"
+                                      ],
+                                      "default": "sans-serif"
+                                    },
+                                    "fontSize": {
+                                      "type": "integer",
+                                      "minimum": 14,
+                                      "maximum": 200,
+                                      "default": 48
+                                    },
+                                    "minFontSize": {
+                                      "type": "integer",
+                                      "minimum": 14,
+                                      "maximum": 200,
+                                      "default": 20
+                                    },
+                                    "fontWeight": {
+                                      "type": "string",
+                                      "enum": [
+                                        "normal",
+                                        "bold"
+                                      ],
+                                      "default": "normal"
+                                    },
+                                    "color": {
+                                      "type": "string",
+                                      "pattern": "^#[0-9a-fA-F]{6}$",
+                                      "default": "#111111"
+                                    },
+                                    "background": {
+                                      "type": "string",
+                                      "nullable": true,
+                                      "pattern": "^#[0-9a-fA-F]{6}$",
+                                      "default": null
+                                    },
+                                    "border": {
+                                      "type": "string",
+                                      "nullable": true,
+                                      "pattern": "^#[0-9a-fA-F]{6}$",
+                                      "default": null
+                                    },
+                                    "textAlign": {
+                                      "type": "string",
+                                      "enum": [
+                                        "left",
+                                        "center",
+                                        "right"
+                                      ],
+                                      "default": "left"
+                                    },
+                                    "verticalAlign": {
+                                      "type": "string",
+                                      "enum": [
+                                        "top",
+                                        "middle",
+                                        "bottom"
+                                      ],
+                                      "default": "top"
+                                    },
+                                    "lineHeight": {
+                                      "type": "number",
+                                      "minimum": 1,
+                                      "maximum": 3,
+                                      "default": 1.25
+                                    },
+                                    "letterSpacing": {
+                                      "type": "number",
+                                      "minimum": -2,
+                                      "maximum": 20,
+                                      "default": 0
+                                    },
+                                    "padding": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 100,
+                                      "default": 12
+                                    },
+                                    "autoFit": {
+                                      "type": "string",
+                                      "enum": [
+                                        "fixed",
+                                        "shrink",
+                                        "wrap"
+                                      ],
+                                      "default": "shrink"
+                                    },
+                                    "maxLines": {
+                                      "type": "integer",
+                                      "minimum": 1,
+                                      "maximum": 30,
+                                      "default": 4
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "x",
+                                "y",
+                                "width",
+                                "height",
+                                "id",
+                                "type",
+                                "content",
+                                "style"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "x": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 1000
+                                },
+                                "y": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 1500
+                                },
+                                "width": {
+                                  "type": "integer",
+                                  "minimum": 40,
+                                  "maximum": 1000
+                                },
+                                "height": {
+                                  "type": "integer",
+                                  "minimum": 40,
+                                  "maximum": 1500
+                                },
+                                "id": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 40
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "maxLength": 100,
+                                  "default": "Élément"
+                                },
+                                "locked": {
+                                  "type": "boolean",
+                                  "default": false
+                                },
+                                "type": {
+                                  "type": "string",
+                                  "enum": [
+                                    "image"
+                                  ]
+                                },
+                                "imageId": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 40
+                                }
+                              },
+                              "required": [
+                                "x",
+                                "y",
+                                "width",
+                                "height",
+                                "id",
+                                "type",
+                                "imageId"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "x": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 1000
+                                },
+                                "y": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 1500
+                                },
+                                "width": {
+                                  "type": "integer",
+                                  "minimum": 40,
+                                  "maximum": 1000
+                                },
+                                "height": {
+                                  "type": "integer",
+                                  "minimum": 40,
+                                  "maximum": 1500
+                                },
+                                "id": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 40
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "maxLength": 100,
+                                  "default": "Élément"
+                                },
+                                "locked": {
+                                  "type": "boolean",
+                                  "default": false
+                                },
+                                "type": {
+                                  "type": "string",
+                                  "enum": [
+                                    "qrCode"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "x",
+                                "y",
+                                "width",
+                                "height",
+                                "id",
+                                "type"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "x": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 1000
+                                },
+                                "y": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 1500
+                                },
+                                "width": {
+                                  "type": "integer",
+                                  "minimum": 40,
+                                  "maximum": 1000
+                                },
+                                "height": {
+                                  "type": "integer",
+                                  "minimum": 40,
+                                  "maximum": 1500
+                                },
+                                "id": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 40
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "maxLength": 100,
+                                  "default": "Élément"
+                                },
+                                "locked": {
+                                  "type": "boolean",
+                                  "default": false
+                                },
+                                "type": {
+                                  "type": "string",
+                                  "enum": [
+                                    "shape"
+                                  ]
+                                },
+                                "shape": {
+                                  "type": "string",
+                                  "enum": [
+                                    "rectangle",
+                                    "circle",
+                                    "line"
+                                  ]
+                                },
+                                "color": {
+                                  "type": "string",
+                                  "pattern": "^#[0-9a-fA-F]{6}$"
+                                }
+                              },
+                              "required": [
+                                "x",
+                                "y",
+                                "width",
+                                "height",
+                                "id",
+                                "type",
+                                "shape",
+                                "color"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        "minItems": 2,
+                        "maxItems": 50
+                      }
+                    },
+                    "required": [
+                      "version",
+                      "canvas",
+                      "backgroundId",
+                      "backgroundColor",
+                      "elements"
+                    ],
+                    "additionalProperties": false
                   }
-                },
-                "required": [
-                  "document"
-                ],
-                "additionalProperties": false
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "`{ draft, published }`",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "400": {
-            "description": "Corps invalide (détail Zod dans `details`)"
-          },
-          "401": {
-            "description": "Session absente"
-          },
-          "403": {
-            "description": "Accès refusé"
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "ticketing"
-        ],
-        "summary": "Retirer le visuel publié du billet",
-        "description": "**Accès** : toute personne connectée — organisateur.\n\nLe brouillon est conservé. Les billets reviennent à la présentation standard.",
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "x-access": "session",
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "`{ ok: true }`",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "401": {
-            "description": "Session absente"
-          },
-          "403": {
-            "description": "Accès refusé"
-          }
-        }
-      }
-    },
-    "/api/ticketing/events/{id}/ticket-visual/images": {
-      "get": {
-        "tags": [
-          "ticketing"
-        ],
-        "summary": "Images du billet",
-        "description": "**Accès** : toute personne connectée — rôle de lecture sur l'événement.",
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "x-access": "session",
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "`[{ id, name, width, height }]`",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "401": {
-            "description": "Session absente"
-          },
-          "403": {
-            "description": "Accès refusé"
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "ticketing"
-        ],
-        "summary": "Déposer une image du billet",
-        "description": "**Accès** : toute personne connectée — organisateur.\n\nType contrôlé sur le contenu, SVG rastérisé, WebP sans métadonnées ; 20 images au plus. Journalisé.",
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "x-access": "session",
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "description": "file (JPEG/PNG/WebP/SVG, 8 Mo au plus) et name facultatif (120 caractères)",
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "string",
-                "format": "binary"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "`{ id, name, width, height }`",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "401": {
-            "description": "Session absente"
-          },
-          "403": {
-            "description": "Accès refusé"
-          }
-        }
-      }
-    },
-    "/api/ticketing/events/{id}/ticket-visual/images/{imageId}": {
-      "get": {
-        "tags": [
-          "ticketing"
-        ],
-        "summary": "Image du billet (équipe)",
-        "description": "**Accès** : toute personne connectée — rôle de lecture sur l'événement.",
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "x-access": "session",
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "imageId",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "WebP",
-            "content": {
-              "image/webp": {
-                "schema": {}
-              }
-            }
-          },
-          "401": {
-            "description": "Session absente"
-          },
-          "403": {
-            "description": "Accès refusé"
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "ticketing"
-        ],
-        "summary": "Supprimer une image inutilisée du billet",
-        "description": "**Accès** : toute personne connectée — organisateur.\n\n409 si référencée par le brouillon ou la publication ; propriété vérifiée, journalisé.",
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "x-access": "session",
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "imageId",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "`{ ok: true }`",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "401": {
-            "description": "Session absente"
-          },
-          "403": {
-            "description": "Accès refusé"
-          }
-        }
-      }
-    },
-    "/api/ticketing/events/{id}/ticket-visual/preview": {
-      "get": {
-        "tags": [
-          "ticketing"
-        ],
-        "summary": "Aperçu fictif du brouillon du billet",
-        "description": "**Accès** : toute personne connectée — rôle de lecture sur l'événement.",
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "x-access": "session",
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "PNG",
-            "content": {
-              "image/png": {
-                "schema": {}
-              }
-            }
-          },
-          "401": {
-            "description": "Session absente"
-          },
-          "403": {
-            "description": "Accès refusé"
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "ticketing"
-        ],
-        "summary": "Aperçu sans enregistrement du visuel",
-        "description": "**Accès** : toute personne connectée — organisateur.\n\nNom long fictif et QR non valable. 60 rendus par minute et par compte.",
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "x-access": "session",
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "version": {
-                    "type": "number",
-                    "enum": [
-                      1
-                    ]
-                  },
-                  "backgroundId": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 40
-                  },
-                  "qr": {
-                    "type": "object",
-                    "properties": {
-                      "x": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "maximum": 820
-                      },
-                      "y": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "maximum": 1320
-                      },
-                      "size": {
-                        "type": "integer",
-                        "minimum": 180,
-                        "maximum": 600
-                      }
-                    },
-                    "required": [
-                      "x",
-                      "y",
-                      "size"
-                    ]
-                  },
-                  "participant": {
-                    "type": "object",
-                    "properties": {
-                      "x": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "maximum": 1000
-                      },
-                      "y": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "maximum": 1500
-                      },
-                      "width": {
-                        "type": "integer",
-                        "minimum": 40,
-                        "maximum": 1000
-                      },
-                      "height": {
-                        "type": "integer",
-                        "minimum": 40,
-                        "maximum": 1500
-                      },
-                      "visible": {
-                        "type": "boolean"
-                      },
-                      "mode": {
-                        "type": "string",
-                        "enum": [
-                          "text",
-                          "image"
-                        ]
-                      },
-                      "imageId": {
-                        "type": "string",
-                        "nullable": true,
-                        "minLength": 1,
-                        "maxLength": 40
-                      },
-                      "font": {
-                        "type": "string",
-                        "enum": [
-                          "sans-serif",
-                          "serif",
-                          "monospace"
-                        ]
-                      },
-                      "fontSize": {
-                        "type": "integer",
-                        "minimum": 14,
-                        "maximum": 100
-                      },
-                      "color": {
-                        "type": "string",
-                        "pattern": "^#[0-9a-fA-F]{6}$"
-                      },
-                      "background": {
-                        "type": "string",
-                        "nullable": true,
-                        "pattern": "^#[0-9a-fA-F]{6}$"
-                      },
-                      "border": {
-                        "type": "string",
-                        "nullable": true,
-                        "pattern": "^#[0-9a-fA-F]{6}$"
-                      }
-                    },
-                    "required": [
-                      "x",
-                      "y",
-                      "width",
-                      "height",
-                      "visible",
-                      "mode",
-                      "imageId",
-                      "font",
-                      "fontSize",
-                      "color",
-                      "background",
-                      "border"
-                    ]
-                  },
-                  "date": {
-                    "type": "object",
-                    "properties": {
-                      "x": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "maximum": 1000
-                      },
-                      "y": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "maximum": 1500
-                      },
-                      "width": {
-                        "type": "integer",
-                        "minimum": 40,
-                        "maximum": 1000
-                      },
-                      "height": {
-                        "type": "integer",
-                        "minimum": 40,
-                        "maximum": 1500
-                      },
-                      "visible": {
-                        "type": "boolean"
-                      },
-                      "mode": {
-                        "type": "string",
-                        "enum": [
-                          "text",
-                          "image"
-                        ]
-                      },
-                      "imageId": {
-                        "type": "string",
-                        "nullable": true,
-                        "minLength": 1,
-                        "maxLength": 40
-                      },
-                      "font": {
-                        "type": "string",
-                        "enum": [
-                          "sans-serif",
-                          "serif",
-                          "monospace"
-                        ]
-                      },
-                      "fontSize": {
-                        "type": "integer",
-                        "minimum": 14,
-                        "maximum": 100
-                      },
-                      "color": {
-                        "type": "string",
-                        "pattern": "^#[0-9a-fA-F]{6}$"
-                      },
-                      "background": {
-                        "type": "string",
-                        "nullable": true,
-                        "pattern": "^#[0-9a-fA-F]{6}$"
-                      },
-                      "border": {
-                        "type": "string",
-                        "nullable": true,
-                        "pattern": "^#[0-9a-fA-F]{6}$"
-                      }
-                    },
-                    "required": [
-                      "x",
-                      "y",
-                      "width",
-                      "height",
-                      "visible",
-                      "mode",
-                      "imageId",
-                      "font",
-                      "fontSize",
-                      "color",
-                      "background",
-                      "border"
-                    ]
-                  },
-                  "location": {
-                    "type": "object",
-                    "properties": {
-                      "x": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "maximum": 1000
-                      },
-                      "y": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "maximum": 1500
-                      },
-                      "width": {
-                        "type": "integer",
-                        "minimum": 40,
-                        "maximum": 1000
-                      },
-                      "height": {
-                        "type": "integer",
-                        "minimum": 40,
-                        "maximum": 1500
-                      },
-                      "visible": {
-                        "type": "boolean"
-                      },
-                      "mode": {
-                        "type": "string",
-                        "enum": [
-                          "text",
-                          "image"
-                        ]
-                      },
-                      "imageId": {
-                        "type": "string",
-                        "nullable": true,
-                        "minLength": 1,
-                        "maxLength": 40
-                      },
-                      "font": {
-                        "type": "string",
-                        "enum": [
-                          "sans-serif",
-                          "serif",
-                          "monospace"
-                        ]
-                      },
-                      "fontSize": {
-                        "type": "integer",
-                        "minimum": 14,
-                        "maximum": 100
-                      },
-                      "color": {
-                        "type": "string",
-                        "pattern": "^#[0-9a-fA-F]{6}$"
-                      },
-                      "background": {
-                        "type": "string",
-                        "nullable": true,
-                        "pattern": "^#[0-9a-fA-F]{6}$"
-                      },
-                      "border": {
-                        "type": "string",
-                        "nullable": true,
-                        "pattern": "^#[0-9a-fA-F]{6}$"
-                      }
-                    },
-                    "required": [
-                      "x",
-                      "y",
-                      "width",
-                      "height",
-                      "visible",
-                      "mode",
-                      "imageId",
-                      "font",
-                      "fontSize",
-                      "color",
-                      "background",
-                      "border"
-                    ]
-                  },
-                  "address": {
-                    "type": "object",
-                    "properties": {
-                      "x": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "maximum": 1000
-                      },
-                      "y": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "maximum": 1500
-                      },
-                      "width": {
-                        "type": "integer",
-                        "minimum": 40,
-                        "maximum": 1000
-                      },
-                      "height": {
-                        "type": "integer",
-                        "minimum": 40,
-                        "maximum": 1500
-                      },
-                      "visible": {
-                        "type": "boolean"
-                      },
-                      "mode": {
-                        "type": "string",
-                        "enum": [
-                          "text",
-                          "image"
-                        ]
-                      },
-                      "imageId": {
-                        "type": "string",
-                        "nullable": true,
-                        "minLength": 1,
-                        "maxLength": 40
-                      },
-                      "font": {
-                        "type": "string",
-                        "enum": [
-                          "sans-serif",
-                          "serif",
-                          "monospace"
-                        ]
-                      },
-                      "fontSize": {
-                        "type": "integer",
-                        "minimum": 14,
-                        "maximum": 100
-                      },
-                      "color": {
-                        "type": "string",
-                        "pattern": "^#[0-9a-fA-F]{6}$"
-                      },
-                      "background": {
-                        "type": "string",
-                        "nullable": true,
-                        "pattern": "^#[0-9a-fA-F]{6}$"
-                      },
-                      "border": {
-                        "type": "string",
-                        "nullable": true,
-                        "pattern": "^#[0-9a-fA-F]{6}$"
-                      }
-                    },
-                    "required": [
-                      "x",
-                      "y",
-                      "width",
-                      "height",
-                      "visible",
-                      "mode",
-                      "imageId",
-                      "font",
-                      "fontSize",
-                      "color",
-                      "background",
-                      "border"
-                    ]
-                  }
-                },
-                "required": [
-                  "version",
-                  "backgroundId",
-                  "qr",
-                  "participant",
-                  "date",
-                  "location",
-                  "address"
-                ],
-                "additionalProperties": false
+                ]
               }
             }
           }
