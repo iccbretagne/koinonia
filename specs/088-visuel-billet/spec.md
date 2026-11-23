@@ -33,9 +33,12 @@ vitrine de l'événement, et il doit rester lisible à l'entrée.
 
 1. Dans la billetterie, l'organisateur ouvre « Visuel du billet » de l'événement.
 2. Il dépose une image de fond (format portrait), conçue **sans** QR code ni nom de participant.
-3. Il place sur l'image la zone du QR code et la zone du texte nominatif (prénom, nom,
-   référence, catégorie d'âge), et peut afficher en surimpression la date, l'heure et le lieu
-   tirés de l'événement.
+3. Dans l'**éditeur du billet**, il place et dimensionne sur l'image des **vignettes** : QR code,
+   nom du participant (prénom, nom, référence, catégorie d'âge), date et heure, lieu, adresse.
+   Pour chaque vignette de texte, il choisit **soit** un rendu texte (police, taille, couleur,
+   fond, bordure), **soit** une image à positionner à la place (par exemple la date déjà
+   dessinée dans le style de la maquette). Les textes viennent de l'événement et du participant ;
+   une vignette peut être masquée.
 4. Un aperçu avec un billet fictif montre le rendu final ; il publie le visuel.
 5. Chaque participant ouvre son billet depuis l'email : il voit le visuel avec **son** QR code,
    son nom et sa référence. Il peut le télécharger en image (PNG) et en PDF.
@@ -46,8 +49,13 @@ vitrine de l'événement, et il doit rester lisible à l'entrée.
 - **Pas de visuel publié** : le billet garde la présentation actuelle.
 - **Billet annulé** : le visuel n'est pas affiché ; le billet indique qu'il n'est plus valable
   (le téléchargement est impossible).
-- **Événement modifié** (date, lieu) : les informations en surimpression suivent l'événement ;
-  celles écrites dans l'image ne changent pas — l'écran le rappelle à l'organisateur.
+- **Événement modifié** (date, lieu, adresse) : les vignettes en mode texte suivent l'événement ;
+  celles remplacées par une image ne changent pas — l'écran le rappelle à l'organisateur.
+- **Vignette du QR code** : toujours générée par Koinonia (jamais une image déposée), sur fond
+  clair avec marge ; seuls sa position et sa taille se règlent, avec une taille minimale.
+- **Vignette nominative** : toujours en mode texte (propre à chaque participant).
+- **Texte trop long pour sa vignette** (nom, lieu) : réduit ou coupé proprement, jamais débordant ;
+  l'aperçu le montre avec un nom long fictif.
 - **Visuel remplacé ou retiré** : tous les billets, déjà envoyés compris, suivent le visuel en
   vigueur ; rien n'est renvoyé par email.
 - **Zone du QR trop petite ou sur fond chargé** : l'aperçu le signale ; le QR est toujours
@@ -60,7 +68,11 @@ vitrine de l'événement, et il doit rester lisible à l'entrée.
 ## Critères d'acceptation
 
 - [ ] L'organisateur dépose, remplace, retire un visuel de billet pour son événement.
-- [ ] Il place la zone du QR et la zone nominative ; l'aperçu montre un billet fictif.
+- [ ] Dans l'éditeur, il place et dimensionne les vignettes QR code, nom, date et heure, lieu,
+      adresse ; l'aperçu montre un billet fictif.
+- [ ] Chaque vignette de texte se règle en texte (police, taille, couleur, fond, bordure) ou se
+      remplace par une image positionnée ; le QR code et le nom restent générés par Koinonia.
+- [ ] Les vignettes en mode texte suivent les changements de l'événement.
 - [ ] Le billet d'un participant affiche le visuel avec son propre QR, ses nom et référence.
 - [ ] Le billet se télécharge en PNG et en PDF ; le QR téléchargé est lu par le contrôle d'entrée.
 - [ ] Le QR reste toujours sur fond clair avec marge, quelle que soit l'image.
@@ -74,7 +86,8 @@ vitrine de l'événement, et il doit rester lisible à l'entrée.
 
 - Billets pour portefeuille mobile (Apple Wallet, Google Wallet).
 - Visuel différent par catégorie de billet ou par option.
-- Éditeur graphique dans Koinonia (le visuel est conçu ailleurs).
+- Éditeur graphique complet dans Koinonia : le fond est conçu ailleurs ; l'éditeur ne place et
+  ne règle que les vignettes.
 - Badges de l'équipe et étiquettes repas.
 
 ## Questions ouvertes
@@ -82,4 +95,4 @@ vitrine de l'événement, et il doit rester lisible à l'entrée.
 - Un visuel propre au billet, ou reprise des couleurs et images du site de l'événement ?
 - Téléchargement PNG seul, ou PNG et PDF ?
 - Vignette du billet dans l'email de confirmation ?
-- Date et lieu : toujours en surimpression, ou laissés dans l'image au choix de l'organisateur ?
+- Polices proposées : une liste fermée (celles du site de l'événement) ou libre ?
