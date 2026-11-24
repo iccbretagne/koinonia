@@ -495,3 +495,13 @@ sans nouvelle spec : elles prolongent le lot 1 et le lot 2 sans toucher aux droi
   n'impose pas ces points (l'état reste aussi modifiable dans les paramètres).
 - Paramètres : blocs `<details>` repliables, informations, jauge, tarifs et paiement ouverts.
 
+
+## Harmonisation de l’interface
+
+La navigation organisateur regroupe les vues par usage. Le raccourci Distribution ouvre
+l’écran de terrain. Le suivi de la restauration reste dans Jour J.
+
+La page Étiquettes utilise une feuille CSS d’impression nommée en A4 portrait et compose
+une grille par planche. La distribution conserve l’instantané du serveur et indique les
+remises en attente à partir de la file locale. Chaque résultat de synchronisation peut
+confirmer la remise ou signaler un refus avec le motif renvoyé par le serveur.

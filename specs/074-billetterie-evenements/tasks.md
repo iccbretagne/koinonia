@@ -274,3 +274,10 @@ Chaque route a son `contract.ts`.
 | Module désactivé, puis réactivé intact | T3, T21, T31 |
 | Aucune fuite entre églises | T5, T27, T30 |
 | Purge après la durée de conservation | T12, T29 |
+
+## Suivi de la cohérence de l’interface
+
+- [x] Regrouper les vues par usage et distinguer le suivi de la distribution.
+- [x] Paginer les deux formats d’étiquettes A4 portrait et vérifier le PDF sur deux pages.
+- [x] Distinguer les remises en attente, confirmées et refusées. Tester les résultats mixtes.
+- [ ] Vérifier en recette les deux planches physiques et la synchronisation sur téléphone.

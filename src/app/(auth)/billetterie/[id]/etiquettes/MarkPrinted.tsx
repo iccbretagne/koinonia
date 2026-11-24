@@ -8,7 +8,7 @@ export default function MarkPrinted({ eventId, itemIds }: { readonly eventId: st
   const { call, busy } = useApi();
   return (
     <div className="flex flex-wrap gap-2">
-      <Button type="button" onClick={() => window.print()}>
+      <Button type="button" disabled={itemIds.length === 0} onClick={() => window.print()}>
         Imprimer
       </Button>
       <Button

@@ -2,12 +2,19 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { Alert, Button, Checkbox, Input, Select, Textarea, useToast } from "@/components/ui";
+import { Alert, Button, Checkbox, ConfirmModal, Input, Select, Textarea, useToast } from "@/components/ui";
 import { convertTicketVisual, defaultTicketVisualV2, TICKET_FONTS, TICKET_VARIABLES, ticketTextStyleSchema, ticketVisualSchema, type TicketElement, type TicketVisual, type TicketVisualV2 } from "@/modules/ticketing/schemas";
 import { useApi } from "../../use-api";
 
 type Asset = { id: string; name: string; width: number; height: number };
-const options = (items: readonly string[]) => items.map((value) => ({ value, label: value }));
+const labels: Record<string, string> = {
+  "sans-serif": "Sans empattement", serif: "Avec empattement", monospace: "Chasse fixe",
+  normal: "Normale", bold: "Gras", left: "À gauche", center: "Centré", right: "À droite",
+  top: "En haut", middle: "Au milieu", bottom: "En bas",
+  fixed: "Taille fixe", shrink: "Réduire pour tenir", wrap: "Retour à la ligne",
+  rectangle: "Rectangle", circle: "Cercle", line: "Ligne",
+};
+const options = (items: readonly string[]) => items.map((value) => ({ value, label: labels[value] ?? value }));
 export default function TicketVisualV2Tab({ eventId, initial, initialDocument, images: initialImages, canEdit }: {
   readonly eventId: string; readonly initial: { draft: TicketVisual | null; published: TicketVisual | null };
   readonly initialDocument: TicketVisualV2 | null; readonly images: Asset[]; readonly canEdit: boolean;
@@ -19,6 +26,7 @@ export default function TicketVisualV2Tab({ eventId, initial, initialDocument, i
   const [images, setImages] = useState(initialImages);
   const [selected, setSelected] = useState(doc.elements[0]?.id);
   const [published, setPublished] = useState(!!initial.published);
+  const previewUrl = useRef("");
   const [preview, setPreview] = useState("");
   const [previewed, setPreviewed] = useState("");
   const [error, setError] = useState("");
@@ -26,6 +34,7 @@ export default function TicketVisualV2Tab({ eventId, initial, initialDocument, i
   const [category, setCategory] = useState("adult");
   const [zoom, setZoom] = useState("100");
   const [safety, setSafety] = useState(true);
+  const [confirmation, setConfirmation] = useState<"publish" | "withdraw" | null>(null);
   const [uploading, setUploading] = useState(false);
   const drag = useRef<{ x: number; y: number; width: number; element: TicketElement; doc: TicketVisualV2; resize: boolean } | null>(null);
   const { call, busy } = useApi();
@@ -33,6 +42,7 @@ export default function TicketVisualV2Tab({ eventId, initial, initialDocument, i
   const base = `/api/ticketing/events/${eventId}/ticket-visual`;
   const parsed = ticketVisualSchema.safeParse(doc);
   const serialized = JSON.stringify(doc);
+  const previewKey = JSON.stringify([serialized, profile, category]);
   const dirty = serialized !== saved;
   const element = doc.elements.find((e) => e.id === selected);
   function commit(next: TicketVisualV2) {
@@ -52,18 +62,20 @@ export default function TicketVisualV2Tab({ eventId, initial, initialDocument, i
   useEffect(() => {
     if (!parsed.success) return;
     const controller = new AbortController();
-    let url = "";
     const timer = setTimeout(async () => {
       try {
         const response = await fetch(`${base}/preview?profile=${profile}&category=${category}`, canEdit ? { method: "POST", headers: { "Content-Type": "application/json" }, body: serialized, signal: controller.signal } : { signal: controller.signal });
         if (!response.ok) { const body = await response.json(); throw new Error(body.error ?? "Aperçu indisponible"); }
-        url = URL.createObjectURL(await response.blob());
+        const url = URL.createObjectURL(await response.blob());
         if (controller.signal.aborted) { URL.revokeObjectURL(url); return; }
-        setPreview(url); setPreviewed(serialized); setError("");
+        if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
+        previewUrl.current = url;
+        setPreview(url); setPreviewed(previewKey); setError("");
       } catch (e) { if (!controller.signal.aborted) setError(e instanceof Error ? e.message : "Aperçu indisponible"); }
     }, 450);
-    return () => { clearTimeout(timer); controller.abort(); if (url) URL.revokeObjectURL(url); };
-  }, [serialized, parsed.success, base, canEdit, profile, category]);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [serialized, previewKey, parsed.success, base, canEdit, profile, category]);
+  useEffect(() => () => { if (previewUrl.current) URL.revokeObjectURL(previewUrl.current); }, []);
   async function upload(file?: File) {
     if (!file) return;
     setUploading(true);
@@ -77,9 +89,14 @@ export default function TicketVisualV2Tab({ eventId, initial, initialDocument, i
     finally { setUploading(false); }
   }
   async function save(publish: boolean) {
-    if (publish && !window.confirm("Publier ce modèle sur tous les billets existants ?")) return;
     const result = await call(base, "PUT", { document: doc, publish }, publish ? "Visuel publié" : "Brouillon enregistré");
-    if (result) { setSaved(serialized); if (publish) setPublished(true); }
+    if (result) { setSaved(serialized); if (publish) { setPublished(true); setConfirmation(null); } }
+  }
+  async function withdraw() {
+    if (await call(base, "DELETE", undefined, "Visuel retiré")) {
+      setPublished(false);
+      setConfirmation(null);
+    }
   }
   function add(type: "text" | "image" | "shape") {
     if (type === "image" && !images.length) { toast.error("Déposez une image avant de l'ajouter."); return; }
@@ -96,12 +113,12 @@ export default function TicketVisualV2Tab({ eventId, initial, initialDocument, i
   return <div className="space-y-4">
     <Alert tone="info" title={published ? "Un modèle est publié" : "Brouillon V2"}>L&apos;enregistrement ne change aucun billet publié. L&apos;aperçu est fictif ; le QR réel sera généré pour chaque participant.</Alert>
     <div className="grid items-start gap-6 xl:grid-cols-[360px_1fr]">
-      <fieldset disabled={!canEdit || busy} className="min-w-0 space-y-4">
+      <fieldset disabled={!canEdit || busy} className="order-2 min-w-0 space-y-4 xl:order-1">
         <div className="flex flex-wrap gap-2"><Button variant="secondary" disabled={cursor === 0} onClick={() => setCursor(cursor - 1)}>Annuler</Button><Button variant="secondary" disabled={cursor === history.length - 1} onClick={() => setCursor(cursor + 1)}>Rétablir</Button></div>
         <Input label="Importer une image" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" disabled={uploading} onChange={(e) => { void upload(e.target.files?.[0]); e.target.value = ""; }} />
         <Select label="Fond portrait (facultatif)" value={doc.backgroundId ?? ""} options={[{ value: "", label: "Couleur unie" }, ...imageOptions.filter((o) => images.some((i) => i.id === o.value && i.height > i.width && i.width >= 600))]} onChange={(e) => commit({ ...doc, backgroundId: e.target.value || null })} />
         <Input label="Couleur de fond" type="color" value={doc.backgroundColor} onChange={(e) => commit({ ...doc, backgroundColor: e.target.value })} />
-        <div className="flex flex-wrap gap-2"><Button onClick={() => add("text")}>+ Texte</Button><Button onClick={() => add("image")}>+ Image</Button><Button onClick={() => add("shape")}>+ Décor</Button></div>
+        <div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => add("text")}>+ Texte</Button><Button variant="secondary" onClick={() => add("image")}>+ Image</Button><Button variant="secondary" onClick={() => add("shape")}>+ Décor</Button></div>
         <Select label="Éléments (du fond au premier plan, QR toujours protégé)" options={doc.elements.map((e) => ({ value: e.id, label: `${e.locked ? "🔒 " : ""}${e.name}` }))} value={selected} onChange={(e) => setSelected(e.target.value)} />
         {element && <div className="space-y-3 rounded-card border border-line p-3">
           <Input label="Nom de l'élément" value={element.name} onChange={(e) => patch({ name: e.target.value })} />
@@ -112,8 +129,10 @@ export default function TicketVisualV2Tab({ eventId, initial, initialDocument, i
             <Textarea label="Texte et variables" rows={4} value={element.content} onChange={(e) => patch({ content: e.target.value })} />
             <Select label="Insérer une variable" value="" options={[{ value: "", label: "Choisir…" }, ...options(TICKET_VARIABLES)]} onChange={(e) => { if (e.target.value) patch({ content: `${element.content}{${e.target.value}}` }); }} />
             {(["fontFamily", "fontWeight", "textAlign", "verticalAlign", "autoFit"] as const).map((key) => <Select key={key} label={{ fontFamily: "Police", fontWeight: "Graisse", textAlign: "Alignement horizontal", verticalAlign: "Alignement vertical", autoFit: "Adaptation" }[key]} value={element.style[key]} options={options({ fontFamily: TICKET_FONTS, fontWeight: ["normal", "bold"], textAlign: ["left", "center", "right"], verticalAlign: ["top", "middle", "bottom"], autoFit: ["fixed", "shrink", "wrap"] }[key])} onChange={(e) => patch({ style: { ...element.style, [key]: e.target.value } })} />)}
+            <details className="space-y-2"><summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-ink">Réglages typographiques avancés</summary>
             <div className="grid grid-cols-2 gap-2">{(["fontSize", "minFontSize", "lineHeight", "letterSpacing", "padding", "maxLines"] as const).map((key) => <Input key={key} label={{ fontSize: "Taille maximale", minFontSize: "Taille minimale", lineHeight: "Interligne", letterSpacing: "Espacement", padding: "Marge interne", maxLines: "Lignes maximales" }[key]} type="number" step={key === "lineHeight" ? 0.05 : 1} value={element.style[key]} onChange={(e) => patch({ style: { ...element.style, [key]: Number(e.target.value) } })} />)}</div>
             {(["background", "border"] as const).map((key) => <div key={key}><label className="flex gap-2"><Checkbox checked={element.style[key] !== null} onChange={(e) => patch({ style: { ...element.style, [key]: e.target.checked ? "#ffffff" : null } })} />{key === "background" ? "Fond du texte" : "Bordure du texte"}</label>{element.style[key] && <Input label={key === "background" ? "Couleur du panneau" : "Couleur de bordure"} type="color" value={element.style[key]} onChange={(e) => patch({ style: { ...element.style, [key]: e.target.value } })} />}</div>)}
+            </details>
             <Input label="Couleur du texte" type="color" value={element.style.color} onChange={(e) => patch({ style: { ...element.style, color: e.target.value } })} />
           </>}
           {element.type === "image" && <Select label="Image" options={imageOptions} value={element.imageId} onChange={(e) => patch({ imageId: e.target.value })} />}
@@ -123,14 +142,14 @@ export default function TicketVisualV2Tab({ eventId, initial, initialDocument, i
         </div>}
         {initial.published && <Button variant="secondary" onClick={() => { if (initial.published) commit(initial.published.version === 2 ? initial.published : convertTicketVisual(initial.published)); }}>Restaurer le publié dans le brouillon</Button>}
       </fieldset>
-      <div className="min-w-0 space-y-3 xl:sticky xl:top-4">
+      <div className="order-1 min-w-0 space-y-3 xl:sticky xl:top-4 xl:order-2">
         <h2 className="font-semibold">Aperçu serveur — billet fictif</h2>
         <div className="grid grid-cols-2 gap-2"><Select label="Profil fictif" value={profile} options={[{ value: "0", label: "Jean Koné" }, { value: "1", label: "Marie-Claire Ouattara" }, { value: "2", label: "Jean-Baptiste Kouamé N'Guessan" }, { value: "3", label: "Nom très long" }]} onChange={(e) => setProfile(e.target.value)} /><Select label="Catégorie fictive" value={category} options={[{ value: "adult", label: "Adulte" }, { value: "child", label: "Enfant" }]} onChange={(e) => setCategory(e.target.value)} /></div>
         <Select label="Zoom" value={zoom} options={[{ value: "60", label: "60 %" }, { value: "100", label: "Adapter à la largeur" }, { value: "150", label: "150 %" }]} onChange={(e) => setZoom(e.target.value)} />
         <label className="flex gap-2"><Checkbox checked={safety} onChange={(e) => setSafety(e.target.checked)} />Afficher la zone de sécurité (30 px) et les repères centraux</label>
         {!parsed.success && <Alert tone="warning" title="Zones invalides">{parsed.error.issues.map((i) => i.message).join(" ; ")}</Alert>}
         {error && <Alert tone="danger" title="Rendu à corriger">{error}</Alert>}
-        {previewed !== serialized && <p role="status" className="text-sm text-ink-muted">Aperçu en cours de mise à jour…</p>}
+        {parsed.success && !error && previewed !== previewKey && <p role="status" className="text-sm text-ink-muted">Aperçu en cours de mise à jour…</p>}
         <div className="overflow-auto">
           <div className="relative" style={{ width: `${zoom}%`, aspectRatio: "2 / 3" }}>
             {preview && <Image unoptimized src={preview} alt="Aperçu fictif du billet" width={1000} height={1500} className="absolute inset-0 h-full w-full" />}
@@ -162,10 +181,22 @@ export default function TicketVisualV2Tab({ eventId, initial, initialDocument, i
         </div>
       </div>
     </div>
-    {canEdit && <div className="sticky bottom-20 flex flex-wrap gap-2 rounded-card border border-line bg-surface p-3 md:bottom-4">
-      <Button variant="secondary" disabled={busy || !parsed.success} onClick={() => save(false)}>Enregistrer le brouillon{dirty ? " *" : ""}</Button>
-      <Button disabled={busy || !parsed.success || !!error || previewed !== serialized} onClick={() => save(true)}>Publier sur les billets</Button>
-      {published && <Button variant="ghost" disabled={busy} onClick={async () => { if (await call(base, "DELETE", undefined, "Visuel retiré")) setPublished(false); }}>Retirer le visuel publié</Button>}
+    {canEdit && <div data-k-bottom-bar className="sticky bottom-20 z-10 flex flex-wrap gap-2 rounded-card border border-line bg-surface p-3 md:bottom-4">
+      <Button disabled={busy || !parsed.success || !dirty} onClick={() => save(false)}>Enregistrer le brouillon{dirty ? " *" : ""}</Button>
+      <Button variant="secondary" disabled={busy || !parsed.success || !!error || previewed !== previewKey} onClick={() => setConfirmation("publish")}>Publier sur les billets</Button>
+      {published && <Button variant="ghost" disabled={busy} onClick={() => setConfirmation("withdraw")}>Retirer le visuel publié</Button>}
     </div>}
+    {confirmation && <ConfirmModal
+      open
+      title={confirmation === "publish" ? "Publier ce visuel de billet ?" : "Retirer le visuel publié ?"}
+      message={confirmation === "publish"
+        ? "Ce visuel apparaîtra sur les billets existants et futurs de cet événement."
+        : "Les billets existants et futurs reprendront leur présentation standard. Votre brouillon reste disponible."}
+      confirmLabel={confirmation === "publish" ? "Publier le visuel" : "Retirer le visuel"}
+      variant={confirmation === "publish" ? "primary" : "danger"}
+      confirming={busy}
+      onConfirm={() => { void (confirmation === "publish" ? save(true) : withdraw()); }}
+      onCancel={() => { if (!busy) setConfirmation(null); }}
+    />}
   </div>;
 }

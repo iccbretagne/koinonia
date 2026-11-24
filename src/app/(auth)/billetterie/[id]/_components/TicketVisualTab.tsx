@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Alert, Button, Checkbox, Input, Select, useToast } from "@/components/ui";
+import { Alert, Button, Checkbox, ConfirmModal, Input, Select, useToast } from "@/components/ui";
 import { defaultTicketVisual, TICKET_FIELDS, TICKET_FONTS, ticketVisualSchema, type TicketVisualV1 as TicketVisual, type TicketText } from "@/modules/ticketing/schemas";
 import TicketVisualV2Tab from "./TicketVisualV2Tab";
 import { convertTicketVisual, type TicketVisual as AnyVisual } from "@/modules/ticketing/schemas";
@@ -18,6 +18,7 @@ export function LegacyTicketVisualTab({ eventId, initial, images: initialImages,
 }) {
   const [doc, setDoc] = useState(initial.draft ?? initial.published);
   const [images, setImages] = useState(initialImages);
+  const [confirmChange, setConfirmChange] = useState<"publish" | "withdraw" | null>(null);
   const [published, setPublished] = useState(!!initial.published);
   const [saved, setSaved] = useState(JSON.stringify(initial.draft ?? initial.published));
   const [preview, setPreview] = useState<string | null>(null);
@@ -76,7 +77,7 @@ export function LegacyTicketVisualTab({ eventId, initial, images: initialImages,
   async function save(publish: boolean) {
     if (!doc) return;
     const result = await call(`${base}`, "PUT", { document: doc, publish }, publish ? "Visuel publié sur tous les billets" : "Brouillon enregistré");
-    if (result) { setSaved(JSON.stringify(doc)); if (publish) setPublished(true); }
+    if (result) { setSaved(JSON.stringify(doc)); if (publish) { setPublished(true); setConfirmChange(null); } }
   }
   const imageOptions = images.map((i) => ({ value: i.id, label: `${i.name || i.id} (${i.width} × ${i.height})` }));
   return (
@@ -124,9 +125,27 @@ export function LegacyTicketVisualTab({ eventId, initial, images: initialImages,
       </div>
       {canEdit && <div data-k-bottom-bar className="sticky bottom-20 flex flex-wrap gap-2 rounded-card border border-line bg-surface p-3 md:bottom-4">
         <Button variant="secondary" disabled={busy || !valid || !doc} onClick={() => save(false)}>Enregistrer le brouillon{dirty ? " *" : ""}</Button>
-        <Button disabled={busy || !valid || !doc || !!previewError || !preview || previewed !== JSON.stringify(doc)} onClick={() => save(true)}>Publier sur les billets</Button>
-        {published && <Button variant="ghost" disabled={busy} onClick={async () => { if (await call(base, "DELETE", undefined, "Visuel retiré des billets")) setPublished(false); }}>Retirer le visuel publié</Button>}
+        <Button disabled={busy || !valid || !doc || !!previewError || !preview || previewed !== JSON.stringify(doc)} onClick={() => setConfirmChange("publish")}>Publier sur les billets</Button>
+        {published && <Button variant="ghost" disabled={busy} onClick={() => setConfirmChange("withdraw")}>Retirer le visuel publié</Button>}
       </div>}
+      {confirmChange && <ConfirmModal
+        open
+        title={confirmChange === "publish" ? "Publier ce visuel de billet ?" : "Retirer le visuel publié ?"}
+        message={confirmChange === "publish"
+          ? "Ce visuel apparaîtra sur les billets existants et futurs de cet événement."
+          : "Les billets reprendront leur présentation standard. Votre brouillon reste disponible."}
+        confirmLabel={confirmChange === "publish" ? "Publier le visuel" : "Retirer le visuel"}
+        variant={confirmChange === "publish" ? "primary" : "danger"}
+        confirming={busy}
+        onConfirm={async () => {
+          if (confirmChange === "publish") await save(true);
+          else if (await call(base, "DELETE", undefined, "Visuel retiré des billets")) {
+            setPublished(false);
+            setConfirmChange(null);
+          }
+        }}
+        onCancel={() => { if (!busy) setConfirmChange(null); }}
+      />}
     </div>
   );
 }

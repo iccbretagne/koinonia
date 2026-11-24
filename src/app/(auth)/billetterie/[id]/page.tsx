@@ -40,6 +40,12 @@ import CateringTab from "./_components/CateringTab";
 import EventFormsBlock from "@/components/forms/EventFormsBlock";
 import { registry } from "@/lib/registry";
 
+const VIEW_GROUPS = [
+  { label: "Préparer", views: ["parametres", "options", "equipe", "site", "billet"] },
+  { label: "Inscriptions", views: ["inscrits", "reglements"] },
+  { label: "Jour J", views: ["presences", "restauration"] },
+] as const;
+
 const VIEWS = ["apercu", "parametres", "options", "inscrits", "reglements", "equipe", "presences", "restauration", "site", "billet"] as const;
 type View = (typeof VIEWS)[number];
 
@@ -113,11 +119,18 @@ export default async function TicketingEventPage({
   const publicUrl = `${appUrl()}/inscription/${event.church.slug}/${event.slug}`;
   const pending = payments.filter((p) => p.kind === "DECLARATION" && p.status === "PENDING").length;
   const tabs = VIEWS.filter((v) => allowed[v]).map((v) => ({
+    view: v,
     href: `/billetterie/${id}?vue=${v}`,
-    label: { apercu: "Aperçu", parametres: "Paramètres", options: "Options", inscrits: "Inscrits", reglements: "Règlements", equipe: "Équipe", presences: "Présences", restauration: "Restauration", site: "Site", billet: "Visuel du billet" }[v],
+    label: { apercu: "Aperçu", parametres: "Paramètres", options: "Options", inscrits: "Inscrits", reglements: "Règlements", equipe: "Équipe", presences: "Présences", restauration: "Suivi restauration", site: "Site", billet: "Visuel du billet" }[v],
     active: v === view,
     count: v === "reglements" && pending > 0 ? pending : undefined,
   }));
+
+  const groups = VIEW_GROUPS.map(({ label, views }) => ({
+    label,
+    tabs: tabs.filter((tab) => views.some((key) => tab.view === key)),
+  })).filter((group) => group.tabs.length > 0);
+  const activeGroup = groups.find((group) => group.tabs.some((tab) => tab.active));
 
   return (
     <div className="space-y-6">
@@ -129,19 +142,28 @@ export default async function TicketingEventPage({
           <div className="flex flex-wrap items-center gap-2">
             <StatusChip tone={event.status === "OPEN" ? "success" : "neutral"}>{EVENT_STATUS_LABEL[event.status]}</StatusChip>
             {can.reception && (
-              <Link href={`/billetterie/${id}/controle`} className={buttonClasses("primary", "sm")}>
+              <Link href={`/billetterie/${id}/controle`} className={buttonClasses("primary", "md")}>
                 <ScanLine className="size-4" aria-hidden="true" /> Contrôle
               </Link>
             )}
             {can.catering && event.options.some((o) => o.pickup) && (
-              <Link href={`/billetterie/${id}/restauration`} className={buttonClasses("secondary", "sm")}>
-                <Utensils className="size-4" aria-hidden="true" /> Restauration
+              <Link href={`/billetterie/${id}/restauration`} className={buttonClasses("secondary", "md")}>
+                <Utensils className="size-4" aria-hidden="true" /> Distribution
               </Link>
             )}
           </div>
         }
       >
-        <Tabs tabs={tabs} ariaLabel="Événement" />
+        <Tabs tabs={[
+          tabs[0],
+          ...groups.map((group) => ({
+            label: group.label,
+            href: (group.tabs.find((tab) => tab.active) ?? group.tabs[0]).href,
+            active: group === activeGroup,
+            count: group.tabs.find((tab) => tab.count !== undefined)?.count,
+          })),
+        ]} ariaLabel="Sections de l’événement" />
+        {activeGroup && <Tabs tabs={activeGroup.tabs} ariaLabel={activeGroup.label} />}
       </PageHeader>
       {view === "apercu" && <EventFormsBlock forms={forms} manage={formsManager} />}
       {view === "apercu" && <Overview event={event} bookings={bookings} publicUrl={publicUrl} publicQr={qrPath(publicUrl)} canConfigure={can.configure} />}

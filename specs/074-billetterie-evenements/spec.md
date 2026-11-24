@@ -365,6 +365,8 @@ comme le contrôle.
   - ce qui a **déjà été remis**.
 - **« Remis »** en un geste. Le **paiement sur place** (espèces, Wero) est enregistré dans le même
   geste.
+- La fiche distingue une remise en attente de synchronisation d’une remise confirmée. Si le serveur
+  refuse une opération, l’équipe voit le motif avant de décider quoi faire.
 - **Vente sur place** d'un repas restant à quelqu'un qui n'en avait pas réservé.
 
 #### Stock
@@ -393,8 +395,9 @@ restauration. Elle sert quand les repas sont préparés en paquets au nom des pe
 - un code facultatif qui ouvre la réservation sur l'écran de distribution. Ce code **ne permet
   pas d'entrer** : il est distinct du billet.
 
-**Impression** sur planches d'étiquettes A4 standard, depuis le navigateur, sans logiciel. On
-choisit :
+**Impression** sur planches A4 portrait depuis le navigateur. Les formats 2 × 7 et 3 × 7
+passent automatiquement à la planche suivante après sept rangées. L’équipe imprime à 100 % et
+marque les étiquettes imprimées après avoir vérifié la planche. On choisit :
 - **le format** de la planche ;
 - **l'ensemble à imprimer** :
   - tous les repas ;
