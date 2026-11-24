@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { defaultStore, deviceId as loadDeviceId, opQueue } from "@/lib/offline/store";
 import type { SyncOp } from "@/modules/ticketing/schemas";
-import { deliveryFeedback, type DeliveryFeedback, type SyncResult } from "./sync-feedback";
+import { deliveryFeedback, settleFieldSync, type DeliveryFeedback, type SyncResult } from "./sync-feedback";
 
 export interface FieldStatus {
   online: boolean;
@@ -50,27 +50,25 @@ export function useFieldSync<S>(eventId: string, kind: "reception" | "catering",
       setStatus((s) => ({ ...s, pending: ops.length }));
       if (ops.length === 0) return;
       const device = await loadDeviceId(storeRef.current);
+      const sent = ops.slice(0, 200);
       const res = await fetch(`/api/ticketing/events/${eventId}/sync`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deviceId: device, clientTime: new Date().toISOString(), ops: ops.slice(0, 200) }),
+        body: JSON.stringify({ deviceId: device, clientTime: new Date().toISOString(), ops: sent }),
       });
       if (!res.ok) {
         setStatus((s) => ({ ...s, online: true, error: "Synchronisation refusée : réessai automatique." }));
         return;
       }
       const data = (await res.json()) as { results: SyncResult[]; counts: unknown };
-      const completed = new Set(data.results.map((r) => r.id));
-      if (kind === "catering") {
-        const rejected = data.results.filter((r) => r.status === "rejected");
-        if (rejected.length) setSyncRejection(rejected.map((r) => r.reason ?? "Opération refusée").join(" · "));
-        setDeliveries((current) => deliveryFeedback(current, ops.filter((op) => completed.has(op.id)), data.results));
+      const settled = await settleFieldSync(queue.current, sent, data.results, kind);
+      if (settled.rejection) setSyncRejection(settled.rejection);
+      if (Object.keys(settled.deliveries).length) {
+        setDeliveries((current) => ({ ...current, ...settled.deliveries }));
       }
-      await queue.current.remove(data.results.map((r) => r.id));
-      const left = await queue.current.count();
-      setStatus((s) => ({ ...s, online: true, pending: left, lastSync: new Date().toISOString(), error: null }));
+      setStatus((s) => ({ ...s, online: true, pending: settled.pending, lastSync: new Date().toISOString(), error: null }));
       onSynced?.(data.counts);
-      if (kind === "catering" && left === 0) await refreshSnapshot();
+      if (kind === "catering" && settled.pending === 0) await refreshSnapshot();
     } catch {
       setStatus((s) => ({ ...s, online: false }));
     } finally {
