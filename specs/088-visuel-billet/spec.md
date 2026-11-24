@@ -1,7 +1,7 @@
 # Spec — Visuel du billet d'entrée
 
 - **Numéro** : 088
-- **Statut** : Implémentée — recette utilisateur à valider
+- **Statut** : V1 et V2 implémentées et déployées en recette. Validation fonctionnelle en recette à terminer.
 - **Créée le** : 2026-11-23
 - **Branche de travail** : `claude/visual-deposit-validation-process-gbyji8` (branche existante reprise à la demande de l’utilisateur)
 
@@ -29,7 +29,7 @@ vitrine de l'événement, et il doit rester lisible à l'entrée.
 
 ## Comportement attendu
 
-### Scénario principal
+### Scénario historique (V1)
 
 1. Dans la billetterie, l'organisateur ouvre « Visuel du billet » de l'événement.
 2. Il dépose une image de fond (format portrait), conçue **sans** QR code ni nom de participant.
@@ -44,6 +44,13 @@ vitrine de l'événement, et il doit rester lisible à l'entrée.
    son nom et sa référence. Il peut le télécharger en image (PNG) et en PDF.
 6. À l'entrée, l'accueil scanne le QR code comme aujourd'hui.
 
+### Scénario principal (V2)
+
+1. L’organisateur crée un modèle V2 ou choisit de convertir une copie de son modèle V1. La conversion prépare un brouillon. Le modèle publié reste celui utilisé par les billets jusqu’à la publication explicite.
+2. Il compose le billet sur un fond uni ou une image de fond facultative. Il ajoute des textes, images et formes, règle leur superposition et déplace ou redimensionne les éléments. Il peut dupliquer les éléments, verrouiller leur position et annuler ou rétablir ses modifications.
+3. Il compose ses textes à partir de champs autorisés de l’événement et du billet. Il règle leur alignement, les retours à la ligne et l’adaptation de la taille. Le nom complet du participant reste dynamique.
+4. Il vérifie les profils fictifs, dont un nom très long, puis enregistre le brouillon. La publication reste une action séparée et explicite.
+
 ### Scénarios alternatifs / cas limites
 
 - **Pas de visuel publié** : le billet garde la présentation actuelle.
@@ -54,8 +61,9 @@ vitrine de l'événement, et il doit rester lisible à l'entrée.
 - **Vignette du QR code** : toujours générée par Koinonia (jamais une image déposée), sur fond
   clair avec marge ; seuls sa position et sa taille se règlent, avec une taille minimale.
 - **Vignette nominative** : toujours en mode texte (propre à chaque participant).
-- **Texte trop long pour sa vignette** (nom, lieu) : réduit ou coupé proprement, jamais débordant ;
-  l'aperçu le montre avec un nom long fictif.
+- **Texte trop long** : en V2, le texte peut revenir à la ligne ou diminuer jusqu’à la taille
+  minimale selon le réglage. Si la zone reste trop petite, une erreur identifie l’élément à
+  corriger. Le rendu V1 conserve son comportement historique.
 - **Visuel remplacé ou retiré** : tous les billets, déjà envoyés compris, suivent le visuel en
   vigueur ; rien n'est renvoyé par email.
 - **Zone du QR trop petite ou sur fond chargé** : l'aperçu le signale ; le QR est toujours
@@ -82,12 +90,18 @@ vitrine de l'événement, et il doit rester lisible à l'entrée.
 - [x] Seuls les rôles qui gèrent l'événement modifient le visuel ; toute modification est journalisée.
 - [x] L'assistant IA ne prétend jamais appliquer un visuel qu'il ne peut pas appliquer.
 
+- [x] La V2 compose plusieurs éléments indépendants et accepte un fond uni.
+- [x] Les noms longs s’adaptent dans leur zone ou déclenchent une erreur explicite.
+- [x] La conversion V1 vers V2 et la sauvegarde du brouillon préservent le modèle publié.
+- [x] L’API et le MCP acceptent les deux formats avec publication explicite.
+- [ ] Valider le parcours complet sur l’instance de recette, puis imprimer et scanner sur un appareil de l’équipe.
+
 ## Hors périmètre
 
 - Billets pour portefeuille mobile (Apple Wallet, Google Wallet).
 - Visuel différent par catégorie de billet ou par option.
-- Éditeur graphique complet dans Koinonia : le fond est conçu ailleurs ; l'éditeur ne place et
-  ne règle que les vignettes.
+- Groupes imbriqués, rotation, polices personnalisées, export vectoriel et historique des
+  anciennes publications.
 - Badges de l'équipe et étiquettes repas.
 
 ## Arbitrages de l’implémentation
@@ -97,5 +111,4 @@ vitrine de l'événement, et il doit rester lisible à l'entrée.
 - Email inchangé : lien vers le billet courant ; pas de vignette ajoutée.
 - Liste fermée de polices : sans empattement, avec empattement, chasse fixe.
 
-Le plan technique détaille ces choix. La recette dans un navigateur et le test sur un appareil
-réel de contrôle restent à effectuer avant validation de recette.
+Le [plan technique](plan.md) et le [rapport V2](../../docs/ticket-editor-v2.md) détaillent les choix et les validations.

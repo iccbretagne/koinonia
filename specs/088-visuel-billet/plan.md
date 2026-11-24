@@ -1,8 +1,8 @@
 # Plan technique — Visuel du billet d'entrée
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Validé pour implémentation à la demande de l'utilisateur
-- **Mis à jour le** : 2026-11-23
+- **Statut** : V1 et V2 implémentées
+- **Mis à jour le** : 2026-11-24
 
 ## Conformité
 - [x] Métier dans `ticketing/services`, imports par l'index ; schémas purs réexportés par `schemas`.
@@ -11,7 +11,7 @@
 - [x] Migration Prisma pour les documents, images et adresse d'événement.
 - [x] Composants UI existants ; aucun ajout de dépendance.
 
-## Approche
+## Approche V1 (historique)
 Un brouillon et un document publié distincts par événement. Fond portrait et vignettes sur une
 surface fixe 1000 × 1500 ; coordonnées et styles bornés. QR carré obligatoire, taille minimale,
 noir sur blanc avec quatre modules de marge ; nominatif toujours en texte. Les images sont
@@ -19,7 +19,7 @@ réencodées par le traitement sécurisé existant, stockées en base comme les 
 accessibles seulement à l'équipe. Le participant reçoit uniquement le rendu composé, par son
 jeton existant, avec relecture de son état à chaque demande et `private, no-store`.
 
-## Données et services
+## Données et services V1
 - `TicketingEvent.ticketVisualDraft`, `ticketVisualPublished` : JSON nullable.
 - `TicketingEvent.address` : adresse distincte du lieu, facultative, éditable dans les paramètres.
 - `TicketingTicketImage` : événement, WebP réencodé, dimensions, nom et date ; suppression en
@@ -37,7 +37,7 @@ en PNG (`read`), POST document non enregistré en PNG (`configure`). `/images` :
 (`configure`). `/api/ticketing/public/tickets/[token]/visual?format=png|pdf` : billet actif et
 visuel publié obligatoires, aucun asset ni document brut exposé.
 
-## UI
+## UI V1
 Onglet « Visuel du billet » : lecture de l'aperçu pour les rôles `read`, formulaire pour
 l'organisateur. Fond, réglages numériques accessibles de position/dimensions, styles ou image
 pour date/lieu/adresse, aperçu fictif avec nom long, enregistrement et publication explicites.
@@ -49,7 +49,7 @@ Lecture du document et lien vers l'éditeur. Actions upload, édition/publicatio
 `safeFetchImage`, base64 via le décodeur existant ; l'aperçu vérifie le contenu, la confirmation
 réutilise le service de l'écran. Aucune dépendance au drapeau des sites.
 
-## Arbitrages
+## Arbitrages V1
 - Fond propre au billet, PNG **et** PDF conformément aux critères explicites.
 - Polices fermées : sans-serif, serif, monospace ; pas de police distante.
 - Email inchangé (vignette optionnelle hors livraison), lien toujours à jour.
@@ -60,3 +60,13 @@ réutilise le service de l'écran. Aucune dépendance au drapeau des sites.
 Vitest : schémas/bornes, propriété des images, refus, audit, publié/brouillon, rendu texte long,
 décodage du QR du PNG/PDF, annulation, permissions et confirmation MCP. Puis typecheck, lint,
 frontières et suite complète. Recette visuelle de l'éditeur et téléchargement à consigner.
+
+## Évolution V2
+
+- Les colonnes JSON existantes stockent les deux versions. La V2 ne nécessite aucune migration supplémentaire. La conversion V1 vers V2 est explicite et préserve la publication.
+- Le repère reste à 1000 × 1500. L’ordre des éléments définit la superposition. Le QR officiel est composé en dernier avec sa marge blanche. Les textes et images qui empiètent sur sa zone sont refusés.
+- Sharp/Pango mesure et rend le texte avec les mêmes paramètres. L’aperçu et l’export partagent la composition PNG, utilisée aussi dans le PDF. Les variables sont limitées aux champs métier autorisés et leurs valeurs sont échappées.
+- Le panneau de propriétés et les manipulations directes partagent le même document. Le serveur valide la géométrie, les références d’images et le rendu du profil long à la sauvegarde.
+- Les routes et outils MCP gardent leurs droits existants. La V2 ajoute des profils fictifs à l’aperçu HTTP et conserve le parcours d’aperçu puis confirmation du MCP.
+
+Le détail du schéma, du moteur, des fichiers et des limites figure dans le [rapport V2](../../docs/ticket-editor-v2.md).
