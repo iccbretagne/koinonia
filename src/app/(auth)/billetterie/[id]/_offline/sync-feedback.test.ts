@@ -51,6 +51,39 @@ describe("réponses du serveur sur la file locale", () => {
     });
   });
 
+  it("affiche un refus compréhensible même si le serveur ne donne pas de motif", async () => {
+    const queue = opQueue<SyncOp>(memoryStore(), "catering");
+    const op = delivery("refused", "meal-a");
+    await queue.push(op);
+
+    await expect(settleFieldSync(queue, [op], [{ id: op.id, status: "rejected" }], "catering"))
+      .resolves.toEqual({
+        pending: 0,
+        deliveries: { "meal-a": { status: "rejected", reason: "Remise refusée" } },
+        rejection: "Opération refusée",
+      });
+  });
+
+  it("ne signale aucun refus quand une vente et une remise sont confirmées", async () => {
+    const queue = opQueue<SyncOp>(memoryStore(), "catering");
+    const meal = delivery("meal", "meal-a");
+    const sale: SyncOp = {
+      type: "onsiteSale", id: "sale", optionId: "option", variantId: null,
+      quantity: 1, method: "CASH", scannedAt: new Date(),
+    };
+    await queue.push(meal);
+    await queue.push(sale);
+
+    await expect(settleFieldSync(queue, [meal, sale], [
+      { id: meal.id, status: "duplicate" },
+      { id: sale.id, status: "applied" },
+    ], "catering")).resolves.toEqual({
+      pending: 0,
+      deliveries: { "meal-a": { status: "delivered" } },
+      rejection: null,
+    });
+  });
+
   it("laisse le traitement de l’accueil indépendant du suivi restauration", async () => {
     const queue = opQueue<SyncOp>(memoryStore(), "reception");
     const op: SyncOp = { type: "manual", id: "entry", direction: "IN", reason: "Sans billet", scannedAt: new Date() };
