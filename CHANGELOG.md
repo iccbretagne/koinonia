@@ -6,6 +6,21 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.43.0] - 2026-11-24
+
+### Ajouté
+
+- Billetterie : l’organisateur peut composer un visuel de billet à partir de textes, d’images et de formes dans l’éditeur V2. Les champs dynamiques reprennent les données de l’événement et du participant. Les noms longs s’adaptent à leur zone et un débordement est signalé. Les modèles V1 restent utilisables et peuvent être convertis en brouillon V2. Aperçus fictifs, exports PNG et PDF et QR de contrôle existant. La publication est explicite. (Spec 088, PR #775.)
+- Assistant IA connecté : lecture, dépôt d’images et édition du visuel de billet selon les droits de l’organisateur. Le MCP accepte les formats V1 et V2. Les modifications passent par un aperçu puis une confirmation. (PR #775.)
+
+### Modifié
+
+- Billetterie : navigation regroupée par usage, aperçu du billet en tête sur mobile et modales Koinonia pour la publication et le retrait des billets et des sites. (PR #776.)
+
+### Corrigé
+
+- Restauration : les étiquettes s’impriment en A4 portrait avec un saut de page après sept rangées. Les remises en attente de synchronisation se distinguent des remises confirmées. Un refus de synchronisation affiche son motif. (PR #776.)
+
 ## [v1.42.0] - 2026-11-22
 
 ### Ajouté
