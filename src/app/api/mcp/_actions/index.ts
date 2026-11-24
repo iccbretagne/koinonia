@@ -7,6 +7,7 @@ import { REPORT_ACTIONS } from "./report";
 import { EVENT_ACTIONS } from "./events";
 import { SERVING_ACTIONS } from "./serving";
 import { TICKETING_ACTIONS } from "./ticketing";
+import { TICKET_VISUAL_ACTIONS } from "./ticket-visual";
 import { SITE_ACTIONS } from "./site";
 import { TRANSFER_ACTIONS } from "./event-transfer";
 
@@ -15,7 +16,7 @@ import { TRANSFER_ACTIONS } from "./event-transfer";
  * (actions des responsables). Toutes exigent la case « actions confirmées » (portée `write`) ;
  * chacune n'est proposée qu'au compte qui peut la faire dans l'application.
  */
-export const MCP_ACTIONS: McpActionDef[] = [...PERSONAL_ACTIONS, ...PLANNING_ACTIONS, ...DELEGATE_ACTIONS, ...REPORT_ACTIONS, ...EVENT_ACTIONS, ...SERVING_ACTIONS, ...TICKETING_ACTIONS, ...SITE_ACTIONS, ...TRANSFER_ACTIONS];
+export const MCP_ACTIONS: McpActionDef[] = [...PERSONAL_ACTIONS, ...PLANNING_ACTIONS, ...DELEGATE_ACTIONS, ...REPORT_ACTIONS, ...EVENT_ACTIONS, ...SERVING_ACTIONS, ...TICKETING_ACTIONS, ...SITE_ACTIONS, ...TRANSFER_ACTIONS, ...TICKET_VISUAL_ACTIONS];
 
 export function actionsFor(viewer: AssistantViewer, write: boolean): McpActionDef[] {
   return write ? MCP_ACTIONS.filter((a) => a.available(viewer)) : [];

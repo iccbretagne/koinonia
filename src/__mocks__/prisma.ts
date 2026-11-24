@@ -161,6 +161,7 @@ export const prismaMock = {
   ticketingSiteSettings: createModelMock(),
   ticketingSite: createModelMock(),
   ticketingSiteAsset: createModelMock(),
+  ticketingTicketImage: createModelMock(),
   ticketingSiteDomain: createModelMock(),
   ticketingPost: createModelMock(),
   ticketingAssignment: createModelMock(),

@@ -69,7 +69,7 @@ async function uniqueSlug(churchId: string, base: string): Promise<string> {
 export async function createEvent(
   churchId: string,
   userId: string,
-  input: { title: string; startsAt: Date; endsAt: Date; capacity: number; description?: string | null; location?: string | null }
+  input: { title: string; startsAt: Date; endsAt: Date; capacity: number; description?: string | null; location?: string | null; address?: string | null }
 ) {
   const prisma = await db();
   const slug = await uniqueSlug(churchId, slugify(input.title));
@@ -80,6 +80,7 @@ export async function createEvent(
       title: input.title,
       description: input.description ?? null,
       location: input.location ?? null,
+      address: input.address ?? null,
       startsAt: input.startsAt,
       endsAt: input.endsAt,
       capacity: input.capacity,

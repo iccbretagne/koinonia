@@ -33,6 +33,7 @@ async function readContent(eventId: string, mode: "duplicate" | "export"): Promi
       title: detail.title,
       description: detail.description,
       location: detail.location,
+      address: detail.address,
       startsAt: detail.startsAt,
       endsAt: detail.endsAt,
       registrationDeadline: detail.registrationDeadline,
@@ -82,6 +83,7 @@ async function createFromContent(churchId: string, userId: string, content: Cont
     capacity: e.capacity,
     description: e.description,
     location: e.location,
+    address: e.address,
   });
   try {
     await updateEvent(event.id, userId, {

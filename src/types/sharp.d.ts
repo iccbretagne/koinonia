@@ -50,6 +50,9 @@ declare module "sharp" {
     failOn?: string;
     raw?: { width: number; height: number; channels: 1 | 2 | 3 | 4 };
   }
-  function sharp(input: Buffer | string | CreateInput, options?: SharpOptions): Sharp;
+  interface TextInput {
+    text: { text: string; font: string; dpi: number; rgba: boolean };
+  }
+  function sharp(input: Buffer | string | CreateInput | TextInput, options?: SharpOptions): Sharp;
   export = sharp;
 }
