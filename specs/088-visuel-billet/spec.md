@@ -49,7 +49,7 @@ vitrine de l'événement, et il doit rester lisible à l'entrée.
 1. L’organisateur crée un modèle V2 ou choisit de convertir une copie de son modèle V1. La conversion prépare un brouillon. Le modèle publié reste celui utilisé par les billets jusqu’à la publication explicite.
 2. Il compose le billet sur un fond uni ou une image de fond facultative. Il ajoute des textes, images et formes, règle leur superposition et déplace ou redimensionne les éléments. Il peut dupliquer les éléments, verrouiller leur position et annuler ou rétablir ses modifications.
 3. Il compose ses textes à partir de champs autorisés de l’événement et du billet. Il règle leur alignement, les retours à la ligne et l’adaptation de la taille. Le nom complet du participant reste dynamique.
-4. Il vérifie les profils fictifs, dont un nom très long, puis enregistre le brouillon. La publication reste une action séparée et explicite.
+4. Il vérifie les profils fictifs, dont un nom très long, puis enregistre le brouillon. La publication et le retrait passent par une confirmation qui précise leur effet sur les billets existants.
 
 ### Scénarios alternatifs / cas limites
 

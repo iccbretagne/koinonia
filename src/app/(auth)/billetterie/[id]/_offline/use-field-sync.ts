@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { defaultStore, deviceId as loadDeviceId, opQueue } from "@/lib/offline/store";
 import type { SyncOp } from "@/modules/ticketing/schemas";
+import { deliveryFeedback, settleFieldSync, type DeliveryFeedback, type SyncResult } from "./sync-feedback";
 
 export interface FieldStatus {
   online: boolean;
@@ -20,6 +21,8 @@ export function useFieldSync<S>(eventId: string, kind: "reception" | "catering",
   const storeRef = useRef(defaultStore());
   const queue = useRef(opQueue<SyncOp>(storeRef.current, `${eventId}:${kind}`));
   const syncing = useRef(false);
+  const [deliveries, setDeliveries] = useState<DeliveryFeedback>({});
+  const [syncRejection, setSyncRejection] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<S | null>(null);
   const [status, setStatus] = useState<FieldStatus>({ online: true, pending: 0, lastSync: null, error: null });
   const snapshotKey = `snapshot:${eventId}:${kind}`;
@@ -47,30 +50,39 @@ export function useFieldSync<S>(eventId: string, kind: "reception" | "catering",
       setStatus((s) => ({ ...s, pending: ops.length }));
       if (ops.length === 0) return;
       const device = await loadDeviceId(storeRef.current);
+      const sent = ops.slice(0, 200);
       const res = await fetch(`/api/ticketing/events/${eventId}/sync`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deviceId: device, clientTime: new Date().toISOString(), ops: ops.slice(0, 200) }),
+        body: JSON.stringify({ deviceId: device, clientTime: new Date().toISOString(), ops: sent }),
       });
       if (!res.ok) {
         setStatus((s) => ({ ...s, online: true, error: "Synchronisation refusée : réessai automatique." }));
         return;
       }
-      const data = (await res.json()) as { results: { id: string }[]; counts: unknown };
-      await queue.current.remove(data.results.map((r) => r.id));
-      const left = await queue.current.count();
-      setStatus((s) => ({ ...s, online: true, pending: left, lastSync: new Date().toISOString(), error: null }));
+      const data = (await res.json()) as { results: SyncResult[]; counts: unknown };
+      const settled = await settleFieldSync(queue.current, sent, data.results, kind);
+      if (settled.rejection) setSyncRejection(settled.rejection);
+      if (Object.keys(settled.deliveries).length) {
+        setDeliveries((current) => ({ ...current, ...settled.deliveries }));
+      }
+      setStatus((s) => ({ ...s, online: true, pending: settled.pending, lastSync: new Date().toISOString(), error: null }));
       onSynced?.(data.counts);
+      if (kind === "catering" && settled.pending === 0) await refreshSnapshot();
     } catch {
       setStatus((s) => ({ ...s, online: false }));
     } finally {
       syncing.current = false;
     }
-  }, [eventId, onSynced]);
+  }, [eventId, kind, onSynced, refreshSnapshot]);
 
   useEffect(() => {
     void (async () => {
       const cached = await storeRef.current.get<S>(snapshotKey);
+      if (kind === "catering") {
+        const ops = await queue.current.pending();
+        setDeliveries((current) => deliveryFeedback(current, ops));
+      }
       if (cached) setSnapshot(cached);
       setStatus((s) => ({ ...s, online: navigator.onLine }));
       await flush();
@@ -101,11 +113,12 @@ export function useFieldSync<S>(eventId: string, kind: "reception" | "catering",
   const enqueue = useCallback(
     async (op: SyncOp) => {
       await queue.current.push(op);
+      if (kind === "catering" && op.type === "delivery") setDeliveries((current) => deliveryFeedback(current, [op]));
       setStatus((s) => ({ ...s, pending: s.pending + 1 }));
       void flush();
     },
-    [flush]
+    [flush, kind]
   );
 
-  return { snapshot, setSnapshot, status, enqueue, refreshSnapshot, flush };
+  return { snapshot, setSnapshot, status, enqueue, refreshSnapshot, flush, deliveries, syncRejection, dismissRejection: () => setSyncRejection(null) };
 }

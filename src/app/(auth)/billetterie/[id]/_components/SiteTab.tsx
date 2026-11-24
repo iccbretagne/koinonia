@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Alert, Button, Checkbox, Input, Select, StatusChip, useToast } from "@/components/ui";
+import { Alert, Button, Checkbox, ConfirmModal, Input, Select, StatusChip, useToast } from "@/components/ui";
 import SitePagesEditor from "./SitePagesEditor";
 import { BackgroundFields, ImageField } from "./SiteFields";
 import SiteRenderer from "@/app/site/_components/SiteRenderer";
@@ -76,6 +76,7 @@ export default function SiteTab({
   const toast = useToast();
   const [doc, setDoc] = useState<SiteDocument>(site.draft);
   const [dirty, setDirty] = useState(false);
+  const [confirmSite, setConfirmSite] = useState<"publish" | "withdraw" | null>(null);
   const [published, setPublished] = useState(site.published);
   const [previewPage, setPreviewPage] = useState<string | undefined>();
   const [fullPreview, setFullPreview] = useState(false);
@@ -127,11 +128,11 @@ export default function SiteTab({
   }
   async function publish() {
     const res = await call<SiteView>(`/api/ticketing/events/${eventId}/site/publish`, "POST", undefined, "Site publié");
-    if (res) setPublished(true);
+    if (res) { setPublished(true); setConfirmSite(null); }
   }
   async function unpublish() {
     const res = await call<SiteView>(`/api/ticketing/events/${eventId}/site/publish`, "DELETE", undefined, "Site dépublié");
-    if (res) setPublished(false);
+    if (res) { setPublished(false); setConfirmSite(null); }
   }
 
   return (
@@ -152,10 +153,22 @@ export default function SiteTab({
         <span className="break-all text-[13px] text-ink-muted">Adresse : {publicUrl ?? "aucune pour l'instant"}</span>
         <div className="ml-auto flex flex-wrap gap-2">
           <Button type="button" variant="secondary" disabled={busy || !dirty} onClick={save}>Enregistrer le brouillon</Button>
-          <Button type="button" disabled={busy || dirty || issues.length > 0} onClick={publish}>{published ? "Republier" : "Publier"}</Button>
-          {published && <Button type="button" variant="secondary" disabled={busy} onClick={unpublish}>Dépublier</Button>}
+          <Button type="button" disabled={busy || dirty || issues.length > 0} onClick={() => setConfirmSite("publish")}>{published ? "Republier" : "Publier"}</Button>
+          {published && <Button type="button" variant="secondary" disabled={busy} onClick={() => setConfirmSite("withdraw")}>Dépublier</Button>}
         </div>
       </div>
+      {confirmSite && <ConfirmModal
+        open
+        title={confirmSite === "publish" ? "Publier le site de l’événement ?" : "Dépublier le site de l’événement ?"}
+        message={confirmSite === "publish"
+          ? "Le site utilisera le dernier brouillon enregistré. Sa visibilité dépend des réglages de l’événement."
+          : "Le site sera retiré de la consultation publique. Le brouillon reste disponible."}
+        confirmLabel={confirmSite === "publish" ? "Publier le site" : "Dépublier le site"}
+        variant={confirmSite === "publish" ? "primary" : "danger"}
+        confirming={busy}
+        onConfirm={() => { void (confirmSite === "publish" ? publish() : unpublish()); }}
+        onCancel={() => { if (!busy) setConfirmSite(null); }}
+      />}
       {dirty && <p className="text-[13px] text-ink-muted">Modifications non enregistrées : enregistrez le brouillon avant de publier.</p>}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_1fr]">
@@ -175,7 +188,7 @@ export default function SiteTab({
             <Select label="Texte" value={doc.theme.fonts.body} options={SITE_FONTS.map((f) => ({ value: f, label: SITE_FONT_LABEL[f] }))} onChange={(e) => edit((d) => void (d.theme.fonts.body = e.target.value as (typeof SITE_FONTS)[number]))} />
           </Card>
           <Card title="Images et fond">
-            <Link href={`/billetterie/${eventId}/images`} className="text-sm text-brand underline">Images du site : déposer plusieurs images d&apos;un coup</Link>
+            <Link href={`/billetterie/${eventId}/images`} className="text-sm font-semibold text-brand-text underline underline-offset-2">Images du site : déposer plusieurs images d&apos;un coup</Link>
             <ImageField label="Logo" current={doc.theme.logoAssetId} tools={tools} onPick={(id) => edit((d) => void (d.theme.logoAssetId = id))} onClear={() => edit((d) => void delete d.theme.logoAssetId)} />
             <ImageField label="Image d'en-tête" current={doc.theme.headerAssetId} tools={tools} onPick={(id) => edit((d) => void (d.theme.headerAssetId = id))} onClear={() => edit((d) => void delete d.theme.headerAssetId)} />
             <BackgroundFields label="Fond de page" value={doc.theme.background} tools={tools} onChange={(bg) => edit((d) => void (d.theme.background = bg))} />

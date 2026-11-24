@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Camera, CameraOff, Printer } from "lucide-react";
-import { Alert, Button, Input, Modal, SearchInput, Select, StatusChip } from "@/components/ui";
+import { Alert, Button, Input, Modal, SearchInput, Select, StatusChip, buttonClasses, useToast } from "@/components/ui";
 import { newOpId, sha256Hex } from "@/lib/offline/hash";
 import { startScanner } from "@/lib/offline/scanner";
 import type { CateringSnapshot } from "@/modules/ticketing";
@@ -11,6 +11,8 @@ import { formatEuros, parseScannedCode } from "@/modules/ticketing/schemas";
 import DishList from "../_components/DishList";
 import NetworkBar from "../_offline/NetworkBar";
 import { useFieldSync } from "../_offline/use-field-sync";
+
+import type { DeliveryFeedback } from "../_offline/sync-feedback";
 
 type Item = CateringSnapshot["items"][number];
 type View = "distribution" | "menu" | "stock";
@@ -31,22 +33,30 @@ function ItemStatus({ done, paid, amountDue }: { readonly done: boolean; readonl
 function Sheet({
   title,
   items,
+  deliveries,
+  missingRejection,
   onDeliver,
   onClose,
 }: {
   readonly title: string;
   readonly items: Item[];
+  readonly deliveries: DeliveryFeedback;
+  readonly missingRejection?: string;
   readonly onDeliver: (item: Item, method: "CASH" | "CHEQUE" | null) => Promise<void>;
   readonly onClose: () => void;
 }) {
   return (
     <Modal open onClose={onClose} title={title} mobileLayout="sheet">
-      {items.length === 0 ? (
+      {missingRejection && <Alert tone="danger" title="Remise refusée">{missingRejection}</Alert>}
+      {items.length === 0 && !missingRejection ? (
         <p className="text-ink-muted">Rien à retirer.</p>
-      ) : (
+      ) : items.length > 0 && (
         <ul className="space-y-3">
           {items.map((i) => {
-            const done = i.deliveredQty >= i.quantity;
+            const delivery = deliveries[i.id];
+            const done = i.deliveredQty >= i.quantity || delivery?.status === "delivered";
+            const pending = delivery?.status === "pending";
+            const rejected = !done && delivery?.status === "rejected";
             return (
               <li key={i.id} className="space-y-2 rounded-card border border-line p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -54,14 +64,17 @@ function Sheet({
                     {i.label}
                     {i.quantity > 1 ? ` × ${i.quantity}` : ""}
                   </span>
-                  <ItemStatus done={done} paid={i.paid} amountDue={i.amountDue} />
+                  {pending ? <StatusChip tone="warning">En attente</StatusChip>
+                    : rejected ? <StatusChip tone="danger">Remise refusée</StatusChip>
+                    : <ItemStatus done={done} paid={i.paid} amountDue={i.amountDue} />}
                 </div>
                 <p className="text-[13px] text-ink-muted">
                   {i.holder}
                   {i.allergens ? ` · allergènes : ${i.allergens}` : ""}
                   {i.labelStale ? " · étiquette à refaire" : ""}
                 </p>
-                {!done &&
+                {rejected && <Alert tone="danger">{delivery.reason}. Vérifiez le paiement et le retrait avant de réessayer.</Alert>}
+                {!done && !pending &&
                   (i.paid ? (
                     <Button type="button" onClick={() => onDeliver(i, null)}>
                       Remis
@@ -105,13 +118,15 @@ function MenuEditor({ eventId, menus }: { readonly eventId: string; readonly men
 
 /** Restauration : distribution (hors ligne), vente sur place, menu, stock. */
 export default function CateringClient({ eventId, menus, hasLabels }: { readonly eventId: string; readonly menus: Menu[]; readonly hasLabels: boolean }) {
-  const { snapshot, setSnapshot, status, enqueue } = useFieldSync<CateringSnapshot>(eventId, "catering");
+  const { snapshot, status, enqueue, deliveries, syncRejection, dismissRejection } = useFieldSync<CateringSnapshot>(eventId, "catering");
+  const toast = useToast();
   const [view, setView] = useState<View>("distribution");
   const [sheet, setSheet] = useState<{ title: string; ids: string[] } | null>(null);
   const [message, setMessage] = useState<{ tone: "danger" | "success"; text: string } | null>(null);
   const [search, setSearch] = useState("");
   const [camera, setCamera] = useState(false);
   const [sale, setSale] = useState<{ key: string; quantity: string; method: string } | null>(null);
+  const enqueuing = useRef(new Set<string>());
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const index = useMemo(() => {
@@ -161,8 +176,15 @@ export default function CateringClient({ eventId, menus, hasLabels }: { readonly
   }, [camera]);
 
   async function deliver(item: Item, method: "CASH" | "CHEQUE" | null) {
-    setSnapshot((s) => (s ? { ...s, items: s.items.map((i) => (i.id === item.id ? { ...i, deliveredQty: i.quantity, paid: true, amountDue: 0 } : i)) } : s));
-    await enqueue({ type: "delivery", id: newOpId(), itemId: item.id, delivered: item.quantity, method, scannedAt: new Date() });
+    if (enqueuing.current.has(item.id) || deliveries[item.id]?.status === "pending") return;
+    enqueuing.current.add(item.id);
+    try {
+      await enqueue({ type: "delivery", id: newOpId(), itemId: item.id, delivered: item.quantity, method, scannedAt: new Date() });
+    } catch {
+      toast.error("Impossible d’enregistrer la remise sur cet appareil.");
+    } finally {
+      enqueuing.current.delete(item.id);
+    }
   }
 
   const matches = useMemo(() => {
@@ -186,7 +208,7 @@ export default function CateringClient({ eventId, menus, hasLabels }: { readonly
           ← {snapshot?.event.title ?? "Événement"}
         </Link>
         {hasLabels && (
-          <Link href={`/billetterie/${eventId}/etiquettes`} className="inline-flex items-center gap-1 text-[13px] font-semibold text-brand-text underline">
+          <Link href={`/billetterie/${eventId}/etiquettes`} className={buttonClasses("secondary", "md")}>
             <Printer className="size-4" aria-hidden="true" /> Étiquettes
           </Link>
         )}
@@ -194,12 +216,16 @@ export default function CateringClient({ eventId, menus, hasLabels }: { readonly
       <fieldset className="grid grid-cols-3 gap-2">
         <legend className="sr-only">Vue</legend>
         {(["distribution", "menu", "stock"] as const).map((v) => (
-          <Button key={v} type="button" size="sm" variant={view === v ? "primary" : "secondary"} aria-pressed={view === v} onClick={() => setView(v)}>
+          <Button key={v} type="button" variant={view === v ? "primary" : "secondary"} aria-pressed={view === v} onClick={() => setView(v)}>
             {{ distribution: "Distribution", menu: "Menu", stock: "Stock" }[v]}
           </Button>
         ))}
       </fieldset>
       <NetworkBar status={status} />
+      {syncRejection && <Alert tone="danger" title="Synchronisation partiellement refusée">
+        <p>{syncRejection}</p>
+        <Button type="button" variant="ghost" onClick={dismissRejection}>Masquer le message</Button>
+      </Alert>}
 
       {view === "distribution" && (
         <div className="space-y-4">
@@ -252,7 +278,10 @@ export default function CateringClient({ eventId, menus, hasLabels }: { readonly
         </ul>
       )}
 
-      {sheet && <Sheet title={sheet.title} items={sheetItems} onDeliver={deliver} onClose={() => setSheet(null)} />}
+      {sheet && <Sheet title={sheet.title} items={sheetItems} deliveries={deliveries}
+        missingRejection={sheet.ids.filter((id) => !sheetItems.some((item) => item.id === id))
+          .map((id) => deliveries[id]?.reason).filter(Boolean).join(" · ") || undefined}
+        onDeliver={deliver} onClose={() => setSheet(null)} />}
       {sale && (
         <Modal open onClose={() => setSale(null)} title="Vente sur place" mobileLayout="sheet">
           <div className="space-y-3">
@@ -273,14 +302,17 @@ export default function CateringClient({ eventId, menus, hasLabels }: { readonly
               onClick={async () => {
                 const [optionId, variantId] = sale.key.split(":");
                 const quantity = Number(sale.quantity);
-                setSnapshot((s) =>
-                  s
-                    ? { ...s, stock: s.stock.map((x) => (x.optionId === optionId && (x.variantId ?? "") === variantId ? { ...x, sold: x.sold + quantity, available: x.available === null ? null : Math.max(0, x.available - quantity) } : x)) }
-                    : s
-                );
-                await enqueue({ type: "onsiteSale", id: newOpId(), optionId, variantId: variantId || null, quantity, method: sale.method as "CASH" | "CHEQUE", scannedAt: new Date() });
-                const price = saleOptions.find((o) => o.key === sale.key)?.price ?? 0;
-                setMessage({ tone: "success", text: `Vente enregistrée : ${formatEuros(price * quantity)}` });
+                if (enqueuing.current.has("sale")) return;
+                enqueuing.current.add("sale");
+                try {
+                  await enqueue({ type: "onsiteSale", id: newOpId(), optionId, variantId: variantId || null, quantity, method: sale.method as "CASH" | "CHEQUE", scannedAt: new Date() });
+                  setMessage({ tone: "success", text: "Vente transmise à la file de synchronisation." });
+                } catch {
+                  toast.error("Impossible d’enregistrer la vente sur cet appareil.");
+                  return;
+                } finally {
+                  enqueuing.current.delete("sale");
+                }
                 setSale(null);
               }}
             >

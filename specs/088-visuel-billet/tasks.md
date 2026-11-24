@@ -41,3 +41,9 @@
 - [x] Documenter la démonstration fictive et les limites dans le [rapport V2](../../docs/ticket-editor-v2.md).
 - [ ] Valider en recette le parcours complet avec un organisateur et un billet de test.
 - [ ] Imprimer le billet de test et vérifier sa lecture sur un appareil de contrôle réel.
+
+## Suivi de la cohérence de l’éditeur
+
+- [x] Utiliser la modale du design system pour la publication et le retrait.
+- [x] Placer l’aperçu V2 avant les propriétés sur mobile et traduire les réglages.
+- [x] Vérifier dans Chrome l’annulation, la publication et le retrait avec API simulée.

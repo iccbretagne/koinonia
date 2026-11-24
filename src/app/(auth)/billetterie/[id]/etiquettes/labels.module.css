@@ -1,0 +1,22 @@
+@page ticket-labels {
+  size: A4 portrait;
+  margin: 15.15mm 0 10mm;
+}
+
+@media print {
+  .sheets {
+    page: ticket-labels;
+    color: #000;
+    background: #fff;
+  }
+
+  .sheet {
+    width: max-content;
+    margin-inline: auto;
+    break-inside: avoid;
+  }
+
+  .sheet + .sheet {
+    break-before: page;
+  }
+}

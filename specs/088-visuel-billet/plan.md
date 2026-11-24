@@ -70,3 +70,9 @@ frontières et suite complète. Recette visuelle de l'éditeur et téléchargeme
 - Les routes et outils MCP gardent leurs droits existants. La V2 ajoute des profils fictifs à l’aperçu HTTP et conserve le parcours d’aperçu puis confirmation du MCP.
 
 Le détail du schéma, du moteur, des fichiers et des limites figure dans le [rapport V2](../../docs/ticket-editor-v2.md).
+
+## Harmonisation de l’éditeur
+
+V1 et V2 réutilisent la modale Koinonia pour publier ou retirer un visuel. Sur mobile,
+l’éditeur V2 place l’aperçu en tête et replie les réglages typographiques avancés.
+La dernière image reste visible pendant le calcul du nouvel aperçu.
