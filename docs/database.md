@@ -1816,6 +1816,8 @@ Demande financière : note de frais (dépense déjà effectuée) ou avance de bu
 
 Relations : `corrections`, `attachments`, `payments`, `justification`, `overageOf`
 
+Champs ajoutés par la spec 089 : `archivedAt` (DateTime?) et `archivedById` (String?, sans relation) : archivage à la main par la compta. Une demande close (validée, tout remis, justificatifs soldés ou jamais attendus, aucune pièce demandée) est archivée d'office sans champ ; une demande qui attend une action de la compta reste dans la file même archivée (`isRequestArchived`, `@/modules/accounting`).
+
 Champs ajoutés par la spec 078 : `justificationId` (String?, ref vers `financial_justifications` : justificatifs attendus après la remise) et `overageOfJustificationId` (String?, ref vers `financial_justifications` : note de frais qui complète un dépassement).
 
 Index : `[churchId, status]`, `[churchId, departmentId, status]`, `[submittedById]`, `[seriesId]`

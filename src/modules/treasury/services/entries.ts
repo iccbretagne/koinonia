@@ -1,7 +1,7 @@
 import type { TreasuryEntry } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/api-utils";
 import { AUTOMATIC_SYSTEMS, type EntryInput } from "../schemas";
-import { getActiveTreasuryAccount } from "./accounts";
+import { assertOnOrAfterOpening, getActiveTreasuryAccount } from "./accounts";
 import { assertOpen } from "./closures";
 import { audit, cents, db, fromIsoDate, toIsoDate, type TreasuryActor } from "./common";
 import { storeReceipt } from "./receipts";
@@ -33,9 +33,7 @@ export function entrySnapshot(e: TreasuryEntry) {
 /** Compte, date, catégorie et objet d'une saisie à la main. Renvoie l'objet retenu. */
 async function validateInput(churchId: string, input: EntryInput): Promise<string | null> {
   const account = await getActiveTreasuryAccount(churchId, input.accountId);
-  if (input.date < toIsoDate(account.openingDate)) {
-    throw new ApiError(400, "La date est antérieure au solde de départ de ce compte");
-  }
+  assertOnOrAfterOpening(account, input.date);
   const prisma = await db();
   const category = await prisma.treasuryCategory.findFirst({ where: { id: input.categoryId, churchId } });
   if (!category) throw new ApiError(400, "Catégorie introuvable");

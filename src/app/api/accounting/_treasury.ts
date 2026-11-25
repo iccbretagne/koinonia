@@ -15,3 +15,19 @@ export async function resolveTreasuryAccount(churchId: string, accountId: string
   await assertTreasuryDateOpen(churchId, date);
   return accountId;
 }
+
+/**
+ * Changement du compte d'une tranche déjà remise (spec 089) : le mois de la remise doit être
+ * ouvert pour l'ancien compte comme pour le nouveau (une ligne quitte un registre, entre dans un
+ * autre) ; le nouveau compte doit être actif.
+ */
+export async function validatePaymentAccountChange(
+  churchId: string,
+  { releasedAt, previous, next }: { releasedAt: Date; previous: string | null; next: string | null }
+) {
+  if (previous && registry.has("treasury")) {
+    const { assertTreasuryDateOpen } = await import("@/modules/treasury");
+    await assertTreasuryDateOpen(churchId, releasedAt);
+  }
+  return resolveTreasuryAccount(churchId, next, releasedAt);
+}

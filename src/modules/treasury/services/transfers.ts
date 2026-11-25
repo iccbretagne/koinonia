@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { ApiError } from "@/lib/api-utils";
 import type { TransferInput } from "../schemas";
-import { getActiveTreasuryAccount } from "./accounts";
+import { assertOnOrAfterOpening, getActiveTreasuryAccount } from "./accounts";
 import { assertOpen } from "./closures";
 import { audit, db, fromIsoDate, toIsoDate, type TreasuryActor } from "./common";
 import { entrySnapshot } from "./entries";
@@ -17,9 +17,8 @@ async function validate(churchId: string, input: TransferInput) {
     getActiveTreasuryAccount(churchId, input.fromId),
     getActiveTreasuryAccount(churchId, input.toId),
   ]);
-  if (input.date < toIsoDate(from.openingDate) || input.date < toIsoDate(to.openingDate)) {
-    throw new ApiError(400, "La date est antérieure au solde de départ d'un des comptes");
-  }
+  assertOnOrAfterOpening(from, input.date);
+  assertOnOrAfterOpening(to, input.date);
   return { from, to };
 }
 

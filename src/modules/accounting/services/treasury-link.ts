@@ -48,3 +48,42 @@ export async function listTreasuryReturns(churchId: string) {
     label: `${r.requests[0]?.label ?? "Avance de budget"}${r.period ? ` (${r.period})` : ""}`,
   }));
 }
+
+/**
+ * Change le compte d'où est partie une tranche déjà remise (spec 089) : une caisse, ou `null` pour
+ * le compte commun. La validation du compte et des mois (ancien et nouveau compte) est injectée
+ * par la couche `src/app`, seule à connaître la trésorerie (ADR-0027) ; journalisé.
+ */
+export async function setPaymentTreasuryAccount(
+  paymentId: string,
+  accountId: string | null,
+  actor: { id: string; churchId: string },
+  validate: (input: { releasedAt: Date; previous: string | null; next: string | null }) => Promise<string | null>
+) {
+  const { prisma } = await import("@/lib/prisma");
+  const { ApiError } = await import("@/lib/api-utils");
+  const payment = await prisma.financialPayment.findUnique({
+    where: { id: paymentId },
+    select: { id: true, releasedAt: true, treasuryAccountId: true, requestId: true, request: { select: { churchId: true } } },
+  });
+  if (payment?.request.churchId !== actor.churchId) throw new ApiError(404, "Paiement introuvable");
+  if (!payment.releasedAt) throw new ApiError(400, "Ce paiement n'a pas encore été remis");
+  if ((payment.treasuryAccountId ?? null) === accountId) return { id: payment.id, treasuryAccountId: accountId };
+
+  const next = await validate({ releasedAt: payment.releasedAt, previous: payment.treasuryAccountId, next: accountId });
+  const updated = await prisma.financialPayment.update({
+    where: { id: paymentId },
+    data: { treasuryAccountId: next },
+    select: { id: true, treasuryAccountId: true },
+  });
+  const { logAudit } = await import("@/lib/audit");
+  await logAudit({
+    userId: actor.id,
+    churchId: actor.churchId,
+    action: "UPDATE",
+    entityType: "FinancialRequest",
+    entityId: payment.requestId,
+    details: { action: "paymentTreasuryAccount", paymentId, before: payment.treasuryAccountId, after: next },
+  });
+  return updated;
+}

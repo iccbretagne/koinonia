@@ -38,6 +38,8 @@ interface Payment {
   releasedAmount: number | string | null;
   releasedBy: { id: string; name: string | null } | null;
   note: string | null;
+  /** Compte de trésorerie d'où est partie la tranche (spec 076) ; `null` = compte commun. */
+  treasuryAccountId?: string | null;
 }
 
 interface Request {
@@ -54,6 +56,8 @@ interface Request {
   pieceRequestLastAt?: DateLike | null;
   pieceRequestCount?: number;
   pieceRequestNote?: string | null;
+  /** Archivée à la main par la compta (spec 089). */
+  archivedAt?: DateLike | null;
   createdAt: DateLike;
   processedAt: DateLike | null;
   department: { id: string; name: string; ministry: { name: string } } | null;
@@ -72,6 +76,8 @@ interface Props {
   readonly isOwn: boolean;
   /** Comptes de trésorerie actifs (spec 076) ; vide si la trésorerie est désactivée ou inaccessible. */
   readonly treasuryAccounts?: readonly { id: string; name: string }[];
+  /** Hors de la file (spec 089) : close d'office, ou archivée à la main sans action en attente. */
+  readonly archived?: boolean;
   /** Justificatifs après la remise des fonds (spec 078), si la demande en attend. */
   readonly justification?: Justification | null;
   /** Arriéré : versée avant le suivi, la compta peut réclamer les justificatifs (spec 078). */
@@ -132,7 +138,7 @@ function WorkflowBar({ status }: { readonly status: string }) {
   );
 }
 
-export default function RequestDetail({ request: initial, canManage, isOwn, treasuryAccounts = [], justification = null, claimable = false, submitterActive = true }: Props) {
+export default function RequestDetail({ request: initial, canManage, isOwn, treasuryAccounts = [], archived = false, justification = null, claimable = false, submitterActive = true }: Props) {
   const router = useRouter();
   const uid = useId();
   const [req, setReq] = useState(initial);
@@ -258,6 +264,10 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
             <span className="text-lg font-bold text-ink">{fmtAmount(req.amount)}</span>
           </div>
         </div>
+
+        {canManage && ["APPROVED", "REJECTED", "CANCELLED"].includes(req.status) && (
+          <ArchiveBar archived={archived} manual={!!req.archivedAt} disabled={loading} onChange={(a) => patch({ action: a ? "archive" : "unarchive" })} />
+        )}
 
         {/* Progression workflow */}
         <div className="pt-2 border-t border-line">
@@ -392,6 +402,17 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
                     {p.releasedAt ? ` · Remis le ${fmt(p.releasedAt)} par ${p.releasedBy?.name ?? "—"}` : ""}
                   </p>
                   {p.note && <p className="text-xs text-ink-muted mt-0.5">{p.note}</p>}
+                  {p.releasedAt && canManage && treasuryAccounts.length > 0 && (
+                    <PaymentAccount
+                      paymentId={p.id}
+                      value={p.treasuryAccountId ?? null}
+                      accounts={treasuryAccounts}
+                      onSaved={(treasuryAccountId) => {
+                        setReq((r) => ({ ...r, payments: r.payments.map((x) => (x.id === p.id ? { ...x, treasuryAccountId } : x)) }));
+                        router.refresh();
+                      }}
+                    />
+                  )}
                 </div>
                 {paymentStatus}
               </div>
@@ -650,6 +671,88 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
         );
       })()}
 
+    </div>
+  );
+}
+
+/**
+ * Archives de la file (spec 089) : une demande close est archivée d'office ; la compta peut en
+ * archiver une à la main, et la désarchiver. Une action en attente la garde dans la file.
+ */
+function ArchiveBar({ archived, manual, disabled, onChange }: {
+  readonly archived: boolean;
+  readonly manual: boolean;
+  readonly disabled: boolean;
+  readonly onChange: (archived: boolean) => void;
+}) {
+  let text: string;
+  if (archived) text = manual ? "Archivée : hors de la file." : "Close : archivée d'office, hors de la file.";
+  else if (manual) text = "Archivée, mais revenue dans la file : une action de la comptabilité est attendue.";
+  else text = "Dans la file des demandes.";
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-line">
+      <p className="text-xs text-ink-subtle">{text}</p>
+      {manual ? (
+        <button type="button" disabled={disabled} onClick={() => onChange(false)} className="text-sm font-medium text-brand-text hover:underline disabled:opacity-50">
+          Désarchiver
+        </button>
+      ) : !archived && (
+        <button type="button" disabled={disabled} onClick={() => onChange(true)} className="text-sm font-medium text-brand-text hover:underline disabled:opacity-50">
+          Archiver
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * « Payé depuis » d'une tranche déjà remise (spec 089) : la compta la rattache après coup à une
+ * caisse, ou la remet sur le compte commun ; la sortie suit dans le registre de la trésorerie.
+ */
+function PaymentAccount({ paymentId, value, accounts, onSaved }: {
+  readonly paymentId: string;
+  readonly value: string | null;
+  readonly accounts: readonly { id: string; name: string }[];
+  readonly onSaved: (treasuryAccountId: string | null) => void;
+}) {
+  const id = useId();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const known = value === null || accounts.some((a) => a.id === value);
+
+  async function change(next: string) {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/accounting/payments/${paymentId}/treasury-account`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ treasuryAccountId: next || null }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) setError(json.error ?? "Erreur");
+      else onSaved(next || null);
+    } catch { setError("Erreur réseau"); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <div className="mt-1.5">
+      <div className="flex items-center gap-2">
+        <label htmlFor={id} className="text-xs text-ink-subtle">Payé depuis</label>
+        <select
+          id={id}
+          value={value ?? ""}
+          disabled={saving}
+          onChange={(e) => change(e.target.value)}
+          className="text-xs border border-control-line bg-surface rounded-md px-2 py-1 focus:outline-none focus:border-brand disabled:opacity-50"
+        >
+          <option value="">Compte commun</option>
+          {!known && <option value={value!}>Compte archivé</option>}
+          {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+        </select>
+      </div>
+      {error && <p className="text-xs text-danger mt-1">{error}</p>}
     </div>
   );
 }

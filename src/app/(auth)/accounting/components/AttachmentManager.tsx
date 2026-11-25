@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, FileText, ImageIcon, Loader2, Upload, X } from "lucide-react";
+import { Download, Eye, FileText, ImageIcon, Loader2, Upload, X } from "lucide-react";
 import { useState, useRef } from "react";
 
 export interface AttachmentItem {
@@ -49,6 +49,21 @@ async function handleDownload(id: string, filename: string) {
     a.target = "_blank";
     a.click();
   } catch { /* silent */ }
+}
+
+/**
+ * Affiche la pièce dans un nouvel onglet, sans la télécharger (spec 089). L'onglet est ouvert avant
+ * l'appel, pendant le clic : ouvert après une attente, il serait bloqué par le navigateur.
+ */
+async function handleView(id: string) {
+  const tab = window.open("", "_blank");
+  try {
+    const res = await fetch(`/api/accounting/attachments/${id}?inline=1`);
+    if (!res.ok) { tab?.close(); return; }
+    const { url } = await res.json();
+    if (tab) { tab.opener = null; tab.location.href = url; }
+    else window.open(url, "_blank", "noopener");
+  } catch { tab?.close(); }
 }
 
 function onDragOver(e: React.DragEvent) { e.preventDefault(); }
@@ -137,6 +152,15 @@ export default function AttachmentManager({
                 <p className="text-sm font-medium text-ink truncate">{a.filename}</p>
                 <p className="text-xs text-ink-subtle">{fmtSize(a.size)}</p>
               </div>
+              <button
+                type="button"
+                onClick={() => handleView(a.id)}
+                title="Voir"
+                aria-label={`Voir ${a.filename}`}
+                className="shrink-0 p-1.5 text-ink-subtle hover:text-brand-text transition-colors"
+              >
+                <Eye className="w-4 h-4" aria-hidden="true" />
+              </button>
               <button
                 type="button"
                 onClick={() => handleDownload(a.id, a.filename)}

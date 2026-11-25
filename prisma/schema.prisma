@@ -1857,6 +1857,9 @@ model FinancialRequest {
   pieceRequestLastAt       DateTime?
   pieceRequestCount        Int                    @default(0)
   pieceRequestNote         String?                @db.VarChar(500)
+  /// Archivée à la main par la compta (spec 089) : masquée de la file tant qu'aucune action ne l'attend.
+  archivedAt               DateTime?
+  archivedById             String?
 
   church                 Church                  @relation(fields: [churchId], references: [id])
   justification          FinancialJustification? @relation("RequestJustification", fields: [justificationId], references: [id], onDelete: SetNull)

@@ -43,6 +43,8 @@ interface Request {
   claimable?: boolean;
   /** Pièce demandée par la compta et pas encore déposée (spec 086). */
   pieceRequestedAt?: string | Date | null;
+  /** Archivée (spec 089) : close d'office, ou à la main sans action de la compta en attente. */
+  archived?: boolean;
 }
 
 interface Stats {
@@ -93,13 +95,14 @@ function fmtAmount(n: number | string) {
 }
 
 const STATUS_FILTERS = [
-  { value: "",           label: "Toutes" },
+  { value: "",           label: "En cours" },
   { value: "SUBMITTED",  label: "En attente" },
   { value: "PROCESSING", label: "En traitement" },
   { value: "APPROVED",   label: "Validées" },
   { value: "REJECTED",   label: "Rejetées" },
   { value: "CANCELLED",  label: "Annulées" },
   { value: "JUSTIFY",    label: "À justifier" },
+  { value: "ARCHIVED",   label: "Archivées" },
 ];
 
 export default function AccountingDashboard({ requests, stats, canManage, currentUserId }: Props) {
@@ -138,7 +141,11 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const list = requests.filter((r) => {
-      if (statusFilter === "JUSTIFY") { if (!r.justification) return false; }
+      // Archivées (spec 089) : seulement sous leur filtre, sauf l'arriéré (à réclamer).
+      if (statusFilter === "ARCHIVED") { if (!r.archived) return false; }
+      else if (r.archived && statusFilter !== "ARREARS") return false;
+      if (statusFilter === "ARCHIVED") { /* déjà filtré */ }
+      else if (statusFilter === "JUSTIFY") { if (!r.justification) return false; }
       else if (statusFilter === "PIECE") { if (!r.pieceRequestedAt) return false; }
       else if (statusFilter === "ARREARS") { if (!r.claimable) return false; }
       else if (statusFilter && r.status !== statusFilter) return false;

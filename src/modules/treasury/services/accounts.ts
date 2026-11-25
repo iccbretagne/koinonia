@@ -49,6 +49,20 @@ export async function getActiveTreasuryAccount(churchId: string, accountId: stri
   return account;
 }
 
+/**
+ * Refuse une saisie datée avant le solde de départ du compte, en disant lequel, à quelle date, et
+ * où la changer (spec 089) : « antérieure au solde de départ » seul ne permettait pas de corriger.
+ */
+export function assertOnOrAfterOpening(account: Pick<TreasuryAccount, "name" | "openingDate">, isoDate: string) {
+  const opening = toIsoDate(account.openingDate);
+  if (isoDate >= opening) return;
+  const fr = `${opening.slice(8, 10)}/${opening.slice(5, 7)}/${opening.slice(0, 4)}`;
+  throw new ApiError(
+    400,
+    `La date est antérieure au solde de départ de « ${account.name} » (${fr}). Modifiez la date de départ du compte dans Réglages.`
+  );
+}
+
 async function assertUniqueName(churchId: string, name: string, selfId?: string) {
   const prisma = await db();
   const existing = await prisma.treasuryAccount.findFirst({
