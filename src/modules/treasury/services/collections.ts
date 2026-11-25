@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Prisma } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/api-utils";
 import type { CollectionInput } from "../schemas";
-import { getActiveTreasuryAccount } from "./accounts";
+import { assertOnOrAfterOpening, getActiveTreasuryAccount } from "./accounts";
 import { assertOpen } from "./closures";
 import { audit, cents, dayLabel, db, euros, fromIsoDate, toIsoDate, type TreasuryActor } from "./common";
 import { ensureDefaults } from "./defaults";
@@ -30,9 +30,7 @@ export async function createCollection(churchId: string, input: CollectionInput,
   await ensureDefaults(churchId);
   await assertOpen(churchId, input.date);
   const account = await getActiveTreasuryAccount(churchId, input.accountId);
-  if (input.date < toIsoDate(account.openingDate)) {
-    throw new ApiError(400, "La date est antérieure au solde de départ de ce compte");
-  }
+  assertOnOrAfterOpening(account, input.date);
   const prisma = await db();
 
   const event = input.eventId

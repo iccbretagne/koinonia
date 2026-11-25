@@ -3,7 +3,7 @@ import { registry, rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getAccountingDepartmentScope, getRequestJustification, isJustificationClaimable } from "@/modules/accounting";
+import { getAccountingDepartmentScope, getRequestJustification, isJustificationClaimable, isRequestArchived } from "@/modules/accounting";
 import RequestDetail from "./RequestDetail";
 
 export default async function AccountingRequestDetailPage({
@@ -109,6 +109,7 @@ export default async function AccountingRequestDetailPage({
         isOwn={isOwn}
         treasuryAccounts={treasuryAccounts}
         justification={justification}
+        archived={isRequestArchived({ ...req, justification: justification ? { status: justification.status } : null })}
         claimable={
           canManage &&
           isJustificationClaimable({

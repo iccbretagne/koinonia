@@ -856,6 +856,12 @@ désactivable (`ENABLED_MODULES`) :
   `POST …/requests/[id]/pieces` (`submitPieces`, droit tiré de l'objet : pas de `accounting:submit`
   exigé, STAR compris), hors de la règle « Soumise » de `POST /api/accounting/attachments`, laissée
   intacte. Le premier lot referme l'état (prise conditionnelle) et prévient la compta une fois
+- **Archives et retours du comptable** (spec 089) : une demande close (validée, tout remis, rien à
+  justifier ni à déposer) sort d'office de la file ; `archive`/`unarchive` (`PATCH
+  /api/accounting/requests/[id]`) l'archivent à la main, mais toute action en attente de la compta
+  la ramène (`isRequestArchived`). « Voir » une pièce : `?inline=1`, PDF et images seulement.
+  « Payé depuis » se corrige après la remise (`PUT /api/accounting/payments/[id]/treasury-account`,
+  mois ouvert pour l'ancien et le nouveau compte, validé par `_treasury.ts`)
 - Pas d'accès au planning, aux membres, aux événements, au discipolat ni à la section admin
 - Conserve `audio:listen` et les permissions transverses du module emploi (`jobs:*`, hors
   `jobs:manage`)

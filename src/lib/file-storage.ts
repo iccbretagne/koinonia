@@ -41,7 +41,20 @@ export async function storeFile(s3Key: string, buffer: Buffer, _mimeType: string
   }
 }
 
-export async function getFileUrl(s3Key: string, filename: string): Promise<string> {
+/** Types qu'un navigateur peut afficher sans risque (spec 089) : jamais de HTML ni de SVG. */
+const INLINE_TYPES = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
+
+/**
+ * URL de lecture d'une pièce. `inline` (spec 089) demande l'affichage dans le navigateur au lieu
+ * du téléchargement, et n'est honoré que pour un type sûr (`mimeType`) ; sinon téléchargement.
+ */
+export async function getFileUrl(
+  s3Key: string,
+  filename: string,
+  options: { inline?: boolean; mimeType?: string } = {}
+): Promise<string> {
+  const inline = !!options.inline && !!options.mimeType && INLINE_TYPES.has(options.mimeType);
+  const disposition = `${inline ? "inline" : "attachment"}; filename="${encodeURIComponent(filename)}"`;
   if (S3_CONFIGURED) {
     const { GetObjectCommand } = await import("@aws-sdk/client-s3");
     const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner");
@@ -51,12 +64,14 @@ export async function getFileUrl(s3Key: string, filename: string): Promise<strin
       new GetObjectCommand({
         Bucket:                     process.env.ACCOUNTING_S3_BUCKET!,
         Key:                        s3Key,
-        ResponseContentDisposition: `attachment; filename="${encodeURIComponent(filename)}"`,
+        ResponseContentDisposition: disposition,
+        ...(inline ? { ResponseContentType: options.mimeType } : {}),
       }),
       { expiresIn: 300 }
     );
   } else {
     // In local mode, serve via API route
+    if (inline) return `/api/accounting/attachments/local?key=${encodeURIComponent(s3Key)}&filename=${encodeURIComponent(filename)}&inline=1`;
     return `/api/accounting/attachments/local?key=${encodeURIComponent(s3Key)}&filename=${encodeURIComponent(filename)}`;
   }
 }

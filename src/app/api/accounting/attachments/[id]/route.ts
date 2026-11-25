@@ -5,7 +5,7 @@ import { getFileUrl, deleteFile } from "@/lib/file-storage";
 import { canReadAttachment } from "@/modules/accounting";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -21,7 +21,9 @@ export async function GET(
       throw new ApiError(403, "Accès refusé");
     }
 
-    const url = await getFileUrl(attachment.s3Key, attachment.filename);
+    // `?inline=1` (spec 089) : affichage dans le navigateur, pour un PDF ou une image seulement.
+    const inline = new URL(request.url).searchParams.get("inline") === "1";
+    const url = await getFileUrl(attachment.s3Key, attachment.filename, { inline, mimeType: attachment.mimeType });
     return successResponse({ url, filename: attachment.filename, mimeType: attachment.mimeType });
   } catch (error) {
     return errorResponse(error);

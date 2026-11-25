@@ -6,7 +6,7 @@ import AccountingDashboard from "./AccountingDashboard";
 import { isShuttleVisible } from "@/modules/shuttle/auth";
 import { isTreasuryVisible } from "@/modules/treasury/auth";
 import AccountingNav from "../AccountingNav";
-import { getJustificationSettings, isJustificationClaimable } from "@/modules/accounting";
+import { getJustificationSettings, isJustificationClaimable, isRequestArchived } from "@/modules/accounting";
 import JustificationSettingsCard from "./JustificationSettingsCard";
 
 export default async function AccountingRequestsPage() {
@@ -126,6 +126,7 @@ export default async function AccountingRequestsPage() {
           amount: r.amount.toString(),
           payments: r.payments.map((p) => ({ ...p, amount: p.amount.toString() })),
           justification: justificationOf(r.justification),
+          archived: isRequestArchived(r),
           claimable: canManage && isJustificationClaimable({
             ...r,
             justificationId: r.justification?.id ?? null,

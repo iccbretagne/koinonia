@@ -4,7 +4,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rolePermissions } from "@/lib/registry";
 import { buildAccountingStatusEmail } from "@/lib/email";
 import { createNotification } from "@/lib/notifications";
-import { cancelPieceRequest, claimJustification, getAccountingDepartmentScope, requestPiece } from "@/modules/accounting";
+import { cancelPieceRequest, claimJustification, getAccountingDepartmentScope, requestPiece, setRequestArchived } from "@/modules/accounting";
 import type { z } from "zod";
 import { patchSchema } from "./contract";
 
@@ -161,6 +161,9 @@ function manageAction(context: ActionContext, body: Exclude<PatchBody, { action:
       return requestPiece(context.id, { id: context.userId, name: context.userName }, body.note);
     case "cancelPieceRequest":
       return cancelPieceRequest(context.id, { id: context.userId, name: context.userName });
+    case "archive":
+    case "unarchive":
+      return setRequestArchived(context.id, body.action === "archive", { id: context.userId, churchId: context.churchId });
   }
 }
 

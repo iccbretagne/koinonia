@@ -6,6 +6,16 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+
+- Comptabilité : une demande close (validée, entièrement remise, justificatifs soldés ou jamais attendus) sort d'office de la liste et se retrouve sous le filtre « Archivées ». La compta peut aussi archiver à la main une demande validée, rejetée ou annulée, puis la désarchiver. Toute action qui l'attend la ramène dans la file. (Spec 089.)
+- Comptabilité : bouton « Voir » sur chaque pièce (PDF ou image), qui l'ouvre dans le navigateur sans la télécharger. (Spec 089.)
+- Comptabilité : « Payé depuis » se corrige sur une tranche déjà remise, pour rattacher la sortie à une caisse ou la remettre sur le compte commun ; la trésorerie suit. (Spec 089.)
+
+### Modifié
+
+- Trésorerie : une saisie antérieure au solde de départ indique le compte, sa date de départ et qu'elle se modifie dans Réglages. (Spec 089.)
+
 ## [v1.43.0] - 2026-11-24
 
 ### Ajouté

@@ -4,6 +4,8 @@ import { useId, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Modal from "@/components/ui/Modal";
+import { Button, Select, StatusChip, useToast } from "@/components/ui";
+import { Archive } from "lucide-react";
 import AttachmentManager from "@/app/(auth)/accounting/components/AttachmentManager";
 import PieceRequestPanel from "./PieceRequestPanel";
 import JustificationPanel, { type Justification } from "./JustificationPanel";
@@ -38,6 +40,8 @@ interface Payment {
   releasedAmount: number | string | null;
   releasedBy: { id: string; name: string | null } | null;
   note: string | null;
+  /** Compte de trésorerie d'où est partie la tranche (spec 076) ; `null` = compte commun. */
+  treasuryAccountId?: string | null;
 }
 
 interface Request {
@@ -54,6 +58,8 @@ interface Request {
   pieceRequestLastAt?: DateLike | null;
   pieceRequestCount?: number;
   pieceRequestNote?: string | null;
+  /** Archivée à la main par la compta (spec 089). */
+  archivedAt?: DateLike | null;
   createdAt: DateLike;
   processedAt: DateLike | null;
   department: { id: string; name: string; ministry: { name: string } } | null;
@@ -72,6 +78,8 @@ interface Props {
   readonly isOwn: boolean;
   /** Comptes de trésorerie actifs (spec 076) ; vide si la trésorerie est désactivée ou inaccessible. */
   readonly treasuryAccounts?: readonly { id: string; name: string }[];
+  /** Hors de la file (spec 089) : close d'office, ou archivée à la main sans action en attente. */
+  readonly archived?: boolean;
   /** Justificatifs après la remise des fonds (spec 078), si la demande en attend. */
   readonly justification?: Justification | null;
   /** Arriéré : versée avant le suivi, la compta peut réclamer les justificatifs (spec 078). */
@@ -132,7 +140,7 @@ function WorkflowBar({ status }: { readonly status: string }) {
   );
 }
 
-export default function RequestDetail({ request: initial, canManage, isOwn, treasuryAccounts = [], justification = null, claimable = false, submitterActive = true }: Props) {
+export default function RequestDetail({ request: initial, canManage, isOwn, treasuryAccounts = [], archived = false, justification = null, claimable = false, submitterActive = true }: Props) {
   const router = useRouter();
   const uid = useId();
   const [req, setReq] = useState(initial);
@@ -258,6 +266,10 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
             <span className="text-lg font-bold text-ink">{fmtAmount(req.amount)}</span>
           </div>
         </div>
+
+        {canManage && ["APPROVED", "REJECTED", "CANCELLED"].includes(req.status) && (
+          <ArchiveBar archived={archived} manual={!!req.archivedAt} disabled={loading} onChange={(a) => patch({ action: a ? "archive" : "unarchive" })} />
+        )}
 
         {/* Progression workflow */}
         <div className="pt-2 border-t border-line">
@@ -392,6 +404,17 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
                     {p.releasedAt ? ` · Remis le ${fmt(p.releasedAt)} par ${p.releasedBy?.name ?? "—"}` : ""}
                   </p>
                   {p.note && <p className="text-xs text-ink-muted mt-0.5">{p.note}</p>}
+                  {p.releasedAt && canManage && treasuryAccounts.length > 0 && (
+                    <PaymentAccount
+                      paymentId={p.id}
+                      value={p.treasuryAccountId ?? null}
+                      accounts={treasuryAccounts}
+                      onSaved={(treasuryAccountId) => {
+                        setReq((r) => ({ ...r, payments: r.payments.map((x) => (x.id === p.id ? { ...x, treasuryAccountId } : x)) }));
+                        router.refresh();
+                      }}
+                    />
+                  )}
                 </div>
                 {paymentStatus}
               </div>
@@ -650,6 +673,94 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
         );
       })()}
 
+    </div>
+  );
+}
+
+/**
+ * Archives de la file (spec 089) : une demande close est archivée d'office ; la compta peut en
+ * archiver une à la main, et la désarchiver. Une action en attente la garde dans la file.
+ */
+function ArchiveBar({ archived, manual, disabled, onChange }: {
+  readonly archived: boolean;
+  readonly manual: boolean;
+  readonly disabled: boolean;
+  readonly onChange: (archived: boolean) => void;
+}) {
+  let hint: string;
+  if (archived) hint = manual ? "Hors de la file des demandes." : "Close : archivée d'office, hors de la file des demandes.";
+  else if (manual) hint = "Revenue dans la file : une action de la comptabilité est attendue.";
+  else hint = "Dans la file des demandes.";
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-line">
+      <div className="flex flex-wrap items-center gap-2">
+        {(archived || manual) && <StatusChip tone="neutral" icon={Archive}>Archivée</StatusChip>}
+        <p className="text-sm text-ink-muted">{hint}</p>
+      </div>
+      {manual ? (
+        <Button variant="secondary" size="sm" disabled={disabled} onClick={() => onChange(false)}>
+          Désarchiver
+        </Button>
+      ) : !archived && (
+        <Button variant="secondary" size="sm" disabled={disabled} onClick={() => onChange(true)}>
+          <Archive className="size-4" aria-hidden="true" strokeWidth={1.75} />
+          Archiver
+        </Button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * « Payé depuis » d'une tranche déjà remise (spec 089) : la compta la rattache après coup à une
+ * caisse, ou la remet sur le compte commun ; la sortie suit dans le registre de la trésorerie.
+ */
+function PaymentAccount({ paymentId, value, accounts, onSaved }: {
+  readonly paymentId: string;
+  readonly value: string | null;
+  readonly accounts: readonly { id: string; name: string }[];
+  readonly onSaved: (treasuryAccountId: string | null) => void;
+}) {
+  const toast = useToast();
+  const [saving, setSaving] = useState(false);
+  const known = value === null || accounts.some((a) => a.id === value);
+  const options = [
+    { value: "", label: "Compte commun" },
+    ...(known ? [] : [{ value: value!, label: "Compte archivé" }]),
+    ...accounts.map((a) => ({ value: a.id, label: a.name })),
+  ];
+
+  async function change(next: string) {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/accounting/payments/${paymentId}/treasury-account`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ treasuryAccountId: next || null }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(json.error ?? "Modification impossible. Réessayez dans un instant.");
+        return;
+      }
+      toast.success(next ? "Tranche rattachée à la caisse." : "Tranche remise sur le compte commun.");
+      onSaved(next || null);
+    } catch {
+      toast.error("Modification impossible. Réessayez dans un instant.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="mt-2 max-w-xs">
+      <Select
+        label="Payé depuis"
+        options={options}
+        value={value ?? ""}
+        disabled={saving}
+        onChange={(e) => change(e.target.value)}
+      />
     </div>
   );
 }

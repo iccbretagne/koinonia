@@ -20,7 +20,7 @@ const input = {
   label: "Dîme reçue",
   thirdParty: null,
 };
-const account = { id: "caisse", churchId: "church-1", openingDate: new Date("2026-10-01T00:00:00Z"), archivedAt: null };
+const account = { id: "caisse", name: "Caisse principale", churchId: "church-1", openingDate: new Date("2026-10-01T00:00:00Z"), archivedAt: null };
 const category = (p: Record<string, unknown> = {}) => ({ id: "dimes", churchId: "church-1", direction: "IN", active: true, system: null, name: "Dîmes", ...p });
 const row = (p: Record<string, unknown> = {}) => ({
   id: "e1",
@@ -81,7 +81,11 @@ describe("trésorerie — saisie des lignes (spec 076)", () => {
   it("refuse un compte archivé ou une date antérieure au solde de départ", async () => {
     prismaMock.treasuryAccount.findFirst.mockResolvedValueOnce({ ...account, archivedAt: new Date() });
     expect((await rejection(createEntry("church-1", input, null, actor))).message).toContain("archivé");
-    expect((await rejection(createEntry("church-1", { ...input, date: "2026-09-30" }, null, actor))).message).toContain("solde de départ");
+    const early = (await rejection(createEntry("church-1", { ...input, date: "2026-09-30" }, null, actor))).message;
+    expect(early).toContain("solde de départ");
+    // Spec 089 : le compte, sa date de départ et où la modifier.
+    expect(early).toContain("« Caisse principale » (01/10/2026)");
+    expect(early).toContain("Réglages");
   });
 
   it("refuse une catégorie d'un autre sens, désactivée, ou alimentée automatiquement", async () => {

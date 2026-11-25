@@ -1,6 +1,6 @@
 import { ApiError } from "@/lib/api-utils";
 import type { DepositInput } from "../schemas";
-import { getActiveTreasuryAccount } from "./accounts";
+import { assertOnOrAfterOpening, getActiveTreasuryAccount } from "./accounts";
 import { getSystemCategory } from "./categories";
 import { assertOpen } from "./closures";
 import { audit, cents, db, euros, fromIsoDate, toIsoDate, type TreasuryActor } from "./common";
@@ -60,9 +60,7 @@ export async function listChequesInHand(churchId: string, accountId?: string): P
 export async function createDeposit(churchId: string, input: DepositInput, actor: TreasuryActor) {
   await assertOpen(churchId, input.date);
   const account = await getActiveTreasuryAccount(churchId, input.accountId);
-  if (input.date < toIsoDate(account.openingDate)) {
-    throw new ApiError(400, "La date est antérieure au solde de départ de ce compte");
-  }
+  assertOnOrAfterOpening(account, input.date);
   const prisma = await db();
   const ids = [...new Set(input.chequeIds)];
   const cheques = ids.length

@@ -11,7 +11,7 @@ export {
   type LinkedExpenseReportInput,
 } from "./services/requests";
 export { cancelPieceRequest, PIECE_MAX_FILES, requestPiece, submitPieces, getRequestChurchId, type PieceActor } from "./services/piece-requests";
-export { listTreasuryPayments, listTreasuryReturns } from "./services/treasury-link";
+export { listTreasuryPayments, listTreasuryReturns, setPaymentTreasuryAccount } from "./services/treasury-link";
 export {
   assertOverageAllowed,
   claimJustification,
@@ -36,3 +36,10 @@ export { FUND_BOXES, type FundBox, type FundTracking } from "./services/fund-tra
 
 export { accountingModule } from "./manifest";
 export { isJustificationClaimable } from "./services/justification-rules";
+export {
+  isRequestArchived,
+  isRequestClosed,
+  needsAccountingAction,
+  setRequestArchived,
+  type ArchiveInput,
+} from "./services/archive";

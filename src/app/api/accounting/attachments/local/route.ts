@@ -4,6 +4,8 @@ import { serveLocalFile, S3_CONFIGURED } from "@/lib/file-storage";
 import { ApiError, errorResponse } from "@/lib/api-utils";
 import { canReadAttachment } from "@/modules/accounting";
 
+const INLINE_TYPES = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
+
 // Local file serving — only active when S3 is not configured (dev mode)
 export async function GET(request: Request) {
   try {
@@ -16,6 +18,7 @@ export async function GET(request: Request) {
     const filename = searchParams.get("filename") ?? "fichier";
 
     if (!s3Key) throw new ApiError(400, "Clé manquante");
+    const inlineRequested = searchParams.get("inline") === "1";
 
     // Mêmes règles que le téléchargement principal (canReadAttachment) : déposant, ou
     // accounting:manage dans l'église de la pièce — qui fait autorité, rattachée ou non.
@@ -25,11 +28,13 @@ export async function GET(request: Request) {
 
     const file = await serveLocalFile(s3Key);
     if (!file) throw new ApiError(404, "Fichier introuvable sur le disque");
+    const inline = inlineRequested && INLINE_TYPES.has(file.mimeType);
 
     return new Response(file.buffer as unknown as BodyInit, {
       headers: {
         "Content-Type":        file.mimeType,
-        "Content-Disposition": `attachment; filename="${encodeURIComponent(filename)}"`,
+        // `inline=1` (spec 089) : affichage, pour un PDF ou une image seulement.
+        "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${encodeURIComponent(filename)}"`,
         "Content-Length":      String(file.buffer.length),
         "Cache-Control":       "private, no-cache",
       },
