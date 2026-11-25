@@ -4,6 +4,8 @@ import { useId, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Modal from "@/components/ui/Modal";
+import { Button, Select, StatusChip, useToast } from "@/components/ui";
+import { Archive } from "lucide-react";
 import AttachmentManager from "@/app/(auth)/accounting/components/AttachmentManager";
 import PieceRequestPanel from "./PieceRequestPanel";
 import JustificationPanel, { type Justification } from "./JustificationPanel";
@@ -685,21 +687,25 @@ function ArchiveBar({ archived, manual, disabled, onChange }: {
   readonly disabled: boolean;
   readonly onChange: (archived: boolean) => void;
 }) {
-  let text: string;
-  if (archived) text = manual ? "Archivée : hors de la file." : "Close : archivée d'office, hors de la file.";
-  else if (manual) text = "Archivée, mais revenue dans la file : une action de la comptabilité est attendue.";
-  else text = "Dans la file des demandes.";
+  let hint: string;
+  if (archived) hint = manual ? "Hors de la file des demandes." : "Close : archivée d'office, hors de la file des demandes.";
+  else if (manual) hint = "Revenue dans la file : une action de la comptabilité est attendue.";
+  else hint = "Dans la file des demandes.";
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-line">
-      <p className="text-xs text-ink-subtle">{text}</p>
+    <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-line">
+      <div className="flex flex-wrap items-center gap-2">
+        {(archived || manual) && <StatusChip tone="neutral" icon={Archive}>Archivée</StatusChip>}
+        <p className="text-sm text-ink-muted">{hint}</p>
+      </div>
       {manual ? (
-        <button type="button" disabled={disabled} onClick={() => onChange(false)} className="text-sm font-medium text-brand-text hover:underline disabled:opacity-50">
+        <Button variant="secondary" size="sm" disabled={disabled} onClick={() => onChange(false)}>
           Désarchiver
-        </button>
+        </Button>
       ) : !archived && (
-        <button type="button" disabled={disabled} onClick={() => onChange(true)} className="text-sm font-medium text-brand-text hover:underline disabled:opacity-50">
+        <Button variant="secondary" size="sm" disabled={disabled} onClick={() => onChange(true)}>
+          <Archive className="size-4" aria-hidden="true" strokeWidth={1.75} />
           Archiver
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -715,14 +721,17 @@ function PaymentAccount({ paymentId, value, accounts, onSaved }: {
   readonly accounts: readonly { id: string; name: string }[];
   readonly onSaved: (treasuryAccountId: string | null) => void;
 }) {
-  const id = useId();
+  const toast = useToast();
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const known = value === null || accounts.some((a) => a.id === value);
+  const options = [
+    { value: "", label: "Compte commun" },
+    ...(known ? [] : [{ value: value!, label: "Compte archivé" }]),
+    ...accounts.map((a) => ({ value: a.id, label: a.name })),
+  ];
 
   async function change(next: string) {
     setSaving(true);
-    setError(null);
     try {
       const res = await fetch(`/api/accounting/payments/${paymentId}/treasury-account`, {
         method: "PUT",
@@ -730,29 +739,28 @@ function PaymentAccount({ paymentId, value, accounts, onSaved }: {
         body: JSON.stringify({ treasuryAccountId: next || null }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) setError(json.error ?? "Erreur");
-      else onSaved(next || null);
-    } catch { setError("Erreur réseau"); }
-    finally { setSaving(false); }
+      if (!res.ok) {
+        toast.error(json.error ?? "Modification impossible. Réessayez dans un instant.");
+        return;
+      }
+      toast.success(next ? "Tranche rattachée à la caisse." : "Tranche remise sur le compte commun.");
+      onSaved(next || null);
+    } catch {
+      toast.error("Modification impossible. Réessayez dans un instant.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
-    <div className="mt-1.5">
-      <div className="flex items-center gap-2">
-        <label htmlFor={id} className="text-xs text-ink-subtle">Payé depuis</label>
-        <select
-          id={id}
-          value={value ?? ""}
-          disabled={saving}
-          onChange={(e) => change(e.target.value)}
-          className="text-xs border border-control-line bg-surface rounded-md px-2 py-1 focus:outline-none focus:border-brand disabled:opacity-50"
-        >
-          <option value="">Compte commun</option>
-          {!known && <option value={value!}>Compte archivé</option>}
-          {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-        </select>
-      </div>
-      {error && <p className="text-xs text-danger mt-1">{error}</p>}
+    <div className="mt-2 max-w-xs">
+      <Select
+        label="Payé depuis"
+        options={options}
+        value={value ?? ""}
+        disabled={saving}
+        onChange={(e) => change(e.target.value)}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { Download, Eye, FileText, ImageIcon, Loader2, Upload, X } from "lucide-react";
 import { useState, useRef } from "react";
+import { IconButton } from "@/components/ui";
 
 export interface AttachmentItem {
   id: string;
@@ -152,37 +153,23 @@ export default function AttachmentManager({
                 <p className="text-sm font-medium text-ink truncate">{a.filename}</p>
                 <p className="text-xs text-ink-subtle">{fmtSize(a.size)}</p>
               </div>
-              <button
-                type="button"
-                onClick={() => handleView(a.id)}
-                title="Voir"
-                aria-label={`Voir ${a.filename}`}
-                className="shrink-0 p-1.5 text-ink-subtle hover:text-brand-text transition-colors"
-              >
-                <Eye className="w-4 h-4" aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDownload(a.id, a.filename)}
-                title="Télécharger"
-                className="shrink-0 p-1.5 text-ink-subtle hover:text-brand-text transition-colors"
-              >
-                <Download className="w-4 h-4" aria-hidden="true" />
-              </button>
+              <IconButton size="sm" icon={Eye} aria-label={`Voir ${a.filename}`} title="Voir" onClick={() => handleView(a.id)} />
+              <IconButton size="sm" icon={Download} aria-label={`Télécharger ${a.filename}`} title="Télécharger" onClick={() => handleDownload(a.id, a.filename)} />
               {canDelete && (
-                <button
-                  type="button"
+                <IconButton
+                  size="sm"
+                  aria-label={`Supprimer ${a.filename}`}
+                  title="Supprimer"
                   onClick={() => handleDelete(a.id)}
                   disabled={deletingId === a.id}
-                  title="Supprimer"
-                  className="shrink-0 p-1.5 text-ink-subtle hover:text-danger transition-colors disabled:opacity-50"
+                  className="hover:text-danger"
                 >
                   {deletingId === a.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                    <Loader2 className="size-5 animate-spin" aria-hidden="true" strokeWidth={1.75} />
                   ) : (
-                    <X className="w-4 h-4" aria-hidden="true" />
+                    <X className="size-5" aria-hidden="true" strokeWidth={1.75} />
                   )}
-                </button>
+                </IconButton>
               )}
             </div>
           ))}
