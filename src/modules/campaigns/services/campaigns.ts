@@ -127,6 +127,69 @@ export async function listMyCampaigns(session: Session): Promise<MyCampaigns> {
   };
 }
 
+/**
+ * Espace « Collectes » dans la navigation : `campaigns:manage` dans l'église, gestionnaire d'une
+ * de ses campagnes, ou répondant d'une affectation d'une campagne sortie du brouillon. Deux
+ * `count` au plus.
+ */
+export async function hasCampaignsSpace(session: Session, churchId: string): Promise<boolean> {
+  if (await hasCampaignsManage(session, churchId)) return true;
+  if (!session.user.churchRoles.some((r) => r.churchId === churchId)) return false;
+  const userId = session.user.id;
+  const managed = await prisma.campaignManager.count({ where: { userId, campaign: { churchId } } });
+  if (managed > 0) return true;
+  const answering = await prisma.campaignRespondent.count({
+    where: { userId, assignment: { campaign: { churchId, status: { not: "DRAFT" } } } },
+  });
+  return answering > 0;
+}
+
+export interface OpenAssignment {
+  id: string;
+  label: string;
+  formTitle: string;
+  campaignTitle: string;
+  status: CampaignAssignmentStatus;
+  /** Échéance de l'affectation, à défaut celle de la campagne. */
+  dueAt: Date | null;
+}
+
+/**
+ * Questionnaires à remplir (carte de l'Accueil) : affectations dont le compte est répondant, dans
+ * une campagne **ouverte** de cette église, non soumises. Par échéance.
+ */
+export async function listMyOpenAssignments(session: Session, churchId: string): Promise<OpenAssignment[]> {
+  if (!session.user.churchRoles.some((r) => r.churchId === churchId)) return [];
+  const rows = await prisma.campaignRespondent.findMany({
+    where: {
+      userId: session.user.id,
+      assignment: { status: { in: ["NOT_STARTED", "IN_PROGRESS", "CHANGES_REQUESTED"] }, campaign: { churchId, status: "OPEN" } },
+    },
+    select: {
+      assignment: {
+        select: {
+          id: true,
+          label: true,
+          status: true,
+          dueAt: true,
+          form: { select: { title: true } },
+          campaign: { select: { title: true, dueAt: true } },
+        },
+      },
+    },
+  });
+  return rows
+    .map(({ assignment: a }) => ({
+      id: a.id,
+      label: a.label,
+      formTitle: a.form.title,
+      campaignTitle: a.campaign.title,
+      status: a.status,
+      dueAt: a.dueAt ?? a.campaign.dueAt,
+    }))
+    .sort((x, y) => (x.dueAt?.getTime() ?? Infinity) - (y.dueAt?.getTime() ?? Infinity) || x.formTitle.localeCompare(y.formTitle, "fr"));
+}
+
 // ── Pilotage ───────────────────────────────────────────────────────────────────────────────────
 
 /** Règles stockées (`Campaign.rules`), relues avec leur schéma ; une règle illisible est ignorée. */

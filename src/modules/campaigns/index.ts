@@ -3,6 +3,7 @@ export { campaignsModule } from "./manifest";
 // Niveau questionnaire
 export {
   getAssignmentView,
+  listMyAssignments,
   saveAnswers,
   submitAssignment,
   reviewAssignment,
@@ -11,6 +12,7 @@ export {
   removeRespondent,
   regenerateRespondentLink,
   type AssignmentView,
+  type MyAssignment,
   type ReviewInput,
   type RespondentInput,
   type RespondentView,
@@ -38,6 +40,8 @@ export {
 } from "./services/import";
 export {
   listMyCampaigns,
+  hasCampaignsSpace,
+  listMyOpenAssignments,
   getCampaignOverview,
   updateCampaignSettings,
   changeCampaignStatus,
@@ -49,6 +53,7 @@ export {
   storedRules,
   storedItems,
   type MyCampaigns,
+  type OpenAssignment,
   type AssignmentOverview,
   type CampaignCheck,
   type CampaignActorRef,

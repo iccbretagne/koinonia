@@ -58,6 +58,7 @@ Il complète le guide des fonctionnalités, qui répond à une autre question �
 | Processus | Point de départ | Qui traite | Où ça se termine |
 |---|---|---|---|
 | [Offres, recherches et missions](offres-et-missions.md) | N'importe quel compte | Modération par l'administration | Publication archivée, automatiquement ou à la main |
+| [Collectes](collectes.md) | Un gestionnaire importe et ouvre une campagne | Les répondants remplissent, le gestionnaire valide | Questionnaires validés, export, campagne clôturée |
 
 ---
 

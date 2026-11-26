@@ -11,6 +11,7 @@ const deptScope = vi.fn();
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/auth", () => ({ getUserDepartmentScope: (...a: unknown[]) => deptScope(...a) }));
 vi.mock("@/lib/registry", () => ({ registry: { has: () => true }, rolePermissions: {} }));
+vi.mock("@/modules/campaigns", () => ({ listMyCampaigns: vi.fn(async () => ({ managed: [], assignments: [] })), assignmentPath: (id: string) => `/collectes/r/${id}` }));
 vi.mock("@/app/(auth)/planning/my-planning-data", () => ({
   loadMyPlanning: vi.fn(async () => ({
     member: { firstName: "Marie", lastName: "K" },
@@ -76,6 +77,7 @@ function stubDatabase() {
   prismaMock.memberUserLink.findMany.mockResolvedValue([{ memberId: "m1" }]);
   prismaMock.absence.findMany.mockResolvedValue([{ kind: "PERIOD", startDate: future, endDate: future, targetEvents: [], member: { firstName: "Léa", lastName: "B" } }]);
   prismaMock.availabilityResponse.findMany.mockResolvedValue([]);
+  prismaMock.campaignRespondent.findMany.mockResolvedValue([]);
   prismaMock.serviceWithdrawal.findMany.mockResolvedValue([
     { status: "REPLACED", event: { title: "Culte", date: future }, department: { name: "Accueil" }, replacementMember: { firstName: "Léa", lastName: "B" }, member: { firstName: "Paul", lastName: "M" } },
   ]);
@@ -133,7 +135,8 @@ describe("catalogue des questions de données (spec 075)", () => {
     for (const key of catalog.keys()) {
       // Ouvertes au STAR : ses propres affectations, la file du secrétariat (prédicat),
       // la bibliothèque d'écoute (`audio:listen`, tous les rôles).
-      if (key === "ticketing.myAssignments" || key === "planning.secretariatPending" || key === "audio.recentSermons") continue;
+      // Collectes : ses propres questionnaires (liste vide ici), comme tout compte.
+      if (key === "ticketing.myAssignments" || key === "planning.secretariatPending" || key === "audio.recentSermons" || key === "campaigns.list") continue;
       const result = await run(key, star);
       expect(isDataRefusal(result), key).toBe(true);
     }

@@ -10,6 +10,7 @@ import {
 import { PLANNING_QUESTIONS } from "./_data/planning";
 import { AUDIO_QUESTIONS, REPORTS_QUESTIONS } from "./_data/audio-reports";
 import { SERVING_QUESTIONS } from "./_data/serving";
+import { CAMPAIGNS_QUESTIONS } from "./_data/campaigns";
 
 /**
  * Catalogue des questions de données (spec 075, ADR-0028), composé ici — seul endroit qui voit
@@ -26,6 +27,7 @@ export const DATA_QUESTION_SOURCES: readonly { module: string; questions: readon
   { module: "shuttle", questions: SHUTTLE_QUESTIONS },
   { module: "treasury", questions: TREASURY_QUESTIONS },
   { module: "serving", questions: SERVING_QUESTIONS },
+  { module: "campaigns", questions: CAMPAIGNS_QUESTIONS },
 ];
 
 /** Questions des modules actifs, par clé. */

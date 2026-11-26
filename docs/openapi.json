@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "API Koinonia",
-    "version": "1.43.0",
+    "version": "1.44.0",
     "description": "API interne de Koinonia, appelée par l'application (session NextAuth, même origine). Générée depuis les contrats `contract.ts` des routes — voir `docs/api.md` (conventions) et ADR-0023."
   },
   "components": {
@@ -9849,6 +9849,1458 @@
           },
           "403": {
             "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns": {
+      "get": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Mes campagnes de collecte",
+        "description": "**Accès** : toute personne connectée.\n\nCampagnes que le compte pilote dans ses églises (`campaigns:manage` ou gestionnaire désigné), avec leur avancement, et questionnaires dont il est répondant (campagne ouverte ou clôturée, jamais en brouillon), avec leur état et leur échéance.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "responses": {
+          "200": {
+            "description": "`{ managed: [...], assignments: [...] }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/{id}": {
+      "get": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Pilotage d'une campagne",
+        "description": "**Accès** : permission `campaigns:manage` — dans l'église de la campagne, ou gestionnaire désigné de la campagne ; sinon 404.\n\nParamètres, questionnaires et destinataires avec leur état, répondants (compte ou lien personnel, jamais le lien lui-même), complétude par destinataire (obligatoires manquantes, estimations, à rechercher, fichiers attendus et reçus, métadonnées des fichiers), taux global (soumis et validés sur le total), contrôles de cohérence (règles locales par destinataire, règles croisées sur toute la campagne) et gestionnaires. Questionnaires confidentiels compris.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "campaigns:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ campaign, forms, progress, checks, managers }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Paramètres d'une campagne",
+        "description": "**Accès** : permission `campaigns:manage` — dans l'église de la campagne, ou gestionnaire désigné.\n\nTitre, description, période de référence, échéance (un jour = fin de journée à Paris), conservation des fichiers (1 à 365 jours). Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "campaigns:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 150
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 5000
+                  },
+                  "periodStart": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "periodEnd": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "dueAt": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      {
+                        "nullable": true
+                      }
+                    ]
+                  },
+                  "fileRetentionDays": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Paramètres mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/{id}/candidates": {
+      "get": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Comptes de l'église à ajouter à une campagne",
+        "description": "**Accès** : permission `campaigns:manage` — dans l'église de la campagne, ou gestionnaire désigné.\n\nComptes ayant un rôle dans l'église de la campagne, filtrés par nom ou email (`q`), 20 au plus : pour ajouter un gestionnaire ou un répondant.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "campaigns:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comptes : identifiant, nom, email",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/{id}/export": {
+      "get": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Export d'une campagne",
+        "description": "**Accès** : permission `campaigns:manage` — dans l'église de la campagne, ou gestionnaire désigné.\n\nxlsx : feuilles Réponses (une ligne par code et destinataire, nombres restés nombres, qualificatif et précision), Groupes, États, Contrôles, Fichiers (métadonnées seulement). csv : feuille Réponses, séparateur `;`, UTF-8 avec BOM. `form` restreint à un questionnaire. Valeurs neutralisées contre l'injection de formules. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "campaigns:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "xlsx",
+                "csv"
+              ],
+              "default": "xlsx"
+            },
+            "required": false,
+            "name": "format",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$"
+            },
+            "required": false,
+            "name": "form",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Classeur ou fichier CSV en pièce jointe",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/{id}/managers": {
+      "get": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Gestionnaires d'une campagne",
+        "description": "**Accès** : permission `campaigns:manage` — dans l'église de la campagne, ou gestionnaire désigné.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "campaigns:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Gestionnaires : compte, nom, email, ajouté le, ajouté par",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Ajout d'un gestionnaire",
+        "description": "**Accès** : permission `campaigns:manage` — dans l'église de la campagne, ou gestionnaire désigné.\n\nUn compte ayant un rôle dans l'église de la campagne (400 sinon). Idempotent. Le gestionnaire voit tout le contenu de la campagne, questionnaires confidentiels compris. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "campaigns:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  }
+                },
+                "required": [
+                  "userId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "`{ created }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/{id}/managers/{userId}": {
+      "delete": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Retrait d'un gestionnaire",
+        "description": "**Accès** : permission `campaigns:manage` — dans l'église de la campagne, ou gestionnaire désigné.\n\nJamais le dernier gestionnaire de la campagne (409). Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "campaigns:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ deleted: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/{id}/status": {
+      "post": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Ouverture, clôture ou réouverture d'une campagne",
+        "description": "**Accès** : permission `campaigns:manage` — dans l'église de la campagne, ou gestionnaire désigné.\n\nopen : brouillon (ou clôturée) → ouverte, au moins un destinataire ; la première ouverture prévient tous les répondants (lien personnel par email pour un sans-compte). close : ouverte → clôturée, lecture seule, la conservation des fichiers court. reopen : clôturée → ouverte. 409 si l'action ne correspond pas à l'état. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "campaigns:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "open",
+                      "close",
+                      "reopen"
+                    ]
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Campagne dans son nouvel état (`id`, `status`, `openedAt`, `closedAt`)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/assignments/{id}": {
+      "get": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Questionnaire d'une affectation de campagne",
+        "description": "**Accès** : toute personne connectée — répondant désigné ou gestionnaire de la campagne, dans l'église de la campagne.\n\nSpec 090. Campagne, questionnaire (définition avec ses codes, non affichés), état de l'affectation, réponses, métadonnées des fichiers, alertes de cohérence locales, complétude et si la saisie est ouverte. Autre église, brouillon pour un répondant ou aucun droit : 404.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vue complète du questionnaire et de sa saisie",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/assignments/{id}/answers": {
+      "put": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Enregistrement de réponses d'un questionnaire",
+        "description": "**Accès** : toute personne connectée — répondant désigné ou gestionnaire de la campagne.\n\nSpec 090. Sauvegarde partielle (enregistrement automatique, 100 réponses au plus par envoi, 120 envois par minute). Chaque code doit appartenir au questionnaire (sinon 400) ; valeur validée selon le type, qualificatif et précision (estimation : valeur + précision ; à rechercher : note). Zéro est une valeur ; vide en « exacte » sans note efface la réponse. Premier enregistrement : « En cours » (journalisé). Saisie fermée (campagne non ouverte, questionnaire soumis) : 409.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "answers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,39}$"
+                        },
+                        "value": {
+                          "nullable": true
+                        },
+                        "qualifier": {
+                          "type": "string",
+                          "enum": [
+                            "EXACT",
+                            "ESTIMATE",
+                            "TO_RESEARCH",
+                            "NOT_APPLICABLE",
+                            "NSP"
+                          ]
+                        },
+                        "note": {
+                          "type": "string",
+                          "nullable": true,
+                          "maxLength": 1000
+                        }
+                      },
+                      "required": [
+                        "code"
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 100
+                  }
+                },
+                "required": [
+                  "answers"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "État de l'affectation, alertes locales et complétude à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/assignments/{id}/files": {
+      "post": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Dépôt d'un fichier pour une demande de fichier",
+        "description": "**Accès** : toute personne connectée — répondant désigné ou gestionnaire de la campagne.\n\nSpec 090. Multipart `requestCode` (code d'une demande de fichier du questionnaire) et `file` : XLSX sans macro, CSV ou PDF, 10 Mo, type vérifié sur le contenu (un fichier renommé est refusé), types acceptés et nombre maximal de la demande respectés. Stockage privé ; première pièce sans état choisi ⇒ « fichier transmis ». Journalisé sans nom de fichier. Répondant tant que la saisie est ouverte ; gestionnaire tant que la campagne n'est pas clôturée.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "description": "`requestCode` et `file`",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Métadonnées du fichier déposé",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/assignments/{id}/remind": {
+      "post": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Relance des répondants d'un questionnaire",
+        "description": "**Accès** : toute personne connectée — gestionnaire de la campagne.\n\nSpec 090. Questionnaire non soumis, au plus une relance par 24 h. Notification sans aucune valeur (titre, questionnaire, échéance, lien) ; lien personnel par email pour un répondant sans compte.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ sent }` : nombre de répondants relancés",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/assignments/{id}/respondents": {
+      "get": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Répondants d'un questionnaire",
+        "description": "**Accès** : toute personne connectée — gestionnaire de la campagne.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Répondants : compte ou sans compte, nom, email, lien personnel actif, date d'ajout",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Ajout d'un répondant à un questionnaire",
+        "description": "**Accès** : toute personne connectée — gestionnaire de la campagne.\n\nSpec 090. `{ userId }` : compte ayant un rôle dans l'église de la campagne (400 sinon), une seule fois (409). `{ name, email }` : personne sans compte (exception), lien personnel dérivé dont seule l'empreinte est stockée. Campagne ouverte : la personne reçoit son lien. Journalisé sans email.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "userId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64
+                      }
+                    },
+                    "required": [
+                      "userId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150
+                      },
+                      "email": {
+                        "type": "string",
+                        "maxLength": 254,
+                        "format": "email"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "email"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Répondant ajouté",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/assignments/{id}/respondents/{rid}": {
+      "delete": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Retrait d'un répondant",
+        "description": "**Accès** : toute personne connectée — gestionnaire de la campagne.\n\nSpec 090. Son lien personnel cesse de fonctionner ; ses réponses déjà saisies restent. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "rid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ deleted: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/assignments/{id}/respondents/{rid}/link": {
+      "post": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Nouveau lien personnel d'un répondant sans compte",
+        "description": "**Accès** : toute personne connectée — gestionnaire de la campagne.\n\nSpec 090. Nouveau sel : l'ancien lien est révoqué. Campagne ouverte : le lien est envoyé à la personne. Répondant avec compte : 400. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "rid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ link }` : adresse `/collecte/<jeton>`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/assignments/{id}/review": {
+      "post": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Demande de correction ou validation d'un questionnaire",
+        "description": "**Accès** : toute personne connectée — gestionnaire de la campagne.\n\nSpec 090. `request_changes` (motif obligatoire) : soumis ou validé → « Correction demandée », modifiable de nouveau, campagne ouverte requise (409 sinon), répondants prévenus. `validate` : soumis → « Validé », `pastoralValidated` consigne « Validé par la Pasteure ». Autre état : 409. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "request_changes",
+                      "validate"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 2000
+                  },
+                  "pastoralValidated": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "action"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ status }` (et `pastoralValidated` à la validation)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/assignments/{id}/submit": {
+      "post": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Soumission d'un questionnaire",
+        "description": "**Accès** : toute personne connectée — répondant désigné ou gestionnaire de la campagne.\n\nSpec 090. Refusée (400, libellés manquants) tant qu'une question obligatoire n'est pas renseignée ou qu'un « fichier transmis » n'a pas de fichier ; « à rechercher » compte comme renseigné. Le questionnaire passe à « Soumis », en lecture seule ; les gestionnaires sont prévenus. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ status, submittedAt, completeness }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/files/{fileId}": {
+      "get": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Téléchargement d'un fichier de campagne",
+        "description": "**Accès** : toute personne connectée — répondant de l'affectation ou gestionnaire de la campagne.\n\nSpec 090. Servi par Koinonia, jamais d'adresse signée : `Content-Disposition: attachment`, `nosniff`, `no-store`. Droits revérifiés sur l'affectation du fichier à chaque appel. Journalisé sans nom de fichier.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "fileId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contenu du fichier",
+            "content": {
+              "application/octet-stream": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Retrait d'un fichier de campagne",
+        "description": "**Accès** : toute personne connectée — répondant de l'affectation ou gestionnaire de la campagne.\n\nSpec 090. Répondant tant que la saisie est ouverte (409 sinon), gestionnaire tant que la campagne n'est pas clôturée. Objet supprimé du stockage. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "fileId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ deleted: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/import": {
+      "post": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Import d'une définition de campagne (aperçu ou application)",
+        "description": "**Accès** : permission `campaigns:manage` — création : `campaigns:manage` dans l'église courante (l'auteur devient gestionnaire) ; mise à jour d'une campagne existante de l'église courante (même clé) : gestionnaire de cette campagne.\n\nDéfinition `koinonia.campaign` version 1, validée (schéma puis contrôles sémantiques : 400 avec la liste des erreurs). `dryRun` (par défaut) renvoie l'aperçu sans rien écrire : campagne, questionnaires et destinataires créés, modifiés, inchangés ou supprimés, répondants retrouvés (comptes ayant un rôle dans l'église) ou non, modifications refusées. Application dans une seule transaction, idempotente par (église, clé) ; refusée (409) si une modification ferait perdre des réponses (question supprimée, type changé, choix ou champ de groupe utilisé retiré, destinataire supprimé). Les répondants sont ajoutés, jamais retirés ; l'état de la campagne n'est pas modifié. Campagne ouverte : les répondants ajoutés sont prévenus. Journalisé, sans valeur.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "campaigns:manage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "definition": {
+                    "nullable": true
+                  },
+                  "dryRun": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Aperçu de l'import (`ImportPreview`), avec `campaignId` et `applied`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/public/{token}": {
+      "get": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Questionnaire ouvert par un lien personnel",
+        "description": "**Accès** : jeton de partage dans l'adresse.\n\nSpec 090. Répondant sans compte : n'ouvre que son questionnaire, tant que la campagne est ouverte. Lien inconnu, révoqué, régénéré, campagne en brouillon ou clôturée : même 404. Débit limité par IP.",
+        "security": [],
+        "x-access": "token",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vue du questionnaire et de sa saisie (comme `GET /api/campaigns/assignments/{id}`)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/campaigns/public/{token}/answers": {
+      "put": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Enregistrement de réponses par un lien personnel",
+        "description": "**Accès** : jeton de partage dans l'adresse.\n\nSpec 090. Sauvegarde partielle (enregistrement automatique, 100 réponses au plus par envoi, 120 envois par minute). Chaque code doit appartenir au questionnaire (sinon 400) ; valeur validée selon le type, qualificatif et précision (estimation : valeur + précision ; à rechercher : note). Zéro est une valeur ; vide en « exacte » sans note efface la réponse. Premier enregistrement : « En cours » (journalisé). Saisie fermée (campagne non ouverte, questionnaire soumis) : 409.",
+        "security": [],
+        "x-access": "token",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "answers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,39}$"
+                        },
+                        "value": {
+                          "nullable": true
+                        },
+                        "qualifier": {
+                          "type": "string",
+                          "enum": [
+                            "EXACT",
+                            "ESTIMATE",
+                            "TO_RESEARCH",
+                            "NOT_APPLICABLE",
+                            "NSP"
+                          ]
+                        },
+                        "note": {
+                          "type": "string",
+                          "nullable": true,
+                          "maxLength": 1000
+                        }
+                      },
+                      "required": [
+                        "code"
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 100
+                  }
+                },
+                "required": [
+                  "answers"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "État de l'affectation, alertes locales et complétude à jour",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          }
+        }
+      }
+    },
+    "/api/campaigns/public/{token}/files": {
+      "post": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Dépôt d'un fichier par un lien personnel",
+        "description": "**Accès** : jeton de partage dans l'adresse.\n\nSpec 090. Multipart `requestCode` (code d'une demande de fichier du questionnaire) et `file` : XLSX sans macro, CSV ou PDF, 10 Mo, type vérifié sur le contenu (un fichier renommé est refusé), types acceptés et nombre maximal de la demande respectés. Stockage privé ; première pièce sans état choisi ⇒ « fichier transmis ». Journalisé sans nom de fichier. Tant que la saisie est ouverte. Débit limité par IP.",
+        "security": [],
+        "x-access": "token",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "description": "`requestCode` et `file`",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Métadonnées du fichier déposé",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/campaigns/public/{token}/files/{fileId}": {
+      "get": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Téléchargement d'un fichier par un lien personnel",
+        "description": "**Accès** : jeton de partage dans l'adresse.\n\nSpec 090. Seulement un fichier du questionnaire du lien (autre fichier : 404). `attachment`, `nosniff`, `no-store`. Journalisé sans nom de fichier.",
+        "security": [],
+        "x-access": "token",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "fileId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contenu du fichier",
+            "content": {
+              "application/octet-stream": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Retrait d'un fichier par un lien personnel",
+        "description": "**Accès** : jeton de partage dans l'adresse.\n\nSpec 090. Tant que la saisie est ouverte (409 sinon). Journalisé.",
+        "security": [],
+        "x-access": "token",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "fileId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ deleted: true }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/campaigns/public/{token}/submit": {
+      "post": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Soumission d'un questionnaire par un lien personnel",
+        "description": "**Accès** : jeton de partage dans l'adresse.\n\nSpec 090. Refusée (400, libellés manquants) tant qu'une question obligatoire n'est pas renseignée ou qu'un « fichier transmis » n'a pas de fichier ; « à rechercher » compte comme renseigné. Le questionnaire passe à « Soumis », en lecture seule ; les gestionnaires sont prévenus. Journalisé.",
+        "security": [],
+        "x-access": "token",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ status, submittedAt, completeness }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
           }
         }
       }

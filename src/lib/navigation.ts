@@ -123,6 +123,8 @@ export interface NavigationInput {
   readonly hasTicketing?: boolean;
   /** Formulaires (spec 079, 085) : `forms:manage`, intervenant ou accès délégué dans l'église courante. */
   readonly hasForms?: boolean;
+  /** Collectes (spec 090) : `campaigns:manage`, gestionnaire d'une campagne ou répondant d'une affectation. */
+  readonly hasCampaigns?: boolean;
   readonly hasJobs?: boolean;
   /** Vue pastorale active (cookie `koinonia-view-mode`). */
   readonly isPastoral?: boolean;
@@ -319,6 +321,9 @@ function agendaPagesFor(input: NavigationInput, agendaPages: NavPage[]): NavPage
   }
   if (input.hasForms) {
     agenda.push({ href: "/formulaires", label: "Formulaires", sidebarBlock: church });
+  }
+  if (input.hasCampaigns) {
+    agenda.push({ href: "/collectes", label: "Collectes", sidebarBlock: church });
   }
   agenda.push(...agendaPages);
   return agenda;

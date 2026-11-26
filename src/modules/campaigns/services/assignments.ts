@@ -1,4 +1,5 @@
-import { Prisma } from "@/generated/prisma/client";
+import type { Session } from "next-auth";
+import { Prisma, type CampaignAssignmentStatus, type CampaignStatus } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
@@ -249,6 +250,63 @@ export async function getAssignmentView(access: AssignmentAccess): Promise<Assig
     alerts: evaluateRules(localRules(rules, items), byCode),
     completeness: completeness(items, byCode, fileCounts(a.files)),
   };
+}
+
+// ── Mes questionnaires ─────────────────────────────────────────────────────────────────────────
+
+export interface MyAssignment {
+  id: string;
+  label: string;
+  formTitle: string;
+  campaignId: string;
+  campaignTitle: string;
+  campaignStatus: CampaignStatus;
+  status: CampaignAssignmentStatus;
+  /** Échéance de l'affectation, à défaut celle de la campagne. */
+  dueAt: Date | null;
+}
+
+/**
+ * Questionnaires dont le compte est répondant, dans ses églises, campagne sortie du brouillon
+ * (même règle que `getAssignmentAccess`). Ouverts d'abord, puis par échéance.
+ */
+export async function listMyAssignments(session: Session): Promise<MyAssignment[]> {
+  const churchIds = [...new Set(session.user.churchRoles.map((r) => r.churchId))];
+  const rows = await prisma.campaignRespondent.findMany({
+    where: {
+      userId: session.user.id,
+      assignment: { campaign: { status: { not: "DRAFT" }, churchId: { in: churchIds } } },
+    },
+    select: {
+      assignment: {
+        select: {
+          id: true,
+          label: true,
+          status: true,
+          dueAt: true,
+          form: { select: { title: true } },
+          campaign: { select: { id: true, title: true, status: true, dueAt: true } },
+        },
+      },
+    },
+  });
+  const list = rows.map(({ assignment: a }) => ({
+    id: a.id,
+    label: a.label,
+    formTitle: a.form.title,
+    campaignId: a.campaign.id,
+    campaignTitle: a.campaign.title,
+    campaignStatus: a.campaign.status,
+    status: a.status,
+    dueAt: a.dueAt ?? a.campaign.dueAt,
+  }));
+  const rank = (a: MyAssignment) => (a.campaignStatus === "OPEN" ? 0 : 1);
+  return list.sort(
+    (x, y) =>
+      rank(x) - rank(y) ||
+      (x.dueAt?.getTime() ?? Infinity) - (y.dueAt?.getTime() ?? Infinity) ||
+      x.campaignTitle.localeCompare(y.campaignTitle, "fr")
+  );
 }
 
 // ── Saisie ─────────────────────────────────────────────────────────────────────────────────────

@@ -2308,6 +2308,46 @@ suivant), clôture à la fin des réponses (le lendemain de la dernière session
 tâche `forms-purge` (quotidienne) calcule `totals` puis efface les réponses au terme de la
 conservation.
 
+### Module Campagnes de collecte (`campaigns`)
+
+Spec 090, ADR-0032. Une campagne regroupe des questionnaires (définition JSON versionnée), affectés
+à des entités répondantes. Toutes les tables descendent de `campaigns` (cascade).
+
+- **`campaigns`** : `churchId`, `key` (clé stable de la définition ; unique par église, l'import est
+  idempotent dessus), `title`, `description`, `periodStart` / `periodEnd` (dates), `dueAt`,
+  `status` (`DRAFT`, `OPEN`, `CLOSED`), `fileRetentionDays` (30, à compter de `closedAt`), `rules`
+  (JSON : règles de cohérence déclaratives, jamais bloquantes), `definitionHash`, `openedAt`,
+  `closedAt`, `filesPurgedAt`, `createdById` (set null).
+- **`campaign_managers`** : clé `(campaignId, userId)`, `addedById`. Une donnée, pas une permission.
+- **`campaign_forms`** : `campaignId`, `key` (unique par campagne), `title`, `position`,
+  `confidential` (réservé aux gestionnaires et aux répondants), `definition` (JSON
+  `{ intro?, sections }` validé par `campaignDefinitionSchema`), `definitionHash`, `revision`
+  (incrémentée à chaque modification importée).
+- **`campaign_assignments`** : `formId`, `campaignId` et `churchId` (dénormalisés pour les
+  contrôles d'accès), `key` (unique par questionnaire), `label`, `position`, `dueAt`, `status`
+  (`NOT_STARTED`, `IN_PROGRESS`, `SUBMITTED`, `CHANGES_REQUESTED`, `VALIDATED`), `startedAt`,
+  `submittedAt` / `submittedById` / `submittedByName`, `reviewReason` / `reviewedAt` /
+  `reviewedById` (correction demandée), `validatedAt` / `validatedById`, `pastoralValidated`
+  (case « validé par la Pasteure »), `lastRemindedAt`, `dueReminderSentAt` (relance J-2, prise une
+  seule fois), `definitionRevision` (révision du questionnaire à la soumission).
+- **`campaign_respondents`** : `assignmentId`, `userId` (compte de l'église, cascade) **ou**
+  `name` + `email` (personne sans compte), `tokenSalt` / `tokenHash` (unique ; jeton personnel
+  dérivé par HMAC, empreinte SHA-256 seule), `addedById`. Unique par `(assignmentId, userId)`.
+- **`campaign_answers`** : `assignmentId`, `code` (item ou champ de groupe), `value` (JSON),
+  `qualifier`, `note` (1000 car.), `updatedById` / `updatedByName`. Unique par
+  `(assignmentId, code)`.
+- **`campaign_files`** : `assignmentId`, `campaignId`, `churchId`, `requestCode`, `storageKey`,
+  `name`, `mime`, `size`, `sha256`, `uploadedById` / `uploadedByName`, `uploadedAt`. Supprimés par
+  la purge quotidienne (tâche `campaigns`) après la conservation.
+
+### Enums campagnes
+
+- **`CampaignStatus`** : `DRAFT`, `OPEN`, `CLOSED`
+- **`CampaignAssignmentStatus`** : `NOT_STARTED`, `IN_PROGRESS`, `SUBMITTED`, `CHANGES_REQUESTED`,
+  `VALIDATED`
+- **`CampaignQualifier`** : `EXACT`, `ESTIMATE` (estimation), `TO_RESEARCH` (à rechercher),
+  `NOT_APPLICABLE` (sans objet), `NSP` (ne sait pas)
+
 ### Module Candidatures au service (`serving`)
 
 Spec 077. Une candidature reçue du formulaire public `/servir/<slug>` est étudiée par le Pôle Vie

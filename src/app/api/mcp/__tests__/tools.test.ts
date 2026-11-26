@@ -9,7 +9,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/registry", () => ({ registry: { has: () => true }, rolePermissions: {} }));
 vi.mock("@/lib/auth", () => ({ getUserDepartmentScope: () => ({ scoped: false }) }));
 
-const { MCP_TOOLS, toolsFor, renderResult, runTool, NO_DATA, toolName, toolInput } = await import("../_tools");
+const { MCP_TOOLS, toolsFor, renderResult, runTool, NO_DATA, toolName, toolInput, inputFor } = await import("../_tools");
 
 const names = (role: string, predicates: string[] = []) => toolsFor(viewerFor(role, { predicates }), () => true).map((t) => t.key);
 
@@ -107,6 +107,24 @@ describe("outils MCP — lot 1", () => {
     expect(toolInput.safeParse({ limit: 0 }).success).toBe(false);
     expect(toolInput.safeParse({ offset: -1 }).success).toBe(false);
     expect(toolInput.safeParse({ limit: 100, offset: 50, day: "2026-10-25" }).success).toBe(true);
+  });
+
+  it("collectes : liste pour tous, avancement aux gestionnaires ; jamais un outil de valeurs ni de fichiers", () => {
+    const campaignKeys = Object.keys(MCP_TOOLS).filter((k) => k.startsWith("campaigns."));
+    expect(campaignKeys.sort()).toEqual(["campaigns.list", "campaigns.progress"]);
+    expect(Object.keys(MCP_TOOLS).some((k) => /^campaigns\..*(value|answer|file|export|respondent)/i.test(k))).toBe(false);
+    expect(names("STAR")).toContain("campaigns.list");
+    expect(names("STAR")).not.toContain("campaigns.progress");
+    expect(names("SECRETARY")).not.toContain("campaigns.progress");
+    expect(names("STAR", ["campaignManager"])).toContain("campaigns.progress");
+    expect(names("ADMIN")).toContain("campaigns.progress");
+  });
+
+  it("campaign_progress accepte le paramètre campaign ; les autres outils gardent le schéma commun", () => {
+    expect(inputFor("campaigns.progress").safeParse({ campaign: "f9", limit: 10 }).success).toBe(true);
+    expect(Object.keys(inputFor("campaigns.progress").shape)).toContain("campaign");
+    expect(inputFor("planning.myNextService")).toBe(toolInput);
+    expect(toolsFor(viewerFor("ADMIN"), () => true).find((t) => t.key === "campaigns.progress")?.name).toBe("campaigns_progress");
   });
 
   it("reports_get : proposé avec les comptes rendus, jamais au STAR ni au Comptable", () => {
