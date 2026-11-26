@@ -62,6 +62,8 @@ const svc = {
   findCampaignByKey: vi.fn(async () => (campaignRow ? { id: campaignRow.id, churchId: "c1", status: campaignRow.status, title: "Bilan 2026" } : null)),
   importCampaign: vi.fn(async (input: { dryRun: boolean }) => (input.dryRun ? previewResult : { ...previewResult, campaignId: "cmp-1", applied: true })),
   changeCampaignStatus: vi.fn(async (_id: string, op: string) => ({ id: "cmp-1", status: op === "close" ? "CLOSED" : "OPEN" })),
+  assignmentsWithoutRespondent: vi.fn(async (): Promise<string[]> => []),
+  missingRespondentsMessage: (missing: string[]) => `Ouverture impossible : ${missing.length} destinataire(s) sans répondant — ${missing.join(" ; ")}.`,
 };
 vi.mock("@/modules/campaigns", () => svc);
 
@@ -157,7 +159,7 @@ describe("état d'une campagne", () => {
     const out = await run("set_campaign_status_preview", { campaign: "bilan", op: "open" });
     expect(db.campaign.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { churchId: "c1", OR: [{ id: "bilan" }, { key: "bilan" }] } }));
     expect(out.text).toContain("« Brouillon » → « Ouverte »");
-    expect(out.text).toContain("Première ouverture");
+    expect(out.text).toContain("Première ouverture : les répondants des 3 destinataire(s)");
     const done = await run("set_campaign_status_confirm", { confirmation: lastToken });
     expect(done.structured).toMatchObject({ done: true, status: "OPEN" });
     expect(svc.changeCampaignStatus).toHaveBeenCalledWith("cmp-1", "open", { userId: "user-1", name: "Awa" });
@@ -174,7 +176,22 @@ describe("état d'une campagne", () => {
     campaignRow = row("DRAFT");
     expect((await run("set_campaign_status_preview", { campaign: "cmp-1", op: "close" })).structured.reason).toMatch(/Impossible/);
     campaignRow = row("DRAFT", { _count: { assignments: 0 } });
-    expect((await run("set_campaign_status_preview", { campaign: "cmp-1", op: "open" })).structured.reason).toMatch(/aucun questionnaire/);
+    expect((await run("set_campaign_status_preview", { campaign: "cmp-1", op: "open" })).structured.reason).toMatch(/aucun destinataire/);
+  });
+
+  it("ouverture refusée tant qu'un destinataire n'a aucun répondant valide (aperçu), sans jeton", async () => {
+    campaignRow = row("DRAFT");
+    svc.assignmentsWithoutRespondent.mockResolvedValueOnce(["Intégration › Rennes", "Compta › Compta"]);
+    mcp.createConfirmation.mockClear();
+    const out = await run("set_campaign_status_preview", { campaign: "cmp-1", op: "open" });
+    expect(svc.assignmentsWithoutRespondent).toHaveBeenCalledWith("cmp-1", "c1");
+    expect(out.structured.reason).toMatch(/2 destinataire\(s\) sans répondant — Intégration › Rennes ; Compta › Compta/);
+    expect(mcp.createConfirmation).not.toHaveBeenCalled();
+    // La clôture n'est pas concernée.
+    campaignRow = row("OPEN");
+    svc.assignmentsWithoutRespondent.mockClear();
+    await run("set_campaign_status_preview", { campaign: "cmp-1", op: "close" });
+    expect(svc.assignmentsWithoutRespondent).not.toHaveBeenCalled();
   });
 
   it("confirmation refusée si l'état a changé ; erreur du service rendue lisible", async () => {

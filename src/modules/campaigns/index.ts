@@ -45,6 +45,8 @@ export {
   getCampaignOverview,
   updateCampaignSettings,
   changeCampaignStatus,
+  assignmentsWithoutRespondent,
+  missingRespondentsMessage,
   listManagers,
   addManager,
   removeManager,

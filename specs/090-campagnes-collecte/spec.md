@@ -97,7 +97,7 @@ outil. Le F9 est le premier cas d'usage, pas un module à part.
 
 ### Notifications
 
-20. Ouverture (ou ajout d'un répondant à une campagne ouverte) : les répondants reçoivent le lien.
+20. Ouverture (ou ajout d'un répondant à une campagne ouverte) : les répondants reçoivent le lien. Une campagne ne s'ouvre (ni ne se rouvre) que si chaque destinataire a au moins un répondant valide.
     Correction demandée : les répondants. Soumission : les gestionnaires. Domaine « Collectes ».
     Aucun chiffre dans une notification.
 

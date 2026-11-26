@@ -193,13 +193,18 @@ export async function previewSetCampaignStatus(input: z.infer<typeof setCampaign
   const op = STATUS_OPS[input.op];
   const from = CAMPAIGN_STATUS_LABELS[c.status];
   if (!op.from.includes(c.status)) return refusal(`Impossible : la campagne « ${c.title} » est « ${from} ».`);
-  if (op.to === "OPEN" && c._count.assignments === 0) return refusal("La campagne n'a aucun questionnaire à remplir.");
+  if (op.to === "OPEN" && c._count.assignments === 0) return refusal("La campagne n'a aucun destinataire.");
+  if (op.to === "OPEN") {
+    const { assignmentsWithoutRespondent, missingRespondentsMessage } = await campaigns();
+    const missing = await assignmentsWithoutRespondent(c.id, c.churchId);
+    if (missing.length > 0) return refusal(missingRespondentsMessage(missing));
+  }
   const lines = [`${op.label} « ${c.title} » (clé ${c.key}) : « ${from} » → « ${CAMPAIGN_STATUS_LABELS[op.to]} ».`];
   if (op.to === "OPEN") {
     lines.push(
       c.openedAt
         ? "La saisie reprend ; les répondants ne sont pas prévenus de nouveau."
-        : `Première ouverture : les répondants des ${c._count.assignments} questionnaire(s) reçoivent leur lien par notification ou par email.`
+        : `Première ouverture : les répondants des ${c._count.assignments} destinataire(s) (un questionnaire peut en avoir plusieurs) reçoivent leur lien par notification ou par email.`
     );
   } else {
     lines.push("La saisie s'arrête ; les liens personnels sans compte cessent de fonctionner. La campagne pourra être rouverte.");

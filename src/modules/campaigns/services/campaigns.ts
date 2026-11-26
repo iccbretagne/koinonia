@@ -475,6 +475,29 @@ const TRANSITIONS: Record<CampaignStatusAction, { from: CampaignStatus[]; to: Ca
  * Ouvre, clôture ou rouvre une campagne. Prise conditionnelle sur l'état courant. Seule la
  * **première** ouverture prévient les répondants.
  */
+/**
+ * Destinataires sans répondant valide : un compte encore membre de l'église, ou une personne sans
+ * compte munie d'un lien personnel actif. Une campagne ne s'ouvre (ni ne se rouvre) qu'à zéro.
+ */
+export async function assignmentsWithoutRespondent(campaignId: string, churchId: string): Promise<string[]> {
+  const rows = await prisma.campaignAssignment.findMany({
+    where: {
+      campaignId,
+      respondents: { none: { OR: [{ tokenHash: { not: null } }, { user: { churchRoles: { some: { churchId } } } }] } },
+    },
+    orderBy: [{ form: { position: "asc" } }, { position: "asc" }],
+    select: { label: true, form: { select: { title: true } } },
+  });
+  return rows.map((a) => `${a.form.title} › ${a.label}`);
+}
+
+/** Message de refus d'ouverture, partagé par l'écran et le MCP. */
+export function missingRespondentsMessage(missing: string[]): string {
+  const shown = missing.slice(0, 10).join(" ; ");
+  const more = missing.length > 10 ? ` (et ${missing.length - 10} autre(s))` : "";
+  return `Ouverture impossible : ${missing.length} destinataire(s) sans répondant — ${shown}${more}. Ajoutez au moins un répondant (compte de l'église ou lien personnel) à chacun.`;
+}
+
 export async function changeCampaignStatus(campaignId: string, action: CampaignStatusAction, actor: CampaignActorRef) {
   const campaign = await prisma.campaign.findUnique({
     where: { id: campaignId },
@@ -483,7 +506,11 @@ export async function changeCampaignStatus(campaignId: string, action: CampaignS
   if (!campaign) throw new ApiError(404, "Campagne introuvable");
   const t = TRANSITIONS[action];
   if (!t.from.includes(campaign.status)) throw new ApiError(409, "Cette action n'est pas possible dans l'état actuel de la campagne");
-  if (t.to === "OPEN" && campaign._count.assignments === 0) throw new ApiError(409, "La campagne n'a aucun questionnaire à remplir");
+  if (t.to === "OPEN" && campaign._count.assignments === 0) throw new ApiError(409, "La campagne n'a aucun destinataire");
+  if (t.to === "OPEN") {
+    const missing = await assignmentsWithoutRespondent(campaignId, campaign.churchId);
+    if (missing.length > 0) throw new ApiError(409, missingRespondentsMessage(missing));
+  }
 
   const now = new Date();
   const firstOpening = t.to === "OPEN" && !campaign.openedAt;

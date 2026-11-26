@@ -40,7 +40,7 @@ Un gestionnaire **importe** la définition de la campagne (fichier JSON), vérif
 | Pour… | Faire… |
 |---|---|
 | Créer ou mettre à jour une campagne | **Importer**, vérifier l'aperçu, confirmer. Un changement qui ferait perdre des réponses est refusé |
-| Ouvrir | **Ouvrir** : les répondants sont prévenus (la première fois seulement) |
+| Ouvrir | **Ouvrir** : refusé tant qu'un destinataire n'a aucun répondant (compte de l'église ou lien personnel) ; les répondants sont prévenus (la première fois seulement) |
 | Suivre | Tableau d'avancement, estimations, « à rechercher », contrôles croisés entre questionnaires |
 | Relancer | **Relancer** un questionnaire ; une relance automatique part 2 jours avant l'échéance |
 | Ajouter un répondant | Onglet **Répondants** : un compte de l'église, ou nom et email pour une personne sans compte. **Régénérer le lien** révoque l'ancien |
