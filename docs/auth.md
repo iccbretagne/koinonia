@@ -447,6 +447,7 @@ hors nom/slug/superviseur), historique des modifications. `access:admins` s'ajou
 | `treasury:reopen` | x | x | | | | | | | | |
 | `ticketing:manage` | x | x | x | | | | | | | |
 | `forms:manage` | x | x | x | | | | | | | |
+| `campaigns:manage` | x | x | | | | | | | | |
 
 #### Module `agenda`
 
@@ -683,6 +684,13 @@ renommé spec 052) :
   fonction de département)
 - Conserve `audio:listen` et les permissions transverses du module emploi (`jobs:*`, hors
   `jobs:manage`)
+
+**Spécificités du module collectes** (spec 090, ADR-0032) :
+- `campaigns:manage` (Super Admin, Admin) crée et importe des campagnes de collecte dans son
+  église et les pilote toutes ; l'église qui fait foi est celle **de la campagne** (autre église :
+  404). Les gestionnaires d'une campagne (`campaign_managers`) et ses répondants
+  (`campaign_respondents`, compte de l'église ou lien personnel sans compte) sont des **données**,
+  pas des permissions ; aucun accès hors de leur campagne ou de leur affectation
 
 **Spécificités du module formulaires** (spec 079, ADR-0030) :
 - `forms:manage` (Super Admin, Admin, Secrétaire) ouvre `/formulaires` : construire, publier,

@@ -427,6 +427,7 @@ Compt = Comptable.
 | `treasury:reopen` | x | x | | | | | | | | |
 | `ticketing:manage` | x | x | x | | | | | | | |
 | `forms:manage` | x | x | x | | | | | | | |
+| `campaigns:manage` | x | x | | | | | | | | |
 | `agenda:view` | x | x | x | | | | | | | |
 | `agenda:manage` | x | x | x | | | | | | | |
 | `care:qualify` | x | x | | | | | | | x | |

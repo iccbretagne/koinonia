@@ -131,6 +131,8 @@ model Church {
   supervisor                     PastoralProfile?                @relation("ChurchSupervisorProfile", fields: [supervisorProfileId], references: [id])
   // Formulaires (spec 079)
   forms                          Form[]
+  // Campagnes de collecte (spec 090)
+  campaigns                      Campaign[]
 
   serviceWithdrawals  ServiceWithdrawal[]
   // Page publique « Donner » (spec 065)
@@ -210,6 +212,10 @@ model User {
   formsGrants                       FormsGrant[]                  @relation("FormsGrantee")
   formsGrantsGiven                  FormsGrant[]                  @relation("FormsGrantor")
   formManagements                   FormManager[]                 @relation("FormManagerUser")
+  campaignsCreated                  Campaign[]                    @relation("CampaignCreatedBy")
+  campaignManagements               CampaignManager[]             @relation("CampaignManagerUser")
+  campaignManagersAdded             CampaignManager[]             @relation("CampaignManagerAddedBy")
+  campaignRespondents               CampaignRespondent[]          @relation("CampaignRespondentUser")
   formManagersAdded                 FormManager[]                 @relation("FormManagerAddedBy")
   systemMessagesCreated             SystemMessage[]               @relation("SystemMessageCreatedBy")
   systemMessagesUpdated             SystemMessage[]               @relation("SystemMessageUpdatedBy")
@@ -4682,4 +4688,205 @@ model TicketingTicketImage {
 
   @@index([eventId])
   @@map("ticketing_ticket_images")
+}
+
+// ─── Campagnes de collecte (spec 090, ADR-0032) ───
+
+enum CampaignStatus {
+  DRAFT
+  OPEN
+  CLOSED
+}
+
+enum CampaignAssignmentStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  SUBMITTED
+  CHANGES_REQUESTED
+  VALIDATED
+}
+
+/// Qualificatif d'une réponse : valeur exacte, estimée, à rechercher, sans objet ou « ne sait pas ».
+enum CampaignQualifier {
+  EXACT
+  ESTIMATE
+  TO_RESEARCH
+  NOT_APPLICABLE
+  NSP
+}
+
+/// Campagne de collecte de données (questionnaires remplis par des responsables, validés par la gestion).
+model Campaign {
+  id                String         @id @default(cuid())
+  churchId          String
+  /// Clé stable de la définition importée : l'import est idempotent par (église, clé).
+  key               String         @db.VarChar(80)
+  title             String         @db.VarChar(150)
+  description       String?        @db.Text
+  periodStart       DateTime?      @db.Date
+  periodEnd         DateTime?      @db.Date
+  dueAt             DateTime?
+  status            CampaignStatus @default(DRAFT)
+  /// Conservation des fichiers déposés après la clôture, en jours.
+  fileRetentionDays Int            @default(30)
+  /// Règles de cohérence déclaratives (arbre JSON), jamais bloquantes.
+  rules             Json?
+  /// Empreinte de la dernière définition importée.
+  definitionHash    String         @db.VarChar(64)
+  openedAt          DateTime?
+  closedAt          DateTime?
+  filesPurgedAt     DateTime?
+  createdById       String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  church      Church               @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  createdBy   User?                @relation("CampaignCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  managers    CampaignManager[]
+  forms       CampaignForm[]
+  assignments CampaignAssignment[]
+
+  @@unique([churchId, key])
+  @@index([churchId, status])
+  @@map("campaigns")
+}
+
+/// Gestionnaire d'une campagne (donnée, pas une permission).
+model CampaignManager {
+  campaignId String
+  userId     String
+  addedById  String?
+  createdAt  DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user     User     @relation("CampaignManagerUser", fields: [userId], references: [id], onDelete: Cascade)
+  addedBy  User?    @relation("CampaignManagerAddedBy", fields: [addedById], references: [id], onDelete: SetNull)
+
+  @@id([campaignId, userId])
+  @@index([userId])
+  @@map("campaign_managers")
+}
+
+/// Questionnaire d'une campagne ; la définition (sections, items) est un document JSON versionné.
+model CampaignForm {
+  id             String   @id @default(cuid())
+  campaignId     String
+  key            String   @db.VarChar(80)
+  title          String   @db.VarChar(150)
+  position       Int
+  /// Réservé aux gestionnaires et aux répondants du questionnaire.
+  confidential   Boolean  @default(false)
+  /// `{ intro?, sections: [...] }` validé par `campaignDefinitionSchema`.
+  definition     Json
+  definitionHash String   @db.VarChar(64)
+  /// Incrémentée à chaque modification de la définition par un import.
+  revision       Int      @default(1)
+  updatedAt      DateTime @updatedAt
+
+  campaign    Campaign             @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  assignments CampaignAssignment[]
+
+  @@unique([campaignId, key])
+  @@map("campaign_forms")
+}
+
+/// Affectation d'un questionnaire à une entité répondante (département, pôle…) : porte l'état de remplissage.
+model CampaignAssignment {
+  id                 String                   @id @default(cuid())
+  formId             String
+  /// Dénormalisés pour les contrôles d'accès et les requêtes de pilotage.
+  campaignId         String
+  churchId           String
+  key                String                   @db.VarChar(80)
+  label              String                   @db.VarChar(150)
+  position           Int
+  dueAt              DateTime?
+  status             CampaignAssignmentStatus @default(NOT_STARTED)
+  startedAt          DateTime?
+  submittedAt        DateTime?
+  submittedById      String?
+  submittedByName    String?                  @db.VarChar(150)
+  /// Motif de la demande de correction.
+  reviewReason       String?                  @db.Text
+  reviewedAt         DateTime?
+  reviewedById       String?
+  validatedAt        DateTime?
+  validatedById      String?
+  pastoralValidated  Boolean                  @default(false)
+  lastRemindedAt     DateTime?
+  dueReminderSentAt  DateTime?
+  /// Révision du questionnaire au moment de la soumission.
+  definitionRevision Int?
+
+  form        CampaignForm         @relation(fields: [formId], references: [id], onDelete: Cascade)
+  campaign    Campaign             @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  respondents CampaignRespondent[]
+  answers     CampaignAnswer[]
+  files       CampaignFile[]
+
+  @@unique([formId, key])
+  @@index([campaignId, status])
+  @@map("campaign_assignments")
+}
+
+/// Répondant d'une affectation : compte de l'église (normal) ou personne sans compte (lien personnel).
+model CampaignRespondent {
+  id           String   @id @default(cuid())
+  assignmentId String
+  userId       String?
+  name         String?  @db.VarChar(150)
+  email        String?  @db.VarChar(254)
+  /// Lien personnel dérivé (HMAC) : seule l'empreinte SHA-256 est stockée.
+  tokenSalt    String?  @db.VarChar(32)
+  tokenHash    String?  @unique @db.VarChar(64)
+  addedById    String?
+  createdAt    DateTime @default(now())
+
+  assignment CampaignAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  user       User?              @relation("CampaignRespondentUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, userId])
+  @@index([userId])
+  @@map("campaign_respondents")
+}
+
+/// Réponse à un item (par code), avec son qualificatif et sa note.
+model CampaignAnswer {
+  id            String            @id @default(cuid())
+  assignmentId  String
+  code          String            @db.VarChar(40)
+  value         Json?
+  qualifier     CampaignQualifier @default(EXACT)
+  note          String?           @db.VarChar(1000)
+  updatedById   String?
+  updatedByName String?           @db.VarChar(150)
+  updatedAt     DateTime          @updatedAt
+
+  assignment CampaignAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, code])
+  @@map("campaign_answers")
+}
+
+/// Fichier déposé en réponse à une demande de pièce ; purgé après la clôture.
+model CampaignFile {
+  id             String   @id @default(cuid())
+  assignmentId   String
+  campaignId     String
+  churchId       String
+  requestCode    String   @db.VarChar(40)
+  storageKey     String   @db.VarChar(300)
+  name           String   @db.VarChar(200)
+  mime           String   @db.VarChar(100)
+  size           Int
+  sha256         String   @db.VarChar(64)
+  uploadedById   String?
+  uploadedByName String?  @db.VarChar(150)
+  uploadedAt     DateTime @default(now())
+
+  assignment CampaignAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@index([assignmentId, requestCode])
+  @@index([campaignId])
+  @@map("campaign_files")
 }

@@ -201,6 +201,19 @@ module.exports = {
       },
     },
     {
+      name: "no-campaigns-imports-other-modules",
+      severity: "error",
+      comment:
+        "Le module campaigns (spec 090, ADR-0032) n'importe aucun autre module : les routes src/app injectent ce qui touche aux autres domaines.",
+      from: {
+        path: "^src/modules/campaigns/",
+        pathNot: "/__tests__/",
+      },
+      to: {
+        path: "^src/modules/(?!campaigns/)",
+      },
+    },
+    {
       name: "no-treasury-imports-other-modules",
       severity: "error",
       comment:

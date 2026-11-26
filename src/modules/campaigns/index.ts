@@ -1,0 +1,1 @@
+export { campaignsModule } from "./manifest";
