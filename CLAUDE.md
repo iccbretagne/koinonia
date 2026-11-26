@@ -774,16 +774,16 @@ seule (`ENABLED_MODULES`) :
   relance J-2
 - Notifications du domaine `campaigns` (ouverture, relance, correction demandée, soumission) :
   **jamais de valeur de réponse** dans le texte. Exports XLSX/CSV (`exports.ts`)
-- Espace « Collectes » (`/collectes`, espace Agenda, `hasCampaignsSpace`) ; carte « Questionnaires
-  à remplir » sur l'Accueil. MCP : lectures `campaigns_list`/`campaigns_progress` (prédicat
+- Entrée « Questionnaires » (`/collectes`) dans l'espace **Demandes**, vue pastorale comprise
+  (`hasCampaignsSpace`) ; carte « Questionnaires à remplir » sur l'Accueil. MCP : lectures `campaigns_list`/`campaigns_progress` (prédicat
   `campaignManager`, `_viewer.ts`) et actions `import_campaign`/`set_campaign_status` (aperçu →
   confirmation) — **jamais de valeur, de fichier ni d'email** ; un questionnaire confidentiel ne
   montre que son état, et les contrôles qui lisent ses codes sont masqués
 
 **Spécificités du module formulaires** (spec 079, [ADR-0030](docs/adr/0030-moteur-de-formulaires.md)) —
 désactivable (`ENABLED_MODULES`) :
-- `forms:manage` (Super Admin, Admin, Secrétaire) ouvre `/formulaires` (lien dans l'espace Agenda,
-  à côté de la Billetterie) : construire (13 types de questions, choix avec places, condition
+- `forms:manage` (Super Admin, Admin, Secrétaire) ouvre `/formulaires` (espace Agenda, bloc
+  « Inscriptions » avec la Billetterie) : construire (13 types de questions, choix avec places, condition
   d'affichage sur une question précédente), publier, clôturer, dupliquer, supprimer, voir et
   exporter les réponses. L'église qui fait foi est celle **du formulaire** (`requireFormManage`,
   `@/modules/forms/auth`). Dès qu'il y a des réponses, `assertSafeEdit` borne la modification

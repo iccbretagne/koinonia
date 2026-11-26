@@ -24,7 +24,7 @@ Un gestionnaire **importe** la définition de la campagne (fichier JSON), vérif
 
 ## Répondre
 
-**Où.** *Collectes* dans le menu. Une personne sans compte ouvre le lien personnel reçu par email.
+**Où.** *Demandes › Questionnaires* dans le menu (et la carte « Questionnaires à remplir » de l'Accueil). Une personne sans compte ouvre le lien personnel reçu par email.
 
 - **Tout s'enregistre automatiquement.** On peut s'arrêter et reprendre plus tard.
 - **Chaque réponse porte un qualificatif.** *Exact* par défaut. *Estimation* si le chiffre est approché, *À rechercher* s'il reste à trouver, *Sans objet* si la question ne vous concerne pas, *NSP* (ne sait pas) quand le questionnaire l'autorise. Une estimation, un « à rechercher » ou un NSP demande une **note** : d'où vient le chiffre, ce qui manque.
@@ -35,7 +35,7 @@ Un gestionnaire **importe** la définition de la campagne (fichier JSON), vérif
 
 ## Piloter
 
-**Où.** *Collectes → la campagne*.
+**Où.** *Demandes › Questionnaires → la campagne*.
 
 | Pour… | Faire… |
 |---|---|

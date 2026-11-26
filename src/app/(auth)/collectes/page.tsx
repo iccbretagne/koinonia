@@ -8,7 +8,7 @@ import { ASSIGNMENT_STATUS_LABELS } from "@/modules/campaigns/schemas";
 import { ASSIGNMENT_STATUS_TONES } from "./_components/display";
 import ManagedCampaigns from "./_components/ManagedCampaigns";
 
-export const metadata: Metadata = { title: "Collectes" };
+export const metadata: Metadata = { title: "Questionnaires" };
 
 const dayFr = (d: Date) => d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Paris" });
 
@@ -21,7 +21,7 @@ export default async function CampaignsPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
-      <PageHeader title="Collectes" description="Questionnaires de collecte de données de l'église." />
+      <PageHeader title="Questionnaires" description="Collectes de données de l'église : questionnaires à remplir et campagnes à piloter." />
 
       <ManagedCampaigns session={session} />
 

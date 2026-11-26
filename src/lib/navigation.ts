@@ -267,7 +267,10 @@ function buildPastoralSpaces(input: NavigationInput): NavSpace[] {
       { href: "/pastoral/reports", label: "Comptes rendus" },
       ...agendaPages,
     ]),
-    space("requests", "Demandes", Inbox, "service", [{ href: "/pastoral/accounting", label: "Comptabilité" }]),
+    space("requests", "Demandes", Inbox, "service", [
+      { href: "/pastoral/accounting", label: "Comptabilité" },
+      ...(input.hasCampaigns ? [{ href: "/collectes", label: "Questionnaires" }] : []),
+    ]),
     space("resources", "Ressources", Package, "church", input.hasJobs ? [jobsPage(input)] : []),
     space("admin", "Administration", Settings, "church", configPages(input)),
   ];
@@ -299,13 +302,6 @@ function agendaPagesFor(input: NavigationInput, agendaPages: NavPage[]): NavPage
   }
   if (input.hasEventsAccess) {
     agenda.push({ href: "/events", label: "Agenda de l'église", sidebarBlock: church });
-  }
-  // Trame des annonces : seulement avec le droit de lecture effectif (#676) — ni events:view
-  // (Reporter) ni planning:view seul (STAR hors modération) ne suffisent.
-  if (input.hasAnnouncementSheet) {
-    agenda.push({ href: "/events/announcement-sheets", label: "Trame des annonces", sidebarBlock: church });
-  }
-  if (input.hasEventsAccess) {
     if (input.hasEventsManage) {
       agenda.push(
         { href: "/admin/events", label: "Gérer les événements", sidebarBlock: church },
@@ -316,14 +312,18 @@ function agendaPagesFor(input: NavigationInput, agendaPages: NavPage[]): NavPage
       agenda.push({ href: "/admin/reports", label: "Comptes rendus", dataTour: "sidebar-reports", sidebarBlock: church });
     }
   }
+  // Trame des annonces : seulement avec le droit de lecture effectif (#676) — ni events:view
+  // (Reporter) ni planning:view seul (STAR hors modération) ne suffisent.
+  if (input.hasAnnouncementSheet) {
+    agenda.push({ href: "/events/announcement-sheets", label: "Trame des annonces", sidebarBlock: church });
+  }
+  // Inscriptions publiques (billetterie, formulaires) : bloc distinct des pages d'événements.
+  const signups = "Inscriptions";
   if (input.hasTicketing) {
-    agenda.push({ href: "/billetterie", label: "Billetterie", sidebarBlock: church });
+    agenda.push({ href: "/billetterie", label: "Billetterie", sidebarBlock: signups });
   }
   if (input.hasForms) {
-    agenda.push({ href: "/formulaires", label: "Formulaires", sidebarBlock: church });
-  }
-  if (input.hasCampaigns) {
-    agenda.push({ href: "/collectes", label: "Collectes", sidebarBlock: church });
+    agenda.push({ href: "/formulaires", label: "Formulaires", sidebarBlock: signups });
   }
   agenda.push(...agendaPages);
   return agenda;
@@ -346,6 +346,9 @@ const ACCOUNTING_BLOCK = "Comptabilité";
 
 function requestPagesFor(input: NavigationInput): NavPage[] {
   const requests: NavPage[] = input.requestLinks.map((l) => ({ href: l.href, label: l.label }));
+  // Collectes (spec 090) : questionnaires à remplir ou à piloter, là où répondants et responsables
+  // vont déjà (barre du bas), avant le bloc Comptabilité.
+  if (input.hasCampaigns) requests.push({ href: "/collectes", label: "Questionnaires" });
   // « Navette » et « Trésorerie » se rangent sous « Comptabilité » (specs 073, 076) : un bloc de
   // sidebar les regroupe, et leur préfixe plus long l'emporte sur celui de la comptabilité.
   const accountingBlock = input.hasShuttle || input.hasTreasury ? ACCOUNTING_BLOCK : undefined;
