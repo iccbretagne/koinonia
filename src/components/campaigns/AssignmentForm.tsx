@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft, CircleAlert, CircleCheck, Download, LoaderCircle, Plus, Trash2, Upload } from "lucide-react";
 import {
@@ -117,6 +117,22 @@ function parseNumberText(text: string): number | null | "invalid" {
   return Number(t);
 }
 
+/**
+ * Saisie locale illisible d'un champ (nombre mal tapé) : remontée au formulaire, par champ, pour
+ * bloquer la soumission tant qu'elle est à l'écran. Fournie par `ItemBlock` pour sa question.
+ */
+const LocalErrorContext = createContext<((fieldId: string, message: string | null) => void) | null>(null);
+
+/** Erreurs affichées : celles de la validation, plus la première saisie illisible de chaque question. */
+function withLocalErrors(base: Record<string, string>, local: ReadonlyMap<string, ReadonlyMap<string, string>>): Record<string, string> {
+  const out = { ...base };
+  for (const [code, fields] of local) {
+    const first = fields.values().next().value;
+    if (first) out[code] = first;
+  }
+  return out;
+}
+
 function NumberInput({
   id,
   item,
@@ -135,6 +151,14 @@ function NumberInput({
   const [text, setText] = useState(() => formatNumber(value));
   const [localError, setLocalError] = useState<string | null>(null);
   const focused = useRef(false);
+  const reportLocalError = useContext(LocalErrorContext);
+
+  // Saisie illisible remontée au formulaire (bloque la soumission), retirée dès qu'elle disparaît.
+  useEffect(() => {
+    if (!reportLocalError || !localError) return;
+    reportLocalError(id, localError);
+    return () => reportLocalError(id, null);
+  }, [id, localError, reportLocalError]);
 
   // Valeur changée ailleurs (autre répondant, qualificatif « sans objet ») : resynchroniser hors saisie.
   useEffect(() => {
@@ -641,6 +665,7 @@ function ItemBlock({
   error,
   disabled,
   onChange,
+  onLocalError,
   fileProps,
 }: {
   readonly item: DefinitionItem;
@@ -648,6 +673,7 @@ function ItemBlock({
   readonly error?: string;
   readonly disabled: boolean;
   readonly onChange: (patch: Partial<Draft>) => void;
+  readonly onLocalError: (code: string, fieldId: string, message: string | null) => void;
   readonly fileProps: Pick<Parameters<typeof FileRequestField>[0], "files" | "apiBase" | "fileUrl" | "onFilesChange">;
 }) {
   const id = itemDomId(item.code);
@@ -656,6 +682,8 @@ function ItemBlock({
   const noValue = draft.qualifier === "NOT_APPLICABLE" || draft.qualifier === "NSP";
   const noteVisible = noteOpen || draft.qualifier !== "EXACT" || Boolean(draft.note);
   const setValue = (value: unknown) => onChange({ value });
+  const code = item.code;
+  const reportLocalError = useCallback((fieldId: string, message: string | null) => onLocalError(code, fieldId, message), [code, onLocalError]);
 
   let body: ReactNode;
   if (item.type === "group") {
@@ -690,7 +718,7 @@ function ItemBlock({
 
   return (
     <div className="flex flex-col gap-3 border-b border-line py-5 last:border-b-0">
-      {body}
+      <LocalErrorContext.Provider value={reportLocalError}>{body}</LocalErrorContext.Provider>
       {qualifiers.length > 1 && (
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -805,6 +833,10 @@ export default function AssignmentForm({
 
   // ── Enregistrement automatique : codes modifiés, envoyés groupés, envois en file ──
   const dirty = useRef(new Set<string>());
+  /** Dernier envoi en échec (réseau, serveur, refus) : la soumission attend un enregistrement réussi. */
+  const saveFailed = useRef(false);
+  /** Saisies illisibles à l'écran, par question puis par champ (voir `LocalErrorContext`). */
+  const localErrors = useRef(new Map<string, Map<string, string>>());
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queue = useRef<Promise<void>>(Promise.resolve());
   const inFlight = useRef(0);
@@ -828,7 +860,7 @@ export default function AssignmentForm({
     });
     const nextErrors = { ...errorsRef.current };
     for (const code of codes) delete nextErrors[code];
-    errorsRef.current = { ...nextErrors, ...found };
+    errorsRef.current = withLocalErrors({ ...nextErrors, ...found }, localErrors.current);
     setErrors(errorsRef.current);
     if (payload.length === 0) {
       // Rien d'envoyable : une valeur refusée localement n'est pas « enregistrée ».
@@ -837,8 +869,13 @@ export default function AssignmentForm({
     }
 
     setSaveState("saving");
+    /** Codes pas encore acceptés par le serveur, à renvoyer si l'envoi s'interrompt. */
+    const keepFrom = (start: number) => {
+      for (const a of payload.slice(start)) dirty.current.add(a.code);
+    };
+    let i = 0;
     try {
-      for (let i = 0; i < payload.length; i += MAX_PER_REQUEST) {
+      for (; i < payload.length; i += MAX_PER_REQUEST) {
         const chunk = payload.slice(i, i + MAX_PER_REQUEST);
         const res = await fetch(`${apiBase}/answers`, {
           method: "PUT",
@@ -848,12 +885,15 @@ export default function AssignmentForm({
         if (res.status === 409) {
           setEditable(false);
           setLockedMessage(await readError(res));
+          saveFailed.current = true;
           setSaveState("error");
           return;
         }
         if (!res.ok) {
-          // 400 : refus métier, réessayer à l'identique ne changerait rien ; sinon, on garde pour réessayer.
-          if (res.status !== 400) for (const a of chunk) dirty.current.add(a.code);
+          // 400 : refus métier du lot, le renvoyer à l'identique ne changerait rien ; les lots
+          // suivants, jamais envoyés, restent à enregistrer. Sinon, tout le reste depuis ce lot.
+          keepFrom(res.status === 400 ? i + MAX_PER_REQUEST : i);
+          saveFailed.current = true;
           setSaveError(await readError(res));
           setSaveState("error");
           return;
@@ -862,10 +902,12 @@ export default function AssignmentForm({
         setStatus(data.status);
         setAlerts(data.alerts);
       }
+      saveFailed.current = false;
       setSaveError(null);
       setSaveState(dirty.current.size > 0 ? "saving" : "saved");
     } catch {
-      for (const a of payload) dirty.current.add(a.code);
+      keepFrom(i);
+      saveFailed.current = true;
       setSaveError("Connexion interrompue.");
       setSaveState("error");
     }
@@ -891,6 +933,19 @@ export default function AssignmentForm({
     },
     [flush]
   );
+
+  const reportLocalError = useCallback((code: string, fieldId: string, message: string | null) => {
+    const fields = localErrors.current.get(code) ?? new Map<string, string>();
+    if (message) fields.set(fieldId, message);
+    else fields.delete(fieldId);
+    if (fields.size > 0) localErrors.current.set(code, fields);
+    else localErrors.current.delete(code);
+    const base = { ...errorsRef.current };
+    // Plus de saisie illisible : l'erreur affichée était la sienne ; la validation suivra l'envoi.
+    if (fields.size === 0) delete base[code];
+    errorsRef.current = withLocalErrors(base, localErrors.current);
+    setErrors(errorsRef.current);
+  }, []);
 
   // Avertir avant de quitter avec un envoi en attente.
   useEffect(() => {
@@ -925,10 +980,18 @@ export default function AssignmentForm({
 
   async function startSubmit() {
     await flush();
-    const firstError = items.find((i) => errorsRef.current[i.code]);
+    const firstError = items.find((i) => errorsRef.current[i.code] || localErrors.current.has(i.code));
     if (firstError) {
       toast.error("Corrigez les réponses signalées avant de soumettre.");
       return scrollToItem(firstError.code);
+    }
+    // Réponses pas (encore) enregistrées : soumettre maintenant les laisserait de côté.
+    if (dirty.current.size > 0 || saveFailed.current) {
+      const message = "Des réponses ne sont pas enregistrées : réessayez l'enregistrement avant de soumettre.";
+      setSaveError((current) => current ?? message);
+      setSaveState("error");
+      toast.error(message);
+      return;
     }
     if (state.missing.length > 0) {
       setShowMissing(true);
@@ -1099,6 +1162,7 @@ export default function AssignmentForm({
               error={errors[item.code] ?? (showMissing && missing.has(item.code) ? "Réponse attendue" : undefined)}
               disabled={!editable}
               onChange={(patch) => update(item.code, patch)}
+              onLocalError={reportLocalError}
               fileProps={{ files: files.filter((f) => f.requestCode === item.code), apiBase, fileUrl, onFilesChange: setFiles }}
             />
           ))}

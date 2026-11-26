@@ -60,6 +60,7 @@ export interface ManagedCampaign {
   churchId: string;
   status: CampaignStatus;
   title: string;
+  key: string;
 }
 
 /** Gestionnaire de la campagne ; 404 sinon. */
@@ -67,7 +68,7 @@ export async function requireCampaignManager(campaignId: string): Promise<{ sess
   const session = await requireAuth();
   const campaign = await prisma.campaign.findUnique({
     where: { id: campaignId },
-    select: { id: true, churchId: true, status: true, title: true },
+    select: { id: true, churchId: true, status: true, title: true, key: true },
   });
   if (!campaign || !(await isCampaignManager(session, campaign))) throw new ApiError(404, NOT_FOUND);
   return { session, campaign };

@@ -544,11 +544,20 @@ export async function addManager(campaignId: string, userId: string, actor: Camp
 export async function removeManager(campaignId: string, userId: string, actor: CampaignActorRef) {
   const campaign = await prisma.campaign.findUnique({ where: { id: campaignId }, select: { churchId: true } });
   if (!campaign) throw new ApiError(404, "Campagne introuvable");
-  const row = await prisma.campaignManager.findUnique({ where: { campaignId_userId: { campaignId, userId } }, select: { userId: true } });
-  if (!row) throw new ApiError(404, "Gestionnaire introuvable");
-  const count = await prisma.campaignManager.count({ where: { campaignId } });
-  if (count <= 1) throw new ApiError(409, "Une campagne garde toujours au moins un gestionnaire");
-  await prisma.campaignManager.delete({ where: { campaignId_userId: { campaignId, userId } } });
+  const { churchId } = campaign;
+  // Verrou sur la campagne : deux retraits simultanés ne peuvent pas retirer les deux derniers.
+  await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM campaigns WHERE id = ${campaignId} FOR UPDATE`;
+    const row = await tx.campaignManager.findUnique({ where: { campaignId_userId: { campaignId, userId } }, select: { userId: true } });
+    if (!row) throw new ApiError(404, "Gestionnaire introuvable");
+    // Seuls comptent les gestionnaires encore membres de l'église : un ancien membre ne gère plus
+    // rien, le retirer ne retire aucun gestionnaire effectif.
+    const effective = { campaignId, user: { churchRoles: { some: { churchId } } } };
+    const targetEffective = await tx.campaignManager.count({ where: { ...effective, userId } });
+    const remaining = await tx.campaignManager.count({ where: { ...effective, userId: { not: userId } } });
+    if (targetEffective > 0 && remaining < 1) throw new ApiError(409, "Une campagne garde toujours au moins un gestionnaire");
+    await tx.campaignManager.delete({ where: { campaignId_userId: { campaignId, userId } } });
+  });
   await logAudit({ userId: actor.userId, churchId: campaign.churchId, action: "DELETE", entityType: "CampaignManager", entityId: campaignId, details: { managerId: userId } });
   return { deleted: true };
 }

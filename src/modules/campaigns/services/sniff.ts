@@ -2,7 +2,8 @@ import JSZip from "jszip";
 
 /**
  * Type d'un fichier de campagne (spec 090) déterminé par son **contenu**, jamais par son nom ni
- * par le type annoncé : PDF, XLSX sans macro, CSV texte. Le contenu n'est pas lu au-delà.
+ * par le type annoncé : PDF, XLSX sans macro ni ActiveX, CSV texte. Seul `[Content_Types].xml` est
+ * décompressé (borné) ; le contenu n'est pas lu au-delà.
  */
 
 export const CAMPAIGN_FILE_MAX_BYTES = 10 * 1024 * 1024;
@@ -22,13 +23,43 @@ const startsWith = (bytes: Uint8Array, magic: readonly number[]) => magic.every(
 /** Caractère de contrôle hors tabulation et fins de ligne. */
 const isControl = (code: number) => (code < 0x20 && code !== 0x09 && code !== 0x0a && code !== 0x0d) || code === 0x7f;
 
+/** Taille au plus lue de `[Content_Types].xml` décompressé (un vrai classeur en fait quelques Ko). */
+const CONTENT_TYPES_MAX_BYTES = 256 * 1024;
+/** Marques d'un classeur actif : macros (XLSM, XLAM…), feuilles macro Excel 4, contrôles ActiveX. */
+const ACTIVE_CONTENT = /macroenabled|vbaproject|activex/i;
+const ACTIVE_ENTRY = /(^|\/)vbaproject\.bin$|^xl\/macrosheets\/|^xl\/activex\//i;
+
+/** Contenu décompressé d'une entrée, null s'il dépasse `max` octets (lecture arrêtée en route). */
+async function readBounded(entry: JSZip.JSZipObject, max: number): Promise<string | null> {
+  const chunks: Buffer[] = [];
+  let total = 0;
+  const stream = entry.nodeStream("nodebuffer");
+  const ok = await new Promise<boolean>((resolve, reject) => {
+    stream.on("data", (chunk: Buffer) => {
+      total += chunk.length;
+      if (total > max) {
+        stream.pause();
+        resolve(false);
+        return;
+      }
+      chunks.push(chunk);
+    });
+    stream.on("error", reject);
+    stream.on("end", () => resolve(true));
+  });
+  return ok ? Buffer.concat(chunks).toString("utf-8") : null;
+}
+
 async function isXlsx(bytes: Uint8Array): Promise<boolean> {
   try {
-    // Lecture du répertoire central seulement : aucune entrée n'est décompressée.
+    // Répertoire central, puis la seule entrée `[Content_Types].xml`, décompressée sous borne.
     const zip = await JSZip.loadAsync(bytes);
     const names = Object.keys(zip.files);
-    if (names.some((n) => n.toLowerCase().endsWith("vbaproject.bin"))) return false;
-    return zip.file("[Content_Types].xml") !== null && zip.file("xl/workbook.xml") !== null;
+    if (names.some((n) => ACTIVE_ENTRY.test(n))) return false;
+    const contentTypes = zip.file("[Content_Types].xml");
+    if (!contentTypes || zip.file("xl/workbook.xml") === null) return false;
+    const xml = await readBounded(contentTypes, CONTENT_TYPES_MAX_BYTES);
+    return xml !== null && !ACTIVE_CONTENT.test(xml);
   } catch {
     return false;
   }

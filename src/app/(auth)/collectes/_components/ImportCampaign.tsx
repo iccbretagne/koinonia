@@ -54,10 +54,18 @@ const rowClasses = "flex flex-col gap-1 border-t border-line px-4 py-3 first:bor
 
 /**
  * Import d'une définition de campagne (spec 090) : coller ou déposer un JSON, vérifier (aperçu
- * sans écriture), puis appliquer. `expectedKey` (mise à jour d'une campagne existante) refuse une
- * définition d'une autre campagne, qui en créerait une nouvelle.
+ * sans écriture), puis appliquer. En mise à jour, `campaignId` est envoyé : le serveur applique la
+ * définition à cette campagne, dans son église, et refuse une autre clé ; `expectedKey` l'annonce
+ * dès l'aperçu.
  */
-export default function ImportCampaign({ expectedKey }: { readonly expectedKey?: string }) {
+export default function ImportCampaign({
+  expectedKey,
+  campaignId,
+}: {
+  readonly expectedKey?: string;
+  /** Mise à jour d'une campagne existante : toujours envoyé, son église fait foi côté serveur. */
+  readonly campaignId?: string;
+}) {
   const router = useRouter();
   const toast = useToast();
   const [text, setText] = useState("");
@@ -97,7 +105,7 @@ export default function ImportCampaign({ expectedKey }: { readonly expectedKey?:
       const res = await fetch("/api/campaigns/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ definition, dryRun }),
+        body: JSON.stringify({ definition, dryRun, ...(campaignId ? { campaignId } : {}) }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {

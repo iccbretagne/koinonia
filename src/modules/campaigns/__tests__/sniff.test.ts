@@ -35,6 +35,21 @@ describe("sniffCampaignFile", () => {
     expect(await sniffCampaignFile(data, "export.xlsx")).toBeNull();
   });
 
+  it.each([
+    ["type de contenu macroEnabled", { "[Content_Types].xml": '<Types><Override ContentType="application/vnd.ms-excel.sheet.macroEnabled.main+xml"/></Types>' }],
+    ["type de contenu vbaProject", { "[Content_Types].xml": '<Types><Default Extension="bin" ContentType="application/vnd.ms-office.vbaProject"/></Types>' }],
+    ["type de contenu ActiveX", { "[Content_Types].xml": '<Types><Override ContentType="application/vnd.ms-office.activeX+xml"/></Types>' }],
+    ["feuille macro Excel 4", { "xl/macrosheets/sheet1.xml": "<xm:macrosheet/>" }],
+    ["contrôle ActiveX", { "xl/activeX/activeX1.xml": "<ax:ocx/>" }],
+  ])("classeur actif refusé : %s", async (_label, extra) => {
+    expect(await sniffCampaignFile(await zip({ ...XLSX_ENTRIES, ...extra }), "export.xlsx")).toBeNull();
+  });
+
+  it("[Content_Types].xml démesuré refusé (lecture bornée)", async () => {
+    const huge = `<Types>${" ".repeat(300 * 1024)}</Types>`;
+    expect(await sniffCampaignFile(await zip({ ...XLSX_ENTRIES, "[Content_Types].xml": huge }), "export.xlsx")).toBeNull();
+  });
+
   it("zip qui n'est pas un classeur refusé", async () => {
     expect(await sniffCampaignFile(await zip({ "a.txt": "a" }), "a.xlsx")).toBeNull();
   });

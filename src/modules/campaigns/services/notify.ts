@@ -194,14 +194,27 @@ export async function notifyChangesRequested(assignmentId: string, reason: strin
   });
 }
 
+/**
+ * Gestionnaires désignés **encore membres** de l'église de la campagne : un compte qui a quitté
+ * l'église n'en reçoit plus rien (même règle que `isCampaignManager`).
+ */
+async function activeManagerIds(campaignId: string, churchId: string): Promise<string[]> {
+  const rows = await prisma.campaignManager.findMany({
+    where: { campaignId, user: { churchRoles: { some: { churchId } } } },
+    select: { userId: true },
+  });
+  return rows.map((m) => m.userId);
+}
+
 /** Soumission : les gestionnaires désignés de la campagne (pas tous les Admins). */
 export async function notifyAssignmentSubmitted(assignmentId: string): Promise<void> {
   const a = await prisma.campaignAssignment.findUnique({
     where: { id: assignmentId },
-    select: { id: true, label: true, campaignId: true, form: { select: { title: true } }, campaign: { select: { title: true, managers: { select: { userId: true } } } } },
+    select: { id: true, label: true, campaignId: true, form: { select: { title: true } }, campaign: { select: { title: true, churchId: true } } },
   });
   if (!a) return;
-  const userIds = a.campaign.managers.map((m) => m.userId);
+  const userIds = await activeManagerIds(a.campaignId, a.campaign.churchId);
+  if (userIds.length === 0) return;
   try {
     await notifyUsers(userIds, {
       domain: DOMAIN,

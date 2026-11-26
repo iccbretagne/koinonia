@@ -6,6 +6,7 @@ const model = () => ({
   create: vi.fn(),
   update: vi.fn(),
   deleteMany: vi.fn(),
+  count: vi.fn(async () => 0),
 });
 const db = {
   campaign: model(),
@@ -17,6 +18,7 @@ const db = {
   campaignFile: model(),
   user: model(),
   $transaction: vi.fn((fn: (tx: unknown) => unknown) => fn(db)),
+  $queryRaw: vi.fn(async () => []),
 };
 
 vi.mock("@/lib/prisma", () => ({ prisma: db }));
@@ -84,6 +86,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   db.campaignAnswer.findMany.mockResolvedValue([]);
   db.campaignFile.findMany.mockResolvedValue([]);
+  db.campaignAnswer.count.mockResolvedValue(0);
+  db.campaignFile.count.mockResolvedValue(0);
   db.user.findMany.mockResolvedValue([{ id: "u-resp", email: "resp@exemple.org", name: "Resp", displayName: null }]);
 });
 
@@ -190,5 +194,32 @@ describe("importCampaign", () => {
     expect(db.campaign.update).not.toHaveBeenCalled();
     expect(db.campaignRespondent.create).toHaveBeenCalledWith(expect.objectContaining({ data: { assignmentId: "a1", userId: "u-resp", addedById: "u-admin" } }));
     expect(notifyRespondentAdded).toHaveBeenCalledWith("r-added");
+  });
+
+  it("réponse arrivée entre l'aperçu et l'application sur un code retiré : recomptée sous verrou, 409", async () => {
+    db.campaign.findUnique.mockResolvedValue(stored(definition()));
+    // Aperçu (hors transaction) : aucune réponse ; sous le verrou, une réponse à V2 est arrivée.
+    db.campaignAnswer.findMany.mockResolvedValue([]);
+    db.campaignAnswer.count.mockResolvedValue(1);
+    const without = definition([{ code: "V1", type: "integer", label: "Nouveaux venus", required: true, min: 0 }]);
+
+    await expect(importCampaign({ churchId: "ch1", definition: without, dryRun: false, actor, canCreate: false })).rejects.toMatchObject({ statusCode: 409 });
+    expect(db.$queryRaw).toHaveBeenCalledTimes(2);
+    expect(db.campaignAnswer.count).toHaveBeenCalledWith({
+      where: { OR: [{ assignmentId: { in: ["a1"] }, code: { in: ["V2"] } }] },
+    });
+    expect(db.campaignForm.update).not.toHaveBeenCalled();
+    expect(logAudit).not.toHaveBeenCalled();
+  });
+
+  it("fichier arrivé entre-temps sur un destinataire supprimé : 409, rien n'est supprimé", async () => {
+    const base = stored(definition());
+    base.forms[0].assignments.push({ id: "a2", key: "autre", label: "Autre", position: 1, dueAt: null, respondents: [] });
+    db.campaign.findUnique.mockResolvedValue(base);
+    db.campaignFile.count.mockResolvedValue(1);
+
+    await expect(importCampaign({ churchId: "ch1", definition: definition(), dryRun: false, actor, canCreate: false })).rejects.toMatchObject({ statusCode: 409 });
+    expect(db.campaignFile.count).toHaveBeenCalledWith({ where: { OR: [{ assignmentId: { in: ["a2"] } }] } });
+    expect(db.campaignAssignment.deleteMany).not.toHaveBeenCalled();
   });
 });

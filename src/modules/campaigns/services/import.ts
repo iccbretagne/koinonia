@@ -346,6 +346,7 @@ export async function importCampaign(input: ImportInput): Promise<ImportPreview>
   const addedRespondents: string[] = [];
   const campaignId = await prisma.$transaction(async (tx) => {
     let id: string;
+    if (existing) await assertNothingLost(tx, existing, def, preview);
     if (!existing) {
       const created = await tx.campaign.create({ data: { ...campaignData, churchId, key: c.key, createdById: actor.userId }, select: { id: true } });
       id = created.id;
@@ -429,6 +430,57 @@ export async function importCampaign(input: ImportInput): Promise<ImportPreview>
   }
 
   return { ...preview, campaignId, applied: true };
+}
+
+type ExistingCampaign = {
+  id: string;
+  forms: { id: string; key: string; assignments: { id: string; key: string }[] }[];
+};
+
+/**
+ * Revérifie, sous verrou, ce que l'aperçu a constaté hors transaction : aucune réponse ni aucun
+ * fichier n'est arrivé entre-temps sur un questionnaire ou un destinataire supprimé, ni sur une
+ * question retirée. Les verrous (campagne, puis toutes ses affectations) sont pris **avant** toute
+ * lecture simple, pour que les comptes voient les écritures validées (sauvegarde et dépôt
+ * verrouillent la même ligne d'affectation). Sinon 409.
+ */
+async function assertNothingLost(
+  tx: Prisma.TransactionClient,
+  existing: ExistingCampaign,
+  def: CampaignDefinition,
+  preview: ImportPreview
+): Promise<void> {
+  await tx.$queryRaw`SELECT id FROM campaigns WHERE id = ${existing.id} FOR UPDATE`;
+  await tx.$queryRaw`SELECT id FROM campaign_assignments WHERE campaignId = ${existing.id} FOR UPDATE`;
+
+  const removedAssignmentIds: string[] = [];
+  const removedCodes: { assignmentIds: string[]; codes: string[] }[] = [];
+  for (const form of existing.forms) {
+    const next = def.forms.find((f) => f.key === form.key);
+    if (!next) {
+      removedAssignmentIds.push(...form.assignments.map((a) => a.id));
+      continue;
+    }
+    const kept = form.assignments.filter((a) => next.assignments.some((x) => x.key === a.key));
+    removedAssignmentIds.push(...form.assignments.filter((a) => !kept.includes(a)).map((a) => a.id));
+    const codes = preview.forms.find((f) => f.key === form.key)?.itemsRemoved ?? [];
+    if (codes.length && kept.length) removedCodes.push({ assignmentIds: kept.map((a) => a.id), codes });
+  }
+
+  const conditions = [
+    ...(removedAssignmentIds.length ? [{ assignmentId: { in: removedAssignmentIds } }] : []),
+    ...removedCodes.map((r) => ({ assignmentId: { in: r.assignmentIds }, code: { in: r.codes } })),
+  ];
+  const fileConditions = [
+    ...(removedAssignmentIds.length ? [{ assignmentId: { in: removedAssignmentIds } }] : []),
+    ...removedCodes.map((r) => ({ assignmentId: { in: r.assignmentIds }, requestCode: { in: r.codes } })),
+  ];
+  if (conditions.length === 0) return;
+  const answers = await tx.campaignAnswer.count({ where: { OR: conditions } });
+  const files = await tx.campaignFile.count({ where: { OR: fileConditions } });
+  if (answers > 0 || files > 0) {
+    throw new ApiError(409, "Import refusé : des réponses ou des fichiers ont été saisis entre-temps sur un élément supprimé ; vérifiez de nouveau");
+  }
 }
 
 function countActions(list: readonly { action: ImportAction }[]): Partial<Record<ImportAction, number>> {

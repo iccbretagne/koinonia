@@ -3,10 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
 import { logger } from "@/lib/logger";
 import { FILE_ACCEPT, FILE_REQUEST_MAX_FILES } from "../schemas";
-import { assertEditable, type AssignmentAccess } from "../auth";
+import type { Prisma } from "@/generated/prisma/client";
+import { assertEditable, type AssignmentAccess, type AssignmentContext } from "../auth";
 import { itemIndex } from "./definition";
 import { CAMPAIGN_FILE_MAX_BYTES, sniffCampaignFile } from "./sniff";
-import { auditCampaign, formSections } from "./assignments";
+import { auditCampaign, formSections, lockAssignment } from "./assignments";
 
 /**
  * Fichiers des demandes de fichier (spec 090) : stockage privé, type vérifié sur le contenu
@@ -40,18 +41,38 @@ const FILE_SELECT = {
  * Dépôt et retrait : répondant tant que la saisie est ouverte ; gestionnaire tant que la
  * campagne n'est pas clôturée (correction à sa place).
  */
-function assertCanChangeFiles(access: AssignmentAccess) {
+function assertCanChangeFiles(access: AssignmentAccess, current: Pick<AssignmentContext, "status" | "campaignStatus"> = access.assignment) {
   if (access.role === "manager") {
-    if (access.assignment.campaignStatus === "CLOSED") throw new ApiError(409, "La campagne est clôturée");
+    if (current.campaignStatus === "CLOSED") throw new ApiError(409, "La campagne est clôturée");
     return;
   }
-  assertEditable(access.assignment);
+  assertEditable(current);
 }
 
-/** Nom affiché : caractères sûrs seulement, 200 au plus (comme les justificatifs de la navette). */
+/**
+ * Dans la transaction : verrouille l'affectation (comme la sauvegarde et la soumission) puis
+ * revérifie la même règle sur l'état en base (soumission ou clôture entre-temps).
+ */
+async function lockAndAssertCanChangeFiles(tx: Prisma.TransactionClient, access: AssignmentAccess) {
+  await lockAssignment(tx, access.assignment.id);
+  const current = await tx.campaignAssignment.findUnique({
+    where: { id: access.assignment.id },
+    select: { status: true, campaign: { select: { status: true } } },
+  });
+  if (!current) throw new ApiError(404, FILE_NOT_FOUND);
+  assertCanChangeFiles(access, { status: current.status, campaignStatus: current.campaign.status });
+}
+
+/**
+ * Nom affiché : caractères sûrs seulement, 200 au plus (comme les justificatifs de la navette),
+ * extension **forcée** au type reconnu sur le contenu (`.xlsm` déposé ⇒ `.xlsx`, sans extension
+ * ⇒ ajoutée) : le nom téléchargé ne contredit jamais le type servi.
+ */
 export function cleanFileName(name: string, ext: string): string {
-  const base = (name || `fichier.${ext}`).replace(/[^\p{L}\p{N}._ -]/gu, "_").trim();
-  return (base || `fichier.${ext}`).slice(0, 200);
+  const suffix = `.${ext}`;
+  const safe = (name || "").replace(/[^\p{L}\p{N}._ -]/gu, "_").trim();
+  const stem = safe.replace(/\.[^.]*$/, "").replace(/[. ]+$/, "").trim() || "fichier";
+  return `${stem.slice(0, 200 - suffix.length)}${suffix}`;
 }
 
 export async function storeCampaignFile(access: AssignmentAccess, requestCode: string, file: File): Promise<CampaignFileView> {
@@ -84,6 +105,10 @@ export async function storeCampaignFile(access: AssignmentAccess, requestCode: s
   let created: CampaignFileView;
   try {
     created = await prisma.$transaction(async (tx) => {
+      await lockAndAssertCanChangeFiles(tx, access);
+      // Recompté sous le verrou : deux dépôts simultanés ne dépassent pas le maximum.
+      const current = await tx.campaignFile.count({ where: { assignmentId: assignment.id, requestCode } });
+      if (current >= maxFiles) throw new ApiError(409, `${maxFiles} fichier(s) au plus pour cette demande : retirez-en un d'abord`);
       const row = await tx.campaignFile.create({
         data: {
           assignmentId: assignment.id,
@@ -163,7 +188,11 @@ export async function readCampaignFile(access: AssignmentAccess, fileId: string)
 export async function deleteCampaignFile(access: AssignmentAccess, fileId: string) {
   assertCanChangeFiles(access);
   const file = await findFile(access, fileId);
-  await prisma.campaignFile.delete({ where: { id: file.id } });
+  await prisma.$transaction(async (tx) => {
+    await lockAndAssertCanChangeFiles(tx, access);
+    const removed = await tx.campaignFile.deleteMany({ where: { id: file.id, assignmentId: access.assignment.id } });
+    if (removed.count !== 1) throw new ApiError(404, FILE_NOT_FOUND);
+  });
   const { deleteFile } = await import("@/lib/file-storage");
   await deleteFile(file.storageKey).catch(() => logger.error("Campagne : objet supprimé de la base, pas du stockage"));
   await auditCampaign(access, "DELETE", "CampaignFile", file.id, { assignmentId: file.assignmentId, requestCode: file.requestCode });

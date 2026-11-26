@@ -21,7 +21,7 @@ export default async function ReimportCampaignPage({ params }: Props) {
         title="Mettre à jour la définition"
         description="Les questionnaires, destinataires et répondants sont rapprochés par leur clé : rien n'est dupliqué. Une modification qui ferait perdre des réponses est refusée. L'état de la campagne ne change pas."
       />
-      <ImportCampaign expectedKey={campaign.key} />
+      <ImportCampaign expectedKey={campaign.key} campaignId={id} />
     </div>
   );
 }

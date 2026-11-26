@@ -89,15 +89,18 @@ function fileCounts(files: readonly { requestCode: string }[]): Map<string, numb
   return counts;
 }
 
-/** Alertes locales et complétude, recalculées depuis la base. */
-async function computeState(assignmentId: string, items: readonly DefinitionItem[], rules: unknown) {
-  const [answers, files] = await Promise.all([
-    prisma.campaignAnswer.findMany({
-      where: { assignmentId },
-      select: { code: true, value: true, qualifier: true, note: true },
-    }),
-    prisma.campaignFile.findMany({ where: { assignmentId }, select: { requestCode: true } }),
-  ]);
+/** Alertes locales et complétude, recalculées depuis la base (dans `client` s'il est fourni). */
+async function computeState(
+  assignmentId: string,
+  items: readonly DefinitionItem[],
+  rules: unknown,
+  client: Prisma.TransactionClient = prisma
+) {
+  const answers = await client.campaignAnswer.findMany({
+    where: { assignmentId },
+    select: { code: true, value: true, qualifier: true, note: true },
+  });
+  const files = await client.campaignFile.findMany({ where: { assignmentId }, select: { requestCode: true } });
   const byCode = answerMap(answers);
   return {
     alerts: evaluateRules(localRules(rules, items), byCode),
@@ -311,8 +314,17 @@ export async function listMyAssignments(session: Session): Promise<MyAssignment[
 
 // ── Saisie ─────────────────────────────────────────────────────────────────────────────────────
 
-/** Revérifie en base que la saisie est toujours ouverte (soumission ou clôture entre-temps). */
+/**
+ * Verrouille la ligne de l'affectation jusqu'à la fin de la transaction : sauvegarde, soumission,
+ * dépôt et retrait de fichier s'y sérialisent (jamais d'écriture après une soumission concurrente).
+ */
+export async function lockAssignment(tx: Prisma.TransactionClient, assignmentId: string): Promise<void> {
+  await tx.$queryRaw`SELECT id FROM campaign_assignments WHERE id = ${assignmentId} FOR UPDATE`;
+}
+
+/** Verrouille puis revérifie en base que la saisie est toujours ouverte (soumission ou clôture entre-temps). */
 async function assertStillEditable(tx: Prisma.TransactionClient, assignmentId: string) {
+  await lockAssignment(tx, assignmentId);
   const current = await tx.campaignAssignment.findUnique({
     where: { id: assignmentId },
     select: { status: true, campaign: { select: { status: true } } },
@@ -386,24 +398,29 @@ export async function submitAssignment(access: AssignmentAccess) {
   const { form, index, items, rules } = await loadFormContext(access);
   const assignmentId = access.assignment.id;
 
-  const state = await computeState(assignmentId, items, rules);
-  if (state.completeness.missing.length > 0) {
-    const labels = state.completeness.missing.map((code) => index.get(code)?.label ?? code);
-    throw new ApiError(400, `Réponses manquantes : ${labels.join(" ; ")}`);
-  }
-
   const now = new Date();
-  const updated = await prisma.campaignAssignment.updateMany({
-    where: { id: assignmentId, status: { in: [...EDITABLE_STATUSES] }, campaign: { status: "OPEN" } },
-    data: {
-      status: "SUBMITTED",
-      submittedAt: now,
-      submittedById: actorUserId(access.actor),
-      submittedByName: access.actor.name.slice(0, 150),
-      definitionRevision: form.revision,
-    },
+  // Verrou, état et complétude dans la même transaction : aucune sauvegarde ni retrait de fichier
+  // ne peut s'intercaler entre le contrôle des obligatoires et la soumission.
+  const state = await prisma.$transaction(async (tx) => {
+    await assertStillEditable(tx, assignmentId);
+    const state = await computeState(assignmentId, items, rules, tx);
+    if (state.completeness.missing.length > 0) {
+      const labels = state.completeness.missing.map((code) => index.get(code)?.label ?? code);
+      throw new ApiError(400, `Réponses manquantes : ${labels.join(" ; ")}`);
+    }
+    const updated = await tx.campaignAssignment.updateMany({
+      where: { id: assignmentId, status: { in: [...EDITABLE_STATUSES] }, campaign: { status: "OPEN" } },
+      data: {
+        status: "SUBMITTED",
+        submittedAt: now,
+        submittedById: actorUserId(access.actor),
+        submittedByName: access.actor.name.slice(0, 150),
+        definitionRevision: form.revision,
+      },
+    });
+    if (updated.count !== 1) throw new ApiError(409, "Ce questionnaire n'est plus modifiable");
+    return state;
   });
-  if (updated.count !== 1) throw new ApiError(409, "Ce questionnaire n'est plus modifiable");
 
   await auditCampaign(access, "UPDATE", "CampaignAssignment", assignmentId, { status: "SUBMITTED" });
   await notifyAssignmentSubmitted(assignmentId);
@@ -534,12 +551,11 @@ export async function addRespondent(access: AssignmentAccess & { role: "manager"
   const assignmentId = access.assignment.id;
   const addedById = actorUserId(access.actor);
   let respondentId: string;
-  let auditName: string;
 
   if ("userId" in input) {
     const role = await prisma.userChurchRole.findFirst({
       where: { userId: input.userId, churchId: access.assignment.churchId },
-      select: { user: { select: { name: true, displayName: true, email: true } } },
+      select: { userId: true },
     });
     if (!role) throw new ApiError(400, "Ce compte n'a pas de rôle dans l'église de la campagne");
     const existing = await prisma.campaignRespondent.findUnique({
@@ -552,7 +568,6 @@ export async function addRespondent(access: AssignmentAccess & { role: "manager"
       select: { id: true },
     });
     respondentId = created.id;
-    auditName = role.user.displayName ?? role.user.name ?? "Compte";
   } else {
     const email = input.email.trim().toLowerCase();
     const name = input.name.trim();
@@ -573,10 +588,12 @@ export async function addRespondent(access: AssignmentAccess & { role: "manager"
       });
       return created.id;
     });
-    auditName = name;
   }
 
-  await auditCampaign(access, "CREATE", "CampaignRespondent", respondentId, { assignmentId, name: auditName });
+  await auditCampaign(access, "CREATE", "CampaignRespondent", respondentId, {
+    assignmentId,
+    ...("userId" in input ? { userId: input.userId } : { kind: "guest" }),
+  });
   if (access.assignment.campaignStatus === "OPEN") await notifyRespondentAdded(respondentId);
 
   const row = await prisma.campaignRespondent.findUniqueOrThrow({ where: { id: respondentId }, select: RESPONDENT_SELECT });
@@ -598,7 +615,7 @@ export async function removeRespondent(access: AssignmentAccess & { role: "manag
   await prisma.campaignRespondent.delete({ where: { id: r.id } });
   await auditCampaign(access, "DELETE", "CampaignRespondent", r.id, {
     assignmentId: access.assignment.id,
-    name: respondentView(r).name,
+    ...(r.userId ? { userId: r.userId } : { kind: "guest" }),
   });
   return { deleted: true as const };
 }
@@ -617,7 +634,6 @@ export async function regenerateRespondentLink(access: AssignmentAccess & { role
   });
   await auditCampaign(access, "UPDATE", "CampaignRespondent", r.id, {
     assignmentId: access.assignment.id,
-    name: respondentView(r).name,
     link: "regenerated",
   });
   if (access.assignment.campaignStatus === "OPEN") await notifyRespondentAdded(r.id);

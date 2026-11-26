@@ -335,6 +335,11 @@ export type StoredFormDefinition = z.infer<typeof storedFormDefinitionSchema>;
 export const importBodySchema = z.object({
   definition: z.unknown(),
   dryRun: z.boolean().default(true),
+  /**
+   * Mise à jour d'une campagne existante : son église fait foi (pas l'église courante), et la clé
+   * de la définition doit être la sienne.
+   */
+  campaignId: z.string().min(1).max(64).optional(),
 });
 
 export const campaignSettingsSchema = z

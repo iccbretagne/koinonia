@@ -14,21 +14,21 @@
 - [x] Fichiers : dépôt (type par contenu), téléchargement, suppression
 - [x] Répondants (compte / sans compte), liens personnels
 - [x] Routes à jeton `/api/campaigns/public/[token]/*`
-- [ ] Pages `/collectes`, `/collectes/r/[assignmentId]`, `/collecte/[token]` (mobile d'abord)
+- [x] Pages `/collectes`, `/collectes/r/[assignmentId]`, `/collecte/[token]` (mobile d'abord)
 
 ## Lot 3 — Pilotage
 - [x] Avancement, contrôles croisés, demande de correction, validation (case Pasteure), relance
 - [x] Exports XLSX/CSV
 - [x] Notifications (domaine `campaigns`), tâche cron (relance J-2, purge des fichiers)
-- [ ] Pages `/collectes/[id]`, `/collectes/import`, `/collectes/[id]/import` ; carte Accueil ; navigation
+- [x] Pages `/collectes/[id]`, `/collectes/import`, `/collectes/[id]/import` ; carte Accueil ; navigation
 
 ## Lot 4 — F9
 - [x] `f9-2026.json` (79 codes, codes internes `M0_C`, `M1_C`, `N`, `I*_FIN`) + test de couverture
-- [ ] Guide d'utilisation (`docs/`), fiches de l'assistant
+- [x] Guide d'utilisation (`docs/`), fiches de l'assistant
 
 ## Lot 5 — MCP
-- [ ] Lectures `campaigns_list`, `campaign_progress` ; actions import et statut (aperçu → confirmation)
+- [x] Lectures `campaigns_list`, `campaign_progress` ; actions import et statut (aperçu → confirmation)
 
 ## Finition
-- [ ] `npm run openapi`, typecheck, lint, lint:boundaries, tests, build
+- [x] `npm run openapi`, typecheck, lint, lint:boundaries, tests, build
 - [x] `CLAUDE.md` (spécificités du module), `docs/database.md`, CHANGELOG

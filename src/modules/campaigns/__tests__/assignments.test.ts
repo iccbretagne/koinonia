@@ -28,6 +28,7 @@ const db = {
   campaignFile: model(),
   userChurchRole: model(),
   $transaction: vi.fn((fn: (tx: unknown) => unknown) => fn(db)),
+  $queryRaw: vi.fn(async (..._args: unknown[]) => [] as unknown[]),
 };
 
 vi.mock("@/lib/prisma", () => ({ prisma: db }));
@@ -46,8 +47,9 @@ vi.mock("@/lib/file-storage", () => storage);
 
 process.env.CAMPAIGNS_TOKEN_SECRET = "secret-de-test";
 
-const { saveAnswers, submitAssignment, reviewAssignment, getAssignmentView } = await import("../services/assignments");
-const { storeCampaignFile, readCampaignFile } = await import("../services/files");
+const { saveAnswers, submitAssignment, reviewAssignment, getAssignmentView, addRespondent, removeRespondent, regenerateRespondentLink } =
+  await import("../services/assignments");
+const { storeCampaignFile, readCampaignFile, deleteCampaignFile, cleanFileName } = await import("../services/files");
 const { requireTokenAccess } = await import("../auth");
 const { respondentTokenPair } = await import("../services/tokens");
 
@@ -286,5 +288,151 @@ describe("storeCampaignFile", () => {
   it("question qui n'attend pas de fichier : 400", async () => {
     assignmentStatus = "IN_PROGRESS";
     await expect(storeCampaignFile(access(), "A", new File(["%PDF-1.4"], "a.pdf"))).rejects.toMatchObject({ statusCode: 400 });
+  });
+});
+
+/** Texte SQL d'un appel à `$queryRaw` (gabarit étiqueté). */
+const sqlOf = (call: unknown[]) => (call[0] as readonly string[]).join("?");
+
+async function xlsxBytes() {
+  const zip = new JSZip();
+  zip.file("[Content_Types].xml", "<Types/>");
+  zip.file("xl/workbook.xml", "<workbook/>");
+  return zip.generateAsync({ type: "uint8array" });
+}
+
+describe("verrou de l'affectation", () => {
+  it("sauvegarde : ligne verrouillée puis état relu dans la transaction", async () => {
+    await saveAnswers(access(), [{ code: "A", value: 1 }]);
+    expect(sqlOf(db.$queryRaw.mock.calls[0])).toMatch(/SELECT id FROM campaign_assignments WHERE id = \? FOR UPDATE/);
+    expect(db.$queryRaw.mock.calls[0][1]).toBe("as1");
+  });
+
+  it("sauvegarde : soumis entre la garde et la transaction ⇒ 409, rien n'est écrit", async () => {
+    const stale = access();
+    assignmentStatus = "SUBMITTED";
+    await expect(saveAnswers(stale, [{ code: "A", value: 1 }])).rejects.toMatchObject({ statusCode: 409 });
+    expect(db.campaignAnswer.upsert).not.toHaveBeenCalled();
+  });
+
+  it("soumission : complétude recalculée sous le verrou (réponse effacée entre-temps ⇒ 400)", async () => {
+    assignmentStatus = "IN_PROGRESS";
+    answers.set("A", { code: "A", value: 1, qualifier: "EXACT", note: null });
+    answers.set("B", { code: "B", value: 1, qualifier: "EXACT", note: null });
+    // La réponse B disparaît dès que le verrou est pris (sauvegarde concurrente validée avant).
+    db.$queryRaw.mockImplementationOnce(async () => {
+      answers.delete("B");
+      return [];
+    });
+    await expect(submitAssignment(access())).rejects.toMatchObject({ statusCode: 400, message: expect.stringContaining("Nombre B") });
+    expect(db.campaignAssignment.updateMany).not.toHaveBeenCalled();
+    expect(notify.notifyAssignmentSubmitted).not.toHaveBeenCalled();
+  });
+
+  it("soumission : déjà soumise par un autre sous le verrou ⇒ 409", async () => {
+    assignmentStatus = "IN_PROGRESS";
+    answers.set("A", { code: "A", value: 1, qualifier: "EXACT", note: null });
+    answers.set("B", { code: "B", value: 1, qualifier: "EXACT", note: null });
+    const stale = access();
+    db.$queryRaw.mockImplementationOnce(async () => {
+      assignmentStatus = "SUBMITTED";
+      return [];
+    });
+    await expect(submitAssignment(stale)).rejects.toMatchObject({ statusCode: 409 });
+    expect(db.campaignAssignment.updateMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("fichiers sous verrou", () => {
+  beforeEach(() => {
+    db.campaignFile.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({ id: "file1", ...data }));
+    db.campaignAnswer.findUnique.mockResolvedValue(null);
+  });
+
+  it("dépôt : maximum recompté sous le verrou ⇒ 409 et objet stocké retiré", async () => {
+    assignmentStatus = "IN_PROGRESS";
+    // Avant le stockage : 0 ; sous le verrou : un dépôt concurrent a pris la place.
+    db.campaignFile.count.mockResolvedValueOnce(0).mockResolvedValueOnce(1);
+    db.campaignForm.findUnique.mockResolvedValue({
+      revision: 3,
+      definition: { sections: [{ key: "s", title: "S", items: [{ code: "F", type: "file_request", label: "Export", accept: ["xlsx"], maxFiles: 1 }] }] },
+      campaign: { rules: [] },
+    });
+    await expect(storeCampaignFile(access(), "F", new File([(await xlsxBytes()) as BlobPart], "x.xlsx"))).rejects.toMatchObject({ statusCode: 409 });
+    expect(db.campaignFile.create).not.toHaveBeenCalled();
+    expect(storage.deleteFile).toHaveBeenCalledTimes(1);
+    expect(sqlOf(db.$queryRaw.mock.calls[0])).toMatch(/campaign_assignments .* FOR UPDATE/);
+  });
+
+  it("dépôt : soumis entre-temps (répondant) ⇒ 409 ; gestionnaire accepté tant que non clôturée", async () => {
+    assignmentStatus = "IN_PROGRESS";
+    const stale = access();
+    db.campaignFile.count.mockResolvedValue(0);
+    assignmentStatus = "SUBMITTED";
+    await expect(storeCampaignFile(stale, "F", new File([(await xlsxBytes()) as BlobPart], "x.xlsx"))).rejects.toMatchObject({ statusCode: 409 });
+    expect(db.campaignFile.create).not.toHaveBeenCalled();
+
+    await expect(storeCampaignFile(access("manager"), "F", new File([(await xlsxBytes()) as BlobPart], "x.xlsx"))).resolves.toMatchObject({ id: "file1" });
+    campaignStatus = "CLOSED";
+    const base = access("manager") as { assignment: Record<string, unknown> };
+    const closed = { ...base, assignment: { ...base.assignment, campaignStatus: "OPEN" } } as never;
+    await expect(storeCampaignFile(closed, "F", new File([(await xlsxBytes()) as BlobPart], "x.xlsx"))).rejects.toMatchObject({ statusCode: 409 });
+  });
+
+  it("retrait : revérifié sous le verrou (soumis entre-temps ⇒ 409, rien n'est supprimé)", async () => {
+    assignmentStatus = "IN_PROGRESS";
+    const stale = access();
+    db.campaignFile.findUnique.mockResolvedValue({ id: "file1", assignmentId: "as1", storageKey: "k", requestCode: "F" });
+    assignmentStatus = "SUBMITTED";
+    await expect(deleteCampaignFile(stale, "file1")).rejects.toMatchObject({ statusCode: 409 });
+    expect(db.campaignFile.deleteMany).not.toHaveBeenCalled();
+    expect(storage.deleteFile).not.toHaveBeenCalled();
+
+    assignmentStatus = "IN_PROGRESS";
+    db.campaignFile.deleteMany.mockResolvedValue({ count: 1 });
+    await expect(deleteCampaignFile(access(), "file1")).resolves.toEqual({ deleted: true });
+    expect(storage.deleteFile).toHaveBeenCalledWith("k");
+  });
+
+  it("nom stocké : extension forcée au type reconnu", () => {
+    expect(cleanFileName("export.xlsm", "xlsx")).toBe("export.xlsx");
+    expect(cleanFileName("rapport", "pdf")).toBe("rapport.pdf");
+    expect(cleanFileName("liste.txt", "csv")).toBe("liste.csv");
+    expect(cleanFileName("", "pdf")).toBe("fichier.pdf");
+    expect(cleanFileName(".xlsx", "xlsx")).toBe("fichier.xlsx");
+    expect(cleanFileName(`${"a".repeat(300)}.pdf`, "pdf")).toHaveLength(200);
+    expect(cleanFileName(`${"a".repeat(300)}.pdf`, "pdf").endsWith(".pdf")).toBe(true);
+  });
+});
+
+describe("journal des répondants", () => {
+  const manager = () => access("manager") as never;
+
+  it("ajout, retrait et nouveau lien : identifiants seulement, jamais de nom ni d'email", async () => {
+    // Compte de l'église.
+    db.userChurchRole.findFirst.mockResolvedValue({ userId: "u2" });
+    db.campaignRespondent.findUnique.mockResolvedValue(null);
+    db.campaignRespondent.create.mockResolvedValue({ id: "r2" });
+    db.campaignRespondent.findUniqueOrThrow.mockResolvedValue({
+      id: "r2", userId: "u2", name: null, email: null, tokenHash: null, createdAt: new Date(),
+      user: { name: "Carole Martin", displayName: null, email: "carole@exemple.org" },
+    });
+    await addRespondent(manager(), { userId: "u2" });
+
+    // Sans compte.
+    db.campaignRespondent.findFirst.mockResolvedValueOnce(null);
+    db.campaignRespondent.create.mockResolvedValue({ id: "r3" });
+    await addRespondent(manager(), { name: "Denis Durand", email: "denis@exemple.org" });
+
+    const guest = { id: "r3", userId: null, name: "Denis Durand", email: "denis@exemple.org", tokenHash: "h", tokenSalt: "s", createdAt: new Date(), user: null };
+    db.campaignRespondent.findFirst.mockResolvedValue(guest);
+    await regenerateRespondentLink(manager(), "r3");
+    await removeRespondent(manager(), "r3");
+
+    expect(logAudit).toHaveBeenCalledTimes(4);
+    const logged = JSON.stringify(logAudit.mock.calls);
+    expect(logged).not.toMatch(/Carole|Denis|exemple\.org/);
+    expect(logAudit.mock.calls[0][0].details).toMatchObject({ assignmentId: "as1", userId: "u2" });
+    expect(logAudit.mock.calls[3][0]).toMatchObject({ entityType: "CampaignRespondent", entityId: "r3", action: "DELETE" });
   });
 });
