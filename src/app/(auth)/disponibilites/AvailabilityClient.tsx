@@ -238,6 +238,8 @@ interface Props {
   readonly initialMonth: string | null;
   readonly focusEventId: string | null;
   readonly initialMemberId: string | null;
+  /** `?declarer=1` : ouvre le formulaire d'indisponibilité à l'arrivée. */
+  readonly initialDeclare?: boolean;
 }
 
 export default function AvailabilityClient({
@@ -251,6 +253,7 @@ export default function AvailabilityClient({
   initialMonth,
   focusEventId,
   initialMemberId,
+  initialDeclare = false,
 }: Props) {
   const toast = useToast();
   const [memberId, setMemberId] = useState(initialMemberId ?? selfMembers[0]?.id ?? "");
@@ -260,7 +263,7 @@ export default function AvailabilityClient({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
-  const [periodOpen, setPeriodOpen] = useState(false);
+  const [periodOpen, setPeriodOpen] = useState(initialDeclare && selfMembers.length > 0);
   const [editingPeriod, setEditingPeriod] = useState<EditablePeriod | null>(null);
   const [periodsKey, setPeriodsKey] = useState(0);
   const [pendingSave, setPendingSave] = useState<{ event: EventRow; answers: AnswerInput[] } | null>(null);

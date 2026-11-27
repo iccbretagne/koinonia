@@ -5,11 +5,16 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { PageHeader, buttonClasses } from "@/components/ui";
 import AccountingDashboard from "./AccountingDashboard";
-import { getJustificationSettings, isJustificationClaimable, isRequestArchived } from "@/modules/accounting";
+import { accountingQueueCounts, getJustificationSettings, isJustificationClaimable, isRequestArchived } from "@/modules/accounting";
+import { accountingFilterFromParam } from "@/lib/opening-params";
 import JustificationSettingsCard from "./JustificationSettingsCard";
 import { paths } from "@/lib/paths";
 
-export default async function AccountingRequestsPage() {
+export default async function AccountingRequestsPage({
+  searchParams,
+}: {
+  readonly searchParams: Promise<{ filtre?: string }>;
+}) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
@@ -78,21 +83,24 @@ export default async function AccountingRequestsPage() {
   const now = new Date();
   const justificationOf = (j: { status: string; dueAt: Date } | null) =>
     j && j.status !== "SETTLED" ? { status: j.status, late: j.status === "AWAITING" && j.dueAt <= now } : null;
-  const settings = canManage ? await getJustificationSettings(churchId) : null;
+  // Avec `accounting:manage`, les files viennent du même compte que l'Accueil (spec 092).
+  const [settings, queue] = canManage
+    ? await Promise.all([getJustificationSettings(churchId), accountingQueueCounts(churchId)])
+    : [null, null];
 
   // Statistiques simplifiées
   const stats = {
-    submitted:  requests.filter((r) => r.status === "SUBMITTED").length,
-    processing: requests.filter((r) => r.status === "PROCESSING").length,
+    submitted:  queue?.submitted ?? requests.filter((r) => r.status === "SUBMITTED").length,
+    processing: queue?.processing ?? requests.filter((r) => r.status === "PROCESSING").length,
     approved:   requests.filter((r) => r.status === "APPROVED").length,
     rejected:   requests.filter((r) => r.status === "REJECTED").length,
     totalAmount: requests
       .filter((r) => r.status !== "CANCELLED" && r.status !== "REJECTED")
       .reduce((sum, r) => sum + Number(r.amount), 0),
-    pendingPayments: requests
+    pendingPayments: queue?.toPay ?? requests
       .flatMap((r) => r.payments)
       .filter((p) => !p.releasedAt).length,
-    toJustify: requests.filter((r) => justificationOf(r.justification)).length,
+    toJustify: queue?.toJustify ?? requests.filter((r) => justificationOf(r.justification)).length,
   };
 
   return (
@@ -129,6 +137,7 @@ export default async function AccountingRequestsPage() {
         stats={stats}
         canManage={canManage}
         currentUserId={session.user.id!}
+        initialStatusFilter={accountingFilterFromParam((await searchParams).filtre)}
       />
 
       {settings && <JustificationSettingsCard initial={settings} />}

@@ -289,26 +289,26 @@ describe("bottomDestinations", () => {
   const labels = (input: NavigationInput, role: Parameters<typeof bottomDestinations>[1]["role"]) =>
     bottomDestinations(buildSpaces(input), { role }).map((d) => d.label);
 
-  it("STAR : Mon planning · Événements · Demandes (l'Accueil mène à la même page que Mon planning)", () => {
-    expect(labels(star, "STAR")).toEqual(["Mon planning", "Événements", "Demandes"]);
+  it("STAR : Mon planning · Calendrier (l'Accueil mène à la même page que Mon planning ; Mes demandes au lot 3)", () => {
+    expect(labels(star, "STAR")).toEqual(["Mon planning", "Calendrier"]);
   });
 
   it("Resp. département : Planning · Événements · Personnes", () => {
     expect(labels(deptHead, "DEPARTMENT_HEAD")).toEqual(["Planning", "Événements", "Personnes"]);
   });
 
-  it("Admin : Accueil · Événements · Demandes · Personnes", () => {
-    expect(labels({ ...admin, homeHref: "/aujourdhui" }, "ADMIN")).toEqual(["Accueil", "Événements", "Demandes", "Personnes"]);
+  it("Admin : Accueil · Événements · Personnes · Planning (spec 092, rôle principal)", () => {
+    expect(labels({ ...admin, homeHref: "/aujourdhui" }, "ADMIN")).toEqual(["Accueil", "Événements", "Personnes", "Planning"]);
   });
 
   it("n'invente pas de destination : un espace externe seul ou absent est écarté", () => {
     const reporter: NavigationInput = { ...star, hasMyPlanning: false, hasAbsences: false, hasAvailability: false, showStarEvents: false, hasEventsAccess: true, requestLinks: [], homeHref: "/profile" };
-    expect(labels(reporter, "REPORTER")).toEqual(["Accueil", "Événements"]);
+    expect(labels(reporter, "REPORTER")).toEqual(["Accueil", "Calendrier"]);
   });
 
-  it("Comptable : Accueil · Demandes comptables", () => {
+  it("Comptable : Accueil · Demandes (comptables)", () => {
     const accountant: NavigationInput = { departments: [], configLinks: [], requestLinks: [], mediaLinks: [], hasAccounting: true, hasAccountingManage: true, homeHref: "/profile" };
-    expect(labels(accountant, "ACCOUNTANT")).toEqual(["Accueil", "Demandes comptables"]);
+    expect(labels(accountant, "ACCOUNTANT")).toEqual(["Accueil", "Demandes"]);
   });
 
   it("vue pastorale : « Mes membres » mène à la page pastorale, comme la barre latérale (spec 092)", () => {

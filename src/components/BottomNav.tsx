@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Ellipsis, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { isDestinationActive, type ActiveNav, type BottomDestination } from "@/lib/navigation";
+import { activeDestinationKey, type ActiveNav, type BottomDestination } from "@/lib/navigation";
 
 interface BottomNavProps {
   readonly destinations: readonly BottomDestination[];
@@ -39,13 +39,13 @@ function Item({ icon: Icon, label, active, badge }: { readonly icon: LucideIcon;
 }
 
 /**
- * Barre du bas mobile (docs/design-system/components/BottomNav.md) : jusqu'à quatre destinations
+ * Barre du bas mobile (docs/design-system/components/BottomNav.md) : l'Accueil et au plus trois destinations
  * adaptées au rôle (`bottomDestinations`), puis « Plus », actif quand la page courante
  * n'appartient à aucune d'elles.
  */
 export default function BottomNav({ destinations, active, moreBadge, moreOpen = false, onMoreOpen }: BottomNavProps) {
   const pathname = usePathname();
-  const activeKey = destinations.find((d) => isDestinationActive(d, active, pathname))?.key ?? null;
+  const activeKey = activeDestinationKey(destinations, active, pathname);
   const moreActive = moreOpen || activeKey === null;
   let moreLabel = "Plus";
   if (moreBadge) {

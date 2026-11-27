@@ -6,6 +6,7 @@ export {
   submitApplication,
   listApplications,
   hasServingAccess,
+  countServingQueue,
   getApplication,
   rejectApplication,
   linkMember,

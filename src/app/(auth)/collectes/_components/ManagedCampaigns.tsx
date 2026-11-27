@@ -16,11 +16,54 @@ import { paths } from "@/lib/paths";
  * Les boutons « Nouvelle campagne » et « Importer » n'apparaissent qu'avec `campaigns:manage` dans cette église. Rien n'est rendu si
  * je ne pilote aucune campagne et ne peux pas en créer.
  */
-export default async function ManagedCampaigns({ session }: { readonly session: Session }) {
+export default async function ManagedCampaigns({
+  session,
+  toValidate = false,
+}: {
+  readonly session: Session;
+  /** `?a-valider=1` (spec 092) : seulement les campagnes qui ont des contributions soumises à valider. */
+  readonly toValidate?: boolean;
+}) {
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return null;
   const [{ managed }, canCreate] = await Promise.all([listMyCampaigns(session), hasCampaignsManage(session, churchId)]);
-  const campaigns = managed.filter((c) => c.churchId === churchId);
+  const campaigns = managed.filter((c) => c.churchId === churchId && (!toValidate || c.assignments.submitted > 0));
+  if (toValidate) {
+    return (
+      <section aria-labelledby="managed-campaigns" className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="managed-campaigns" className="font-display text-[17px] font-semibold leading-6 text-ink">
+            Contributions à valider
+          </h2>
+          <Link href={paths.collectes()} className="inline-flex min-h-11 items-center text-[15px] font-semibold text-brand-text underline-offset-2 hover:underline">
+            Voir toutes les campagnes
+          </Link>
+        </div>
+        {campaigns.length === 0 ? (
+          <div className="rounded-card border border-line bg-surface">
+            <EmptyState icon={ClipboardList} title="Rien à valider" description="Les contributions soumises de vos campagnes apparaîtront ici." size="sm" />
+          </div>
+        ) : (
+          <ul className="overflow-hidden rounded-card border border-line bg-surface">
+            {campaigns.map((c) => (
+              <li key={c.id} className="border-t border-line first:border-t-0">
+                <Link
+                  href={paths.collectes.campaign(c.id, { onglet: "suivi", etat: "soumis" })}
+                  className="flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
+                >
+                  <p className="min-w-0 flex-1 truncate text-[15px] font-semibold leading-[22px] text-ink">{c.title}</p>
+                  <StatusChip tone="warning" className="shrink-0">
+                    {c.assignments.submitted} à valider
+                  </StatusChip>
+                  <ChevronRight aria-hidden="true" className="hidden size-4 shrink-0 text-ink-subtle sm:block" strokeWidth={1.75} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    );
+  }
   if (campaigns.length === 0 && !canCreate) return null;
 
   const actions = canCreate ? (

@@ -32,15 +32,17 @@ interface Props {
   readonly tabs: readonly ApplicationsTab[];
   readonly pvs: ApplicationSummary[];
   readonly departments: ApplicationSummary[];
+  /** Fiches « À traiter » (`countServingQueue`), le même nombre que sur l'Accueil. */
+  readonly todoCount: number;
 }
 
-export default function ApplicationsClient({ tab, tabs, pvs, departments }: Props) {
+export default function ApplicationsClient({ tab, tabs, pvs, departments, todoCount }: Props) {
   const rows =
     tab === "departments"
       ? departments
       : pvs.filter((a) => a.bucket === (tab === "todo" ? "todo" : tab === "ongoing" ? "ongoing" : "archived"));
   const counts: Partial<Record<ApplicationsTab, number>> = {
-    todo: pvs.filter((a) => a.bucket === "todo").length,
+    todo: todoCount,
   };
 
   return (

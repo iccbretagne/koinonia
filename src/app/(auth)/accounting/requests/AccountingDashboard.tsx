@@ -78,6 +78,8 @@ interface Props {
   readonly stats: Stats;
   readonly canManage: boolean;
   readonly currentUserId: string;
+  /** Filtre à l'ouverture (`?filtre=justifier`, liste fermée). */
+  readonly initialStatusFilter?: string;
 }
 
 /** Pastille des justificatifs (spec 078). */
@@ -121,8 +123,8 @@ const STATUS_FILTERS = [
   { value: "ARCHIVED",   label: "Archivées" },
 ];
 
-export default function AccountingDashboard({ requests, stats, canManage, currentUserId }: Props) {
-  const [statusFilter, setStatusFilter] = useState("");
+export default function AccountingDashboard({ requests, stats, canManage, currentUserId, initialStatusFilter = "" }: Props) {
+  const [statusFilter, setStatusFilter] = useState(initialStatusFilter);
   const [typeFilter, setTypeFilter] = useState("");
   const [search, setSearch] = useState("");
   const router = useRouter();

@@ -3,6 +3,7 @@ import { requireAuth, getCurrentChurchId, getUserDepartmentScope } from "@/lib/a
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { listBackupOptions } from "@/modules/planning";
+import { isOpenFlag } from "@/lib/opening-params";
 import AvailabilityClient from "./AvailabilityClient";
 
 /**
@@ -12,12 +13,12 @@ import AvailabilityClient from "./AvailabilityClient";
 export default async function AvailabilityPage({
   searchParams,
 }: Readonly<{
-  searchParams: Promise<{ month?: string; event?: string; member?: string }>;
+  searchParams: Promise<{ month?: string; event?: string; member?: string; declarer?: string }>;
 }>) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
-  const { month, event, member } = await searchParams;
+  const { month, event, member, declarer } = await searchParams;
 
   const permissions = new Set(
     session.user.churchRoles.filter((r) => r.churchId === churchId).flatMap((r) => rolePermissions[r.role] ?? [])
@@ -63,6 +64,7 @@ export default async function AvailabilityPage({
         initialMonth={validMonth}
         focusEventId={event ?? null}
         initialMemberId={member ?? null}
+        initialDeclare={isOpenFlag(declarer)}
       />
     </Suspense>
   );

@@ -40,6 +40,8 @@ interface EventItem {
 interface Props {
   readonly initialEvents: EventItem[];
   readonly churches: { id: string; name: string }[];
+  /** `?nouveau=1` : ouvre le formulaire de création à l'arrivée (état initial = « Nouvel événement »). */
+  readonly initialCreate?: boolean;
 }
 
 const DEADLINE_OFFSETS = [
@@ -242,9 +244,9 @@ function SeriesScopeChoice({
   );
 }
 
-export default function EventsClient({ initialEvents, churches }: Props) {
+export default function EventsClient({ initialEvents, churches, initialCreate = false }: Props) {
   const [events, setEvents] = useState(initialEvents);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(initialCreate);
   const toast = useToast();
   const [editing, setEditing] = useState<EventItem | null>(null);
   const [title, setTitle] = useState("");

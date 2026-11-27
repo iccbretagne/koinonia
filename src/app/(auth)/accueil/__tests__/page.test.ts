@@ -38,6 +38,9 @@ vi.mock("@/modules/planning", () => ({
   countUnstaffedDepartments: async () => new Map([["ev-1", 2]]),
 }));
 
+// Bloc « À traiter » : testé à part (TodoBlock.test.ts), hors de ce rendu figé.
+vi.mock("../TodoBlock", () => ({ default: () => null }));
+
 const TodayPage = (await import("../page")).default;
 
 const at = (day: number, hour = 10) => new Date(2026, 2, day, hour, 0, 0);

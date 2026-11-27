@@ -80,14 +80,17 @@ function completenessLabel(row: Row): string {
 export default function TrackingTab({
   overview,
   onMessage,
+  initialStatusFilter = "",
 }: {
   readonly overview: CampaignOverviewData;
+  /** Filtre d'état à l'ouverture (`?etat=soumis`). */
+  readonly initialStatusFilter?: string;
   /** Ouvre la fenêtre « Communication » pré-ciblée sur une contribution. */
   readonly onMessage: (preset: CommunicationPreset) => void;
 }) {
   const { call, busy } = useApi();
   const { campaign, progress } = overview;
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState(initialStatusFilter);
   const [formFilter, setFormFilter] = useState("");
   const [changes, setChanges] = useState<Row | null>(null);
   const [reason, setReason] = useState("");

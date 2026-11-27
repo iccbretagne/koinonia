@@ -17,6 +17,7 @@ import { requireTreasuryAccess } from "@/modules/treasury/auth";
 import { ledgerQuerySchema, periodQuerySchema } from "@/modules/treasury/schemas";
 import TreasuryClient from "./TreasuryClient";
 import { TREASURY_TABS, type TreasuryTab } from "./tabs";
+import { isOpenFlag } from "@/lib/opening-params";
 
 /**
  * Trésorerie de l'église (spec 076), rangée sous la comptabilité : Comptable, Admin, Super Admin.
@@ -40,7 +41,9 @@ export default async function TreasuryPage({
 
   const params = await searchParams;
   const one = (k: string) => (typeof params[k] === "string" ? (params[k] as string) : undefined);
-  const tab: TreasuryTab = TREASURY_TABS.find((t) => t === one("onglet")) ?? "tableau";
+  // `?saisie=1` (spec 092, palette) : ouvre la saisie d'une ligne dans le registre.
+  const openEntry = isOpenFlag(one("saisie"));
+  const tab: TreasuryTab = TREASURY_TABS.find((t) => t === one("onglet")) ?? (openEntry ? "registre" : "tableau");
 
   const [accounts, categories, purposes] = await Promise.all([
     listAccounts(churchId),
@@ -104,6 +107,7 @@ export default async function TreasuryPage({
           method: one("moyen"),
         }}
         highlightId={one("ligne")}
+        openEntry={openEntry && tab === "registre"}
       />
     </div>
   );

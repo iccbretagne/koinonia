@@ -11,6 +11,7 @@ import {
   listMemberAvailability,
   listTeamEventsForMember,
   loadRequestQueue,
+  pendingWithdrawalsWhere,
   resolveRequestQueueAccess,
 } from "@/modules/planning";
 import { loadMyPlanning } from "@/app/(auth)/planning/my-planning-data";
@@ -390,13 +391,11 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
       const departmentIds = scopedDepartmentIds(session, churchId);
       const base = { title: "Services à remplacer", href: paths.dashboard(), hrefLabel: "Planning" };
       if (departmentIds?.length === 0) return boundedAnswer({ ...base, items: [], empty: "Aucun département dans votre périmètre." });
+      // Même sélection que la carte « À traiter » de l'Accueil (spec 092).
+      const where = await pendingWithdrawalsWhere(session, churchId);
+      if (!where) return REFUSED;
       const withdrawals = await prisma.serviceWithdrawal.findMany({
-        where: {
-          churchId,
-          status: "PENDING",
-          event: { date: { gte: new Date() } },
-          ...(departmentIds === null ? {} : { departmentId: { in: departmentIds } }),
-        },
+        where,
         select: {
           event: { select: { title: true, date: true } },
           department: { select: { name: true } },

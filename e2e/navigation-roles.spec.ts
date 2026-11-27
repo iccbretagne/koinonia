@@ -4,7 +4,7 @@ import { expect, test } from "./roles";
 /**
  * Navigation par rôle : espaces visibles (sidebar desktop, barre du bas + panneau « Plus »
  * mobile). Table de données volontairement petite, à mettre à jour avec src/lib/navigation.ts
- * (spec 092, lot 1 : onze espaces). Constat du comportement, pas une prescription : en cas d'écart
+ * (spec 092 : onze espaces au lot 1, barre du bas par rôle principal au lot 2). Constat du comportement, pas une prescription : en cas d'écart
  * légitime, corriger la table.
  */
 
@@ -36,16 +36,16 @@ const MINISTRE: Space[] = ["Accueil", "Planning", "Événements", "Personnes", "
 const DEPT_HEAD: Space[] = ["Accueil", "Planning", "Événements", "Personnes", "Demandes", "Médias", "Ressources"];
 
 export const NAV_BY_ROLE: Record<string, RoleNav> = {
-  "super-admin": { spaces: SUPER_ADMIN, bottom: ["Accueil", "Événements", "Demandes", "Personnes"] },
-  admin: { spaces: ADMIN, bottom: ["Accueil", "Événements", "Demandes", "Personnes"] },
-  secretaire: { spaces: ADMIN, bottom: ["Accueil", "Événements", "Demandes", "Personnes"] },
+  "super-admin": { spaces: SUPER_ADMIN, bottom: ["Accueil", "Événements", "Personnes", "Planning"] },
+  admin: { spaces: ADMIN, bottom: ["Accueil", "Événements", "Personnes", "Planning"] },
+  secretaire: { spaces: ADMIN, bottom: ["Accueil", "Traitement", "Événements", "Personnes"] },
   ministre: { spaces: MINISTRE, bottom: ["Accueil", "Planning", "Événements", "Personnes"] },
   "resp-accueil": { spaces: DEPT_HEAD, bottom: ["Accueil", "Planning", "Événements", "Personnes"] },
   "resp-secretariat": { spaces: DEPT_HEAD, bottom: ["Accueil", "Planning", "Événements", "Personnes"] },
-  "faiseur-disciples": { spaces: ["Accueil", "Planning", "Personnes", "Médias", "Ressources"], bottom: ["Accueil", "Planning", "Personnes"] },
-  reporter: { spaces: ["Accueil", "Événements", "Médias", "Ressources"], bottom: ["Accueil", "Événements"] },
-  star: { spaces: DEPT_HEAD.filter((s) => s !== "Personnes"), bottom: ["Accueil", "Mon planning", "Événements", "Demandes"] },
-  comptable: { spaces: ["Accueil", "Finances", "Médias", "Ressources"], bottom: ["Accueil", "Demandes comptables"] },
+  "faiseur-disciples": { spaces: ["Accueil", "Planning", "Personnes", "Médias", "Ressources"], bottom: ["Accueil", "Discipolat", "Planning"] },
+  reporter: { spaces: ["Accueil", "Événements", "Médias", "Ressources"], bottom: ["Accueil", "Comptes rendus", "Calendrier"] },
+  star: { spaces: DEPT_HEAD.filter((s) => s !== "Personnes"), bottom: ["Accueil", "Mon planning", "Calendrier"] },
+  comptable: { spaces: ["Accueil", "Finances", "Médias", "Ressources"], bottom: ["Accueil", "Demandes", "Trésorerie", "Navette"] },
   "referent-soins": { spaces: ["Accueil", "Pastoral", "Médias", "Ressources"], bottom: ["Accueil", "Suivi"] },
 };
 

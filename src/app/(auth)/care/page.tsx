@@ -10,6 +10,7 @@ import {
   getCareSettings,
   isUnassignedDue,
   isUnscheduledDue,
+  careQueueCounts,
 } from "@/modules/care";
 import CareTabs from "./CareTabs";
 import PublicFormBanner from "@/components/PublicFormBanner";
@@ -36,10 +37,12 @@ export default async function CarePage() {
     );
   }
 
-  const [allRequests, allFollowUps, church] = await Promise.all([
+  const [allRequests, allFollowUps, church, queue] = await Promise.all([
     listAppointmentRequests(churchId, ["PENDING", "VALIDATED", "SCHEDULED", "CLOSED", "REJECTED"]),
     listMsdpFollowUps(churchId),
     prisma.church.findUnique({ where: { id: churchId }, select: { slug: true } }),
+    // Pastilles des onglets : même compte que la carte « À traiter » de l'Accueil (spec 092).
+    careQueueCounts(access, churchId),
   ]);
 
   const requests = access.canOverview
@@ -137,6 +140,7 @@ export default async function CarePage() {
       <CareTabs
         churchId={churchId}
         canQualify={access.canQualify}
+        counts={queue ?? { requests: 0, followUps: 0 }}
         requests={projectedRequests}
         followUps={followUps}
       />

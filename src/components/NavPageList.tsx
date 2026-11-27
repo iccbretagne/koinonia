@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import type { NavPage } from "@/lib/navigation";
+import { sheetGroups, type NavPage } from "@/lib/navigation";
 import { sheetGroup, sheetOverline } from "@/components/nav-styles";
 
 interface NavPageListProps {
@@ -163,10 +163,10 @@ export default function NavPageList({
   const firstCollapsible = groups.findIndex((g) => g.collapsible);
 
   if (size === "touch") {
-    // Panneau « Plus » : un bloc groupé par sous-groupe (ministère…), intitulé au-dessus.
+    // Panneau « Plus » : les blocs de la barre latérale (`sheetGroups`), intitulé au-dessus.
     return (
       <div className="flex flex-col">
-        {groups.map((group, gi) => (
+        {sheetGroups(pages).map((group, gi) => (
           <section key={`${group.name ?? "_"}-${gi}`} className="mt-4">
             {group.name && (
               <p className={`${sheetOverline} flex items-baseline justify-between gap-2`}>

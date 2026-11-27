@@ -1,4 +1,5 @@
 export { campaignsModule } from "./manifest";
+export { countSubmittedContributions } from "./services/queue";
 
 // Niveau questionnaire
 export {

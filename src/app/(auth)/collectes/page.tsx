@@ -8,6 +8,7 @@ import { ASSIGNMENT_STATUS_LABELS } from "@/modules/campaigns/schemas";
 import { ASSIGNMENT_STATUS_TONES } from "./_components/display";
 import ManagedCampaigns from "./_components/ManagedCampaigns";
 import { paths } from "@/lib/paths";
+import { isOpenFlag } from "@/lib/opening-params";
 
 export const metadata: Metadata = { title: "Questionnaires" };
 
@@ -16,15 +17,20 @@ const dayFr = (d: Date) => d.toLocaleDateString("fr-FR", { day: "numeric", month
 const isPast = (d: Date) => d.getTime() < Date.now();
 
 /** Collectes (spec 090) : campagnes que je pilote, puis questionnaires qui me sont confiés. */
-export default async function CampaignsPage() {
+export default async function CampaignsPage({
+  searchParams,
+}: {
+  readonly searchParams: Promise<{ "a-valider"?: string }>;
+}) {
   const session = await requireAuth();
+  const toValidate = isOpenFlag((await searchParams)["a-valider"]);
   const assignments = await listMyAssignments(session);
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
       <PageHeader title="Questionnaires" description="Collectes de données de l'église : questionnaires à remplir et campagnes à piloter." />
 
-      <ManagedCampaigns session={session} />
+      <ManagedCampaigns session={session} toValidate={toValidate} />
 
       <section aria-labelledby="mes-questionnaires" className="flex flex-col gap-3">
         <h2 id="mes-questionnaires" className="font-display text-[17px] font-semibold leading-6 text-ink">

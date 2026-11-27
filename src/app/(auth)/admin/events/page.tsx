@@ -2,8 +2,13 @@ import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/
 import { prisma } from "@/lib/prisma";
 import EventsClient from "./EventsClient";
 import { PageHeader } from "@/components/ui";
+import { isOpenFlag } from "@/lib/opening-params";
 
-export default async function EventsPage() {
+export default async function EventsPage({
+  searchParams,
+}: {
+  readonly searchParams: Promise<{ nouveau?: string }>;
+}) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p className="text-ink-muted">Aucune église sélectionnée.</p>;
@@ -36,6 +41,7 @@ export default async function EventsPage() {
           createdAt: e.createdAt.toISOString(),
         }))}
         churches={church ? [{ id: church.id, name: church.name }] : []}
+        initialCreate={isOpenFlag((await searchParams).nouveau)}
       />
     </div>
   );

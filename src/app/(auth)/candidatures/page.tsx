@@ -5,7 +5,7 @@ import { getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PublicFormBanner from "@/components/PublicFormBanner";
 import { EmptyState, PageHeader } from "@/components/ui";
-import { listApplications, type ApplicationSummary } from "@/modules/serving";
+import { countServingQueue, listApplications, type ApplicationSummary } from "@/modules/serving";
 import { requireServingActor } from "@/modules/serving/auth";
 import ApplicationsClient, { type ApplicationsTab } from "./ApplicationsClient";
 import { paths } from "@/lib/paths";
@@ -24,10 +24,12 @@ export default async function CandidaturesPage({
   if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
 
   const actor = await requireServingActor(churchId);
-  const [pvs, departments, church] = await Promise.all([
+  const [pvs, departments, church, queue] = await Promise.all([
     actor.canManage ? listApplications(actor, "pvs") : Promise.resolve<ApplicationSummary[]>([]),
     listApplications(actor, "department"),
     prisma.church.findUnique({ where: { id: churchId }, select: { slug: true } }),
+    // Pastille « À traiter » : même compte que la carte de l'Accueil (spec 092).
+    actor.canManage ? countServingQueue(actor) : Promise.resolve(null),
   ]);
 
   if (!actor.canManage && departments.length === 0) {
@@ -75,7 +77,7 @@ export default async function CandidaturesPage({
       {actor.canManage && church?.slug && (
         <PublicFormBanner path={`/servir/${church.slug}`} label="Lien public — candidature au service" />
       )}
-      <ApplicationsClient tab={tab} tabs={tabs} pvs={pvs} departments={departments} />
+      <ApplicationsClient tab={tab} tabs={tabs} pvs={pvs} departments={departments} todoCount={queue?.count ?? 0} />
     </div>
   );
 }

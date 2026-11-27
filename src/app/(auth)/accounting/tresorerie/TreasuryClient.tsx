@@ -55,6 +55,7 @@ export default function TreasuryClient({
   data,
   filters,
   highlightId,
+  openEntry = false,
 }: {
   readonly tab: TreasuryTab;
   readonly accounts: AccountView[];
@@ -64,6 +65,8 @@ export default function TreasuryClient({
   readonly data: TreasuryData;
   readonly filters: LedgerFilters;
   readonly highlightId?: string;
+  /** `?saisie=1` : formulaire de saisie ouvert dans le registre. */
+  readonly openEntry?: boolean;
 }) {
   const activeAccounts = accounts.filter((a) => !a.archived);
   const noAccount = accounts.length === 0;
@@ -89,6 +92,7 @@ export default function TreasuryClient({
               purposes={purposes}
               filters={filters}
               highlightId={highlightId}
+              openEntry={openEntry}
             />
           )}
           {tab === "collecte" && (

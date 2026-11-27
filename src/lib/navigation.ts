@@ -1,6 +1,11 @@
 import {
   BookOpen,
+  Bus,
   Download,
+  FileText,
+  Landmark,
+  ListChecks,
+  Sprout,
   Calendar,
   CalendarCheck,
   HeartHandshake,
@@ -57,7 +62,7 @@ export interface NavPage {
   readonly dataTour?: string;
   /**
    * Bloc de la sidebar desktop (« Église », « Intégration », « Organisation »…), à défaut de
-   * `group`. Lu seulement par `sidebarBlocks` : le panneau « Plus » mobile n'en tient pas compte.
+   * `group`. Lu par `sidebarBlocks`, que le panneau « Plus » mobile reprend (`sheetGroups`).
    */
   readonly sidebarBlock?: string;
   /** Libellé raccourci sous l'intitulé de son bloc dans la sidebar desktop (« Parcours »). */
@@ -136,6 +141,10 @@ export interface NavigationInput {
   /** Collectes (spec 090) : `campaigns:manage`, gestionnaire d'une campagne ou répondant d'une affectation. */
   readonly hasCampaigns?: boolean;
   readonly hasJobs?: boolean;
+  /** Action « Demander un rendez-vous » de la palette : module `care` actif et `planning:view`. */
+  readonly hasCareRequest?: boolean;
+  /** Action « Nouvelle demande comptable » : module `accounting` actif et `accounting:submit`. */
+  readonly hasAccountingSubmit?: boolean;
   /** Vue pastorale active (cookie `koinonia-view-mode`). */
   readonly isPastoral?: boolean;
   /** Page d'accueil du rôle (`landingHref`). */
@@ -481,7 +490,7 @@ function runs<T, K>(items: readonly T[], key: (item: T) => K): { key: K; items: 
  * « Départements » range ses départements par ministère repliable ; avec un seul ministère, il
  * le nomme dans son intitulé (« Départements · Louange ») et liste les départements directement.
  * Un espace réduit à un seul bloc (hors départements) n'affiche pas d'intitulé : il ne
- * distinguerait rien. Le panneau « Plus » mobile garde sa propre présentation (`group`).
+ * distinguerait rien. Le panneau « Plus » mobile reprend ces blocs (`sheetGroups`).
  */
 export function sidebarBlocks(pages: readonly NavPage[]): SidebarBlock[] {
   const groups = runs(pages, blockOf);
@@ -514,6 +523,27 @@ export function sidebarBlocks(pages: readonly NavPage[]): SidebarBlock[] {
         .filter((m): m is { key: string; items: NavPage[] } => m.key !== null)
         .map((m) => ({ name: m.key, entries: m.items.map(entry) })),
     };
+  });
+}
+
+export interface SheetGroup {
+  /** Intitulé du bloc (celui de la barre latérale, ou le ministère d'un département). */
+  readonly name: string | null;
+  readonly pages: readonly NavPage[];
+}
+
+/**
+ * Blocs du panneau « Plus » (spec 092, lot 2) : exactement ceux de la barre latérale
+ * (`sidebarBlocks`), mêmes intitulés et même ordre. Les départements de plusieurs ministères y
+ * forment un bloc par ministère, puisque le panneau ne replie rien.
+ */
+export function sheetGroups(pages: readonly NavPage[]): SheetGroup[] {
+  const asPage = (e: SidebarEntry): NavPage => (e.label === e.page.label ? e.page : { ...e.page, label: e.label });
+  return sidebarBlocks(pages).flatMap((block) => {
+    const out: SheetGroup[] = [];
+    if (block.entries.length > 0 || block.ministries.length === 0) out.push({ name: block.label, pages: block.entries.map(asPage) });
+    for (const m of block.ministries) out.push({ name: m.name, pages: m.entries.map(asPage) });
+    return out.filter((g) => g.pages.length > 0);
   });
 }
 
@@ -789,6 +819,57 @@ function collectAncestors(ref: ScreenRef): ScreenRef[] {
 
 /* ── Barre du bas ─────────────────────────────────────────────────────────── */
 
+/** Destinations possibles de la barre du bas (spec 092, lot 2). */
+export type DestinationKey =
+  | "home"
+  | "myPlanning"
+  | "calendar"
+  | "events"
+  | "planning"
+  | "people"
+  | "requestQueue"
+  | "myRequests"
+  | "accountingRequests"
+  | "treasury"
+  | "shuttle"
+  | "care"
+  | "reports"
+  | "discipleship";
+
+/** Tableau de la spec 092, par rôle principal dans l'église courante (Accueil compris). */
+export const ROLE_DESTINATIONS: Record<RoleKey, readonly DestinationKey[]> = {
+  SUPER_ADMIN: ["home", "events", "people", "planning"],
+  ADMIN: ["home", "events", "people", "planning"],
+  SECRETARY: ["home", "requestQueue", "events", "people"],
+  ACCOUNTANT: ["home", "accountingRequests", "treasury", "shuttle"],
+  PASTORAL_CARE_REFERENT: ["home", "care", "myRequests"],
+  MINISTER: ["home", "planning", "events", "people"],
+  DEPARTMENT_HEAD: ["home", "planning", "events", "people"],
+  REPORTER: ["home", "reports", "calendar"],
+  DISCIPLE_MAKER: ["home", "discipleship", "myRequests"],
+  STAR: ["home", "myPlanning", "calendar", "myRequests"],
+};
+
+/** Repli commun : une destination inaccessible est remplacée par la première accessible ici. */
+export const FALLBACK_DESTINATIONS: readonly DestinationKey[] = ["myPlanning", "calendar", "planning", "events", "people", "myRequests"];
+
+/** Au plus trois destinations après l'Accueil, puis « Plus ». */
+const MAX_AFTER_HOME = 3;
+
+/** Destinations de page : adresses possibles (la première présente l'emporte), libellé court, icône. */
+const PAGE_DESTINATIONS: Partial<Record<DestinationKey, { hrefs: readonly string[]; label: string; icon: LucideIcon }>> = {
+  myPlanning: { hrefs: [paths.planning()], label: "Mon planning", icon: CalendarCheck },
+  calendar: { hrefs: [paths.planning.events(), paths.events()], label: "Calendrier", icon: Calendar },
+  requestQueue: { hrefs: [paths.secretariat.requests()], label: "Traitement", icon: ListChecks },
+  myRequests: { hrefs: [paths.requests()], label: "Mes demandes", icon: Inbox },
+  accountingRequests: { hrefs: [paths.accounting.requests()], label: "Demandes", icon: Wallet },
+  treasury: { hrefs: [paths.accounting.tresorerie()], label: "Trésorerie", icon: Landmark },
+  shuttle: { hrefs: [paths.accounting.navette()], label: "Navette", icon: Bus },
+  care: { hrefs: [CARE_HREF], label: "Suivi", icon: HeartHandshake },
+  reports: { hrefs: [paths.admin.reports()], label: "Comptes rendus", icon: FileText },
+  discipleship: { hrefs: [paths.admin.discipleship()], label: "Discipolat", icon: Sprout },
+};
+
 export interface BottomDestination {
   readonly key: string;
   readonly label: string;
@@ -796,62 +877,40 @@ export interface BottomDestination {
   readonly icon: LucideIcon;
   /** Espace couvert : la destination est active sur toutes ses pages. */
   readonly space?: SpaceKey;
+  /** Espace de la page de destination (activation de repli, voir `activeDestinationKey`). */
+  readonly pageSpace?: SpaceKey;
   /** Préfixes de routes qui l'allument (destination de page). */
   readonly prefixes?: readonly string[];
   readonly badge?: number;
 }
 
-type Candidate = "home" | "myPlanning" | "planning" | "events" | "people" | "requests" | "care" | "accounting";
-
-/** Priorités de `10-navigation.md`, par rôle principal dans l'église courante. */
-const ROLE_PRIORITIES: Partial<Record<RoleKey, Candidate[]>> = {
-  STAR: ["home", "myPlanning", "events", "requests"],
-  DEPARTMENT_HEAD: ["home", "planning", "events", "people"],
-  MINISTER: ["home", "planning", "events", "people"],
-  SECRETARY: ["home", "events", "requests", "people"],
-  ADMIN: ["home", "events", "requests", "people"],
-  SUPER_ADMIN: ["home", "events", "requests", "people"],
-  PASTORAL_CARE_REFERENT: ["home", "care", "people", "events"],
-  ACCOUNTANT: ["home", "accounting", "requests"],
-};
-
-/** Rôles sans ligne dans le tableau (Reporter, Faiseur de disciples) : premières sections réelles. */
-const DEFAULT_PRIORITIES: Candidate[] = ["home", "myPlanning", "planning", "events", "people", "requests"];
-
-function candidate(spaces: readonly NavSpace[], c: Candidate): BottomDestination | null {
-  const bySpace = (key: SpaceKey) => spaces.find((s) => s.key === key && !s.external && s.pages.some((p) => !p.external));
-  const pageIn = (key: SpaceKey, href: string) => spaces.find((s) => s.key === key)?.pages.find((p) => p.href === href);
-
-  switch (c) {
-    case "home": {
-      const home = spaces.find((s) => s.key === "home");
-      return home ? { key: "home", label: "Accueil", href: home.href, icon: House, space: "home" } : null;
-    }
-    case "myPlanning": {
-      const p = pageIn("planning", paths.planning());
-      return p ? { key: "myPlanning", label: "Mon planning", href: p.href, icon: CalendarCheck, prefixes: [] } : null;
-    }
-    case "care": {
-      const p = pageIn("pastoral", CARE_HREF);
-      return p ? { key: "care", label: "Suivi", href: p.href, icon: HeartHandshake, prefixes: [CARE_HREF] } : null;
-    }
-    case "accounting": {
-      const p = pageIn("finances", paths.accounting.requests());
-      return p ? { key: "accounting", label: "Demandes comptables", href: p.href, icon: Wallet, prefixes: [PREFIXES.accounting] } : null;
-    }
-    default: {
-      const s = bySpace(c);
-      if (!s) return null;
-      return { key: c, label: s.label, href: s.href, icon: s.icon, space: s.key, badge: s.badge };
-    }
+/** Destination réellement accessible (page présente dans la navigation du rôle), ou `null`. */
+export function destinationFor(spaces: readonly NavSpace[], key: DestinationKey): BottomDestination | null {
+  if (key === "home") {
+    const home = spaces.find((s) => s.key === "home");
+    return home ? { key: "home", label: "Accueil", href: home.href, icon: House, space: "home" } : null;
   }
+  const page = PAGE_DESTINATIONS[key];
+  if (page) {
+    for (const href of page.hrefs) {
+      for (const s of spaces) {
+        const p = s.pages.find((x) => !x.external && x.href === href);
+        if (p) {
+          return { key, label: page.label, href: p.href, icon: page.icon, pageSpace: s.key, prefixes: p.matchPrefixes ?? [], badge: p.badge };
+        }
+      }
+    }
+    return null;
+  }
+  const s = spaces.find((sp) => sp.key === key && !sp.external && sp.pages.some((p) => !p.external));
+  return s ? { key, label: s.label, href: s.href, icon: s.icon, space: s.key, badge: s.badge } : null;
 }
 
 /**
- * Au plus quatre destinations adaptées au rôle, avant « Plus ». Seules les sections réellement
- * accessibles sont retenues ; une destination qui mènerait à la même URL qu'une autre déjà
- * retenue (l'Accueil tant que la page « Aujourd'hui » n'existe pas) est écartée plutôt que
- * doublée. Aucune destination n'est inventée pour compléter.
+ * Barre du bas (spec 092) : liste du rôle principal, puis repli commun ; une destination
+ * inaccessible est remplacée par la suivante. Jamais deux destinations vers la même adresse, jamais
+ * un formulaire (toutes les cibles sont des listes). L'Accueil qui mène à la même page qu'une autre
+ * destination est écarté plutôt que doublé. Au plus trois destinations après l'Accueil.
  */
 export function bottomDestinations(
   spaces: readonly NavSpace[],
@@ -866,28 +925,39 @@ export function bottomDestinations(
     ];
   }
 
-  const order = ROLE_PRIORITIES[role] ?? DEFAULT_PRIORITIES;
-  const picked: BottomDestination[] = [];
-  for (const c of order) {
-    const d = candidate(spaces, c);
-    if (!d) continue;
-    const duplicate = picked.some((p) => pathOf(p.href) === pathOf(d.href));
-    if (duplicate) continue;
-    // L'Accueil qui ne mène qu'à une page déjà couverte par une destination suivante est écarté.
-    if (c === "home" && order.some((o) => o !== "home" && candidate(spaces, o) && pathOf(candidate(spaces, o)!.href) === pathOf(d.href))) {
-      continue;
-    }
-    picked.push(d);
-    if (picked.length === 4) break;
+  const own = ROLE_DESTINATIONS[role] ?? ROLE_DESTINATIONS.STAR;
+  const others: BottomDestination[] = [];
+  for (const key of [...own.filter((k) => k !== "home"), ...FALLBACK_DESTINATIONS]) {
+    if (others.length === MAX_AFTER_HOME) break;
+    const d = destinationFor(spaces, key);
+    if (!d || others.some((o) => o.key === d.key || pathOf(o.href) === pathOf(d.href))) continue;
+    others.push(d);
   }
-  return picked;
+  const home = destinationFor(spaces, "home");
+  const keepHome = home && !others.some((o) => pathOf(o.href) === pathOf(home.href));
+  return keepHome ? [home, ...others] : others;
 }
 
-/** La destination est-elle active pour la page courante ? */
+/** La destination est-elle directement active (son espace, sa page ou un de ses descendants) ? */
 export function isDestinationActive(d: BottomDestination, active: ActiveNav, pathname: string): boolean {
   if (d.space) return active.space === d.space;
   if (active.page === d.href) return true;
   return (d.prefixes ?? []).some((p) => matchesPath(pathname, p));
+}
+
+/**
+ * Destination allumée : celle de l'écran courant ou de son plus proche parent de navigation
+ * (`resolveActive` remonte déjà la chaîne de parents du registre) ; à défaut, la première
+ * destination de page rangée dans l'espace courant. `null` : « Plus » s'allume.
+ */
+export function activeDestinationKey(destinations: readonly BottomDestination[], active: ActiveNav, pathname: string): string | null {
+  // La page exacte l'emporte sur un préfixe large (« /accounting » ne doit pas voler la trésorerie).
+  const exact = destinations.find((d) => !d.space && active.page === d.href);
+  if (exact) return exact.key;
+  const direct = destinations.find((d) => isDestinationActive(d, active, pathname));
+  if (direct) return direct.key;
+  if (!active.space || active.space === "home") return null;
+  return destinations.find((d) => d.pageSpace === active.space)?.key ?? null;
 }
 
 /* ── Palette de recherche ─────────────────────────────────────────────────── */
@@ -951,4 +1021,53 @@ export function filterByQuery<T>(items: readonly T[], query: string, text: (item
     scored.push({ item, score, index });
   });
   return scored.toSorted((a, b) => a.score - b.score || a.index - b.index).map((s) => s.item);
+}
+
+// ── Actions de la recherche (spec 092, lot 2) ────────────────────────────────
+
+/** Actions proposées par la palette, chacune ouvrant un formulaire déjà présent sur son écran. */
+export type PaletteActionKey = "declareAbsence" | "newRequest" | "careRequest" | "newEvent" | "newAccountingRequest" | "treasuryEntry";
+
+export interface PaletteAction {
+  readonly key: PaletteActionKey;
+  readonly label: string;
+  readonly href: string;
+  readonly icon: LucideIcon;
+}
+
+const PALETTE_ACTIONS: Record<PaletteActionKey, Omit<PaletteAction, "key">> = {
+  declareAbsence: { label: "Déclarer une absence", href: paths.disponibilites({ declarer: "1" }), icon: CalendarCheck },
+  newRequest: { label: "Nouvelle demande", href: paths.requests.newRequest(), icon: Inbox },
+  careRequest: { label: "Demander un rendez-vous", href: paths.care.request({ new: "1" }), icon: HeartHandshake },
+  newEvent: { label: "Nouvel événement", href: paths.admin.events({ nouveau: "1" }), icon: Calendar },
+  newAccountingRequest: { label: "Nouvelle demande comptable", href: paths.accounting.newRequest(), icon: Wallet },
+  treasuryEntry: { label: "Nouvelle saisie de trésorerie", href: paths.accounting.tresorerie({ saisie: "1" }), icon: Landmark },
+};
+
+/** Droits déjà calculés par `loadNavigationInput` (mêmes conditions que les écrans cibles). */
+export interface PaletteActionRights {
+  /** Fiche STAR liée (`hasAvailability`). */
+  readonly hasAvailability?: boolean;
+  /** `members:view` : « Mes demandes ». */
+  readonly hasMembersAccess?: boolean;
+  /** Module `care` actif et `planning:view`. */
+  readonly hasCareRequest?: boolean;
+  /** `events:manage`. */
+  readonly hasEventsManage?: boolean;
+  /** Module `accounting` actif et `accounting:submit`. */
+  readonly hasAccountingSubmit?: boolean;
+  /** `isTreasuryVisible`. */
+  readonly hasTreasury?: boolean;
+}
+
+/** Actions de la palette, dans un ordre fixe, chacune seulement avec sa condition. */
+export function paletteActions(rights: PaletteActionRights): PaletteAction[] {
+  const keys: PaletteActionKey[] = [];
+  if (rights.hasAvailability) keys.push("declareAbsence");
+  if (rights.hasMembersAccess) keys.push("newRequest");
+  if (rights.hasCareRequest) keys.push("careRequest");
+  if (rights.hasEventsManage) keys.push("newEvent");
+  if (rights.hasAccountingSubmit) keys.push("newAccountingRequest");
+  if (rights.hasTreasury) keys.push("treasuryEntry");
+  return keys.map((key) => ({ key, ...PALETTE_ACTIONS[key] }));
 }

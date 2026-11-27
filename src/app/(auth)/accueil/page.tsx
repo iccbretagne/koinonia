@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import {
   CalendarCheck,
@@ -32,6 +33,8 @@ import { loadMyRequests } from "../requests/my-requests-data";
 import { REQUEST_TYPE_LABEL, requestStatus, requestTypeIcon } from "../requests/request-display";
 import { pickFirstName } from "./first-name";
 import InstallCard from "./InstallCard";
+import TodoBlock from "./TodoBlock";
+import { SkeletonList } from "@/components/ui/Skeleton";
 import { countUnstaffedDepartments, getStaffingGapViewer } from "@/modules/planning";
 import type { OpenAssignment } from "@/modules/campaigns";
 import { paths } from "@/lib/paths";
@@ -49,6 +52,9 @@ import { paths } from "@/lib/paths";
  * - Raccourcis : uniquement vers les sections que les mêmes gardes ouvrent déjà.
  * - Questionnaires à remplir : `listMyOpenAssignments`, affectations non soumises des campagnes
  *   ouvertes de l'église courante dont le compte est répondant (comme `/collectes`) ; rien si aucune.
+ *
+ * - À traiter (spec 092) : `TodoBlock`, les files de travail de la personne, chacune avec le compte
+ *   et la garde de son écran ; rendu en différé (`Suspense`), le reste de l'Accueil n'attend pas.
  *
  * Chaque garde passe par `requireChurchPermission`, exactement comme la page source.
  */
@@ -526,6 +532,10 @@ export default async function TodayPage() {
 
       <div className={`grid grid-cols-1 gap-6 ${hasAside ? "lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]" : ""}`}>
         <div className="flex min-w-0 flex-col gap-6">
+          <Suspense fallback={<SkeletonList rows={2} label="Chargement des éléments à traiter…" />}>
+            <TodoBlock session={session} churchId={churchId} />
+          </Suspense>
+
           {questionnaires.length > 0 && <QuestionnairesSection questionnaires={questionnaires} />}
 
           {myPlanning && <ServicesSection myPlanning={myPlanning} nextService={nextService} agendaRows={agendaRows} />}

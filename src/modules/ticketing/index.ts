@@ -1,4 +1,5 @@
 export { ticketingModule } from "./manifest";
+export { countPendingDeclarations, paymentsEventsWhere } from "./services/payments-queue";
 export { getEventAccess, isTicketingManager, isTicketingVisible, canDo, EVENT_ACTIONS, type EventAccess, type EventAction } from "./auth";
 export {
   createEvent,
