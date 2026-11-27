@@ -102,7 +102,7 @@ describe("importCampaign", () => {
 
     const preview = await importCampaign({ churchId: "ch1", definition: definition(), dryRun: false, actor, canCreate: true });
 
-    expect(preview.campaign).toEqual({ action: "create", key: "bilan", title: "Bilan 2026" });
+    expect(preview.campaign).toEqual({ action: "create", key: "bilan", title: "Bilan 2026", fieldsChanged: [] });
     expect(preview.forms[0]).toMatchObject({ key: "integration", action: "create", revision: 1, itemsAdded: ["V1", "V2"] });
     expect(preview.assignments).toEqual([{ formKey: "integration", key: "integration", label: "Intégration", action: "create" }]);
     expect(preview.respondents).toEqual({ resolved: [{ email: "resp@exemple.org", name: "Resp" }], unresolved: [] });

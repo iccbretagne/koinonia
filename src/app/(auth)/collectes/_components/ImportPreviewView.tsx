@@ -120,6 +120,12 @@ export default function ImportPreviewView({
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">{preview.campaign.title}</h2>
         <StatusChip tone={ACTION_TONES[preview.campaign.action]}>{CAMPAIGN_ACTION_LABELS[preview.campaign.action]}</StatusChip>
       </div>
+      {preview.campaign.action === "update" && preview.campaign.fieldsChanged.length > 0 && (
+        <p className="text-[15px] leading-[22px] text-ink">
+          <span className="text-ink-muted">Champs de la campagne modifiés : </span>
+          {preview.campaign.fieldsChanged.join(", ")}.
+        </p>
+      )}
 
       {wrongKey && (
         <Alert tone="danger" title="Autre campagne.">

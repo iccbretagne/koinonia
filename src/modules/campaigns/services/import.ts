@@ -31,7 +31,13 @@ export interface ImportActor {
 }
 
 export interface ImportPreview {
-  campaign: { action: "create" | "update" | "unchanged"; key: string; title: string };
+  campaign: {
+    action: "create" | "update" | "unchanged";
+    key: string;
+    title: string;
+    /** Libellés des champs de campagne modifiés (« update » seulement ; vide sinon). */
+    fieldsChanged: string[];
+  };
   forms: {
     key: string;
     title: string;
@@ -99,6 +105,7 @@ export interface CampaignFieldsRow {
   dueAt: Date | null;
   fileRetentionDays: number;
   rules: unknown;
+  /** `undefined` (définition sans `campaign.messages`) : modèles actuels conservés, ni écrits ni comparés. */
   messageTemplates: unknown;
 }
 
@@ -107,26 +114,55 @@ const emptyToNull = (v: unknown) =>
     ? null
     : v;
 
-/**
- * Empreinte des **champs de campagne** (spec 091) : titre, description, période, échéance,
- * conservation, règles et messages, en JSON canonique. L'action « campagne » de l'aperçu se
- * calcule sur elle, et non plus sur l'empreinte du document entier : un document exporté (sans
- * répondants) est ainsi annoncé « inchangé ».
- */
-export function campaignFieldsHash(row: CampaignFieldsRow): string {
-  return hashJson({
+function comparableFields(row: CampaignFieldsRow) {
+  return {
     title: row.title,
     description: row.description || null,
-    periodStart: row.periodStart?.toISOString().slice(0, 10) ?? null,
-    periodEnd: row.periodEnd?.toISOString().slice(0, 10) ?? null,
+    period: [row.periodStart?.toISOString().slice(0, 10) ?? null, row.periodEnd?.toISOString().slice(0, 10) ?? null],
     dueAt: row.dueAt?.getTime() ?? null,
     fileRetentionDays: row.fileRetentionDays,
     rules: emptyToNull(row.rules),
     messages: emptyToNull(row.messageTemplates),
-  });
+  };
 }
 
-/** Champs de campagne d'une définition, comme l'import les écrirait. */
+/** Libellés de l'aperçu, dans l'ordre de l'écran. */
+const CAMPAIGN_FIELD_LABELS: Record<keyof ReturnType<typeof comparableFields>, string> = {
+  title: "titre",
+  description: "description",
+  period: "période",
+  dueAt: "échéance",
+  fileRetentionDays: "conservation des fichiers",
+  rules: "contrôles",
+  messages: "modèles de messages",
+};
+
+/**
+ * Empreinte des **champs de campagne** (spec 091) : titre, description, période, échéance,
+ * conservation, règles et messages, en JSON canonique. Un document exporté (sans répondants) est
+ * ainsi annoncé « inchangé ».
+ */
+export function campaignFieldsHash(row: CampaignFieldsRow): string {
+  return hashJson(comparableFields(row));
+}
+
+/**
+ * Champs de campagne qui changent entre la base et la définition, en libellés français. Une
+ * définition sans modèles de messages (`messageTemplates` indéfini) laisse ceux de la base : ils
+ * ne sont pas comparés.
+ */
+export function campaignFieldChanges(current: CampaignFieldsRow, next: CampaignFieldsRow): string[] {
+  const a = comparableFields(current);
+  const b = comparableFields(next.messageTemplates === undefined ? { ...next, messageTemplates: current.messageTemplates } : next);
+  return (Object.keys(CAMPAIGN_FIELD_LABELS) as (keyof typeof a)[])
+    .filter((k) => canonicalJson(a[k]) !== canonicalJson(b[k]))
+    .map((k) => CAMPAIGN_FIELD_LABELS[k]);
+}
+
+/**
+ * Champs de campagne d'une définition, comme l'import les écrirait. `campaign.messages` absent ⇒
+ * `messageTemplates` indéfini (modèles conservés) ; `{}` ⇒ null (textes par défaut rétablis).
+ */
 export function definitionCampaignFields(def: CampaignDefinition): CampaignFieldsRow {
   const c = def.campaign;
   return {
@@ -137,7 +173,7 @@ export function definitionCampaignFields(def: CampaignDefinition): CampaignField
     dueAt: c.dueAt ? dueAtToDate(c.dueAt) : null,
     fileRetentionDays: c.fileRetentionDays ?? 30,
     rules: def.rules?.length ? def.rules : null,
-    messageTemplates: c.messages && Object.keys(c.messages).length ? c.messages : null,
+    messageTemplates: c.messages === undefined ? undefined : Object.keys(c.messages).length ? c.messages : null,
   };
 }
 
@@ -292,11 +328,13 @@ export async function importCampaign(input: ImportInput): Promise<ImportPreview>
     for (const f of files) assignmentsWithData.add(f.assignmentId);
   }
 
+  const fieldsChanged = existing ? campaignFieldChanges(existing, definitionCampaignFields(def)) : [];
   const preview: ImportPreview = {
     campaign: {
-      action: existing ? (campaignFieldsHash(existing) === campaignFieldsHash(definitionCampaignFields(def)) ? "unchanged" : "update") : "create",
+      action: existing ? (fieldsChanged.length ? "update" : "unchanged") : "create",
       key: c.key,
       title: c.title,
+      fieldsChanged,
     },
     forms: [],
     assignments: [],
@@ -406,7 +444,10 @@ export async function importCampaign(input: ImportInput): Promise<ImportPreview>
     dueAt: fields.dueAt,
     fileRetentionDays: fields.fileRetentionDays,
     rules: fields.rules ? (fields.rules as Prisma.InputJsonValue) : Prisma.DbNull,
-    messageTemplates: fields.messageTemplates ? (fields.messageTemplates as Prisma.InputJsonValue) : Prisma.DbNull,
+    // Définition sans modèles de messages : ceux de la campagne sont conservés.
+    ...(fields.messageTemplates === undefined
+      ? {}
+      : { messageTemplates: fields.messageTemplates ? (fields.messageTemplates as Prisma.InputJsonValue) : Prisma.DbNull }),
     definitionHash,
   };
 
