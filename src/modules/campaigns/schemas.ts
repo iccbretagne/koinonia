@@ -294,12 +294,14 @@ const messageText = z.string().trim().min(1).max(MESSAGE_TEMPLATE_MAX_LENGTH);
  * `Campaign.messageTemplates`) : chaque clé est facultative, absente = texte par défaut.
  */
 export const messageTemplatesSchema = z.strictObject({
+  launch: messageText.optional(),
   initial: messageText.optional(),
   progress: messageText.optional(),
   collective: messageText.optional(),
   individual: messageText.optional(),
   overdue: messageText.optional(),
   resubmission: messageText.optional(),
+  closing: messageText.optional(),
 });
 
 // ── Campagne ───────────────────────────────────────────────────────────────────────────────────

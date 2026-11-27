@@ -146,3 +146,13 @@ describe("préparer l'ouverture", () => {
     ).toEqual(["Répondants : Sans répondant valide : Son", "Contrôles"]);
   });
 });
+
+describe("changement de type de message", () => {
+  it("la clôture affiche les services ayant répondu et masque les restants, puis revient au défaut", async () => {
+    const { initialSettings, withKind } = await import("../pilotage");
+    const closing = withKind(initialSettings(), "closing");
+    expect(closing).toMatchObject({ kind: "closing", showDone: true, showRemaining: false });
+    expect(withKind(closing, "progress")).toMatchObject({ kind: "progress", showDone: false, showRemaining: true });
+    expect(withKind(initialSettings(), "launch")).toMatchObject({ kind: "launch", showDone: false, showRemaining: true });
+  });
+});

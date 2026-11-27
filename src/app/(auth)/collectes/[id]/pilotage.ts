@@ -175,6 +175,16 @@ export function initialSettings(preset?: { kind: MessageKind; contributionId?: s
   };
 }
 
+/**
+ * Changement de type : la clôture remercie les services ayant répondu (liste affichée, restants
+ * masqués) ; les autres types reprennent l'affichage par défaut des listes.
+ */
+export function withKind(settings: CommunicationSettings, kind: MessageKind): CommunicationSettings {
+  if (kind === "closing") return { ...settings, kind, showDone: true, showRemaining: false };
+  if (settings.kind === "closing") return { ...settings, kind, showDone: false, showRemaining: true };
+  return { ...settings, kind };
+}
+
 // ── Modèles de messages (Paramètres) ───────────────────────────────────────────────────────────
 
 /**

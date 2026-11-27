@@ -87,7 +87,7 @@ describe("composeMessage — collectif", () => {
     expect(text).not.toContain("• Secrétariat");
   });
 
-  it("COLLECTIVE_MESSAGE_KINDS", () => expect([...COLLECTIVE_MESSAGE_KINDS]).toEqual(["progress", "collective"]));
+  it("COLLECTIVE_MESSAGE_KINDS", () => expect([...COLLECTIVE_MESSAGE_KINDS]).toEqual(["launch", "progress", "collective", "closing"]));
 });
 
 describe("composeMessage — individuel", () => {
@@ -143,5 +143,41 @@ describe("aperçu répondant (previewAssignmentView)", () => {
       forms: [{ key: "f", title: "F", assignments: [{ key: "a", label: "A" }], sections: [{ ...sections[0], items: [sections[0].items[0], sections[0].items[0]] }] }],
     };
     expect(validateDefinition(def).join()).toMatch(/déjà utilisé/);
+  });
+});
+
+describe("annonce de lancement et clôture (messages à tous)", () => {
+  it("sont collectifs : un seul message, lien générique, jamais de lien personnel", () => {
+    for (const kind of ["launch", "closing"] as const) {
+      expect(COLLECTIVE_MESSAGE_KINDS).toContain(kind);
+      const r = composeMessage(kind, ctx(), { showDone: true });
+      expect(r.collective).toBe(true);
+      expect(r.messages).toHaveLength(1);
+      const text = r.messages[0].text;
+      if (kind === "launch") expect(text).toContain("https://koinonia.test/collectes");
+      expect(text).not.toMatch(/kc_|\/collectes\/questionnaire\//);
+    }
+  });
+
+  it("lancement : liste tous les destinataires sollicités, sans les confidentiels par défaut", () => {
+    const text = composeMessage("launch", ctx()).messages[0].text;
+    expect(text).toContain("Questionnaires et destinataires sollicités");
+    for (const label of ["Secrétariat", "Accueil", "EJP", "Pasteure"]) expect(text).toContain(label);
+    expect(text).not.toContain("Protection");
+    expect(text).toContain("1 contribution(s) confidentielle(s) non comptée(s)");
+    expect(text).toContain("vendredi 4 décembre 2026");
+  });
+
+  it("clôture : avancement et remerciement des services ayant répondu", () => {
+    const text = composeMessage("closing", ctx(), { showDone: true, showRemaining: false }).messages[0].text;
+    expect(text).toContain("clôturé");
+    expect(text).toContain("*2/4* contributions transmises");
+    expect(text).toContain("Ont répondu :");
+    expect(text).toContain("Secrétariat");
+    expect(text).not.toContain("Restent à répondre");
+  });
+
+  it("modèles personnalisables", () => {
+    expect(messageTemplatesSchema.safeParse({ launch: "Annonce", closing: "Merci" }).success).toBe(true);
   });
 });
