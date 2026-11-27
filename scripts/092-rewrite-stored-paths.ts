@@ -6,7 +6,8 @@
  *
  * **Manuel uniquement** : jamais lancé par la CI, `prisma migrate deploy` ni le déploiement.
  *
- * Usage :
+ * Usage (développement ; sur le serveur : `node --env-file=… dist/092-rewrite-stored-paths.mjs`,
+ * compilé par `npm run build:scripts`, voir docs/production.md) :
  *   npx tsx scripts/092-rewrite-stored-paths.ts              # essai à blanc (défaut) : compte, n'écrit rien
  *   npx tsx scripts/092-rewrite-stored-paths.ts --apply      # écrit, après sauvegarde JSON
  *   npx tsx scripts/092-rewrite-stored-paths.ts --reverse [--apply]   # retour aux anciennes adresses
@@ -16,9 +17,13 @@
  * les liens absolus vers l'application. Idempotent : un second passage ne trouve rien à changer.
  * Lots de 500 lignes, chaque lot dans une transaction.
  */
-import "dotenv/config";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+
+// `.env` du dossier courant s'il existe (en développement) ; sur le serveur, l'environnement
+// vient de `node --env-file=/opt/koinonia/shared/.env` (aucune dépendance à dotenv, absente du
+// paquet de production).
+if (existsSync(".env")) process.loadEnvFile(".env");
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { chunk, legacyMentions, rewriteLink, rewriteScreens, type RewriteDirection } from "../src/lib/stored-paths";

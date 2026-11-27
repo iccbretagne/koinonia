@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "prisma generate && next build && npm run build:worker",
+    "build": "prisma generate && next build && npm run build:worker && npm run build:scripts",
     "build:worker": "esbuild src/modules/audio/worker/runner.ts --bundle --platform=node --target=node22 --format=esm --packages=external --outfile=dist/worker.mjs",
+    "build:scripts": "esbuild scripts/092-rewrite-stored-paths.ts --bundle --platform=node --target=node22 --format=esm --packages=external --outfile=dist/092-rewrite-stored-paths.mjs",
     "start": "next start",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
