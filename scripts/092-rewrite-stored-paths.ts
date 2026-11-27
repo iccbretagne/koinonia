@@ -94,25 +94,37 @@ function fromBackup(file: string): Change[] {
   return data.changes.map((c) => ({ field: c.field, id: c.id, before: c.after, after: c.before }));
 }
 
+/**
+ * Écriture par comparaison : une ligne n'est modifiée que si sa valeur est encore `before`
+ * (`updateMany`, jamais d'erreur sur une ligne supprimée entre-temps). Les lignes ignorées
+ * (supprimées ou modifiées depuis la lecture ou la sauvegarde) sont comptées et signalées.
+ */
 async function write(changes: readonly Change[]) {
+  let written = 0;
+  let skipped = 0;
   for (const batch of chunk(changes, BATCH)) {
-    await prisma.$transaction(
+    const results = await prisma.$transaction(
       batch.map((c) => {
         switch (c.field) {
           case "assistant.href":
-            return prisma.assistantEntry.update({ where: { id: c.id }, data: { href: c.after as string | null } });
+            return prisma.assistantEntry.updateMany({ where: { id: c.id, href: c.before as string | null }, data: { href: c.after as string | null } });
           case "assistant.screens":
-            return prisma.assistantEntry.update({ where: { id: c.id }, data: { screens: c.after as string[] } });
+            return prisma.assistantEntry.updateMany({ where: { id: c.id, screens: { equals: c.before as string[] } }, data: { screens: c.after as string[] } });
           case "systemMessage.linkUrl":
-            return prisma.systemMessage.update({ where: { id: c.id }, data: { linkUrl: c.after as string | null } });
+            return prisma.systemMessage.updateMany({ where: { id: c.id, linkUrl: c.before as string | null }, data: { linkUrl: c.after as string | null } });
           case "notification.link":
-            return prisma.notification.update({ where: { id: c.id }, data: { link: c.after as string | null } });
+            return prisma.notification.updateMany({ where: { id: c.id, link: c.before as string | null }, data: { link: c.after as string | null } });
         }
       })
     );
+    for (const r of results) {
+      if (r.count > 0) written++;
+      else skipped++;
+    }
     process.stdout.write(".");
   }
   process.stdout.write("\n");
+  console.log(`${written} ligne(s) écrite(s), ${skipped} ignorée(s) (supprimée(s) ou modifiée(s) depuis la lecture).`);
 }
 
 async function main() {

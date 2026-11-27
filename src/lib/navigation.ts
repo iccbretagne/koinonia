@@ -257,8 +257,8 @@ function splitConfig(input: NavigationInput) {
     if (PLATFORM_HREFS.has(l.href)) platform.push({ href: l.href, label: l.label });
     else if (l.href === paths.dons()) giving.push({ href: l.href, label: l.label });
     else {
-      // Paramètres de l'église : `/admin/churches/<id>`.
-      const block = ADMIN_BLOCKS[l.href] ?? (l.href.startsWith(`${paths.admin.churches()}/`) ? "Église" : undefined);
+      // Paramètres de l'église : `/admin/eglise/<id>` (préfixe tiré du registre).
+      const block = ADMIN_BLOCKS[l.href] ?? (l.href.startsWith(CHURCH_SETTINGS_PREFIX) ? "Église" : undefined);
       admin.push({ href: l.href, label: l.label, sidebarBlock: block });
     }
   }
@@ -698,6 +698,9 @@ export interface Crumb {
 }
 
 /** Pages de compte, hors espaces : présentes dans le menu compte et la palette. */
+/** Préfixe des paramètres d'une église (`/admin/eglise/<id>`), rangés dans le bloc « Église ». */
+const CHURCH_SETTINGS_PREFIX = paths.admin.church("_").slice(0, -1);
+
 export const ACCOUNT_PAGES: readonly { href: string; label: string; icon: LucideIcon }[] = [
   { href: paths.profile(), label: "Mon profil", icon: UserRound },
   { href: paths.guide(), label: "Guide d'utilisation", icon: BookOpen },
@@ -815,9 +818,6 @@ export function parentLink(spaces: readonly NavSpace[], pathname: string, dept: 
     return { href: cover.href, label: cover.exact ? (cover.page?.label ?? cover.label ?? SCREEN_META[p.key].label) : SCREEN_META[p.key].label };
   });
   if (viaChain) return viaChain;
-
-  // Vue pastorale : « Mes membres » revient à l'Accueil (tableau pastoral, spec 092 lot 3).
-  if (pathname.startsWith(`${paths.pastoral()}/`)) return { href: paths.accueil(), label: "Accueil" };
 
   // Écran hors des espaces du rôle (lien reçu, notification…) : retour à l'Accueil, sauf s'il est
   // lui-même une page d'espace d'un autre rôle (aucun parent dans le registre).
