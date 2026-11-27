@@ -1,6 +1,5 @@
 import { requireAuth, resolveChurchId } from "@/lib/auth";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import {
   getCareAccess,
   getAppointmentRequestById,
@@ -13,6 +12,7 @@ import {
 import RequestActions from "./RequestActions";
 import DeleteItemButton from "@/components/DeleteItemButton";
 import CareItemFooter from "../../CareItemFooter";
+import { PageHeader, StatusChip, type StatusTone } from "@/components/ui";
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "En attente",
@@ -20,6 +20,14 @@ const STATUS_LABEL: Record<string, string> = {
   SCHEDULED: "Planifiée",
   CLOSED: "Terminée",
   REJECTED: "Refusée",
+};
+
+const STATUS_TONE: Record<string, StatusTone> = {
+  PENDING: "warning",
+  VALIDATED: "info",
+  SCHEDULED: "success",
+  CLOSED: "neutral",
+  REJECTED: "danger",
 };
 
 const HISTORY_ACTION_LABELS: Record<string, string> = {
@@ -81,31 +89,25 @@ export default async function CareRequestDetailPage({
   const wasHandedBack = item.status === "PENDING" && history.at(-1)?.action === "handback";
 
   return (
-    <div className="max-w-xl mx-auto">
-      <Link href="/care" className="text-sm text-ink-subtle hover:text-brand-text transition-colors mb-4 inline-block">
-        ← Suivi pastoral
-      </Link>
-      <h1 className="text-2xl font-bold text-ink mb-1">{item.firstName} {item.lastName}</h1>
-      <p className="text-sm text-ink-muted mb-6">
-        {STATUS_LABEL[item.status] ?? item.status}
-        {wasHandedBack && (
-          <span className="ml-2 inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-warning-soft text-warning">
-            Rendue par le référent
-          </span>
-        )}
-      </p>
+    <div className="mx-auto max-w-xl">
+      <PageHeader className="mb-6" eyebrow="Rendez-vous pastoral" title={`${item.firstName} ${item.lastName}`}>
+        <div className="flex flex-wrap gap-1.5">
+          <StatusChip tone={STATUS_TONE[item.status] ?? "neutral"}>{STATUS_LABEL[item.status] ?? item.status}</StatusChip>
+          {wasHandedBack && <StatusChip tone="warning">Rendue par le référent</StatusChip>}
+        </div>
+      </PageHeader>
 
-      <div className="bg-surface rounded-xl border border-line p-5 space-y-3">
-        <p className="text-sm text-ink-muted">
+      <div className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card md:p-5">
+        <p className="break-words text-sm text-ink-muted">
           {item.email} {item.phone && `· ${item.phone}`}
         </p>
         {!projected.masked ? (
           <>
-            <p className="text-sm font-medium text-ink">{projected.subject}</p>
+            <p className="text-sm font-semibold text-ink">{projected.subject}</p>
             <p className="text-sm text-ink-muted whitespace-pre-line">{projected.message}</p>
           </>
         ) : (
-          <p className="text-sm text-ink-subtle italic">Contenu confidentiel — réservé aux Référents soins pastoraux et au référent en charge.</p>
+          <p className="text-sm italic text-ink-muted">Contenu confidentiel — réservé aux Référents soins pastoraux et au référent en charge.</p>
         )}
         {item.assignedTo && (
           <p className="text-sm text-ink-muted">Référent : <strong>{item.assignedTo.name}</strong></p>

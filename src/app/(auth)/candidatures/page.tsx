@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarClock, Settings } from "lucide-react";
+import { CalendarClock, Inbox, Settings } from "lucide-react";
 import { buttonClasses } from "@/components/ui/button-classes";
 import { getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -32,6 +32,7 @@ export default async function CandidaturesPage({
   if (!actor.canManage && departments.length === 0) {
     return (
       <EmptyState
+        icon={Inbox}
         title="Aucune candidature"
         description="Les candidatures orientées vers tes départements apparaîtront ici."
       />
@@ -57,13 +58,13 @@ export default async function CandidaturesPage({
           actor.canManage || actor.canEditSettings ? (
             <div className="flex flex-wrap gap-2">
               {actor.canManage && (
-                <Link href="/candidatures/entretiens" className={buttonClasses("secondary", "sm")}>
-                  <CalendarClock className="size-4" aria-hidden="true" /> Entretiens
+                <Link href="/candidatures/entretiens" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+                  <CalendarClock className="size-4" aria-hidden="true" /> Gérer les entretiens
                 </Link>
               )}
               {actor.canEditSettings && (
-                <Link href="/candidatures/parametres" className={buttonClasses("secondary", "sm")}>
-                  <Settings className="size-4" aria-hidden="true" /> Paramètres (observation, email du PVS)
+                <Link href="/candidatures/parametres" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+                  <Settings className="size-4" aria-hidden="true" /> Régler l&apos;observation et l&apos;email du PVS
                 </Link>
               )}
             </div>

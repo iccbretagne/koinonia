@@ -26,7 +26,7 @@ export default function FreelanceRateFields({
   return (
     <>
       <Input
-        label="TJM (taux journalier)"
+        label="TJM, taux journalier (facultatif)"
         type="text"
         value={dailyRate}
         onChange={(e) => onDailyRateChange(e.target.value)}
@@ -35,7 +35,7 @@ export default function FreelanceRateFields({
       />
 
       <Input
-        label="Taux horaire"
+        label="Taux horaire (facultatif)"
         type="text"
         value={hourlyRate}
         onChange={(e) => onHourlyRateChange(e.target.value)}
@@ -44,9 +44,9 @@ export default function FreelanceRateFields({
       />
 
       {!remote && (
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Input
-            label="Localisation"
+            label="Localisation (facultatif)"
             type="text"
             value={location}
             onChange={(e) => onLocationChange(e.target.value)}

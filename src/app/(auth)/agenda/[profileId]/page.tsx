@@ -3,6 +3,7 @@ import { requireAgendaView } from "@/modules/agenda/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
+import { PageHeader } from "@/components/ui";
 import ProfileAgenda from "./ProfileAgenda";
 
 function toLocalISO(d: Date): string {
@@ -27,7 +28,7 @@ export default async function ProfileAgendaPage({
 }) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-sm text-ink-muted">Aucune église sélectionnée.</p>;
 
   const { profileId } = await params;
   const { week } = await searchParams;
@@ -62,11 +63,8 @@ export default async function ProfileAgendaPage({
   });
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-ink mb-1">
-        Agenda — {profile.name}
-      </h1>
-      <p className="text-sm text-ink-muted mb-6">{ROLE_LABELS[profile.role]}</p>
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+      <PageHeader eyebrow="Agenda pastoral" title={profile.name} description={ROLE_LABELS[profile.role]} />
       <ProfileAgenda profile={profile} entries={entries} weekStart={toLocalISO(from)} />
     </div>
   );

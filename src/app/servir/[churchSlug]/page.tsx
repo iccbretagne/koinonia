@@ -24,7 +24,7 @@ export default async function ServirPublicPage({ params }: { readonly params: Pr
   const retentionMonths = church ? (await getServingDurations(church.id)).retentionMonths : 0;
 
   return (
-    <div className="min-h-screen bg-surface-sunken flex flex-col">
+    <div className="flex min-h-screen flex-col bg-bg">
       <header className="bg-brand px-4 py-6">
         <div className="max-w-xl mx-auto">
           {church && (
@@ -54,7 +54,7 @@ export default async function ServirPublicPage({ params }: { readonly params: Pr
         )}
       </main>
 
-      <footer className="text-center text-xs text-ink-subtle py-5 border-t border-line">
+      <footer className="border-t border-line py-5 text-center text-xs text-ink-muted">
         <p>
           Propulsé par <span className="font-medium text-ink-muted">Koinonia</span>
         </p>

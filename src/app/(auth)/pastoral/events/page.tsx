@@ -1,7 +1,7 @@
 import { requirePastoralActiveChurch } from "../active-church";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { buttonClasses } from "@/components/ui/button-classes";
+import { PageHeader, StatusChip, buttonClasses } from "@/components/ui";
 function progressTextClass(pct: number): string {
   if (pct === 100) return "text-success";
   return pct > 50 ? "text-brand-text" : "text-warning";
@@ -91,26 +91,18 @@ export default async function PastoralEventsPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-2 mb-2">
-        <Link href="/pastoral" className="text-sm text-ink-subtle hover:text-brand-text transition-colors">
-          ← Accueil pastoral
-        </Link>
-      </div>
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
 
-      <div>
-        <h1 className="text-2xl font-bold text-ink">Événements</h1>
-        <p className="text-sm text-ink-muted mt-0.5">{church?.name}</p>
-      </div>
+      <PageHeader title="Événements" description={church?.name} />
 
       {/* Stats année */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-surface border border-line rounded-xl p-4 text-center col-span-2 md:col-span-1">
+        <div className="rounded-card border border-line bg-surface p-4 shadow-card text-center col-span-2 md:col-span-1">
           <p className="text-2xl font-bold text-brand-text">{totalThisYear}</p>
           <p className="text-xs text-ink-muted mt-1">Événements {now.getFullYear()}</p>
         </div>
         {yearStats.toSorted((a, b) => b._count - a._count).slice(0, 3).map((g) => (
-          <div key={g.type} className="bg-surface border border-line rounded-xl p-4 text-center">
+          <div key={g.type} className="rounded-card border border-line bg-surface p-4 shadow-card text-center">
             <p className="text-2xl font-bold text-ink">{g._count}</p>
             <p className="text-xs text-ink-muted mt-1">{EVENT_TYPE_LABELS[g.type] ?? g.type}</p>
           </div>
@@ -121,17 +113,17 @@ export default async function PastoralEventsPage() {
         {/* Prochains événements */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-ink-muted">À venir</h2>
-            <Link href="/events" className={buttonClasses("ghost", "sm")}>Agenda de l&apos;église →</Link>
+            <h2 className="font-display text-[17px] font-semibold text-ink">À venir</h2>
+            <Link href="/events" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>Voir l&apos;agenda de l&apos;église</Link>
           </div>
           {upcoming.length === 0 ? (
-            <p className="text-sm text-ink-subtle italic">Aucun événement planifié.</p>
+            <p className="text-sm text-ink-muted">Aucun événement planifié.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="flex flex-col gap-2">
               {upcoming.map((e) => {
                 const progress = planningProgress(e);
                 return (
-                  <div key={e.id} className="bg-surface border border-line rounded-lg px-3 py-2.5 space-y-1.5">
+                  <div key={e.id} className="flex flex-col gap-1.5 rounded-card border border-line bg-surface px-3 py-2.5 shadow-card">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-ink truncate">{e.title}</p>
@@ -146,11 +138,11 @@ export default async function PastoralEventsPage() {
                           }`}>
                             {progress.deptsWithStar} / {progress.totalDepts} département{progress.totalDepts > 1 ? "s" : ""} prêt{progress.totalDepts > 1 ? "s" : ""}
                           </span>
-                          <span className="text-xs text-ink-subtle">
+                          <span className="text-xs text-ink-muted">
                             {progress.totalStars} STAR en service
                           </span>
                         </div>
-                        <div className="w-full bg-surface-sunken rounded-full h-1">
+                        <div className="h-1 w-full rounded-full bg-line" role="img" aria-label={`Planning prêt à ${progress.pct} %`}>
                           <div
                             className={`h-1 rounded-full transition-all ${
                               progressBarClass(progress.pct)
@@ -161,7 +153,7 @@ export default async function PastoralEventsPage() {
                       </div>
                     )}
                     {e.planningDeadline && e.planningDeadline > now && (
-                      <p className="text-xs text-ink-subtle">Deadline planning : {fmtFull(e.planningDeadline)}</p>
+                      <p className="text-xs text-ink-muted">Date limite du planning : {fmtFull(e.planningDeadline)}</p>
                     )}
                   </div>
                 );
@@ -173,28 +165,26 @@ export default async function PastoralEventsPage() {
         {/* Événements récents */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-ink-muted">30 derniers jours</h2>
-            <Link href="/pastoral/reports" className={buttonClasses("ghost", "sm")}>CRs →</Link>
+            <h2 className="font-display text-[17px] font-semibold text-ink">30 derniers jours</h2>
+            <Link href="/pastoral/reports" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>Voir les comptes rendus</Link>
           </div>
           {recent.length === 0 ? (
-            <p className="text-sm text-ink-subtle italic">Aucun événement sur les 30 derniers jours.</p>
+            <p className="text-sm text-ink-muted">Aucun événement sur les 30 derniers jours.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="flex flex-col gap-2">
               {recent.map((e) => (
-                <div key={e.id} className="flex items-center gap-3 bg-surface border border-line rounded-lg px-3 py-2.5">
+                <div key={e.id} className="flex items-center gap-3 rounded-card border border-line bg-surface px-3 py-2.5 shadow-card">
                   <div className="w-12 shrink-0 text-xs text-ink-subtle">{fmt(e.date)}</div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-ink truncate">{e.title}</p>
                     {e.report?.speaker && (
-                      <p className="text-xs text-ink-subtle truncate">{e.report.speaker}</p>
+                      <p className="truncate text-xs text-ink-muted">{e.report.speaker}</p>
                     )}
                   </div>
                   {e.reportEnabled && (
-                    <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${
-                      e.report ? "text-success bg-success-soft" : "text-warning bg-warning-soft"
-                    }`}>
-                      {e.report ? "CR ✓" : "CR manquant"}
-                    </span>
+                    <StatusChip tone={e.report ? "success" : "warning"} className="shrink-0">
+                      {e.report ? "CR rédigé" : "CR manquant"}
+                    </StatusChip>
                   )}
                 </div>
               ))}

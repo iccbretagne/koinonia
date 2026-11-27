@@ -17,7 +17,7 @@ export default async function MyResponsesPage() {
         <ul className="space-y-3">
           {responses.map((r) => (
             <li key={r.id}>
-              <Link href={`/f/${r.form.church.slug}/${r.form.slug}`} className="flex items-center justify-between gap-3 rounded-card border border-line bg-surface p-4 hover:border-brand">
+              <Link href={`/f/${r.form.church.slug}/${r.form.slug}`} className="flex min-h-11 items-center justify-between gap-3 rounded-card border border-line bg-surface p-4 shadow-card transition-colors hover:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
                 <span>
                   <span className="block font-semibold text-ink">{r.form.title}</span>
                   <span className="text-[13px] text-ink-muted">{r.form.church.name}</span>

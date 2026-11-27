@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Check, Copy, Link2 } from "lucide-react";
+import { Button } from "@/components/ui";
 
 export default function PublicUrlBanner({ slug }: { readonly slug: string }) {
   const [copied, setCopied] = useState(false);
@@ -14,34 +16,26 @@ export default function PublicUrlBanner({ slug }: { readonly slug: string }) {
   }
 
   return (
-    <div className="mb-6 flex items-center gap-3 bg-brand-soft border border-brand/20 rounded-xl px-4 py-3">
-      <svg aria-hidden="true" className="w-4 h-4 text-brand-text shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-      </svg>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-brand-text mb-0.5">Lien public — formulaire de demande de RDV</p>
-        <p className="text-xs text-ink-muted truncate">{url}</p>
+    <div className="flex flex-wrap items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-card">
+      <Link2 aria-hidden="true" className="size-4 shrink-0 text-brand-text" strokeWidth={1.75} />
+      <div className="min-w-0 flex-1 basis-48">
+        <p className="mb-0.5 text-xs font-semibold text-ink">Lien public — formulaire de demande de RDV</p>
+        <p className="truncate text-xs text-ink-muted">{url}</p>
       </div>
-      <button
-        onClick={copy}
-        className="shrink-0 flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-brand/30 text-brand-text hover:bg-brand-soft transition-colors font-medium"
-      >
+      <Button type="button" variant="secondary" size="sm" onClick={copy} className="min-h-11 shrink-0 sm:min-h-9">
         {copied ? (
           <>
-            <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-            Copié !
+            <Check aria-hidden="true" className="size-4" strokeWidth={1.75} />
+            Lien copié
           </>
         ) : (
           <>
-            <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-            Copier
+            <Copy aria-hidden="true" className="size-4" strokeWidth={1.75} />
+            Copier le lien
           </>
         )}
-      </button>
+      </Button>
+      <span className="sr-only" role="status">{copied ? "Lien copié" : ""}</span>
     </div>
   );
 }

@@ -175,7 +175,7 @@ export default function JobsBoard({
               <span className="mt-0.5 flex flex-wrap gap-x-3 text-sm leading-5">
                 {expiry && <span className={expiry.soon ? "font-medium text-warning" : "text-ink-subtle"}>{expiry.label}</span>}
                 {rate && <span className="text-ink-muted">{rate}</span>}
-                {pub.isOwn && <span className="text-ink-subtle">Ma publication</span>}
+                {pub.isOwn && <span className="text-ink-muted">Ma publication</span>}
               </span>
             )}
           </span>
@@ -186,7 +186,7 @@ export default function JobsBoard({
 
   function renderList() {
     if (visible.length > 0) {
-      return <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">{visible.map(renderCard)}</ul>;
+      return <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-card">{visible.map(renderCard)}</ul>;
     }
     if (filtering) {
       return (
@@ -207,7 +207,7 @@ export default function JobsBoard({
         icon={tab === "opportunites" ? Briefcase : UserRoundSearch}
         title={EMPTY[tab].title}
         description={EMPTY[tab].description}
-        action={<PublishChooser only={TAB_KINDS[tab]} />}
+        action={<PublishChooser only={TAB_KINDS[tab]} variant="secondary" />}
       />
     );
   }

@@ -2,7 +2,7 @@
 
 import { SubmitEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import Button from "@/components/ui/Button";
+import { Alert, Button, Input, Select, Textarea, fieldLabelClasses } from "@/components/ui";
 
 interface Profile { id: string; name: string; role: string }
 interface Props { readonly churchId: string; readonly profiles: Profile[] }
@@ -13,10 +13,18 @@ const ROLE_LABELS: Record<string, string> = {
   BERGER: "Berger",
 };
 
+/** Pastille de choix (radio masquée) : 44 px, focus visible porté par l'étiquette. */
+function choiceClasses(on: boolean): string {
+  return `inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${
+    on ? "border-brand bg-brand-soft text-brand-text" : "border-control-line bg-surface text-ink-muted hover:bg-surface-sunken"
+  }`;
+}
+
 export default function NewEntryForm({ churchId, profiles }: Props) {
   const router = useRouter();
   const id = useId();
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     type: "ACTIVITY" as "ACTIVITY" | "APPOINTMENT",
     recipientId: profiles[0]?.id ?? "",
@@ -34,10 +42,11 @@ export default function NewEntryForm({ churchId, profiles }: Props) {
   async function submit(e: SubmitEvent) {
     e.preventDefault();
     if (!form.recipientId || !form.title || !form.startsAt) {
-      alert("Profil, titre et date de début sont requis.");
+      setError("Profil, titre et date de début sont requis.");
       return;
     }
     setSubmitting(true);
+    setError(null);
     try {
       const res = await fetch("/api/agenda/entries", {
         method: "POST",
@@ -53,114 +62,103 @@ export default function NewEntryForm({ churchId, profiles }: Props) {
           location: form.location || null,
         }),
       });
-      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setError(d.error || "L'enregistrement a échoué. Veuillez réessayer.");
+        return;
+      }
       router.push("/agenda");
       router.refresh();
-    } catch { alert("Erreur réseau"); }
-    finally { setSubmitting(false); }
+    } catch {
+      setError("Erreur réseau. Veuillez réessayer.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
-    <form onSubmit={submit} className="space-y-5 bg-surface rounded-lg shadow border border-line p-6">
+    <form onSubmit={submit} className="flex flex-col gap-5 rounded-card border border-line bg-surface p-4 shadow-card sm:p-6">
       <fieldset className="min-w-0">
-        <legend className="block text-sm font-medium text-ink-muted mb-1">Type</legend>
-        <div className="flex gap-4">
+        <legend className={`${fieldLabelClasses} mb-2`}>Type</legend>
+        <div className="flex flex-wrap gap-2">
           {(["ACTIVITY", "APPOINTMENT"] as const).map((t) => (
-            <label key={t} className="flex items-center gap-2 cursor-pointer">
+            <label key={t} className={choiceClasses(form.type === t)}>
               <input
                 type="radio"
                 name="type"
                 value={t}
                 checked={form.type === t}
                 onChange={() => set("type", t)}
+                className="sr-only"
               />
-              <span className="text-sm">{t === "ACTIVITY" ? "Activité" : "Rendez-vous"}</span>
+              {t === "ACTIVITY" ? "Activité" : "Rendez-vous"}
             </label>
           ))}
         </div>
       </fieldset>
 
-      <div>
-        <label htmlFor={`${id}-f1`} className="block text-sm font-medium text-ink-muted mb-1">
-          Profil pastoral <span className="text-danger">*</span>
-        </label>
-        <select id={`${id}-f1`}
-          value={form.recipientId}
-          onChange={(e) => set("recipientId", e.target.value)}
+      <Select
+        id={`${id}-f1`}
+        label="Profil pastoral"
+        value={form.recipientId}
+        onChange={(e) => set("recipientId", e.target.value)}
+        required
+        options={profiles.map((p) => ({ value: p.id, label: `${p.name} — ${ROLE_LABELS[p.role] ?? p.role}` }))}
+      />
+
+      <Input
+        id={`${id}-f2`}
+        label="Titre"
+        type="text"
+        value={form.title}
+        onChange={(e) => set("title", e.target.value)}
+        required
+        placeholder="Culte, réunion d'équipe, RDV avec…"
+      />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Input
+          id={`${id}-f3`}
+          label="Début"
+          type="datetime-local"
+          value={form.startsAt}
+          onChange={(e) => set("startsAt", e.target.value)}
           required
-          className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
-        >
-          {profiles.map((p) => (
-            <option key={p.id} value={p.id}>{p.name} — {ROLE_LABELS[p.role] ?? p.role}</option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label htmlFor={`${id}-f2`} className="block text-sm font-medium text-ink-muted mb-1">
-          Titre <span className="text-danger">*</span>
-        </label>
-        <input id={`${id}-f2`}
-          type="text"
-          value={form.title}
-          onChange={(e) => set("title", e.target.value)}
-          required
-          placeholder="Culte, réunion d'équipe, RDV avec..."
-          className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
+        />
+        <Input
+          id={`${id}-f4`}
+          label="Fin (facultatif)"
+          type="datetime-local"
+          value={form.endsAt}
+          onChange={(e) => set("endsAt", e.target.value)}
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor={`${id}-f3`} className="block text-sm font-medium text-ink-muted mb-1">
-            Début <span className="text-danger">*</span>
-          </label>
-          <input id={`${id}-f3`}
-            type="datetime-local"
-            value={form.startsAt}
-            onChange={(e) => set("startsAt", e.target.value)}
-            required
-            className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
-          />
-        </div>
-        <div>
-          <label htmlFor={`${id}-f4`} className="block text-sm font-medium text-ink-muted mb-1">Fin</label>
-          <input id={`${id}-f4`}
-            type="datetime-local"
-            value={form.endsAt}
-            onChange={(e) => set("endsAt", e.target.value)}
-            className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
-          />
-        </div>
-      </div>
+      <Input
+        id={`${id}-f5`}
+        label="Lieu (facultatif)"
+        type="text"
+        value={form.location}
+        onChange={(e) => set("location", e.target.value)}
+        placeholder="Salle, adresse…"
+      />
 
-      <div>
-        <label htmlFor={`${id}-f5`} className="block text-sm font-medium text-ink-muted mb-1">Lieu</label>
-        <input id={`${id}-f5`}
-          type="text"
-          value={form.location}
-          onChange={(e) => set("location", e.target.value)}
-          placeholder="Salle, adresse..."
-          className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
-        />
-      </div>
+      <Textarea
+        id={`${id}-f6`}
+        label="Description (facultatif)"
+        value={form.description}
+        onChange={(e) => set("description", e.target.value)}
+        rows={3}
+      />
 
-      <div>
-        <label htmlFor={`${id}-f6`} className="block text-sm font-medium text-ink-muted mb-1">Description</label>
-        <textarea id={`${id}-f6`}
-          value={form.description}
-          onChange={(e) => set("description", e.target.value)}
-          rows={3}
-          className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand resize-none"
-        />
-      </div>
+      {error && <Alert tone="danger">{error}</Alert>}
 
-      <div className="flex gap-3">
-        <Button type="submit" disabled={submitting}>
-          {submitting ? "Enregistrement..." : "Enregistrer"}
-        </Button>
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button type="button" variant="secondary" onClick={() => router.back()}>
           Annuler
+        </Button>
+        <Button type="submit" disabled={submitting}>
+          {submitting ? "Enregistrement en cours…" : "Ajouter à l'agenda"}
         </Button>
       </div>
     </form>

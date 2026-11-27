@@ -13,6 +13,8 @@ import {
 } from "@/modules/care";
 import CareTabs from "./CareTabs";
 import PublicFormBanner from "@/components/PublicFormBanner";
+import { BarChart3, Settings } from "lucide-react";
+import { Alert, PageHeader, buttonClasses } from "@/components/ui";
 
 /**
  * Espace « Suivi pastoral » (spec 052) — deux onglets : Rendez-vous (ex-`/agenda/requests`,
@@ -27,7 +29,7 @@ export default async function CarePage() {
   const access = await getCareAccess(session, churchId);
   if (!access.canOverview && access.ownProfileIds.length === 0) {
     return (
-      <div className="max-w-2xl mx-auto text-center py-12 text-ink-subtle">
+      <div className="mx-auto max-w-2xl py-12 text-center text-ink-muted">
         <p className="text-lg">Aucun accès à l&apos;espace suivi pastoral.</p>
       </div>
     );
@@ -95,24 +97,29 @@ export default async function CarePage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex items-start justify-between gap-3 mb-2">
-        <h1 className="text-2xl font-bold text-ink">Suivi pastoral</h1>
-        <div className="flex items-center gap-3 shrink-0">
-          {access.canOverview && (
-            <Link href="/care/stats" className="text-sm text-ink-subtle hover:text-brand-text transition-colors">
-              Statistiques
-            </Link>
-          )}
-          {access.canQualify && (
-            <Link href="/care/parametres" className="text-sm text-ink-subtle hover:text-brand-text transition-colors">
-              Paramètres
-            </Link>
-          )}
-        </div>
-      </div>
-      <p className="text-sm text-ink-muted mb-4">
-        Demandes de rendez-vous pastoral et suivi des nouveaux convertis.
-      </p>
+      <PageHeader
+        className="mb-4"
+        title="Suivi pastoral"
+        description="Demandes de rendez-vous pastoral et suivi des nouveaux convertis."
+        actions={
+          (access.canOverview || access.canQualify) && (
+            <>
+              {access.canOverview && (
+                <Link href="/care/stats" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+                  <BarChart3 aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                  Statistiques
+                </Link>
+              )}
+              {access.canQualify && (
+                <Link href="/care/parametres" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+                  <Settings aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                  Paramètres
+                </Link>
+              )}
+            </>
+          )
+        }
+      />
       {church?.slug && (
         <div className="mb-4">
           <PublicFormBanner
@@ -122,9 +129,9 @@ export default async function CarePage() {
         </div>
       )}
       {relances.length > 0 && (
-        <div className="bg-warning-soft border border-warning/30 rounded-lg px-4 py-3 mb-4 text-sm text-warning">
-          À relancer : {relances.join(" · ")}
-        </div>
+        <Alert tone="warning" title="À relancer" className="mb-4">
+          {relances.join(" · ")}
+        </Alert>
       )}
       <CareTabs
         churchId={churchId}

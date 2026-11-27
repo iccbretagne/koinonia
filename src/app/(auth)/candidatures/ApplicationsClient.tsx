@@ -64,7 +64,7 @@ export default function ApplicationsClient({ tab, tabs, pvs, departments }: Prop
             primary: true,
             accessor: (a) =>
               a.canOpen ? (
-                <Link href={`/candidatures/${a.id}`} className="font-medium text-ink hover:text-brand-text underline-offset-2 hover:underline">
+                <Link href={`/candidatures/${a.id}`} className="rounded-control font-medium text-ink hover:text-brand-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
                   {a.firstName} {a.lastName}
                 </Link>
               ) : (

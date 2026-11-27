@@ -71,8 +71,8 @@ export default function InterviewBlock({
   }
 
   return (
-    <section className="bg-surface rounded-xl border border-line p-4 sm:p-5 space-y-3">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-brand-text">Entretien</h2>
+    <section className="space-y-3 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+      <h2 className="font-display text-[17px] font-semibold text-ink">Entretien</h2>
       {repeatedNoShow && <Alert tone="warning" title="Absent à deux entretiens d'affilée." />}
       {scheduling && (
         <p className="flex flex-wrap items-center gap-2 text-sm text-ink">
@@ -90,22 +90,22 @@ export default function InterviewBlock({
           <div className="flex flex-wrap gap-2 pt-1">
             {current.status === "TO_COMPLETE" ? (
               <>
-                <Button size="sm" disabled={busy} onClick={() => void act({ action: "outcome", status: "DONE" }, "Entretien noté réalisé")}>
-                  Réalisé
+                <Button size="sm" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => void act({ action: "outcome", status: "DONE" }, "Entretien noté réalisé")}>
+                  Noter réalisé
                 </Button>
-                <Button size="sm" variant="secondary" disabled={busy} onClick={() => void act({ action: "outcome", status: "NO_SHOW" }, "Absence notée")}>
-                  Absent
+                <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => void act({ action: "outcome", status: "NO_SHOW" }, "Absence notée")}>
+                  Noter absent
                 </Button>
-                <Button size="sm" variant="secondary" disabled={busy} onClick={() => void act({ action: "outcome", status: "EXCUSED" }, "Excuse notée")}>
-                  Excusé
+                <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => void act({ action: "outcome", status: "EXCUSED" }, "Excuse notée")}>
+                  Noter excusé
                 </Button>
               </>
             ) : (
               <>
-                <Button size="sm" variant="secondary" disabled={busy} onClick={() => void openPicker()}>
-                  Déplacer
+                <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => void openPicker()}>
+                  Déplacer le rendez-vous
                 </Button>
-                <Button size="sm" variant="ghost" disabled={busy} onClick={() => setCancelling(true)}>
+                <Button size="sm" variant="ghost" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => setCancelling(true)}>
                   Annuler le rendez-vous
                 </Button>
               </>
@@ -116,11 +116,11 @@ export default function InterviewBlock({
         <div className="space-y-2">
           <p className="text-sm text-ink-muted">Aucun rendez-vous en cours.</p>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" disabled={busy} onClick={() => void openPicker()}>
+            <Button size="sm" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => void openPicker()}>
               Fixer un rendez-vous
             </Button>
             {hasEmail ? (
-              <Button size="sm" variant="secondary" disabled={busy} onClick={() => void act({ action: "invite" }, "Invitation envoyée")}>
+              <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => void act({ action: "invite" }, "Invitation envoyée")}>
                 Inviter à choisir un créneau
               </Button>
             ) : (
@@ -132,7 +132,7 @@ export default function InterviewBlock({
 
       {history.length > 0 && (
         <details className="text-sm">
-          <summary className="cursor-pointer text-ink-muted">Historique ({history.length})</summary>
+          <summary className="flex min-h-11 cursor-pointer items-center rounded-control text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">Historique ({history.length})</summary>
           <ul className="mt-2 space-y-1">
             {history.map((i) => (
               <li key={i.id} className="text-ink-muted">
@@ -147,7 +147,7 @@ export default function InterviewBlock({
 
       <Modal open={picking} onClose={() => setPicking(false)} title={`Rendez-vous de ${name}`}>
         {slots === null ? (
-          <p className="text-ink-muted">Chargement…</p>
+          <p className="text-ink-muted">Chargement en cours…</p>
         ) : slots.length === 0 ? (
           <Alert tone="info" title="Aucun créneau libre : ajoutez-en depuis l'écran Entretiens." />
         ) : (
@@ -157,7 +157,7 @@ export default function InterviewBlock({
                 <button
                   type="button"
                   disabled={busy}
-                  className="w-full min-h-11 rounded-control border border-line bg-surface p-3 text-left hover:border-brand"
+                  className="w-full min-h-11 rounded-control border border-line bg-surface p-3 text-left transition-colors hover:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-45"
                   onClick={() =>
                     void act({ action: "book", slotId: s.id }, hasEmail ? "Rendez-vous fixé, le candidat est prévenu" : "Rendez-vous fixé").then((ok) => ok && setPicking(false))
                   }
@@ -177,8 +177,8 @@ export default function InterviewBlock({
         title="Annuler le rendez-vous ?"
         message={`Le créneau sera libéré${hasEmail ? " et le candidat invité à en choisir un autre" : ""}.`}
         confirmLabel="Annuler le rendez-vous"
-        confirmingLabel="Annulation…"
-        variant="danger"
+        confirmingLabel="Annulation en cours…"
+        variant="primary"
         confirming={busy}
         onConfirm={() => void act({ action: "cancel" }, "Rendez-vous annulé").then(() => setCancelling(false))}
         onCancel={() => setCancelling(false)}

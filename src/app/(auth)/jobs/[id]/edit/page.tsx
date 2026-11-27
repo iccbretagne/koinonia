@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { PageHeader } from "@/components/ui";
 import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import JobFormClient from "../../new/JobFormClient";
@@ -26,8 +27,8 @@ export default async function EditJobPage({
   if (job.authorId !== session.user.id) redirect(`/jobs/${id}`);
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-ink mb-6">Modifier l&apos;offre</h1>
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <PageHeader title="Modifier l&apos;offre" />
       <JobFormClient
         initial={{
           ...job,

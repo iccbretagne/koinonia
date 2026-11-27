@@ -78,7 +78,7 @@ export default function CompanionsSettings({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error ?? "Erreur lors de l'enregistrement");
-      toast.success("Accompagnants mis à jour.");
+      toast.success("Accompagnants mis à jour");
       router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erreur lors de l'enregistrement");
@@ -123,11 +123,11 @@ export default function CompanionsSettings({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-xl border border-line bg-surface overflow-hidden">
-        <div className="px-4 pt-3 pb-1 text-xs font-bold uppercase tracking-wide text-ink-muted">
+    <div className="flex flex-col gap-6">
+      <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+        <h3 className="px-4 pb-1 pt-3 text-xs font-bold uppercase tracking-wide text-ink-muted">
           Équipe MSDP
-        </div>
+        </h3>
         {settings.msdp.length === 0 ? (
           <EmptyState size="sm" title="Aucun membre du MSDP" />
         ) : (
@@ -155,10 +155,10 @@ export default function CompanionsSettings({
         )}
       </div>
 
-      <div className="rounded-xl border border-line bg-surface overflow-hidden">
-        <div className="px-4 pt-3 pb-1 text-xs font-bold uppercase tracking-wide text-ink-muted">
+      <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+        <h3 className="px-4 pb-1 pt-3 text-xs font-bold uppercase tracking-wide text-ink-muted">
           Ajoutés hors MSDP
-        </div>
+        </h3>
         {settings.added.length === 0 ? (
           <EmptyState size="sm" title="Aucun STAR ajouté" description="Cherchez un STAR ci-dessous pour l'ajouter." />
         ) : (
@@ -184,7 +184,7 @@ export default function CompanionsSettings({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="flex flex-col gap-2">
         <Input
           label="Ajouter un STAR hors MSDP"
           placeholder="Rechercher par nom ou email…"
@@ -192,7 +192,7 @@ export default function CompanionsSettings({
           onChange={(e) => setQuery(e.target.value)}
         />
         {query.trim() && (
-          <ul className="divide-y divide-line rounded-xl border border-line bg-surface overflow-hidden">
+          <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-card">
             {filteredCandidates.length === 0 ? (
               <li className="px-4 py-3 text-sm text-ink-muted">Aucun résultat.</li>
             ) : (
@@ -224,7 +224,9 @@ export default function CompanionsSettings({
         open={!!pending}
         title={pending?.question ?? ""}
         message={pending?.message ?? ""}
-        confirmLabel="Confirmer"
+        confirmLabel={pending?.state === "EXCLUDED" ? "Écarter l'accompagnant" : "Retirer l'accompagnant"}
+        confirmingLabel="Enregistrement en cours…"
+        variant="primary"
         confirming={saving}
         onConfirm={() => pending && applyState(pending.userId, pending.state)}
         onCancel={() => setPending(null)}

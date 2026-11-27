@@ -25,7 +25,7 @@ export default function JobContactFields({
   return (
     <>
       <Input
-        label="Email de contact"
+        label="Email de contact (facultatif)"
         type="email"
         value={email}
         onChange={(e) => onEmailChange(e.target.value)}
@@ -33,7 +33,7 @@ export default function JobContactFields({
       />
 
       <Input
-        label={urlLabel}
+        label={`${urlLabel} (facultatif)`}
         type="url"
         value={url}
         onChange={(e) => onUrlChange(e.target.value)}

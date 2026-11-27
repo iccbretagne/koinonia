@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/ui";
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { requireIntegrationAccess } from "@/modules/integration";
 import { prisma } from "@/lib/prisma";
@@ -33,12 +34,11 @@ export default async function IntegrationLeadersPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-ink">Bergers &amp; co-bergers</h1>
-        <p className="text-sm text-ink-muted mt-1">
-          Gérez les responsables de familles affectés au suivi des demandes d&apos;intégration.
-        </p>
-      </div>
+      <PageHeader
+        className="mb-6"
+        title="Bergers & co-bergers"
+        description="Gérez les responsables de familles affectés au suivi des demandes d'intégration."
+      />
       <LeadersDashboard
         churchId={churchId}
         initialAssignments={assignments}

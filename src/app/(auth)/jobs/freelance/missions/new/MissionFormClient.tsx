@@ -84,19 +84,19 @@ export default function MissionFormClient({
   }
 
   let submitLabel = "Publier la mission";
-  if (saving) submitLabel = "Publication…";
-  else if (isEdit) submitLabel = "Enregistrer";
+  if (saving) submitLabel = isEdit ? "Enregistrement en cours…" : "Publication en cours…";
+  else if (isEdit) submitLabel = "Enregistrer les modifications";
 
   return (
-    <form onSubmit={handleSubmit} className="bg-surface rounded-lg border border-line p-6 space-y-5">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 rounded-card border border-line bg-surface p-4 shadow-card sm:p-6">
       {error && (
         <Alert tone="danger">{error}</Alert>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="sm:col-span-2">
           <Input
-            label="Titre de la mission *"
+            label="Titre de la mission"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -106,9 +106,9 @@ export default function MissionFormClient({
           />
         </div>
 
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Input
-            label="Domaine / Stack technique *"
+            label="Domaine / Stack technique"
             type="text"
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
@@ -119,7 +119,7 @@ export default function MissionFormClient({
         </div>
 
         <Input
-          label="Durée estimée"
+          label="Durée estimée (facultatif)"
           type="text"
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
@@ -128,7 +128,7 @@ export default function MissionFormClient({
         />
 
         <Select
-          label="Modalité *"
+          label="Modalité"
           value={modality}
           onChange={(e) => setModality(e.target.value as Modality)}
           options={[
@@ -148,9 +148,9 @@ export default function MissionFormClient({
           onLocationChange={setLocation}
         />
 
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Textarea
-            label="Description de la mission *"
+            label="Description de la mission"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { controlClasses } from "@/components/ui";
 
 export interface AssigneeValue {
   kind: "PROFILE" | "MEMBER";
@@ -58,9 +59,9 @@ export default function AssigneeSelect({ id, churchId, value, onChange }: {
         const [kind, id] = raw.split(":");
         onChange({ kind: kind as "PROFILE" | "MEMBER", id });
       }}
-      className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
+      className={controlClasses()}
     >
-      <option value="">{loading ? "Chargement…" : "— Sélectionner —"}</option>
+      <option value="">{loading ? "Chargement en cours…" : "Choisir un référent…"}</option>
       <optgroup label="Profils pastoraux">
         {profiles.map((p) => (
           <option key={p.id} value={`PROFILE:${p.id}`}>

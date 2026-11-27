@@ -23,9 +23,9 @@ const API: Record<PublicationKind, { endpoint: (id: string) => string; edit: (id
 
 /** Clôture par l'auteur (pourvue, a trouvé, indisponible) et remise en ligne, hors offres. */
 const AUTHOR_CLOSE: Partial<Record<PublicationKind, { status: string; state: PublicationState; close: string; reopen: string; done: string; reopened: string }>> = {
-  MISSION: { status: "FILLED", state: "filled", close: "Mission pourvue", reopen: "Remettre en ligne", done: "Mission marquée pourvue", reopened: "Mission remise en ligne" },
-  SEEKER: { status: "FOUND", state: "found", close: "J'ai trouvé", reopen: "Je cherche de nouveau", done: "Profil marqué « a trouvé »", reopened: "Profil remis en ligne" },
-  FREELANCE: { status: "UNAVAILABLE", state: "unavailable", close: "Plus disponible", reopen: "De nouveau disponible", done: "Profil marqué indisponible", reopened: "Profil remis en ligne" },
+  MISSION: { status: "FILLED", state: "filled", close: "Marquer la mission pourvue", reopen: "Remettre la mission en ligne", done: "Mission marquée pourvue", reopened: "Mission remise en ligne" },
+  SEEKER: { status: "FOUND", state: "found", close: "Signaler que j'ai trouvé", reopen: "Reprendre ma recherche", done: "Profil marqué « a trouvé »", reopened: "Profil remis en ligne" },
+  FREELANCE: { status: "UNAVAILABLE", state: "unavailable", close: "Me déclarer indisponible", reopen: "Me déclarer disponible", done: "Profil marqué indisponible", reopened: "Profil remis en ligne" },
 };
 
 const STATE_NOTICE: Record<Exclude<PublicationState, "active">, string> = {
@@ -126,8 +126,8 @@ export default function PublicationDetail({
         <Alert
           tone="warning"
           action={
-            <Button size="sm" disabled={busy} onClick={async () => { if (await send("PATCH", { renew: true }, "Offre confirmée")) onChanged(); }}>
-              Toujours d&apos;actualité
+            <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" disabled={busy} onClick={async () => { if (await send("PATCH", { renew: true }, "Offre confirmée")) onChanged(); }}>
+              Confirmer l&apos;offre
             </Button>
           }
         >
@@ -164,7 +164,7 @@ export default function PublicationDetail({
 
       {(pub.contactEmail || pub.contactUrl) && (
         <div className="flex flex-col gap-2">
-          <h3 className="text-[13px] font-semibold leading-[18px] text-ink-subtle">{isOpportunity ? "Candidature" : "Contact"}</h3>
+          <h3 className="text-[13px] font-semibold leading-[18px] text-ink-muted">{isOpportunity ? "Candidature" : "Contact"}</h3>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             {pub.contactEmail && (
               <a href={`mailto:${pub.contactEmail}`} className={buttonClasses("primary")}>
@@ -186,7 +186,7 @@ export default function PublicationDetail({
         <ActionRow>
           {pub.isOwn && (pub.kind === "OFFER" ? !isRetired : pub.state === "active") && (
             <Link href={api.edit(pub.id)} className={buttonClasses("secondary")}>
-              Modifier
+              Modifier la publication
             </Link>
           )}
           {pub.isOwn && close && pub.state === "active" && (
@@ -201,16 +201,16 @@ export default function PublicationDetail({
           )}
           {canRetire && !isRetired && (
             <Button variant="secondary" disabled={busy} onClick={() => setPending("retire")}>
-              Retirer
+              Retirer la publication
             </Button>
           )}
           {canRetire && isRetired && (
             <Button variant="secondary" disabled={busy} onClick={() => setStatus(api.active, "Publication remise en ligne")}>
-              Republier
+              Republier la publication
             </Button>
           )}
           <Button variant="ghost" disabled={busy} onClick={() => setPending("delete")}>
-            Supprimer
+            Supprimer la publication
           </Button>
         </ActionRow>
       )}
@@ -223,7 +223,8 @@ export default function PublicationDetail({
             ? "Elle sera supprimée définitivement, pour tout le monde."
             : "Elle n'apparaîtra plus dans la liste. Elle pourra être republiée."
         }
-        confirmLabel={pending === "delete" ? "Supprimer" : "Retirer"}
+        confirmLabel={pending === "delete" ? "Supprimer la publication" : "Retirer la publication"}
+        confirmingLabel={pending === "delete" ? "Suppression en cours…" : "Retrait en cours…"}
         variant={pending === "delete" ? "danger" : "primary"}
         confirming={busy}
         onConfirm={() => void confirmPending()}

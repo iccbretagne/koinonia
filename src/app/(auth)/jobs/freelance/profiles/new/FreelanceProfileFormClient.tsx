@@ -35,7 +35,7 @@ export default function FreelanceProfileFormClient({
 }) {
   const router = useRouter();
   const isEdit = !!initial;
-  const submitLabel = isEdit ? "Enregistrer" : "Publier mon profil freelance";
+  const submitLabel = isEdit ? "Enregistrer les modifications" : "Publier mon profil freelance";
 
   const [title,        setTitle]        = useState(initial?.title        ?? "");
   const [domain,       setDomain]       = useState(initial?.domain       ?? "");
@@ -87,15 +87,15 @@ export default function FreelanceProfileFormClient({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-surface rounded-lg border border-line p-6 space-y-5">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 rounded-card border border-line bg-surface p-4 shadow-card sm:p-6">
       {error && (
         <Alert tone="danger">{error}</Alert>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="sm:col-span-2">
           <Input
-            label="Titre *"
+            label="Titre"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -105,9 +105,9 @@ export default function FreelanceProfileFormClient({
           />
         </div>
 
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Input
-            label="Domaine / Stack technique *"
+            label="Domaine / Stack technique"
             type="text"
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
@@ -118,7 +118,7 @@ export default function FreelanceProfileFormClient({
         </div>
 
         <Select
-          label="Modalité *"
+          label="Modalité"
           value={modality}
           onChange={(e) => setModality(e.target.value as Modality)}
           options={[
@@ -129,7 +129,7 @@ export default function FreelanceProfileFormClient({
         />
 
         <Input
-          label="Disponible à partir du"
+          label="Disponible à partir du (facultatif)"
           type="date"
           value={availableFrom}
           onChange={(e) => setAvailableFrom(e.target.value)}
@@ -145,9 +145,9 @@ export default function FreelanceProfileFormClient({
           onLocationChange={setLocation}
         />
 
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Textarea
-            label="Présentation *"
+            label="Présentation"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
@@ -165,7 +165,7 @@ export default function FreelanceProfileFormClient({
         />
       </div>
 
-      <JobFormActions saving={saving} label={saving ? "Publication…" : submitLabel} />
+      <JobFormActions saving={saving} label={saving ? (isEdit ? "Enregistrement en cours…" : "Publication en cours…") : submitLabel} />
     </form>
   );
 }
