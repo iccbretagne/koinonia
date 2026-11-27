@@ -36,10 +36,14 @@ export function proxy(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
   // Fichiers statiques (`public/`) : jamais interceptés, comme avant l'élargissement du matcher.
-  if (/\.[a-z0-9]+$/i.test(pathname)) return NextResponse.next();
+  // L'adresse vue par la garde d'adresse ne vient jamais du navigateur, même sur les sorties
+  // anticipées (fichier « statique » qui retombe sur une page, API).
+  const clean = new Headers(request.headers);
+  clean.delete(PATHNAME_HEADER);
+  if (/\.[a-z0-9]+$/i.test(pathname)) return NextResponse.next({ request: { headers: clean } });
   // Le site d'un événement n'est servi que par son hôte (ADR-0031) ; l'aperçu passe par l'onglet Site.
   if (pathname === "/site" || pathname.startsWith("/site/")) return notFoundResponse(pathname);
-  if (pathname.startsWith("/api/")) return route(request);
+  if (pathname.startsWith("/api/")) return route(request, clean);
   const legacy = legacyRedirect(request);
   if (legacy) return legacy;
 
