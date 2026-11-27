@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { buildSpaces, resolveActive, sidebarBlocks, type NavigationInput } from "../navigation";
+import { buildSpaces, resolveActive, type NavigationInput } from "../navigation";
 
-/** Entrée « Trésorerie » rangée sous « Comptabilité » (spec 076). */
+/** Entrée « Trésorerie » dans l'espace Finances (spec 076, lot 1 de la spec 092). */
 const base: NavigationInput = {
   departments: [],
   configLinks: [],
@@ -10,27 +10,25 @@ const base: NavigationInput = {
   homeHref: "/accueil",
 };
 
-const requestPages = (input: NavigationInput) => buildSpaces(input).find((s) => s.key === "requests")?.pages ?? [];
+const financePages = (input: NavigationInput) => buildSpaces(input).find((s) => s.key === "finances")?.pages ?? [];
 
 describe("navigation — trésorerie (spec 076)", () => {
-  it("le bloc « Comptabilité » regroupe Demandes, Navette puis Trésorerie", () => {
-    const pages = requestPages({ ...base, hasAccounting: true, hasShuttle: true, hasTreasury: true });
-    const accounting = sidebarBlocks(pages).find((b) => b.label === "Comptabilité");
-    expect(accounting?.entries.map((e) => e.label)).toEqual(["Demandes", "Navette", "Trésorerie"]);
+  it("Finances regroupe Demandes comptables, Navette puis Trésorerie", () => {
+    const pages = financePages({ ...base, hasAccounting: true, hasAccountingManage: true, hasShuttle: true, hasTreasury: true });
+    expect(pages.map((p) => p.label)).toEqual(["Demandes comptables", "Navette", "Trésorerie"]);
   });
 
-  it("sans navette, la trésorerie suffit à former le bloc", () => {
-    const pages = requestPages({ ...base, hasAccounting: true, hasTreasury: true });
-    const accounting = sidebarBlocks(pages).find((b) => b.label === "Comptabilité");
-    expect(accounting?.entries.map((e) => e.label)).toEqual(["Demandes", "Trésorerie"]);
+  it("sans navette, la trésorerie suffit", () => {
+    const pages = financePages({ ...base, hasAccounting: true, hasAccountingManage: true, hasTreasury: true });
+    expect(pages.map((p) => p.label)).toEqual(["Demandes comptables", "Trésorerie"]);
   });
 
   it("sans droit, aucune entrée « Trésorerie »", () => {
-    expect(requestPages({ ...base, hasAccounting: true }).some((p) => p.href === "/accounting/tresorerie")).toBe(false);
+    expect(financePages({ ...base, hasAccounting: true, hasAccountingManage: true }).some((p) => p.href === "/accounting/tresorerie")).toBe(false);
   });
 
-  it("/accounting/tresorerie allume « Trésorerie », pas « Comptabilité »", () => {
-    const spaces = buildSpaces({ ...base, hasAccounting: true, hasTreasury: true });
-    expect(resolveActive(spaces, "/accounting/tresorerie")).toEqual({ space: "requests", page: "/accounting/tresorerie" });
+  it("/accounting/tresorerie allume « Trésorerie »", () => {
+    const spaces = buildSpaces({ ...base, hasAccounting: true, hasAccountingManage: true, hasTreasury: true });
+    expect(resolveActive(spaces, "/accounting/tresorerie")).toEqual({ space: "finances", page: "/accounting/tresorerie" });
   });
 });

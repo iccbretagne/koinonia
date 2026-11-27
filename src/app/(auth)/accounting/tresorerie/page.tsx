@@ -1,5 +1,4 @@
 import { getCurrentChurchId, requireAuth } from "@/lib/auth";
-import { registry, rolePermissions } from "@/lib/registry";
 import {
   budgetVsActual,
   getBudget,
@@ -16,7 +15,6 @@ import {
 } from "@/modules/treasury";
 import { requireTreasuryAccess } from "@/modules/treasury/auth";
 import { ledgerQuerySchema, periodQuerySchema } from "@/modules/treasury/schemas";
-import AccountingNav from "../AccountingNav";
 import TreasuryClient from "./TreasuryClient";
 import { TREASURY_TABS, type TreasuryTab } from "./tabs";
 
@@ -88,20 +86,9 @@ export default async function TreasuryPage({
         : null,
   };
 
-  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
-  const perms = new Set(roles.flatMap((r) => rolePermissions[r] ?? []));
-  const { isShuttleVisible } = await import("@/modules/shuttle/auth");
-  const canViewShuttle = registry.has("shuttle") && (await isShuttleVisible(session, churchId));
 
   return (
     <div className="space-y-6">
-      <AccountingNav
-        canViewStats={perms.has("accounting:stats") || !!session.user.isSuperAdmin}
-        canViewRequests={perms.has("accounting:view") || !!session.user.isSuperAdmin}
-        canViewShuttle={canViewShuttle}
-        canViewTreasury
-        active="tresorerie"
-      />
       <TreasuryClient
         tab={tab}
         accounts={accounts}

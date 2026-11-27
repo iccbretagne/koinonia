@@ -37,16 +37,16 @@ const ALL_STEPS: TourStep[] = [
   },
   {
     target: '[data-tour="sidebar-events"]',
-    title: "Agenda",
+    title: "Événements",
     content:
-      "La liste et le calendrier des événements de l'église, l'agenda pastoral, et les comptes rendus (statistiques de présence, export Excel) pour ceux qui les saisissent.",
+      "Le calendrier des événements de l'église, leurs inscriptions (billetterie, formulaires), et les comptes rendus (statistiques de présence, export Excel) pour ceux qui les saisissent.",
     viewport: "desktop",
   },
   {
     target: '[data-tour="sidebar-members"]',
     title: "Personnes",
     content:
-      "Les membres actifs (STAR) de vos départements — coordonnées, affectations, statuts — mais aussi le discipolat, l'intégration des nouvelles familles, le suivi pastoral et les bergers de famille, regroupés ici.",
+      "Les membres actifs (STAR) de vos départements — coordonnées, affectations, statuts — mais aussi le discipolat, l'intégration des nouvelles familles et les bergers de famille, regroupés ici.",
     viewport: "desktop",
     roles: MEMBERS_ROLES,
   },
@@ -54,7 +54,7 @@ const ALL_STEPS: TourStep[] = [
     target: '[data-tour="sidebar-service"]',
     title: "Demandes",
     content:
-      "Retrouvez toutes vos demandes (annonce, visuel, RDV pastoral, demande comptable...) dans « Mes demandes ». L'espace « Communication & Production » regroupe les activités Photos, Visuels et Réseaux sociaux, avec un bouton « Partages » pour gérer vos liens actifs, sur le modèle de l'espace Audio. La Comptabilité (notes de frais, avances de budget) reste accessible séparément pour son équipe.",
+      "Retrouvez toutes vos demandes (annonce, visuel, RDV pastoral, demande comptable...) dans « Mes demandes ». L'espace « Communication & Production » regroupe les activités Photos, Visuels et Réseaux sociaux, avec un bouton « Partages » pour gérer vos liens actifs, sur le modèle de l'espace Audio. Les demandes comptables (notes de frais, avances de budget) se retrouvent dans « Mes demandes », et l'espace Finances est réservé à l'équipe comptable.",
     viewport: "desktop",
     roles: SERVICE_ROLES,
   },
@@ -70,9 +70,9 @@ const ALL_STEPS: TourStep[] = [
   },
   {
     target: '[data-tour="sidebar-pastoral"]',
-    title: "Suivi pastoral",
+    title: "Pastoral",
     content:
-      "Les demandes de rendez-vous pastoral et les suivis de nouveaux convertis, déposés depuis le formulaire public : qualification, affectation au bon profil, puis planification — dans Personnes ou Agenda selon votre organisation.",
+      "L'agenda des pasteurs, les demandes de rendez-vous pastoral et les suivis de nouveaux convertis, déposés depuis le formulaire public : qualification, affectation au bon profil, puis planification.",
     viewport: "desktop",
     roles: PASTORAL_ROLES,
   },
@@ -95,7 +95,7 @@ const ALL_STEPS: TourStep[] = [
     target: '[data-tour="sidebar-reports"]',
     title: "Comptes rendus",
     content:
-      "Dans Agenda, saisissez les comptes rendus de culte (orateur, titre du message, statistiques de présence par département) et exportez les données sur une période.",
+      "Dans Événements, saisissez les comptes rendus de culte (orateur, titre du message, statistiques de présence par département) et exportez les données sur une période.",
     viewport: "desktop",
     roles: REPORT_ROLES,
   },

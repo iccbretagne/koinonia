@@ -649,10 +649,18 @@ export async function getTicket(token: string) {
 
 // ── Mes réservations (compte connecté) ───────────────────────────────────────
 
+const myBookingsWhere = (userId: string) => ({ userId, event: { status: { not: "ARCHIVED" as const } } });
+
+/** Nombre de réservations de `listMyBookings` (entrée « Mes inscriptions » de la navigation), sans rien lire d'autre. */
+export async function countMyBookings(userId: string) {
+  const prisma = await db();
+  return prisma.ticketingBooking.count({ where: myBookingsWhere(userId) });
+}
+
 export async function listMyBookings(userId: string) {
   const prisma = await db();
   const rows = await prisma.ticketingBooking.findMany({
-    where: { userId, event: { status: { not: "ARCHIVED" } } },
+    where: myBookingsWhere(userId),
     orderBy: { createdAt: "desc" },
     include: { event: { select: { title: true, startsAt: true, location: true, church: { select: { name: true } } } }, participants: { select: { status: true } } },
   });

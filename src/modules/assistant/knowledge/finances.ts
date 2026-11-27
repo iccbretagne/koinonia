@@ -17,7 +17,7 @@ export const FINANCES: readonly KnowledgeEntry[] = [
       "demander de l'argent pour mon département",
     ],
     answer:
-      "Dans « Comptabilité », déposez une note de frais (dépense faite) ou une avance de budget (dépense à venir), avec les justificatifs. Suivez ensuite son traitement au même endroit.",
+      "Dans « Mes demandes », section « Demandes comptables », déposez une note de frais (dépense faite) ou une avance de budget (dépense à venir), avec les justificatifs. Suivez ensuite son traitement au même endroit.",
     href: paths.accounting.newRequest(),
     hrefLabel: "Nouvelle demande financière",
     audience: { permissions: ["accounting:submit"], predicates: ["pastoral"] },
@@ -36,7 +36,7 @@ export const FINANCES: readonly KnowledgeEntry[] = [
       "confirmer un paiement",
     ],
     answer:
-      "Dans « Comptabilité », ouvrez la demande pour la valider avec son plan de paiement ou la refuser avec un motif, puis confirmez chaque remise de fonds. « Payé depuis » indique si l'argent sort du compte commun ou d'une caisse de la trésorerie (repris alors automatiquement).",
+      "Dans « Finances » › « Demandes comptables », ouvrez la demande pour la valider avec son plan de paiement ou la refuser avec un motif, puis confirmez chaque remise de fonds. « Payé depuis » indique si l'argent sort du compte commun ou d'une caisse de la trésorerie (repris alors automatiquement).",
     href: paths.accounting.requests(),
     hrefLabel: "Comptabilité",
     audience: { permissions: ["accounting:manage"] },
@@ -76,7 +76,7 @@ export const FINANCES: readonly KnowledgeEntry[] = [
       "réclamer les justificatifs des anciennes avances",
     ],
     answer:
-      "Dans « Comptabilité », le compteur « À justifier » liste les retards, les factures à vérifier et les reliquats. Sur la demande, acceptez, renvoyez avec un motif, ou dispensez avec le montant retenu ; confirmez la restitution d'un reliquat avec « Rendu sur » (une caisse l'ajoute à la trésorerie). Les délais de relance se règlent en bas de la liste. Pour une avance versée avant la mise en service, le filtre « Arriéré » permet de réclamer les justificatifs.",
+      "Dans « Finances » › « Demandes comptables », le compteur « À justifier » liste les retards, les factures à vérifier et les reliquats. Sur la demande, acceptez, renvoyez avec un motif, ou dispensez avec le montant retenu ; confirmez la restitution d'un reliquat avec « Rendu sur » (une caisse l'ajoute à la trésorerie). Les délais de relance se règlent en bas de la liste. Pour une avance versée avant la mise en service, le filtre « Arriéré » permet de réclamer les justificatifs.",
     href: paths.accounting.requests(),
     hrefLabel: "Comptabilité",
     audience: { permissions: ["accounting:manage"] },

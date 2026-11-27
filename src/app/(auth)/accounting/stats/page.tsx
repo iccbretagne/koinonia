@@ -2,9 +2,6 @@ import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/
 import { computeAccountingStats } from "@/modules/accounting";
 import { PageHeader } from "@/components/ui";
 import AccountingStats from "./AccountingStats";
-import { isShuttleVisible } from "@/modules/shuttle/auth";
-import { isTreasuryVisible } from "@/modules/treasury/auth";
-import AccountingNav from "../AccountingNav";
 
 export default async function AccountingStatsPage() {
   const session = await requireAuth();
@@ -17,16 +14,11 @@ export default async function AccountingStatsPage() {
     return <p className="p-4 text-ink-muted">Accès non autorisé.</p>;
   }
 
-  const [initialData, canViewShuttle, canViewTreasury] = await Promise.all([
-    computeAccountingStats(churchId, "year"),
-    isShuttleVisible(session, churchId),
-    isTreasuryVisible(session, churchId),
-  ]);
+  const initialData = await computeAccountingStats(churchId, "year");
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Comptabilité" description="Vue d'ensemble des demandes et paiements" />
-      <AccountingNav canViewStats canViewShuttle={canViewShuttle} canViewTreasury={canViewTreasury} active="stats" />
       <AccountingStats initialData={initialData} churchId={churchId} />
     </div>
   );

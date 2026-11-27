@@ -3,14 +3,19 @@ import { ClipboardList } from "lucide-react";
 import { requireAuth } from "@/lib/auth";
 import { EmptyState, PageHeader, StatusChip } from "@/components/ui";
 import { STATUS_LABEL, listMemberResponses } from "@/modules/forms";
+import { countMyBookings } from "@/modules/ticketing";
+import { registry } from "@/lib/registry";
+import MyRegistrationsTabs from "@/components/MyRegistrationsTabs";
 
 /** Mes réponses ouvertes à des formulaires (spec 079), pour les modifier ou les annuler. */
 export default async function MyResponsesPage() {
   const session = await requireAuth();
   const responses = await listMemberResponses(session.user.id);
+  const reservations = registry.has("ticketing") ? await countMyBookings(session.user.id).catch(() => 0) : 0;
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Formulaires" title="Mes réponses" description="Vos réponses aux formulaires encore ouverts. Les sondages anonymes n'y figurent pas : rien ne les relie à votre compte." />
+      <MyRegistrationsTabs reservations={reservations} responses={responses.length} active="responses" />
       {responses.length === 0 ? (
         <EmptyState icon={ClipboardList} title="Aucune réponse en cours" />
       ) : (

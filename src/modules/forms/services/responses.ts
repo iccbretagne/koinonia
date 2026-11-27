@@ -377,9 +377,20 @@ export async function listResponses(formId: string, status?: Prisma.FormResponse
 }
 
 /** Réponses ouvertes d'un compte connecté, tous formulaires de ses églises confondus. */
+const memberResponsesWhere = (userId: string) => ({
+  userId,
+  status: { in: [...ACTIVE_STATUSES] },
+  form: { deletedAt: null, status: "PUBLISHED" as const },
+});
+
+/** Nombre de réponses de `listMemberResponses` (entrée « Mes inscriptions » de la navigation). */
+export async function countMemberResponses(userId: string) {
+  return prisma.formResponse.count({ where: memberResponsesWhere(userId) });
+}
+
 export async function listMemberResponses(userId: string) {
   return prisma.formResponse.findMany({
-    where: { userId, status: { in: [...ACTIVE_STATUSES] }, form: { deletedAt: null, status: "PUBLISHED" } },
+    where: memberResponsesWhere(userId),
     select: {
       id: true,
       status: true,

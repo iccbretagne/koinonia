@@ -3,7 +3,7 @@ import { buildSpaces, resolveActive, type NavigationInput } from "../navigation"
 
 /** Entrée « Billetterie » dans l'espace Agenda (spec 074). */
 const base: NavigationInput = { departments: [], configLinks: [], requestLinks: [], mediaLinks: [], homeHref: "/planning" };
-const agenda = (input: NavigationInput) => buildSpaces(input).find((s) => s.key === "agenda")?.pages ?? [];
+const agenda = (input: NavigationInput) => buildSpaces(input).find((s) => s.key === "events")?.pages ?? [];
 
 describe("navigation — billetterie (spec 074)", () => {
   it("absente sans droit ni rôle d'événement", () => {
@@ -17,6 +17,6 @@ describe("navigation — billetterie (spec 074)", () => {
 
   it("le tableau de bord d'un événement allume « Billetterie »", () => {
     const spaces = buildSpaces({ ...base, hasEventsAccess: true, hasTicketing: true });
-    expect(resolveActive(spaces, "/billetterie/ev-1")).toEqual({ space: "agenda", page: "/billetterie" });
+    expect(resolveActive(spaces, "/billetterie/ev-1")).toEqual({ space: "events", page: "/billetterie" });
   });
 });

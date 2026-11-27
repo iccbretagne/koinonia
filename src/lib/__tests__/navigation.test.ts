@@ -80,6 +80,7 @@ const admin: NavigationInput = {
   integrationLinks: [{ href: "/integration/requests", label: "Intégration" }],
   hasEventsManage: true,
   hasReports: true,
+  hasAccountingManage: true,
 };
 
 function hrefs(input: NavigationInput): string[] {
@@ -104,14 +105,16 @@ describe("buildSpaces", () => {
     expect(buildSpaces(admin).map((s) => s.key)).toEqual([
       "home",
       "planning",
-      "agenda",
+      "events",
+      "pastoral",
       "people",
       "requests",
+      "finances",
       "media",
       "resources",
       "admin",
     ]);
-    expect(buildSpaces(star).map((s) => s.key)).toEqual(["home", "planning", "agenda", "people", "requests", "media", "resources"]);
+    expect(buildSpaces(star).map((s) => s.key)).toEqual(["home", "planning", "events", "requests", "media", "resources"]);
   });
 
   it("STAR : aucune grille par département, les liens STAR des événements, le RDV pastoral autonome", () => {
@@ -152,18 +155,17 @@ describe("buildSpaces", () => {
         "/admin/events",
         "/admin/welcome-duty",
         "/admin/reports",
-        "/accounting/requests",
         "/rooms",
         "/jobs",
       ])
     );
   });
 
-  it("place le suivi pastoral dans Personnes et l'agenda pastoral dans Agenda", () => {
+  it("range l'agenda pastoral et le suivi pastoral dans l'espace Pastoral", () => {
     const spaces = buildSpaces(admin);
-    expect(spaces.find((s) => s.key === "people")?.pages.map((p) => p.href)).toContain("/care");
-    const agenda = spaces.find((s) => s.key === "agenda")!;
-    expect(agenda.pages.filter((p) => p.group === "Agenda pastoral").map((p) => p.href)).toEqual(["/agenda", "/agenda/schedule"]);
+    expect(spaces.find((s) => s.key === "pastoral")?.pages.map((p) => p.href)).toEqual(["/agenda", "/agenda/schedule", "/care"]);
+    expect(spaces.find((s) => s.key === "people")?.pages.map((p) => p.href)).not.toContain("/care");
+    expect(spaces.find((s) => s.key === "events")?.pages.map((p) => p.href)).not.toContain("/agenda");
   });
 
   it("conserve les ancres de visite guidée", () => {
@@ -183,10 +185,11 @@ describe("buildSpaces", () => {
     );
   });
 
-  it("un espace dont la seule page est externe (Familles) pointe vers elle", () => {
-    const people = buildSpaces(star).find((s) => s.key === "people")!;
-    expect(people.external).toBe(true);
-    expect(people.href).toBe(FAMILLES);
+  it("Familles (site externe) est rangé dans Ressources, jamais dans Personnes", () => {
+    const spaces = buildSpaces(star);
+    expect(spaces.find((s) => s.key === "people")).toBeUndefined();
+    const resources = spaces.find((s) => s.key === "resources")!;
+    expect(resources.pages.find((p) => p.href === FAMILLES)?.external).toBe(true);
   });
 
   it("planning sans département : l'espace reste, avec un message", () => {
@@ -218,8 +221,12 @@ describe("resolveActive", () => {
   it("retient la page la plus spécifique", () => {
     expect(resolveActive(spaces, "/admin/departments/functions")).toEqual({ space: "admin", page: "/admin/departments/functions" });
     expect(resolveActive(spaces, "/communication/requests")).toEqual({ space: "media", page: "/media" });
-    expect(resolveActive(spaces, "/events/abc/star-view")).toEqual({ space: "agenda", page: "/events" });
-    expect(resolveActive(spaces, "/accounting/stats")).toEqual({ space: "requests", page: "/accounting/requests" });
+    expect(resolveActive(spaces, "/events/abc/star-view")).toEqual({ space: "events", page: "/events" });
+    expect(resolveActive(spaces, "/accounting/stats")).toEqual({ space: "finances", page: "/accounting/requests" });
+    expect(resolveActive(buildSpaces({ ...admin, hasAccountingManage: true, hasAccountingStats: true }), "/accounting/stats")).toEqual({
+      space: "finances",
+      page: "/accounting/stats",
+    });
   });
 
   it("distingue les départements par ?dept", () => {
@@ -228,7 +235,7 @@ describe("resolveActive", () => {
   });
 
   it("n'allume pas Mon planning sur les événements STAR", () => {
-    expect(resolveActive(buildSpaces(star), "/planning/events")).toEqual({ space: "agenda", page: "/planning/events" });
+    expect(resolveActive(buildSpaces(star), "/planning/events")).toEqual({ space: "events", page: "/planning/events" });
   });
 
   it("l'Accueil ne s'allume que si aucune autre page ne correspond", () => {
@@ -248,8 +255,8 @@ describe("buildBreadcrumb / parentLink", () => {
       { label: "Départements" },
     ]);
     expect(buildBreadcrumb(spaces, "/events/e1/star-view")).toEqual([
-      { label: "Agenda", href: "/events" },
-      { label: "Agenda de l'église", href: "/events" },
+      { label: "Événements", href: "/events" },
+      { label: "Calendrier de l'église", href: "/events" },
       { label: "Planning des STAR" },
     ]);
   });
@@ -282,26 +289,26 @@ describe("bottomDestinations", () => {
   const labels = (input: NavigationInput, role: Parameters<typeof bottomDestinations>[1]["role"]) =>
     bottomDestinations(buildSpaces(input), { role }).map((d) => d.label);
 
-  it("STAR : Mon planning · Agenda · Demandes (l'Accueil mène à la même page que Mon planning)", () => {
-    expect(labels(star, "STAR")).toEqual(["Mon planning", "Agenda", "Demandes"]);
+  it("STAR : Mon planning · Événements · Demandes (l'Accueil mène à la même page que Mon planning)", () => {
+    expect(labels(star, "STAR")).toEqual(["Mon planning", "Événements", "Demandes"]);
   });
 
-  it("Resp. département : Planning · Agenda · Personnes", () => {
-    expect(labels(deptHead, "DEPARTMENT_HEAD")).toEqual(["Planning", "Agenda", "Personnes"]);
+  it("Resp. département : Planning · Événements · Personnes", () => {
+    expect(labels(deptHead, "DEPARTMENT_HEAD")).toEqual(["Planning", "Événements", "Personnes"]);
   });
 
-  it("Admin : Accueil · Agenda · Demandes · Personnes", () => {
-    expect(labels({ ...admin, homeHref: "/aujourdhui" }, "ADMIN")).toEqual(["Accueil", "Agenda", "Demandes", "Personnes"]);
+  it("Admin : Accueil · Événements · Demandes · Personnes", () => {
+    expect(labels({ ...admin, homeHref: "/aujourdhui" }, "ADMIN")).toEqual(["Accueil", "Événements", "Demandes", "Personnes"]);
   });
 
   it("n'invente pas de destination : un espace externe seul ou absent est écarté", () => {
     const reporter: NavigationInput = { ...star, hasMyPlanning: false, hasAbsences: false, hasAvailability: false, showStarEvents: false, hasEventsAccess: true, requestLinks: [], homeHref: "/profile" };
-    expect(labels(reporter, "REPORTER")).toEqual(["Accueil", "Agenda"]);
+    expect(labels(reporter, "REPORTER")).toEqual(["Accueil", "Événements"]);
   });
 
-  it("Comptable : Accueil · Comptabilité (Demandes n'y mènerait qu'à la même page)", () => {
-    const accountant: NavigationInput = { departments: [], configLinks: [], requestLinks: [], mediaLinks: [], hasAccounting: true, homeHref: "/profile" };
-    expect(labels(accountant, "ACCOUNTANT")).toEqual(["Accueil", "Comptabilité"]);
+  it("Comptable : Accueil · Demandes comptables", () => {
+    const accountant: NavigationInput = { departments: [], configLinks: [], requestLinks: [], mediaLinks: [], hasAccounting: true, hasAccountingManage: true, homeHref: "/profile" };
+    expect(labels(accountant, "ACCOUNTANT")).toEqual(["Accueil", "Demandes comptables"]);
   });
 
   it("vue pastorale : « Mes membres » mène à la page pastorale, comme la barre latérale (spec 092)", () => {
@@ -402,16 +409,19 @@ describe("sidebarBlocks (sidebar desktop)", () => {
     ]);
   });
 
-  it("Agenda : bloc « Église » face à « Agenda pastoral »", () => {
-    expect(outline(sidebarBlocks(spaceOf(admin, "agenda").pages)).map((b) => [b.label, b.pages])).toEqual([
-      ["Église", ["Agenda de l'église", "Gérer les événements", "Service d'accueil", "Comptes rendus", "Trame des annonces"]],
-      ["Agenda pastoral", ["Vue agenda", "Planification"]],
+  it("Événements : un seul bloc « Église » n'affiche pas d'intitulé, « Inscriptions » le fait apparaître", () => {
+    expect(outline(sidebarBlocks(spaceOf(admin, "events").pages)).map((b) => [b.label, b.pages])).toEqual([
+      [null, ["Calendrier de l'église", "Gérer les événements", "Service d'accueil", "Comptes rendus", "Trame des annonces"]],
+    ]);
+    expect(outline(sidebarBlocks(spaceOf({ ...admin, hasTicketing: true }, "events").pages)).map((b) => [b.label, b.pages])).toEqual([
+      ["Église", ["Calendrier de l'église", "Gérer les événements", "Service d'accueil", "Comptes rendus", "Trame des annonces"]],
+      ["Inscriptions", ["Billetterie"]],
     ]);
   });
 
   it("un espace réduit à un seul bloc n'affiche pas d'intitulé", () => {
-    expect(outline(sidebarBlocks(spaceOf(deptHead, "agenda").pages)).map((b) => [b.label, b.pages])).toEqual([
-      [null, ["Agenda de l'église", "Trame des annonces"]],
+    expect(outline(sidebarBlocks(spaceOf(deptHead, "events").pages)).map((b) => [b.label, b.pages])).toEqual([
+      [null, ["Calendrier de l'église", "Trame des annonces"]],
     ]);
   });
 
@@ -419,8 +429,7 @@ describe("sidebarBlocks (sidebar desktop)", () => {
     const blocks = outline(sidebarBlocks(spaceOf(fullAdmin, "people").pages));
     expect(blocks.map((b) => [b.label, b.pages])).toEqual([
       [null, ["STAR", "Discipolat"]],
-      ["Intégration", ["Demandes", "Bergers de famille", "Parcours"]],
-      [null, ["Suivi pastoral", "Familles"]],
+      ["Intégration", ["Dossiers", "Bergers de famille", "Parcours"]],
     ]);
     // Seul dans son espace, le bloc perd son intitulé et reprend le libellé complet.
     const alone = buildSpaces({ ...star, famillesUrl: null, integrationLinks: [{ href: "/integration/requests", label: "Intégration" }] });
@@ -428,12 +437,13 @@ describe("sidebarBlocks (sidebar desktop)", () => {
     expect(outline(sidebarBlocks(people.pages)).map((b) => [b.label, b.pages])).toEqual([[null, ["Intégration"]]]);
   });
 
-  it("Administration : Organisation, Accès, Plateforme", () => {
+  it("Administration : Église, Accès, Suivi ; la liste des églises relève de Plateforme", () => {
     expect(outline(sidebarBlocks(spaceOf(fullAdmin, "admin").pages)).map((b) => [b.label, b.pages])).toEqual([
-      ["Organisation", ["Églises", "Départements"]],
+      ["Église", ["Départements"]],
       ["Accès", ["Utilisateurs", "Accès & rôles"]],
-      ["Plateforme", ["Historique"]],
+      ["Suivi", ["Historique"]],
     ]);
+    expect(spaceOf(fullAdmin, "platform").pages.map((p) => p.href)).toEqual(["/admin/churches"]);
   });
 });
 
@@ -496,7 +506,7 @@ describe("panneau « Plus » mobile : données inchangées par la sidebar deskto
         {
           "pages": [
             [
-              "Agenda de l'église",
+              "Calendrier de l'église",
               null,
               null,
               null,
@@ -530,22 +540,34 @@ describe("panneau « Plus » mobile : données inchangées par la sidebar deskto
               null,
               false,
             ],
+          ],
+          "space": "Événements",
+        },
+        {
+          "pages": [
             [
               "Vue agenda",
-              "Agenda pastoral",
+              null,
               null,
               null,
               false,
             ],
             [
               "Planification",
-              "Agenda pastoral",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Suivi pastoral",
+              null,
               null,
               null,
               false,
             ],
           ],
-          "space": "Agenda",
+          "space": "Pastoral",
         },
         {
           "pages": [
@@ -584,20 +606,6 @@ describe("panneau « Plus » mobile : données inchangées par la sidebar deskto
               null,
               false,
             ],
-            [
-              "Suivi pastoral",
-              null,
-              null,
-              null,
-              false,
-            ],
-            [
-              "Familles",
-              null,
-              null,
-              null,
-              true,
-            ],
           ],
           "space": "Personnes",
         },
@@ -617,15 +625,20 @@ describe("panneau « Plus » mobile : données inchangées par la sidebar deskto
               null,
               false,
             ],
+          ],
+          "space": "Demandes",
+        },
+        {
+          "pages": [
             [
-              "Comptabilité",
+              "Demandes comptables",
               null,
               null,
               null,
               false,
             ],
           ],
-          "space": "Demandes",
+          "space": "Finances",
         },
         {
           "pages": [
@@ -662,18 +675,18 @@ describe("panneau « Plus » mobile : données inchangées par la sidebar deskto
               null,
               false,
             ],
+            [
+              "Familles",
+              null,
+              null,
+              null,
+              true,
+            ],
           ],
           "space": "Ressources",
         },
         {
           "pages": [
-            [
-              "Églises",
-              null,
-              null,
-              null,
-              false,
-            ],
             [
               "Départements",
               null,
@@ -704,6 +717,18 @@ describe("panneau « Plus » mobile : données inchangées par la sidebar deskto
             ],
           ],
           "space": "Administration",
+        },
+        {
+          "pages": [
+            [
+              "Églises",
+              null,
+              null,
+              null,
+              false,
+            ],
+          ],
+          "space": "Plateforme",
         },
       ]
     `);
