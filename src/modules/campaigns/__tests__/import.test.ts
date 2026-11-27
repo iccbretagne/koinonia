@@ -27,7 +27,7 @@ vi.mock("@/lib/audit", () => ({ logAudit: (...a: unknown[]) => logAudit(...a) })
 const notifyRespondentAdded = vi.fn();
 vi.mock("../services/notify", () => ({ notifyRespondentAdded: (...a: unknown[]) => notifyRespondentAdded(...a) }));
 
-const { importCampaign, storedDefinition, formDefinitionHash, parseDefinition } = await import("../services/import");
+const { importCampaign, storedDefinition, formDefinitionHash, parseDefinition, definitionCampaignFields } = await import("../services/import");
 const { hashJson, dueAtToDate } = await import("../services/values");
 
 const actor = { userId: "u-admin", name: "Admin" };
@@ -66,6 +66,7 @@ function stored(def: ReturnType<typeof definition>, status = "DRAFT") {
     id: "c1",
     status,
     definitionHash: hashJson(parsed),
+    ...definitionCampaignFields(parsed),
     forms: [
       {
         id: "f1",

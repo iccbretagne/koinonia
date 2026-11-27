@@ -4731,6 +4731,9 @@ model Campaign {
   fileRetentionDays Int            @default(30)
   /// Règles de cohérence déclaratives (arbre JSON), jamais bloquantes.
   rules             Json?
+  /// Modèles de messages personnalisés (spec 091) : { initial?, progress?, collective?,
+  /// individual?, overdue?, resubmission? } — absent = textes par défaut.
+  messageTemplates  Json?
   /// Empreinte de la dernière définition importée.
   definitionHash    String         @db.VarChar(64)
   openedAt          DateTime?

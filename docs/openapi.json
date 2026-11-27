@@ -9890,7 +9890,7 @@
           "campaigns"
         ],
         "summary": "Pilotage d'une campagne",
-        "description": "**Accès** : permission `campaigns:manage` — dans l'église de la campagne, ou gestionnaire désigné de la campagne ; sinon 404.\n\nParamètres, questionnaires et destinataires avec leur état, répondants (compte ou lien personnel, jamais le lien lui-même), complétude par destinataire (obligatoires manquantes, estimations, à rechercher, fichiers attendus et reçus, métadonnées des fichiers), taux global (soumis et validés sur le total), contrôles de cohérence (règles locales par destinataire, règles croisées sur toute la campagne) et gestionnaires. Questionnaires confidentiels compris.",
+        "description": "**Accès** : permission `campaigns:manage` — dans l'église de la campagne, ou gestionnaire désigné de la campagne ; sinon 404.\n\nParamètres, questionnaires et destinataires avec leur état, répondants (compte ou lien personnel, jamais le lien lui-même), complétude par destinataire (obligatoires manquantes, estimations, à rechercher, fichiers attendus et reçus, métadonnées des fichiers), taux global (soumis et validés sur le total), contrôles de cohérence (règles locales par destinataire, règles croisées sur toute la campagne) et gestionnaires. Questionnaires confidentiels compris. Spec 091 : `campaign.churchName` et `campaign.messageTemplates` (modèles personnalisés, clé absente = texte par défaut) ; par destinataire, `issues` (questions concernées : manquante, à rechercher, estimée, fichier attendu, contrôle non respecté) et `exploitable` ; `progress.exploitable`.",
         "security": [
           {
             "session": []
@@ -9929,7 +9929,7 @@
           "campaigns"
         ],
         "summary": "Paramètres d'une campagne",
-        "description": "**Accès** : permission `campaigns:manage` — dans l'église de la campagne, ou gestionnaire désigné.\n\nTitre, description, période de référence, échéance (un jour = fin de journée à Paris), conservation des fichiers (1 à 365 jours). Journalisé.",
+        "description": "**Accès** : permission `campaigns:manage` — dans l'église de la campagne, ou gestionnaire désigné.\n\nTitre, description, période de référence, échéance (un jour = fin de journée à Paris), conservation des fichiers (1 à 365 jours), modèles de messages (spec 091 : l'objet remplace l'ensemble des modèles personnalisés ; `null` ou `{}` rétablit les textes par défaut). Journalisé.",
         "security": [
           {
             "session": []
@@ -9988,6 +9988,43 @@
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 365
+                  },
+                  "messageTemplates": {
+                    "type": "object",
+                    "nullable": true,
+                    "properties": {
+                      "initial": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 5000
+                      },
+                      "progress": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 5000
+                      },
+                      "collective": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 5000
+                      },
+                      "individual": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 5000
+                      },
+                      "overdue": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 5000
+                      },
+                      "resubmission": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 5000
+                      }
+                    },
+                    "additionalProperties": false
                   }
                 }
               }
@@ -10055,6 +10092,149 @@
                 "schema": {}
               }
             }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/{id}/definition": {
+      "get": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Définition JSON d'une campagne",
+        "description": "**Accès** : permission `campaigns:manage` — dans l'église de la campagne, ou gestionnaire désigné ; sinon 404.\n\nSpec 091. Document `koinonia.campaign` v1 reconstruit depuis la base : champs de campagne, modèles de messages, questionnaires (confidentiels compris, pour le gestionnaire) avec leurs destinataires et échéances propres, règles. Jamais de réponse, de fichier, de répondant ni de lien. Réimporté tel quel, il est annoncé « inchangé ». `download=1` : pièce jointe `<clé>.json`. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "campaigns:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            },
+            "required": false,
+            "name": "download",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document `koinonia.campaign` v1",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/campaigns/{id}/duplicate": {
+      "post": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Duplication d'une campagne",
+        "description": "**Accès** : permission `campaigns:manage` — gestionnaire de la campagne source **et** `campaigns:manage` dans son église (403 sinon).\n\nSpec 091. Nouvelle campagne en brouillon dans l'église de la source : même structure, règles, confidentialité et modèles de messages ; nouveaux titre, clé et dates (absentes = celles de la source, `null` = aucune). `keepAssignments` garde les destinataires sans leur échéance propre ; sinon un destinataire par questionnaire. Rien d'autre n'est copié : ni réponse, ni fichier, ni répondant, ni lien, ni validation, ni historique. L'auteur devient gestionnaire. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "campaigns:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 150
+                  },
+                  "periodStart": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "periodEnd": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "dueAt": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      {
+                        "nullable": true
+                      }
+                    ]
+                  },
+                  "keepAssignments": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                },
+                "required": [
+                  "title"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Aperçu d'import de la création, avec `campaignId` (201)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
           },
           "401": {
             "description": "Session absente"
@@ -10279,6 +10459,47 @@
         }
       }
     },
+    "/api/campaigns/{id}/readiness": {
+      "get": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Préparer l'ouverture d'une campagne",
+        "description": "**Accès** : permission `campaigns:manage` — dans l'église de la campagne, ou gestionnaire désigné ; sinon 404.\n\nSpec 091. Synthèse en lecture seule : questionnaires, questions, définition valide, échéances non dépassées, destinataires, répondants valides, contrôles de cohérence, questionnaires confidentiels (informatif). Aucun nom de personne.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "campaigns:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ ready, items: { key, label, ok, detail? }[] }`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
     "/api/campaigns/{id}/status": {
       "post": {
         "tags": [
@@ -10376,6 +10597,77 @@
                 "schema": {}
               }
             }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Échéance d'une contribution",
+        "description": "**Accès** : toute personne connectée — gestionnaire de la campagne.\n\nSpec 091. Sans réimport : un jour (fin de journée à Paris), un instant, ou `null` (échéance de la campagne). Si l'échéance applicable recule, la relance automatique J-2 peut repartir. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "dueAt": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      {
+                        "nullable": true
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "dueAt"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ assignmentDueAt, dueAt }` : échéance propre et échéance applicable",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
           },
           "401": {
             "description": "Session absente"
@@ -10705,7 +10997,7 @@
           "campaigns"
         ],
         "summary": "Retrait d'un répondant",
-        "description": "**Accès** : toute personne connectée — gestionnaire de la campagne.\n\nSpec 090. Son lien personnel cesse de fonctionner ; ses réponses déjà saisies restent. Journalisé.",
+        "description": "**Accès** : toute personne connectée — gestionnaire de la campagne.\n\nSpec 090. Son lien personnel cesse de fonctionner ; ses réponses déjà saisies restent. Spec 091 : campagne ouverte, le dernier répondant valide d'un destinataire ne se retire pas (409 : utiliser « Remplacer »). Journalisé.",
         "security": [
           {
             "session": []
@@ -10749,6 +11041,53 @@
       }
     },
     "/api/campaigns/assignments/{id}/respondents/{rid}/link": {
+      "get": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Lien personnel actif d'un répondant sans compte",
+        "description": "**Accès** : toute personne connectée — gestionnaire de la campagne.\n\nSpec 091. Pour composer un message individuel : renvoie le lien actif (créé s'il n'existe pas encore, sans révoquer un lien existant). Rien n'est envoyé. Répondant avec compte : 400. Consultation journalisée, sans le lien.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "rid",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ link }` : adresse `/collecte/<jeton>`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
       "post": {
         "tags": [
           "campaigns"
@@ -10797,13 +11136,109 @@
         }
       }
     },
+    "/api/campaigns/assignments/{id}/respondents/{rid}/replace": {
+      "post": {
+        "tags": [
+          "campaigns"
+        ],
+        "summary": "Remplacement d'un répondant",
+        "description": "**Accès** : toute personne connectée — gestionnaire de la campagne.\n\nSpec 091. En un seul geste, sous verrou : le nouveau répondant (compte de l'église ou personne sans compte, mêmes règles que l'ajout) est ajouté, l'ancien retiré et son lien personnel révoqué. Réponses et fichiers restent à la contribution. Campagne ouverte : le nouveau est prévenu. Journalisé.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "session",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "rid",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "userId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64
+                      }
+                    },
+                    "required": [
+                      "userId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150
+                      },
+                      "email": {
+                        "type": "string",
+                        "maxLength": 254,
+                        "format": "email"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "email"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Le nouveau répondant (sans lien)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
     "/api/campaigns/assignments/{id}/review": {
       "post": {
         "tags": [
           "campaigns"
         ],
-        "summary": "Demande de correction ou validation d'un questionnaire",
-        "description": "**Accès** : toute personne connectée — gestionnaire de la campagne.\n\nSpec 090. `request_changes` (motif obligatoire) : soumis ou validé → « Correction demandée », modifiable de nouveau, campagne ouverte requise (409 sinon), répondants prévenus. `validate` : soumis → « Validé », `pastoralValidated` consigne « Validé par la Pasteure ». Autre état : 409. Journalisé.",
+        "summary": "Revue d'un questionnaire : correction, validation, réouverture, annulation de validation",
+        "description": "**Accès** : toute personne connectée — gestionnaire de la campagne.\n\nSpec 090. `request_changes` (motif obligatoire) : soumis ou validé → « Correction demandée », modifiable de nouveau, campagne ouverte requise (409 sinon), répondants prévenus. `validate` : soumis → « Validé », `pastoralValidated` consigne « Validé par la Pasteure ». Spec 091 — `reopen` (motif facultatif) : soumis → « En cours », campagne ouverte requise, réponses et fichiers conservés, nouvelle soumission nécessaire, répondants prévenus sans le motif. `unvalidate` (motif facultatif) : validé → « Soumis », mention pastorale retirée, sans notification. Autre état : 409. Journalisé.",
         "security": [
           {
             "session": []
@@ -10830,7 +11265,9 @@
                     "type": "string",
                     "enum": [
                       "request_changes",
-                      "validate"
+                      "validate",
+                      "reopen",
+                      "unvalidate"
                     ]
                   },
                   "reason": {
@@ -10850,7 +11287,7 @@
         },
         "responses": {
           "200": {
-            "description": "`{ status }` (et `pastoralValidated` à la validation)",
+            "description": "`{ status }` (et `pastoralValidated` à la validation et à son annulation)",
             "content": {
               "application/json": {
                 "schema": {}

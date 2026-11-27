@@ -88,6 +88,59 @@ export async function findCampaignByKey(churchId: string, key: string) {
   });
 }
 
+// ── Champs de campagne ─────────────────────────────────────────────────────────────────────────
+
+/** Champs d'une campagne tels que l'import les écrit, sous une forme comparable. */
+export interface CampaignFieldsRow {
+  title: string;
+  description: string | null;
+  periodStart: Date | null;
+  periodEnd: Date | null;
+  dueAt: Date | null;
+  fileRetentionDays: number;
+  rules: unknown;
+  messageTemplates: unknown;
+}
+
+const emptyToNull = (v: unknown) =>
+  v === null || v === undefined || (Array.isArray(v) && v.length === 0) || (typeof v === "object" && !Array.isArray(v) && Object.keys(v as object).length === 0)
+    ? null
+    : v;
+
+/**
+ * Empreinte des **champs de campagne** (spec 091) : titre, description, période, échéance,
+ * conservation, règles et messages, en JSON canonique. L'action « campagne » de l'aperçu se
+ * calcule sur elle, et non plus sur l'empreinte du document entier : un document exporté (sans
+ * répondants) est ainsi annoncé « inchangé ».
+ */
+export function campaignFieldsHash(row: CampaignFieldsRow): string {
+  return hashJson({
+    title: row.title,
+    description: row.description || null,
+    periodStart: row.periodStart?.toISOString().slice(0, 10) ?? null,
+    periodEnd: row.periodEnd?.toISOString().slice(0, 10) ?? null,
+    dueAt: row.dueAt?.getTime() ?? null,
+    fileRetentionDays: row.fileRetentionDays,
+    rules: emptyToNull(row.rules),
+    messages: emptyToNull(row.messageTemplates),
+  });
+}
+
+/** Champs de campagne d'une définition, comme l'import les écrirait. */
+export function definitionCampaignFields(def: CampaignDefinition): CampaignFieldsRow {
+  const c = def.campaign;
+  return {
+    title: c.title,
+    description: c.description ?? null,
+    periodStart: c.periodStart ? dayToDate(c.periodStart) : null,
+    periodEnd: c.periodEnd ? dayToDate(c.periodEnd) : null,
+    dueAt: c.dueAt ? dueAtToDate(c.dueAt) : null,
+    fileRetentionDays: c.fileRetentionDays ?? 30,
+    rules: def.rules?.length ? def.rules : null,
+    messageTemplates: c.messages && Object.keys(c.messages).length ? c.messages : null,
+  };
+}
+
 // ── Réponses existantes ────────────────────────────────────────────────────────────────────────
 
 type UsedValues = Map<string, unknown[]>;
@@ -192,6 +245,14 @@ export async function importCampaign(input: ImportInput): Promise<ImportPreview>
       id: true,
       status: true,
       definitionHash: true,
+      title: true,
+      description: true,
+      periodStart: true,
+      periodEnd: true,
+      dueAt: true,
+      fileRetentionDays: true,
+      rules: true,
+      messageTemplates: true,
       forms: {
         select: {
           id: true,
@@ -232,7 +293,11 @@ export async function importCampaign(input: ImportInput): Promise<ImportPreview>
   }
 
   const preview: ImportPreview = {
-    campaign: { action: existing ? (existing.definitionHash === definitionHash ? "unchanged" : "update") : "create", key: c.key, title: c.title },
+    campaign: {
+      action: existing ? (campaignFieldsHash(existing) === campaignFieldsHash(definitionCampaignFields(def)) ? "unchanged" : "update") : "create",
+      key: c.key,
+      title: c.title,
+    },
     forms: [],
     assignments: [],
     respondents: { resolved: [], unresolved: [] },
@@ -332,14 +397,16 @@ export async function importCampaign(input: ImportInput): Promise<ImportPreview>
     additions.size === 0;
   if (existing && nothingToDo) return { ...preview, applied: true };
 
+  const fields = definitionCampaignFields(def);
   const campaignData = {
-    title: c.title,
-    description: c.description ?? null,
-    periodStart: c.periodStart ? dayToDate(c.periodStart) : null,
-    periodEnd: c.periodEnd ? dayToDate(c.periodEnd) : null,
-    dueAt: c.dueAt ? dueAtToDate(c.dueAt) : null,
-    fileRetentionDays: c.fileRetentionDays ?? 30,
-    rules: def.rules?.length ? (def.rules as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
+    title: fields.title,
+    description: fields.description,
+    periodStart: fields.periodStart,
+    periodEnd: fields.periodEnd,
+    dueAt: fields.dueAt,
+    fileRetentionDays: fields.fileRetentionDays,
+    rules: fields.rules ? (fields.rules as Prisma.InputJsonValue) : Prisma.DbNull,
+    messageTemplates: fields.messageTemplates ? (fields.messageTemplates as Prisma.InputJsonValue) : Prisma.DbNull,
     definitionHash,
   };
 
@@ -353,7 +420,7 @@ export async function importCampaign(input: ImportInput): Promise<ImportPreview>
       await tx.campaignManager.create({ data: { campaignId: id, userId: actor.userId, addedById: actor.userId } });
     } else {
       id = existing.id;
-      // Même définition : les paramètres retouchés depuis l'interface sont conservés.
+      // Champs de campagne identiques : rien n'est réécrit (l'empreinte du document est gardée).
       if (preview.campaign.action === "update") await tx.campaign.update({ where: { id }, data: campaignData });
     }
 

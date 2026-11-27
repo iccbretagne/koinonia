@@ -34,7 +34,12 @@ vi.mock("@/lib/audit", () => ({
 }));
 
 let campaignRow: Record<string, unknown> | null = null;
-const db = { campaign: { findUnique: vi.fn(async () => campaignRow && { id: campaignRow.id, status: campaignRow.status, definitionHash: "h1", updatedAt: campaignRow.updatedAt }), findFirst: vi.fn(async () => campaignRow) } };
+let confidentialForms: { key: string }[] = [];
+const db = {
+  campaignForm: { findMany: vi.fn(async () => confidentialForms) },
+  campaignAssignment: { findUnique: vi.fn(async (): Promise<Record<string, unknown> | null> => null) },
+  campaign: { findUnique: vi.fn(async () => campaignRow && { id: campaignRow.id, status: campaignRow.status, definitionHash: "h1", updatedAt: campaignRow.updatedAt }), findFirst: vi.fn(async () => campaignRow) },
+};
 vi.mock("@/lib/prisma", () => ({ prisma: db }));
 
 let canManage = true;
@@ -44,7 +49,9 @@ vi.mock("@/modules/campaigns/auth", () => ({
   isCampaignManager: vi.fn(async () => isManager),
   isChurchMember: () => true,
   userActor: () => ({ name: "Awa" }),
+  getAssignmentAccess: vi.fn(async (): Promise<unknown> => assignmentAccess),
 }));
+let assignmentAccess: unknown = null;
 
 const PREVIEW = (action: "create" | "update", extra: Record<string, unknown> = {}) => ({
   campaign: { action, key: "bilan", title: "Bilan 2026" },
@@ -63,6 +70,9 @@ const svc = {
   importCampaign: vi.fn(async (input: { dryRun: boolean }) => (input.dryRun ? previewResult : { ...previewResult, campaignId: "cmp-1", applied: true })),
   changeCampaignStatus: vi.fn(async (_id: string, op: string) => ({ id: "cmp-1", status: op === "close" ? "CLOSED" : "OPEN" })),
   assignmentsWithoutRespondent: vi.fn(async (): Promise<string[]> => []),
+  mergeHiddenConfidential: vi.fn(async (_id: string, definition: unknown) => definition),
+  exportCampaignDefinition: vi.fn(),
+  reopenAssignment: vi.fn(async () => ({ status: "IN_PROGRESS" })),
   missingRespondentsMessage: (missing: string[]) => `Ouverture impossible : ${missing.length} destinataire(s) sans répondant — ${missing.join(" ; ")}.`,
 };
 vi.mock("@/modules/campaigns", () => svc);
@@ -83,13 +93,28 @@ beforeEach(() => {
   isManager = true;
   campaignRow = null;
   previewResult = PREVIEW("create");
+  confidentialForms = [];
+  assignmentAccess = null;
 });
 
 describe("disponibilité", () => {
   it("proposées à campaigns:manage ou au prédicat campaignManager, avec la portée write seulement", () => {
-    const names = (v: ReturnType<typeof viewerFor>, write = true) => actionsFor(v, write).map((a) => a.name).filter((n) => n.includes("campaign"));
-    expect(names(viewerFor("ADMIN"))).toEqual(["import_campaign_preview", "import_campaign_confirm", "set_campaign_status_preview", "set_campaign_status_confirm"]);
-    expect(names(viewerFor("STAR", { predicates: ["campaignManager"] }))).toHaveLength(4);
+    const names = (v: ReturnType<typeof viewerFor>, write = true) =>
+      actionsFor(v, write)
+        .map((a) => a.name)
+        .filter((n) => n.includes("campaign") || n.includes("contribution"));
+    expect(names(viewerFor("ADMIN"))).toEqual([
+      "import_campaign_preview",
+      "import_campaign_confirm",
+      "set_campaign_status_preview",
+      "set_campaign_status_confirm",
+      "campaign_import_contract",
+      "campaign_structure",
+      "export_campaign_definition",
+      "reopen_contribution_preview",
+      "reopen_contribution_confirm",
+    ]);
+    expect(names(viewerFor("STAR", { predicates: ["campaignManager"] }))).toHaveLength(9);
     expect(names(viewerFor("SECRETARY"))).toEqual([]);
     expect(names(viewerFor("ADMIN"), false)).toEqual([]);
     expect(names(viewerFor("ADMIN", { modules: ["core"] }))).toEqual([]);
@@ -203,5 +228,122 @@ describe("état d'une campagne", () => {
     await run("set_campaign_status_preview", { campaign: "cmp-1", op: "close" });
     svc.changeCampaignStatus.mockRejectedValueOnce(new ApiError(409, "La campagne a changé entre-temps : rechargez la page"));
     expect((await run("set_campaign_status_confirm", { confirmation: lastToken })).structured.reason).toMatch(/Rien n'est fait/);
+  });
+});
+
+describe("spec 091 : questionnaires confidentiels à l'import", () => {
+  it("campagne existante : confidentiels réintégrés d'office, absents du résumé, définition fusionnée appliquée", async () => {
+    campaignRow = { id: "cmp-1", status: "OPEN", updatedAt: new Date(0) };
+    confidentialForms = [{ key: "pastoral" }];
+    const merged = { ...DEF, forms: [{ key: "pastoral" }] };
+    svc.mergeHiddenConfidential.mockImplementation(async () => merged);
+    previewResult = PREVIEW("update", {
+      forms: [
+        { key: "integration", title: "Intégration", action: "update", revision: 2, itemsAdded: [], itemsChanged: ["N1"], itemsRemoved: [] },
+        { key: "pastoral", title: "Suivi pastoral secret", action: "unchanged", revision: 1, itemsAdded: [], itemsChanged: [], itemsRemoved: [] },
+      ],
+      assignments: [
+        { formKey: "integration", key: "rennes", label: "Rennes", action: "update" },
+        { formKey: "pastoral", key: "p", label: "Pasteur", action: "unchanged" },
+      ],
+    });
+    const out = await run("import_campaign_preview", { definition: DEF });
+    expect(svc.mergeHiddenConfidential).toHaveBeenCalledWith("cmp-1", DEF);
+    expect(svc.importCampaign).toHaveBeenCalledWith(expect.objectContaining({ definition: merged, dryRun: true }));
+    expect(JSON.stringify(out)).not.toContain("pastoral");
+    expect(JSON.stringify(out)).not.toContain("Suivi pastoral");
+    await run("import_campaign_confirm", { confirmation: lastToken });
+    expect(svc.importCampaign).toHaveBeenLastCalledWith(expect.objectContaining({ dryRun: false, definition: merged }));
+    svc.mergeHiddenConfidential.mockImplementation(async (_id: string, d: unknown) => d);
+  });
+
+  it("clé d'un questionnaire confidentiel reprise : refus lisible, sans jeton", async () => {
+    campaignRow = { id: "cmp-1", status: "DRAFT", updatedAt: new Date(0) };
+    svc.mergeHiddenConfidential.mockRejectedValueOnce(new ApiError(400, "Ce document reprend la clé d'un questionnaire confidentiel"));
+    const out = await run("import_campaign_preview", { definition: DEF });
+    expect(out.structured.reason).toMatch(/questionnaire confidentiel/);
+    expect(mcp.createConfirmation).not.toHaveBeenCalled();
+  });
+});
+
+describe("spec 091 : lectures", () => {
+  it("campaign_import_contract : schéma JSON, types, exemple minimal valide", async () => {
+    const { campaignDefinitionSchema, validateDefinition } = await vi.importActual<typeof import("@/modules/campaigns/schemas")>("@/modules/campaigns/schemas");
+    const out = await run("campaign_import_contract", {});
+    const c = out.structured as { jsonSchema: unknown; itemTypes: unknown[]; example: unknown; messages: { placeholders: unknown[] } };
+    expect(c.jsonSchema).toBeTruthy();
+    expect(c.itemTypes.length).toBeGreaterThan(5);
+    expect(c.messages.placeholders.length).toBeGreaterThan(5);
+    const parsed = campaignDefinitionSchema.parse(c.example);
+    expect(validateDefinition(parsed)).toEqual([]);
+  });
+
+  it("campaign_structure : questions des questionnaires non confidentiels seulement", async () => {
+    campaignRow = { id: "cmp-1", churchId: "c1", key: "bilan", title: "Bilan 2026", status: "OPEN", updatedAt: new Date(0), _count: { assignments: 2 } };
+    const section = { key: "s", title: "S", items: [{ code: "SECRET_N", type: "integer", label: "Question secrète" }] };
+    db.campaign.findUnique.mockResolvedValueOnce({
+      dueAt: null,
+      forms: [
+        { key: "pub", title: "Public", confidential: false, revision: 1, definition: { sections: [{ ...section, items: [{ code: "N1", type: "integer", label: "Effectif" }] }] }, assignments: [{ id: "a1", key: "a1", label: "Rennes", status: "SUBMITTED", dueAt: null }] },
+        { key: "conf", title: "Confidentiel", confidential: true, revision: 1, definition: { sections: [section] }, assignments: [{ id: "a2", key: "a2", label: "Pasteur", status: "NOT_STARTED", dueAt: null }] },
+      ],
+    } as never);
+    const out = await run("campaign_structure", { campaign: "bilan" });
+    const json = JSON.stringify(out);
+    expect(json).toContain("N1");
+    expect(json).not.toContain("SECRET_N");
+    expect(json).not.toContain("Question secrète");
+    expect(json).toContain("a2");
+  });
+
+  it("export_campaign_definition : toujours sans les confidentiels, omission annoncée", async () => {
+    campaignRow = { id: "cmp-1", churchId: "c1", key: "bilan", title: "Bilan 2026", status: "DRAFT", updatedAt: new Date(0), _count: { assignments: 1 } };
+    svc.exportCampaignDefinition.mockResolvedValueOnce({ definition: DEF, omittedForms: 1, omittedRules: 2 } as never);
+    const out = await run("export_campaign_definition", { campaign: "bilan" });
+    expect(svc.exportCampaignDefinition).toHaveBeenCalledWith("cmp-1", { omitConfidential: true });
+    expect(out.text).toMatch(/1 questionnaire\(s\) confidentiel\(s\) et 2 contrôle\(s\)/);
+    isManager = false;
+    expect((await run("export_campaign_definition", { campaign: "bilan" })).structured.reason).toMatch(/introuvable/);
+  });
+});
+
+describe("spec 091 : rouvrir une contribution", () => {
+  const row = (status: string, campaignStatus = "OPEN") => ({
+    label: "Rennes",
+    status,
+    submittedAt: new Date(0),
+    reviewedAt: null,
+    form: { title: "Intégration" },
+    campaign: { id: "cmp-1", title: "Bilan 2026", status: campaignStatus },
+  });
+  const manager = { role: "manager", actor: { kind: "user", userId: "user-1", name: "Awa" }, assignment: { id: "a1", churchId: "c1" } };
+
+  it("aperçu puis confirmation : soumis → en cours, via l'assistant IA", async () => {
+    assignmentAccess = manager;
+    db.campaignAssignment.findUnique.mockResolvedValue(row("SUBMITTED"));
+    const out = await run("reopen_contribution_preview", { assignment: "a1", reason: "Chiffre 2025 à revoir" });
+    expect(out.text).toContain("« Soumis » → « En cours »");
+    expect(JSON.stringify(out)).not.toContain("Chiffre 2025");
+    const done = await run("reopen_contribution_confirm", { confirmation: lastToken });
+    expect(done.structured).toMatchObject({ done: true, status: "IN_PROGRESS" });
+    expect(svc.reopenAssignment).toHaveBeenCalledWith(manager, "Chiffre 2025 à revoir");
+    expect(auditContexts).toEqual([{ via: "mcp" }]);
+  });
+
+  it("refus : non gestionnaire, autre église, non soumise, campagne fermée, état changé", async () => {
+    db.campaignAssignment.findUnique.mockResolvedValue(row("SUBMITTED"));
+    expect((await run("reopen_contribution_preview", { assignment: "a1" })).structured.reason).toMatch(/introuvable/);
+    assignmentAccess = { ...manager, assignment: { id: "a1", churchId: "autre" } };
+    expect((await run("reopen_contribution_preview", { assignment: "a1" })).structured.reason).toMatch(/introuvable/);
+    assignmentAccess = manager;
+    db.campaignAssignment.findUnique.mockResolvedValue(row("VALIDATED"));
+    expect((await run("reopen_contribution_preview", { assignment: "a1" })).structured.reason).toMatch(/annulez d'abord la validation/);
+    db.campaignAssignment.findUnique.mockResolvedValue(row("SUBMITTED", "CLOSED"));
+    expect((await run("reopen_contribution_preview", { assignment: "a1" })).structured.reason).toMatch(/pas ouverte/);
+    db.campaignAssignment.findUnique.mockResolvedValue(row("SUBMITTED"));
+    await run("reopen_contribution_preview", { assignment: "a1" });
+    db.campaignAssignment.findUnique.mockResolvedValue({ ...row("SUBMITTED"), reviewedAt: new Date(5) });
+    expect((await run("reopen_contribution_confirm", { confirmation: lastToken })).structured.reason).toMatch(/ont changé/);
+    expect(svc.reopenAssignment).not.toHaveBeenCalled();
   });
 });

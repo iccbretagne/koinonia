@@ -1,19 +1,19 @@
 # Tâches — 091 Campagnes de collecte : évolutions post-recette
 
 ## Lot 1 — Socle serveur (P1 et P2)
-- [ ] Migration `campaign_message_templates` (`Campaign.messageTemplates Json?`)
-- [ ] `campaign.messages` dans le format v1 ; import et action « campagne » calculée par champs
-- [ ] `services/messages.ts` (modèles par défaut, `renderTemplate`, `composeMessage`) + tests
-- [ ] `services/preview.ts` (`previewAssignmentView`) + tests ; réexports purs par `schemas`
-- [ ] `exportCampaignDefinition` (+ `omitConfidential`), aller-retour « inchangé » + tests
-- [ ] `duplicateCampaign` + route `POST /api/campaigns/[id]/duplicate` + tests
-- [ ] `reopenAssignment`, `unvalidateAssignment`, `notifyAssignmentReopened` ; route review élargie + tests
-- [ ] `removeRespondent` : dernier répondant refusé en campagne ouverte ; `replaceRespondent` + route ; `getRespondentLink` (GET `…/link`) + tests
-- [ ] `setAssignmentDueAt` + route PATCH + tests
-- [ ] `campaignReadiness` + route + tests
-- [ ] `getCampaignOverview` : `churchName`, `messageTemplates`, `issues`, `exploitable` ; paramètres : `messageTemplates`
-- [ ] Routes `GET /api/campaigns/[id]/definition` ; `contract.ts` partout ; `npm run openapi`
-- [ ] MCP : `campaign_import_contract`, `campaign_structure`, `export_campaign_definition`, `reopen_contribution_*`, `mergeHiddenConfidential` à l'import + tests
+- [x] Migration `campaign_message_templates` (`Campaign.messageTemplates Json?`)
+- [x] `campaign.messages` dans le format v1 ; import et action « campagne » calculée par champs
+- [x] `services/messages.ts` (modèles par défaut, `renderTemplate`, `composeMessage`) + tests
+- [x] `services/preview.ts` (`previewAssignmentView`) + tests ; réexports purs par `schemas`
+- [x] `exportCampaignDefinition` (+ `omitConfidential`), aller-retour « inchangé » + tests
+- [x] `duplicateCampaign` + route `POST /api/campaigns/[id]/duplicate` + tests
+- [x] `reopenAssignment`, `unvalidateAssignment`, `notifyAssignmentReopened` ; route review élargie + tests
+- [x] `removeRespondent` : dernier répondant refusé en campagne ouverte ; `replaceRespondent` + route ; `getRespondentLink` (GET `…/link`) + tests
+- [x] `setAssignmentDueAt` + route PATCH + tests
+- [x] `campaignReadiness` + route + tests
+- [x] `getCampaignOverview` : `churchName`, `messageTemplates`, `issues`, `exploitable` ; paramètres : `messageTemplates`
+- [x] Routes `GET /api/campaigns/[id]/definition` ; `contract.ts` partout ; `npm run openapi`
+- [x] MCP : `campaign_import_contract`, `campaign_structure`, `export_campaign_definition`, `reopen_contribution_*`, `mergeHiddenConfidential` à l'import + tests
 
 ## Lot 2 — Pilotage (UI, P1)
 - [ ] Communication (modale, messages individuels et collectifs, copie) ; action « Message » par ligne
