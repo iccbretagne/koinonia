@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { PageHeader, buttonClasses, fieldLabelClasses } from "@/components/ui";
 import { notFound } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
 import { qrPath } from "@/lib/qr";
@@ -47,17 +49,22 @@ export default async function LabelsPage({
     for (const [k, v] of Object.entries(merged)) if (v) next.set(k, v);
     return `/billetterie/${id}/etiquettes?${next.toString()}`;
   };
-  const chip = (active: boolean) => `inline-flex min-h-11 items-center rounded-chip border px-3 text-[13px] ${active ? "border-brand bg-brand-soft text-ink" : "border-line text-ink-muted"}`;
+  // Même apparence que `FilterChip`, sur un lien (le filtre est dans l'adresse).
+  const chip = (active: boolean) =>
+    `inline-flex min-h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+      active ? "border-brand bg-brand-soft text-brand-text" : "border-control-line bg-surface text-ink-muted hover:bg-surface-sunken"
+    }`;
 
   return (
     <div className="space-y-4">
       <div className="space-y-3 print:hidden">
-        <Link href={`/billetterie/${id}/restauration`} className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-text underline underline-offset-2">
-          ← Distribution
+        <Link href={`/billetterie/${id}/restauration`} className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+          <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
+          Retour à la distribution
         </Link>
-        <h1 className="text-xl font-bold text-ink">Étiquettes — {event.title}</h1>
+        <PageHeader title="Étiquettes" description={event.title} />
         <fieldset className="flex flex-wrap gap-2">
-          <legend className="mb-1 text-sm font-semibold text-ink">Étiquettes à imprimer</legend>
+          <legend className={`${fieldLabelClasses} mb-1`}>Étiquettes à imprimer</legend>
           {SETS.map((s) => (
             <Link key={s.value} aria-current={(!variantId && set === s.value) || undefined} href={href({ set: s.value, plat: undefined })} className={chip(!variantId && set === s.value)}>
               {s.label}
@@ -70,7 +77,7 @@ export default async function LabelsPage({
           ))}
         </fieldset>
         <fieldset className="flex flex-wrap gap-2">
-          <legend className="mb-1 text-sm font-semibold text-ink">Planche A4 portrait</legend>
+          <legend className={`${fieldLabelClasses} mb-1`}>Planche A4 portrait</legend>
           {Object.entries(FORMATS).map(([key, f]) => (
             <Link key={key} aria-current={format === f || undefined} href={href({ format: key })} className={chip(format === f)}>
               {f.label}
@@ -85,7 +92,7 @@ export default async function LabelsPage({
         </p>
         <MarkPrinted eventId={id} itemIds={labels.map((l) => l.itemId)} />
       </div>
-      {labels.length === 0 && <p className="text-sm text-ink-muted print:hidden">Aucune étiquette pour cette sélection.</p>}
+      {labels.length === 0 && <p className="text-[15px] text-ink-muted print:hidden">Aucune étiquette pour cette sélection.</p>}
       <div className={`${styles.sheets} space-y-4 overflow-x-auto print:space-y-0 print:overflow-visible`}>
         {sheets.map((sheet) => (
           <div key={sheet[0].itemId} className={`${styles.sheet} grid gap-0`} style={{ gridTemplateColumns: `repeat(${format.cols}, ${format.width})` }}>
@@ -98,7 +105,7 @@ export default async function LabelsPage({
                     {l.dish}
                     {l.quantity > 1 ? ` × ${l.quantity}` : ""}
                   </p>
-                  {(l.allergies || l.allergens) && <p className="truncate">⚠ {[l.allergies, l.allergens].filter(Boolean).join(" · ")}</p>}
+                  {(l.allergies || l.allergens) && <p className="truncate">Allergies : {[l.allergies, l.allergens].filter(Boolean).join(" · ")}</p>}
                   <p>
                     {l.reference}
                     {l.toPay ? " · À RÉGLER" : ""}

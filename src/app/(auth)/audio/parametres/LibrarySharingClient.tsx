@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
-import Modal from "@/components/ui/Modal";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 interface Share {
   id: string;
@@ -116,6 +116,7 @@ export default function LibrarySharingClient({
         </div>
         <Button
           type="button"
+          variant="secondary"
           disabled={submitting || !slug.trim()}
           onClick={handleResolve}
         >
@@ -128,59 +129,43 @@ export default function LibrarySharingClient({
       {shares.length === 0 ? (
         <p className="text-sm text-ink-subtle">Aucune église n&apos;a accès à votre bibliothèque pour l&apos;instant.</p>
       ) : (
-        <ul className="divide-y divide-line border border-line rounded-lg overflow-hidden">
+        <ul className="divide-y divide-line border border-line rounded-card bg-surface overflow-hidden">
           {shares.map((s) => (
-            <li key={s.id} className="flex items-center justify-between px-4 py-3">
+            <li key={s.id} className="flex items-center justify-between gap-3 px-4 py-3">
               <div>
                 <p className="font-medium text-ink">{s.churchName}</p>
                 <p className="text-xs text-ink-subtle">{s.churchSlug}</p>
               </div>
-              <Button variant="danger" size="sm" onClick={() => setRevokeTarget(s)}>
-                Révoquer
+              <Button variant="secondary" size="sm" className="min-h-11 shrink-0 sm:min-h-9" onClick={() => setRevokeTarget(s)}>
+                Révoquer le partage
               </Button>
             </li>
           ))}
         </ul>
       )}
 
-      <Modal
+      <ConfirmModal
         open={confirmChurchName !== null}
-        onClose={() => setConfirmChurchName(null)}
-        title="Confirmer l'ouverture de la bibliothèque"
-      >
-        <p className="text-sm text-ink-muted mb-6">
-          Vous êtes sur le point d&apos;ouvrir votre bibliothèque à{" "}
-          <span className="font-semibold">{confirmChurchName}</span>. Ses membres pourront
-          réécouter tous vos cultes publiés. Confirmez-vous ?
-        </p>
-        <div className="flex justify-end gap-3">
-          <Button variant="secondary" onClick={() => setConfirmChurchName(null)} disabled={submitting}>
-            Annuler
-          </Button>
-          <Button onClick={handleConfirm} disabled={submitting}>
-            {submitting ? "Ouverture…" : "Confirmer"}
-          </Button>
-        </div>
-      </Modal>
+        variant="primary"
+        title={`Ouvrir votre bibliothèque à ${confirmChurchName ?? ""} ?`}
+        message="Ses membres pourront réécouter tous vos cultes publiés."
+        confirmLabel="Ouvrir la bibliothèque"
+        confirmingLabel="Ouverture en cours…"
+        confirming={submitting}
+        onConfirm={handleConfirm}
+        onCancel={() => setConfirmChurchName(null)}
+      />
 
-      <Modal
+      <ConfirmModal
         open={revokeTarget !== null}
-        onClose={() => setRevokeTarget(null)}
-        title="Révoquer ce partage"
-      >
-        <p className="text-sm text-ink-muted mb-6">
-          <span className="font-semibold">{revokeTarget?.churchName}</span> perdra
-          immédiatement l&apos;accès à votre bibliothèque. Confirmez-vous ?
-        </p>
-        <div className="flex justify-end gap-3">
-          <Button variant="secondary" onClick={() => setRevokeTarget(null)} disabled={submitting}>
-            Annuler
-          </Button>
-          <Button variant="danger" onClick={handleRevoke} disabled={submitting}>
-            {submitting ? "Révocation…" : "Révoquer"}
-          </Button>
-        </div>
-      </Modal>
+        title={`Révoquer le partage avec ${revokeTarget?.churchName ?? ""} ?`}
+        message="Cette église perdra immédiatement l'accès à votre bibliothèque."
+        confirmLabel="Révoquer le partage"
+        confirmingLabel="Révocation en cours…"
+        confirming={submitting}
+        onConfirm={handleRevoke}
+        onCancel={() => setRevokeTarget(null)}
+      />
     </div>
   );
 }

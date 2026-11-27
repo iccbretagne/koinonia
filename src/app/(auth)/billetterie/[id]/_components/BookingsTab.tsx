@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Download } from "lucide-react";
-import { Button, ConfirmModal, FilterChip, SearchInput, StatusChip } from "@/components/ui";
+import { Button, ConfirmModal, FilterChip, SearchInput, StatusChip, buttonClasses } from "@/components/ui";
 import type { BookingRow } from "@/modules/ticketing";
 import { AGE_GROUP_LABEL, CHARGE_STATUS_LABEL, formatEuros, type TicketingQuestion } from "@/modules/ticketing/schemas";
 import { useApi } from "../../use-api";
@@ -47,8 +47,8 @@ export default function BookingsTab({
         <FilterChip pressed={filter === "due"} onClick={() => setFilter("due")}>Reste à régler</FilterChip>
         <FilterChip pressed={filter === "cancelled"} onClick={() => setFilter("cancelled")}>Annulées</FilterChip>
         {canManage && (
-          <a className="inline-flex items-center gap-1 text-[15px] font-semibold text-brand-text underline" href={`/api/ticketing/events/${eventId}/export?type=participants`}>
-            <Download className="size-4" aria-hidden="true" /> Participants
+          <a className={buttonClasses("secondary")} href={`/api/ticketing/events/${eventId}/export?type=participants`}>
+            <Download className="size-4" aria-hidden="true" strokeWidth={1.75} /> Télécharger les participants
           </a>
         )}
       </div>
@@ -89,8 +89,8 @@ export default function BookingsTab({
                     {p.entryPrice > 0 && ` · entrée ${CHARGE_STATUS_LABEL[p.entryStatus].toLowerCase()}`}
                   </span>
                   {canManage && p.status === "ACTIVE" && b.participants.filter((x) => x.status === "ACTIVE").length > 1 && (
-                    <Button type="button" size="sm" variant="ghost" onClick={() => setCancel({ bookingId: b.id, participantId: p.id, label: `${p.firstName} ${p.lastName}` })}>
-                      Annuler
+                    <Button type="button" size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => setCancel({ bookingId: b.id, participantId: p.id, label: `${p.firstName} ${p.lastName}` })}>
+                      Annuler l&apos;inscription
                     </Button>
                   )}
                 </li>
@@ -108,10 +108,10 @@ export default function BookingsTab({
             )}
             {canManage && b.status === "ACTIVE" && (
               <div className="flex flex-wrap gap-2 border-t border-line pt-2">
-                <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => call(`/api/ticketing/events/${eventId}/bookings/${b.id}`, "PATCH", { action: "remind" }, "Récapitulatif renvoyé")}>
+                <Button type="button" size="sm" variant="secondary" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => call(`/api/ticketing/events/${eventId}/bookings/${b.id}`, "PATCH", { action: "remind" }, "Récapitulatif renvoyé")}>
                   Renvoyer le récapitulatif
                 </Button>
-                <Button type="button" size="sm" variant="ghost" onClick={() => setCancel({ bookingId: b.id, participantId: null, label: b.reference })}>
+                <Button type="button" size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => setCancel({ bookingId: b.id, participantId: null, label: b.reference })}>
                   Annuler la réservation
                 </Button>
               </div>
@@ -126,8 +126,8 @@ export default function BookingsTab({
           variant="danger"
           title={`Annuler ${cancel.label} ?`}
           message="Les places et le stock sont rendus. Chaque élément payé suit ses règles de remboursement ; le contact est prévenu par email."
-          confirmLabel="Annuler"
-          confirmingLabel="Annulation…"
+          confirmLabel="Confirmer l'annulation"
+          confirmingLabel="Annulation en cours…"
           confirming={busy}
           onCancel={() => setCancel(null)}
           onConfirm={async () => {

@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Download, FileText, X } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 import type { CollectionConfig } from "@/modules/media";
 import DownloadAllButton from "../../_components/DownloadAllButton";
+import { Button } from "@/components/ui";
 
 type Photo = {
   id: string;
@@ -106,12 +107,12 @@ function Lightbox({
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <div className="flex items-center gap-3 min-w-0">
-          <button onClick={onClose} className="text-on-brand/70 hover:text-on-brand transition-colors shrink-0">
+          <button onClick={onClose} aria-label="Fermer la visionneuse" className="grid size-11 place-items-center rounded-control text-on-brand/70 hover:text-on-brand transition-colors shrink-0 focus-visible:outline-2 focus-visible:outline-focus">
             <X className="w-6 h-6" aria-hidden="true" />
           </button>
           <span className="text-on-brand/80 text-sm truncate">{current.item.filename}</span>
           {current.kind === "file" && (
-            <span className="text-xs text-brand-text bg-brand/20 rounded-full px-2 py-0.5 shrink-0">
+            <span className="text-xs font-semibold text-on-brand bg-brand/60 rounded-full px-2 py-0.5 shrink-0">
               {current.item.type}
             </span>
           )}
@@ -121,34 +122,30 @@ function Lightbox({
 
       {/* Image */}
       <div className="flex-1 flex items-center justify-center relative px-14 overflow-hidden">
-        <button onClick={onPrev} disabled={index === 0} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-full p-2.5 transition-all disabled:opacity-20 z-10">
+        <button onClick={onPrev} disabled={index === 0} aria-label="Média précédent" className="absolute left-3 top-1/2 -translate-y-1/2 grid size-11 place-items-center text-on-brand/60 hover:text-on-brand bg-scrim rounded-full transition-all disabled:opacity-20 z-10 focus-visible:outline-2 focus-visible:outline-focus">
           <ChevronLeft className="w-5 h-5" aria-hidden="true" />
         </button>
-        <button onClick={onNext} disabled={index === items.length - 1} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-full p-2.5 transition-all disabled:opacity-20 z-10">
+        <button onClick={onNext} disabled={index === items.length - 1} aria-label="Média suivant" className="absolute right-3 top-1/2 -translate-y-1/2 grid size-11 place-items-center text-on-brand/60 hover:text-on-brand bg-scrim rounded-full transition-all disabled:opacity-20 z-10 focus-visible:outline-2 focus-visible:outline-focus">
           <ChevronRight className="w-5 h-5" aria-hidden="true" />
         </button>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={current.item.thumbnailUrl}
           alt={current.item.filename}
-          className="max-w-full max-h-[75vh] object-contain rounded shadow-overlay"
+          className="max-w-full max-h-[75vh] object-contain rounded-control shadow-overlay"
         />
       </div>
 
       {/* Bottom bar */}
       <div className="flex items-center justify-end px-4 py-3 gap-3 shrink-0">
-        <button
-          onClick={download}
-          disabled={downloading}
-          className="flex items-center gap-1.5 text-sm bg-brand text-on-brand px-3 py-1.5 rounded-lg hover:bg-brand-hover disabled:opacity-50 transition-colors font-medium"
-        >
+        <Button type="button" onClick={download} disabled={downloading}>
           {downloading ? (
             <span className="w-4 h-4 border-2 border-on-brand/30 border-t-on-brand rounded-full animate-spin" />
           ) : (
             <Download className="w-4 h-4" aria-hidden="true" />
           )}
-          Télécharger
-        </button>
+          {downloading ? "Téléchargement en cours…" : "Télécharger le média"}
+        </Button>
       </div>
     </div>
   );
@@ -213,7 +210,7 @@ export default function CollectionView({ token, data }: { readonly token: string
         />
       )}
 
-      <div className="min-h-screen bg-surface-sunken">
+      <div className="min-h-screen bg-bg">
         {/* Header */}
         <header className="bg-surface border-b border-line px-4 py-5">
           <div className="max-w-5xl mx-auto">
@@ -222,9 +219,9 @@ export default function CollectionView({ token, data }: { readonly token: string
             </h1>
             <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
               <p className="text-sm text-ink-muted">
-                {totalPhotos > 0 && `${totalPhotos} photo${totalPhotos !== 1 ? "s" : ""}`}
+                {totalPhotos > 0 && `${totalPhotos} photo${totalPhotos > 1 ? "s" : ""}`}
                 {totalPhotos > 0 && totalFiles > 0 && " · "}
-                {totalFiles > 0 && `${totalFiles} visuel${totalFiles !== 1 ? "s" : ""}`}
+                {totalFiles > 0 && `${totalFiles} visuel${totalFiles > 1 ? "s" : ""}`}
               </p>
               {allItems.length > 0 && (
                 <DownloadAllButton onClick={downloadZip} zipping={zipping} />
@@ -245,14 +242,15 @@ export default function CollectionView({ token, data }: { readonly token: string
                 <div className="flex items-baseline gap-2 mb-3">
                   <h2 className="text-base font-semibold text-ink">{group.eventName}</h2>
                   <span className="text-xs text-ink-subtle">{formatDate(group.eventDate)}</span>
-                  <span className="text-xs text-ink-subtle">· {group.photos.length} photo{group.photos.length !== 1 ? "s" : ""}</span>
+                  <span className="text-xs text-ink-subtle">· {group.photos.length} photo{group.photos.length > 1 ? "s" : ""}</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
                   {group.photos.map((photo) => (
                     <button
                       key={photo.id}
                       onClick={() => setLightboxIdx(idxMap.get(photo.id) ?? null)}
-                      className="group aspect-square rounded-lg overflow-hidden bg-surface-sunken hover:opacity-90 transition-opacity relative"
+                      aria-label={`Agrandir ${photo.filename}`}
+                      className="group aspect-square rounded-control overflow-hidden bg-surface-sunken hover:opacity-90 transition-opacity relative focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={photo.thumbnailUrl} alt={photo.filename} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
@@ -270,16 +268,17 @@ export default function CollectionView({ token, data }: { readonly token: string
               <section key={group.projectId}>
                 <div className="flex items-baseline gap-2 mb-3">
                   <h2 className="text-base font-semibold text-ink">{group.projectName}</h2>
-                  <span className="text-xs text-ink-subtle">· {group.files.length} visuel{group.files.length !== 1 ? "s" : ""}</span>
+                  <span className="text-xs text-ink-subtle">· {group.files.length} visuel{group.files.length > 1 ? "s" : ""}</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
                   {group.files.map((file) => {
                     const flatIdx = idxMap.get(file.id) ?? null;
                     return (
-                      <div key={file.id} className="group rounded-lg overflow-hidden border border-line bg-surface">
+                      <div key={file.id} className="group rounded-control overflow-hidden border border-line bg-surface">
                         <button
                           onClick={() => setLightboxIdx(flatIdx)}
-                          className="w-full aspect-square bg-surface-sunken relative overflow-hidden block"
+                          aria-label={`Agrandir ${file.filename}`}
+                          className="w-full aspect-square bg-surface-sunken relative overflow-hidden block focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
                         >
                           {file.thumbnailUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element

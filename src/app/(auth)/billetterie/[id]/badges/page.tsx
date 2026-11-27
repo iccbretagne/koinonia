@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import { qrPath } from "@/lib/qr";
 import QrSvg from "@/components/ticketing/QrSvg";
 import { canDo, getEventAccess, getEventDetail, listTeam } from "@/modules/ticketing";
+import { PageHeader } from "@/components/ui";
 import PrintButton from "./PrintButton";
 
 /** Badges de l'équipe à imprimer (spec 074, lot 2) : nom, poste et QR, 8 par page A4. */
@@ -15,9 +16,8 @@ export default async function BadgesPage({ params }: { readonly params: Promise<
   const [event, team] = await Promise.all([getEventDetail(id), listTeam(id)]);
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3 print:hidden">
-        <h1 className="text-xl font-bold text-ink">Badges — {event.title}</h1>
-        <PrintButton />
+      <div className="print:hidden">
+        <PageHeader title="Badges de l'équipe" description={event.title} actions={<PrintButton label="Imprimer les badges" />} />
       </div>
       <div className="grid grid-cols-2 gap-3 print:gap-0">
         {team.assignments.map((a) => (

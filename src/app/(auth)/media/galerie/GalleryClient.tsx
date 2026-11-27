@@ -8,6 +8,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import EmptyState from "@/components/ui/EmptyState";
+import { FilterChip, Input, SearchInput, Select, buttonClasses, fieldLabelClasses } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
 import MediaLightbox from "@/components/media/MediaLightbox";
 import CollectionBuilder from "../collections/CollectionBuilder";
@@ -95,7 +96,6 @@ export default function GalleryClient({
   const router = useRouter();
   const pathname = usePathname();
   const toast = useToast();
-  const uid = useId();
 
   const [items, setItems] = useState(initialPage.items);
   const [cursor, setCursor] = useState(initialPage.nextCursor);
@@ -247,7 +247,7 @@ export default function GalleryClient({
           <div className="flex items-center gap-2">
             {canManageGrants && (
               <Button variant="secondary" onClick={() => setGrantsOpen(true)}>
-                <Users className="w-4 h-4" aria-hidden="true" /> Accès
+                <Users className="w-4 h-4" aria-hidden="true" /> Gérer les accès
               </Button>
             )}
             {items.length > 0 && !selecting && (
@@ -262,64 +262,45 @@ export default function GalleryClient({
       {/* Barre de filtres */}
       <div className="sticky top-14 z-20 -mx-4 px-4 py-3 bg-bg/95 backdrop-blur-sm border-b border-line space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex rounded-lg border border-line bg-surface p-0.5" role="group" aria-label="Type de média">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Type de média">
             {(Object.keys(TYPE_LABELS) as (keyof typeof TYPE_LABELS)[]).map((t) => (
-              <button
-                key={t}
-                type="button"
-                aria-pressed={filters.type === t}
-                onClick={() => apply({ type: t })}
-                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${filters.type === t ? "bg-brand text-on-brand" : "text-ink-muted hover:text-ink"}`}
-              >
+              <FilterChip key={t} pressed={filters.type === t} onClick={() => apply({ type: t })}>
                 {TYPE_LABELS[t]}
-              </button>
+              </FilterChip>
             ))}
           </div>
-          <div className="relative flex-1 min-w-[10rem]">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle" aria-hidden="true" />
-            <label htmlFor={`${uid}-q`} className="sr-only">Rechercher</label>
-            <input
-              id={`${uid}-q`}
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher…"
-              className="w-full pl-9 pr-3 py-2 text-base sm:text-sm border border-control-line rounded-lg bg-surface text-ink focus:outline-none focus:border-brand"
+          <SearchInput aria-label="Rechercher" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher…" className="flex-1 min-w-40" />
+          <Button variant="secondary" onClick={() => setFiltersOpen(true)}>
+            <SlidersHorizontal className="w-4 h-4" aria-hidden="true" /> Filtrer
+          </Button>
+          <div className="w-40">
+            <Select
+              label=""
+              aria-label="Tri"
+              value={filters.order}
+              onChange={(e) => apply({ order: e.target.value as "desc" | "asc" })}
+              options={[{ value: "desc", label: "Plus récent" }, { value: "asc", label: "Plus ancien" }]}
             />
           </div>
-          <Button variant="secondary" onClick={() => setFiltersOpen(true)}>
-            <SlidersHorizontal className="w-4 h-4" aria-hidden="true" /> Filtres
-          </Button>
-          <label htmlFor={`${uid}-order`} className="sr-only">Tri</label>
-          <select
-            id={`${uid}-order`}
-            value={filters.order}
-            onChange={(e) => apply({ order: e.target.value as "desc" | "asc" })}
-            className="py-2 pl-3 pr-8 text-base sm:text-sm border border-control-line rounded-lg bg-surface text-ink focus:outline-none focus:border-brand"
-          >
-            <option value="desc">Plus récent</option>
-            <option value="asc">Plus ancien</option>
-          </select>
         </div>
         {hasFilters && (
           <div className="flex flex-wrap items-center gap-2">
             {activeChips.map((c) => (
-              <button
+              <FilterChip
                 key={c.key}
-                type="button"
+                pressed
                 onClick={() => {
                   if (c.key === "q") {
                     setSearch("");
                   }
                   apply(c.clear);
                 }}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-soft text-brand-text text-xs font-medium"
                 aria-label={`Retirer le filtre ${c.label}`}
               >
-                {c.label} <X className="w-3 h-3" aria-hidden="true" />
-              </button>
+                {c.label} <X className="size-4" aria-hidden="true" strokeWidth={1.75} />
+              </FilterChip>
             ))}
-            <button type="button" onClick={clearAll} className="text-xs text-ink-muted underline">Tout effacer</button>
+            <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={clearAll}>Effacer les filtres</Button>
           </div>
         )}
       </div>
@@ -358,16 +339,16 @@ export default function GalleryClient({
                         onClick={() => (selecting ? toggle(item) : setLightboxIndex(indexOf.get(k) ?? 0))}
                         aria-pressed={selecting ? isSelected : undefined}
                         aria-label={`${item.filename} — ${item.source.name}`}
-                        className={`relative block w-full aspect-square overflow-hidden rounded-lg bg-surface-sunken focus:outline-none focus-visible:ring-2 focus-visible:ring-focus ${isSelected ? "ring-2 ring-brand" : ""}`}
+                        className={`relative block w-full aspect-square overflow-hidden rounded-control bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${isSelected ? "ring-2 ring-brand" : ""}`}
                       >
                         {item.thumbnailUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={item.thumbnailUrl} alt="" loading="lazy" className={`w-full h-full object-cover transition-transform ${isSelected ? "scale-90 rounded-md" : ""}`} />
+                          <img src={item.thumbnailUrl} alt="" loading="lazy" className={`w-full h-full object-cover transition-transform ${isSelected ? "scale-90 rounded-chip" : ""}`} />
                         ) : (
                           <span className="flex w-full h-full items-center justify-center text-xs text-ink-subtle">Aperçu indisponible</span>
                         )}
                         {item.kind === "file" && (
-                          <span className="absolute left-1 bottom-1 px-1.5 py-0.5 rounded bg-surface/90 text-ink text-[10px] font-medium">Visuel</span>
+                          <span className="absolute left-1 bottom-1 px-1.5 py-0.5 rounded-chip bg-surface/90 text-ink text-xs font-semibold">Visuel</span>
                         )}
                         {selecting && (
                           <span
@@ -388,7 +369,7 @@ export default function GalleryClient({
           {cursor !== null && (
             <div className="flex justify-center py-4">
               <Button variant="secondary" onClick={loadMore} disabled={loading}>
-                {loading ? "Chargement…" : loadError ? "Réessayer" : "Charger plus"}
+                {loading ? "Chargement en cours…" : loadError ? "Réessayer le chargement" : "Afficher plus de médias"}
               </Button>
             </div>
           )}
@@ -399,7 +380,7 @@ export default function GalleryClient({
       {selecting && (
         <div
           data-k-bottom-bar
-          className="fixed bottom-14 md:bottom-4 inset-x-0 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 z-30 bg-surface border-t md:border border-line md:rounded-card shadow-float px-4 py-3 flex flex-wrap items-center gap-2 justify-between md:justify-center"
+          className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-4 inset-x-0 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 z-30 bg-surface border-t md:border border-line md:rounded-card shadow-float px-4 py-3 flex flex-wrap items-center gap-2 justify-between md:justify-center"
         >
           <span className="text-sm font-medium text-ink">
             {selection.length} sélectionné{selection.length > 1 ? "s" : ""}
@@ -407,14 +388,14 @@ export default function GalleryClient({
           </span>
           <div className="flex items-center gap-2">
             <Button variant="primary" onClick={downloadZip} disabled={zipping || selection.length === 0 || selection.length > ZIP_MAX}>
-              <Download className="w-4 h-4" aria-hidden="true" /> {zipping ? "Préparation…" : "Télécharger"}
+              <Download className="w-4 h-4" aria-hidden="true" /> {zipping ? "Préparation en cours…" : "Télécharger la sélection"}
             </Button>
             {canShare && (
               <Button variant="secondary" onClick={() => setShareOpen(true)} disabled={!shareAllowed}>
-                <Share2 className="w-4 h-4" aria-hidden="true" /> Partager
+                <Share2 className="w-4 h-4" aria-hidden="true" /> Partager la sélection
               </Button>
             )}
-            <Button variant="ghost" onClick={stopSelecting}>Annuler</Button>
+            <Button variant="ghost" onClick={stopSelecting}>Annuler la sélection</Button>
           </div>
         </div>
       )}
@@ -441,13 +422,13 @@ export default function GalleryClient({
               <>
                 <a
                   href={`/api/media/library/${item.kind}/${item.id}/download`}
-                  className="flex items-center gap-2 px-5 py-2 rounded-xl bg-brand text-on-brand text-sm font-medium hover:opacity-90 transition-opacity"
+                  className={buttonClasses("primary")}
                 >
-                  <Download className="w-4 h-4" aria-hidden="true" /> Télécharger
+                  <Download className="w-4 h-4" aria-hidden="true" /> Télécharger le média
                 </a>
                 {href !== null && (
-                  // eslint-disable-next-line no-restricted-syntax -- visionneuse plein écran toujours sombre
-                  <Link href={href} className="text-sm text-white/80 underline hover:text-white">
+                  // eslint-disable-next-line no-restricted-syntax -- visionneuse plein écran toujours sombre : bouton clair sur fond noir
+                  <Link href={href} className="inline-flex min-h-11 items-center rounded-control border border-white/30 px-4 font-display text-sm font-semibold text-white/90 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
                     {item.source.type === "event" ? "Voir dans l'événement" : "Voir dans le projet"}
                   </Link>
                 )}
@@ -516,31 +497,23 @@ function FiltersDialog({
     return () => { clearTimeout(t); ctrl.abort(); };
   }, [open, q]);
 
-  const input = "w-full border border-control-line rounded-lg px-3 py-2 text-base bg-surface text-ink focus:outline-none focus:border-brand";
   return (
     <Modal open={open} onClose={onClose} title="Filtres" mobileLayout="sheet">
       <div className="space-y-5">
         <fieldset>
-          <legend className="text-sm font-semibold text-ink mb-2">Période</legend>
+          <legend className={`${fieldLabelClasses} mb-2`}>Période</legend>
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label htmlFor={`${uid}-from`} className="block text-xs text-ink-muted mb-1">Du</label>
-              <input id={`${uid}-from`} type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} className={input} />
-            </div>
-            <div>
-              <label htmlFor={`${uid}-to`} className="block text-xs text-ink-muted mb-1">Au</label>
-              <input id={`${uid}-to`} type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} className={input} />
-            </div>
+            <Input label="Du" type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} />
+            <Input label="Au" type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} />
           </div>
         </fieldset>
         <fieldset>
-          <legend className="text-sm font-semibold text-ink mb-2">Événement ou projet</legend>
-          <label htmlFor={`${uid}-src`} className="sr-only">Rechercher un événement ou un projet</label>
-          <input id={`${uid}-src`} type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher…" className={input} />
-          <ul className="mt-2 max-h-56 overflow-y-auto border border-line rounded-lg divide-y divide-line">
+          <legend className={`${fieldLabelClasses} mb-2`}>Événement ou projet</legend>
+          <SearchInput aria-label="Rechercher un événement ou un projet" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher…" />
+          <ul className="mt-2 max-h-56 overflow-y-auto border border-line rounded-control divide-y divide-line">
             <li>
-              <label className="flex items-center gap-2 px-3 py-2 text-sm text-ink cursor-pointer">
-                <input type="radio" name={`${uid}-source`} checked={source === ""} onChange={() => setSource("")} /> Tous
+              <label className="flex min-h-11 items-center gap-3 px-3 py-2 text-[15px] text-ink cursor-pointer">
+                <input className="size-5 shrink-0 accent-brand" type="radio" name={`${uid}-source`} checked={source === ""} onChange={() => setSource("")} /> Tous
               </label>
             </li>
             {sources === null && <li className="px-3 py-2 text-sm text-ink-subtle">Chargement…</li>}
@@ -548,8 +521,8 @@ function FiltersDialog({
               const value = `${s.type}:${s.id}`;
               return (
                 <li key={value}>
-                  <label className="flex items-center gap-2 px-3 py-2 text-sm text-ink cursor-pointer">
-                    <input type="radio" name={`${uid}-source`} checked={source === value} onChange={() => setSource(value)} />
+                  <label className="flex min-h-11 items-center gap-3 px-3 py-2 text-[15px] text-ink cursor-pointer">
+                    <input className="size-5 shrink-0 accent-brand" type="radio" name={`${uid}-source`} checked={source === value} onChange={() => setSource(value)} />
                     <span className="truncate">{s.name}</span>
                     <span className="ml-auto text-xs text-ink-subtle shrink-0">{s.type === "event" ? "Événement" : "Projet"}</span>
                   </label>
@@ -559,9 +532,9 @@ function FiltersDialog({
           </ul>
         </fieldset>
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => { setFrom(""); setTo(""); setSource(""); }}>Réinitialiser</Button>
+          <Button variant="ghost" onClick={() => { setFrom(""); setTo(""); setSource(""); }}>Réinitialiser les filtres</Button>
           <Button variant="primary" onClick={() => onApply({ from: from || undefined, to: to || undefined, source: source || undefined })}>
-            Appliquer
+            Appliquer les filtres
           </Button>
         </div>
       </div>

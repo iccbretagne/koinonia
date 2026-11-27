@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { CheckCircle2, Circle, CircleAlert } from "lucide-react";
-import { Button } from "@/components/ui";
+import { Button, buttonClasses } from "@/components/ui";
 import type { TicketingEventStatus } from "@/generated/prisma/enums";
 import { useApi } from "../../use-api";
 import type { ReadinessCheck } from "@/modules/ticketing/schemas";
@@ -65,7 +65,7 @@ export default function OpeningChecklist({
                 {c.detail && <span className="block text-[13px] text-ink-muted">{c.detail}</span>}
               </span>
               {!c.done && (
-                <Link href={c.href} className="shrink-0 text-[13px] font-semibold text-brand-text underline-offset-2 hover:underline">
+                <Link href={c.href} className={`${buttonClasses("ghost", "sm")} min-h-11 shrink-0 sm:min-h-9`}>
                   Régler
                 </Link>
               )}

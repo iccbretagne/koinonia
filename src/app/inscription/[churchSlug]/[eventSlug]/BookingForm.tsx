@@ -111,7 +111,7 @@ export default function BookingForm({
 
   function stepOneError(): string | null {
     if (participants.some((p) => !p.firstName.trim() || !p.lastName.trim())) return "Indiquez le prénom et le nom de chaque participant.";
-    if (participants.length > event.seatsRemaining) return `Il ne reste que ${event.seatsRemaining} place(s).`;
+    if (participants.length > event.seatsRemaining) return event.seatsRemaining > 1 ? `Il ne reste que ${event.seatsRemaining} places.` : `Il ne reste que ${event.seatsRemaining} place.`;
     if (unaccompanied && !event.allowUnaccompaniedMinors) return "Un adulte doit faire partie de la réservation pour accompagner les mineurs.";
     return null;
   }
@@ -162,9 +162,9 @@ export default function BookingForm({
   }
 
   const recoverLink = (
-    <button type="button" className="text-[15px] font-semibold text-brand-text underline" onClick={() => setRecover(true)}>
+    <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setRecover(true)}>
       Retrouver ma réservation
-    </button>
+    </Button>
   );
 
   if (!event.open) {
@@ -191,8 +191,8 @@ export default function BookingForm({
               <div className="flex items-center justify-between">
                 <legend className="font-semibold text-ink">Participant {i + 1}</legend>
                 {participants.length > 1 && (
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setParticipants((l) => l.filter((_, j) => j !== i))}>
-                    <Trash2 className="size-4" aria-hidden="true" /> Retirer
+                  <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setParticipants((l) => l.filter((_, j) => j !== i))}>
+                    <Trash2 className="size-4" aria-hidden="true" /> Retirer le participant
                   </Button>
                 )}
               </div>

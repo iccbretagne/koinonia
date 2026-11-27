@@ -94,8 +94,8 @@ export default function ServiceInfoEditor({ service }: { readonly service: Servi
               service.planningEventTitle ||
               new Date(service.serviceDate).toLocaleDateString("fr-FR")}
           </h1>
-          <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
-            Modifier
+          <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setEditing(true)}>
+            Modifier les informations
           </Button>
         </div>
         <p className="text-sm text-ink-muted">
@@ -111,7 +111,7 @@ export default function ServiceInfoEditor({ service }: { readonly service: Servi
   }
 
   return (
-    <div className="mb-6 border border-line rounded-lg p-4 space-y-3">
+    <div className="mb-6 border border-line rounded-card bg-surface p-4 space-y-3">
       {error && <p className="text-sm text-danger">{error}</p>}
       <Input label="Date du culte" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       <ServiceEventFields
@@ -131,7 +131,7 @@ export default function ServiceInfoEditor({ service }: { readonly service: Servi
       <Input label="Série" value={series} onChange={(e) => setSeries(e.target.value)} placeholder="Nom du podcast / de la série" />
       <div className="flex gap-2">
         <Button onClick={save} disabled={saving}>
-          {saving ? "Enregistrement..." : "Enregistrer"}
+          {saving ? "Enregistrement en cours…" : "Enregistrer les informations"}
         </Button>
         <Button variant="secondary" onClick={() => setEditing(false)} disabled={saving}>
           Annuler

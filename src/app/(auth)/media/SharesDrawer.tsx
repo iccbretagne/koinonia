@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 interface ShareSource {
   type: "event" | "project";
@@ -44,6 +45,7 @@ export default function SharesDrawer({ open, onClose }: { readonly open: boolean
   const [shares, setShares] = useState<ActiveShare[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revokingId, setRevokingId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -63,7 +65,6 @@ export default function SharesDrawer({ open, onClose }: { readonly open: boolean
   }, [open, load]);
 
   async function handleRevoke(id: string) {
-    if (!confirm("Révoquer ce lien de partage ? Il ne sera plus accessible.")) return;
     setRevokingId(id);
     try {
       const res = await fetch(`/api/media/shares/${id}`, { method: "DELETE" });
@@ -72,6 +73,7 @@ export default function SharesDrawer({ open, onClose }: { readonly open: boolean
         throw new Error(json.error ?? "Erreur lors de la révocation");
       }
       setShares((prev) => prev?.filter((s) => s.id !== id) ?? null);
+      setConfirmId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur lors de la révocation");
     } finally {
@@ -86,12 +88,12 @@ export default function SharesDrawer({ open, onClose }: { readonly open: boolean
       {shares?.length === 0 && <p className="text-ink-muted text-sm">Aucun lien de partage actif.</p>}
       <ul className="flex flex-col gap-3">
         {shares?.map((share) => (
-          <li key={share.id} className="border border-line rounded-lg p-3 flex flex-col gap-2">
+          <li key={share.id} className="border border-line rounded-card p-3 flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2">
               <span className="font-medium text-sm text-ink">
                 {share.label || TYPE_LABELS[share.type] || share.type}
               </span>
-              <span className="text-xs text-ink-muted">{share.usageCount} utilisation(s)</span>
+              <span className="text-xs text-ink-muted shrink-0">{share.usageCount} utilisation{share.usageCount > 1 ? "s" : ""}</span>
             </div>
             <p className="text-xs text-ink-muted">
               {share.sources.map((s) => s.name).join(", ") || "Sources indisponibles"}
@@ -101,24 +103,35 @@ export default function SharesDrawer({ open, onClose }: { readonly open: boolean
                 Expire le {new Date(share.expiresAt).toLocaleDateString("fr-FR")}
               </p>
             )}
-            <div className="flex gap-2">
-              <Button size="sm" variant="secondary" onClick={() => copyLink(share.url)}>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => copyLink(share.url)}>
                 Copier le lien
               </Button>
               {share.canRevoke && (
                 <Button
                   size="sm"
-                  variant="danger"
+                  variant="ghost"
+                  className="min-h-11 sm:min-h-9"
                   disabled={revokingId === share.id}
-                  onClick={() => handleRevoke(share.id)}
+                  onClick={() => setConfirmId(share.id)}
                 >
-                  Révoquer
+                  Révoquer le lien
                 </Button>
               )}
             </div>
           </li>
         ))}
       </ul>
+      <ConfirmModal
+        open={confirmId !== null}
+        title="Révoquer ce lien de partage ?"
+        message="Il ne sera plus accessible."
+        confirmLabel="Révoquer le lien"
+        confirmingLabel="Révocation en cours…"
+        confirming={revokingId !== null}
+        onConfirm={() => { if (confirmId) void handleRevoke(confirmId); }}
+        onCancel={() => setConfirmId(null)}
+      />
     </Modal>
   );
 }

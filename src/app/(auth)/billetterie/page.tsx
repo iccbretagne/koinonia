@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Ticket } from "lucide-react";
 import { getCurrentChurchId, requireAuth } from "@/lib/auth";
-import { EmptyState, PageHeader, StatusChip } from "@/components/ui";
+import { EmptyState, PageHeader, StatusChip, buttonClasses } from "@/components/ui";
 import { formatDateTime } from "@/components/ticketing/format";
 import { isTicketingManager, listEvents } from "@/modules/ticketing";
 import { EVENT_STATUS_LABEL } from "@/modules/ticketing/schemas";
@@ -25,7 +25,7 @@ export default async function TicketingPage() {
         description="Inscriptions, paiements, billets et présences des événements ouverts au public."
         actions={
           <div className="flex flex-wrap gap-2">
-            <Link href="/billetterie/mes-reservations" className="self-center text-[15px] font-semibold text-brand-text underline">
+            <Link href="/billetterie/mes-reservations" className={buttonClasses("secondary")}>
               Mes réservations
             </Link>
             {manager && <CreateEventButton />}
@@ -38,7 +38,7 @@ export default async function TicketingPage() {
         <ul className="grid gap-3 md:grid-cols-2">
           {events.map((e) => (
             <li key={e.id}>
-              <Link href={`/billetterie/${e.id}`} className="block rounded-card border border-line bg-surface p-4 hover:border-brand">
+              <Link href={`/billetterie/${e.id}`} className="block rounded-card border border-line bg-surface p-4 shadow-card hover:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
                 <div className="flex items-start justify-between gap-3">
                   <p className="font-semibold text-ink">{e.title}</p>
                   <StatusChip tone={STATUS_TONE[e.status]}>

@@ -2,6 +2,8 @@
 
 import { useId, useState } from "react";
 import Button from "@/components/ui/Button";
+import { Textarea, fieldLabelClasses } from "@/components/ui";
+import { FILE_INPUT } from "@/app/(auth)/billetterie/[id]/_components/file-input-classes";
 
 const ALLOWED_COVER_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_COVER_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -115,17 +117,17 @@ export default function AudioSettingsClient({
   return (
     <div className="max-w-xl space-y-4">
       <div className="space-y-2">
-        <label htmlFor={`${id}-cover`} className="block text-sm font-medium text-ink-muted">Couverture par défaut</label>
+        <label htmlFor={`${id}-cover`} className={fieldLabelClasses}>Couverture par défaut</label>
         {coverPreview && (
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={coverPreview}
               alt="Couverture par défaut"
-              className="w-20 h-20 object-cover rounded-lg border border-line"
+              className="w-20 h-20 object-cover rounded-control border border-line"
             />
-            <Button type="button" variant="danger" size="sm" onClick={removeCover}>
-              Retirer
+            <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={removeCover}>
+              Retirer la couverture
             </Button>
           </div>
         )}
@@ -135,34 +137,30 @@ export default function AudioSettingsClient({
           accept={ALLOWED_COVER_MIME_TYPES.join(",")}
           onChange={(e) => handleCoverSelected(e.target.files)}
           disabled={uploadingCover}
-          className="block text-sm text-ink-muted"
+          className={FILE_INPUT}
         />
-        {uploadingCover && <p className="text-xs text-ink-muted">Envoi en cours...</p>}
+        {uploadingCover && <p className="text-xs text-ink-muted">Envoi en cours…</p>}
         {coverError && <p className="text-sm text-danger">{coverError}</p>}
         <p className="text-xs text-ink-muted">
           Utilisée pour les cultes publiés sans couverture propre. JPEG, PNG ou WebP, 10MB max.
         </p>
       </div>
 
-      <div className="space-y-1">
-        <label htmlFor={`${id}-template`} className="block text-sm font-medium text-ink-muted">
-          Template de noms de séquences (un par ligne)
-        </label>
-        <textarea
-          id={`${id}-template`}
-          value={templateText}
-          onChange={(e) => setTemplateText(e.target.value)}
-          rows={5}
-          className="block w-full px-3 py-2.5 md:py-2 border border-control-line rounded-lg shadow-card text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-brand"
-          placeholder={"Louange\nPrédication\nPrière"}
-        />
-      </div>
+      <Textarea
+        id={`${id}-template`}
+        label="Modèle de noms de séquences"
+        hint="Un nom par ligne."
+        value={templateText}
+        onChange={(e) => setTemplateText(e.target.value)}
+        rows={5}
+        placeholder={"Louange\nPrédication\nPrière"}
+      />
 
       {message && <p className="text-sm text-success">{message}</p>}
       {error && <p className="text-sm text-danger">{error}</p>}
 
       <Button onClick={save} disabled={saving}>
-        {saving ? "Enregistrement..." : "Enregistrer"}
+        {saving ? "Enregistrement en cours…" : "Enregistrer les paramètres"}
       </Button>
     </div>
   );

@@ -9,15 +9,15 @@ export default function MarkPrinted({ eventId, itemIds }: { readonly eventId: st
   return (
     <div className="flex flex-wrap gap-2">
       <Button type="button" disabled={itemIds.length === 0} onClick={() => window.print()}>
-        Imprimer
+        Imprimer les étiquettes
       </Button>
       <Button
         type="button"
         variant="secondary"
         disabled={busy || itemIds.length === 0}
-        onClick={() => call(`/api/ticketing/events/${eventId}/labels`, "POST", { itemIds }, `${itemIds.length} étiquette(s) marquée(s) imprimée(s)`)}
+        onClick={() => call(`/api/ticketing/events/${eventId}/labels`, "POST", { itemIds }, itemIds.length > 1 ? `${itemIds.length} étiquettes marquées imprimées` : "1 étiquette marquée imprimée")}
       >
-        Marquer imprimées
+        {busy ? "Enregistrement en cours…" : "Marquer comme imprimées"}
       </Button>
     </div>
   );

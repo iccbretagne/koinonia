@@ -83,7 +83,7 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
       "donner accès à la galerie",
     ],
     answer:
-      "Dans « Communication & Production », la carte Galerie montre toutes les photos et tous les visuels validés, par mois. Filtrez par type, période, événement ou projet, ou cherchez un nom ; touchez un média pour l'ouvrir et le télécharger, ou « Sélectionner » pour en télécharger plusieurs (200 au plus) ou les partager. Un Admin ou le Ministre des équipes média donne un accès à une personne précise avec le bouton « Accès ».",
+      "Dans « Communication & Production », la carte Galerie montre toutes les photos et tous les visuels validés, par mois. Filtrez par type, période, événement ou projet, ou cherchez un nom ; touchez un média pour l'ouvrir et le télécharger, ou « Sélectionner » pour en télécharger plusieurs (200 au plus) ou les partager. Un Admin ou le Ministre des équipes média donne un accès à une personne précise avec le bouton « Gérer les accès ».",
     href: "/media/galerie",
     hrefLabel: "Galerie",
     audience: { predicates: ["mediaGallery"] },

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { Button, Checkbox, EmptyState, IconButton, Input, Modal, StatusChip } from "@/components/ui";
+import { Button, Checkbox, EmptyState, IconButton, Input, Modal, StatusChip, Textarea, fieldLabelClasses } from "@/components/ui";
 import type { EventDetail } from "@/modules/ticketing";
 import { OPTION_SCOPE_LABEL, formatEuros } from "@/modules/ticketing/schemas";
 import type { TicketingOptionScope, TicketingOptionType } from "@/generated/prisma/enums";
@@ -107,7 +107,7 @@ function CardChoice<T extends string>({
 }) {
   return (
     <fieldset className="space-y-2">
-      <legend className="text-[13px] font-medium text-ink">{legend}</legend>
+      <legend className={fieldLabelClasses}>{legend}</legend>
       <div className="grid gap-2 sm:grid-cols-3">
         {items.map((it) => (
           <label
@@ -211,23 +211,20 @@ function OptionEditor({
               <DishList eventId={event.id} optionId={option.id} dishes={option.variants} />
             </section>
           ) : (
-            <label className="block space-y-1">
-              <span className="text-[13px] font-medium text-ink">Plats (un par ligne, facultatif)</span>
-              <textarea
-                className="w-full rounded-control border border-control-line bg-surface p-2 text-[15px] text-ink"
-                rows={3}
-                placeholder={"Poulet yassa\nPoisson braisé\nVégétarien"}
-                value={d.variants}
-                onChange={(e) => set("variants", e.target.value)}
-              />
-              <span className="text-[13px] text-ink-muted">Vous pourrez en ajouter, en modifier ou en fermer ensuite.</span>
-            </label>
+            <Textarea
+              label="Plats (un par ligne, facultatif)"
+              rows={3}
+              placeholder={"Poulet yassa\nPoisson braisé\nVégétarien"}
+              value={d.variants}
+              hint="Vous pourrez en ajouter, en modifier ou en fermer ensuite."
+              onChange={(e) => set("variants", e.target.value)}
+            />
           ))}
 
         <Input label="Description (facultative)" value={d.description} maxLength={500} onChange={(e) => set("description", e.target.value)} />
 
         <details className="rounded-control border border-line p-3" open={!!(d.choiceGroup || !d.refundable || d.refundDeadline)}>
-          <summary className="cursor-pointer text-[15px] font-medium text-ink">Réglages avancés</summary>
+          <summary className="flex min-h-11 cursor-pointer items-center rounded-control font-display text-[15px] font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">Réglages avancés</summary>
           <div className="mt-3 space-y-3">
             <Input
               label="Groupe au choix unique (facultatif)"
@@ -254,7 +251,7 @@ function OptionEditor({
 
         <div className="flex gap-2">
           <Button type="button" disabled={busy || !d.label.trim()} onClick={save}>
-            {busy ? "Enregistrement…" : option ? "Enregistrer" : "Créer l'option"}
+            {busy ? "Enregistrement en cours…" : option ? "Enregistrer l'option" : "Créer l'option"}
           </Button>
           <Button type="button" variant="secondary" onClick={onClose}>
             Fermer

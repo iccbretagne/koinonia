@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Download } from "lucide-react";
-import { Button, Checkbox, Input, Modal, SearchInput, Select, StatusChip } from "@/components/ui";
+import { Button, Checkbox, Input, Modal, SearchInput, Select, StatusChip, buttonClasses } from "@/components/ui";
 import type { BookingRow, PaymentRow } from "@/modules/ticketing";
 import { CHARGE_STATUS_LABEL, PAYMENT_METHODS, PAYMENT_METHOD_LABEL, formatEuros } from "@/modules/ticketing/schemas";
 import { useApi } from "../../use-api";
@@ -51,9 +51,9 @@ function ChargesModal({ eventId, action, onClose }: { readonly eventId: string; 
             </label>
           );
         })}
-        <Select label="Moyen" value={method} options={PAYMENT_METHODS.map((m) => ({ value: m, label: PAYMENT_METHOD_LABEL[m] }))} onChange={(e) => setMethod(e.target.value)} />
+        <Select label="Moyen de paiement" value={method} options={PAYMENT_METHODS.map((m) => ({ value: m, label: PAYMENT_METHOD_LABEL[m] }))} onChange={(e) => setMethod(e.target.value)} />
         <Button type="button" disabled={busy || total <= 0} onClick={submit}>
-          {action.mode === "receipt" ? "Encaisser" : "Marquer remboursé"} {formatEuros(total)}
+          {busy ? "Enregistrement en cours…" : `${action.mode === "receipt" ? "Encaisser" : "Marquer remboursé"} ${formatEuros(total)}`}
         </Button>
       </div>
     </Modal>
@@ -86,10 +86,10 @@ export default function PaymentsTab({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-2">
         {(["payments", "refunds", "options"] as const).map((type) => (
-          <a key={type} className="inline-flex items-center gap-1 text-[15px] font-semibold text-brand-text underline" href={`/api/ticketing/events/${eventId}/export?type=${type}`}>
-            <Download className="size-4" aria-hidden="true" /> {{ payments: "Règlements", refunds: "Remboursements", options: "Options" }[type]}
+          <a key={type} className={buttonClasses("secondary")} href={`/api/ticketing/events/${eventId}/export?type=${type}`}>
+            <Download className="size-4" aria-hidden="true" strokeWidth={1.75} /> {{ payments: "Télécharger les règlements", refunds: "Télécharger les remboursements", options: "Télécharger les options" }[type]}
           </a>
         ))}
       </div>
@@ -106,10 +106,10 @@ export default function PaymentsTab({
                   <strong>{p.reference}</strong> {p.contactName} — {PAYMENT_METHOD_LABEL[p.method]} {formatEuros(p.amount)}
                 </span>
                 <span className="flex gap-2">
-                  <Button type="button" size="sm" disabled={busy} onClick={() => call(`/api/ticketing/events/${eventId}/payments/${p.id}`, "PATCH", { action: "confirm" }, "Paiement confirmé")}>
-                    Reçu
+                  <Button type="button" size="sm" variant="secondary" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => call(`/api/ticketing/events/${eventId}/payments/${p.id}`, "PATCH", { action: "confirm" }, "Paiement confirmé")}>
+                    Confirmer la réception
                   </Button>
-                  <Button type="button" size="sm" variant="ghost" onClick={() => setReject({ id: p.id, reason: "" })}>
+                  <Button type="button" size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => setReject({ id: p.id, reason: "" })}>
                     Refuser
                   </Button>
                 </span>
@@ -128,7 +128,7 @@ export default function PaymentsTab({
               <span className="text-[15px] text-ink">
                 <strong>{b.reference}</strong> {b.contact.name} — reste {formatEuros(b.balances.due + b.balances.declared)}
               </span>
-              <Button type="button" size="sm" variant="secondary" onClick={() => setAction({ booking: b, mode: "receipt" })}>
+              <Button type="button" size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => setAction({ booking: b, mode: "receipt" })}>
                 Encaisser
               </Button>
             </li>
@@ -149,7 +149,7 @@ export default function PaymentsTab({
                     {b.charges.filter((c) => c.status === "REFUND_DUE").map((c) => c.label).join(" · ")}
                   </span>
                 </span>
-                <Button type="button" size="sm" variant="secondary" onClick={() => setAction({ booking: b, mode: "refund" })}>
+                <Button type="button" size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => setAction({ booking: b, mode: "refund" })}>
                   Rembourser
                 </Button>
               </li>
@@ -182,14 +182,13 @@ export default function PaymentsTab({
             <Input label="Motif (envoyé au participant)" value={reject.reason} onChange={(e) => setReject({ ...reject, reason: e.target.value })} />
             <Button
               type="button"
-              variant="danger"
               disabled={busy || !reject.reason.trim()}
               onClick={async () => {
                 const ok = await call(`/api/ticketing/events/${eventId}/payments/${reject.id}`, "PATCH", { action: "reject", reason: reject.reason.trim() }, "Déclaration refusée");
                 if (ok) setReject(null);
               }}
             >
-              Refuser
+              {busy ? "Refus en cours…" : "Refuser la déclaration"}
             </Button>
           </div>
         </Modal>

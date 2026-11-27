@@ -2,10 +2,11 @@
 
 import { Check, ChevronLeft, ImageIcon, Trash2, Upload } from "lucide-react";
 import { DashedAddButton, ShareLinksHeading, UploadToggleButton } from "@/components/media/MediaDetailParts";
-import { useState, useRef, useEffect, useId } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
+import { Checkbox, ConfirmModal, FilterChip, IconButton, Input, Select, StatusChip, buttonClasses, type StatusTone } from "@/components/ui";
 import type { MediaEventStatus, MediaPhotoStatus, MediaTokenType } from "@/generated/prisma/enums";
 import MediaLightbox from "@/components/media/MediaLightbox";
 
@@ -62,12 +63,12 @@ const PHOTO_STATUS_LABELS: Record<MediaPhotoStatus, string> = {
   PREREJECTED:  "Pré-rejetée",
 };
 
-const PHOTO_STATUS_COLORS: Record<MediaPhotoStatus, string> = {
-  PENDING:      "bg-warning-soft text-warning",
-  APPROVED:     "bg-success-soft text-success",
-  REJECTED:     "bg-danger-soft text-danger",
-  PREVALIDATED: "bg-info-soft text-info",
-  PREREJECTED:  "bg-warning-soft text-warning",
+const PHOTO_STATUS_TONE: Record<MediaPhotoStatus, StatusTone> = {
+  PENDING:      "warning",
+  APPROVED:     "success",
+  REJECTED:     "danger",
+  PREVALIDATED: "info",
+  PREREJECTED:  "warning",
 };
 
 const TOKEN_TYPE_LABELS: Record<MediaTokenType, string> = {
@@ -95,11 +96,11 @@ const EVENT_STATUS_LABELS: Record<MediaEventStatus, string> = {
   ARCHIVED:      "Archivé",
 };
 
-const EVENT_STATUS_COLORS: Record<MediaEventStatus, string> = {
-  DRAFT:         "bg-surface-sunken text-ink-muted",
-  PENDING_REVIEW:"bg-warning-soft text-warning",
-  REVIEWED:      "bg-success-soft text-success",
-  ARCHIVED:      "bg-surface-sunken text-ink-muted",
+const EVENT_STATUS_TONE: Record<MediaEventStatus, StatusTone> = {
+  DRAFT:         "neutral",
+  PENDING_REVIEW:"warning",
+  REVIEWED:      "success",
+  ARCHIVED:      "neutral",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -204,12 +205,12 @@ function PhotoUploadZone({ eventId, onUploaded, onProgressChange }: {
       onDrop={onDrop}
       onDragOver={(e) => e.preventDefault()}
       onClick={() => !uploading && inputRef.current?.click()}
-      className="block w-full border-2 border-dashed border-control-line rounded-xl p-6 text-center cursor-pointer hover:border-brand hover:bg-brand-soft focus-visible:ring-2 focus-visible:ring-focus outline-none transition-all"
+      className="block w-full border-2 border-dashed border-control-line rounded-card p-6 text-center cursor-pointer hover:border-brand hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus transition-all"
     >
       {uploading && progress ? (
         <div className="space-y-2">
           <p className="text-sm font-medium text-ink-muted">
-            Envoi {progress.done}/{progress.total}…
+            Envoi en cours : {progress.done}/{progress.total}
           </p>
           <div className="w-full bg-surface-sunken rounded-full h-2">
             <div
@@ -227,7 +228,7 @@ function PhotoUploadZone({ eventId, onUploaded, onProgressChange }: {
           <p className="text-xs text-ink-subtle mt-1">JPEG, PNG, WebP</p>
         </>
       )}
-      {error && <p className="mt-2 text-xs text-danger whitespace-pre-line">{error}</p>}
+      {error && <p className="mt-2 text-[13px] text-danger whitespace-pre-line">{error}</p>}
     </button>
       <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={onFileChange} />
     </>
@@ -241,7 +242,6 @@ function ShareTokenSection({ eventId, tokens, onRefresh }: {
   readonly tokens: ShareToken[];
   readonly onRefresh: () => void;
 }) {
-  const fieldId = useId();
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newType, setNewType] = useState<MediaTokenType>("GALLERY");
@@ -307,8 +307,8 @@ function ShareTokenSection({ eventId, tokens, onRefresh }: {
         const url = getTokenUrl(token);
         const isExpired = token.expiresAt && new Date(token.expiresAt) < new Date();
         return (
-          <div key={token.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${isExpired ? "bg-danger-soft border-danger/30 opacity-70" : "bg-surface-sunken border-line"}`}>
-            <span className="text-lg shrink-0">{TOKEN_TYPE_ICONS[token.type]}</span>
+          <div key={token.id} className={`flex flex-wrap items-center gap-3 p-3 rounded-control border transition-colors ${isExpired ? "bg-danger-soft border-danger/30 opacity-70" : "bg-bg border-line"}`}>
+            <span className="text-lg shrink-0" aria-hidden="true">{TOKEN_TYPE_ICONS[token.type]}</span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-semibold text-ink-muted">{TOKEN_TYPE_LABELS[token.type]}</span>
@@ -322,73 +322,35 @@ function ShareTokenSection({ eventId, tokens, onRefresh }: {
               </p>
             </div>
             <div className="flex gap-1.5 shrink-0">
-              <button
-                onClick={() => copy(url, token.id)}
-                className={`text-xs border rounded-lg px-2.5 py-1.5 transition-colors ${copied === token.id ? "bg-success-soft border-success/30 text-success" : "border-line text-ink-muted hover:text-brand-text hover:border-brand"}`}
-              >
-                {copied === token.id ? "✓ Copié" : "Copier"}
-              </button>
-              <button
-                onClick={() => setPendingDeleteTokenId(token.id)}
-                className="text-xs text-danger hover:text-danger border border-danger/30 hover:bg-danger-soft rounded-lg px-2.5 py-1.5 transition-colors"
-              >
-                Suppr.
-              </button>
+              <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => copy(url, token.id)}>
+                {copied === token.id ? "Copié !" : "Copier le lien"}
+              </Button>
+              <IconButton icon={Trash2} aria-label="Supprimer le lien" size="sm" className="max-sm:size-11" onClick={() => setPendingDeleteTokenId(token.id)} />
             </div>
           </div>
         );
       })}
 
       {open ? (
-        <div className="p-4 border border-brand/30 rounded-xl bg-brand-soft space-y-3">
-          <p className="text-sm font-medium text-ink-muted">Nouveau lien de partage</p>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label htmlFor={`${fieldId}-type`} className="text-xs text-ink-muted mb-1 block">Type</label>
-              <select
-                id={`${fieldId}-type`}
-                value={newType}
-                onChange={(e) => setNewType(e.target.value as MediaTokenType)}
-                className="w-full border border-control-line rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus bg-surface"
-              >
-                {(Object.keys(TOKEN_TYPE_LABELS) as MediaTokenType[]).map((t) => (
-                  <option key={t} value={t}>{TOKEN_TYPE_ICONS[t]} {TOKEN_TYPE_LABELS[t]}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor={`${fieldId}-expiry`} className="text-xs text-ink-muted mb-1 block">Durée (0 = illimité)</label>
-              <div className="relative">
-                <input
-                  id={`${fieldId}-expiry`}
-                  type="number"
-                  min="0"
-                  value={newExpiry}
-                  onChange={(e) => setNewExpiry(e.target.value)}
-                  className="w-full border border-control-line rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
-                />
-                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-ink-subtle pointer-events-none">jours</span>
-              </div>
-            </div>
-          </div>
-          <div>
-            <label htmlFor={`${fieldId}-label`} className="text-xs text-ink-muted mb-1 block">Étiquette (optionnel)</label>
-            <input
-              id={`${fieldId}-label`}
-              type="text"
-              placeholder="Ex : Validateurs familles"
-              value={newLabel}
-              onChange={(e) => setNewLabel(e.target.value)}
-              className="w-full border border-control-line rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
+        <div className="p-4 border border-brand/30 rounded-card bg-brand-soft space-y-3">
+          <p className="text-sm font-semibold text-ink">Nouveau lien de partage</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Select
+              label="Type"
+              value={newType}
+              onChange={(e) => setNewType(e.target.value as MediaTokenType)}
+              options={(Object.keys(TOKEN_TYPE_LABELS) as MediaTokenType[]).map((t) => ({ value: t, label: TOKEN_TYPE_LABELS[t] }))}
             />
+            <Input label="Durée en jours (0 = illimitée)" type="number" min="0" value={newExpiry} onChange={(e) => setNewExpiry(e.target.value)} />
           </div>
-          {error && <p className="text-xs text-danger">{error}</p>}
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => { setOpen(false); setError(null); }} className="text-sm text-ink-muted hover:text-ink-muted px-3 py-1.5">
+          <Input label="Étiquette (facultative)" placeholder="Ex : Validateurs familles" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
+          {error && <p className="text-[13px] text-danger">{error}</p>}
+          <div className="flex flex-wrap gap-2 justify-end">
+            <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => { setOpen(false); setError(null); }}>
               Annuler
-            </button>
-            <Button onClick={createToken} disabled={creating} size="sm">
-              {creating ? "Création…" : "Créer le lien"}
+            </Button>
+            <Button onClick={createToken} disabled={creating} size="sm" className="min-h-11 sm:min-h-9">
+              {creating ? "Création en cours…" : "Créer le lien"}
             </Button>
           </div>
         </div>
@@ -416,45 +378,8 @@ function ConfirmDeleteModal({ title, message, onConfirm, onCancel }: {
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      e.preventDefault();
-      onCancel();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onCancel]);
-
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-scrim backdrop-blur-sm" aria-hidden="true" onClick={onCancel} />
-      <div className="relative bg-surface rounded-2xl shadow-overlay max-w-sm w-full p-6 space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-danger-soft flex items-center justify-center shrink-0">
-            <Trash2 className="w-5 h-5 text-danger" aria-hidden="true" />
-          </div>
-          <div>
-            <p className="font-semibold text-ink">{title}</p>
-            <p className="text-sm text-ink-muted mt-0.5">{message}</p>
-          </div>
-        </div>
-        <div className="flex gap-2 justify-end pt-1">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 text-sm text-ink-muted hover:text-ink border border-line hover:border-control-line rounded-xl transition-colors"
-          >
-            Annuler
-          </button>
-          <button
-            onClick={onConfirm}
-            className="px-4 py-2 text-sm font-medium text-on-danger bg-danger hover:bg-danger/90 rounded-xl transition-colors"
-          >
-            Supprimer
-          </button>
-        </div>
-      </div>
-    </div>
+    <ConfirmModal open title={title} message={message} confirmLabel="Supprimer définitivement" onConfirm={onConfirm} onCancel={onCancel} />
   );
 }
 
@@ -482,9 +407,9 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
       onClose={onClose}
       header={(photo) => (
         <>
-          <span className={`text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${PHOTO_STATUS_COLORS[photo.status]}`}>
+          <StatusChip tone={PHOTO_STATUS_TONE[photo.status]} className="shrink-0">
             {PHOTO_STATUS_LABELS[photo.status]}
-          </span>
+          </StatusChip>
           {/* eslint-disable-next-line no-restricted-syntax -- visionneuse photo plein écran toujours sombre */}
           <p className="text-sm text-white/70 truncate">{photo.filename}</p>
           {/* eslint-disable-next-line no-restricted-syntax -- visionneuse photo plein écran toujours sombre */}
@@ -493,16 +418,13 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
       )}
       footer={(photo) => (
         <>
-          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${PHOTO_STATUS_COLORS[photo.status]}`}>
+          <StatusChip tone={PHOTO_STATUS_TONE[photo.status]}>
             {PHOTO_STATUS_LABELS[photo.status]}
-          </span>
+          </StatusChip>
           {canUpload && (
-            <button
-              onClick={() => onRequestDelete(photo.id)}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-danger/80 hover:bg-danger text-on-danger text-sm font-medium transition-colors"
-            >
-              🗑 Supprimer
-            </button>
+            <Button type="button" variant="secondary" onClick={() => onRequestDelete(photo.id)}>
+              <Trash2 className="size-4" aria-hidden="true" strokeWidth={1.75} /> Supprimer la photo
+            </Button>
           )}
         </>
       )}
@@ -523,7 +445,7 @@ function ActivityBanner({ uploadProgress }: { readonly uploadProgress: { done: n
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-medium text-warning">
-              Upload en cours · {uploadProgress.done}/{uploadProgress.total} photo{uploadProgress.total > 1 ? "s" : ""}
+              Envoi en cours · {uploadProgress.done}/{uploadProgress.total} photo{uploadProgress.total > 1 ? "s" : ""}
             </span>
             <span className="text-xs text-warning">{Math.round((uploadProgress.done / uploadProgress.total) * 100)}%</span>
           </div>
@@ -555,32 +477,10 @@ function PhotoStatPills({
 }) {
   return (
     <div className="flex flex-wrap gap-2 mt-4">
-      <div className="flex items-center gap-1.5 bg-surface-sunken border border-line rounded-lg px-3 py-1.5">
-        <ImageIcon className="w-3.5 h-3.5 text-ink-subtle" aria-hidden="true" />
-        <span className="text-xs font-semibold text-ink-muted">{total}</span>
-        <span className="text-xs text-ink-muted">photo{total !== 1 ? "s" : ""}</span>
-      </div>
-      {pending > 0 && (
-        <div className="flex items-center gap-1.5 bg-warning-soft border border-warning/30 rounded-lg px-3 py-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
-          <span className="text-xs font-semibold text-warning">{pending}</span>
-          <span className="text-xs text-warning">en attente</span>
-        </div>
-      )}
-      {approved > 0 && (
-        <div className="flex items-center gap-1.5 bg-success-soft border border-success/30 rounded-lg px-3 py-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
-          <span className="text-xs font-semibold text-success">{approved}</span>
-          <span className="text-xs text-success">approuvée{approved > 1 ? "s" : ""}</span>
-        </div>
-      )}
-      {rejected > 0 && (
-        <div className="flex items-center gap-1.5 bg-danger-soft border border-danger/30 rounded-lg px-3 py-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-danger shrink-0" />
-          <span className="text-xs font-semibold text-danger">{rejected}</span>
-          <span className="text-xs text-danger">rejetée{rejected > 1 ? "s" : ""}</span>
-        </div>
-      )}
+      <StatusChip tone="neutral" icon={ImageIcon}>{total} photo{total > 1 ? "s" : ""}</StatusChip>
+      {pending > 0 && <StatusChip tone="warning">{pending} en attente</StatusChip>}
+      {approved > 0 && <StatusChip tone="success">{approved} approuvée{approved > 1 ? "s" : ""}</StatusChip>}
+      {rejected > 0 && <StatusChip tone="danger">{rejected} rejetée{rejected > 1 ? "s" : ""}</StatusChip>}
     </div>
   );
 }
@@ -631,7 +531,6 @@ export default function MediaEventDetail({
   readonly canManage: boolean;
 }) {
   const router = useRouter();
-  const editId = useId();
   const [event, setEvent] = useState(initialEvent);
   const [thumbnailUrls, setThumbnailUrls] = useState(initialThumbnailUrls);
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<string>>(new Set());
@@ -777,97 +676,70 @@ export default function MediaEventDetail({
   return (
     <div className="space-y-5">
       {/* ── Header ──────────────────────────────────────────── */}
-      <div className="bg-surface rounded-2xl border border-line shadow-card overflow-hidden">
+      <div className="bg-surface rounded-card border border-line shadow-card overflow-hidden">
         <div className="p-5">
-          <Link href="/media/events" className="text-xs text-ink-subtle hover:text-brand-text transition-colors inline-flex items-center gap-1 mb-3">
-            <ChevronLeft className="w-3 h-3" aria-hidden="true" />
-            Événements
+          <Link href="/media/events" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9 -ml-2 mb-3`}>
+            <ChevronLeft className="size-4" aria-hidden="true" strokeWidth={1.75} />
+            Retour aux événements
           </Link>
 
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h1 className="text-2xl font-bold text-ink truncate">{event.name}</h1>
-                <span className={`text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 ${EVENT_STATUS_COLORS[event.status]}`}>
+                <StatusChip tone={EVENT_STATUS_TONE[event.status]} className="shrink-0">
                   {EVENT_STATUS_LABELS[event.status]}
-                </span>
+                </StatusChip>
               </div>
               <p className="text-sm text-ink-muted mt-1">{formatDate(event.date)}</p>
               {event.planningEvent && (
-                <p className="text-xs text-brand-text mt-1">
-                  📅 Lié à : {event.planningEvent.title}
+                <p className="text-[13px] text-ink-muted mt-1">
+                  Lié à : {event.planningEvent.title}
                 </p>
               )}
               {event.description && (
                 <p className="text-sm text-ink-muted mt-2 leading-relaxed">{event.description}</p>
               )}
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
               {canManage && !editMode && (
-                <button
-                  onClick={openEdit}
-                  className="text-xs text-brand-text hover:text-brand-text/80 border border-brand/30 hover:border-brand/60 rounded-lg px-3 py-2 hover:bg-brand-soft transition-colors"
-                >
-                  Modifier
-                </button>
+                <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={openEdit}>
+                  Modifier l&apos;événement
+                </Button>
               )}
               {canManage && (
-                <button
-                  onClick={() => setConfirmDeleteEvent(true)}
-                  className="text-xs text-danger hover:text-danger border border-danger/30 hover:border-danger/30 rounded-lg px-3 py-2 hover:bg-danger-soft transition-colors"
-                >
-                  Supprimer
-                </button>
+                <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setConfirmDeleteEvent(true)}>
+                  Supprimer l&apos;événement
+                </Button>
               )}
             </div>
           </div>
 
           {/* ── Panneau d'édition ──────────────────────────────────────── */}
           {editMode && (
-            <div className="mt-4 p-4 bg-surface-sunken border border-line rounded-xl space-y-3">
-              <div>
-                <label htmlFor={`${editId}-name`} className="text-xs font-medium text-ink-muted block mb-1">Nom de l&apos;événement</label>
-                <input
-                  id={`${editId}-name`}
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand"
-                  placeholder="Nom de l'événement"
-                />
-              </div>
-              <div>
-                <label htmlFor={`${editId}-planning`} className="text-xs font-medium text-ink-muted block mb-1">Lier à un événement planning</label>
-                <select
-                  id={`${editId}-planning`}
-                  value={editPlanningEventId}
-                  onChange={(e) => setEditPlanningEventId(e.target.value)}
-                  className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand bg-surface"
-                >
-                  <option value="">— Aucun lien —</option>
-                  {planningEvents.map((pe) => (
-                    <option key={pe.id} value={pe.id}>
-                      {new Date(pe.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })} — {pe.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {editError && <p className="text-xs text-danger">{editError}</p>}
-              <div className="flex gap-2 justify-end">
-                <button
-                  onClick={() => setEditMode(false)}
-                  className="text-xs px-4 py-2 rounded-lg border border-line text-ink-muted hover:bg-surface-sunken transition-colors"
-                  disabled={editSaving}
-                >
+            <div className="mt-4 p-4 bg-bg border border-line rounded-card space-y-3">
+              <Input label="Nom de l'événement" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nom de l'événement" />
+              <Select
+                label="Lier à un événement planning"
+                value={editPlanningEventId}
+                onChange={(e) => setEditPlanningEventId(e.target.value)}
+                options={[
+                  { value: "", label: "Aucun lien" },
+                  ...planningEvents.map((pe) => ({
+                    value: pe.id,
+                    label: `${new Date(pe.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })} — ${pe.title}`,
+                  })),
+                ]}
+              />
+              {editError && <p className="text-[13px] text-danger">{editError}</p>}
+              {!editName.trim() && <p className="text-[13px] text-ink-muted">Saisissez un nom pour enregistrer.</p>}
+              <div className="flex flex-wrap gap-2 justify-end">
+                <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setEditMode(false)} disabled={editSaving}>
                   Annuler
-                </button>
-                <button
-                  onClick={saveEdit}
-                  disabled={editSaving || !editName.trim()}
-                  className="text-xs px-4 py-2 rounded-lg bg-brand text-on-brand font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
-                >
-                  {editSaving ? "Enregistrement…" : "Enregistrer"}
-                </button>
+                </Button>
+                <Button type="button" size="sm" className="min-h-11 sm:min-h-9" onClick={saveEdit} disabled={editSaving || !editName.trim()}>
+                  {editSaving ? "Enregistrement en cours…" : "Enregistrer les modifications"}
+                </Button>
               </div>
             </div>
           )}
@@ -884,35 +756,27 @@ export default function MediaEventDetail({
 
       {/* ── Liens de partage ──────────────────────────────────── */}
       {canManage && (
-        <div className="bg-surface rounded-2xl border border-line shadow-card p-5">
+        <div className="bg-surface rounded-card border border-line shadow-card p-5">
           <ShareLinksHeading count={event.shareTokens.length} />
           <ShareTokenSection eventId={event.id} tokens={event.shareTokens} onRefresh={refreshEvent} />
         </div>
       )}
 
       {/* ── Photos ────────────────────────────────────────────── */}
-      <div className="bg-surface rounded-2xl border border-line shadow-card">
+      <div className="bg-surface rounded-card border border-line shadow-card">
         {/* Toolbar */}
         <div className="px-5 pt-4 pb-3 border-b border-line">
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-1 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               {tabs.map((tab) => (
-                <button
+                <FilterChip
                   key={tab.value}
+                  pressed={activeTab === tab.value}
                   onClick={() => { setActiveTab(tab.value); setSelectedPhotoIds(new Set()); }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === tab.value
-                      ? "bg-brand text-on-brand"
-                      : "text-ink-muted hover:bg-surface-sunken"
-                  }`}
                 >
                   {tab.label}
-                  <span className={`text-xs px-1.5 py-0.5 rounded-md font-semibold ${
-                    activeTab === tab.value ? "bg-on-brand/20 text-on-brand" : "bg-surface-sunken text-ink-muted"
-                  }`}>
-                    {tab.count}
-                  </span>
-                </button>
+                  <span className="text-xs font-semibold tabular-nums">{tab.count}</span>
+                </FilterChip>
               ))}
             </div>
             {canUpload && (
@@ -926,7 +790,7 @@ export default function MediaEventDetail({
 
         {/* Upload zone (conditionnelle) */}
         {showUpload && (
-          <div className="px-5 py-4 border-b border-line bg-surface-sunken/50">
+          <div className="px-5 py-4 border-b border-line bg-bg">
             <PhotoUploadZone
               eventId={event.id}
               onUploaded={() => { setShowUpload(false); refreshPhotos().catch(() => undefined); }}
@@ -937,36 +801,28 @@ export default function MediaEventDetail({
 
         {/* Bulk actions bar */}
         {canUpload && filteredPhotos.length > 0 && (
-          <div className="px-5 py-2.5 border-b border-line flex items-center gap-3">
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
+          <div className="px-5 py-2 border-b border-line flex flex-wrap items-center gap-3">
+            <label className="flex min-h-11 items-center gap-3 cursor-pointer select-none">
+              <Checkbox
                 checked={allSelected}
                 onChange={() => {
                   if (allSelected) setSelectedPhotoIds(new Set());
                   else setSelectedPhotoIds(new Set(filteredPhotos.map((p) => p.id)));
                 }}
-                className="w-4 h-4 rounded border-control-line accent-brand"
               />
-              <span className="text-xs text-ink-muted">
+              <span className="text-sm text-ink-muted">
                 {selectionLabel}
               </span>
             </label>
             {selectedPhotoIds.size > 0 && (
               <div className="flex items-center gap-2 ml-auto">
-                <button
-                  onClick={() => requestDelete(Array.from(selectedPhotoIds))}
-                  disabled={bulkLoading}
-                  className="flex items-center gap-1.5 text-xs bg-danger hover:bg-danger/90 text-on-danger px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors font-medium"
-                >
-                  🗑 Supprimer ({selectedPhotoIds.size})
-                </button>
-                <button
-                  onClick={() => setSelectedPhotoIds(new Set())}
-                  className="text-xs text-ink-muted hover:text-ink-muted px-2 py-1.5"
-                >
-                  Annuler
-                </button>
+                <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => requestDelete(Array.from(selectedPhotoIds))} disabled={bulkLoading}>
+                  <Trash2 className="size-4" aria-hidden="true" strokeWidth={1.75} />
+                  {bulkLoading ? "Suppression en cours…" : `Supprimer la sélection (${selectedPhotoIds.size})`}
+                </Button>
+                <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setSelectedPhotoIds(new Set())}>
+                  Annuler la sélection
+                </Button>
               </div>
             )}
           </div>
@@ -981,9 +837,9 @@ export default function MediaEventDetail({
                 {activeTab ? `Aucune photo "${PHOTO_STATUS_LABELS[activeTab as MediaPhotoStatus]}"` : "Aucune photo pour cet événement"}
               </p>
               {activeTab && (
-                <button onClick={() => setActiveTab("")} className="mt-2 text-xs text-brand-text hover:underline">
+                <Button type="button" variant="ghost" size="sm" className="mt-2 min-h-11 sm:min-h-9" onClick={() => setActiveTab("")}>
                   Voir toutes les photos
-                </button>
+                </Button>
               )}
             </div>
           ) : (
@@ -994,7 +850,7 @@ export default function MediaEventDetail({
                 return (
                   <div
                     key={photo.id}
-                    className={`relative group rounded-xl overflow-hidden border-2 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-focus outline-none ${
+                    className={`relative group rounded-control overflow-hidden border-2 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                       isSelected
                         ? "border-brand ring-2 ring-focus/30"
                         : "border-transparent hover:border-line"
@@ -1035,10 +891,10 @@ export default function MediaEventDetail({
                         type="button"
                         aria-label={isSelected ? "Désélectionner la photo" : "Sélectionner la photo"}
                         aria-pressed={isSelected}
-                        className={`absolute top-1.5 left-1.5 transition-opacity focus-visible:opacity-100 ${isSelected || selectedPhotoIds.size > 0 ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                        className={`absolute top-0 left-0 grid size-11 place-items-center rounded-control transition-opacity focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-focus ${isSelected || selectedPhotoIds.size > 0 ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
                         onClick={(e) => { e.stopPropagation(); toggleSelect(photo.id); }}
                       >
-                        <span className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${isSelected ? "bg-brand border-brand" : "bg-surface/90 border-control-line"}`}>
+                        <span className={`w-5 h-5 rounded-chip border-2 flex items-center justify-center transition-colors ${isSelected ? "bg-brand border-brand" : "bg-surface/90 border-control-line"}`}>
                           {isSelected && (
                             <Check className="w-3 h-3 text-on-brand" aria-hidden="true" />
                           )}
@@ -1055,12 +911,12 @@ export default function MediaEventDetail({
 
                     {/* Hover : bouton supprimer */}
                     {canUpload && selectedPhotoIds.size === 0 && (
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent py-2 px-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-scrim to-transparent py-2 px-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                         <button
                           onClick={(e) => { e.stopPropagation(); requestDelete([photo.id]); }}
-                          className="w-full text-xs bg-danger/80 hover:bg-danger text-on-danger rounded-lg py-1.5 transition-colors font-medium"
+                          className={`${buttonClasses("secondary", "sm")} w-full`}
                         >
-                          🗑 Supprimer
+                          <Trash2 className="size-4" aria-hidden="true" strokeWidth={1.75} /> Supprimer la photo
                         </button>
                       </div>
                     )}

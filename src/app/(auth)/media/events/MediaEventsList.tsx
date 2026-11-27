@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useState } from "react";
 import type { MediaEventStatus } from "@/generated/prisma/enums";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
+import { Checkbox, Input, SearchInput, Select, StatusChip, buttonClasses, type StatusTone } from "@/components/ui";
 import CollectionBuilder from "../collections/CollectionBuilder";
 
 type PhotoCounts = { pending: number; prevalidated: number; approved: number; rejected: number };
@@ -29,11 +30,11 @@ const STATUS_LABELS: Record<MediaEventStatus, string> = {
   ARCHIVED: "Archivé",
 };
 
-const STATUS_COLORS: Record<MediaEventStatus, string> = {
-  DRAFT: "bg-surface-sunken text-ink-muted",
-  PENDING_REVIEW: "bg-warning-soft text-warning",
-  REVIEWED: "bg-success-soft text-success",
-  ARCHIVED: "bg-surface-sunken text-ink-muted",
+const STATUS_TONE: Record<MediaEventStatus, StatusTone> = {
+  DRAFT: "neutral",
+  PENDING_REVIEW: "warning",
+  REVIEWED: "success",
+  ARCHIVED: "neutral",
 };
 
 function formatDate(d: Date) {
@@ -55,7 +56,6 @@ export default function MediaEventsList({
   readonly churchId: string;
   readonly canShare: boolean;
 }) {
-  const id = useId();
   const [statusFilter, setStatusFilter] = useState<MediaEventStatus | "">("");
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -89,50 +89,29 @@ export default function MediaEventsList({
       {/* Filters */}
       <div className="flex flex-col gap-2">
         <div className="flex flex-col sm:flex-row gap-2">
-          <input
-            type="text"
-            placeholder="Rechercher…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent flex-1"
-          />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as MediaEventStatus | "")}
-            className="border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-          >
-            <option value="">Tous les statuts</option>
-            {(Object.keys(STATUS_LABELS) as MediaEventStatus[]).map((s) => (
-              <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-            ))}
-          </select>
-        </div>
-        <div className="flex flex-col sm:flex-row items-center gap-2">
-          <div className="flex items-center gap-2 flex-1">
-            <label htmlFor={`${id}-f1`} className="text-xs text-ink-muted shrink-0">Du</label>
-            <input id={`${id}-f1`}
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="flex-1 border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+          <SearchInput aria-label="Rechercher un événement" placeholder="Rechercher…" value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1" />
+          <div className="sm:w-56">
+            <Select
+              label=""
+              aria-label="Statut"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as MediaEventStatus | "")}
+              placeholder="Tous les statuts"
+              options={(Object.keys(STATUS_LABELS) as MediaEventStatus[]).map((s) => ({ value: s, label: STATUS_LABELS[s] }))}
             />
           </div>
-          <div className="flex items-center gap-2 flex-1">
-            <label htmlFor={`${id}-f2`} className="text-xs text-ink-muted shrink-0">au</label>
-            <input id={`${id}-f2`}
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="flex-1 border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-            />
+        </div>
+        <div className="flex flex-col sm:flex-row sm:items-end gap-2">
+          <div className="flex-1">
+            <Input label="Du" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          </div>
+          <div className="flex-1">
+            <Input label="Au" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
           </div>
           {hasDateFilter && (
-            <button
-              onClick={() => { setDateFrom(""); setDateTo(""); }}
-              className="text-xs text-ink-subtle hover:text-brand-text transition-colors shrink-0 px-2 py-1"
-            >
-              Effacer dates
-            </button>
+            <Button type="button" variant="ghost" size="sm" className="min-h-11 shrink-0 sm:min-h-9" onClick={() => { setDateFrom(""); setDateTo(""); }}>
+              Effacer les dates
+            </Button>
           )}
         </div>
       </div>
@@ -143,11 +122,9 @@ export default function MediaEventsList({
             <>
               <p className="text-lg font-medium mb-2">Aucun événement média</p>
               {canUpload && (
-                <p className="text-sm">
-                  <Link href="/media/events/new" className="text-brand-text hover:underline">
-                    Créer le premier événement
-                  </Link>
-                </p>
+                <Link href="/media/events/new" className={buttonClasses("secondary")}>
+                  Créer le premier événement
+                </Link>
               )}
             </>
           ) : (
@@ -157,9 +134,9 @@ export default function MediaEventsList({
       )}
 
       {canShare && selected.size > 0 && (
-        <div className="sticky top-0 z-10 bg-brand-soft border border-brand/30 rounded-lg px-4 py-2 flex items-center justify-between gap-3">
+        <div className="sticky top-0 z-10 bg-brand-soft border border-brand/30 rounded-card px-4 py-2 flex flex-wrap items-center justify-between gap-3">
           <span className="text-sm text-ink-muted">{selected.size} événement{selected.size > 1 ? "s" : ""} sélectionné{selected.size > 1 ? "s" : ""}</span>
-          <Button size="sm" onClick={() => setShareModalOpen(true)}>Partager la sélection</Button>
+          <Button size="sm" className="min-h-11 sm:min-h-9" onClick={() => setShareModalOpen(true)}>Partager la sélection</Button>
         </div>
       )}
 
@@ -175,26 +152,26 @@ export default function MediaEventsList({
             <Link
               key={event.id}
               href={`/media/events/${event.id}`}
-              className={`block bg-surface rounded-xl border p-4 hover:border-brand transition-colors ${
+              className={`block bg-surface rounded-card shadow-card border p-4 hover:border-brand transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                 hasActivity ? "border-warning/30" : "border-line"
               }`}
             >
               <div className="flex items-start justify-between gap-3">
                 {canShare && (
-                  <input
-                    type="checkbox"
+                  <Checkbox
+                    aria-label={`Sélectionner ${event.name}`}
                     checked={selected.has(event.id)}
                     onClick={(e) => toggleSelected(event.id, e)}
                     onChange={() => {}}
-                    className="w-4 h-4 rounded border-control-line accent-brand shrink-0 mt-1"
+                    className="shrink-0 mt-0.5"
                   />
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <h2 className="font-semibold text-ink truncate">{event.name}</h2>
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${STATUS_COLORS[event.status]}`}>
+                    <StatusChip tone={STATUS_TONE[event.status]} className="shrink-0">
                       {STATUS_LABELS[event.status]}
-                    </span>
+                    </StatusChip>
                   </div>
                   <p className="text-sm text-ink-muted">{formatDate(event.date)}</p>
                   {event.planningEvent && (
@@ -209,28 +186,16 @@ export default function MediaEventsList({
                     <div className="mt-2.5 space-y-1.5">
                       <div className="flex flex-wrap gap-1.5">
                         {pending > 0 && (
-                          <span className="inline-flex items-center gap-1 text-xs bg-warning-soft text-warning border border-warning/30 px-2 py-0.5 rounded-full">
-                            <span className="w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
-                            {pending} en attente
-                          </span>
+                          <StatusChip tone="warning">{pending} en attente</StatusChip>
                         )}
                         {prevalidated > 0 && (
-                          <span className="inline-flex items-center gap-1 text-xs bg-info-soft text-info border border-info/30 px-2 py-0.5 rounded-full">
-                            <span className="w-1.5 h-1.5 rounded-full bg-info shrink-0" />
-                            {prevalidated} pré-validée{prevalidated > 1 ? "s" : ""}
-                          </span>
+                          <StatusChip tone="info">{prevalidated} pré-validée{prevalidated > 1 ? "s" : ""}</StatusChip>
                         )}
                         {approved > 0 && (
-                          <span className="inline-flex items-center gap-1 text-xs bg-success-soft text-success border border-success/30 px-2 py-0.5 rounded-full">
-                            <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
-                            {approved} approuvée{approved > 1 ? "s" : ""}
-                          </span>
+                          <StatusChip tone="success">{approved} approuvée{approved > 1 ? "s" : ""}</StatusChip>
                         )}
                         {rejected > 0 && (
-                          <span className="inline-flex items-center gap-1 text-xs bg-danger-soft text-danger border border-danger/30 px-2 py-0.5 rounded-full">
-                            <span className="w-1.5 h-1.5 rounded-full bg-danger shrink-0" />
-                            {rejected} rejetée{rejected > 1 ? "s" : ""}
-                          </span>
+                          <StatusChip tone="danger">{rejected} rejetée{rejected > 1 ? "s" : ""}</StatusChip>
                         )}
                       </div>
                       {done > 0 && (

@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Button from "@/components/ui/Button";
-import Modal from "@/components/ui/Modal";
+import { ArrowLeft, ExternalLink } from "lucide-react";
+import { Button, ConfirmModal, Input, buttonClasses } from "@/components/ui";
+import { FILE_INPUT } from "@/app/(auth)/billetterie/[id]/_components/file-input-classes";
 import SequenceListEditor, { type SourceSummary, type SegmentSummary } from "./SequenceListEditor";
 import PublishModal, { type PublishSegmentSummary } from "./PublishModal";
 
@@ -301,34 +302,31 @@ export default function AudioServiceClient({
 
   return (
     <div className="space-y-6">
-      <Link href="/audio/production">
-        <Button variant="secondary" size="sm">
-          ← File d&apos;attente
-        </Button>
+      <Link href="/audio/production" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+        <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
+        Retour à la file d&apos;attente
       </Link>
 
       {service.shareUrl && (
-        <section className="border border-success/30 bg-success-soft rounded-lg p-4">
+        <section className="border border-success/30 bg-success-soft rounded-card p-4">
           <h2 className="font-semibold text-ink mb-2">Lien d&apos;écoute</h2>
           <div className="flex flex-wrap items-center gap-2">
-            <input
-              readOnly
-              value={service.shareUrl}
-              onFocus={(e) => e.target.select()}
-              className="flex-1 min-w-0 text-sm text-ink-muted bg-surface border border-line rounded px-2 py-1.5"
-            />
+            <div className="flex-1 min-w-0">
+              <Input readOnly aria-label="Lien d'écoute" value={service.shareUrl} onFocus={(e) => e.target.select()} />
+            </div>
             <Button variant="secondary" onClick={copyShareUrl}>
               {copied ? "Copié !" : "Copier le lien"}
             </Button>
-            <a href={service.shareUrl} target="_blank" rel="noopener noreferrer">
-              <Button variant="secondary">Ouvrir ↗</Button>
+            <a href={service.shareUrl} target="_blank" rel="noopener noreferrer" className={buttonClasses("secondary")}>
+              <ExternalLink aria-hidden="true" className="size-4" strokeWidth={1.75} />
+              Ouvrir le lien
             </a>
           </div>
         </section>
       )}
 
       {hasFailedRenders && (
-        <section className="border border-danger bg-danger-soft rounded-lg p-4">
+        <section className="border border-danger bg-danger-soft rounded-card p-4">
           <p className="text-sm text-ink font-medium">
             Le rendu a échoué pour {service.failedRenders.length} séquence
             {service.failedRenders.length > 1 ? "s" : ""} — la publication est interrompue.
@@ -350,7 +348,7 @@ export default function AudioServiceClient({
       )}
 
       {rendering && (
-        <section className="border border-info bg-info-soft rounded-lg p-4">
+        <section className="border border-info bg-info-soft rounded-card p-4">
           <p className="text-sm text-ink font-medium">
             Rendu en cours : {renderedCount}/{service.segments.length} séquence
             {service.segments.length > 1 ? "s" : ""} prête{service.segments.length > 1 ? "s" : ""}.
@@ -363,29 +361,31 @@ export default function AudioServiceClient({
       )}
 
       {canDeposit && (
-        <section className="border border-line rounded-lg p-4">
+        <section className="border border-line rounded-card p-4">
           <h2 className="font-semibold text-ink mb-2">Dépôt des séquences</h2>
           <input
             ref={fileInputRef}
             type="file"
             accept="audio/*"
             multiple
+            aria-label="Déposer des séquences audio"
             onChange={(e) => handleFilesSelected(e.target.files)}
-            className="block text-sm text-ink-muted"
+            className={FILE_INPUT}
           />
 
           {interrupted.length > 0 && (
             <ul className="mt-3 space-y-1">
               {interrupted.map((r) => (
-                <li key={r.sourceId} className="text-sm flex items-center gap-2">
+                <li key={r.sourceId} className="text-sm flex flex-wrap items-center gap-2">
                   <span className="text-warning">Upload interrompu : {r.filename} — redéposez ce fichier.</span>
                   <Button
-                    variant="danger"
+                    variant="secondary"
                     size="sm"
+                    className="min-h-11 sm:min-h-9"
                     onClick={() => dismissInterrupted(r.sourceId)}
                     disabled={dismissing === r.sourceId}
                   >
-                    {dismissing === r.sourceId ? "Suppression..." : "Supprimer ce dépôt"}
+                    {dismissing === r.sourceId ? "Suppression en cours…" : "Supprimer ce dépôt"}
                   </Button>
                 </li>
               ))}
@@ -420,7 +420,7 @@ export default function AudioServiceClient({
         </section>
       )}
 
-      <section className="border border-line rounded-lg p-4">
+      <section className="border border-line rounded-card p-4">
         <h2 className="font-semibold text-ink mb-3">Nommer et ordonner les séquences</h2>
         <SequenceListEditor
           serviceId={service.id}
@@ -437,7 +437,7 @@ export default function AudioServiceClient({
             disabled={service.segments.length === 0 || rendering}
             title={publishDisabledReason}
           >
-            Publier
+            Publier le culte
           </Button>
           {/* Le bouton reste désactivé tant qu'aucune séquence n'est enregistrée — sans ce message,
               un clic ne produit aucune requête ni retour visible, ce qui a été rapporté comme
@@ -452,19 +452,19 @@ export default function AudioServiceClient({
 
       {/* Actions destructrices/irréversibles regroupées à part — pas au même niveau visuel que
           Publier, pour ne pas pouvoir les déclencher par inadvertance (spec 020). */}
-      <section className="border border-danger/30 rounded-lg p-4 space-y-2">
+      <section className="border border-danger/30 rounded-card p-4 space-y-2">
         <h2 className="text-sm font-semibold text-danger">Zone de danger</h2>
         {service.status === "PUBLISHED" ? (
           <div className="space-y-1">
-            <Button variant="danger" onClick={() => setPublishModal("unpublish")}>
-              Dépublier
+            <Button variant="secondary" onClick={() => setPublishModal("unpublish")}>
+              Dépublier le culte
             </Button>
             <p className="text-xs text-ink-muted">
               Le lien d&apos;écoute ci-dessus cessera de fonctionner pour toute personne qui l&apos;a déjà reçu.
             </p>
           </div>
         ) : (
-          <Button variant="danger" onClick={() => setDeleteModalOpen(true)}>
+          <Button variant="secondary" onClick={() => setDeleteModalOpen(true)}>
             Supprimer cet enregistrement
           </Button>
         )}
@@ -480,23 +480,18 @@ export default function AudioServiceClient({
         />
       )}
 
-      <Modal open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} title="Supprimer ce culte">
-        <div className="space-y-3">
-          <p className="text-sm text-ink-muted">
-            Le dépôt, les séquences nommées et les rendus déjà calculés seront définitivement supprimés. Cette
-            action est irréversible.
-          </p>
-          {deleteError && <p className="text-sm text-danger">{deleteError}</p>}
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setDeleteModalOpen(false)} disabled={deleting}>
-              Annuler
-            </Button>
-            <Button variant="danger" onClick={deleteService} disabled={deleting}>
-              {deleting ? "Suppression..." : "Supprimer définitivement"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      <ConfirmModal
+        open={deleteModalOpen}
+        title="Supprimer cet enregistrement ?"
+        message="Le dépôt, les séquences nommées et les rendus déjà calculés seront définitivement supprimés. Cette action est irréversible."
+        confirmLabel="Supprimer définitivement"
+        confirmingLabel="Suppression en cours…"
+        confirming={deleting}
+        onConfirm={deleteService}
+        onCancel={() => setDeleteModalOpen(false)}
+      >
+        {deleteError && <p className="text-sm text-danger">{deleteError}</p>}
+      </ConfirmModal>
     </div>
   );
 }

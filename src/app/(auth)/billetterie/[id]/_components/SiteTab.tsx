@@ -2,7 +2,8 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Alert, Button, Checkbox, ConfirmModal, Input, Select, StatusChip, useToast } from "@/components/ui";
+import { Images } from "lucide-react";
+import { Alert, Button, Checkbox, ConfirmModal, Input, Select, StatusChip, buttonClasses, useToast } from "@/components/ui";
 import SitePagesEditor from "./SitePagesEditor";
 import { BackgroundFields, ImageField } from "./SiteFields";
 import SiteRenderer from "@/app/site/_components/SiteRenderer";
@@ -153,8 +154,8 @@ export default function SiteTab({
         <span className="break-all text-[13px] text-ink-muted">Adresse : {publicUrl ?? "aucune pour l'instant"}</span>
         <div className="ml-auto flex flex-wrap gap-2">
           <Button type="button" variant="secondary" disabled={busy || !dirty} onClick={save}>Enregistrer le brouillon</Button>
-          <Button type="button" disabled={busy || dirty || issues.length > 0} onClick={() => setConfirmSite("publish")}>{published ? "Republier" : "Publier"}</Button>
-          {published && <Button type="button" variant="secondary" disabled={busy} onClick={() => setConfirmSite("withdraw")}>Dépublier</Button>}
+          <Button type="button" disabled={busy || dirty || issues.length > 0} onClick={() => setConfirmSite("publish")}>{published ? "Republier le site" : "Publier le site"}</Button>
+          {published && <Button type="button" variant="secondary" disabled={busy} onClick={() => setConfirmSite("withdraw")}>Dépublier le site</Button>}
         </div>
       </div>
       {confirmSite && <ConfirmModal
@@ -164,7 +165,7 @@ export default function SiteTab({
           ? "Le site utilisera le dernier brouillon enregistré. Sa visibilité dépend des réglages de l’événement."
           : "Le site sera retiré de la consultation publique. Le brouillon reste disponible."}
         confirmLabel={confirmSite === "publish" ? "Publier le site" : "Dépublier le site"}
-        variant={confirmSite === "publish" ? "primary" : "danger"}
+        variant="primary"
         confirming={busy}
         onConfirm={() => { void (confirmSite === "publish" ? publish() : unpublish()); }}
         onCancel={() => { if (!busy) setConfirmSite(null); }}
@@ -176,8 +177,8 @@ export default function SiteTab({
           <Card title="Couleurs">
             <div className="grid grid-cols-2 gap-3">
               {PALETTE_KEYS.map((key) => (
-                <label key={key} className="flex items-center gap-2 text-sm text-ink">
-                  <input type="color" value={doc.theme.colors[key]} onChange={(e) => edit((d) => void (d.theme.colors[key] = e.target.value.toLowerCase()))} className="size-9 cursor-pointer rounded border border-line" />
+                <label key={key} className="flex min-h-11 items-center gap-2 text-[15px] text-ink">
+                  <input type="color" value={doc.theme.colors[key]} onChange={(e) => edit((d) => void (d.theme.colors[key] = e.target.value.toLowerCase()))} className="size-11 shrink-0 cursor-pointer rounded-control border border-control-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" />
                   {PALETTE_LABEL[key]}
                 </label>
               ))}
@@ -188,7 +189,10 @@ export default function SiteTab({
             <Select label="Texte" value={doc.theme.fonts.body} options={SITE_FONTS.map((f) => ({ value: f, label: SITE_FONT_LABEL[f] }))} onChange={(e) => edit((d) => void (d.theme.fonts.body = e.target.value as (typeof SITE_FONTS)[number]))} />
           </Card>
           <Card title="Images et fond">
-            <Link href={`/billetterie/${eventId}/images`} className="text-sm font-semibold text-brand-text underline underline-offset-2">Images du site : déposer plusieurs images d&apos;un coup</Link>
+            <Link href={`/billetterie/${eventId}/images`} className={`${buttonClasses("secondary")} self-start`}>
+              <Images aria-hidden="true" className="size-4" strokeWidth={1.75} />
+              Déposer plusieurs images
+            </Link>
             <ImageField label="Logo" current={doc.theme.logoAssetId} tools={tools} onPick={(id) => edit((d) => void (d.theme.logoAssetId = id))} onClear={() => edit((d) => void delete d.theme.logoAssetId)} />
             <ImageField label="Image d'en-tête" current={doc.theme.headerAssetId} tools={tools} onPick={(id) => edit((d) => void (d.theme.headerAssetId = id))} onClear={() => edit((d) => void delete d.theme.headerAssetId)} />
             <BackgroundFields label="Fond de page" value={doc.theme.background} tools={tools} onChange={(bg) => edit((d) => void (d.theme.background = bg))} />
@@ -199,16 +203,16 @@ export default function SiteTab({
                 <Input label="Titre" value={hero.title} maxLength={120} onChange={(e) => edit((d) => void (heroOf(d).title = e.target.value))} />
                 <Input label="Accroche" value={hero.tagline ?? ""} maxLength={240} onChange={(e) => edit((d) => void (heroOf(d).tagline = e.target.value || undefined))} />
                 <Input label="Texte du bouton" value={hero.buttonLabel ?? ""} maxLength={40} placeholder="Je m'inscris" onChange={(e) => edit((d) => void (heroOf(d).buttonLabel = e.target.value || undefined))} />
-                <label className="flex items-center gap-2 text-sm text-ink"><Checkbox checked={hero.showDateLocation} onChange={(e) => edit((d) => void (heroOf(d).showDateLocation = e.target.checked))} /> Date et lieu</label>
-                <label className="flex items-center gap-2 text-sm text-ink"><Checkbox checked={hero.showCountdown} onChange={(e) => edit((d) => void (heroOf(d).showCountdown = e.target.checked))} /> Compte à rebours</label>
+                <label className="flex min-h-11 items-center gap-3 text-[15px] text-ink"><Checkbox checked={hero.showDateLocation} onChange={(e) => edit((d) => void (heroOf(d).showDateLocation = e.target.checked))} /> Date et lieu</label>
+                <label className="flex min-h-11 items-center gap-3 text-[15px] text-ink"><Checkbox checked={hero.showCountdown} onChange={(e) => edit((d) => void (heroOf(d).showCountdown = e.target.checked))} /> Compte à rebours</label>
               </>
             ) : (
-              <p className="text-sm text-ink-muted">La page d&apos;accueil n&apos;a pas de bandeau d&apos;accueil.</p>
+              <p className="text-[15px] text-ink-muted">La page d&apos;accueil n&apos;a pas de bandeau d&apos;accueil.</p>
             )}
           </Card>
           <Card title="Après l'événement">
             <Input label="Jours d'affichage de « Événement terminé » (1 à 365)" type="number" min={1} max={365} value={afterClose} onChange={(e) => setAfterClose(Number(e.target.value))} />
-            <Button type="button" variant="secondary" size="sm" disabled={busy || afterClose === site.afterCloseDays || !(afterClose >= 1 && afterClose <= 365)} onClick={() => call<SiteView>(`/api/ticketing/events/${eventId}/site`, "PATCH", { afterCloseDays: afterClose }, "Durée enregistrée")}>Enregistrer la durée</Button>
+            <Button type="button" variant="secondary" disabled={busy || afterClose === site.afterCloseDays || !(afterClose >= 1 && afterClose <= 365)} onClick={() => call<SiteView>(`/api/ticketing/events/${eventId}/site`, "PATCH", { afterCloseDays: afterClose }, "Durée enregistrée")}>Enregistrer la durée</Button>
           </Card>
           <SitePagesEditor doc={doc} edit={edit} tools={tools} />
           {canConfigure && <DomainCard eventId={eventId} domain={domain} />}
@@ -217,8 +221,8 @@ export default function SiteTab({
         <div className="min-w-0 space-y-2">
           <div className="flex items-center justify-between gap-2">
             <h2 className="font-semibold text-ink">Aperçu du brouillon</h2>
-            <Button type="button" size="sm" variant="secondary" onClick={() => setFullPreview(true)}>
-              Plein écran
+            <Button type="button" size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => setFullPreview(true)}>
+              Voir en plein écran
             </Button>
           </div>
           <div className="max-h-[80vh] overflow-auto rounded-card border border-line">

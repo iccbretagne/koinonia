@@ -35,13 +35,13 @@ export default function DomainCard({ eventId, domain }: { readonly eventId: stri
           {domain.lastError && <Alert tone="warning" title="Dernier contrôle.">{domain.lastError}</Alert>}
           {(domain.status === "PENDING" || domain.status === "SUSPENDED") && (
             <>
-              <p className="text-[13px] text-ink-muted">Créez ces deux enregistrements chez votre hébergeur DNS, puis cliquez sur « Vérifier » (la propagation peut prendre quelques minutes).</p>
+              <p className="text-[13px] text-ink-muted">Créez ces deux enregistrements chez votre hébergeur DNS, puis cliquez sur « Vérifier le DNS » (la propagation peut prendre quelques minutes).</p>
               <ul className="space-y-2 text-[13px] text-ink">
                 {domain.records.map((r) => (
-                  <li key={r.type} className="rounded border border-line p-2"><strong>{r.type}</strong> · <code className="break-all">{r.name}</code> → <code className="break-all">{r.value}</code></li>
+                  <li key={r.type} className="rounded-chip border border-line p-2"><strong>{r.type}</strong> · <code className="break-all">{r.name}</code> → <code className="break-all">{r.value}</code></li>
                 ))}
               </ul>
-              <Button type="button" disabled={busy} onClick={() => call(`${base}/verify`, "POST", undefined, undefined)}>Vérifier</Button>
+              <Button type="button" disabled={busy} onClick={() => call(`${base}/verify`, "POST", undefined, undefined)}>{busy ? "Vérification en cours…" : "Vérifier le DNS"}</Button>
             </>
           )}
           <Button type="button" variant="secondary" disabled={busy} onClick={() => call(base, "DELETE", undefined, "Domaine supprimé")}>Supprimer le domaine</Button>

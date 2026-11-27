@@ -1,11 +1,12 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, CircleHelp, Trash2, Upload, Video, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, Upload, Video, X } from "lucide-react";
 import { DashedAddButton, ShareLinksHeading, UploadToggleButton } from "@/components/media/MediaDetailParts";
-import { useState, useRef, useEffect, useCallback, useId, type ReactNode } from "react";
+import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
+import { ConfirmModal as UiConfirmModal, FilterChip, IconButton, Input, Select, StatusChip, Textarea, buttonClasses, type StatusTone } from "@/components/ui";
 import type { MediaFileStatus, MediaFileType, MediaTokenType } from "@/generated/prisma/enums";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -85,16 +86,16 @@ const FILE_STATUS_LABELS: Record<MediaFileStatus, string> = {
   FINAL_APPROVED:     "Validé final",
 };
 
-const FILE_STATUS_COLORS: Record<MediaFileStatus, string> = {
-  PENDING:            "bg-warning-soft text-warning",
-  APPROVED:           "bg-success-soft text-success",
-  REJECTED:           "bg-danger-soft text-danger",
-  PREVALIDATED:       "bg-info-soft text-info",
-  PREREJECTED:        "bg-warning-soft text-warning",
-  DRAFT:              "bg-surface-sunken text-ink-muted",
-  IN_REVIEW:          "bg-brand-soft text-brand-text",
-  REVISION_REQUESTED: "bg-warning-soft text-warning",
-  FINAL_APPROVED:     "bg-success-soft text-success",
+const FILE_STATUS_TONE: Record<MediaFileStatus, StatusTone> = {
+  PENDING:            "warning",
+  APPROVED:           "success",
+  REJECTED:           "danger",
+  PREVALIDATED:       "info",
+  PREREJECTED:        "warning",
+  DRAFT:              "neutral",
+  IN_REVIEW:          "brand",
+  REVISION_REQUESTED: "warning",
+  FINAL_APPROVED:     "success",
 };
 
 const FILE_STATUS_DOT: Record<MediaFileStatus, string> = {
@@ -180,51 +181,16 @@ function ConfirmModal({ title, message, confirmLabel = "Confirmer", danger = fal
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      e.preventDefault();
-      onCancel();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onCancel]);
-
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-scrim backdrop-blur-sm" aria-hidden="true" onClick={onCancel} />
-      <div className="relative bg-surface rounded-2xl shadow-overlay max-w-sm w-full p-6 space-y-4">
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${danger ? "bg-danger-soft" : "bg-surface-sunken"}`}>
-            {danger ? (
-              <Trash2 className="w-5 h-5 text-danger" aria-hidden="true" />
-            ) : (
-              <CircleHelp className="w-5 h-5 text-ink-muted" aria-hidden="true" />
-            )}
-          </div>
-          <div>
-            <p className="font-semibold text-ink">{title}</p>
-            <p className="text-sm text-ink-muted mt-0.5">{message}</p>
-          </div>
-        </div>
-        <div className="flex gap-2 justify-end pt-1">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 text-sm text-ink-muted hover:text-ink border border-line hover:border-control-line rounded-xl transition-colors"
-          >
-            Annuler
-          </button>
-          <button
-            onClick={onConfirm}
-            className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors ${
-              danger ? "bg-danger text-on-danger hover:bg-danger/90" : "bg-brand text-on-brand hover:bg-brand-hover"
-            }`}
-          >
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
+    <UiConfirmModal
+      open
+      title={title}
+      message={message}
+      confirmLabel={confirmLabel}
+      variant={danger ? "danger" : "primary"}
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+    />
   );
 }
 
@@ -235,7 +201,6 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
   readonly tokens: ShareToken[];
   readonly onRefresh: () => void;
 }) {
-  const fieldId = useId();
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newType, setNewType] = useState<MediaTokenType>("GALLERY");
@@ -302,8 +267,8 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
           const url = getTokenUrl(token);
           const isExpired = token.expiresAt && new Date(token.expiresAt) < new Date();
           return (
-            <div key={token.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${isExpired ? "bg-danger-soft border-danger/30 opacity-70" : "bg-surface-sunken border-line"}`}>
-              <span className="text-lg shrink-0">{TOKEN_TYPE_ICONS[token.type]}</span>
+            <div key={token.id} className={`flex flex-wrap items-center gap-3 p-3 rounded-control border transition-colors ${isExpired ? "bg-danger-soft border-danger/30 opacity-70" : "bg-bg border-line"}`}>
+              <span className="text-lg shrink-0" aria-hidden="true">{TOKEN_TYPE_ICONS[token.type]}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-semibold text-ink-muted">{TOKEN_TYPE_LABELS[token.type]}</span>
@@ -317,73 +282,35 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
                 </p>
               </div>
               <div className="flex gap-1.5 shrink-0">
-                <button
-                  onClick={() => copy(url, token.id)}
-                  className={`text-xs border rounded-lg px-2.5 py-1.5 transition-colors ${copied === token.id ? "bg-success-soft border-success/30 text-success" : "border-line text-ink-muted hover:text-brand-text hover:border-brand"}`}
-                >
-                  {copied === token.id ? "✓ Copié" : "Copier"}
-                </button>
-                <button
-                  onClick={() => setPendingDeleteToken(token.id)}
-                  className="text-xs text-danger hover:text-danger border border-danger/30 hover:bg-danger-soft rounded-lg px-2.5 py-1.5 transition-colors"
-                >
-                  Suppr.
-                </button>
+                <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => copy(url, token.id)}>
+                  {copied === token.id ? "Copié !" : "Copier le lien"}
+                </Button>
+                <IconButton icon={Trash2} aria-label="Supprimer le lien" size="sm" className="max-sm:size-11" onClick={() => setPendingDeleteToken(token.id)} />
               </div>
             </div>
           );
         })}
 
         {open ? (
-          <div className="p-4 border border-brand/30 rounded-xl bg-brand-soft space-y-3">
-            <p className="text-sm font-medium text-ink-muted">Nouveau lien de partage</p>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label htmlFor={`${fieldId}-type`} className="text-xs text-ink-muted mb-1 block">Type</label>
-                <select
-                  id={`${fieldId}-type`}
-                  value={newType}
-                  onChange={(e) => setNewType(e.target.value as MediaTokenType)}
-                  className="w-full border border-control-line rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus bg-surface"
-                >
-                  {(Object.keys(TOKEN_TYPE_LABELS) as MediaTokenType[]).map((t) => (
-                    <option key={t} value={t}>{TOKEN_TYPE_ICONS[t]} {TOKEN_TYPE_LABELS[t]}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor={`${fieldId}-expiry`} className="text-xs text-ink-muted mb-1 block">Durée (0 = illimité)</label>
-                <div className="relative">
-                  <input
-                    id={`${fieldId}-expiry`}
-                    type="number"
-                    min="0"
-                    value={newExpiry}
-                    onChange={(e) => setNewExpiry(e.target.value)}
-                    className="w-full border border-control-line rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
-                  />
-                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-ink-subtle pointer-events-none">jours</span>
-                </div>
-              </div>
-            </div>
-            <div>
-              <label htmlFor={`${fieldId}-label`} className="text-xs text-ink-muted mb-1 block">Étiquette (optionnel)</label>
-              <input
-                id={`${fieldId}-label`}
-                type="text"
-                placeholder="Ex : Révision client"
-                value={newLabel}
-                onChange={(e) => setNewLabel(e.target.value)}
-                className="w-full border border-control-line rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
+          <div className="p-4 border border-brand/30 rounded-card bg-brand-soft space-y-3">
+            <p className="text-sm font-semibold text-ink">Nouveau lien de partage</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Select
+                label="Type"
+                value={newType}
+                onChange={(e) => setNewType(e.target.value as MediaTokenType)}
+                options={(Object.keys(TOKEN_TYPE_LABELS) as MediaTokenType[]).map((t) => ({ value: t, label: TOKEN_TYPE_LABELS[t] }))}
               />
+              <Input label="Durée en jours (0 = illimitée)" type="number" min="0" value={newExpiry} onChange={(e) => setNewExpiry(e.target.value)} />
             </div>
-            {error && <p className="text-xs text-danger">{error}</p>}
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => { setOpen(false); setError(null); }} className="text-sm text-ink-muted hover:text-ink-muted px-3 py-1.5">
+            <Input label="Étiquette (facultative)" placeholder="Ex : Révision client" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
+            {error && <p className="text-[13px] text-danger">{error}</p>}
+            <div className="flex flex-wrap gap-2 justify-end">
+              <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => { setOpen(false); setError(null); }}>
                 Annuler
-              </button>
-              <Button onClick={createToken} disabled={creating} size="sm">
-                {creating ? "Création…" : "Créer le lien"}
+              </Button>
+              <Button onClick={createToken} disabled={creating} size="sm" className="min-h-11 sm:min-h-9">
+                {creating ? "Création en cours…" : "Créer le lien"}
               </Button>
             </div>
           </div>
@@ -396,7 +323,7 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
         <ConfirmModal
           title="Supprimer ce lien ?"
           message="Les personnes ayant ce lien ne pourront plus y accéder."
-          confirmLabel="Supprimer"
+          confirmLabel="Supprimer le lien"
           danger
           onConfirm={() => deleteToken(pendingDeleteToken)}
           onCancel={() => setPendingDeleteToken(null)}
@@ -427,9 +354,9 @@ function VideoPlayer({ src, thumbnail, onExpired }: {
           onClick={() => { setError(false); onExpired(); }}
           /* Bouton sur aperçu vidéo toujours sombre, indépendant du thème */
           // eslint-disable-next-line no-restricted-syntax -- visionneuse vidéo toujours sombre
-          className="relative z-10 text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg transition-colors"
+          className="relative z-10 min-h-11 rounded-control bg-white/20 px-4 font-display text-sm font-semibold text-white transition-colors hover:bg-white/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         >
-          Recharger
+          Recharger la vidéo
         </button>
       </div>
     );
@@ -539,7 +466,7 @@ function FileUploadZone({ projectId, onUploaded, onActivityChange }: {
     <>
     <button
       type="button"
-      className="block w-full border-2 border-dashed border-control-line rounded-xl p-6 text-center cursor-pointer hover:border-brand hover:bg-brand-soft focus-visible:ring-2 focus-visible:ring-focus outline-none transition-all"
+      className="block w-full border-2 border-dashed border-control-line rounded-card p-6 text-center cursor-pointer hover:border-brand hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus transition-all"
       onClick={() => inputRef.current?.click()}
       onDrop={(e) => { e.preventDefault(); void handleFiles(Array.from(e.dataTransfer.files)); }}
       onDragOver={(e) => e.preventDefault()}
@@ -561,7 +488,7 @@ function FileUploadZone({ projectId, onUploaded, onActivityChange }: {
           <p className="text-xs text-ink-subtle mt-1">Vidéo (MP4, MOV, WebM) · Visuel (JPEG, PNG, WebP, SVG, PDF)</p>
         </>
       )}
-      {error && <p className="mt-2 text-xs text-danger whitespace-pre-line">{error}</p>}
+      {error && <p className="mt-2 text-[13px] text-danger whitespace-pre-line">{error}</p>}
     </button>
       <input
         ref={inputRef}
@@ -622,38 +549,27 @@ function NewVersionUpload({ fileId, onDone }: { readonly fileId: string; readonl
     <div>
       <input ref={inputRef} type="file" className="hidden" onChange={onFileChange} />
       {!showForm ? (
-        <button
-          onClick={() => inputRef.current?.click()}
-          className="text-xs text-brand-text border border-brand/30 rounded-lg px-2.5 py-1.5 hover:bg-brand-soft transition-colors font-medium"
-        >
-          + Nouvelle version
-        </button>
+        <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => inputRef.current?.click()}>
+          <Plus className="size-4" aria-hidden="true" strokeWidth={1.75} /> Ajouter une version
+        </Button>
       ) : (
-        <div className="mt-2 space-y-2 p-3 bg-brand-soft rounded-lg border border-brand/20">
-          <p className="text-xs font-medium text-ink-muted truncate">{pendingFile?.name}</p>
-          <input
-            type="text"
-            placeholder="Note (optionnel)"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="w-full text-xs border border-line rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus"
-          />
+        <div className="mt-2 space-y-2 p-3 bg-brand-soft rounded-control border border-brand/20">
+          <p className="text-sm font-semibold text-ink truncate">{pendingFile?.name}</p>
+          <Input label="Note (facultative)" value={notes} onChange={(e) => setNotes(e.target.value)} />
           {uploading && (
             <div className="w-full bg-surface-sunken rounded-full h-1.5">
               <div className="bg-brand h-1.5 rounded-full transition-all" style={{ width: `${pct}%` }} />
             </div>
           )}
-          <div className="flex gap-2">
-            <button onClick={upload} disabled={uploading}
-              className="text-xs bg-brand text-on-brand px-3 py-1 rounded-lg hover:bg-brand-hover disabled:opacity-50 font-medium">
-              {uploading ? `Upload ${pct}%…` : "Envoyer"}
-            </button>
-            <button onClick={() => { setShowForm(false); setPendingFile(null); }}
-              className="text-xs text-ink-muted px-2 py-1 hover:text-ink-muted">
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" className="min-h-11 sm:min-h-9" onClick={upload} disabled={uploading}>
+              {uploading ? `Envoi en cours (${pct} %)…` : "Envoyer la version"}
+            </Button>
+            <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => { setShowForm(false); setPendingFile(null); }}>
               Annuler
-            </button>
+            </Button>
           </div>
-          {error && <p className="text-xs text-danger">{error}</p>}
+          {error && <p className="text-[13px] text-danger">{error}</p>}
         </div>
       )}
     </div>
@@ -793,7 +709,7 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
       <ConfirmModal
         title={`Supprimer "${file.filename}" ?`}
         message="Le fichier et toutes ses versions seront définitivement supprimés."
-        confirmLabel="Supprimer"
+        confirmLabel="Supprimer le fichier"
         danger
         onConfirm={() => { setPendingDelete(false); onDelete(file.id); }}
         onCancel={() => setPendingDelete(false)}
@@ -807,31 +723,17 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
           {/* Navigation prev/next */}
           {allFiles.length > 1 && (
             <div className="flex items-center gap-1 shrink-0">
-              <button
-                onClick={() => hasPrev && onNavigate(allFiles[fileIndex - 1])}
-                disabled={!hasPrev}
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-muted hover:bg-surface-sunken disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft className="w-4 h-4" aria-hidden="true" />
-              </button>
+              <IconButton icon={ChevronLeft} aria-label="Fichier précédent" size="sm" className="max-sm:size-11" onClick={() => hasPrev && onNavigate(allFiles[fileIndex - 1])} disabled={!hasPrev} />
               <span className="text-xs text-ink-subtle tabular-nums w-10 text-center">{fileIndex + 1}/{allFiles.length}</span>
-              <button
-                onClick={() => hasNext && onNavigate(allFiles[fileIndex + 1])}
-                disabled={!hasNext}
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-muted hover:bg-surface-sunken disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <ChevronRight className="w-4 h-4" aria-hidden="true" />
-              </button>
+              <IconButton icon={ChevronRight} aria-label="Fichier suivant" size="sm" className="max-sm:size-11" onClick={() => hasNext && onNavigate(allFiles[fileIndex + 1])} disabled={!hasNext} />
             </div>
           )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs bg-surface-sunken text-ink-muted px-1.5 py-0.5 rounded font-medium shrink-0">
-                {FILE_TYPE_LABELS[file.type]}
-              </span>
-              <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0 ${FILE_STATUS_COLORS[file.status]}`}>
+              <StatusChip tone="neutral" className="shrink-0">{FILE_TYPE_LABELS[file.type]}</StatusChip>
+              <StatusChip tone={FILE_STATUS_TONE[file.status]} className="shrink-0">
                 {FILE_STATUS_LABELS[file.status]}
-              </span>
+              </StatusChip>
               <span className="text-xs text-ink-subtle truncate">
                 {file.filename}
                 {latestVersion && <span className="ml-1 text-ink-subtle">v{latestVersion.versionNumber}</span>}
@@ -840,17 +742,9 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {canManage && (
-              <button
-                onClick={() => setPendingDelete(true)}
-                className="text-danger hover:text-danger hover:bg-danger-soft rounded-lg p-1.5 transition-colors"
-                title="Supprimer ce fichier"
-              >
-                <Trash2 className="w-4 h-4" aria-hidden="true" />
-              </button>
+              <IconButton icon={Trash2} aria-label="Supprimer ce fichier" className="max-sm:size-11" onClick={() => setPendingDelete(true)} />
             )}
-            <button onClick={onClose} className="text-ink-subtle hover:text-ink-muted rounded-lg p-1.5">
-              <X className="w-5 h-5" aria-hidden="true" />
-            </button>
+            <IconButton icon={X} aria-label="Fermer le fichier" className="max-sm:size-11" onClick={onClose} />
           </div>
         </div>
 
@@ -863,19 +757,16 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
 
         {/* Actions review */}
         {canReview && file.status === "IN_REVIEW" && (
-          <div className="shrink-0 flex gap-2 px-4 py-2.5 border-b border-line bg-surface-sunken">
-            <button onClick={() => { onReviewFile(file.id, "FINAL_APPROVED"); onClose(); }}
-              className="flex-1 text-sm bg-success-soft text-success py-2 rounded-lg hover:bg-success/20 font-medium">
-              ✓ Valider
-            </button>
-            <button onClick={() => { onReviewFile(file.id, "REVISION_REQUESTED"); onClose(); }}
-              className="flex-1 text-sm bg-warning-soft text-warning py-2 rounded-lg hover:bg-warning/20 font-medium">
-              ↩ Révision
-            </button>
-            <button onClick={() => { onReviewFile(file.id, "REJECTED"); onClose(); }}
-              className="flex-1 text-sm bg-danger-soft text-danger py-2 rounded-lg hover:bg-danger/20 font-medium">
-              ✗ Rejeter
-            </button>
+          <div className="shrink-0 flex flex-wrap gap-2 px-4 py-2.5 border-b border-line bg-bg">
+            <Button type="button" className="flex-1" onClick={() => { onReviewFile(file.id, "FINAL_APPROVED"); onClose(); }}>
+              Valider le visuel
+            </Button>
+            <Button type="button" variant="secondary" className="flex-1" onClick={() => { onReviewFile(file.id, "REVISION_REQUESTED"); onClose(); }}>
+              Demander une révision
+            </Button>
+            <Button type="button" variant="secondary" className="flex-1" onClick={() => { onReviewFile(file.id, "REJECTED"); onClose(); }}>
+              Rejeter le visuel
+            </Button>
           </div>
         )}
 
@@ -885,10 +776,11 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`py-2.5 px-1 mr-5 text-sm font-medium border-b-2 transition-colors ${
+              aria-pressed={activeTab === tab}
+              className={`min-h-11 py-2.5 px-1 mr-5 text-sm font-semibold border-b-2 transition-colors focus-visible:outline-2 focus-visible:outline-focus ${
                 activeTab === tab
                   ? "border-brand text-brand-text"
-                  : "border-transparent text-ink-muted hover:text-ink-muted"
+                  : "border-transparent text-ink-muted hover:text-ink"
               }`}
             >
               {tab === "versions" ? `Versions (${versions.length || "…"})` : `Commentaires (${comments.length || "…"})`}
@@ -903,13 +795,13 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
               {canUpload && (
                 <NewVersionUpload fileId={file.id} onDone={() => { void loadVersions(); onRefresh(); }} />
               )}
-              {loadingVersions && <p className="text-xs text-ink-subtle text-center py-4">Chargement…</p>}
+              {loadingVersions && <p className="text-[13px] text-ink-subtle text-center py-4">Chargement en cours…</p>}
               {!loadingVersions && versions.length === 0 && (
                 <p className="text-xs text-ink-subtle text-center py-4">Aucune version enregistrée.</p>
               )}
               {!loadingVersions && versions.length > 0 && (
                 versions.map((v, idx) => (
-                  <div key={v.id} className={`p-3 rounded-xl border ${idx === 0 ? "border-brand/30 bg-brand-soft" : "border-line bg-surface-sunken"}`}>
+                  <div key={v.id} className={`p-3 rounded-control border ${idx === 0 ? "border-brand/30 bg-brand-soft" : "border-line bg-bg"}`}>
                     <div className="flex items-center justify-between">
                       <span className={`text-xs font-bold ${idx === 0 ? "text-brand-text" : "text-ink-muted"}`}>
                         v{v.versionNumber} {idx === 0 && "(dernière)"}
@@ -929,7 +821,7 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
           )}
 
           {activeTab === "comments" && loadingComments && (
-            <p className="text-xs text-ink-subtle text-center py-4">Chargement…</p>
+            <p className="text-[13px] text-ink-subtle text-center py-4">Chargement en cours…</p>
           )}
           {activeTab === "comments" && !loadingComments && comments.length === 0 && (
             <p className="text-xs text-ink-subtle text-center py-4">Aucun commentaire.</p>
@@ -938,13 +830,13 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
               <div className="space-y-2">
                 {comments.map((c) => (
                   <div key={c.id} className="space-y-2">
-                    <div className="bg-surface-sunken rounded-xl p-3 border border-line">
+                    <div className="bg-bg rounded-control p-3 border border-line">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-medium text-ink-muted">
                           {c.author?.displayName ?? c.author?.name ?? c.authorName ?? "Anonyme"}
                         </span>
                         {c.timecode !== null && (
-                          <span className="text-xs bg-brand-soft text-brand-text px-1.5 py-0.5 rounded font-mono">
+                          <span className="text-xs bg-brand-soft text-brand-text px-1.5 py-0.5 rounded-chip font-mono">
                             {formatTimecode(c.timecode)}
                           </span>
                         )}
@@ -953,7 +845,7 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
                       <p className="text-sm text-ink">{c.content}</p>
                     </div>
                     {c.replies?.map((r) => (
-                      <div key={r.id} className="ml-4 bg-surface rounded-xl p-3 border border-line">
+                      <div key={r.id} className="ml-4 bg-surface rounded-control p-3 border border-line">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs font-medium text-ink-muted">
                             {r.author?.displayName ?? r.author?.name ?? r.authorName ?? "Anonyme"}
@@ -971,21 +863,20 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
 
         {/* Comment input — pinned at bottom, always reachable */}
         {activeTab === "comments" && (
-          <div className="shrink-0 flex gap-2 px-4 py-3 border-t border-line bg-surface">
-            <textarea
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Ajouter un commentaire…"
-              rows={2}
-              className="flex-1 text-sm border border-line rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus resize-none"
-            />
-            <button
-              onClick={postComment}
-              disabled={postingComment || !newComment.trim()}
-              className="self-end text-sm bg-brand text-on-brand px-3 py-2 rounded-lg hover:bg-brand-hover disabled:opacity-40 font-medium"
-            >
-              Envoyer
-            </button>
+          <div className="shrink-0 flex items-end gap-2 px-4 py-3 border-t border-line bg-surface">
+            <div className="min-w-0 flex-1">
+              <Textarea
+                label=""
+                aria-label="Commentaire"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Ajouter un commentaire…"
+                rows={2}
+              />
+            </div>
+            <Button type="button" onClick={postComment} disabled={postingComment || !newComment.trim()}>
+              {postingComment ? "Envoi en cours…" : "Envoyer le commentaire"}
+            </Button>
           </div>
         )}
       </div>
@@ -1013,12 +904,9 @@ function NoFiles({
         {projectEmpty ? "Aucun fichier dans ce projet" : "Aucun résultat pour ces filtres"}
       </p>
       {filtered && (
-        <button
-          onClick={onReset}
-          className="mt-2 text-xs text-brand-text hover:underline"
-        >
+        <Button type="button" variant="ghost" size="sm" className="mt-2 min-h-11 sm:min-h-9" onClick={onReset}>
           Réinitialiser les filtres
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -1072,25 +960,21 @@ function StatusCountPills({
     rejected: number;
   };
 }) {
-  const pills = [
-    { key: "inReview", count: counts.inReview, bg: "bg-brand-soft", border: "border-brand/30", dot: "bg-brand", text: "text-brand-text", label: "en révision" },
-    { key: "revision", count: counts.revision, bg: "bg-warning-soft", border: "border-warning/30", dot: "bg-warning", text: "text-warning", label: "révision demandée" },
-    { key: "prevalidated", count: counts.prevalidated, bg: "bg-info-soft", border: "border-info/30", dot: "bg-info", text: "text-info", label: `pré-validé${plural(counts.prevalidated)}` },
-    { key: "prerejected", count: counts.prerejected, bg: "bg-warning-soft", border: "border-warning/30", dot: "bg-warning", text: "text-warning", label: `pré-rejeté${plural(counts.prerejected)}` },
-    { key: "approved", count: counts.approved, bg: "bg-success-soft", border: "border-success/30", dot: "bg-success", text: "text-success", label: `approuvé${plural(counts.approved)}` },
-    { key: "finalApproved", count: counts.finalApproved, bg: "bg-success-soft", border: "border-success/30", dot: "bg-success", text: "text-success", label: `validé${plural(counts.finalApproved)} final` },
-    { key: "rejected", count: counts.rejected, bg: "bg-danger-soft", border: "border-danger/30", dot: "bg-danger", text: "text-danger", label: `rejeté${plural(counts.rejected)}` },
+  const pills: { key: string; count: number; tone: StatusTone; label: string }[] = [
+    { key: "inReview", count: counts.inReview, tone: "brand", label: "en révision" },
+    { key: "revision", count: counts.revision, tone: "warning", label: `révision${plural(counts.revision)} demandée${plural(counts.revision)}` },
+    { key: "prevalidated", count: counts.prevalidated, tone: "info", label: `pré-validé${plural(counts.prevalidated)}` },
+    { key: "prerejected", count: counts.prerejected, tone: "warning", label: `pré-rejeté${plural(counts.prerejected)}` },
+    { key: "approved", count: counts.approved, tone: "success", label: `approuvé${plural(counts.approved)}` },
+    { key: "finalApproved", count: counts.finalApproved, tone: "success", label: `validé${plural(counts.finalApproved)} final${plural(counts.finalApproved)}` },
+    { key: "rejected", count: counts.rejected, tone: "danger", label: `rejeté${plural(counts.rejected)}` },
   ];
   return (
     <>
       {pills
         .filter((p) => p.count > 0)
         .map((p) => (
-          <div key={p.key} className={`flex items-center gap-1.5 ${p.bg} border ${p.border} rounded-lg px-3 py-1.5`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${p.dot} shrink-0`} />
-            <span className={`text-xs font-semibold ${p.text}`}>{p.count}</span>
-            <span className={`text-xs ${p.text}`}>{p.label}</span>
-          </div>
+          <StatusChip key={p.key} tone={p.tone}>{p.count} {p.label}</StatusChip>
         ))}
     </>
   );
@@ -1218,11 +1102,11 @@ export default function MediaProjectDetail({
 
       <div className="space-y-5">
         {/* ── Header ──────────────────────────────────────────── */}
-        <div className="bg-surface rounded-2xl border border-line shadow-card overflow-hidden">
+        <div className="bg-surface rounded-card border border-line shadow-card overflow-hidden">
           <div className="p-5">
-            <Link href="/media/projects" className="text-xs text-ink-subtle hover:text-brand-text transition-colors inline-flex items-center gap-1 mb-3">
-              <ChevronLeft className="w-3 h-3" aria-hidden="true" />
-              Projets
+            <Link href="/media/projects" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9 -ml-2 mb-3`}>
+              <ChevronLeft className="size-4" aria-hidden="true" strokeWidth={1.75} />
+              Retour aux projets
             </Link>
 
             <div className="flex items-start justify-between gap-4">
@@ -1238,22 +1122,15 @@ export default function MediaProjectDetail({
                 )}
               </div>
               {canManage && (
-                <button
-                  onClick={() => setConfirmDelete(true)}
-                  className="text-xs text-danger hover:text-danger border border-danger/30 hover:border-danger/30 rounded-lg px-3 py-2 hover:bg-danger-soft transition-colors shrink-0"
-                >
-                  Supprimer
-                </button>
+                <Button type="button" variant="ghost" size="sm" className="min-h-11 shrink-0 sm:min-h-9" onClick={() => setConfirmDelete(true)}>
+                  Supprimer le projet
+                </Button>
               )}
             </div>
 
             {/* Stat pills */}
             <div className="flex flex-wrap gap-2 mt-4">
-              <div className="flex items-center gap-1.5 bg-surface-sunken border border-line rounded-lg px-3 py-1.5">
-                <Video className="w-3.5 h-3.5 text-ink-subtle" aria-hidden="true" />
-                <span className="text-xs font-semibold text-ink-muted">{allFiles.length}</span>
-                <span className="text-xs text-ink-muted">fichier{allFiles.length !== 1 ? "s" : ""}</span>
-              </div>
+              <StatusChip tone="neutral" icon={Video}>{allFiles.length} fichier{allFiles.length > 1 ? "s" : ""}</StatusChip>
               <StatusCountPills
                 counts={{
                   inReview: inReviewCount,
@@ -1281,50 +1158,37 @@ export default function MediaProjectDetail({
 
         {/* ── Liens de partage ────────────────────────────────── */}
         {canManage && (
-          <div className="bg-surface rounded-2xl border border-line shadow-card p-5">
+          <div className="bg-surface rounded-card border border-line shadow-card p-5">
             <ShareLinksHeading count={project.shareTokens.length} />
             <ShareTokenSection projectId={project.id} tokens={project.shareTokens} onRefresh={refreshProject} />
           </div>
         )}
 
         {/* ── Fichiers ────────────────────────────────────────── */}
-        <div className="bg-surface rounded-2xl border border-line shadow-card">
+        <div className="bg-surface rounded-card border border-line shadow-card">
           {/* Toolbar */}
           <div className="px-5 pt-4 pb-3 border-b border-line">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               {/* Onglets statut */}
-              <div className="flex items-center gap-1 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
                 {statusTabs.map((tab) => (
-                  <button
-                    key={tab.value}
-                    onClick={() => setStatusFilter(tab.value)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      statusFilter === tab.value
-                        ? "bg-brand text-on-brand"
-                        : "text-ink-muted hover:bg-surface-sunken"
-                    }`}
-                  >
+                  <FilterChip key={tab.value} pressed={statusFilter === tab.value} onClick={() => setStatusFilter(tab.value)}>
                     {tab.label}
-                    <span className={`text-xs px-1.5 py-0.5 rounded-md font-semibold ${
-                      statusFilter === tab.value ? "bg-on-brand/20 text-on-brand" : "bg-surface-sunken text-ink-muted"
-                    }`}>
-                      {tab.count}
-                    </span>
-                  </button>
+                    <span className="text-xs font-semibold tabular-nums">{tab.count}</span>
+                  </FilterChip>
                 ))}
               </div>
               {/* Droite : filtre type + import */}
               <div className="flex items-center gap-2 shrink-0">
-                <select
-                  value={typeFilter}
-                  onChange={(e) => setTypeFilter(e.target.value as MediaFileType | "")}
-                  className="border border-line rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus bg-surface"
-                >
-                  <option value="">Tous types</option>
-                  {(Object.keys(FILE_TYPE_LABELS) as MediaFileType[]).map((t) => (
-                    <option key={t} value={t}>{FILE_TYPE_LABELS[t]}</option>
-                  ))}
-                </select>
+                <div className="w-40">
+                  <Select
+                    label=""
+                    aria-label="Type de fichier"
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value as MediaFileType | "")}
+                    options={[{ value: "", label: "Tous les types" }, ...(Object.keys(FILE_TYPE_LABELS) as MediaFileType[]).map((t) => ({ value: t, label: FILE_TYPE_LABELS[t] }))]}
+                  />
+                </div>
                 {canUpload && (
                   <UploadToggleButton active={showUpload} onClick={() => setShowUpload((v) => !v)} />
                 )}
@@ -1342,12 +1206,12 @@ export default function MediaProjectDetail({
 
           {/* Zone d'upload (toggle) */}
           {showUpload && (
-            <div className="px-5 py-4 border-b border-line bg-surface-sunken/50">
+            <div className="px-5 py-4 border-b border-line bg-bg">
               <FileUploadZone
                 projectId={project.id}
                 onUploaded={() => { setShowUpload(false); refreshProject().catch(() => undefined); }}
                 onActivityChange={(active, filename) =>
-                  setActivity(active ? { label: `Upload en cours · ${filename ?? ""}` } : null)
+                  setActivity(active ? { label: `Envoi en cours · ${filename ?? ""}` } : null)
                 }
               />
             </div>
@@ -1371,7 +1235,7 @@ export default function MediaProjectDetail({
                     <button
                       type="button"
                       key={file.id}
-                      className="block w-full text-left bg-surface border border-line rounded-xl overflow-hidden hover:border-brand transition-all shadow-card hover:shadow-float cursor-pointer group focus-visible:ring-2 focus-visible:ring-focus outline-none"
+                      className="block w-full text-left bg-surface border border-line rounded-card overflow-hidden hover:border-brand transition-all shadow-card hover:shadow-float cursor-pointer group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                       onClick={() => setSelectedFile(file)}
                     >
                       {/* Preview */}
@@ -1388,7 +1252,7 @@ export default function MediaProjectDetail({
                         {/* Scrim toujours sombre : texte blanc fixe, indépendant du thème */}
                         {latestV && (
                           // eslint-disable-next-line no-restricted-syntax -- scrim toujours sombre sur vignette média
-                          <div className="absolute top-2 left-2 bg-scrim text-white text-xs px-1.5 py-0.5 rounded font-mono">
+                          <div className="absolute top-2 left-2 bg-scrim text-white text-xs px-1.5 py-0.5 rounded-chip font-mono">
                             v{latestV.versionNumber}
                           </div>
                         )}
@@ -1403,12 +1267,10 @@ export default function MediaProjectDetail({
                       {/* Info */}
                       <div className="p-3">
                         <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-                          <span className="text-xs bg-surface-sunken text-ink-muted px-1.5 py-0.5 rounded font-medium">
-                            {FILE_TYPE_LABELS[file.type]}
-                          </span>
-                          <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${FILE_STATUS_COLORS[file.status]}`}>
+                          <StatusChip tone="neutral">{FILE_TYPE_LABELS[file.type]}</StatusChip>
+                          <StatusChip tone={FILE_STATUS_TONE[file.status]}>
                             {FILE_STATUS_LABELS[file.status]}
-                          </span>
+                          </StatusChip>
                         </div>
                         <p className="text-sm font-medium text-ink truncate">{file.filename}</p>
                         <p className="text-xs text-ink-subtle mt-0.5">

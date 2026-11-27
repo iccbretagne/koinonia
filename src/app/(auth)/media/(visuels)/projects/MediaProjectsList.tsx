@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
+import { Checkbox, SearchInput, StatusChip, buttonClasses } from "@/components/ui";
 import CollectionBuilder from "../../collections/CollectionBuilder";
 
 type FileCounts = { inReview: number; revisionRequested: number; finalApproved: number; pending: number };
@@ -57,18 +58,14 @@ export default function MediaProjectsList({
 
   return (
     <div className="space-y-4">
-      <input
-        type="text"
-        placeholder="Rechercher…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full sm:w-80 border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-      />
+      <div className="w-full sm:w-80">
+        <SearchInput aria-label="Rechercher un projet" placeholder="Rechercher…" value={search} onChange={(e) => setSearch(e.target.value)} />
+      </div>
 
       {canShare && selected.size > 0 && (
-        <div className="sticky top-0 z-10 bg-brand-soft border border-brand/30 rounded-lg px-4 py-2 flex items-center justify-between gap-3">
+        <div className="sticky top-0 z-10 bg-brand-soft border border-brand/30 rounded-card px-4 py-2 flex flex-wrap items-center justify-between gap-3">
           <span className="text-sm text-ink-muted">{selected.size} projet{selected.size > 1 ? "s" : ""} sélectionné{selected.size > 1 ? "s" : ""}</span>
-          <Button size="sm" onClick={() => setShareModalOpen(true)}>Partager la sélection</Button>
+          <Button size="sm" className="min-h-11 sm:min-h-9" onClick={() => setShareModalOpen(true)}>Partager la sélection</Button>
         </div>
       )}
 
@@ -78,11 +75,9 @@ export default function MediaProjectsList({
             <>
               <p className="text-lg font-medium mb-2">Aucun projet média</p>
               {canUpload && (
-                <p className="text-sm">
-                  <Link href="/media/projects/new" className="text-brand-text hover:underline">
-                    Créer le premier projet
-                  </Link>
-                </p>
+                <Link href="/media/projects/new" className={buttonClasses("secondary")}>
+                  Créer le premier projet
+                </Link>
               )}
             </>
           ) : (
@@ -101,18 +96,18 @@ export default function MediaProjectsList({
             <Link
               key={project.id}
               href={`/media/projects/${project.id}`}
-              className={`block bg-surface rounded-xl border p-4 hover:border-brand transition-colors ${
+              className={`block bg-surface rounded-card shadow-card border p-4 hover:border-brand transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                 hasActivity ? "border-warning/30" : "border-line"
               }`}
             >
               <div className="flex items-start justify-between gap-3">
                 {canShare && (
-                  <input
-                    type="checkbox"
+                  <Checkbox
+                    aria-label={`Sélectionner ${project.name}`}
                     checked={selected.has(project.id)}
                     onClick={(e) => toggleSelected(project.id, e)}
                     onChange={() => {}}
-                    className="w-4 h-4 rounded border-control-line accent-brand shrink-0 mt-1"
+                    className="shrink-0 mt-0.5"
                   />
                 )}
                 <div className="flex-1 min-w-0">
@@ -129,22 +124,15 @@ export default function MediaProjectsList({
                   {total > 0 && hasActivity && (
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {inReview > 0 && (
-                        <span className="inline-flex items-center gap-1 text-xs bg-brand-soft text-brand-text border border-brand/30 px-2 py-0.5 rounded-full">
-                          <span className="w-1.5 h-1.5 rounded-full bg-brand shrink-0" />
-                          {inReview} en révision
-                        </span>
+                        <StatusChip tone="brand">{inReview} en révision</StatusChip>
                       )}
                       {revisionRequested > 0 && (
-                        <span className="inline-flex items-center gap-1 text-xs bg-warning-soft text-warning border border-warning/30 px-2 py-0.5 rounded-full">
-                          <span className="w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
-                          {revisionRequested} révision demandée{revisionRequested > 1 ? "s" : ""}
-                        </span>
+                        <StatusChip tone="warning">
+                          {revisionRequested} {revisionRequested > 1 ? "révisions demandées" : "révision demandée"}
+                        </StatusChip>
                       )}
                       {pending > 0 && (
-                        <span className="inline-flex items-center gap-1 text-xs bg-warning-soft text-warning border border-warning/30 px-2 py-0.5 rounded-full">
-                          <span className="w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
-                          {pending} en attente
-                        </span>
+                        <StatusChip tone="warning">{pending} en attente</StatusChip>
                       )}
                     </div>
                   )}

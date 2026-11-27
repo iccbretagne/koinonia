@@ -53,7 +53,7 @@ export async function getAudioSpaceCards(churchId: string): Promise<SpaceCard[]>
         publishedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
       },
     });
-    cards.push({ href: "/audio/ecouter", title: "(re)Écouter", stats: [`${publishedCount} publié(s) (30 j)`] });
+    cards.push({ href: "/audio/ecouter", title: "(re)Écouter", stats: [`${publishedCount} ${publishedCount > 1 ? "publiés" : "publié"} (30 j)`] });
   }
 
   if (canProduce) {

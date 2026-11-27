@@ -107,7 +107,7 @@ export const ESPACES: readonly KnowledgeEntry[] = [
       "contrôle à l'entrée",
     ],
     answer:
-      "Dans « Billetterie », l'administration crée l'événement et confie les rôles. L'accueil scanne les billets depuis l'écran « Contrôle » (fonctionne sans réseau), la restauration depuis « Restauration ». Une affectation à l'équipe apparaît dans « Mon planning » avec son badge.",
+      "Dans « Billetterie », l'administration crée l'événement et confie les rôles. L'accueil scanne les billets depuis l'écran « Contrôler les entrées » (fonctionne sans réseau), la restauration depuis « Distribuer les repas ». Une affectation à l'équipe apparaît dans « Mon planning » avec son badge.",
     href: "/billetterie",
     hrefLabel: "Billetterie",
     audience: { predicates: ["ticketing"] },
