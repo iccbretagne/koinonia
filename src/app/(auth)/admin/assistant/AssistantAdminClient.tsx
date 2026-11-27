@@ -7,6 +7,7 @@ import { Inbox, MessageCircleQuestion } from "lucide-react";
 import {
   Alert,
   Button,
+  buttonClasses,
   ConfirmModal,
   EmptyState,
   Input,
@@ -157,7 +158,11 @@ function EntryForm({
           <Button variant="secondary" onClick={onClose}>
             Annuler
           </Button>
-          <Button onClick={() => void submit()} disabled={saving || !entryTitle.trim() || !answer.trim() || !questions.trim()}>
+          <Button
+            onClick={() => void submit()}
+            disabled={saving || !entryTitle.trim() || !answer.trim() || !questions.trim()}
+            title={!entryTitle.trim() || !answer.trim() || !questions.trim() ? "Renseignez le titre, les questions et la réponse" : undefined}
+          >
             {saving ? "Enregistrement…" : submitLabel}
           </Button>
         </div>
@@ -229,7 +234,7 @@ function QuestionsTab({ pending, entries, status }: { readonly pending: PendingR
             key={value}
             href={`/admin/assistant?onglet=questions&statut=${value}`}
             aria-current={value === status ? "page" : undefined}
-            className={`rounded-full border px-3 py-1.5 text-[13px] font-semibold ${
+            className={`inline-flex min-h-11 items-center rounded-full border px-3 text-[13px] font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:min-h-9 ${
               value === status ? "border-brand bg-brand-soft text-brand-text" : "border-line text-ink-muted hover:text-ink"
             }`}
           >
@@ -256,16 +261,16 @@ function QuestionsTab({ pending, entries, status }: { readonly pending: PendingR
               </p>
               {status === "OPEN" && (
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" onClick={() => setAnswering(row)}>
+                  <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => setAnswering(row)}>
                     Répondre
                   </Button>
-                  <Button size="sm" variant="secondary" onClick={() => { setLinkKey(""); setLinking(row); }}>
-                    Rattacher à…
+                  <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => { setLinkKey(""); setLinking(row); }}>
+                    Rattacher à une fiche
                   </Button>
-                  <Button size="sm" variant="ghost" disabled={busy} onClick={() => void act(row, { action: "offtopic" }, "Question classée hors sujet")}>
-                    Hors sujet
+                  <Button size="sm" className="min-h-11 sm:min-h-9" variant="ghost" disabled={busy} onClick={() => void act(row, { action: "offtopic" }, "Question classée hors sujet")}>
+                    Classer hors sujet
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setDeleting(row)}>
+                  <Button size="sm" className="min-h-11 sm:min-h-9" variant="ghost" onClick={() => setDeleting(row)}>
                     Supprimer
                   </Button>
                 </div>
@@ -307,12 +312,13 @@ function QuestionsTab({ pending, entries, status }: { readonly pending: PendingR
               </Button>
               <Button
                 disabled={!linkKey || busy}
+                title={!linkKey ? "Choisissez une fiche" : undefined}
                 onClick={async () => {
                   await act(linking, { action: "link", entryKey: linkKey }, "Question rattachée");
                   setLinking(null);
                 }}
               >
-                Rattacher
+                {busy ? "Rattachement…" : "Rattacher la question"}
               </Button>
             </div>
           </div>
@@ -322,7 +328,7 @@ function QuestionsTab({ pending, entries, status }: { readonly pending: PendingR
         open={!!deleting}
         title="Supprimer la question ?"
         message="Elle disparaît définitivement de la liste."
-        confirmLabel="Supprimer"
+        confirmLabel="Supprimer la question"
         variant="danger"
         confirming={busy}
         onCancel={() => setDeleting(null)}
@@ -416,27 +422,27 @@ function BaseTab({ entries }: { readonly entries: AdminEntry[] }) {
             </p>
             <div className="flex flex-wrap gap-2">
               {!e.hidden && (
-                <Button size="sm" variant="secondary" onClick={() => setEditing(e)}>
+                <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => setEditing(e)}>
                   {e.origin === "custom" ? "Modifier" : "Corriger"}
                 </Button>
               )}
               {e.origin === "override" && (
-                <Button size="sm" variant="ghost" onClick={() => void patch(e, { action: "restore" }, "Texte fourni rétabli")}>
+                <Button size="sm" className="min-h-11 sm:min-h-9" variant="ghost" onClick={() => void patch(e, { action: "restore" }, "Texte fourni rétabli")}>
                   Rétablir
                 </Button>
               )}
               {e.origin !== "custom" &&
                 (e.hidden ? (
-                  <Button size="sm" variant="ghost" onClick={() => void patch(e, { action: "show" }, "Fiche affichée")}>
+                  <Button size="sm" className="min-h-11 sm:min-h-9" variant="ghost" onClick={() => void patch(e, { action: "show" }, "Fiche affichée")}>
                     Afficher
                   </Button>
                 ) : (
-                  <Button size="sm" variant="ghost" onClick={() => void patch(e, { action: "hide" }, "Fiche masquée")}>
+                  <Button size="sm" className="min-h-11 sm:min-h-9" variant="ghost" onClick={() => void patch(e, { action: "hide" }, "Fiche masquée")}>
                     Masquer
                   </Button>
                 ))}
               {e.origin === "custom" && (
-                <Button size="sm" variant="ghost" onClick={() => setDeleting(e)}>
+                <Button size="sm" className="min-h-11 sm:min-h-9" variant="ghost" onClick={() => setDeleting(e)}>
                   Supprimer
                 </Button>
               )}
@@ -465,7 +471,7 @@ function BaseTab({ entries }: { readonly entries: AdminEntry[] }) {
         open={!!deleting}
         title="Supprimer la fiche ?"
         message="La fiche et ses formulations rattachées disparaissent de la base."
-        confirmLabel="Supprimer"
+        confirmLabel="Supprimer la fiche"
         variant="danger"
         onCancel={() => setDeleting(null)}
         onConfirm={async () => {
@@ -541,7 +547,14 @@ export default function AssistantAdminClient({
   return (
     <>
       {!enabled && tab !== "reglages" && (
-        <Alert tone="warning" action={<Link href="/admin/assistant?onglet=reglages" className="font-semibold underline">Réglages</Link>}>
+        <Alert
+          tone="warning"
+          action={
+            <Link href="/admin/assistant?onglet=reglages" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+              Ouvrir les réglages
+            </Link>
+          }
+        >
           L&apos;assistant est désactivé : les utilisateurs voient le lien vers le guide.
         </Alert>
       )}

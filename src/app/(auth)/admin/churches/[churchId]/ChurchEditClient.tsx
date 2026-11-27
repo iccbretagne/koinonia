@@ -2,11 +2,7 @@
 
 import { SubmitEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
-import Select from "@/components/ui/Select";
-import Textarea from "@/components/ui/Textarea";
-import Alert from "@/components/ui/Alert";
+import { Alert, Button, buttonClasses, controlClasses, Input, Select, Textarea } from "@/components/ui";
 import Link from "next/link";
 import { churchLogoSrc } from "@/modules/core/schemas";
 import ChurchLogoSlot from "./ChurchLogoSlot";
@@ -100,18 +96,18 @@ export default function ChurchEditClient({ church, profiles, supervisors, canEdi
   }
 
   const profileOptions = [
-    { value: "", label: "— Aucun —" },
+    { value: "", label: "Aucun responsable" },
     ...profiles.map((p) => ({ value: p.id, label: p.label })),
   ];
 
   const supervisorOptions = [
-    { value: "", label: "— Aucun —" },
+    { value: "", label: "Aucun superviseur" },
     ...supervisors.map((s) => ({ value: s.id, label: s.label })),
   ];
 
   return (
     <div className="max-w-md">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input
           label="Nom"
           value={name}
@@ -141,7 +137,7 @@ export default function ChurchEditClient({ church, profiles, supervisors, canEdi
           placeholder={"comptabilite@eglise.fr\nresponsable@eglise.fr"}
         />
         <div>
-          <label htmlFor={`${colorId}-color`} className="block text-sm font-medium text-ink-muted mb-1">
+          <label htmlFor={`${colorId}-color`} className="mb-1 block text-sm font-semibold text-ink">
             Couleur principale (bandeau d&apos;entête)
           </label>
           <div className="flex items-center gap-3">
@@ -150,25 +146,27 @@ export default function ChurchEditClient({ church, profiles, supervisors, canEdi
               type="color"
               value={primaryColor}
               onChange={(e) => setPrimaryColor(e.target.value)}
-              className="h-10 w-16 rounded border border-line cursor-pointer p-0.5"
+              className="h-11 w-16 cursor-pointer rounded-control border border-control-line p-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
             />
             <input
               type="text"
+              aria-label="Code hexadécimal de la couleur principale"
               value={primaryColor}
               onChange={(e) => setPrimaryColor(e.target.value)}
               placeholder="#5E17EB"
-              className="w-32 border border-line rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-brand"
+              className={`${controlClasses()} w-32 font-mono`}
             />
             <div
-              className="h-10 w-24 rounded-lg border border-line shrink-0"
+              aria-hidden="true"
+              className="h-11 w-24 shrink-0 rounded-control border border-line"
               style={{ backgroundColor: primaryColor }}
             />
           </div>
         </div>
 
-        <div className="pt-2 border-t border-line">
-          <p className="text-xs text-ink-muted mb-3">Supervision pastorale</p>
-          <div className="space-y-4">
+        <div className="border-t border-line pt-4">
+          <h2 className="mb-3 font-display text-[17px] font-semibold leading-6 text-ink">Supervision pastorale</h2>
+          <div className="flex flex-col gap-4">
             <Select
               label="Responsable pastoral de l'église"
               value={responsibleProfileId}
@@ -182,7 +180,7 @@ export default function ChurchEditClient({ church, profiles, supervisors, canEdi
                 action={
                   <Link
                     href={canEditIdentity ? `/admin/pastoral-profiles?churchId=${church.id}` : "/admin/pastoral-profiles"}
-                    className="text-sm font-semibold text-brand underline"
+                    className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}
                   >
                     Créer un profil pastoral pour {church.name}
                   </Link>
@@ -203,13 +201,13 @@ export default function ChurchEditClient({ church, profiles, supervisors, canEdi
           </div>
         </div>
 
-        {error && <p className="text-sm text-danger">{error}</p>}
+        {error && <Alert tone="danger">{error}</Alert>}
         {success && (
-          <p className="text-sm text-success">Église mise à jour.</p>
+          <Alert tone="success">Église mise à jour.</Alert>
         )}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button type="submit" disabled={loading}>
-            {loading ? "Enregistrement..." : "Enregistrer"}
+            {loading ? "Enregistrement…" : "Enregistrer"}
           </Button>
           {canEditIdentity && (
             <Button
@@ -217,15 +215,15 @@ export default function ChurchEditClient({ church, profiles, supervisors, canEdi
               type="button"
               onClick={() => router.push("/admin/churches")}
             >
-              Retour
+              Revenir aux églises
             </Button>
           )}
         </div>
       </form>
 
-      <section aria-labelledby={`${colorId}-logo`} className="mt-8 space-y-4 border-t border-line pt-6">
+      <section aria-labelledby={`${colorId}-logo`} className="mt-8 flex flex-col gap-4 border-t border-line pt-6">
         <div>
-          <h2 id={`${colorId}-logo`} className="text-base font-semibold text-ink">
+          <h2 id={`${colorId}-logo`} className="font-display text-[17px] font-semibold leading-6 text-ink">
             Logo de l&apos;église
           </h2>
           <p className="text-[13px] leading-[18px] text-ink-muted">

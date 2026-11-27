@@ -1,12 +1,10 @@
 "use client";
 
 import { SubmitEvent, useState } from "react";
-import { useRouter } from "next/navigation";
-import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
+import Link from "next/link";
+import { Alert, Button, Input, buttonClasses } from "@/components/ui";
 
 export default function OnboardClient() {
-  const router = useRouter();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
@@ -55,33 +53,29 @@ export default function OnboardClient() {
   if (success) {
     return (
       <div className="max-w-md">
-        <div className="bg-success-soft border border-success/30 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-success mb-2">
-            Église créée avec succès
-          </h2>
-          <p className="text-sm text-success mb-4">
-            L&apos;église <strong>{name}</strong> a été créée.
-            {adminEmail && (
-              <>
-                {" "}L&apos;utilisateur <strong>{adminEmail}</strong> recevra le rôle
-                Admin à sa prochaine connexion.
-              </>
-            )}
-          </p>
-          <Button onClick={() => router.push("/admin/churches")}>
-            Retour aux églises
-          </Button>
-        </div>
+        <Alert
+          tone="success"
+          title="Église créée."
+          action={
+            <Link href="/admin/churches" className={`${buttonClasses("secondary", "md")} self-start`}>
+              Retour aux églises
+            </Link>
+          }
+        >
+          L&apos;église <strong>{name}</strong> a été créée.
+          {adminEmail && (
+            <>
+              {" "}L&apos;utilisateur <strong>{adminEmail}</strong> recevra le rôle
+              Admin à sa prochaine connexion.
+            </>
+          )}
+        </Alert>
       </div>
     );
   }
 
   return (
     <div className="max-w-md">
-      <p className="text-sm text-ink-muted mb-6">
-        Créez une nouvelle église et assignez un administrateur.
-      </p>
-
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Nom de l'église"
@@ -103,25 +97,18 @@ export default function OnboardClient() {
           value={adminEmail}
           onChange={(e) => setAdminEmail(e.target.value)}
           placeholder="admin@example.com"
+          hint="L'administrateur recevra automatiquement le rôle Admin pour cette église lors de sa prochaine connexion Google."
         />
-        <p className="text-xs text-ink-subtle">
-          L&apos;administrateur recevra automatiquement le rôle ADMIN pour cette
-          église lors de sa prochaine connexion Google.
-        </p>
 
-        {error && <p className="text-sm text-danger">{error}</p>}
+        {error && <Alert tone="danger">{error}</Alert>}
 
         <div className="flex gap-2">
           <Button type="submit" disabled={loading}>
-            {loading ? "Création..." : "Créer l'église"}
+            {loading ? "Création…" : "Créer l'église"}
           </Button>
-          <Button
-            variant="secondary"
-            type="button"
-            onClick={() => router.push("/admin/churches")}
-          >
+          <Link href="/admin/churches" className={buttonClasses("secondary", "md")}>
             Annuler
-          </Button>
+          </Link>
         </div>
       </form>
     </div>

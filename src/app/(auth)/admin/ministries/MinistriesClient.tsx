@@ -1,12 +1,7 @@
 "use client";
 
 import { SubmitEvent, useState } from "react";
-import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
-import Select from "@/components/ui/Select";
-import Modal from "@/components/ui/Modal";
-import DataTable from "@/components/ui/DataTable";
-import BulkActionBar from "@/components/ui/BulkActionBar";
+import { BulkActionBar, Button, ConfirmModal, DataTable, Input, Modal, Select, useToast } from "@/components/ui";
 import SystemRowActions from "../SystemRowActions";
 
 interface Ministry {
@@ -42,6 +37,10 @@ export default function MinistriesClient({
   const [bulkChurchId, setBulkChurchId] = useState("");
   const [bulkError, setBulkError] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
+  /** Suppression à confirmer : une ligne ou la sélection. */
+  const [pendingDelete, setPendingDelete] = useState<Ministry | "selection" | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const toast = useToast();
 
   function openCreate() {
     setEditing(null);
@@ -101,23 +100,27 @@ export default function MinistriesClient({
   }
 
   async function handleDelete(m: Ministry) {
-    if (!confirm(`Supprimer le ministère "${m.name}" ?`)) return;
+    setDeleting(true);
 
     try {
       const res = await fetch(`/api/ministries/${m.id}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Erreur lors de la suppression");
+        toast.error(data.error || "Erreur lors de la suppression");
         return;
       }
       setMinistries((prev) => prev.filter((x) => x.id !== m.id));
+      setPendingDelete(null);
+      toast.success("Ministère supprimé");
     } catch {
-      alert("Erreur lors de la suppression");
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setDeleting(false);
     }
   }
 
   async function handleBulkDelete() {
-    if (!confirm(`Supprimer ${selectedIds.size} ministère(s) ?`)) return;
+    setDeleting(true);
 
     try {
       const res = await fetch("/api/ministries", {
@@ -127,13 +130,17 @@ export default function MinistriesClient({
       });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Erreur lors de la suppression");
+        toast.error(data.error || "Erreur lors de la suppression");
         return;
       }
       setMinistries((prev) => prev.filter((m) => !selectedIds.has(m.id)));
+      toast.success(selectedIds.size > 1 ? "Ministères supprimés" : "Ministère supprimé");
       setSelectedIds(new Set());
+      setPendingDelete(null);
     } catch {
-      alert("Erreur lors de la suppression");
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -186,12 +193,11 @@ export default function MinistriesClient({
     <>
       {!readOnly && (
         <div className="mb-4">
-          <Button onClick={openCreate}>Nouveau ministère</Button>
+          <Button onClick={openCreate}>Créer un ministère</Button>
         </div>
       )}
 
-      <div className="bg-surface rounded-lg shadow-card">
-        <DataTable
+      <DataTable
           columns={[
             { header: "Nom", accessor: "name" },
             {
@@ -210,17 +216,16 @@ export default function MinistriesClient({
               isSuperAdmin={isSuperAdmin}
               systemLabel="Ministère système"
               onEdit={() => openEdit(m)}
-              onDelete={() => handleDelete(m)}
+              onDelete={() => setPendingDelete(m)}
             />
           )}
         />
-      </div>
 
       {!readOnly && (
         <BulkActionBar
           count={selectedIds.size}
           onEdit={openBulkEdit}
-          onDelete={handleBulkDelete}
+          onDelete={() => setPendingDelete("selection")}
           onClear={() => setSelectedIds(new Set())}
         />
       )}
@@ -228,7 +233,7 @@ export default function MinistriesClient({
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editing ? "Modifier le ministère" : "Nouveau ministère"}
+        title={editing ? "Modifier le ministère" : "Créer un ministère"}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
@@ -255,7 +260,7 @@ export default function MinistriesClient({
               Annuler
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Enregistrement..." : "Enregistrer"}
+              {loading ? "Enregistrement…" : "Enregistrer"}
             </Button>
           </div>
         </form>
@@ -264,7 +269,7 @@ export default function MinistriesClient({
       <Modal
         open={bulkModalOpen}
         onClose={() => setBulkModalOpen(false)}
-        title={`Modifier ${selectedIds.size} ministère(s)`}
+        title={selectedIds.size > 1 ? `Modifier ${selectedIds.size} ministères` : "Modifier 1 ministère"}
       >
         <p className="text-sm text-ink-muted mb-4">
           Seuls les champs remplis seront modifiés.
@@ -293,11 +298,31 @@ export default function MinistriesClient({
               Annuler
             </Button>
             <Button type="submit" disabled={bulkLoading}>
-              {bulkLoading ? "Enregistrement..." : "Appliquer"}
+              {bulkLoading ? "Enregistrement…" : "Appliquer"}
             </Button>
           </div>
         </form>
       </Modal>
+
+      <ConfirmModal
+        open={pendingDelete !== null}
+        title={
+          pendingDelete === "selection"
+            ? selectedIds.size > 1
+              ? `Supprimer ${selectedIds.size} ministères ?`
+              : "Supprimer 1 ministère ?"
+            : `Supprimer le ministère « ${pendingDelete?.name ?? ""} » ?`
+        }
+        message="La suppression est définitive."
+        confirmLabel={pendingDelete === "selection" && selectedIds.size > 1 ? "Supprimer les ministères" : "Supprimer le ministère"}
+        confirmingLabel="Suppression…"
+        confirming={deleting}
+        onConfirm={() => {
+          if (pendingDelete === "selection") void handleBulkDelete();
+          else if (pendingDelete) void handleDelete(pendingDelete);
+        }}
+        onCancel={() => setPendingDelete(null)}
+      />
     </>
   );
 }

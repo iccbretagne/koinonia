@@ -2,7 +2,8 @@ import { requireAuth, requireChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Button from "@/components/ui/Button";
+import { ExternalLink } from "lucide-react";
+import { PageHeader, buttonClasses } from "@/components/ui";
 import { getOrCreatePrimaryShareToken, buildPublicAudioUrl } from "@/modules/audio";
 import EventDetailClient from "./EventDetailClient";
 import EventFormsBlock from "@/components/forms/EventFormsBlock";
@@ -51,21 +52,19 @@ export default async function EventDetailPage({
   });
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-ink mb-2">{event.title}</h1>
-      <p className="text-sm text-ink-muted mb-6">
-        {event.type} &mdash;{" "}
-        {new Date(event.date).toLocaleDateString("fr-FR", {
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title={event.title}
+        description={`${event.type} — ${new Date(event.date).toLocaleDateString("fr-FR", {
           day: "2-digit",
           month: "long",
           year: "numeric",
-        })}{" "}
-        &mdash; {event.church.name}
-      </p>
+        })} — ${event.church.name}`}
+      />
 
       {audioService && (
-        <div className="mb-6 border border-line rounded-lg p-4">
-          <h2 className="text-sm font-semibold text-ink mb-1">Enregistrement audio</h2>
+        <section className="flex flex-col items-start gap-2 rounded-card border border-line bg-surface p-4">
+          <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Enregistrement audio</h2>
           {audioService.status === "PUBLISHED" ? (
             <a
               href={buildPublicAudioUrl(
@@ -73,25 +72,28 @@ export default async function EventDetailPage({
               )}
               target="_blank"
               rel="noopener noreferrer"
+              className={buttonClasses("secondary", "md")}
             >
-              <Button variant="secondary" size="sm">Écouter l&apos;enregistrement ↗</Button>
+              Écouter l&apos;enregistrement
+              <ExternalLink aria-hidden="true" className="size-4" strokeWidth={1.75} />
             </a>
           ) : (
-            <Link href={`/audio/production/${audioService.id}`}>
-              <Button variant="secondary" size="sm">
+            <>
+              <p className="text-[15px] leading-[22px] text-ink-muted">
                 En préparation — {audioService.segments.filter((s) => s.rendition).length}/
                 {audioService.segments.length} séquence
                 {audioService.segments.length > 1 ? "s" : ""} prête
                 {audioService.segments.length > 1 ? "s" : ""}
-              </Button>
-            </Link>
+              </p>
+              <Link href={`/audio/production/${audioService.id}`} className={buttonClasses("secondary", "md")}>
+                Suivre la production
+              </Link>
+            </>
           )}
-        </div>
+        </section>
       )}
 
-      <div className="mb-6">
-        <EventFormsBlock forms={forms} manage={formsManager} />
-      </div>
+      <EventFormsBlock forms={forms} manage={formsManager} />
 
       <EventDetailClient
         eventId={event.id}

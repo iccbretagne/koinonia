@@ -65,7 +65,7 @@ function WithdrawButton({
   readonly onWithdraw: (message: MessageListItem) => void;
 }) {
   return (
-    <Button size="sm" variant="ghost" onClick={() => onWithdraw(message)}>
+    <Button size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => onWithdraw(message)}>
       Retirer
     </Button>
   );

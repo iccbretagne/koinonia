@@ -1,3 +1,4 @@
+import { Lock } from "lucide-react";
 import Button from "@/components/ui/Button";
 
 interface Props {
@@ -7,25 +8,25 @@ interface Props {
   /** Infobulle du cadenas, ex. « Département système ». */
   readonly systemLabel: string;
   readonly onEdit: () => void;
+  /** Ouvre la confirmation de suppression (le `Dialog` porte le bouton `danger`). */
   readonly onDelete: () => void;
 }
 
 /** Actions d'une ligne de ministère ou de département, verrouillées pour une entrée système. */
 export default function SystemRowActions({ isSystem, isSuperAdmin, systemLabel, onEdit, onDelete }: Props) {
   const locked = !!isSystem && !isSuperAdmin;
+  const lockedReason = locked ? `${systemLabel} : modifiable par un Super Admin uniquement` : undefined;
   return (
     <div className="flex items-center gap-2 justify-end">
       {isSystem && (
         <span title={systemLabel} className="text-ink-subtle">
-          <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
+          <Lock aria-label={systemLabel} className="size-4" strokeWidth={1.75} />
         </span>
       )}
-      <Button variant="secondary" onClick={onEdit} disabled={locked}>
+      <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={onEdit} disabled={locked} title={lockedReason}>
         Modifier
       </Button>
-      <Button variant="danger" onClick={onDelete} disabled={locked}>
+      <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={onDelete} disabled={locked} title={lockedReason}>
         Supprimer
       </Button>
     </div>

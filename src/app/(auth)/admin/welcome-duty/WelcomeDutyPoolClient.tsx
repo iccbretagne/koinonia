@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Button from "@/components/ui/Button";
+import { Plus } from "lucide-react";
+import { Button, EmptyState, Modal, SearchInput, SkeletonList, useToast } from "@/components/ui";
+import { useConfirm } from "../use-confirm";
 
 interface PoolFamily {
   id: string;
@@ -25,6 +27,8 @@ export default function WelcomeDutyPoolClient() {
   const [search, setSearch] = useState("");
   const [adding, setAdding] = useState<number | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [confirmDialog, ask] = useConfirm();
+  const toast = useToast();
 
   const fetchPool = useCallback(async () => {
     setLoadingPool(true);
@@ -62,7 +66,7 @@ export default function WelcomeDutyPoolClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ familyId: f.id, familyName: f.name }),
       });
-      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
+      if (!res.ok) { const d = await res.json(); toast.error(d.error || "Erreur"); return; }
       await fetchPool();
     } finally {
       setAdding(null);
@@ -77,7 +81,7 @@ export default function WelcomeDutyPoolClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active: !f.active }),
       });
-      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
+      if (!res.ok) { const d = await res.json(); toast.error(d.error || "Erreur"); return; }
       await fetchPool();
     } finally {
       setRemoving(null);
@@ -85,11 +89,16 @@ export default function WelcomeDutyPoolClient() {
   }
 
   async function removeFamily(f: PoolFamily) {
-    if (!confirm(`Supprimer ${f.familyName} du pool ?`)) return;
+    const ok = await ask({
+      title: `Supprimer ${f.familyName} du pool ?`,
+      message: "La famille ne sera plus proposée dans la rotation ; ses services passés restent visibles.",
+      confirmLabel: "Supprimer la famille",
+    });
+    if (!ok) return;
     setRemoving(f.id);
     try {
       const res = await fetch(`/api/welcome-duty/families/${f.id}`, { method: "DELETE" });
-      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
+      if (!res.ok) { const d = await res.json(); toast.error(d.error || "Erreur"); return; }
       await fetchPool();
     } finally {
       setRemoving(null);
@@ -113,29 +122,29 @@ export default function WelcomeDutyPoolClient() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-ink-muted">
-          {active.length} famille{active.length !== 1 ? "s" : ""} dans le pool de rotation
+          {active.length} famille{active.length > 1 ? "s" : ""} dans le pool de rotation
         </p>
-        <Button onClick={openPicker}>+ Ajouter une famille</Button>
+        <Button onClick={openPicker}>
+          <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
+          Ajouter une famille
+        </Button>
       </div>
 
-      {loadingPool && <p className="text-sm text-ink-subtle">Chargement…</p>}
+      {loadingPool && <SkeletonList rows={4} />}
       {!loadingPool && active.length === 0 && (
-        <div className="text-center py-12 bg-surface rounded-lg border border-dashed border-line">
-          <p className="text-ink-subtle text-sm">Aucune famille dans le pool.</p>
-          <p className="text-ink-subtle text-xs mt-1">Ajoutez des familles pour commencer la rotation.</p>
-        </div>
+        <EmptyState title="Aucune famille dans le pool" description="Ajoutez des familles pour commencer la rotation." />
       )}
       {!loadingPool && active.length > 0 && (
-        <div className="bg-surface rounded-lg shadow-card overflow-hidden">
+        <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
           <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-surface-sunken border-b border-line">
               <tr>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-ink-muted uppercase">Famille</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-ink-muted uppercase">Dernier service</th>
-                <th className="px-4 py-3" />
+                <th className="px-4 py-3 text-left text-[13px] font-semibold text-ink-muted">Famille</th>
+                <th className="px-4 py-3 text-left text-[13px] font-semibold text-ink-muted">Dernier service</th>
+                <th className="px-4 py-3"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -144,13 +153,15 @@ export default function WelcomeDutyPoolClient() {
                   <td className="px-4 py-3 font-medium text-ink">{f.familyName}</td>
                   <td className="px-4 py-3 text-ink-muted">{lastServed(f)}</td>
                   <td className="px-4 py-3 text-right">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="min-h-11 sm:min-h-9"
                       onClick={() => removeFamily(f)}
                       disabled={removing === f.id}
-                      className="text-xs text-danger hover:text-danger disabled:opacity-50"
                     >
-                      Retirer
-                    </button>
+                      {removing === f.id ? "Retrait…" : "Retirer"}
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -162,30 +173,24 @@ export default function WelcomeDutyPoolClient() {
 
       {inactive.length > 0 && (
         <div className="mt-6">
-          <h3 className="text-sm font-semibold text-ink-muted mb-3">Familles désactivées</h3>
-          <div className="bg-surface rounded-lg shadow-card overflow-hidden">
+          <h3 className="mb-3 font-display text-[17px] font-semibold leading-6 text-ink">Familles désactivées</h3>
+          <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
             <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <tbody className="divide-y divide-line">
                 {inactive.map((f) => (
-                  <tr key={f.id} className="opacity-50 hover:opacity-80">
-                    <td className="px-4 py-3 font-medium text-ink">{f.familyName}</td>
+                  <tr key={f.id}>
+                    <td className="px-4 py-3 font-medium text-ink-muted">{f.familyName}</td>
                     <td className="px-4 py-3 text-ink-muted">{lastServed(f)}</td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => toggleActive(f)}
-                        disabled={removing === f.id}
-                        className="text-xs text-brand-text hover:text-brand-text disabled:opacity-50 mr-3"
-                      >
-                        Réactiver
-                      </button>
-                      <button
-                        onClick={() => removeFamily(f)}
-                        disabled={removing === f.id}
-                        className="text-xs text-danger hover:text-danger disabled:opacity-50"
-                      >
-                        Supprimer
-                      </button>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => toggleActive(f)} disabled={removing === f.id}>
+                          Réactiver
+                        </Button>
+                        <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => removeFamily(f)} disabled={removing === f.id}>
+                          Supprimer
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -197,48 +202,41 @@ export default function WelcomeDutyPoolClient() {
       )}
 
       {/* Picker modal */}
-      {showPicker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4">
-          <div className="bg-surface rounded-xl shadow-overlay w-full max-w-md flex flex-col max-h-[80vh]">
-            <div className="px-5 py-4 border-b border-line flex items-center justify-between">
-              <h3 className="text-base font-semibold text-ink">Ajouter une famille au pool</h3>
-              <button onClick={() => setShowPicker(false)} className="text-ink-subtle hover:text-ink-muted">✕</button>
-            </div>
-            <div className="px-5 py-3 border-b border-line">
-              <input
-                type="text"
-                placeholder="Rechercher…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-brand"
-              />
-            </div>
-            <div className="flex-1 overflow-y-auto px-2 py-2">
-              {loadingAvailable && <p className="text-center text-sm text-ink-subtle py-8">Chargement…</p>}
-              {!loadingAvailable && filtered.length === 0 && (
-                <p className="text-center text-sm text-ink-subtle py-8">Aucune famille disponible</p>
-              )}
-              {!loadingAvailable && filtered.length > 0 &&
-                filtered.map((f) => (
-                  <button
-                    key={f.id}
-                    onClick={() => addFamily(f)}
-                    disabled={adding === f.id}
-                    className="w-full text-left px-3 py-2 rounded-lg text-sm text-ink-muted hover:bg-brand-soft disabled:opacity-50 flex items-center justify-between"
-                  >
-                    <span>{f.name}</span>
-                    {adding === f.id && <span className="text-xs text-ink-subtle">Ajout…</span>}
-                  </button>
-                ))}
-            </div>
-            <div className="px-5 py-3 border-t border-line">
-              <Button variant="secondary" onClick={() => setShowPicker(false)} className="w-full">
-                Fermer
-              </Button>
-            </div>
+      <Modal open={showPicker} onClose={() => setShowPicker(false)} title="Ajouter une famille au pool">
+        <div className="flex flex-col gap-3">
+          <SearchInput
+            aria-label="Rechercher une famille"
+            placeholder="Rechercher…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <div className="max-h-[50vh] overflow-y-auto">
+            {loadingAvailable && <SkeletonList rows={4} />}
+            {!loadingAvailable && filtered.length === 0 && (
+              <EmptyState size="sm" title="Aucune famille disponible" />
+            )}
+            {!loadingAvailable && filtered.length > 0 &&
+              filtered.map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => addFamily(f)}
+                  disabled={adding === f.id}
+                  className="flex min-h-11 w-full items-center justify-between rounded-control px-3 py-2 text-left text-[15px] text-ink hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus disabled:opacity-50"
+                >
+                  <span>{f.name}</span>
+                  {adding === f.id && <span className="text-[13px] text-ink-muted">Ajout…</span>}
+                </button>
+              ))}
+          </div>
+          <div className="flex justify-end">
+            <Button variant="secondary" onClick={() => setShowPicker(false)}>
+              Fermer
+            </Button>
           </div>
         </div>
-      )}
+      </Modal>
+      {confirmDialog}
     </div>
   );
 }

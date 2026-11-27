@@ -197,6 +197,7 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
             placeholder="En savoir plus"
             maxLength={60}
             disabled={!linkUrl}
+            hint={linkUrl ? undefined : "Renseignez d'abord le lien."}
           />
         </div>
       </section>
@@ -214,6 +215,7 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
               <span className="flex items-center gap-2">
                 <input
                   type="radio"
+                  className="size-5 shrink-0 accent-brand"
                   name={`${id}-severity`}
                   checked={severity === s}
                   disabled={locked}
@@ -230,7 +232,7 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
       <section className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Public</h2>
         {isSuperAdmin && !editing && (
-          <label className="flex items-center gap-2 text-[15px] text-ink">
+          <label className="flex min-h-11 items-center gap-2 text-[15px] text-ink">
             <Checkbox checked={instance} onChange={(e) => setInstance(e.target.checked)} />
             Toute l&apos;instance (toutes les églises)
           </label>
@@ -240,9 +242,10 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
             { value: false, label: instance ? "Tout le monde" : "Toute l'église" },
             { value: true, label: "Choisir" },
           ].map((o) => (
-            <label key={String(o.value)} className="flex items-center gap-2 text-[15px] text-ink">
+            <label key={String(o.value)} className="flex min-h-11 items-center gap-2 text-[15px] text-ink">
               <input
                 type="radio"
+                className="size-5 shrink-0 accent-brand"
                 name={`${id}-audience`}
                 checked={choose === o.value}
                 disabled={locked}
@@ -311,12 +314,12 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Période</h2>
         {!locked && (
           <div className="flex flex-col gap-2">
-            <label className="flex items-center gap-2 text-[15px] text-ink">
-              <input type="radio" name={`${id}-start`} checked={startNow} onChange={() => setStartNow(true)} />
+            <label className="flex min-h-11 items-center gap-2 text-[15px] text-ink">
+              <input type="radio" className="size-5 shrink-0 accent-brand" name={`${id}-start`} checked={startNow} onChange={() => setStartNow(true)} />
               <span>Publier maintenant</span>
             </label>
-            <label className="flex items-center gap-2 text-[15px] text-ink">
-              <input type="radio" name={`${id}-start`} checked={!startNow} onChange={() => setStartNow(false)} />
+            <label className="flex min-h-11 items-center gap-2 text-[15px] text-ink">
+              <input type="radio" className="size-5 shrink-0 accent-brand" name={`${id}-start`} checked={!startNow} onChange={() => setStartNow(false)} />
               <span>Programmer</span>
             </label>
             {!startNow && (
@@ -334,7 +337,7 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
 
       {title && (
         <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium text-ink">Aperçu du bandeau</h2>
+          <h2 className="font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-subtle">Aperçu du bandeau</h2>
           <SystemMessageBanner preview messages={[{ id: "preview", title, body: body || "…", severity }]} />
         </section>
       )}
@@ -342,7 +345,11 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
       {error && <Alert tone="danger">{error}</Alert>}
 
       <div className="flex flex-wrap gap-2">
-        <Button onClick={submit} disabled={busy || !title.trim() || !body.trim()}>
+        <Button
+          onClick={submit}
+          disabled={busy || !title.trim() || !body.trim()}
+          title={!title.trim() || !body.trim() ? "Renseignez le titre et le texte" : undefined}
+        >
           {busy ? "Enregistrement…" : submitLabel(editing, startNow).button}
         </Button>
         <Button variant="ghost" onClick={() => router.push("/admin/messages")} disabled={busy}>

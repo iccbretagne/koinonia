@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Button from "@/components/ui/Button";
-import Modal from "@/components/ui/Modal";
+import { ArrowLeftRight, X } from "lucide-react";
+import { Alert, Button, EmptyState, IconButton, Modal, SearchInput, StatusChip, type StatusTone } from "@/components/ui";
 
 type MemberSummary = {
   id: string;
@@ -35,38 +35,39 @@ const REASON_LABEL: Record<Group["reason"], string> = {
   both: "Même nom + email",
 };
 
-const REASON_COLOR: Record<Group["reason"], string> = {
-  same_name: "bg-warning-soft text-warning",
-  same_email: "bg-warning-soft text-warning",
-  both: "bg-danger-soft text-danger",
+const REASON_TONE: Record<Group["reason"], StatusTone> = {
+  same_name: "warning",
+  same_email: "warning",
+  both: "danger",
 };
+
+/** « 1 planning », « 3 plannings ». */
+function count(n: number, singular: string, plural: string) {
+  return `${n} ${n > 1 ? plural : singular}`;
+}
 
 function MemberCard({ member, isSource, label }: { readonly member: MemberSummary; readonly isSource: boolean; readonly label: string }) {
   return (
-    <div className={`min-w-0 border rounded-lg p-4 ${isSource ? "border-danger/30 bg-danger-soft" : "border-success/30 bg-success-soft"}`}>
-      <div className="flex items-center justify-between mb-2">
-        <span className={`text-xs font-semibold px-2 py-0.5 rounded ${isSource ? "bg-danger-soft text-danger" : "bg-success-soft text-success"}`}>
-          {label}
-        </span>
-        {member.userLink && (
-          <span className="text-xs bg-brand text-on-brand px-2 py-0.5 rounded">Compte lié</span>
-        )}
+    <div className={`min-w-0 rounded-card border p-4 ${isSource ? "border-danger/30 bg-danger-soft" : "border-success/30 bg-success-soft"}`}>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <StatusChip tone={isSource ? "danger" : "success"}>{label}</StatusChip>
+        {member.userLink && <StatusChip tone="brand">Compte lié</StatusChip>}
       </div>
       <p className="truncate font-semibold text-ink" title={`${member.firstName} ${member.lastName}`}>{member.firstName} {member.lastName}</p>
       {member.email && <p className="truncate text-sm text-ink-muted" title={member.email}>{member.email}</p>}
       {member.phone && <p className="truncate text-sm text-ink-muted" title={member.phone}>{member.phone}</p>}
-      {member.userLink && <p className="text-xs text-ink-muted mt-1">Compte : {member.userLink.name ?? member.userLink.email}</p>}
-      <div className="mt-2 space-y-0.5">
+      {member.userLink && <p className="mt-1 text-[13px] leading-[18px] text-ink-muted">Compte : {member.userLink.name ?? member.userLink.email}</p>}
+      <div className="mt-2 flex flex-wrap gap-1">
         {member.departments.map((d) => (
-          <span key={d.id} className={`inline-block text-xs px-2 py-0.5 rounded mr-1 ${d.isPrimary ? "bg-brand text-on-brand" : "bg-surface-sunken text-ink-muted"}`}>
+          <StatusChip key={d.id} tone={d.isPrimary ? "brand" : "neutral"}>
             {d.ministryName} › {d.name}
-          </span>
+          </StatusChip>
         ))}
       </div>
-      <div className="mt-2 flex gap-3 text-xs text-ink-muted">
-        <span>{member.counts.plannings} planning(s)</span>
-        <span>{member.counts.disciples} discipolat(s)</span>
-        <span>{member.counts.disciplesMade} disciple(s)</span>
+      <div className="mt-2 flex flex-wrap gap-x-3 text-[13px] leading-[18px] text-ink-muted">
+        <span>{count(member.counts.plannings, "planning", "plannings")}</span>
+        <span>{count(member.counts.disciples, "discipolat", "discipolats")}</span>
+        <span>{count(member.counts.disciplesMade, "disciple", "disciples")}</span>
       </div>
     </div>
   );
@@ -90,23 +91,23 @@ function FieldPicker<T extends string | null>({
   const same = sourceValue === targetValue;
   if (same) {
     return (
-      <div className="text-sm text-ink-muted">
-        <span className="font-medium text-ink-muted">{label} :</span> {sourceValue ?? <em className="text-ink-subtle">vide</em>}
+      <div className="text-[15px] leading-[22px] text-ink">
+        <span className="font-semibold">{label} :</span> {sourceValue ?? <span className="text-ink-muted">vide</span>}
       </div>
     );
   }
   return (
-    <div className="border rounded p-2 bg-surface">
-      <p className="text-xs font-semibold text-ink-muted mb-1">{label}</p>
-      <label className="flex items-center gap-2 cursor-pointer mb-1">
-        <input type="radio" checked={choice.from === "source"} onChange={() => onChange({ value: sourceValue, from: "source" })} />
-        <span className="text-sm text-danger">{sourceValue ?? <em className="text-ink-subtle">vide</em>} <span className="text-xs text-ink-subtle">(à supprimer)</span></span>
+    <fieldset className="min-w-0 rounded-control border border-line bg-surface p-2">
+      <legend className="px-1 text-sm font-semibold text-ink">{label}</legend>
+      <label className="flex min-h-11 cursor-pointer items-center gap-3 px-1">
+        <input type="radio" className="size-5 accent-brand" checked={choice.from === "source"} onChange={() => onChange({ value: sourceValue, from: "source" })} />
+        <span className="text-[15px] text-ink">{sourceValue ?? <span className="text-ink-muted">vide</span>} <span className="text-[13px] leading-[18px] text-ink-muted">(fiche supprimée)</span></span>
       </label>
-      <label className="flex items-center gap-2 cursor-pointer">
-        <input type="radio" checked={choice.from === "target"} onChange={() => onChange({ value: targetValue, from: "target" })} />
-        <span className="text-sm text-success">{targetValue ?? <em className="text-ink-subtle">vide</em>} <span className="text-xs text-ink-subtle">(à conserver)</span></span>
+      <label className="flex min-h-11 cursor-pointer items-center gap-3 px-1">
+        <input type="radio" className="size-5 accent-brand" checked={choice.from === "target"} onChange={() => onChange({ value: targetValue, from: "target" })} />
+        <span className="text-[15px] text-ink">{targetValue ?? <span className="text-ink-muted">vide</span>} <span className="text-[13px] leading-[18px] text-ink-muted">(fiche conservée)</span></span>
       </label>
-    </div>
+    </fieldset>
   );
 }
 
@@ -196,17 +197,14 @@ function MergeModal({
           <MemberCard member={target} isSource={false} label="Sera conservé" />
         </div>
 
-        <button
-          type="button"
-          onClick={swap}
-          className="text-xs text-brand-text hover:underline"
-        >
-          ⇄ Inverser source et cible
-        </button>
+        <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={swap}>
+          <ArrowLeftRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
+          Inverser source et cible
+        </Button>
 
         {/* Résolution des champs */}
-        <div className="space-y-2">
-          <p className="text-sm font-semibold text-ink-muted">Champs à conserver</p>
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-semibold text-ink">Champs à conserver</p>
           <FieldPicker
             label="Prénom"
             sourceValue={source.firstName}
@@ -239,45 +237,46 @@ function MergeModal({
 
         {/* Conflit de compte lié */}
         {bothHaveLink && (
-          <div className="border rounded p-3 bg-warning-soft">
-            <p className="text-sm font-semibold text-warning mb-2">Les deux ont un compte Google lié — lequel conserver ?</p>
-            <label className="flex items-center gap-2 cursor-pointer mb-1">
+          <Alert tone="warning" title="Les deux ont un compte Google lié — lequel conserver ?">
+            <label className="flex min-h-11 cursor-pointer items-center gap-3">
               <input
                 type="radio"
+                className="size-5 accent-brand"
                 checked={keepUserId === source.userLink!.userId}
                 onChange={() => setKeepUserId(source.userLink!.userId)}
               />
-              <span className="text-sm text-danger">{source.userLink!.name ?? source.userLink!.email} <span className="text-xs text-ink-subtle">(source)</span></span>
+              <span className="text-[15px] text-ink">{source.userLink!.name ?? source.userLink!.email} <span className="text-[13px] leading-[18px] text-ink-muted">(source)</span></span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className="flex min-h-11 cursor-pointer items-center gap-3">
               <input
                 type="radio"
+                className="size-5 accent-brand"
                 checked={keepUserId === target.userLink!.userId}
                 onChange={() => setKeepUserId(target.userLink!.userId)}
               />
-              <span className="text-sm text-success">{target.userLink!.name ?? target.userLink!.email} <span className="text-xs text-ink-subtle">(cible)</span></span>
+              <span className="text-[15px] text-ink">{target.userLink!.name ?? target.userLink!.email} <span className="text-[13px] leading-[18px] text-ink-muted">(cible)</span></span>
             </label>
-          </div>
+          </Alert>
         )}
 
         {/* Départements fusionnés */}
-        <div className="bg-surface-sunken rounded p-3">
-          <p className="text-xs font-semibold text-ink-muted mb-1">Départements après fusion (union)</p>
+        <div className="flex flex-wrap gap-1 rounded-control border border-line p-3">
+          <p className="mb-1 w-full text-sm font-semibold text-ink">Départements après fusion (union)</p>
           {[
             ...new Map(
               [...source.departments, ...target.departments].map((d) => [d.id, d])
             ).values(),
           ].map((d) => (
-            <span key={d.id} className="inline-block text-xs px-2 py-0.5 rounded mr-1 mb-1 bg-surface-sunken text-ink-muted">
+            <StatusChip key={d.id}>
               {d.ministryName} › {d.name}
-            </span>
+            </StatusChip>
           ))}
         </div>
 
-        {error && <p className="text-sm text-danger">{error}</p>}
+        {error && <Alert tone="danger">{error}</Alert>}
       </div>
 
-      <div className="flex justify-end gap-3 mt-4 pt-3 border-t">
+      <div className="mt-4 flex justify-end gap-3 border-t border-line pt-3">
         <Button variant="secondary" onClick={onClose} disabled={loading}>
           Annuler
         </Button>
@@ -314,45 +313,40 @@ function MemberPicker({
   const selected = members.find((m) => m.id === selectedId);
 
   return (
-    <div className="min-w-0 border rounded-lg p-3">
-      <p className="text-xs font-semibold text-ink-muted mb-2">{label}</p>
-      <input
-        type="text"
+    <div className="min-w-0 rounded-card border border-line p-3">
+      <p className="mb-2 text-sm font-semibold text-ink">{label}</p>
+      <SearchInput
+        aria-label={`${label} : rechercher par nom ou email`}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Rechercher par nom ou email…"
-        className="w-full border rounded px-2 py-1.5 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-focus"
+        className="mb-2"
       />
       {selected && !search && (
-        <div className="flex items-center justify-between gap-2 bg-brand-soft rounded px-2 py-1.5 mb-2">
-          <span className="min-w-0 truncate text-sm font-medium text-brand-text" title={[`${selected.firstName} ${selected.lastName}`, selected.email && `(${selected.email})`].filter(Boolean).join(" ")}>
+        <div className="mb-2 flex items-center justify-between gap-2 rounded-control bg-brand-soft py-1 pl-3 pr-1">
+          <span className="min-w-0 truncate text-[15px] font-semibold text-brand-text" title={[`${selected.firstName} ${selected.lastName}`, selected.email && `(${selected.email})`].filter(Boolean).join(" ")}>
             {selected.firstName} {selected.lastName}
-            {selected.email && <span className="text-xs text-ink-muted ml-1">({selected.email})</span>}
+            {selected.email && <span className="ml-1 text-[13px] leading-[18px] text-ink-muted">({selected.email})</span>}
           </span>
-          <button
-            type="button"
-            onClick={() => onSelect("")}
-            className="shrink-0 text-xs text-ink-subtle hover:text-ink-muted ml-2"
-          >
-            ✕
-          </button>
+          <IconButton icon={X} aria-label={`Retirer ${selected.firstName} ${selected.lastName}`} onClick={() => onSelect("")} />
         </div>
       )}
       {(search || !selectedId) && (
-        <ul className="max-h-40 overflow-y-auto divide-y border rounded">
+        <ul className="max-h-48 divide-y divide-line overflow-y-auto rounded-control border border-line">
           {filtered.length === 0 && (
-            <li className="px-2 py-2 text-sm text-ink-subtle">Aucun résultat</li>
+            <li className="px-3 py-2 text-[13px] leading-[18px] text-ink-muted">Aucun résultat</li>
           )}
           {filtered.map((m) => (
             <li key={m.id}>
               <button
                 type="button"
                 onClick={() => { onSelect(m.id); setSearch(""); }}
-                className={`w-full text-left px-2 py-2 text-sm hover:bg-surface-sunken ${m.id === selectedId ? "bg-brand-soft font-medium" : ""}`}
+                aria-pressed={m.id === selectedId}
+                className={`min-h-11 w-full px-3 py-2 text-left text-[15px] text-ink hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${m.id === selectedId ? "bg-brand-soft font-semibold" : ""}`}
               >
                 {m.firstName} {m.lastName}
-                {m.email && <span className="text-xs text-ink-subtle ml-1">· {m.email}</span>}
-                {m.userLink && <span className="text-xs text-brand-text ml-1">· compte lié</span>}
+                {m.email && <span className="ml-1 text-[13px] leading-[18px] text-ink-muted">· {m.email}</span>}
+                {m.userLink && <span className="ml-1 text-[13px] leading-[18px] text-ink-muted">· compte lié</span>}
               </button>
             </li>
           ))}
@@ -394,33 +388,34 @@ export default function DuplicatesView({ groups, allMembers, churchId, canAssign
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       {/* Bulk STAR assign */}
       {canAssignStarRoles && (
-      <div className="border rounded-lg p-4 bg-brand-soft border-brand/20">
-        <div className="flex items-center justify-between flex-wrap gap-3">
+      <section className="rounded-card border border-line bg-surface p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="font-semibold text-ink">Assigner le rôle STAR aux membres liés sans accès</p>
-            <p className="text-sm text-ink-muted mt-0.5">
+            <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Assigner le rôle STAR aux membres liés sans accès</h2>
+            <p className="mt-0.5 text-[15px] leading-[22px] text-ink-muted">
               Attribue automatiquement le rôle STAR (accès planning en lecture) à tous les membres avec un compte Google lié mais aucun rôle.
             </p>
           </div>
-          <Button onClick={assignStarRoles} disabled={assigningStars}>
-            {assigningStars ? "En cours…" : "Assigner les rôles STAR"}
+          <Button variant="secondary" onClick={assignStarRoles} disabled={assigningStars}>
+            {assigningStars ? "Attribution…" : "Assigner les rôles STAR"}
           </Button>
         </div>
         {assignResult && (
-          <p className="text-sm text-success mt-2">
-            {assignResult.assigned} rôle(s) STAR assigné(s) sur {assignResult.total} compte(s) lié(s).
-          </p>
+          <Alert tone="success" className="mt-3">
+            {assignResult.assigned > 1 ? `${assignResult.assigned} rôles STAR assignés` : `${assignResult.assigned} rôle STAR assigné`}
+            {" "}sur {count(assignResult.total, "compte lié", "comptes liés")}.
+          </Alert>
         )}
-      </div>
+      </section>
       )}
 
       {/* Fusion manuelle */}
-      <div className="border rounded-lg p-4">
-        <p className="font-semibold text-ink mb-1">Fusion manuelle</p>
-        <p className="text-sm text-ink-muted mb-4">
+      <section className="rounded-card border border-line bg-surface p-4">
+        <h2 className="mb-1 font-display text-[17px] font-semibold leading-6 text-ink">Fusion manuelle</h2>
+        <p className="mb-4 text-[15px] leading-[22px] text-ink-muted">
           Sélectionnez deux membres à fusionner, même s&apos;ils ne sont pas détectés automatiquement comme doublons.
         </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -441,32 +436,28 @@ export default function DuplicatesView({ groups, allMembers, churchId, canAssign
         </div>
         {manualSourceId && manualTargetId && (
           <div className="mt-3 flex justify-end">
-            <Button onClick={openManualMerge}>
+            <Button variant="secondary" onClick={openManualMerge}>
               Fusionner ces deux membres
             </Button>
           </div>
         )}
-      </div>
+      </section>
 
       {/* Liste doublons */}
       {groups.length === 0 ? (
-        <div className="text-center py-12 text-ink-muted">
-          <p className="text-lg">Aucun doublon détecté</p>
-          <p className="text-sm mt-1">Tous les membres ont des noms et emails uniques.</p>
-        </div>
+        <EmptyState title="Aucun doublon détecté" description="Tous les membres ont des noms et emails uniques." />
       ) : (
-        <div className="space-y-4">
-          <p className="text-sm text-ink-muted">{groups.length} groupe(s) de doublons potentiels détecté(s)</p>
+        <section className="flex flex-col gap-4">
+          <h2 className="font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-subtle">
+            {groups.length > 1
+              ? `${groups.length} groupes de doublons potentiels détectés`
+              : "1 groupe de doublons potentiels détecté"}
+          </h2>
           {groups.map((group) => (
-            <div key={group.members.map((m) => m.id).join("-")} className="border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className={`text-xs font-semibold px-2 py-1 rounded ${REASON_COLOR[group.reason]}`}>
-                  {REASON_LABEL[group.reason]}
-                </span>
-                <Button
-                  onClick={() => setMergeGroup(group)}
-                  className="text-sm"
-                >
+            <div key={group.members.map((m) => m.id).join("-")} className="rounded-card border border-line bg-surface p-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <StatusChip tone={REASON_TONE[group.reason]}>{REASON_LABEL[group.reason]}</StatusChip>
+                <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setMergeGroup(group)}>
                   Fusionner
                 </Button>
               </div>
@@ -475,29 +466,29 @@ export default function DuplicatesView({ groups, allMembers, churchId, canAssign
                   rupture fixe qui déborderait à 390px pour un groupe à 3+ membres. */}
               <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
                 {group.members.map((m) => (
-                  <div key={m.id} className="min-w-0 border rounded p-3 bg-surface-sunken">
+                  <div key={m.id} className="min-w-0 rounded-control border border-line p-3">
                     <p className="truncate font-semibold text-ink" title={`${m.firstName} ${m.lastName}`}>{m.firstName} {m.lastName}</p>
                     {m.email && <p className="truncate text-sm text-ink-muted" title={m.email}>{m.email}</p>}
                     {m.phone && <p className="truncate text-sm text-ink-muted" title={m.phone}>{m.phone}</p>}
                     {m.userLink && (
-                      <p className="text-xs text-brand-text mt-1">Compte : {m.userLink.name ?? m.userLink.email}</p>
+                      <p className="mt-1 text-[13px] leading-[18px] text-ink-muted">Compte : {m.userLink.name ?? m.userLink.email}</p>
                     )}
                     <div className="mt-1 flex flex-wrap gap-1">
                       {m.departments.map((d) => (
-                        <span key={d.id} className={`text-xs px-1.5 py-0.5 rounded ${d.isPrimary ? "bg-brand text-on-brand" : "bg-surface-sunken text-ink-muted"}`}>
+                        <StatusChip key={d.id} tone={d.isPrimary ? "brand" : "neutral"}>
                           {d.name}
-                        </span>
+                        </StatusChip>
                       ))}
                     </div>
-                    <p className="text-xs text-ink-subtle mt-1">
-                      {m.counts.plannings} planning · {m.counts.disciples + m.counts.disciplesMade} discipolat
+                    <p className="mt-1 text-[13px] leading-[18px] text-ink-muted">
+                      {count(m.counts.plannings, "planning", "plannings")} · {count(m.counts.disciples + m.counts.disciplesMade, "discipolat", "discipolats")}
                     </p>
                   </div>
                 ))}
               </div>
             </div>
           ))}
-        </div>
+        </section>
       )}
 
       {mergeGroup && (

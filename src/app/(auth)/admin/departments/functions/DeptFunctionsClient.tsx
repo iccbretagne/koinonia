@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import CheckboxGroup from "@/components/ui/CheckboxGroup";
+import { Alert, CheckboxGroup, StatusChip, useToast } from "@/components/ui";
 import { DEPT_FN_LABEL, type DeptFunction } from "@/lib/department-functions";
 
 interface Department {
@@ -107,6 +107,7 @@ async function patchDept(id: string, fn: string | null) {
 export default function DeptFunctionsClient({ departments }: Props) {
   const [depts, setDepts] = useState(departments);
   const [saving, setSaving] = useState<string | null>(null);
+  const toast = useToast();
 
   function getAssigned(fn: FnKey) {
     return depts.filter((d) => d.function === fn).map((d) => d.id);
@@ -132,16 +133,16 @@ export default function DeptFunctionsClient({ departments }: Props) {
         })
       );
     } catch (e) {
-      alert((e as Error).message || "Erreur lors de la mise à jour");
+      toast.error((e as Error).message || "Erreur lors de la mise à jour");
     } finally {
       setSaving(null);
     }
   }
 
   return (
-    <div className="space-y-10">
+    <div>
       <div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {FUNCTIONS.map((fn) => {
             const assigned = getAssigned(fn.key);
             const isSaving = saving === fn.key;
@@ -153,13 +154,13 @@ export default function DeptFunctionsClient({ departments }: Props) {
             return (
               <div
                 key={fn.key}
-                className="bg-surface rounded-lg shadow-card p-5 border border-transparent hover:border-brand/20 transition-colors"
+                className="rounded-card border border-line bg-surface p-5 shadow-card"
               >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xl">{fn.icon}</span>
-                  <h3 className="font-semibold text-ink">{fn.label}</h3>
+                <div className="mb-1 flex items-center gap-2">
+                  <span aria-hidden="true" className="text-xl">{fn.icon}</span>
+                  <h3 className="font-display text-[17px] font-semibold leading-6 text-ink">{fn.label}</h3>
                 </div>
-                <p className="text-xs text-ink-muted mb-4">{fn.description}</p>
+                <p className="mb-4 text-[13px] leading-[18px] text-ink-muted">{fn.description}</p>
 
                 <CheckboxGroup
                   label="Départements assignés"
@@ -171,16 +172,16 @@ export default function DeptFunctionsClient({ departments }: Props) {
                       value: d.id,
                       label: (
                         <span className="block">
-                          <span className="block font-medium text-ink">
+                          <span className="block font-semibold text-ink">
                             {d.name}
                           </span>
-                          <span className="block text-xs text-ink-subtle">
+                          <span className="block text-[13px] text-ink-muted">
                             {d.ministryName}
                           </span>
                           {carriesOtherFunction && (
-                            <span className="mt-0.5 inline-block text-xs text-warning">
-                              déjà {DEPT_FN_LABEL[d.function as DeptFunction] ?? d.function}
-                            </span>
+                            <StatusChip tone="warning" className="mt-0.5">
+                              Déjà {DEPT_FN_LABEL[d.function as DeptFunction] ?? d.function}
+                            </StatusChip>
                           )}
                         </span>
                       ),
@@ -190,17 +191,17 @@ export default function DeptFunctionsClient({ departments }: Props) {
                 />
 
                 {assignedNames.length > 0 ? (
-                  <p className="mt-2 text-xs text-brand-text font-medium">
-                    ✓ {assignedNames.join(", ")}
+                  <p className="mt-2 text-[13px] font-semibold text-ink">
+                    Assigné à : {assignedNames.join(", ")}
                   </p>
                 ) : (
-                  <p className="mt-2 text-xs text-warning">
-                    ⚠ Aucun département configuré — les demandes ne seront pas assignées automatiquement
-                  </p>
+                  <Alert tone="warning" className="mt-2">
+                    Aucun département configuré — les demandes ne seront pas assignées automatiquement.
+                  </Alert>
                 )}
 
                 {isSaving && (
-                  <p className="mt-1 text-xs text-ink-subtle">Enregistrement...</p>
+                  <p role="status" className="mt-1 text-[13px] text-ink-muted">Enregistrement…</p>
                 )}
               </div>
             );

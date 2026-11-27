@@ -3,6 +3,7 @@
 import { useId, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { ROLE_LABELS as ROLE_LABELS_BASE } from "@/lib/roles";
+import { Button, EmptyState, Input, Modal, Select, StatusChip, useToast } from "@/components/ui";
 import RejectedLinkRequests from "../RejectedLinkRequests";
 
 // DEPUTY n'est pas un rôle d'église (Role) — c'est un attribut (isDeputy) d'un DEPARTMENT_HEAD —
@@ -58,7 +59,7 @@ function Avatar({ user, size = 32 }: { readonly user: { name: string; image: str
   return (
     <div
       style={{ width: size, height: size }}
-      className="rounded-full bg-surface-sunken flex items-center justify-center text-xs font-semibold text-ink-muted shrink-0"
+      className="rounded-full bg-brand-soft flex items-center justify-center text-xs font-semibold text-brand-text shrink-0"
     >
       {user.name.charAt(0).toUpperCase()}
     </div>
@@ -75,6 +76,7 @@ export default function RequestsPanel({ pendingRequests, rejectedRequests, minis
   const [reconsidering, setReconsidering] = useState<string | null>(null);
   const [approveModal, setApproveModal] = useState<PendingRequest | null>(null);
   const [approveModalDeptId, setApproveModalDeptId] = useState("");
+  const toast = useToast();
 
   function openApproveModal(req: PendingRequest) {
     const allDepts = ministries.flatMap((m) => m.departments);
@@ -99,11 +101,12 @@ export default function RequestsPanel({ pendingRequests, rejectedRequests, minis
       });
       if (!res.ok) {
         const json = await res.json();
-        alert(json.error ?? "Erreur lors de l'approbation");
+        toast.error(json.error ?? "Erreur lors de l'approbation");
         return;
       }
       setLocalRequests((prev) => prev.filter((r) => r.id !== approveModal.id));
       setApproveModal(null);
+      toast.success("Demande approuvée");
     } finally {
       setApprovingId(null);
     }
@@ -136,7 +139,7 @@ export default function RequestsPanel({ pendingRequests, rejectedRequests, minis
         },
       ]);
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Une erreur est survenue");
+      toast.error(e instanceof Error ? e.message : "Une erreur est survenue");
     } finally {
       setReconsidering(null);
     }
@@ -153,10 +156,11 @@ export default function RequestsPanel({ pendingRequests, rejectedRequests, minis
       });
       if (!res.ok) {
         const json = await res.json();
-        alert(json.error ?? "Erreur lors du refus");
+        toast.error(json.error ?? "Erreur lors du refus");
         return;
       }
       setLocalRequests((prev) => prev.filter((r) => r.id !== req.id));
+      toast.success("Demande refusée");
       setRejectingId(null);
       setRejectReason("");
     } finally {
@@ -165,9 +169,9 @@ export default function RequestsPanel({ pendingRequests, rejectedRequests, minis
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       {localRequests.length === 0 && rejected.length === 0 && (
-        <p className="text-sm text-ink-subtle italic text-center py-8">Aucune demande en attente.</p>
+        <EmptyState size="sm" title="Aucune demande en attente" />
       )}
 
       {localRequests.map((req) => {
@@ -177,99 +181,90 @@ export default function RequestsPanel({ pendingRequests, rejectedRequests, minis
 
         let starCard: ReactNode;
         if (req.member) {
-          starCard = <span className="text-success font-medium">{displayName} <span className="text-xs text-success">(existante)</span></span>;
+          starCard = <span className="inline-flex flex-wrap items-center gap-2 font-semibold text-ink">{displayName} <StatusChip tone="success">Fiche existante</StatusChip></span>;
         } else if (displayName) {
-          starCard = <span className="text-ink-muted font-medium">{displayName} <span className="text-xs text-ink-subtle">(nouvelle)</span></span>;
+          starCard = <span className="inline-flex flex-wrap items-center gap-2 font-semibold text-ink">{displayName} <StatusChip>Nouvelle fiche</StatusChip></span>;
         } else {
-          starCard = <span className="text-ink-subtle italic text-xs">Sans fiche STAR</span>;
+          starCard = <span className="text-ink-muted">Sans fiche STAR</span>;
         }
 
         return (
-          <div key={req.id} className="bg-surface rounded-xl border border-line shadow-card p-5 space-y-3">
+          <div key={req.id} className="flex flex-col gap-3 rounded-card border border-line bg-surface p-5 shadow-card">
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <Avatar user={req.user} size={36} />
-                <div>
-                  <p className="text-sm font-semibold text-ink">{req.user.name}</p>
-                  <p className="text-xs text-ink-subtle">{req.user.email}</p>
+                <div className="min-w-0">
+                  <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{req.user.name}</p>
+                  <p className="truncate text-[13px] leading-[18px] text-ink-muted">{req.user.email}</p>
                 </div>
               </div>
-              <span className="text-xs text-ink-subtle shrink-0">
+              <span className="shrink-0 text-[13px] leading-[18px] text-ink-muted">
                 {new Date(req.createdAt).toLocaleDateString("fr-FR")}
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <dl className="grid grid-cols-1 gap-3 text-[15px] leading-[22px] sm:grid-cols-2">
               <div>
-                <p className="text-xs text-ink-subtle mb-0.5">Fiche STAR</p>
-                {starCard}
+                <dt className="mb-0.5 text-[13px] leading-[18px] text-ink-muted">Fiche STAR</dt>
+                <dd>{starCard}</dd>
               </div>
               {(req.department || req.ministry) && (
                 <div>
-                  <p className="text-xs text-ink-subtle mb-0.5">Département demandé</p>
-                  <p className="text-ink-muted font-medium text-sm">
+                  <dt className="mb-0.5 text-[13px] leading-[18px] text-ink-muted">Département demandé</dt>
+                  <dd className="font-semibold text-ink">
                     {req.department
                       ? `${req.department.ministryName} / ${req.department.name}`
                       : req.ministry?.name}
-                  </p>
+                  </dd>
                 </div>
               )}
               {req.requestedRole && (
-                <div className="col-span-2">
-                  <p className="text-xs text-ink-subtle mb-0.5">Rôle souhaité</p>
-                  <span className="inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-brand-soft text-brand-text border border-brand/20">
-                    {REQUESTED_ROLE_LABELS[req.requestedRole] ?? req.requestedRole}
-                  </span>
+                <div className="sm:col-span-2">
+                  <dt className="mb-0.5 text-[13px] leading-[18px] text-ink-muted">Rôle souhaité</dt>
+                  <dd>
+                    <StatusChip tone="brand">{REQUESTED_ROLE_LABELS[req.requestedRole] ?? req.requestedRole}</StatusChip>
+                  </dd>
                 </div>
               )}
               {req.notes && (
-                <div className="col-span-2">
-                  <p className="text-xs text-ink-subtle mb-0.5">Remarques</p>
-                  <p className="text-sm text-ink-muted italic">&ldquo;{req.notes}&rdquo;</p>
+                <div className="sm:col-span-2">
+                  <dt className="mb-0.5 text-[13px] leading-[18px] text-ink-muted">Remarques</dt>
+                  <dd className="text-ink-muted">&ldquo;{req.notes}&rdquo;</dd>
                 </div>
               )}
-            </div>
+            </dl>
 
             {rejectingId === req.id ? (
-              <div className="space-y-2">
-                <input
-                  type="text"
+              <div className="flex flex-col gap-2">
+                <Input
+                  label="Motif du refus"
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
-                  placeholder="Motif du refus (requis)"
-                  className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-danger"
+                  hint="Obligatoire : il est communiqué à la personne."
+                  required
                 />
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => { setRejectingId(null); setRejectReason(""); }}
-                    className="flex-1 px-3 py-2 text-sm border border-line rounded-lg text-ink-muted hover:bg-surface-sunken"
-                  >
+                <div className="flex flex-wrap justify-end gap-2">
+                  <Button type="button" variant="secondary" onClick={() => { setRejectingId(null); setRejectReason(""); }}>
                     Annuler
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    type="button"
                     onClick={() => rejectRequest(req)}
                     disabled={!rejectReason.trim() || approvingId === req.id}
-                    className="flex-1 px-3 py-2 text-sm font-medium bg-danger text-on-danger rounded-lg hover:bg-danger/90 disabled:opacity-50"
+                    title={!rejectReason.trim() ? "Indiquez d'abord le motif du refus" : undefined}
                   >
-                    {approvingId === req.id ? "…" : "Confirmer le refus"}
-                  </button>
+                    {approvingId === req.id ? "Refus…" : "Refuser la demande"}
+                  </Button>
                 </div>
               </div>
             ) : (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setRejectingId(req.id); setRejectReason(""); }}
-                  className="flex-1 px-3 py-2 text-sm border border-line rounded-lg text-ink-muted hover:bg-surface-sunken transition-colors"
-                >
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button type="button" variant="ghost" onClick={() => { setRejectingId(req.id); setRejectReason(""); }}>
                   Refuser
-                </button>
-                <button
-                  onClick={() => openApproveModal(req)}
-                  disabled={approvingId === req.id}
-                  className="flex-1 px-3 py-2 text-sm font-medium bg-brand text-on-brand rounded-lg hover:bg-brand-hover disabled:opacity-50 transition-colors"
-                >
-                  {approvingId === req.id ? "…" : "Approuver"}
-                </button>
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => openApproveModal(req)} disabled={approvingId === req.id}>
+                  {approvingId === req.id ? "Approbation…" : "Approuver"}
+                </Button>
               </div>
             )}
           </div>
@@ -294,47 +289,33 @@ export default function RequestsPanel({ pendingRequests, rejectedRequests, minis
           ? `${approveModal.member.firstName} ${approveModal.member.lastName}`
           : `${approveModal.firstName ?? ""} ${approveModal.lastName ?? ""}`.trim();
         return (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-scrim">
-            <div className="bg-surface rounded-t-xl sm:rounded-xl shadow-overlay w-full sm:max-w-md p-6 space-y-4">
-              <h2 className="text-base font-semibold text-ink">Approuver la demande</h2>
-              <p className="text-sm text-ink-muted">
-                Lier le compte de <strong>{approveModal.user.name}</strong>{" "}
-                {displayName && <>à <strong>{displayName}</strong></>}.
+          <Modal open onClose={() => setApproveModal(null)} title="Approuver la demande">
+            <div className="flex flex-col gap-4">
+              <p className="text-[15px] leading-[22px] text-ink-muted">
+                Lier le compte de <strong className="text-ink">{approveModal.user.name}</strong>{" "}
+                {displayName && <>à <strong className="text-ink">{displayName}</strong></>}.
               </p>
 
               {needsDept && allDepts.length > 0 && (
-                <div>
-                  <label htmlFor={`${uid}-approve-dept`} className="block text-sm font-medium text-ink-muted mb-1">Département</label>
-                  <select
-                    id={`${uid}-approve-dept`}
-                    value={approveModalDeptId}
-                    onChange={(e) => setApproveModalDeptId(e.target.value)}
-                    className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
-                  >
-                    {allDepts.map((d) => (
-                      <option key={d.id} value={d.id}>{d.ministryName} / {d.name}</option>
-                    ))}
-                  </select>
-                </div>
+                <Select
+                  id={`${uid}-approve-dept`}
+                  label="Département"
+                  value={approveModalDeptId}
+                  onChange={(e) => setApproveModalDeptId(e.target.value)}
+                  options={allDepts.map((d) => ({ value: d.id, label: `${d.ministryName} / ${d.name}` }))}
+                />
               )}
 
               <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setApproveModal(null)}
-                  className="px-4 py-2 text-sm rounded-lg border border-line text-ink-muted hover:bg-surface-sunken"
-                >
+                <Button type="button" variant="secondary" onClick={() => setApproveModal(null)}>
                   Annuler
-                </button>
-                <button
-                  onClick={confirmApprove}
-                  disabled={approvingId === approveModal.id}
-                  className="px-4 py-2 text-sm rounded-lg bg-brand text-on-brand hover:bg-brand-hover disabled:opacity-50"
-                >
-                  {approvingId === approveModal.id ? "…" : "Confirmer"}
-                </button>
+                </Button>
+                <Button type="button" onClick={confirmApprove} disabled={approvingId === approveModal.id}>
+                  {approvingId === approveModal.id ? "Approbation…" : "Approuver la demande"}
+                </Button>
               </div>
             </div>
-          </div>
+          </Modal>
         );
       })()}
     </div>

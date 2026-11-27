@@ -8,7 +8,7 @@ Remplace l'ajout au groupe WhatsApp, qui tenait lieu à la fois de nomination, d
 
 ## Le déclencheur
 
-Quelqu'un commence à servir dans un département. Le responsable ouvre **Personnes → STAR → Nouveau STAR**, et renseigne :
+Quelqu'un commence à servir dans un département. Le responsable ouvre **Personnes → STAR → Créer un STAR**, et renseigne :
 
 - le **prénom** et le **nom** ;
 - l'**email** — fortement recommandé, car c'est lui qui fiabilise le rattachement du compte ;

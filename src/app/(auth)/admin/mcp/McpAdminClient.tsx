@@ -38,7 +38,7 @@ export default function McpAdminClient({ enabled, usage }: { readonly enabled: b
     <>
       <section className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="min-w-0 flex-1 font-display text-[17px] font-semibold text-ink">Instance</h2>
+          <h2 className="min-w-0 flex-1 font-display text-[17px] font-semibold leading-6 text-ink">Instance</h2>
           <StatusChip tone={enabled ? "success" : "neutral"}>{enabled ? "Activée" : "Coupée"}</StatusChip>
         </div>
         <p className="text-[15px] text-ink-muted">
@@ -52,17 +52,17 @@ export default function McpAdminClient({ enabled, usage }: { readonly enabled: b
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="font-display text-[17px] font-semibold text-ink">Activité par église</h2>
+        <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Activité par église</h2>
         {usage.length === 0 ? (
           <EmptyState title="Aucune activité" description="Les connexions et appels apparaîtront ici." size="sm" />
         ) : (
           <div className="overflow-x-auto rounded-card border border-line bg-surface">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-ink-muted border-b border-line">
-                  <th className="px-4 py-2 font-medium">Église</th>
-                  <th className="px-4 py-2 font-medium text-right">Connexions actives</th>
-                  <th className="px-4 py-2 font-medium text-right">Appels (30 j)</th>
+                <tr className="border-b border-line bg-surface-sunken text-left text-[13px] text-ink-muted">
+                  <th className="px-4 py-2 font-semibold">Église</th>
+                  <th className="px-4 py-2 text-right font-semibold">Connexions actives</th>
+                  <th className="px-4 py-2 text-right font-semibold">Appels (30 j)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">

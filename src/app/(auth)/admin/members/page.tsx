@@ -4,7 +4,7 @@ import { registry, rolePermissions } from "@/lib/registry";
 import { listObservationMemberIds } from "@/modules/serving";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { buttonClasses } from "@/components/ui/button-classes";
+import { CountBadge, PageHeader, buttonClasses } from "@/components/ui";
 import MembersClient from "./MembersClient";
 import LinkRequestsClient from "./LinkRequestsClient";
 
@@ -110,25 +110,23 @@ export default async function MembersPage() {
   const observation = registry.has("serving") ? await listObservationMemberIds(churchId) : [];
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-ink">STAR</h1>
-        {canManage && (
-          <Link href="/admin/members/duplicates" className={buttonClasses("secondary", "sm")}>
-            Doublons potentiels →
-          </Link>
-        )}
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="STAR"
+        actions={
+          canManage ? (
+            <Link href="/admin/members/duplicates" className={buttonClasses("secondary", "md")}>
+              Voir les doublons potentiels
+            </Link>
+          ) : undefined
+        }
+      />
 
       {(pendingRequests.length > 0 || rejectedRequests.length > 0) && (
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-ink mb-3 flex items-center gap-2">
+        <section className="flex flex-col gap-3">
+          <h2 className="flex items-center gap-2 font-display text-[17px] font-semibold leading-6 text-ink">
             Demandes d&apos;accès
-            {pendingRequests.length > 0 && (
-              <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-on-brand bg-brand rounded-full">
-                {pendingRequests.length}
-              </span>
-            )}
+            {pendingRequests.length > 0 && <CountBadge count={pendingRequests.length} />}
           </h2>
           <LinkRequestsClient
             initialRequests={pendingRequests.map((r) => ({
@@ -159,7 +157,7 @@ export default async function MembersPage() {
               reviewedAt: r.reviewedAt?.toISOString() ?? null,
             }))}
           />
-        </div>
+        </section>
       )}
 
       <MembersClient

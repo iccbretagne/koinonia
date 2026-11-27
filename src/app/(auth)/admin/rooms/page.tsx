@@ -1,6 +1,7 @@
 import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import RoomsAdminClient from "./RoomsAdminClient";
+import { PageHeader } from "@/components/ui";
 
 export default async function AdminRoomsPage() {
   const session = await requireAuth();
@@ -24,8 +25,8 @@ export default async function AdminRoomsPage() {
   });
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-ink mb-6">Salles</h1>
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Salles" />
       <RoomsAdminClient
         churchId={churchId}
         initialRooms={rooms.map((r) => ({

@@ -59,7 +59,7 @@ export default function ChurchLogoSlot({
   const label = CHURCH_LOGO_LABEL[variant];
   const src = version ? churchLogoSrc(churchId, variant, version) : fallbackSrc;
   const endpoint = `/api/churches/${encodeURIComponent(churchId)}/logo`;
-  let uploadLabel = version ? "Remplacer" : "Déposer un logo";
+  let uploadLabel = version ? "Remplacer le logo" : "Déposer un logo";
   if (busy) uploadLabel = "Envoi…";
 
   async function upload(file: File) {
@@ -111,7 +111,7 @@ export default function ChurchLogoSlot({
   return (
     <div className="space-y-2">
       <div>
-        <p className="text-sm font-medium text-ink">Logo pour {label}</p>
+        <p className="text-sm font-semibold text-ink">Logo pour {label}</p>
         <p className="text-[13px] leading-[18px] text-ink-muted">{HINT[variant]}</p>
       </div>
       <Preview
@@ -120,12 +120,12 @@ export default function ChurchLogoSlot({
         alt={src ? `Aperçu sur ${label}` : `Aperçu sur ${label} : plumes ICC, aucun logo`}
       />
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="secondary" size="sm" disabled={busy} onClick={() => fileRef.current?.click()}>
+        <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => fileRef.current?.click()}>
           {uploadLabel}
         </Button>
         {version && (
-          <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => setConfirmRemove(true)}>
-            Retirer
+          <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => setConfirmRemove(true)}>
+            Retirer le logo
           </Button>
         )}
       </div>

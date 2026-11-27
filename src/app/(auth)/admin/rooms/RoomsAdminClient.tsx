@@ -2,11 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
-import Select from "@/components/ui/Select";
-import Modal from "@/components/ui/Modal";
-import DataTable from "@/components/ui/DataTable";
+import { Plus, X } from "lucide-react";
+import { Alert, Button, DataTable, IconButton, Input, Modal, Select, StatusChip, useToast } from "@/components/ui";
 
 interface Room {
   id: string;
@@ -46,6 +43,7 @@ export default function RoomsAdminClient({
   const [newAccessChurch, setNewAccessChurch] = useState("");
 
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const toast = useToast();
 
   const displayedRooms = useMemo(() => {
     let list = rooms;
@@ -119,6 +117,8 @@ export default function RoomsAdminClient({
     });
     if (res.ok) {
       setRooms((prev) => prev.map((r) => (r.id === room.id ? { ...r, isActive: !r.isActive } : r)));
+    } else {
+      toast.error((await res.json().catch(() => ({}))).error ?? "Impossible de modifier la salle");
     }
   }
 
@@ -139,6 +139,8 @@ export default function RoomsAdminClient({
       );
       setAccessRoom((prev) => (prev ? { ...prev, sharedWith: [...prev.sharedWith, { id: access.id, church }] } : prev));
       setNewAccessChurch("");
+    } else {
+      toast.error((await res.json().catch(() => ({}))).error ?? "Impossible d'ajouter l'église");
     }
   }
 
@@ -157,12 +159,14 @@ export default function RoomsAdminClient({
       setAccessRoom((prev) =>
         prev?.id === roomId ? { ...prev, sharedWith: prev.sharedWith.filter((a) => a.church.id !== targetChurchId) } : prev
       );
+    } else {
+      toast.error((await res.json().catch(() => ({}))).error ?? "Impossible de retirer l'église");
     }
   }
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+      <div className="mb-4 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div className="w-full sm:w-56">
           <Select
             label="Filtrer par statut"
@@ -175,7 +179,10 @@ export default function RoomsAdminClient({
             ]}
           />
         </div>
-        <Button onClick={openCreate}>Nouvelle salle</Button>
+        <Button onClick={openCreate}>
+          <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
+          Créer une salle
+        </Button>
       </div>
 
       <DataTable<Room>
@@ -192,79 +199,74 @@ export default function RoomsAdminClient({
           {
             header: "Statut",
             accessor: (r) => (
-              <span
-                className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                  r.isActive ? "bg-success-soft text-success" : "bg-surface-sunken text-ink-muted"
-                }`}
-              >
+              <StatusChip tone={r.isActive ? "success" : "neutral"}>
                 {r.isActive ? "Active" : "Désactivée"}
-              </span>
+              </StatusChip>
             ),
           },
         ]}
         data={displayedRooms}
-        emptyMessage="Aucune salle."
+        emptyMessage="Aucune salle"
         actions={(room) => (
-          <div className="flex gap-2 justify-end">
-            <Button size="sm" variant="secondary" onClick={() => setAccessRoom(room)}>
-              Partage
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => setAccessRoom(room)}>
+              Partager
             </Button>
-            <Button size="sm" variant="edit" onClick={() => openEdit(room)}>
+            <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => openEdit(room)}>
               Modifier
             </Button>
-            <Button size="sm" variant={room.isActive ? "danger" : "secondary"} onClick={() => toggleActive(room)}>
+            <Button size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => toggleActive(room)}>
               {room.isActive ? "Désactiver" : "Activer"}
             </Button>
           </div>
         )}
       />
 
-      <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? "Modifier la salle" : "Nouvelle salle"}>
-        <div className="space-y-4">
+      <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? "Modifier la salle" : "Créer une salle"}>
+        <div className="flex flex-col gap-4">
           <Input label="Nom" value={name} onChange={(e) => setName(e.target.value)} />
           <Input
-            label="Capacité (optionnel)"
+            label="Capacité (facultatif)"
             type="number"
             min="1"
             value={capacity}
             onChange={(e) => setCapacity(e.target.value)}
           />
-          <Input label="Lieu (optionnel)" value={location} onChange={(e) => setLocation(e.target.value)} />
-          {error && <p className="text-xs text-danger">{error}</p>}
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setFormOpen(false)} className="text-sm text-ink-muted hover:text-ink-muted px-3 py-1.5">
+          <Input label="Lieu (facultatif)" value={location} onChange={(e) => setLocation(e.target.value)} />
+          {error && <Alert tone="danger">{error}</Alert>}
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="secondary" onClick={() => setFormOpen(false)}>
               Annuler
-            </button>
-            <Button onClick={save} disabled={saving || !name}>
+            </Button>
+            <Button onClick={save} disabled={saving || !name} title={!name ? "Renseignez le nom de la salle" : undefined}>
               {saving ? "Enregistrement…" : "Enregistrer"}
             </Button>
           </div>
         </div>
       </Modal>
 
-      <Modal open={!!accessRoom} onClose={() => setAccessRoom(null)} title={`Partage — ${accessRoom?.name ?? ""}`}>
+      <Modal open={!!accessRoom} onClose={() => setAccessRoom(null)} title={`Partager — ${accessRoom?.name ?? ""}`}>
         {accessRoom && (
-          <div className="space-y-4">
+          <div className="flex flex-col gap-4">
             <p className="text-sm text-ink-muted">
               Églises autorisées à réserver cette salle, en plus de la vôtre.
             </p>
-            <ul className="space-y-2">
+            <ul className="flex flex-col gap-2">
               {accessRoom.sharedWith.length === 0 && (
-                <li className="text-sm text-ink-subtle">Aucune église partenaire pour l&apos;instant.</li>
+                <li className="text-sm text-ink-muted">Aucune église partenaire pour l&apos;instant.</li>
               )}
               {accessRoom.sharedWith.map((a) => (
-                <li key={a.id} className="flex items-center justify-between border border-line rounded-lg px-3 py-2">
-                  <span className="text-sm">{a.church.name}</span>
-                  <button
+                <li key={a.id} className="flex items-center justify-between rounded-control border border-line py-1 pl-3 pr-1">
+                  <span className="text-sm text-ink">{a.church.name}</span>
+                  <IconButton
+                    icon={X}
+                    aria-label={`Retirer ${a.church.name}`}
                     onClick={() => removeAccess(accessRoom.id, a.church.id)}
-                    className="text-xs text-danger hover:underline"
-                  >
-                    Retirer
-                  </button>
+                  />
                 </li>
               ))}
             </ul>
-            <div className="flex gap-2 items-end">
+            <div className="flex flex-wrap items-end gap-2">
               <div className="flex-1">
                 <Select
                   label="Ajouter une église"
@@ -273,11 +275,11 @@ export default function RoomsAdminClient({
                   options={otherChurches
                     .filter((c) => !accessRoom.sharedWith.some((a) => a.church.id === c.id))
                     .map((c) => ({ value: c.id, label: c.name }))}
-                  placeholder="Choisir…"
+                  placeholder="Choisir une église"
                 />
               </div>
-              <Button size="sm" onClick={addAccess} disabled={!newAccessChurch}>
-                Ajouter
+              <Button variant="secondary" onClick={addAccess} disabled={!newAccessChurch} title={!newAccessChurch ? "Choisissez une église" : undefined}>
+                Ajouter l&apos;église
               </Button>
             </div>
           </div>

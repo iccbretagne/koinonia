@@ -1,6 +1,7 @@
 import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import UsersClient from "./UsersClient";
+import { PageHeader } from "@/components/ui";
 
 export default async function UsersPage() {
   const session = await requireAuth();
@@ -48,8 +49,8 @@ export default async function UsersPage() {
   const canManageRoles = true;
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-ink mb-6">Utilisateurs</h1>
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Utilisateurs" />
       <UsersClient
         churchId={churchId}
         initialUsers={users.map((u) => ({

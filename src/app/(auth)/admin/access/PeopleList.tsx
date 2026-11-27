@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Role } from "@/generated/prisma/client";
 import { ROLE_SHORT_LABELS } from "@/lib/roles";
+import { EmptyState, SearchInput, StatusChip } from "@/components/ui";
 
 interface Person {
   id: string;
@@ -24,7 +25,7 @@ function Avatar({ person }: { readonly person: Person }) {
     return <Image src={person.image} alt={person.name} width={36} height={36} className="rounded-full shrink-0" />;
   }
   return (
-    <div className="w-9 h-9 rounded-full bg-surface-sunken flex items-center justify-center text-xs font-semibold text-ink-muted shrink-0">
+    <div className="w-9 h-9 rounded-full bg-brand-soft flex items-center justify-center text-xs font-semibold text-brand-text shrink-0">
       {person.name.charAt(0).toUpperCase()}
     </div>
   );
@@ -42,46 +43,42 @@ export default function PeopleList({ people }: Props) {
     : people;
 
   return (
-    <div className="space-y-3">
-      <input
-        type="search"
+    <div className="flex flex-col gap-3">
+      <SearchInput
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder="Rechercher une personne par nom ou email..."
-        className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand"
+        placeholder="Rechercher une personne par nom ou email…"
+        aria-label="Rechercher une personne"
       />
 
       {filtered.length === 0 && (
-        <p className="text-sm text-ink-subtle italic text-center py-8">Aucune personne trouvée.</p>
+        <EmptyState size="sm" title="Aucune personne trouvée" description="Essayez un autre nom ou une autre adresse email." />
       )}
 
       {filtered.map((person) => (
         <Link
           key={person.id}
           href={`/admin/access/users/${person.id}`}
-          className="flex items-center gap-3 bg-surface rounded-lg border border-line shadow-card px-4 py-3 hover:border-brand/30 transition-colors"
+          className="flex min-h-16 items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-card transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         >
           <Avatar person={person} />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-ink truncate">{person.name}</p>
-            <p className="text-xs text-ink-subtle truncate">{person.email}</p>
+            <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{person.name}</p>
+            <p className="truncate text-[13px] leading-[18px] text-ink-muted">{person.email}</p>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap justify-end shrink-0 max-w-[50%]">
             {person.roles.map((role) => (
-              <span
-                key={role}
-                className="text-xs bg-brand-soft text-brand-text border border-brand/20 px-2 py-0.5 rounded-full font-medium"
-              >
+              <StatusChip key={role} tone="brand">
                 {ROLE_SHORT_LABELS[role as Role] ?? role}
-              </span>
+              </StatusChip>
             ))}
             {person.inheritedCount > 0 && (
-              <span className="text-xs bg-surface-sunken text-ink-muted border border-line px-2 py-0.5 rounded-full">
+              <StatusChip>
                 +{person.inheritedCount} hérité{person.inheritedCount > 1 ? "s" : ""}
-              </span>
+              </StatusChip>
             )}
             {person.roles.length === 0 && person.inheritedCount === 0 && (
-              <span className="text-xs text-ink-subtle italic">Aucun accès</span>
+              <span className="text-[13px] text-ink-muted">Aucun accès</span>
             )}
           </div>
         </Link>
