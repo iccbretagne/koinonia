@@ -125,7 +125,7 @@ describe("Lien « Demande RDV pastoral » après spec 043", () => {
     mockAuth.mockResolvedValue(createStarSession("church-1"));
     const element = await AuthLayout({ children: null as never });
     const requestLinks = shellProps(element).requestLinks as { href: string; label: string }[];
-    expect(requestLinks).toContainEqual({ href: "/agenda/request", label: "Demande RDV pastoral" });
+    expect(requestLinks).toContainEqual({ href: "/care/request", label: "Demande RDV pastoral" });
   });
 
   it("un Admin (members:view) n'a plus le lien autonome — devenu une tuile dans « Mes demandes »", async () => {
@@ -133,7 +133,7 @@ describe("Lien « Demande RDV pastoral » après spec 043", () => {
     prismaMock.memberUserLink.findUnique.mockResolvedValue(null);
     const element = await AuthLayout({ children: null as never });
     const requestLinks = shellProps(element).requestLinks as { href: string; label: string }[];
-    expect(requestLinks).not.toContainEqual({ href: "/agenda/request", label: "Demande RDV pastoral" });
+    expect(requestLinks).not.toContainEqual({ href: "/care/request", label: "Demande RDV pastoral" });
   });
 });
 

@@ -22,7 +22,7 @@ const FAMILLES = "https://familles.example";
 const star: NavigationInput = {
   departments: [],
   configLinks: [],
-  requestLinks: [{ href: "/agenda/request", label: "Demande RDV pastoral" }],
+  requestLinks: [{ href: "/care/request", label: "Demande RDV pastoral" }],
   mediaLinks: [{ href: "/audio", label: "Audio" }],
   agendaLinks: [],
   integrationLinks: [],
@@ -117,7 +117,7 @@ describe("buildSpaces", () => {
   it("STAR : aucune grille par département, les liens STAR des événements, le RDV pastoral autonome", () => {
     const links = hrefs(star);
     expect(links).toEqual(
-      expect.arrayContaining(["/planning", "/disponibilites", "/planning/events", "/events/announcement-sheets", "/agenda/request", "/audio", "/jobs", FAMILLES])
+      expect.arrayContaining(["/planning", "/disponibilites", "/planning/events", "/events/announcement-sheets", "/care/request", "/audio", "/jobs", FAMILLES])
     );
     expect(links.some((h) => h.startsWith("/dashboard"))).toBe(false);
     expect(links).not.toContain("/events");

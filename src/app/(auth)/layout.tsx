@@ -213,7 +213,7 @@ async function serviceTeamLinks(
   // pas dupliquer. Le STAR (planning:view sans members:view) n'a pas "Mes demandes" :
   // il garde ce lien autonome, seul moyen d'accès pour lui.
   if (!userPermissions.has("members:view")) {
-    requestLinks.push({ href: paths.agenda.profile("request"), label: "Demande RDV pastoral" });
+    requestLinks.push({ href: paths.care.request(), label: "Demande RDV pastoral" });
   }
 
   // Protocole check for agenda access (don't inherit from isGlobalManager — role permissions handle that)
