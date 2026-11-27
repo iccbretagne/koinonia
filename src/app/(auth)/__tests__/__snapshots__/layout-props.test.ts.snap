@@ -749,7 +749,7 @@ exports[`AuthLayout — props de navigation > Pasteur seul (profil pastoral, vue
     "image": null,
     "name": "Test User",
   },
-  "userRole": "DEPARTMENT_HEAD",
+  "userRole": "STAR",
 }
 `;
 
@@ -1618,6 +1618,6 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
     "image": null,
     "name": "Test User",
   },
-  "userRole": "DEPARTMENT_HEAD",
+  "userRole": "SUPER_ADMIN",
 }
 `;

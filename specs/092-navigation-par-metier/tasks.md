@@ -24,49 +24,49 @@
 
 ### Logique / infrastructure
 
-- [ ] **T0.1** [J] — Résolution sur la table complète : propriétaire inactif ⇒ `orphan`, y compris
+- [x] **T0.1** [J] — Résolution sur la table complète : propriétaire inactif ⇒ `orphan`, y compris
       sous un préfixe parent actif ; `isPublic` aligné ; `activeRouteTable`/`fullRouteTable`
       unifiées. *(fichiers : `src/core/module-routes.ts`, `src/lib/module-routes.ts`)*
       **Fait quand** : `/admin/messages` (messages coupé), `/accounting/navette` (shuttle coupé),
       `/accounting/tresorerie`, `/admin/assistant`, `/admin/mcp`, `/admin/site-domains` résolvent `orphan`.
-- [ ] **T0.2** [J] — Tests de résolution : chaque module désactivable ⇒ ses préfixes `orphan` ;
+- [x] **T0.2** [J] — Tests de résolution : chaque module désactivable ⇒ ses préfixes `orphan` ;
       les écrans des modules actifs restent résolus ; proxy ⇒ `/module-absent` pour une page,
       404 JSON pour une API. *(fichiers : `src/core/__tests__/module-routes.test.ts`,
       `src/proxy-modules.test.ts`)*
-- [ ] **T0.3** [J] — `primaryRole(churchRoles, churchId, isSuperAdmin)` à priorité fixe (rôle
+- [x] **T0.3** [J] — `primaryRole(churchRoles, churchId, isSuperAdmin)` à priorité fixe (rôle
       virtuel compté, sans rôle ⇒ `STAR`) + tests toutes paires de rôles dans les deux ordres.
       *(fichiers : `src/lib/roles.ts`, `src/lib/__tests__/roles.test.ts`)*
-- [ ] **T0.4** [M] — Remplacer `churchRoles.find(…)?.role ?? "DEPARTMENT_HEAD"` par `primaryRole`.
+- [x] **T0.4** [M] — Remplacer `churchRoles.find(…)?.role ?? "DEPARTMENT_HEAD"` par `primaryRole`.
       *(fichiers : `src/app/(auth)/layout.tsx`, `src/app/(auth)/guide/page.tsx`, `src/components/GuidedTour.tsx`)*
-- [ ] **T0.5** [P] [M] — « Mes membres » de la barre du bas pastorale → `/pastoral/members`.
+- [x] **T0.5** [P] [M] — « Mes membres » de la barre du bas pastorale → `/pastoral/members`.
       *(fichier : `src/lib/navigation.ts`)* **Fait quand** : test `bottomDestinations` pastoral.
-- [ ] **T0.6** [P] [J] — Liens pastoraux vers un refus : ligne non cliquable sans droit sur la
+- [x] **T0.6** [P] [J] — Liens pastoraux vers un refus : ligne non cliquable sans droit sur la
       cible ; `canSubmit` sans `isPastoral`. *(fichiers : `src/app/(auth)/pastoral/reports/page.tsx`,
       `pastoral/accounting/page.tsx`, `accounting/requests/page.tsx`)* + tests de rendu.
-- [ ] **T0.7** [P] [M] — Supprimer le champ `navigation` (type et 9 manifestes).
+- [x] **T0.7** [P] [M] — Supprimer le champ `navigation` (type et 9 manifestes).
       *(fichiers : `src/core/module-registry.ts`, `src/modules/{accounting,agenda,audio,care,core,discipleship,media,planning,rooms}/manifest.ts`)*
       **Fait quand** : `grep -rn "navigation:" src/modules/*/manifest.ts` vide ; typecheck vert.
 
 ### Registre des écrans
 
-- [ ] **T0.8** [J] — Créer `src/lib/paths.ts` (`SCREENS` + constructeurs typés, segments encodés)
+- [x] **T0.8** [J] — Créer `src/lib/paths.ts` (`SCREENS` + constructeurs typés, segments encodés)
       et `paths.test.ts` (exhaustivité `page.tsx` ↔ `SCREENS`, constructeurs ⇒ motif).
-- [ ] **T0.9** [J] — Admettre `src/lib/paths.ts` et `src/lib/legacy-paths.ts` dans la règle
+- [x] **T0.9** [J] — Admettre `src/lib/paths.ts` et `src/lib/legacy-paths.ts` dans la règle
       `proxy-only-module-routes`. *(fichier : `.dependency-cruiser.cjs`)* **Fait quand** :
       `npm run lint:boundaries` vert.
-- [ ] **T0.10** [M] — Déplacer `requests/prefill.ts` vers `src/lib/request-prefill.ts` ; mettre à
+- [x] **T0.10** [M] — Déplacer `requests/prefill.ts` vers `src/lib/request-prefill.ts` ; mettre à
       jour `api/mcp/_actions/draft.ts` et la page. **Fait quand** : plus aucun import `@/app/` hors `src/app`.
-- [ ] **T0.11** [M] — Remplacer les littéraux d'écran par `paths.*`, un préfixe par commit
+- [x] **T0.11** [M] — Remplacer les littéraux d'écran par `paths.*`, un préfixe par commit
       (planning, events/admin, accounting, care/agenda, media/audio, ticketing/forms, campaigns,
       serving/integration, jobs/rooms, core/admin), y compris services de modules (liens de
       notification), `lib/email.ts`, `api/assistant`, `api/mcp`. Peut être scindée entre plusieurs
       agents [P] par préfixe.
-- [ ] **T0.12** [J] — Cliquet `no-screen-literals.test.ts` (préfixes de `url-mapping.txt`, hors
+- [x] **T0.12** [J] — Cliquet `no-screen-literals.test.ts` (préfixes de `url-mapping.txt`, hors
       tests et `specs/`) ; liste résiduelle justifiée vide.
 
 ### Vérification du lot 0
 
-- [ ] **T0.13** [M] — Instantané `layout-props.test.ts.snap` : seul le rôle de la barre du bas change ; relu.
+- [x] **T0.13** [M] — Instantané `layout-props.test.ts.snap` : seul le rôle de la barre du bas change ; relu.
 - [ ] **T0.14** [J] — Recette Playwright du lot 0 (plan, 4 scénarios), résultats joints à la PR.
 - [ ] **T0.15** — `typecheck`, `lint`, `lint:boundaries`, `test`, `build` verts ; PR vers `feat/navigation-metier`.
 
