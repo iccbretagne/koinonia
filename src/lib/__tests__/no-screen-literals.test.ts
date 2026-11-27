@@ -54,6 +54,10 @@ const RESIDUAL: Record<string, { count: number; reason: string }> = {
   "src/app/api/_media-share/handlers.ts": { count: 1, reason: MEDIA_SHARE },
   "src/app/(auth)/medias/photos/[id]/MediaEventDetail.tsx": { count: 1, reason: MEDIA_SHARE },
   "src/app/(auth)/medias/visuels/[id]/MediaProjectDetail.tsx": { count: 1, reason: MEDIA_SHARE },
+  "src/app/(auth)/page-gates.ts": {
+    count: 45,
+    reason: "table de la garde d'adresse (vrai 403) : clé = adresse demandée, comparée telle quelle et vérifiée contre le page.tsx par page-gates.test.ts",
+  },
 };
 
 function excluded(rel: string): boolean {

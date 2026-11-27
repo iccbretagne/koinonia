@@ -1,7 +1,8 @@
+import { forbidden } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ShieldOff } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { getCurrentChurchId, requireAuth } from "@/lib/auth";
-import { EmptyState, PageHeader, buttonClasses } from "@/components/ui";
+import { PageHeader, buttonClasses } from "@/components/ui";
 import { countToComplete, listInterviewers, listSlots } from "@/modules/serving";
 import { requireServingActor } from "@/modules/serving/auth";
 import InterviewSlotsClient from "./InterviewSlotsClient";
@@ -14,7 +15,7 @@ export default async function EntretiensPage() {
   if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
   const actor = await requireServingActor(churchId);
   if (!actor.canManage) {
-    return <EmptyState icon={ShieldOff} title="Accès refusé" description="Les entretiens sont réservés à l'équipe Vie des STAR (PVS) et à l'administration." />;
+    forbidden();
   }
   const now = new Date();
   const [slots, interviewers, toComplete] = await Promise.all([

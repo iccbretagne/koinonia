@@ -134,7 +134,7 @@ export default async function LoginPage({
                 placeholder="Choisir un compte de test…"
                 options={DEV_USERS.map((u) => ({
                   value: u.key,
-                  label: `${u.displayName} (${u.role})`,
+                  label: `${u.displayName} (${u.role ?? "profil pastoral"})`,
                 }))}
               />
               <Button type="submit" variant="secondary" className="w-full">

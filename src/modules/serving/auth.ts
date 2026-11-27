@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { DEPT_FN } from "@/lib/department-functions";
 import { getFunctionDepartmentIds } from "@/lib/function-departments";
 import { canEditSettings, canManageApplications, type ServingUser } from "./services/access";
+import { forbiddenError } from "@/lib/forbidden";
 
 /**
  * Contexte d'un appelant authentifié dans une église, pour le module serving (spec 077). La
@@ -65,7 +66,7 @@ export async function servingActorFromSession(session: Session, churchId: string
 export async function requireServingActor(churchId: string): Promise<ServingActor> {
   const session = await requireAuth();
   if (!session.user.isSuperAdmin && !session.user.churchRoles.some((r) => r.churchId === churchId)) {
-    throw new Error("FORBIDDEN");
+    throw forbiddenError();
   }
   return servingActorFromSession(session, churchId);
 }
@@ -73,13 +74,13 @@ export async function requireServingActor(churchId: string): Promise<ServingActo
 /** Étude et traitement des candidatures : PVS, Admin, Super Admin. */
 export async function requireServingManage(churchId: string): Promise<ServingActor> {
   const actor = await requireServingActor(churchId);
-  if (!actor.canManage) throw new Error("FORBIDDEN");
+  if (!actor.canManage) throw forbiddenError();
   return actor;
 }
 
 /** Réglages des candidatures : Super Admin, Admin, équipe PVS. */
 export async function requireServingSettingsAccess(churchId: string): Promise<ServingActor> {
   const actor = await requireServingActor(churchId);
-  if (!actor.canEditSettings) throw new Error("FORBIDDEN");
+  if (!actor.canEditSettings) throw forbiddenError();
   return actor;
 }

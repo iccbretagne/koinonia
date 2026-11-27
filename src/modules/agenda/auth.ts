@@ -1,6 +1,7 @@
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { Session } from "next-auth";
+import { forbiddenError } from "@/lib/forbidden";
 
 /**
  * Vérifie si l'utilisateur est membre d'un département PROTOCOLE dans l'église donnée.
@@ -28,7 +29,7 @@ export async function requireAgendaView(churchId: string) {
   if (session.user.isSuperAdmin) return session;
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-  if (roles.length === 0) throw new Error("FORBIDDEN");
+  if (roles.length === 0) throw forbiddenError();
 
   // Import dynamique : registry.ts importe tous les modules (dont agenda), un
   // import statique ici créerait un cycle (cf. issue #446).
@@ -38,7 +39,7 @@ export async function requireAgendaView(churchId: string) {
   if (userPerms.has("agenda:view") || await isProtocoleMember(session, churchId))
     return session;
 
-  throw new Error("FORBIDDEN");
+  throw forbiddenError();
 }
 
 /**
@@ -51,7 +52,7 @@ export async function requireAgendaManage(churchId: string) {
   if (session.user.isSuperAdmin) return session;
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-  if (roles.length === 0) throw new Error("FORBIDDEN");
+  if (roles.length === 0) throw forbiddenError();
 
   // Import dynamique : voir requireAgendaView ci-dessus.
   const { rolePermissions } = await import("@/lib/registry");
@@ -60,5 +61,5 @@ export async function requireAgendaManage(churchId: string) {
   if (userPerms.has("agenda:manage") || await isProtocoleMember(session, churchId))
     return session;
 
-  throw new Error("FORBIDDEN");
+  throw forbiddenError();
 }

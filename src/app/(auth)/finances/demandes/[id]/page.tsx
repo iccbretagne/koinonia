@@ -1,7 +1,7 @@
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { registry, rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
-import { notFound } from "next/navigation";
+import { forbidden, notFound } from "next/navigation";
 import { getAccountingDepartmentScope, getRequestJustification, isJustificationClaimable, isRequestArchived } from "@/modules/accounting";
 import RequestDetail from "./RequestDetail";
 
@@ -19,7 +19,7 @@ export default async function AccountingRequestDetailPage({
   const perms = new Set(roles.flatMap((r: string) => rolePermissions[r as keyof typeof rolePermissions] ?? []));
   const isPastoral = (session.user.pastoralChurchIds ?? []).includes(churchId);
   if (!perms.has("accounting:view") && !isPastoral) {
-    return <p className="p-4 text-ink-muted">Accès non autorisé.</p>;
+    forbidden();
   }
 
   const req = await prisma.financialRequest.findUnique({

@@ -1,3 +1,4 @@
+import { forbidden } from "next/navigation";
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { requireIntegrationAccess } from "@/modules/integration";
 import { prisma } from "@/lib/prisma";
@@ -10,7 +11,7 @@ export default async function ParcoursPage() {
 
   const { scope } = await requireIntegrationAccess(churchId);
   if (scope.scoped) {
-    return <p className="p-4 text-ink-muted">Accès non autorisé aux parcours.</p>;
+    forbidden();
   }
 
   const journeys = await prisma.personJourney.findMany({

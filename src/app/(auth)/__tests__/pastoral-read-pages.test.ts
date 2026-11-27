@@ -18,6 +18,7 @@ vi.mock("next/headers", () => ({
 }));
 vi.mock("next/navigation", () => ({
   notFound: () => { throw new Error("NOT_FOUND"); },
+  forbidden: () => { throw new Error("FORBIDDEN_PAGE"); },
   redirect: (u: string) => { throw new Error(`REDIRECT:${u}`); },
   useParams: () => ({}),
   useRouter: () => ({}),
@@ -156,7 +157,7 @@ describe("/admin/events/[eventId]/report — lecture pastorale", () => {
   it("pasteur d'une autre église : refus", async () => {
     mockAuth.mockResolvedValue(createSession({ churchRoles: [], pastoralChurchIds: ["church-1"] } as never));
     prismaMock.event.findUnique.mockResolvedValue(event("church-2") as never);
-    await expect(EventReportPage({ params })).rejects.toThrow();
+    await expect(EventReportPage({ params })).rejects.toThrow("FORBIDDEN_PAGE");
   });
 
   it("Reporter : éditeur inchangé", async () => {

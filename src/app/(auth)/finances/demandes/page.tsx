@@ -1,3 +1,4 @@
+import { forbidden } from "next/navigation";
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
@@ -23,7 +24,7 @@ export default async function AccountingRequestsPage({
   const perms = new Set(roles.flatMap((r: string) => rolePermissions[r as keyof typeof rolePermissions] ?? []));
   const isPastoral = (session.user.pastoralChurchIds ?? []).includes(churchId);
   if (!perms.has("accounting:view") && !isPastoral) {
-    return <p className="p-4 text-ink-muted">Accès non autorisé.</p>;
+    forbidden();
   }
 
   const canManage = perms.has("accounting:manage");

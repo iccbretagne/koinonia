@@ -1,3 +1,4 @@
+import { forbidden } from "next/navigation";
 import Link from "next/link";
 import { Presentation } from "lucide-react";
 import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
@@ -16,7 +17,7 @@ export default async function GivingSlidePage() {
   try {
     await requireChurchPermission("giving:manage", churchId);
   } catch {
-    return <p className="p-4 text-ink-muted">Accès non autorisé.</p>;
+    forbidden();
   }
 
   const { churchName, content, publicUrl, publicLogoSrc } = await getGivingSettings(churchId);

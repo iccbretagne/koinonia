@@ -227,6 +227,9 @@ async function main() {
     }
     userByKey[u.key] = user;
 
+    // Compte pastoral seul : aucun rôle d'église, son profil pastoral est lié plus bas.
+    if (!u.role) continue;
+
     const churchRole = await prisma.userChurchRole.create({
       data: {
         userId: user.id,
@@ -683,15 +686,17 @@ async function main() {
   console.log("Salle et réservations créées");
 
   // ── Agenda pastoral ──────────────────────────────────────────────────────
+  const pastoralEntry = USERS.find((u) => u.pastoralProfile && u.churchKey === mainChurchKey);
   const pastoralProfile = await prisma.pastoralProfile.create({
     data: {
       churchId: churchByKey[mainChurchKey].id,
       name: "Pasteur Kervignac",
       email: "pasteur@dev.local",
       role: "PASTEUR",
-      // Volontairement non lié à un compte de test (userId) : un profil pastoral lié
-      // bascule automatiquement l'interface de connexion en "vue pastorale" par défaut
-      // (voir src/app/(auth)/layout.tsx), ce qui casse les captures admin standards.
+      // Lié au seul compte « pasteur » (sans rôle d'église), jamais à un compte à rôle : un
+      // profil pastoral lié bascule l'interface en « vue pastorale » par défaut (voir
+      // src/app/(auth)/layout.tsx), ce qui casserait les captures admin standards.
+      userId: pastoralEntry ? userByKey[pastoralEntry.key].id : undefined,
     },
   });
   await prisma.appointmentRequest.create({

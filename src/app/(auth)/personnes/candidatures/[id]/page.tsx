@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { ArrowLeft, Download, ShieldOff } from "lucide-react";
-import { notFound } from "next/navigation";
+import { ArrowLeft, Download } from "lucide-react";
+import { forbidden, notFound } from "next/navigation";
 import { resolveChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
-import { Alert, EmptyState, PageHeader, StatusChip, buttonClasses } from "@/components/ui";
+import { Alert, PageHeader, StatusChip, buttonClasses } from "@/components/ui";
 import { getApplication } from "@/modules/serving";
 import { requireServingActor } from "@/modules/serving/auth";
 import { APPLICATION_STATUS_LABEL } from "@/modules/serving/schemas";
@@ -31,7 +31,7 @@ export default async function CandidaturePage({ params }: { readonly params: Pro
   } catch (error) {
     if (error instanceof ApiError && error.statusCode === 404) notFound();
     if (error instanceof Error && error.message === "FORBIDDEN") {
-      return <EmptyState icon={ShieldOff} title="Accès refusé" description="Cette candidature n'est pas visible pour toi." />;
+      forbidden();
     }
     throw error;
   }

@@ -1,3 +1,4 @@
+import { forbidden } from "next/navigation";
 import Link from "next/link";
 import { CalendarX2, ChevronRight, Church, FileCheck2, FileClock } from "lucide-react";
 import DateTile from "@/components/DateTile";
@@ -36,7 +37,7 @@ export default async function AnnouncementSheetsPage({
   await requireChurchPermission("planning:view", churchId);
 
   if (!(await canReadAnnouncementSheet(session, churchId))) {
-    throw new Error("FORBIDDEN");
+    forbidden();
   }
 
   const { month } = await searchParams;

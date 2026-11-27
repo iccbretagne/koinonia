@@ -49,6 +49,8 @@ const EVENTS_MANAGE_FRAGILE =
 
 const ALLOWLIST: Record<string, string> = {
   "src/modules/planning/manifest.ts": "déclaration des permissions elles-mêmes",
+  "src/app/(auth)/page-gates.ts":
+    "garde d'adresse (vrai 403) : rejoue mot pour mot la garde de la page (page-gates.test.ts), jamais un raccourci de rôle",
 
   "src/app/api/members/route.ts": MEMBERS_MANAGE_LEGIT,
   "src/app/api/members/[memberId]/route.ts": MEMBERS_MANAGE_LEGIT,

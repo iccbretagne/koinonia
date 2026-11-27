@@ -25,6 +25,8 @@ vi.mock("@/modules/planning", async (importOriginal) => ({
   canReadAnnouncementSheet: (...args: Parameters<typeof mockCanReadAnnouncementSheet>) => mockCanReadAnnouncementSheet(...args),
 }));
 vi.mock("next/headers", () => ({
+  // En-tête du proxy absent : la garde d'adresse (page-gates.ts) ne s'applique pas.
+  headers: () => Promise.resolve(new Headers()),
   cookies: () => Promise.resolve({ get: () => undefined, set: () => {} }),
 }));
 vi.mock("next/navigation", () => ({

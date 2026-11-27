@@ -60,7 +60,7 @@ describe("POST /api/auth/dev-login", () => {
     const res = await postForm("super-admin");
 
     expect(res.status).toBe(307);
-    expect(res.headers.get("location")).toBe("http://localhost/planning/departements");
+    expect(res.headers.get("location")).toBe("http://localhost/");
     expect(prismaMock.session.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ userId: "user-1" }),

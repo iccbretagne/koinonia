@@ -30,7 +30,8 @@ asRole("star")` (fixture de `e2e/roles.ts`).
 
 Rôles : `super-admin`, `admin`, `secretaire`, `ministre`, `resp-accueil`, `resp-secretariat`,
 `faiseur-disciples`, `reporter`, `star`, `comptable` (ACCOUNTANT), `referent-soins`
-(PASTORAL_CARE_REFERENT).
+(PASTORAL_CARE_REFERENT), `pasteur` (aucun rôle d'église : profil pastoral lié dans Kervignac
+par le seed, donc `pastoralChurchIds`, comme un vrai pasteur).
 
 ## Specs
 
@@ -40,7 +41,8 @@ Rôles : `super-admin`, `admin`, `secretaire`, `ministre`, `resp-accueil`, `resp
 | `mobile-back.spec.ts` | chevron « Retour à … » sur les pages de détail, nom de l'église sur les pages de navigation |
 | `a11y.spec.ts` | axe (WCAG 2 A et AA) sur `/accueil` par rôle et viewport, panneau « Plus », palette ; violations connues dans `KNOWN_VIOLATIONS` |
 | `legacy-redirects.spec.ts` | spec 092, lot 4 : ancienne adresse → nouvelle par rôle (307, même origine, sans cache, requête conservée) ; liens publics, pages de compte et méthodes autres que GET/HEAD jamais redirigés ; entrées hostiles |
-| `forbidden.spec.ts` | un STAR sur une URL d'administration : HTTP 200 + page « Accès refusé » (comportement actuel) |
+| `forbidden.spec.ts` | un STAR sur une URL d'administration : HTTP 403 + page « Accès refusé » commune (`ForbiddenNotice`), à la même adresse |
+| `pastoral-read.spec.ts` | compte `pasteur` : compte rendu et demande comptable en lecture seule (ni action, ni export, ni pièce ouvrable), écrans de gestion en 403 |
 
 ## Sécurité
 

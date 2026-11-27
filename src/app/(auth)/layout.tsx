@@ -1,6 +1,6 @@
 import pkg from "@/../package.json";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { auth, signOut, getCurrentChurchId } from "@/lib/auth";
 import { forgetPushDeviceOnSignOut } from "@/lib/push/sign-out";
 import { prisma } from "@/lib/prisma";
@@ -15,6 +15,8 @@ import { churchLogoSources } from "@/modules/core/schemas";
 import { pickFirstName } from "./accueil/first-name";
 import type { Session } from "next-auth";
 import { paths } from "@/lib/paths";
+import { PATHNAME_HEADER } from "@/lib/request-pathname";
+import { enforcePageGate } from "./page-gates";
 import type { ChurchRoles } from "@/lib/navigation-input";
 
 /** Églises du sélecteur : celles des rôles, plus celles où l'utilisateur n'a qu'un profil pastoral. */
@@ -108,6 +110,13 @@ export default async function AuthLayout({
   const isInPastoralMode = isPastoralView({ isPastoral, hasClassicRole, viewModeCookie });
   // Double rôle dans l'église courante : profil pastoral + au moins un rôle classique
   const hasBothRoles = isPastoral && hasClassicRole;
+
+  // Vrai 403 (avant le premier `loading.tsx`, donc avant que le statut parte) : la garde de la
+  // page demandée, rejouée ici pour les adresses de `page-gates.ts`.
+  await enforcePageGate((await headers()).get(PATHNAME_HEADER), {
+    churchId: currentChurchId ?? null,
+    pastoralView: isInPastoralMode,
+  });
 
   const { churchName, churchPrimaryColor, churchLogo } = await churchDisplay(currentChurchId);
 

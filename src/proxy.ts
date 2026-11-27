@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { approvedSiteSlug, isForeignHost, refreshSiteHosts, siteSlugFromHost } from "@/lib/site-host";
 import { resolveRouteOwner, isPublicRoute } from "@/lib/module-routes";
 import { matchLegacyPath } from "@/lib/legacy-paths";
+import { PATHNAME_HEADER } from "@/lib/request-pathname";
 import { buildCsp, buildSiteCsp, cspHeaderName, generateNonce, storageOrigins, CSP_REPORT_PATH } from "@/lib/csp";
 
 /**
@@ -35,10 +36,14 @@ export function proxy(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
   // Fichiers statiques (`public/`) : jamais interceptés, comme avant l'élargissement du matcher.
-  if (/\.[a-z0-9]+$/i.test(pathname)) return NextResponse.next();
+  // L'adresse vue par la garde d'adresse ne vient jamais du navigateur, même sur les sorties
+  // anticipées (fichier « statique » qui retombe sur une page, API).
+  const clean = new Headers(request.headers);
+  clean.delete(PATHNAME_HEADER);
+  if (/\.[a-z0-9]+$/i.test(pathname)) return NextResponse.next({ request: { headers: clean } });
   // Le site d'un événement n'est servi que par son hôte (ADR-0031) ; l'aperçu passe par l'onglet Site.
   if (pathname === "/site" || pathname.startsWith("/site/")) return notFoundResponse(pathname);
-  if (pathname.startsWith("/api/")) return route(request);
+  if (pathname.startsWith("/api/")) return route(request, clean);
   const legacy = legacyRedirect(request);
   if (legacy) return legacy;
 
@@ -50,6 +55,9 @@ export function proxy(request: NextRequest) {
   });
   const forwarded = new Headers(request.headers);
   forwarded.set(headerName, policy);
+  // Adresse demandée, pour la garde d'adresse de `(auth)/layout.tsx` (vrai 403) ; toujours
+  // écrasée, jamais celle qu'enverrait le navigateur.
+  forwarded.set(PATHNAME_HEADER, pathname);
 
   const response = route(request, forwarded);
   response.headers.set(headerName, policy);

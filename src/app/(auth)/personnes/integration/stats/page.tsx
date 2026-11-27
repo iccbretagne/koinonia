@@ -1,3 +1,4 @@
+import { forbidden } from "next/navigation";
 import { PageHeader } from "@/components/ui";
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { requireIntegrationAccess } from "@/modules/integration";
@@ -11,7 +12,7 @@ export default async function IntegrationStatsPage() {
 
   const { scope } = await requireIntegrationAccess(churchId);
   if (scope.scoped) {
-    return <p className="p-4 text-ink-muted">Accès non autorisé.</p>;
+    forbidden();
   }
 
   const scopeFilter = {};

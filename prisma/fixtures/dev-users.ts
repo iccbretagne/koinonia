@@ -11,6 +11,9 @@ import type { Role } from "../../src/generated/prisma/client";
  *
  * Deux rôles de module ont aussi un compte (harnais E2E, docs/e2e.md) : Comptable
  * (ACCOUNTANT) et Référent soins pastoraux (PASTORAL_CARE_REFERENT).
+ * Un compte « pasteur » n'a aucun rôle d'église (`role: null`) : seul son profil pastoral,
+ * lié par le seed, lui ouvre l'église — le même chemin qu'un vrai pasteur
+ * (`pastoralChurchIds`).
  *
  * Consommé à la fois par `prisma/seed-dev.ts` (création des comptes) et par
  * `src/lib/auth.ts` (liste affichée par le provider de connexion développement) —
@@ -21,8 +24,11 @@ export interface DevUserDef {
   email: string;
   name: string;
   displayName: string;
-  role: Role;
+  /** `null` : aucun rôle d'église, compte ouvert par son seul profil pastoral. */
+  role: Role | null;
   churchKey: string;
+  /** Profil pastoral lié au compte dans `churchKey` (seed : `PastoralProfile.userId`). */
+  pastoralProfile?: boolean;
   /** Uniquement pour le rôle MINISTER. */
   ministryKey?: string;
   /** Uniquement pour le rôle DEPARTMENT_HEAD. */
@@ -133,5 +139,14 @@ export const DEV_USERS: DevUserDef[] = [
     displayName: "Référent soins pastoraux",
     role: "PASTORAL_CARE_REFERENT",
     churchKey: "kervignac",
+  },
+  {
+    key: "pasteur",
+    email: "pasteur@dev.local",
+    name: "Paul Pasteur",
+    displayName: "Pasteur",
+    role: null,
+    churchKey: "kervignac",
+    pastoralProfile: true,
   },
 ];

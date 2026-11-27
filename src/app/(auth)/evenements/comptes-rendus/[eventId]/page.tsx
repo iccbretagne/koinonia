@@ -1,7 +1,7 @@
 import { requireAuth, hasPastoralRead } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
-import { notFound } from "next/navigation";
+import { forbidden, notFound } from "next/navigation";
 import EventReportClient from "./EventReportClient";
 import EventReportReadOnly from "./EventReportReadOnly";
 import { PageHeader } from "@/components/ui";
@@ -49,10 +49,7 @@ export default async function EventReportPage({
   const canRead = perms.has("events:manage") || perms.has("reports:view");
   // Lecture pastorale (spec 092, exception 3) : église de l'événement, jamais le contexte affiché.
   const readOnly = !canRead && hasPastoralRead(session, event.churchId);
-  if (!canRead && !readOnly) {
-    const { ApiError } = await import("@/lib/api-utils");
-    throw new ApiError(403, "Forbidden");
-  }
+  if (!canRead && !readOnly) forbidden();
 
   if (readOnly) {
     return (

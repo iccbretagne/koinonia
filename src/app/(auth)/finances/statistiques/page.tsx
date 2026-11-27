@@ -1,3 +1,4 @@
+import { forbidden } from "next/navigation";
 import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
 import { computeAccountingStats } from "@/modules/accounting";
 import { PageHeader } from "@/components/ui";
@@ -11,7 +12,7 @@ export default async function AccountingStatsPage() {
   try {
     await requireChurchPermission("accounting:stats", churchId);
   } catch {
-    return <p className="p-4 text-ink-muted">Accès non autorisé.</p>;
+    forbidden();
   }
 
   const initialData = await computeAccountingStats(churchId, "year");
