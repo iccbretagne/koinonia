@@ -23,10 +23,10 @@
 - [ ] Préparer l'ouverture (synthèse) ; Export : définition JSON, Dupliquer
 
 ## Lot 3 — Aperçu et éditeur (UI, P1 pour l'aperçu, P2 pour l'éditeur)
-- [ ] `AssignmentForm` en mode aperçu ; page `/collectes/[id]/apercu/[formId]` (cadre téléphone)
-- [ ] `ImportPreviewView` extrait d'`ImportCampaign`
-- [ ] Éditeur `/collectes/nouvelle` et `/collectes/[id]/editer` (paramètres, questionnaires, sections, questions de tous types, destinataires, contrôles simples + JSON, aperçu, enregistrement par import)
-- [ ] Entrées « Nouvelle campagne » / « Importer » sur `/collectes`
+- [x] `AssignmentForm` en mode aperçu ; page `/collectes/[id]/apercu/[formId]` (cadre téléphone)
+- [x] `ImportPreviewView` extrait d'`ImportCampaign`
+- [x] Éditeur `/collectes/nouvelle` et `/collectes/[id]/editer` (paramètres, questionnaires, sections, questions de tous types, destinataires, contrôles simples + JSON, aperçu, enregistrement par import)
+- [x] Entrées « Nouvelle campagne » / « Importer » sur `/collectes`
 
 ## Finition
 - [ ] Documentation (`CLAUDE.md`, `docs/processus/collectes.md`, `docs/campagnes-f9-2026.md`, `docs/database.md`, fiches de l'assistant, CHANGELOG)
