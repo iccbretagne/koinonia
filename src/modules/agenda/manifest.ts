@@ -33,9 +33,4 @@ export const agendaModule = defineModule({
     // Saisie directe + planification des demandes validées (+ Protocole via dept function)
     "agenda:manage":  ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
   },
-
-  navigation: [
-    { label: "Agenda",    icon: "calendar", href: "/agenda",          permission: "agenda:manage" },
-    { label: "Planifier", icon: "clock",    href: "/agenda/schedule", permission: "agenda:manage" },
-  ],
 });

@@ -237,23 +237,6 @@ describe("Manifestes des modules", () => {
     ]);
   });
 
-  it("chaque entrée de navigation référence une permission déclarée", () => {
-    const known = new Set(Object.keys(buildRegistry().collectPermissions()));
-
-    for (const mod of ALL_MODULES) {
-      for (const entry of mod.navigation ?? []) {
-        expect(entry.label, `Module ${mod.name}`).toBeTruthy();
-        expect(entry.href, `Module ${mod.name} / ${entry.label}`).toMatch(/^\//);
-        if (entry.permission) {
-          expect(
-            known.has(entry.permission),
-            `${mod.name} / ${entry.label} → permission inconnue « ${entry.permission} »`
-          ).toBe(true);
-        }
-      }
-    }
-  });
-
   it("un module chargé sans sa dépendance échoue à la validation", () => {
     for (const mod of ALL_MODULES.filter((m) => (m.dependsOn ?? []).length > 0)) {
       const r = new ModuleRegistry();

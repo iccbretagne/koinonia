@@ -76,8 +76,4 @@ export const coreModule = defineModule({
       defaultEmail: false,
     },
   ],
-
-  navigation: [
-    { label: "Configuration", icon: "settings", href: "/admin", permission: "users:manage" },
-  ],
 });

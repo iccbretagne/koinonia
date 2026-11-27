@@ -32,8 +32,4 @@ export const accountingModule = defineModule({
       visibleWith: ["accounting:submit", "accounting:view", "accounting:manage"],
     },
   ],
-
-  navigation: [
-    { label: "Comptabilité", icon: "accounting", href: "/accounting/requests", permission: "accounting:view" },
-  ],
 });
