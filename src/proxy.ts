@@ -72,7 +72,9 @@ function legacyRedirect(request: NextRequest): NextResponse | null {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
   const match = matchLegacyPath(request.nextUrl.pathname);
   if (!match) return null;
-  if (resolveRouteOwner(match.pathname).kind === "orphan") return notFoundResponse(match.pathname);
+  // Module coupé : pas de redirection ; l'ancienne adresse, revendiquée par aucun manifeste, suit
+  // le chemin ordinaire et répond le même 404 (`/module-absent`) que la nouvelle.
+  if (resolveRouteOwner(match.pathname).kind === "orphan") return null;
   const url = request.nextUrl.clone();
   url.pathname = match.pathname;
   if (match.query) {

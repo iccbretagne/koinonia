@@ -332,7 +332,7 @@ premier chargement, un hôte étranger reçoit 404.
 
 Cycle d'un domaine : demande par l'organisateur (jeton de preuve) → enregistrements DNS
 `TXT _koinonia.<domaine>` (jeton) et `CNAME <domaine> → SITE_TARGET_HOST` → « Vérifier le DNS » →
-approbation du Super Admin (`/admin/site-domains`). La tâche cron `ticketing-site-domains`
+approbation du Super Admin (`/plateforme/site-domains`). La tâche cron `ticketing-site-domains`
 (quotidienne) refait le contrôle : un échec suspend le domaine et prévient l'organisateur.
 Cinq domaines non suspendus au plus par église.
 
@@ -716,14 +716,14 @@ gh release upload guide-assets guide-*.png
 
 | Fichier | Page source |
 |---------|-------------|
-| `guide-planning-view.png` | `/dashboard?dept=<id>` — grille planning |
-| `guide-planning-edit.png` | `/dashboard?dept=<id>` — édition statut |
-| `guide-members-list.png` | `/admin/members` — tableau des STAR |
-| `guide-members-manage.png` | `/admin/members` — formulaire ajout/édition |
-| `guide-events-list.png` | `/events` — liste des événements |
-| `guide-events-manage.png` | `/admin/events` — formulaire événement |
+| `guide-planning-view.png` | `/planning/departements?dept=<id>` — grille planning |
+| `guide-planning-edit.png` | `/planning/departements?dept=<id>` — édition statut |
+| `guide-members-list.png` | `/personnes/star` — tableau des STAR |
+| `guide-members-manage.png` | `/personnes/star` — formulaire ajout/édition |
+| `guide-events-list.png` | `/evenements` — liste des événements |
+| `guide-events-manage.png` | `/evenements/gestion` — formulaire événement |
 | `guide-admin-departments.png` | `/admin/departments` — tableau départements |
-| `guide-admin-church.png` | `/admin/churches` — paramètres église |
+| `guide-admin-church.png` | `/plateforme/eglises` — paramètres église |
 | `guide-admin-users.png` | `/admin/users` — gestion utilisateurs |
 
 > Les captures doivent être prises en **1280x800** pour un ratio 16:9 cohérent.
@@ -1223,6 +1223,58 @@ Lignes à surveiller :
 Pour mettre à jour une instance existante, consulter le guide de migration correspondant :
 
 - [Migration v0.19.x → v1.0.0](migration-v1.0.md)
+
+### Bascule des adresses par espace (spec 092, lot 4)
+
+Le lot 4 change l'adresse de la plupart des écrans connectés (`/events` → `/evenements`,
+`/accounting/requests` → `/finances/demandes`, `/admin/churches` → `/plateforme/eglises`…). Les
+anciennes adresses restent servies par une **redirection temporaire 307** du proxy (table fixe
+`src/lib/legacy-paths.ts`, `GET`/`HEAD` seulement, requête conservée, jamais vers une autre
+origine, jamais mise en cache). Aucune migration de schéma ; les liens déjà enregistrés en base
+(notifications, messages système, fiches de l'assistant) sont réécrits par un **script manuel**.
+Les liens publics (billets, réservations, partages média, formulaires publics, `/donner`…) et les
+sites d'événement ne changent pas.
+
+**Ne jamais basculer pendant un événement** : les écrans hors ligne de la billetterie
+(`/evenements/billetterie/<id>/controle` et `…/restauration`, ex-`/billetterie/…`) changent
+d'adresse. Un poste resté ouvert sur l'ancienne adresse garde sa file locale, mais doit être
+rechargé une fois en ligne (le service worker passe à `koinonia-v7` et ne met en cache aucune
+redirection). Choisir une fenêtre sans événement de billetterie ouvert ce jour-là.
+
+1. **Recette d'abord** : déployer sur l'environnement de recette (`Deploy Staging`), parcourir
+   les anciens favoris de chaque rôle (redirection vers la nouvelle adresse), un écran hors ligne
+   de billetterie, et un module coupé (`ENABLED_MODULES`) : 404 à l'ancienne comme à la nouvelle
+   adresse.
+2. **Sauvegarde** de la base (procédure habituelle, ci-dessus).
+3. **Déployer** la version (pipeline habituel).
+4. **Script, à blanc** — rien n'est écrit, il compte les valeurs à changer et liste les réponses
+   de l'assistant qui citent une ancienne adresse (à relire à la main) :
+   ```bash
+   cd /opt/koinonia/current
+   sudo -u koinonia npx tsx scripts/092-rewrite-stored-paths.ts --origin "$APP_URL"
+   ```
+5. **Script, pour de bon** (sauvegarde JSON des valeurs d'avant dans `backups-092/`, lots de 500,
+   chaque lot dans une transaction ; un second passage ne trouve plus rien) :
+   ```bash
+   sudo -u koinonia npx tsx scripts/092-rewrite-stored-paths.ts --origin "$APP_URL" --apply
+   ```
+   Le script n'est **jamais** lancé par la CI, `prisma migrate deploy` ni le déploiement.
+6. **Vérifier** : un second essai à blanc annonce 0 partout ; ouvrir une notification ancienne.
+
+**Retour arrière** :
+
+- Code : repointer `current` vers la release précédente (section [Rollback](#rollback)). Les
+  anciennes adresses redeviennent les vraies ; les nouvelles, inconnues de l'ancienne version,
+  répondent 404.
+- Données, si le script a été appliqué : restaurer **avant** de repointer le code, depuis la
+  sauvegarde qu'il a écrite (valeurs exactes d'avant) :
+  ```bash
+  sudo -u koinonia npx tsx scripts/092-rewrite-stored-paths.ts --restore backups-092/<fichier>.json --apply
+  ```
+  À défaut de sauvegarde, `--reverse --apply` recalcule les anciennes adresses depuis la table
+  (les préfixes d'aide élargis de l'assistant ne retrouvent pas toujours leur forme d'origine).
+- La table de redirection est temporaire : elle sera retirée au lot 5, une fois les journaux sans
+  hit sur les anciennes adresses.
 
 ## Environnement de recette
 

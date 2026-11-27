@@ -5,13 +5,13 @@ import { expect, test } from "./roles";
 const CHURCH = "ICC Kervignac";
 
 const DETAIL_PAGES: { url: string; parent: string }[] = [
-  { url: "/requests/new", parent: "Mes demandes" },
+  { url: "/demandes/nouvelle", parent: "Mes demandes" },
   { url: "/profile", parent: "Accueil" },
   { url: "/profile/notifications", parent: "Mon profil" },
   { url: "/guide", parent: "Accueil" },
 ];
 
-const NAV_PAGES = ["/accueil", "/admin/members", "/events", "/requests"];
+const NAV_PAGES = ["/accueil", "/personnes/star", "/evenements", "/demandes"];
 
 test.describe("retour mobile", () => {
   test.beforeEach(({}, info) => {
