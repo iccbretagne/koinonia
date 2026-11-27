@@ -1,5 +1,6 @@
 import { errorResponse } from "@/lib/api-utils";
 import { appIconUrl, getAppIconVersion } from "@/modules/core";
+import { paths } from "@/lib/paths";
 
 /**
  * Manifeste de l'application installable (spec 069). Servi par une route et non par
@@ -12,7 +13,7 @@ export async function GET() {
       name: "Koinonia",
       short_name: "Koinonia",
       description: "Le back-office opérationnel de votre église, en une seule application.",
-      start_url: "/accueil",
+      start_url: paths.accueil(),
       display: "standalone",
       background_color: "#0c022d",
       theme_color: "#ffffff",

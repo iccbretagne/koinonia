@@ -7,6 +7,7 @@ import { resolveTreasuryAccount } from "../../_treasury";
 import { buildAccountingPaymentEmail } from "@/lib/email";
 import { createNotification } from "@/lib/notifications";
 import { releaseSchema } from "./contract";
+import { paths } from "@/lib/paths";
 
 export async function PATCH(
   request: Request,
@@ -106,7 +107,7 @@ export async function PATCH(
         type:    "ACCOUNTING_PAYMENT_RELEASED",
         title:   "Fonds remis",
         message: `Un paiement pour "${payment.request.label}" a été confirmé remis${partialMsg}.`,
-        link:    `/accounting/requests/${payment.requestId}`,
+        link:    paths.accounting.request(payment.requestId),
       },
       { email }
     );

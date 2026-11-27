@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { exportedSections, filled, statDisplay, type StatItem } from "@/lib/report-stats";
 import { anonymize } from "@/modules/assistant";
 import { REFUSED, can, dayWindow, formatDay, isOnDay, paramsSchema, type DataQuestion } from "./common";
+import { paths } from "@/lib/paths";
 
 /**
  * Questions de données de la bibliothèque audio et des comptes rendus (spec 081, reprises par
@@ -26,7 +27,7 @@ export const AUDIO_QUESTIONS: DataQuestion[] = [
       }));
       return boundedAnswer({
         title: "Cultes publiés",
-        href: "/audio/ecouter",
+        href: paths.audio.ecouter(),
         hrefLabel: "(re)Écouter",
         items,
         empty: "Aucun culte publié pour l'instant.",
@@ -62,7 +63,7 @@ export const REPORTS_QUESTIONS: DataQuestion[] = [
       }));
       return boundedAnswer({
         title: "Comptes rendus récents",
-        href: "/admin/reports",
+        href: paths.admin.reports(),
         hrefLabel: "Comptes rendus",
         items,
         empty: "Aucun compte rendu sur les 90 derniers jours.",
@@ -121,7 +122,7 @@ export const REPORTS_QUESTIONS: DataQuestion[] = [
       const first = reports[0]?.event;
       return boundedAnswer({
         title: reportTitle(first, several),
-        href: first && !several ? reportHref(first.id) : "/admin/reports",
+        href: first && !several ? reportHref(first.id) : paths.admin.reports(),
         hrefLabel: "Compte rendu",
         items,
         empty: params.day ? "Aucun compte rendu pour ce jour." : "Aucun compte rendu.",
@@ -131,7 +132,7 @@ export const REPORTS_QUESTIONS: DataQuestion[] = [
 ];
 
 /** Écran d'un compte rendu (lecture et saisie). */
-export const reportHref = (eventId: string) => `/admin/events/${eventId}/report`;
+export const reportHref = (eventId: string) => paths.admin.eventReport(eventId);
 
 /** « Orateur · Titre », avec « non renseigné » pour un champ vide (jamais un séparateur seul). */
 function speakerAndTitle(speaker: string | null, messageTitle: string | null): string {

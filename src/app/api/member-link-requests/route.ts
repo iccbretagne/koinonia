@@ -5,6 +5,7 @@ import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
 import { notifyUsers } from "@/lib/notifications";
 import type { z } from "zod";
 import { createSchema } from "./contract";
+import { paths } from "@/lib/paths";
 
 type CreateInput = z.infer<typeof createSchema>;
 
@@ -71,7 +72,7 @@ async function notifyChurchAdmins(churchId: string, requesterName: string | null
       type: "MEMBER_LINK_REQUEST",
       title: "Nouvelle demande de liaison",
       message: `${requesterName} a soumis une demande de liaison compte STAR.`,
-      link: "/admin/access",
+      link: paths.admin.access(),
     }
   );
 }

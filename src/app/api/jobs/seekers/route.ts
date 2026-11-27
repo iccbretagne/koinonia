@@ -3,6 +3,7 @@ import { requireAuth, requirePlatformPermission } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { createNotification } from "@/lib/notifications";
 import { createSeekerSchema } from "./contract";
+import { paths } from "@/lib/paths";
 
 function contractTypeFilter(type: "EMPLOI" | "STAGE" | "ALTERNANCE" | null) {
   if (type === "EMPLOI") return { wantEmploi: true };
@@ -83,7 +84,7 @@ async function notifySeekerSubscribers(seeker: {
           type:    "JOB_SEEKER",
           title:   "Nouveau profil en recherche",
           message: `${authorName} cherche un emploi : « ${seeker.title} »`,
-          link:    `/jobs/seekers/${seeker.id}`,
+          link:    paths.jobs.seeker(seeker.id),
         });
       }
     })

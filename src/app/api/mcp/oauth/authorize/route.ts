@@ -13,8 +13,9 @@ import {
 } from "@/modules/mcp";
 import { readParams } from "../_http";
 import { decisionSchema } from "./contract";
+import { paths } from "@/lib/paths";
 
-const SCREEN = "/mcp/autoriser";
+const SCREEN = paths.mcp.autoriser();
 
 function redirect(location: string, status = 302) {
   return new Response(null, { status, headers: { Location: location, "Cache-Control": "no-store" } });
