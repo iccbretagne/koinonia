@@ -347,7 +347,9 @@ function PaletteBody({
         </kbd>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2">
+      {/* Zone défilante focalisable (axe scrollable-region-focusable) : les options sont désignées par
+          aria-activedescendant, sans être elles-mêmes focalisables. */}
+      <div tabIndex={0} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">
         <ul ref={listRef} id={listId} role="listbox" aria-label="Résultats">
           {groups.map((g) => (
             <li key={g.key} role="none" className="mb-1">

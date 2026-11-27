@@ -45,7 +45,7 @@ export const NAV_BY_ROLE: Record<string, RoleNav> = {
   "faiseur-disciples": { spaces: ["Accueil", "Planning", "Personnes", "Médias", "Ressources"], bottom: ["Accueil", "Discipolat", "Planning"] },
   reporter: { spaces: ["Accueil", "Événements", "Médias", "Ressources"], bottom: ["Accueil", "Comptes rendus", "Calendrier"] },
   star: { spaces: DEPT_HEAD.filter((s) => s !== "Personnes"), bottom: ["Accueil", "Mon planning", "Calendrier"] },
-  comptable: { spaces: ["Accueil", "Finances", "Médias", "Ressources"], bottom: ["Accueil", "Demandes", "Trésorerie", "Navette"] },
+  comptable: { spaces: ["Accueil", "Finances", "Médias", "Ressources"], bottom: ["Accueil", "Demandes", "Trésorerie"] },
   "referent-soins": { spaces: ["Accueil", "Pastoral", "Médias", "Ressources"], bottom: ["Accueil", "Suivi"] },
 };
 
