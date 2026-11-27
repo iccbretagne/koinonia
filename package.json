@@ -26,6 +26,8 @@
     "assistant:eval": "tsx scripts/assistant-eval.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "fixture:training": "tsx prisma/scripts/build-training-fixture.ts",
@@ -67,7 +69,9 @@
   },
   "devDependencies": {
     "@asteasolutions/zod-to-openapi": "^9.1.0",
+    "@axe-core/playwright": "4.14.1",
     "@faker-js/faker": "^10.6.0",
+    "@playwright/test": "1.65.1",
     "@types/archiver": "^7.0.0",
     "@types/node": "^25.9.9",
     "@types/nodemailer": "^7.0.12",
