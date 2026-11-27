@@ -1,7 +1,7 @@
 import type { z } from "zod";
 import type { AssistantViewer } from "@/core/assistant";
 import { publicOrigin } from "@/modules/mcp";
-import { requestPrefillHref, requestPrefillSchema } from "@/app/(auth)/requests/prefill";
+import { requestPrefillHref, requestPrefillSchema } from "@/lib/request-prefill";
 import type { ActionResult } from "./common";
 
 // ─── Préparer une demande (lien prérempli, rien n'est enregistré) ─────────────

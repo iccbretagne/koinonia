@@ -25,7 +25,7 @@ import { fieldLabelClasses } from "@/components/ui/field-classes";
 import { REQUEST_TYPE_ICON } from "../request-display";
 import { EVENT_TYPES, EVENT_TYPE_LABELS } from "@/lib/event-types";
 import { ROLE_LABELS } from "@/lib/roles";
-import type { RequestPrefill } from "../prefill";
+import type { RequestPrefill } from "@/lib/request-prefill";
 
 type RequestCategory = "announcement" | "visual" | "demand" | null;
 type DemandType =

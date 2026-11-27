@@ -2,7 +2,7 @@
  * Tests — formulaire « Nouvelle demande » prérempli par l'adresse (spec 081, brouillon de demande).
  */
 import { describe, it, expect } from "vitest";
-import { parseRequestPrefill, requestPrefillHref } from "../prefill";
+import { parseRequestPrefill, requestPrefillHref } from "@/lib/request-prefill";
 
 describe("préremplissage d'une demande", () => {
   it("aller-retour : le lien produit se relit à l'identique", () => {
