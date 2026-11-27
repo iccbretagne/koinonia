@@ -7,6 +7,7 @@ import { Alert, Button, ConfirmModal, controlClasses, EmptyState, StatusChip, us
 import type { AppIconPreview as PreviewData, AppIconState } from "@/modules/core";
 import { APP_ICON_MAX_BYTES } from "@/modules/core/schemas";
 import AppIconPreview from "./AppIconPreview";
+import FileInput from "@/components/ui/FileInput";
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
@@ -210,20 +211,15 @@ export default function AppIconClient({ initialState }: { readonly initialState:
           <li>Pas de petit texte : il devient illisible à la taille d&apos;un onglet.</li>
         </ul>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${id}-icon`} className="text-sm font-medium text-ink">
-            Icône
-          </label>
-          <input
-            key={`icon-${fileKey}`}
-            id={`${id}-icon`}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            onChange={(e) => pickIcon(e.target.files?.[0] ?? null)}
-            disabled={busy}
-            className="block text-sm text-ink-muted"
-          />
-        </div>
+        <FileInput
+          key={`icon-${fileKey}`}
+          id={`${id}-icon`}
+          label="Icône"
+          accept="image/png,image/jpeg,image/webp"
+          buttonLabel="Choisir une icône"
+          onChange={(e) => pickIcon(e.target.files?.[0] ?? null)}
+          disabled={busy}
+        />
 
         {iconFile && preview && (
           <div className="flex flex-col gap-1.5">
@@ -249,7 +245,6 @@ export default function AppIconClient({ initialState }: { readonly initialState:
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="min-h-11 sm:min-h-9"
                   disabled={busy || !HEX.test(background)}
                   title={HEX.test(background) ? undefined : "Saisissez une couleur au format #RRGGBB"}
                   onClick={() => requestPreview({ icon: iconFile, badge: badgeFile, background })}
@@ -263,17 +258,14 @@ export default function AppIconClient({ initialState }: { readonly initialState:
         )}
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${id}-badge`} className="text-sm font-medium text-ink">
-            Silhouette des notifications (facultatif)
-          </label>
-          <input
+          <FileInput
             key={`badge-${fileKey}`}
             id={`${id}-badge`}
-            type="file"
+            label="Silhouette des notifications (facultatif)"
             accept="image/png,image/webp"
+            buttonLabel="Choisir une silhouette"
             onChange={(e) => pickBadge(e.target.files?.[0] ?? null)}
             disabled={busy || (!state.custom && !iconFile)}
-            className="block text-sm text-ink-muted"
           />
           {!state.custom && !iconFile && (
             <p className="text-[13px] leading-[18px] text-ink-muted">Déposez d&apos;abord une icône.</p>
@@ -318,7 +310,7 @@ export default function AppIconClient({ initialState }: { readonly initialState:
         </p>
         <p className="mt-2 italic">{ANNOUNCEMENT}</p>
         <div className="mt-2">
-          <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={copyAnnouncement}>
+          <Button variant="ghost" size="sm" onClick={copyAnnouncement}>
             <Copy aria-hidden="true" className="size-4" />
             Copier le message
           </Button>

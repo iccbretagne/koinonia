@@ -20,7 +20,7 @@ export default async function SecretariatRequestsPage() {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader title="Traitement des demandes" />
-        <Alert tone="warning" action={<Link href="/admin/departments/functions" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>Configurer les fonctions</Link>}>
+        <Alert tone="warning" action={<Link href="/admin/departments/functions" className={buttonClasses("secondary", "sm")}>Configurer les fonctions</Link>}>
           Aucun département n&apos;est configuré comme <strong>Secrétariat</strong>.
         </Alert>
       </div>

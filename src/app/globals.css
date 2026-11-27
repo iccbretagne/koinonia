@@ -157,6 +157,15 @@
   --radius-sheet: 24px;
 
   --ease-out-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Couches (docs/design-system/tokens.css, --z-*) : utilitaires z-sticky, z-nav, z-overlay,
+     z-modal, z-toast, z-banner. Ne pas écrire de valeur arbitraire (z-[60]). */
+  --z-index-sticky: 20;
+  --z-index-nav: 30;
+  --z-index-overlay: 50;
+  --z-index-modal: 60;
+  --z-index-toast: 70;
+  --z-index-banner: 100;
 }
 
 @theme inline {

@@ -322,10 +322,10 @@ function ShareTokenSection({ eventId, tokens, onRefresh }: {
               </p>
             </div>
             <div className="flex gap-1.5 shrink-0">
-              <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => copy(url, token.id)}>
+              <Button type="button" variant="secondary" size="sm" onClick={() => copy(url, token.id)}>
                 {copied === token.id ? "Copié !" : "Copier le lien"}
               </Button>
-              <IconButton icon={Trash2} aria-label="Supprimer le lien" size="sm" className="max-sm:size-11" onClick={() => setPendingDeleteTokenId(token.id)} />
+              <IconButton icon={Trash2} aria-label="Supprimer le lien" size="sm" onClick={() => setPendingDeleteTokenId(token.id)} />
             </div>
           </div>
         );
@@ -346,10 +346,10 @@ function ShareTokenSection({ eventId, tokens, onRefresh }: {
           <Input label="Étiquette (facultative)" placeholder="Ex : Validateurs familles" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
           {error && <p className="text-[13px] text-danger">{error}</p>}
           <div className="flex flex-wrap gap-2 justify-end">
-            <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => { setOpen(false); setError(null); }}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => { setOpen(false); setError(null); }}>
               Annuler
             </Button>
-            <Button onClick={createToken} disabled={creating} size="sm" className="min-h-11 sm:min-h-9">
+            <Button onClick={createToken} disabled={creating} size="sm">
               {creating ? "Création en cours…" : "Créer le lien"}
             </Button>
           </div>
@@ -678,7 +678,7 @@ export default function MediaEventDetail({
       {/* ── Header ──────────────────────────────────────────── */}
       <div className="bg-surface rounded-card border border-line shadow-card overflow-hidden">
         <div className="p-5">
-          <Link href="/media/events" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9 -ml-2 mb-3`}>
+          <Link href="/media/events" className={`${buttonClasses("ghost", "sm")} -ml-2 mb-3`}>
             <ChevronLeft className="size-4" aria-hidden="true" strokeWidth={1.75} />
             Retour aux événements
           </Link>
@@ -703,12 +703,12 @@ export default function MediaEventDetail({
             </div>
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               {canManage && !editMode && (
-                <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={openEdit}>
+                <Button type="button" variant="secondary" size="sm" onClick={openEdit}>
                   Modifier l&apos;événement
                 </Button>
               )}
               {canManage && (
-                <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setConfirmDeleteEvent(true)}>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmDeleteEvent(true)}>
                   Supprimer l&apos;événement
                 </Button>
               )}
@@ -734,10 +734,10 @@ export default function MediaEventDetail({
               {editError && <p className="text-[13px] text-danger">{editError}</p>}
               {!editName.trim() && <p className="text-[13px] text-ink-muted">Saisissez un nom pour enregistrer.</p>}
               <div className="flex flex-wrap gap-2 justify-end">
-                <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setEditMode(false)} disabled={editSaving}>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setEditMode(false)} disabled={editSaving}>
                   Annuler
                 </Button>
-                <Button type="button" size="sm" className="min-h-11 sm:min-h-9" onClick={saveEdit} disabled={editSaving || !editName.trim()}>
+                <Button type="button" size="sm" onClick={saveEdit} disabled={editSaving || !editName.trim()}>
                   {editSaving ? "Enregistrement en cours…" : "Enregistrer les modifications"}
                 </Button>
               </div>
@@ -816,11 +816,11 @@ export default function MediaEventDetail({
             </label>
             {selectedPhotoIds.size > 0 && (
               <div className="flex items-center gap-2 ml-auto">
-                <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => requestDelete(Array.from(selectedPhotoIds))} disabled={bulkLoading}>
+                <Button type="button" variant="secondary" size="sm" onClick={() => requestDelete(Array.from(selectedPhotoIds))} disabled={bulkLoading}>
                   <Trash2 className="size-4" aria-hidden="true" strokeWidth={1.75} />
                   {bulkLoading ? "Suppression en cours…" : `Supprimer la sélection (${selectedPhotoIds.size})`}
                 </Button>
-                <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setSelectedPhotoIds(new Set())}>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedPhotoIds(new Set())}>
                   Annuler la sélection
                 </Button>
               </div>
@@ -837,7 +837,7 @@ export default function MediaEventDetail({
                 {activeTab ? `Aucune photo "${PHOTO_STATUS_LABELS[activeTab as MediaPhotoStatus]}"` : "Aucune photo pour cet événement"}
               </p>
               {activeTab && (
-                <Button type="button" variant="ghost" size="sm" className="mt-2 min-h-11 sm:min-h-9" onClick={() => setActiveTab("")}>
+                <Button type="button" variant="ghost" size="sm" className="mt-2" onClick={() => setActiveTab("")}>
                   Voir toutes les photos
                 </Button>
               )}

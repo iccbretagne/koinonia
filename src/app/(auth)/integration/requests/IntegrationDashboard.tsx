@@ -363,7 +363,7 @@ export default function IntegrationDashboard({
                         <Link
                           href={`/integration/requests/${r.id}`}
                           aria-label={`${nextAction ?? "Voir la demande"} — ${r.firstName} ${r.lastName}`}
-                          className={`${buttonClasses("ghost", "sm")} min-h-11 whitespace-nowrap sm:min-h-9`}
+                          className={`${buttonClasses("ghost", "sm")} whitespace-nowrap`}
                         >
                           {nextAction ?? "Voir"}
                           <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />

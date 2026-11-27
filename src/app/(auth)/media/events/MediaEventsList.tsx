@@ -92,8 +92,8 @@ export default function MediaEventsList({
           <SearchInput aria-label="Rechercher un événement" placeholder="Rechercher…" value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1" />
           <div className="sm:w-56">
             <Select
-              label=""
-              aria-label="Statut"
+              label="Statut"
+              hideLabel
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as MediaEventStatus | "")}
               placeholder="Tous les statuts"
@@ -109,7 +109,7 @@ export default function MediaEventsList({
             <Input label="Au" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
           </div>
           {hasDateFilter && (
-            <Button type="button" variant="ghost" size="sm" className="min-h-11 shrink-0 sm:min-h-9" onClick={() => { setDateFrom(""); setDateTo(""); }}>
+            <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={() => { setDateFrom(""); setDateTo(""); }}>
               Effacer les dates
             </Button>
           )}
@@ -136,7 +136,7 @@ export default function MediaEventsList({
       {canShare && selected.size > 0 && (
         <div className="sticky top-0 z-10 bg-brand-soft border border-brand/30 rounded-card px-4 py-2 flex flex-wrap items-center justify-between gap-3">
           <span className="text-sm text-ink-muted">{selected.size} événement{selected.size > 1 ? "s" : ""} sélectionné{selected.size > 1 ? "s" : ""}</span>
-          <Button size="sm" className="min-h-11 sm:min-h-9" onClick={() => setShareModalOpen(true)}>Partager la sélection</Button>
+          <Button size="sm" onClick={() => setShareModalOpen(true)}>Partager la sélection</Button>
         </div>
       )}
 

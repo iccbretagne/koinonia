@@ -5,6 +5,7 @@ import Link from "next/link";
 import AvailabilityTabs from "@/components/AvailabilityTabs";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
+import Tabs, { TabPanel } from "@/components/ui/Tabs";
 import Alert from "@/components/ui/Alert";
 import PageHeader from "@/components/ui/PageHeader";
 import { buttonClasses } from "@/components/ui/button-classes";
@@ -343,7 +344,7 @@ export default function AvailabilityClient({
         <Alert
           tone="info"
           action={
-            <Link href="/profile" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+            <Link href="/profile" className={buttonClasses("secondary", "sm")}>
               Ouvrir mon profil
             </Link>
           }
@@ -400,25 +401,13 @@ export default function AvailabilityClient({
       )}
 
       {months.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Mois">
-          {months.map((m) => {
-            const key = m.month.slice(0, 7);
-            return (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                aria-selected={key === month}
-                onClick={() => setMonth(key)}
-                className={`shrink-0 min-h-11 rounded-full border px-4 text-sm ${
-                  key === month ? "bg-brand text-on-brand border-brand" : "border-control-line text-ink-muted hover:border-brand"
-                }`}
-              >
-                {monthLabel(key)}
-              </button>
-            );
-          })}
-        </div>
+        <Tabs
+          ariaLabel="Mois"
+          idBase="availability-month"
+          value={month ?? ""}
+          onChange={setMonth}
+          tabs={months.map((m) => ({ value: m.month.slice(0, 7), label: monthLabel(m.month.slice(0, 7)) }))}
+        />
       )}
 
       {current?.closesAt && (
@@ -450,7 +439,13 @@ export default function AvailabilityClient({
         />
       )}
 
-      {eventsContent}
+      {months.length > 0 ? (
+        <TabPanel idBase="availability-month" value={month ?? ""}>
+          {eventsContent}
+        </TabPanel>
+      ) : (
+        eventsContent
+      )}
 
       <ConfirmModal
         open={pendingSave !== null}

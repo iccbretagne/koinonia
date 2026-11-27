@@ -242,7 +242,7 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
               {selected.sourceRequest && (
                 <Link
                   href={`/integration/requests/${selected.sourceRequest.id}`}
-                  className={`${buttonClasses("ghost", "sm")} -ml-3 min-h-11 self-start sm:min-h-9`}
+                  className={`${buttonClasses("ghost", "sm")} -ml-3 self-start`}
                 >
                   Voir la demande d&apos;intégration
                   <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
@@ -288,7 +288,6 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
                         type="button"
                         variant={reached ? "ghost" : "secondary"}
                         size="sm"
-                        className="min-h-11 sm:min-h-9"
                         onClick={() => toggleMilestone(selected, m.key)}
                       >
                         {reached ? "Retirer le jalon" : "Marquer atteint"}

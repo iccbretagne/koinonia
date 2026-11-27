@@ -2,6 +2,7 @@
 
 import { ArrowLeft, ChevronLeft, ChevronRight, ExternalLink, Moon, Sun, X, ZoomIn } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, type Dispatch, type SetStateAction } from "react";
+import IconButton from "@/components/ui/IconButton";
 
 type Photo = {
   id: string;
@@ -118,9 +119,7 @@ function HdLightbox({
     <div className="fixed inset-0 z-50 bg-scrim/95 flex flex-col" role="none" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
-        <button onClick={onClose} className="grid size-11 place-items-center rounded-control text-on-brand/70 hover:text-on-brand transition-colors focus-visible:outline-2 focus-visible:outline-focus" aria-label="Fermer la visionneuse">
-          <X className="w-6 h-6" aria-hidden="true" />
-        </button>
+        <IconButton variant="on-dark" icon={X} onClick={onClose} aria-label="Fermer la visionneuse" />
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-on-brand/60 text-xs truncate">{photo.filename}</span>
           <span className="text-on-brand/40 text-xs shrink-0">{formatSize(photo.size)}</span>
@@ -736,23 +735,9 @@ export default function ValidatorView({ token, data }: { readonly token: string;
                 Aller à la suivante ({pendingCount} en attente)
               </button>
             )}
-            <button
-              onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
-              disabled={currentIndex === 0}
-              className="grid size-11 place-items-center rounded-control text-on-brand disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-focus"
-              aria-label="Photo précédente"
-            >
-              <ChevronLeft className="size-5" aria-hidden="true" />
-            </button>
+            <IconButton variant="on-dark" icon={ChevronLeft} onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))} disabled={currentIndex === 0} aria-label="Photo précédente" />
             <span className="text-sm tabular-nums text-on-brand/90">{currentIndex + 1}/{totalPhotos}</span>
-            <button
-              onClick={() => setCurrentIndex((i) => Math.min(totalPhotos - 1, i + 1))}
-              disabled={currentIndex === totalPhotos - 1}
-              className="grid size-11 place-items-center rounded-control text-on-brand disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-focus"
-              aria-label="Photo suivante"
-            >
-              <ChevronRight className="size-5" aria-hidden="true" />
-            </button>
+            <IconButton variant="on-dark" icon={ChevronRight} onClick={() => setCurrentIndex((i) => Math.min(totalPhotos - 1, i + 1))} disabled={currentIndex === totalPhotos - 1} aria-label="Photo suivante" />
           </div>
 
           <button onClick={() => setShowSummary(true)} className="min-h-11 rounded-control px-2 font-display text-sm font-semibold text-on-brand/80 hover:text-on-brand focus-visible:outline-2 focus-visible:outline-focus">

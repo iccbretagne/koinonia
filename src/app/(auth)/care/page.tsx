@@ -105,13 +105,13 @@ export default async function CarePage() {
           (access.canOverview || access.canQualify) && (
             <>
               {access.canOverview && (
-                <Link href="/care/stats" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+                <Link href="/care/stats" className={buttonClasses("ghost", "sm")}>
                   <BarChart3 aria-hidden="true" className="size-4" strokeWidth={1.75} />
                   Statistiques
                 </Link>
               )}
               {access.canQualify && (
-                <Link href="/care/parametres" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+                <Link href="/care/parametres" className={buttonClasses("ghost", "sm")}>
                   <Settings aria-hidden="true" className="size-4" strokeWidth={1.75} />
                   Paramètres
                 </Link>

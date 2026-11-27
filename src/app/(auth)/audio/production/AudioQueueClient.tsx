@@ -205,7 +205,7 @@ export default function AudioQueueClient({ services }: { readonly services: Audi
       <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
         <div className="w-full md:flex-1">
           <div className="md:hidden mb-2">
-            <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" aria-expanded={mobileFiltersOpen} onClick={() => setMobileFiltersOpen((o) => !o)}>
+            <Button variant="secondary" size="sm" aria-expanded={mobileFiltersOpen} onClick={() => setMobileFiltersOpen((o) => !o)}>
               Filtrer{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
             </Button>
           </div>
@@ -283,7 +283,7 @@ export default function AudioQueueClient({ services }: { readonly services: Audi
           {visible.length} enregistrement{visible.length > 1 ? "s" : ""}
         </span>
         {showReset && (
-          <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={reset}>
+          <Button variant="secondary" size="sm" onClick={reset}>
             Réinitialiser les filtres
           </Button>
         )}
@@ -335,7 +335,7 @@ export default function AudioQueueClient({ services }: { readonly services: Audi
             : "La date de fin est antérieure à la date de début."
         }
         actions={(row) => (
-          <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => router.push(`/audio/production/${row.id}`)}>
+          <Button variant="secondary" size="sm" onClick={() => router.push(`/audio/production/${row.id}`)}>
             Ouvrir l&apos;enregistrement
           </Button>
         )}

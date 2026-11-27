@@ -123,9 +123,8 @@ export default function RequestActions({
     return null;
   }
 
-  const actionClasses = "min-h-11 sm:min-h-9";
   const cancel = (
-    <Button size="sm" variant="secondary" className={actionClasses} onClick={() => { setMode("none"); setError(null); }} disabled={processing}>
+    <Button size="sm" variant="secondary" onClick={() => { setMode("none"); setError(null); }} disabled={processing}>
       Annuler
     </Button>
   );
@@ -140,14 +139,14 @@ export default function RequestActions({
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           {canValidateOrReject && (
             <>
-              <Button size="sm" className={actionClasses} onClick={() => setMode("validate")}>Confier la demande</Button>
-              <Button size="sm" variant="secondary" className={actionClasses} onClick={() => setMode("reject")}>Refuser la demande</Button>
+              <Button size="sm" onClick={() => setMode("validate")}>Confier la demande</Button>
+              <Button size="sm" variant="secondary" onClick={() => setMode("reject")}>Refuser la demande</Button>
             </>
           )}
-          {canReassign && <Button size="sm" variant="secondary" className={actionClasses} onClick={() => setMode("reassign")}>Réaffecter la demande</Button>}
-          {canSetDate && <Button size="sm" variant="secondary" className={actionClasses} onClick={() => setMode("set_date")}>Fixer la date</Button>}
-          {canOutcome && <Button size="sm" variant="secondary" className={actionClasses} onClick={() => setMode("outcome")}>Renseigner le compte rendu</Button>}
-          {canHandback && <Button size="sm" variant="secondary" className={actionClasses} onClick={() => setMode("handback")}>Rendre la demande</Button>}
+          {canReassign && <Button size="sm" variant="secondary" onClick={() => setMode("reassign")}>Réaffecter la demande</Button>}
+          {canSetDate && <Button size="sm" variant="secondary" onClick={() => setMode("set_date")}>Fixer la date</Button>}
+          {canOutcome && <Button size="sm" variant="secondary" onClick={() => setMode("outcome")}>Renseigner le compte rendu</Button>}
+          {canHandback && <Button size="sm" variant="secondary" onClick={() => setMode("handback")}>Rendre la demande</Button>}
         </div>
       )}
 
@@ -167,7 +166,7 @@ export default function RequestActions({
           />
           <div className={footerClasses}>
             {cancel}
-            <Button size="sm" className={actionClasses} onClick={validate} disabled={processing || !assignee}>
+            <Button size="sm" onClick={validate} disabled={processing || !assignee}>
               {sending ?? "Confier la demande"}
             </Button>
           </div>
@@ -195,7 +194,7 @@ export default function RequestActions({
           />
           <div className={footerClasses}>
             {cancel}
-            <Button size="sm" className={actionClasses} onClick={() => setConfirmReject(true)} disabled={processing || !reasonCode}>
+            <Button size="sm" onClick={() => setConfirmReject(true)} disabled={processing || !reasonCode}>
               Refuser la demande
             </Button>
           </div>
@@ -222,7 +221,7 @@ export default function RequestActions({
           </div>
           <div className={footerClasses}>
             {cancel}
-            <Button size="sm" className={actionClasses} onClick={reassign} disabled={processing || !assignee}>
+            <Button size="sm" onClick={reassign} disabled={processing || !assignee}>
               {sending ?? "Réaffecter la demande"}
             </Button>
           </div>
@@ -242,7 +241,7 @@ export default function RequestActions({
           />
           <div className={footerClasses}>
             {cancel}
-            <Button size="sm" className={actionClasses} onClick={setDate} disabled={processing || !scheduledFor}>
+            <Button size="sm" onClick={setDate} disabled={processing || !scheduledFor}>
               {sending ?? "Fixer la date"}
             </Button>
           </div>
@@ -263,7 +262,7 @@ export default function RequestActions({
           />
           <div className={footerClasses}>
             {cancel}
-            <Button size="sm" className={actionClasses} onClick={outcome} disabled={processing || !outcomeKind}>
+            <Button size="sm" onClick={outcome} disabled={processing || !outcomeKind}>
               {sending ?? "Enregistrer le compte rendu"}
             </Button>
           </div>
@@ -283,7 +282,7 @@ export default function RequestActions({
           />
           <div className={footerClasses}>
             {cancel}
-            <Button size="sm" className={actionClasses} onClick={handback} disabled={processing || !handbackReason.trim()}>
+            <Button size="sm" onClick={handback} disabled={processing || !handbackReason.trim()}>
               {sending ?? "Rendre la demande"}
             </Button>
           </div>

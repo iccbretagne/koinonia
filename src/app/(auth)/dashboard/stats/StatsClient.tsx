@@ -13,6 +13,7 @@ import {
   Line,
 } from "recharts";
 import Select from "@/components/ui/Select";
+import SegmentedControl from "@/components/ui/SegmentedControl";
 import DataTable from "@/components/ui/DataTable";
 import StatusChip, { type StatusTone } from "@/components/ui/StatusChip";
 import EmptyState from "@/components/ui/EmptyState";
@@ -25,37 +26,6 @@ import { ChartColumn, ListChecks } from "lucide-react";
  * qui ne lisent pas les variables CSS. Violet et bleu de la charte, lisibles dans les deux thèmes.
  */
 const SERIES = { primary: "#7c4dff", danger: "#e5484d", secondary: "#38B6FF" };
-
-function Segmented<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  readonly label: string;
-  readonly value: T;
-  readonly options: { value: T; label: string }[];
-  readonly onChange: (v: T) => void;
-}) {
-  return (
-    <fieldset aria-label={label} className="inline-flex min-w-0 w-fit gap-0.5 rounded-control bg-surface-sunken p-[3px]">
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          aria-pressed={value === o.value}
-          onClick={() => onChange(o.value)}
-          className={`min-h-11 rounded-[7px] px-4 font-display text-sm font-semibold transition-colors duration-120
-            focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus ${
-              value === o.value ? "bg-surface text-brand-text shadow-card" : "text-ink-muted hover:text-ink"
-            }`}
-        >
-          {o.label}
-        </button>
-      ))}
-    </fieldset>
-  );
-}
 
 function StatTile({ label, value, accent = false }: { readonly label: string; readonly value: React.ReactNode; readonly accent?: boolean }) {
   return (
@@ -188,7 +158,7 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
 
         <div className="flex flex-col gap-1.5">
           <span className={fieldLabelClasses}>Période</span>
-          <Segmented
+          <SegmentedControl
             label="Période"
             value={periodMode}
             onChange={setPeriodMode}
@@ -227,7 +197,7 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
       </div>
 
       <div className="mb-6">
-        <Segmented
+        <SegmentedControl
           label="Statistiques"
           value={tab}
           onChange={setTab}

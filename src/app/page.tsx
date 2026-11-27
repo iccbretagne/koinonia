@@ -115,7 +115,7 @@ export default async function LoginPage({
           <Link
             href="/api/auth/reset"
             prefetch={false}
-            className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}
+            className={buttonClasses("ghost", "sm")}
           >
             Problème de connexion ?
           </Link>

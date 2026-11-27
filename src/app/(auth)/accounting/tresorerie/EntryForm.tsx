@@ -2,11 +2,13 @@
 
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Input, Modal, Select, buttonClasses, fieldLabelClasses, useToast } from "@/components/ui";
+import { Alert, Button, Input, Modal, Select, fieldLabelClasses, useToast } from "@/components/ui";
+import { Camera } from "lucide-react";
 import type { AccountView, CategoryView, LedgerLine, PurposeView } from "@/modules/treasury";
 import { AUTOMATIC_SYSTEMS, METHODS, METHOD_LABEL, RECEIPT_MAX_BYTES } from "@/modules/treasury/schemas";
 import type { TreasuryDirection, TreasuryMethod } from "@/generated/prisma/enums";
 import { errorText, isoToday, toNumber } from "./format";
+import FileInput from "@/components/ui/FileInput";
 
 /**
  * Saisie ou correction d'une entrée ou d'une sortie (spec 076). Justificatif par photo ou par
@@ -159,19 +161,13 @@ export default function EntryForm({
         <div className="space-y-2">
           <p className={fieldLabelClasses}>Justificatif (facultatif)</p>
           <div className="flex flex-wrap gap-2">
-            <label className={`${buttonClasses("secondary", "md")} cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus`}>
-              Prendre une photo
-              <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
-            </label>
-            <label className={`${buttonClasses("secondary", "md")} cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus`}>
-              Choisir un document
-              <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
-            </label>
+            <FileInput accept="image/*" capture="environment" icon={Camera} buttonLabel="Prendre une photo" fileNames={[]} onFiles={(files) => pick(files[0])} />
+            <FileInput accept="image/jpeg,image/png,image/webp,application/pdf" buttonLabel="Choisir un document" fileNames={[]} onFiles={(files) => pick(files[0])} />
           </div>
           {file && (
             <p className="flex flex-wrap items-center gap-2 text-[15px] leading-[22px] text-ink-muted">
               {file.name} · {(file.size / 1024 / 1024).toFixed(1)} Mo
-              <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setFile(null)}>Retirer le fichier</Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setFile(null)}>Retirer le fichier</Button>
             </p>
           )}
           {!file && line?.hasReceipt && <p className="text-[15px] leading-[22px] text-ink-muted">Un justificatif est déjà enregistré.</p>}

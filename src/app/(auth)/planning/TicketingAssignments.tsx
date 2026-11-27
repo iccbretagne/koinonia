@@ -28,7 +28,7 @@ export default async function TicketingAssignments({ userId }: { readonly userId
             {a.event.location ? ` · ${a.event.location}` : ""}
           </p>
           <details>
-            <summary className={`${buttonClasses("ghost", "sm")} min-h-11 list-none sm:min-h-9 [&::-webkit-details-marker]:hidden`}>
+            <summary className={`${buttonClasses("ghost", "sm")} list-none [&::-webkit-details-marker]:hidden`}>
               Afficher mon badge
             </summary>
             <div className="flex justify-center pt-3">

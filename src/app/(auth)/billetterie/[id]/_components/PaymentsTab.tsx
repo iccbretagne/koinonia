@@ -106,10 +106,10 @@ export default function PaymentsTab({
                   <strong>{p.reference}</strong> {p.contactName} — {PAYMENT_METHOD_LABEL[p.method]} {formatEuros(p.amount)}
                 </span>
                 <span className="flex gap-2">
-                  <Button type="button" size="sm" variant="secondary" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => call(`/api/ticketing/events/${eventId}/payments/${p.id}`, "PATCH", { action: "confirm" }, "Paiement confirmé")}>
+                  <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => call(`/api/ticketing/events/${eventId}/payments/${p.id}`, "PATCH", { action: "confirm" }, "Paiement confirmé")}>
                     Confirmer la réception
                   </Button>
-                  <Button type="button" size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => setReject({ id: p.id, reason: "" })}>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setReject({ id: p.id, reason: "" })}>
                     Refuser
                   </Button>
                 </span>
@@ -128,7 +128,7 @@ export default function PaymentsTab({
               <span className="text-[15px] text-ink">
                 <strong>{b.reference}</strong> {b.contact.name} — reste {formatEuros(b.balances.due + b.balances.declared)}
               </span>
-              <Button type="button" size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => setAction({ booking: b, mode: "receipt" })}>
+              <Button type="button" size="sm" variant="secondary" onClick={() => setAction({ booking: b, mode: "receipt" })}>
                 Encaisser
               </Button>
             </li>
@@ -149,7 +149,7 @@ export default function PaymentsTab({
                     {b.charges.filter((c) => c.status === "REFUND_DUE").map((c) => c.label).join(" · ")}
                   </span>
                 </span>
-                <Button type="button" size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => setAction({ booking: b, mode: "refund" })}>
+                <Button type="button" size="sm" variant="secondary" onClick={() => setAction({ booking: b, mode: "refund" })}>
                   Rembourser
                 </Button>
               </li>

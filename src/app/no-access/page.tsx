@@ -93,7 +93,7 @@ export default async function NoAccessPage() {
 
         <div className="mt-6 pt-4 border-t border-line text-center">
           <form action={async () => { "use server"; await forgetPushDeviceOnSignOut(); await signOut({ redirectTo: "/" }); }}>
-            <button type="submit" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+            <button type="submit" className={buttonClasses("ghost", "sm")}>
               Se déconnecter
             </button>
           </form>

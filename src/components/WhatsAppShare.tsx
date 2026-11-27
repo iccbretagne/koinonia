@@ -48,7 +48,7 @@ export default function WhatsAppShare({
 
   return (
     <span className="inline-flex items-center gap-1">
-      <Button type="button" variant="secondary" size={size} onClick={share} className={size === "sm" ? "min-h-11 sm:min-h-9" : ""}>
+      <Button type="button" variant="secondary" size={size} onClick={share}>
         <MessageCircle aria-hidden="true" className="size-4" strokeWidth={1.75} />
         WhatsApp
       </Button>
@@ -56,7 +56,6 @@ export default function WhatsAppShare({
         icon={Copy}
         aria-label="Copier le message"
         size={size}
-        className={size === "sm" ? "max-sm:size-11" : ""}
         onClick={() => void copy()}
       />
       <Modal open={fallbackText !== null} onClose={() => setFallbackText(null)} title="Copier le message">

@@ -214,7 +214,7 @@ export default function BackupsClient() {
               <span className="ml-2 text-[13px] font-normal text-ink-muted">{backups.length}</span>
             )}
           </h2>
-          <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setRefreshKey((k) => k + 1)} disabled={loading}>
+          <Button variant="ghost" size="sm" onClick={() => setRefreshKey((k) => k + 1)} disabled={loading}>
             {loading ? "Chargement…" : "Actualiser"}
           </Button>
         </div>
@@ -235,10 +235,10 @@ export default function BackupsClient() {
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
-                  <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => downloadBackup(b)} disabled={downloadingKey === b.key}>
+                  <Button variant="secondary" size="sm" onClick={() => downloadBackup(b)} disabled={downloadingKey === b.key}>
                     {downloadingKey === b.key ? "Préparation…" : "Télécharger"}
                   </Button>
-                  <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => { setRestoreResult(null); setRestoreTarget(b); }}>
+                  <Button variant="ghost" size="sm" onClick={() => { setRestoreResult(null); setRestoreTarget(b); }}>
                     Restaurer
                   </Button>
                 </div>

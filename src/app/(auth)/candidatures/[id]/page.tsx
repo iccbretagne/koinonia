@@ -52,7 +52,7 @@ export default async function CandidaturePage({ params }: { readonly params: Pro
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-4">
-      <Link href="/candidatures" className={`${buttonClasses("ghost", "sm")} min-h-11 self-start sm:min-h-9`}>
+      <Link href="/candidatures" className={`${buttonClasses("ghost", "sm")} self-start`}>
         <ArrowLeft className="size-4" aria-hidden="true" /> Retour aux candidatures
       </Link>
       <PageHeader

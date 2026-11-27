@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Alert, Button, EmptyState, Input, buttonClasses, useToast } from "@/components/ui";
-import { FILE_INPUT } from "../_components/file-input-classes";
+import FileInput from "@/components/ui/FileInput";
 
 interface Asset {
   readonly id: string;
@@ -71,23 +71,23 @@ export default function SiteImagesUploader({ eventId, assets }: { readonly event
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href={`/billetterie/${eventId}?vue=site`} className={`${buttonClasses("ghost", "sm")} min-h-11 self-start sm:min-h-9`}>
+      <Link href={`/billetterie/${eventId}?vue=site`} className={`${buttonClasses("ghost", "sm")} self-start`}>
         <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
         Retour à l&apos;éditeur du site
       </Link>
 
       <section className="space-y-3 rounded-card border border-line bg-surface p-4">
         <h2 className="font-semibold text-ink">Déposer des images</h2>
-        <input
-          type="file"
+        <FileInput
           multiple
           accept="image/jpeg,image/png,image/webp,image/svg+xml"
+          buttonLabel="Choisir des images"
           aria-label="Choisir des images (JPEG, PNG, WebP ou SVG, 8 Mo au plus chacune)"
+          fileNames={[]}
           onChange={(e) => {
             add(e.target.files);
             e.target.value = "";
           }}
-          className={FILE_INPUT}
         />
         {rows.map((row, i) => (
           <div key={`${row.file.name}-${i}`} className="flex flex-wrap items-start gap-3 border-t border-line pt-3">

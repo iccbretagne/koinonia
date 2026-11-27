@@ -109,7 +109,7 @@ function AccountMenu({ user, ...actions }: AccountActionsProps & { readonly user
       {open && (
         <div
           id={menuId}
-          className="absolute right-0 top-full z-50 mt-2 w-72 rounded-card border border-line bg-surface p-1.5 shadow-float"
+          className="absolute right-0 top-full z-overlay mt-2 w-72 rounded-card border border-line bg-surface p-1.5 shadow-float"
         >
           <div className="flex items-center gap-3 border-b border-line px-3 pb-3 pt-2">
             <Avatar user={user} size={40} />
@@ -152,7 +152,7 @@ export default function TopBar({
 
   return (
     <header
-      className={`sticky z-30 flex h-14 shrink-0 items-center gap-1 border-b border-line bg-surface pl-3 pr-2 md:gap-2 md:pl-6 md:pr-4 print:hidden ${stickyClassName}`}
+      className={`sticky z-nav flex h-14 shrink-0 items-center gap-1 border-b border-line bg-surface pl-3 pr-2 md:gap-2 md:pl-6 md:pr-4 print:hidden ${stickyClassName}`}
     >
       {/* Mobile : identité de l'église, ou retour sur une page de détail */}
       <div className="flex min-w-0 flex-1 items-center gap-1.5 md:hidden">

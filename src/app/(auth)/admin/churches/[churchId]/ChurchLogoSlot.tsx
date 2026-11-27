@@ -120,11 +120,11 @@ export default function ChurchLogoSlot({
         alt={src ? `Aperçu sur ${label}` : `Aperçu sur ${label} : plumes ICC, aucun logo`}
       />
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => fileRef.current?.click()}>
+        <Button type="button" variant="secondary" size="sm" disabled={busy} onClick={() => fileRef.current?.click()}>
           {uploadLabel}
         </Button>
         {version && (
-          <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => setConfirmRemove(true)}>
+          <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => setConfirmRemove(true)}>
             Retirer le logo
           </Button>
         )}

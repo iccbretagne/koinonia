@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Modal, Textarea, fieldLabelClasses, useToast } from "@/components/ui";
+import { Alert, Button, Modal, Textarea, useToast } from "@/components/ui";
+import FileInput from "@/components/ui/FileInput";
 
 type DateLike = string | Date;
 
@@ -90,19 +91,15 @@ export default function PieceRequestPanel({
 
       {requested && isOwn && (
         <div className="flex flex-col gap-2 rounded-card border border-line bg-surface p-4 shadow-card">
-          <label className={fieldLabelClasses} htmlFor="piece-files">
-            Déposer les pièces demandées (JPEG, PNG ou PDF, 5 Mo chacune)
-          </label>
-          <input
+          <FileInput
             id="piece-files"
-            type="file"
+            label="Déposer les pièces demandées (JPEG, PNG ou PDF, 5 Mo chacune)"
             multiple
             accept="image/jpeg,image/png,application/pdf"
-            onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-            className="block min-h-11 w-full text-base text-ink file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-control file:border file:border-control-line file:bg-surface file:px-4 file:font-display file:text-sm file:font-semibold file:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+            onFiles={setFiles}
           />
           {files.length === 0 && <p className="text-[13px] leading-[18px] text-ink-muted">Choisissez au moins un fichier pour l&apos;envoyer.</p>}
-          <Button size="sm" className="min-h-11 self-start sm:min-h-9" disabled={busy || files.length === 0} onClick={send}>
+          <Button size="sm" className="self-start" disabled={busy || files.length === 0} onClick={send}>
             {busy ? "Envoi…" : "Envoyer les pièces"}
           </Button>
         </div>
@@ -111,7 +108,7 @@ export default function PieceRequestPanel({
       {canManage && (
         <div className="flex flex-wrap items-center gap-2">
           {submitterActive ? (
-            <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" disabled={busy} onClick={() => setOpen(true)}>
+            <Button size="sm" variant="secondary" disabled={busy} onClick={() => setOpen(true)}>
               {requested ? "Relancer le demandeur" : "Demander une pièce"}
             </Button>
           ) : (
@@ -120,7 +117,6 @@ export default function PieceRequestPanel({
           {requested && (
             <Button
               size="sm"
-              className="min-h-11 sm:min-h-9"
               variant="ghost"
               disabled={busy}
               onClick={() => run(() => patch({ action: "cancelPieceRequest" }), "Demande de pièce annulée")}

@@ -18,6 +18,7 @@ import {
   controlClasses,
   useToast,
 } from "@/components/ui";
+import Tabs, { TabPanel } from "@/components/ui/Tabs";
 
 /** Membre existant (id) ou nouveau disciple saisi par son nom. */
 type DiscipleSelection = string | { firstName: string; lastName: string } | null;
@@ -106,24 +107,16 @@ export default function DiscipleshipClient({ churchId, members, allAssignedDisci
 
   return (
     <div>
-      {/* Onglets internes (même rendu que Tabs, qui ne gère que des liens) + filtre "Tous / Mes disciples" */}
+      {/* Onglets internes + filtre "Tous / Mes disciples" */}
       <div className="mb-6 flex flex-wrap items-end justify-between gap-2 border-b border-line">
-        <div role="tablist" aria-label="Discipolat" className="flex gap-1 overflow-x-auto">
-          {(["relations", "appel", "stats"] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab}
-              onClick={() => setActiveTab(tab)}
-              className={`-mb-px inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-3 font-display text-sm font-semibold leading-5 transition-colors duration-120 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${
-                activeTab === tab ? "border-brand text-brand-text" : "border-transparent text-ink-muted hover:text-ink"
-              }`}
-            >
-              {TAB_LABELS[tab]}
-            </button>
-          ))}
-        </div>
+        <Tabs
+          ariaLabel="Discipolat"
+          idBase="discipleship"
+          value={activeTab}
+          onChange={setActiveTab}
+          className="-mb-px min-w-0 border-b-transparent"
+          tabs={(["relations", "appel", "stats"] as const).map((tab) => ({ value: tab, label: TAB_LABELS[tab] }))}
+        />
 
         {showMineFilter && (
           <div className="mb-2 flex gap-2">
@@ -133,6 +126,7 @@ export default function DiscipleshipClient({ churchId, members, allAssignedDisci
         )}
       </div>
 
+      <TabPanel idBase="discipleship" value={activeTab}>
       {activeTab === "relations" && (
         <RelationsTab churchId={churchId} members={members} allAssignedDiscipleIds={allAssignedDiscipleIds} canManage={canManage} canEditRelation={canEditRelation} isFD={isFD} linkedMemberId={linkedMemberId} filterMine={filterMine} />
       )}
@@ -142,6 +136,7 @@ export default function DiscipleshipClient({ churchId, members, allAssignedDisci
       {activeTab === "stats" && (
         <StatsTab churchId={churchId} canExport={canExport} filterMine={filterMine} linkedMemberId={linkedMemberId} />
       )}
+      </TabPanel>
     </div>
   );
 }
@@ -285,7 +280,6 @@ function DiscipleCombobox({
                 type="button"
                 variant="secondary"
                 size="sm"
-                className="min-h-11 sm:min-h-9"
                 onMouseDown={(e) => { e.preventDefault(); confirmNew(); }}
               >
                 <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
@@ -568,20 +562,20 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
                       {canManage && (
                         <td className="px-4 py-3">
                           <div className="flex gap-2 justify-end">
-                            <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => openEditProfile(row)}>
+                            <Button variant="secondary" size="sm" onClick={() => openEditProfile(row)}>
                               Modifier le profil
                             </Button>
                             {canEditRelation && (
-                              <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => openEditRelation(row)}>
+                              <Button variant="secondary" size="sm" onClick={() => openEditRelation(row)}>
                                 Modifier la relation
                               </Button>
                             )}
                             {isFD && (
-                              <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => openChangeFD(row)}>
+                              <Button variant="secondary" size="sm" onClick={() => openChangeFD(row)}>
                                 Changer de FD
                               </Button>
                             )}
-                            <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setPendingDelete(row)}>
+                            <Button variant="ghost" size="sm" onClick={() => setPendingDelete(row)}>
                               {isFD ? "Détacher" : "Supprimer"}
                             </Button>
                           </div>
@@ -617,20 +611,20 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
                   </div>
                   {canManage && (
                     <div className="flex flex-wrap gap-2 pt-1">
-                      <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => openEditProfile(row)}>
+                      <Button variant="secondary" size="sm" onClick={() => openEditProfile(row)}>
                         Modifier le profil
                       </Button>
                       {canEditRelation && (
-                        <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => openEditRelation(row)}>
+                        <Button variant="secondary" size="sm" onClick={() => openEditRelation(row)}>
                           Modifier la relation
                         </Button>
                       )}
                       {isFD && (
-                        <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => openChangeFD(row)}>
+                        <Button variant="secondary" size="sm" onClick={() => openChangeFD(row)}>
                           Changer de FD
                         </Button>
                       )}
-                      <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setPendingDelete(row)}>
+                      <Button variant="ghost" size="sm" onClick={() => setPendingDelete(row)}>
                         {isFD ? "Détacher" : "Supprimer"}
                       </Button>
                     </div>

@@ -46,7 +46,7 @@ function SuggestionButtons({ items, onAsk }: { readonly items: readonly Suggesti
 
 function OpenLink({ href, label }: { readonly href: string; readonly label: string }) {
   return (
-    <Link href={href} className={`${buttonClasses("secondary", "sm")} min-h-11 self-start sm:min-h-9`}>
+    <Link href={href} className={`${buttonClasses("secondary", "sm")} self-start`}>
       {label}
       <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
     </Link>
@@ -107,7 +107,7 @@ function BotAnswer({ response, onAsk }: { readonly response: AskResponse; readon
               <SuggestionButtons items={response.suggestions} onAsk={onAsk} />
             </>
           )}
-          <Link href={response.guideHref} className={`${buttonClasses("ghost", "sm")} -ml-3 min-h-11 self-start sm:min-h-9`}>
+          <Link href={response.guideHref} className={`${buttonClasses("ghost", "sm")} -ml-3 self-start`}>
             <BookOpen aria-hidden="true" className="size-4" strokeWidth={1.75} />
             Ouvrir le guide d&apos;utilisation
           </Link>
@@ -278,7 +278,7 @@ export default function AssistantPanel({
           </div>
           <div className="flex flex-wrap items-center justify-between gap-x-2">
             <p className="text-xs text-ink-muted">Réponses selon votre rôle. Rien n&apos;est conservé à la fermeture.</p>
-            <Link href="/guide" className={`${buttonClasses("ghost", "sm")} -mr-3 min-h-11 sm:min-h-9`}>
+            <Link href="/guide" className={`${buttonClasses("ghost", "sm")} -mr-3`}>
               Ouvrir le guide
             </Link>
           </div>

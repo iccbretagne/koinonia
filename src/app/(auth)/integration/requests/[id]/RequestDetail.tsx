@@ -19,6 +19,7 @@ import {
   type StatusTone,
 } from "@/components/ui";
 import HistoryTimeline from "@/components/HistoryTimeline";
+import { choiceChipClasses } from "@/components/ui/RadioGroup";
 
 type DateLike = Date | string;
 
@@ -456,7 +457,7 @@ function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, 
       )}
       <Link
         href={`/care/followups/${followUp.id}`}
-        className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}
+        className={buttonClasses("ghost", "sm")}
       >
         Voir et gérer le suivi
         <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
@@ -560,7 +561,7 @@ function RequestHeader({
           {req.salvationCall && <StatusChip tone="brand">Appel au salut</StatusChip>}
           {req.pastoralCareRequested && <StatusChip tone="warning">Soin pastoral</StatusChip>}
           {hasJourney && (
-            <Link href="/integration/parcours" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+            <Link href="/integration/parcours" className={buttonClasses("ghost", "sm")}>
               Voir le dossier parcours
               <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
             </Link>
@@ -785,7 +786,7 @@ function InfoRow({ label, children }: { readonly label: string; readonly childre
   );
 }
 
-const inlineLinkClasses = `${buttonClasses("ghost", "sm")} -ml-3 min-h-11 self-start sm:min-h-9`;
+const inlineLinkClasses = `${buttonClasses("ghost", "sm")} -ml-3 self-start`;
 
 /** Onglet « Contact » de la fiche. */
 function ContactTab({ req }: { readonly req: Request }) {
@@ -1002,7 +1003,7 @@ function JourneyCard({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className={sectionTitleClasses}>Étapes clés du parcours</h2>
         {journey && (
-          <Link href="/integration/parcours" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+          <Link href="/integration/parcours" className={buttonClasses("ghost", "sm")}>
             Voir le dossier complet
             <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
           </Link>
@@ -1015,7 +1016,7 @@ function JourneyCard({
       />
       {!journey && isIntegrationMember && (
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={onCreate} disabled={creating}>
+          <Button type="button" variant="secondary" size="sm" onClick={onCreate} disabled={creating}>
             <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
             {creating ? "Création en cours…" : "Créer le dossier parcours"}
           </Button>
@@ -1495,7 +1496,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
               <Alert
                 tone="warning"
                 action={
-                  <Link href="/integration/leaders" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+                  <Link href="/integration/leaders" className={buttonClasses("ghost", "sm")}>
                     Configurer les bergers
                   </Link>
                 }
@@ -1536,7 +1537,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
             <legend className={`${fieldLabelClasses} mb-2`}>Tranche d&apos;âge</legend>
             <div className="flex flex-wrap gap-2">
               {(["YOUTH", "YOUNG_ADULT", "ADULT", "SENIOR"] as const).map((v) => (
-                <label key={v} className={`${choicePillClasses} ${editForm.ageRange === v ? choicePillOn : choicePillOff}`}>
+                <label key={v} className={choiceChipClasses(editForm.ageRange === v)}>
                   <input type="radio" name="editAgeRange" value={v} checked={editForm.ageRange === v} onChange={() => setEditForm((f) => ({ ...f, ageRange: v }))} className="sr-only" />
                   {AGE_LABELS[v]}
                 </label>
@@ -1547,7 +1548,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
             <legend className={`${fieldLabelClasses} mb-2`}>Situation à l&apos;église</legend>
             <div className="flex flex-wrap gap-2">
               {(["VISITOR", "REGULAR", "ENGAGED"] as const).map((v) => (
-                <label key={v} className={`${choicePillClasses} ${editForm.churchStatus === v ? choicePillOn : choicePillOff}`}>
+                <label key={v} className={choiceChipClasses(editForm.churchStatus === v)}>
                   <input type="radio" name="editChurchStatus" value={v} checked={editForm.churchStatus === v} onChange={() => setEditForm((f) => ({ ...f, churchStatus: v }))} className="sr-only" />
                   {CHURCH_STATUS_LABELS[v]}
                 </label>
@@ -1723,13 +1724,6 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
     </div>
   );
 }
-
-/** Pastille de choix (bouton radio stylé) : sélection en `brand-soft`, comme `FilterChip`. */
-const choicePillClasses =
-  "inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border px-4 text-sm font-semibold transition-colors " +
-  "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus";
-const choicePillOn = "border-brand bg-brand-soft text-brand-text";
-const choicePillOff = "border-control-line bg-surface text-ink-muted hover:bg-surface-sunken";
 
 /** Option à choisir dans un dialogue (titre + explication), au doigt. */
 const choiceCardClasses =

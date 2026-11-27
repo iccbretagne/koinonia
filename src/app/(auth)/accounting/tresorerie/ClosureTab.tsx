@@ -120,7 +120,7 @@ export default function ClosureTab({
                   <span className="font-semibold text-ink">{monthTitle(c.month)}</span>
                   <span className="text-ink-muted">le {frDate(c.closedAt)}</span>
                   {canReopen && (
-                    <Button variant="ghost" size="sm" className="ml-auto min-h-11 sm:min-h-9" onClick={() => setReopen(c.month)}>Rouvrir</Button>
+                    <Button variant="ghost" size="sm" className="ml-auto" onClick={() => setReopen(c.month)}>Rouvrir</Button>
                   )}
                 </li>
               ))}

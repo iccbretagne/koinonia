@@ -5,6 +5,7 @@ import { Check } from "lucide-react";
 import Checkbox from "@/components/ui/Checkbox";
 import Skeleton from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
+import { choiceChipClasses } from "@/components/ui/RadioGroup";
 
 interface Subscription {
   id: string;
@@ -118,12 +119,7 @@ export default function JobSubscriptionClient() {
             ] as const).map(({ key, label }) => (
               <label
                 key={key}
-                className={`inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-sm font-semibold transition-colors duration-120
-                  has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${
-                    sub[key]
-                      ? "border-brand bg-brand-soft text-brand-text"
-                      : "border-control-line text-ink-muted hover:border-brand hover:text-ink"
-                  }`}
+                className={choiceChipClasses(sub[key])}
               >
                 <input
                   type="checkbox"

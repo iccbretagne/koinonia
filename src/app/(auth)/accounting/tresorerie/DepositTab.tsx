@@ -80,7 +80,7 @@ export default function DepositTab({ accounts, cheques }: { readonly accounts: A
             <p className="text-[15px] leading-[22px] text-ink-muted">Cochez ceux qui partent avec ce bordereau. Les autres restent en caisse.</p>
           </div>
           {inAccount.length === 0 ? (
-            <EmptyState size="sm" className="min-h-11 sm:min-h-9" title="Aucun chèque en caisse dans ce compte" />
+            <EmptyState size="sm" title="Aucun chèque en caisse dans ce compte" />
           ) : (
             <ul className="divide-y divide-line border-t border-line">
               {inAccount.map((c) => (

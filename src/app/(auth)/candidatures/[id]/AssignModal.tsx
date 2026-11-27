@@ -98,7 +98,7 @@ export default function AssignModal({ applicationId, name, departments, excluded
                   Rattachée à {member.firstName} {member.lastName}
                 </span>
                 {!memberLocked && (
-                  <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" disabled={sending} onClick={() => link(null)}>
+                  <Button variant="ghost" size="sm" disabled={sending} onClick={() => link(null)}>
                     Retirer le rattachement
                   </Button>
                 )}
@@ -118,7 +118,7 @@ export default function AssignModal({ applicationId, name, departments, excluded
                         {m.firstName} {m.lastName} ({REASON[m.reason]})
                         {m.departmentNames.length > 0 && ` · ${m.departmentNames.join(", ")}`}
                       </span>
-                      <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" disabled={sending} onClick={() => link(m.id)}>
+                      <Button variant="secondary" size="sm" disabled={sending} onClick={() => link(m.id)}>
                         Rattacher à cette fiche
                       </Button>
                     </li>

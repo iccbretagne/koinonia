@@ -12,6 +12,7 @@ import Alert from "@/components/ui/Alert";
 export default function ReasonForm({
   label,
   confirmLabel,
+  cancelLabel = "Retour",
   warning,
   busy,
   onConfirm,
@@ -19,6 +20,8 @@ export default function ReasonForm({
 }: {
   readonly label: string;
   readonly confirmLabel: string;
+  /** Libellé du bouton qui renonce (défaut « Retour »). */
+  readonly cancelLabel?: string;
   /** Effets en cascade à signaler avant de valider (suites annulées). */
   readonly warning?: ReactNode;
   readonly busy: boolean;
@@ -50,7 +53,7 @@ export default function ReasonForm({
           {busy ? "Envoi…" : confirmLabel}
         </Button>
         <Button type="button" variant="secondary" onClick={onCancel} disabled={busy}>
-          Retour
+          {cancelLabel}
         </Button>
       </div>
     </form>

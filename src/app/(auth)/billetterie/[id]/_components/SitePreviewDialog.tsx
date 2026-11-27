@@ -48,7 +48,7 @@ export default function SitePreviewDialog({
           <h2 className="mr-2 font-display text-[15px] font-semibold">Aperçu du brouillon</h2>
           <div role="radiogroup" aria-label="Largeur d'écran" className="flex gap-1">
             {DEVICES.map((d) => (
-              <Button key={d.key} type="button" size="sm" className="min-h-11 sm:min-h-9" variant={device === d.key ? "primary" : "secondary"} role="radio" aria-checked={device === d.key} onClick={() => setDevice(d.key)}>
+              <Button key={d.key} type="button" size="sm" variant={device === d.key ? "primary" : "secondary"} role="radio" aria-checked={device === d.key} onClick={() => setDevice(d.key)}>
                 {d.label}
               </Button>
             ))}

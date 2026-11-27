@@ -209,13 +209,13 @@ export default function RoomsAdminClient({
         emptyMessage="Aucune salle"
         actions={(room) => (
           <div className="flex flex-wrap justify-end gap-2">
-            <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => setAccessRoom(room)}>
+            <Button size="sm" variant="secondary" onClick={() => setAccessRoom(room)}>
               Partager
             </Button>
-            <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => openEdit(room)}>
+            <Button size="sm" variant="secondary" onClick={() => openEdit(room)}>
               Modifier
             </Button>
-            <Button size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => toggleActive(room)}>
+            <Button size="sm" variant="ghost" onClick={() => toggleActive(room)}>
               {room.isActive ? "Désactiver" : "Activer"}
             </Button>
           </div>

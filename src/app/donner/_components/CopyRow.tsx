@@ -70,7 +70,7 @@ export default function CopyRow({
         type="button"
         onClick={copy}
         aria-label={`${buttonLabel} : ${label}`}
-        className={`${buttonClasses("secondary", "sm")} min-h-11 shrink-0 sm:min-h-9`}
+        className={`${buttonClasses("secondary", "sm")} shrink-0`}
       >
         {state === "copied" ? <Check aria-hidden="true" className="size-4 text-success" /> : <Copy aria-hidden="true" className="size-4" />}
         <span aria-live="polite">{buttonLabel}</span>

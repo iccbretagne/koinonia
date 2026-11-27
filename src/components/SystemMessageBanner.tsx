@@ -20,7 +20,7 @@ const TONE: Record<SystemMessageBannerItem["severity"], { box: string; icon: str
 };
 
 /** Action « Lire le message » : bouton ghost, cible de 44 px sur mobile. */
-const readClasses = `${buttonClasses("ghost", "sm")} -ml-3 mt-1 min-h-11 sm:min-h-9`;
+const readClasses = `${buttonClasses("ghost", "sm")} -ml-3 mt-1`;
 
 function sendReceipt(id: string, action: "seen" | "dismiss") {
   void fetch(`/api/system-messages/${id}/receipt`, {

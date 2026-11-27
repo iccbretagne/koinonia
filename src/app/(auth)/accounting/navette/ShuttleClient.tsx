@@ -92,7 +92,7 @@ const LEDGER_COLUMNS = [
 function detailAction(open: (id: string) => void) {
   return function renderDetailAction(l: LedgerLine) {
     return (
-      <Button size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => open(l.id)}>
+      <Button size="sm" variant="ghost" onClick={() => open(l.id)}>
         Voir le détail
       </Button>
     );
@@ -230,7 +230,7 @@ export default function ShuttleClient({
         {!ledger.hasOpeningBalance && manager && (
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <p className="text-[15px] leading-[22px] text-ink-muted">Solde de départ non saisi.</p>
-            <Button size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => setFormSeed({ mode: "create", kind: "OPENING_BALANCE" })}>
+            <Button size="sm" variant="ghost" onClick={() => setFormSeed({ mode: "create", kind: "OPENING_BALANCE" })}>
               Saisir le solde de départ
             </Button>
           </div>
@@ -354,7 +354,7 @@ export default function ShuttleClient({
                       {euro(d.amount)} · {d.vendor ?? "—"} · versée le {frDate(d.date)}{" "}
                       <span className={d.ageDays > 14 ? "text-warning" : "text-ink-muted"}>({d.ageDays} j)</span>
                     </span>
-                    <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => setDetailId(d.id)}>
+                    <Button size="sm" variant="secondary" onClick={() => setDetailId(d.id)}>
                       Gérer la caution
                     </Button>
                   </li>
@@ -375,7 +375,7 @@ export default function ShuttleClient({
                     </span>
                     <span className="flex items-center gap-2">
                       {l.reimbursement ? <ReimbursementChip status={l.reimbursement.status} /> : <StatusChip tone="neutral">Non demandé</StatusChip>}
-                      <Button size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => setDetailId(l.id)}>
+                      <Button size="sm" variant="ghost" onClick={() => setDetailId(l.id)}>
                         Voir le détail
                       </Button>
                     </span>

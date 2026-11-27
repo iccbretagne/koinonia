@@ -35,7 +35,7 @@ export default function RecoverInterview({ churchSlug, turnstileSiteKey }: { rea
     <>
       <p className="flex flex-wrap items-center justify-center gap-x-1 text-center text-sm text-ink-muted">
         Déjà candidat ?
-        <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setOpen(true)}>
+        <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(true)}>
           Retrouver mon rendez-vous
         </Button>
       </p>

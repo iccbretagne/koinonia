@@ -58,12 +58,12 @@ export default async function CandidaturesPage({
           actor.canManage || actor.canEditSettings ? (
             <div className="flex flex-wrap gap-2">
               {actor.canManage && (
-                <Link href="/candidatures/entretiens" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+                <Link href="/candidatures/entretiens" className={buttonClasses("secondary", "sm")}>
                   <CalendarClock className="size-4" aria-hidden="true" /> Gérer les entretiens
                 </Link>
               )}
               {actor.canEditSettings && (
-                <Link href="/candidatures/parametres" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+                <Link href="/candidatures/parametres" className={buttonClasses("secondary", "sm")}>
                   <Settings className="size-4" aria-hidden="true" /> Régler l&apos;observation et l&apos;email du PVS
                 </Link>
               )}

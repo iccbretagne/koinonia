@@ -2,6 +2,7 @@
 
 import { ArrowLeft, ChevronLeft, ChevronRight, ExternalLink, FileText, ImageIcon, RefreshCw, Search, Video, X } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
+import IconButton from "@/components/ui/IconButton";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -118,9 +119,7 @@ function ImageLightbox({ file, token, onClose }: { readonly file: ProjectFile; r
   return (
     <div className="fixed inset-0 z-50 bg-scrim/95 flex flex-col" role="none" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
-        <button onClick={onClose} aria-label="Fermer la visionneuse" className="grid size-11 place-items-center rounded-control text-on-brand/70 hover:text-on-brand transition-colors focus-visible:outline-2 focus-visible:outline-focus">
-          <X className="w-6 h-6" aria-hidden="true" />
-        </button>
+        <IconButton variant="on-dark" icon={X} onClick={onClose} aria-label="Fermer la visionneuse" />
         <span className="text-on-brand/60 text-xs truncate max-w-[60%]">{file.filename}</span>
         {hdUrl ? (
           <a href={hdUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}

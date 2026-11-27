@@ -296,7 +296,7 @@ export default function PersonAccessClient({
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/admin/access" className={`${buttonClasses("ghost", "sm")} min-h-11 self-start sm:min-h-9`}>
+      <Link href="/admin/access" className={`${buttonClasses("ghost", "sm")} self-start`}>
         <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
         Revenir aux accès
       </Link>
@@ -375,10 +375,10 @@ export default function PersonAccessClient({
                   <p className="text-[15px] font-semibold leading-[22px] text-ink">{ministerRole.ministryName ?? "—"}</p>
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setModal({ mode: "minister" })}>
+                  <Button type="button" variant="secondary" size="sm" onClick={() => setModal({ mode: "minister" })}>
                     Changer de ministère
                   </Button>
-                  <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={removeMinister}>
+                  <Button type="button" variant="ghost" size="sm" onClick={removeMinister}>
                     Retirer
                   </Button>
                 </div>
@@ -394,7 +394,7 @@ export default function PersonAccessClient({
                       <IconButton icon={X} aria-label={`Retirer la responsabilité ${d.name}`} onClick={() => removeDeptHead(d.id)} />
                     </span>
                   ))}
-                  <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setModal({ mode: "department-head" })}>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setModal({ mode: "department-head" })}>
                     <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
                     Ajouter un département
                   </Button>

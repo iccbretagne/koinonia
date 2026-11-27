@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, CircleAlert, CircleCheck, Download, Eye, LoaderCircle, Plus, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, CircleAlert, CircleCheck, Download, Eye, LoaderCircle, Plus, Trash2 } from "lucide-react";
 import {
   Alert,
   Button,
@@ -40,6 +40,7 @@ import {
 } from "@/modules/campaigns/schemas";
 import { allowedQualifiers, completeness, evaluateRules, flattenItems, ruleScope, validateAnswerValue } from "@/modules/campaigns/schemas";
 import type { AssignmentView } from "@/modules/campaigns";
+import FileInput from "@/components/ui/FileInput";
 
 /**
  * Saisie d'un questionnaire de collecte (spec 090), avec compte (`/collectes/r/<id>`) ou par lien
@@ -323,7 +324,7 @@ function ScalarField({
   const help = <Help help={item.help} examples={item.examples} />;
   const clear =
     !disabled && value !== null && value !== undefined ? (
-      <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9 self-start" onClick={() => onChange(null)}>
+      <Button type="button" variant="ghost" size="sm" className="self-start" onClick={() => onChange(null)}>
         Effacer la réponse
       </Button>
     ) : null;
@@ -654,21 +655,17 @@ function FileRequestField({
             <p className="text-[13px] text-ink-muted">Aucun fichier déposé.</p>
           )}
           {!disabled && files.length < maxFiles && (
-            <label className={`${buttonClasses("secondary", "md")} self-start focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus ${uploading ? "pointer-events-none opacity-45" : "cursor-pointer"}`}>
-              <Upload aria-hidden="true" className="size-4" strokeWidth={1.75} />
-              {uploading ? "Envoi…" : "Déposer des fichiers"}
-              <input
-                type="file"
-                multiple
-                className="sr-only"
-                disabled={uploading}
-                accept={accept.map((e) => `.${e}`).join(",")}
-                onChange={(e) => {
-                  const list = e.target.files;
-                  void upload(list).then(() => (e.target.value = ""));
-                }}
-              />
-            </label>
+            <FileInput
+              multiple
+              disabled={uploading}
+              buttonLabel={uploading ? "Envoi en cours…" : "Déposer des fichiers"}
+              accept={accept.map((e) => `.${e}`).join(",")}
+              fileNames={[]}
+              onChange={(e) => {
+                const input = e.target;
+                void upload(input.files).then(() => (input.value = ""));
+              }}
+            />
           )}
           {preview && <p className="text-[13px] text-ink-muted">Aperçu : les fichiers ne sont pas envoyés.</p>}
           <p className="text-[13px] text-ink-muted">
@@ -765,8 +762,8 @@ function ItemBlock({
           <div className="flex flex-wrap items-center gap-2">
             <div className="w-full sm:w-56">
               <Select
-                label=""
-                aria-label={`Nature de la réponse : ${item.label}`}
+                label={`Nature de la réponse : ${item.label}`}
+                hideLabel
                 value={draft.qualifier}
                 disabled={disabled}
                 options={qualifiers.map((q) => ({ value: q, label: QUALIFIER_LABELS[q] }))}
@@ -777,7 +774,7 @@ function ItemBlock({
               />
             </div>
             {!noteVisible && !disabled && (
-              <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setNoteOpen(true)}>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setNoteOpen(true)}>
                 Ajouter une précision
               </Button>
             )}
@@ -837,7 +834,7 @@ function SaveIndicator({
         <>
           <CircleAlert aria-hidden="true" className="size-4 text-danger" strokeWidth={1.75} />
           <span className="text-danger">Erreur d&apos;enregistrement</span>
-          <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={onRetry}>
+          <Button type="button" variant="ghost" size="sm" onClick={onRetry}>
             Réessayer
           </Button>
         </>
@@ -1134,7 +1131,7 @@ export default function AssignmentForm({
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
       {backHref && (
-        <Link href={backHref} className={`${buttonClasses("ghost", "sm")} min-h-11 self-start sm:min-h-9`}>
+        <Link href={backHref} className={`${buttonClasses("ghost", "sm")} self-start`}>
           <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
           Retour à la campagne
         </Link>
@@ -1232,7 +1229,7 @@ export default function AssignmentForm({
           <ul className="mt-1 flex flex-col gap-1">
             {state.missing.map((code) => (
               <li key={code}>
-                <Button type="button" variant="ghost" size="sm" className="min-h-11 justify-start text-left sm:min-h-9" onClick={() => scrollToItem(code)}>
+                <Button type="button" variant="ghost" size="sm" className="justify-start text-left" onClick={() => scrollToItem(code)}>
                   {labelOf(code)}
                 </Button>
               </li>
@@ -1273,7 +1270,7 @@ export default function AssignmentForm({
             <SaveIndicator state={saveState} onRetry={retry} preview={preview} />
             {saveState === "error" && saveError && <p className="pb-1 text-[13px] text-danger">{saveError}</p>}
             {violated.length > 0 && (
-              <a href="#campaign-alerts" className={`${buttonClasses("ghost", "sm")} min-h-11 self-start sm:min-h-9`}>
+              <a href="#campaign-alerts" className={`${buttonClasses("ghost", "sm")} self-start`}>
                 {violated.length} alerte{violated.length > 1 ? "s" : ""} de cohérence
               </a>
             )}

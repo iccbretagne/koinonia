@@ -43,7 +43,7 @@ function toLocalISO(d: Date): string {
 
 /** Navigation d'une semaine à l'autre : liens (et non boutons), libellés courts sous 640 px. */
 function WeekNav({ prevHref, nextHref, label }: { readonly prevHref: string; readonly nextHref: string; readonly label: string }) {
-  const navLinkClasses = `${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`;
+  const navLinkClasses = `${buttonClasses("secondary", "sm")}`;
   return (
     <nav aria-label="Changer de semaine" className="mb-4 flex items-center justify-between gap-2">
       <Link href={prevHref} className={navLinkClasses} aria-label="Semaine précédente">
@@ -102,7 +102,7 @@ export default function AgendaCalendar({ profiles, entries, weekStart }: Props) 
                 <h2 className="font-display text-[15px] font-semibold text-ink">{profile.name}</h2>
                 <p className="text-xs text-ink-muted">{ROLE_LABELS[profile.role] ?? profile.role}</p>
               </div>
-              <Link href={`/agenda/${profile.id}`} className={`${buttonClasses("ghost", "sm")} min-h-11 shrink-0 sm:min-h-9`}>
+              <Link href={`/agenda/${profile.id}`} className={`${buttonClasses("ghost", "sm")} shrink-0`}>
                 Voir l&apos;agenda
                 <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
               </Link>

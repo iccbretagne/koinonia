@@ -12,8 +12,13 @@ interface ConfirmModalProps {
   readonly message: string;
   /** Répète le verbe (« Supprimer la fiche »). */
   readonly confirmLabel?: string;
-  /** Libellé pendant l'envoi ; défaut : le libellé de confirmation suivi de « … ». */
+  /** Libellé pendant l'envoi (« Suppression en cours… ») ; défaut « En cours… ». */
   readonly confirmingLabel?: string;
+  /**
+   * Libellé du bouton qui renonce (défaut « Annuler »). À changer quand l'action confirmée est
+   * elle-même une annulation : « Annuler ma réponse » / « Garder ma réponse ».
+   */
+  readonly cancelLabel?: string;
   /** `danger` (défaut) pour une action destructive ou irréversible. */
   readonly variant?: "danger" | "primary";
   readonly confirming?: boolean;
@@ -31,7 +36,8 @@ export default function ConfirmModal({
   title,
   message,
   confirmLabel = "Confirmer",
-  confirmingLabel,
+  confirmingLabel = "En cours…",
+  cancelLabel = "Annuler",
   variant = "danger",
   confirming = false,
   onConfirm,
@@ -45,7 +51,7 @@ export default function ConfirmModal({
         {children}
         <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end sm:gap-3">
           <Button type="button" variant="secondary" onClick={onCancel} disabled={confirming}>
-            Annuler
+            {cancelLabel}
           </Button>
           <Button
             type="button"
@@ -54,7 +60,7 @@ export default function ConfirmModal({
             disabled={confirming}
             aria-busy={confirming || undefined}
           >
-            {confirming ? (confirmingLabel ?? `${confirmLabel}…`) : confirmLabel}
+            {confirming ? confirmingLabel : confirmLabel}
           </Button>
         </div>
       </div>

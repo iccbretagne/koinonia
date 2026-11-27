@@ -23,10 +23,10 @@ export default function SystemRowActions({ isSystem, isSuperAdmin, systemLabel, 
           <Lock aria-label={systemLabel} className="size-4" strokeWidth={1.75} />
         </span>
       )}
-      <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={onEdit} disabled={locked} title={lockedReason}>
+      <Button variant="ghost" size="sm" onClick={onEdit} disabled={locked} title={lockedReason}>
         Modifier
       </Button>
-      <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={onDelete} disabled={locked} title={lockedReason}>
+      <Button variant="ghost" size="sm" onClick={onDelete} disabled={locked} title={lockedReason}>
         Supprimer
       </Button>
     </div>

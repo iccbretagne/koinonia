@@ -162,7 +162,7 @@ export default function BookingForm({
   }
 
   const recoverLink = (
-    <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setRecover(true)}>
+    <Button type="button" variant="ghost" size="sm" onClick={() => setRecover(true)}>
       Retrouver ma réservation
     </Button>
   );
@@ -191,7 +191,7 @@ export default function BookingForm({
               <div className="flex items-center justify-between">
                 <legend className="font-semibold text-ink">Participant {i + 1}</legend>
                 {participants.length > 1 && (
-                  <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setParticipants((l) => l.filter((_, j) => j !== i))}>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setParticipants((l) => l.filter((_, j) => j !== i))}>
                     <Trash2 className="size-4" aria-hidden="true" /> Retirer le participant
                   </Button>
                 )}

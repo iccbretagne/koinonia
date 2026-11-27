@@ -132,7 +132,7 @@ function RequestCard({ req, onUpdated }: { readonly req: RequestItem; readonly o
                 size="sm"
                 onClick={() => setExpanded((v) => !v)}
                 aria-expanded={expanded}
-                className="-ml-3 mt-1 min-h-11 sm:min-h-9"
+                className="-ml-3 mt-1"
               >
                 {expanded ? "Réduire le texte" : "Lire la suite"}
               </Button>
@@ -164,11 +164,11 @@ function RequestCard({ req, onUpdated }: { readonly req: RequestItem; readonly o
 
         {isPending && (
           <div className="flex flex-wrap gap-2">
-            <Link href={`/requests/${req.id}/edit`} className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+            <Link href={`/requests/${req.id}/edit`} className={buttonClasses("secondary", "sm")}>
               <Pencil aria-hidden="true" className="size-4" strokeWidth={1.75} />
               Modifier la demande
             </Link>
-            <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setConfirmOpen(true)} disabled={cancelling}>
+            <Button variant="ghost" size="sm" onClick={() => setConfirmOpen(true)} disabled={cancelling}>
               {cancelling ? "Annulation…" : "Annuler la demande"}
             </Button>
           </div>
@@ -180,6 +180,7 @@ function RequestCard({ req, onUpdated }: { readonly req: RequestItem; readonly o
         title="Annuler cette demande ?"
         message="La demande sera définitivement annulée : il faudra en créer une nouvelle pour la relancer."
         confirmLabel="Annuler la demande"
+        cancelLabel="Garder la demande"
         confirmingLabel="Annulation…"
         variant="danger"
         confirming={cancelling}
@@ -271,8 +272,8 @@ export default function RequestsList({ requests }: Props) {
         <div className="grid grid-cols-2 gap-3 md:contents">
           <div className="md:w-48">
             <Select
-              label=""
-              aria-label="Type"
+              label="Type"
+              hideLabel
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
               options={[{ value: "all", label: "Tous types" }, ...types.map((t) => ({ value: t, label: TYPE_LABEL[t] ?? t }))]}
@@ -280,8 +281,8 @@ export default function RequestsList({ requests }: Props) {
           </div>
           <div className="md:w-44">
             <Select
-              label=""
-              aria-label="Statut"
+              label="Statut"
+              hideLabel
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               options={[{ value: "all", label: "Tous statuts" }, ...statuses.map((st) => ({ value: st, label: requestStatus(st).label }))]}
@@ -304,7 +305,7 @@ export default function RequestsList({ requests }: Props) {
           {hasFilters && ` sur ${items.length}`}
         </p>
         {hasFilters && (
-          <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={resetFilters}>
+          <Button variant="ghost" size="sm" onClick={resetFilters}>
             Effacer les filtres
           </Button>
         )}

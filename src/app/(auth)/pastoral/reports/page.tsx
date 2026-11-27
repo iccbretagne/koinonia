@@ -88,7 +88,7 @@ export default async function PastoralReportsPage() {
                 </div>
                 <Link
                   href={`/admin/events/${e.id}/report`}
-                  className={`${buttonClasses("secondary", "sm")} min-h-11 shrink-0 sm:min-h-9`}
+                  className={`${buttonClasses("secondary", "sm")} shrink-0`}
                 >
                   Rédiger le CR
                 </Link>

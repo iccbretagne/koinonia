@@ -89,14 +89,14 @@ function DishRow({ eventId, dish, showPrepared }: { readonly eventId: string; re
         <span className="text-[15px] text-ink">Fermé aux nouvelles commandes</span>
       </label>
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" size="sm" className="min-h-11 sm:min-h-9" disabled={busy || !draft.label.trim()} onClick={save}>
+        <Button type="button" size="sm" disabled={busy || !draft.label.trim()} onClick={save}>
           {busy ? "Enregistrement en cours…" : "Enregistrer le plat"}
         </Button>
-        <Button type="button" size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => setDraft(null)}>
+        <Button type="button" size="sm" variant="secondary" onClick={() => setDraft(null)}>
           Annuler
         </Button>
         {dish.used === 0 ? (
-          <Button type="button" size="sm" variant="ghost" className="ml-auto min-h-11 sm:min-h-9" disabled={busy} onClick={() => call(url, "DELETE", undefined, "Plat supprimé")}>
+          <Button type="button" size="sm" variant="ghost" className="ml-auto" disabled={busy} onClick={() => call(url, "DELETE", undefined, "Plat supprimé")}>
             <Trash2 className="size-4" aria-hidden="true" /> Supprimer le plat
           </Button>
         ) : (

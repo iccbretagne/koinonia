@@ -118,7 +118,7 @@ export default async function CareRequestPage({
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
-      <Link href={backHref} className={`${buttonClasses("ghost", "sm")} min-h-11 self-start sm:min-h-9`}>
+      <Link href={backHref} className={`${buttonClasses("ghost", "sm")} self-start`}>
         <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
         Retour à « {backLabel} »
       </Link>

@@ -8,7 +8,7 @@ import type { EventDetail } from "@/modules/ticketing";
 import { AGE_GROUPS, AGE_GROUP_LABEL, EVENT_STATUSES, EVENT_STATUS_LABEL } from "@/modules/ticketing/schemas";
 import type { TicketingAgeGroup } from "@/generated/prisma/enums";
 import { useApi } from "../../use-api";
-import { FILE_INPUT } from "./file-input-classes";
+import FileInput from "@/components/ui/FileInput";
 
 /** `Date` ou ISO → valeur d'un champ `datetime-local` (heure locale). */
 export function toLocalInput(value: Date | string | null | undefined): string {
@@ -171,9 +171,9 @@ export default function SettingsTab({ event }: { readonly event: EventDetail }) 
         />
         <div className="space-y-1">
           <label htmlFor={`${event.id}-poster`} className={fieldLabelClasses}>Affiche</label>
-          <input id={`${event.id}-poster`} type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => uploadPoster(e.target.files?.[0])} className={FILE_INPUT} />
+          <FileInput id={`${event.id}-poster`} accept="image/jpeg,image/png,image/webp" buttonLabel="Choisir une affiche" resetAfterSelect onFiles={(files) => files[0] && uploadPoster(files[0])} />
           {event.posterKey && (
-            <Button type="button" size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => call(`/api/ticketing/events/${event.id}/poster`, "DELETE", undefined, "Affiche retirée")}>
+            <Button type="button" size="sm" variant="ghost" onClick={() => call(`/api/ticketing/events/${event.id}/poster`, "DELETE", undefined, "Affiche retirée")}>
               Retirer l&apos;affiche
             </Button>
           )}

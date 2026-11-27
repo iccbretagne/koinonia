@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import Button from "@/components/ui/Button";
 import { Textarea, fieldLabelClasses } from "@/components/ui";
-import { FILE_INPUT } from "@/app/(auth)/billetterie/[id]/_components/file-input-classes";
+import FileInput from "@/components/ui/FileInput";
 
 const ALLOWED_COVER_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_COVER_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -126,18 +126,17 @@ export default function AudioSettingsClient({
               alt="Couverture par défaut"
               className="w-20 h-20 object-cover rounded-control border border-line"
             />
-            <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={removeCover}>
+            <Button type="button" variant="secondary" size="sm" onClick={removeCover}>
               Retirer la couverture
             </Button>
           </div>
         )}
-        <input
+        <FileInput
           id={`${id}-cover`}
-          type="file"
           accept={ALLOWED_COVER_MIME_TYPES.join(",")}
+          buttonLabel="Choisir une couverture"
           onChange={(e) => handleCoverSelected(e.target.files)}
           disabled={uploadingCover}
-          className={FILE_INPUT}
         />
         {uploadingCover && <p className="text-xs text-ink-muted">Envoi en cours…</p>}
         {coverError && <p className="text-sm text-danger">{coverError}</p>}

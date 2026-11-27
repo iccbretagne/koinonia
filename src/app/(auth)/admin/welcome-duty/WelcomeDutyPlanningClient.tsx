@@ -186,7 +186,6 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
                       key={s.id}
                       variant="secondary"
                       size="sm"
-                      className="min-h-11 sm:min-h-9"
                       onClick={() => assign(event.id, s.id)}
                       disabled={assigning === s.id}
                       aria-label={`Affecter ${s.familyName} (dernier service : ${formatLastServed(s.lastServedAt)})`}
@@ -244,7 +243,7 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="min-h-11 shrink-0 sm:min-h-9"
+                    className="shrink-0"
                     aria-expanded={isOpen}
                     onClick={() => openSuggestions(event.id)}
                   >

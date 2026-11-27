@@ -241,7 +241,7 @@ export default function RoleHoldersClient({ churchId, role, label, description, 
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/admin/access" className={`${buttonClasses("ghost", "sm")} min-h-11 self-start sm:min-h-9`}>
+      <Link href="/admin/access" className={`${buttonClasses("ghost", "sm")} self-start`}>
         <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
         Revenir aux accès
       </Link>
@@ -291,7 +291,7 @@ export default function RoleHoldersClient({ churchId, role, label, description, 
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="min-h-11 shrink-0 sm:min-h-9"
+                  className="shrink-0"
                   onClick={() => removeHolder(h.roleId, h.user.id)}
                   disabled={loading === h.roleId}
                 >
@@ -314,7 +314,7 @@ export default function RoleHoldersClient({ churchId, role, label, description, 
                   {holder ? (
                     <Link
                       href={`/admin/access/users/${holder.user.id}`}
-                      className={`${buttonClasses("ghost", "sm")} -ml-3 min-h-11 sm:min-h-9`}
+                      className={`${buttonClasses("ghost", "sm")} -ml-3`}
                     >
                       <Avatar user={holder.user} size={16} /> {holder.user.name}
                     </Link>
@@ -324,7 +324,7 @@ export default function RoleHoldersClient({ churchId, role, label, description, 
                 </div>
                 <div className="flex shrink-0 gap-2">
                   {holder && canManage && (
-                    <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => removeHolder(holder.roleId, holder.user.id)}>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => removeHolder(holder.roleId, holder.user.id)}>
                       Retirer
                     </Button>
                   )}
@@ -333,7 +333,6 @@ export default function RoleHoldersClient({ churchId, role, label, description, 
                       type="button"
                       variant="secondary"
                       size="sm"
-                      className="min-h-11 sm:min-h-9"
                       onClick={() => setModal({ targetId: ministry.id, targetLabel: ministry.name })}
                     >
                       {holder ? "Changer de ministre" : "Assigner un ministre"}
@@ -365,7 +364,7 @@ export default function RoleHoldersClient({ churchId, role, label, description, 
                             <span key={h.roleId} className="inline-flex items-center gap-1">
                               <Link
                                 href={`/admin/access/users/${h.user.id}`}
-                                className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}
+                                className={buttonClasses("secondary", "sm")}
                               >
                                 <Avatar user={h.user} size={16} />
                                 {h.user.name}
@@ -387,7 +386,6 @@ export default function RoleHoldersClient({ churchId, role, label, description, 
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="min-h-11 sm:min-h-9"
                             onClick={() => setModal({ targetId: dept.id, targetLabel: `${ministry.name} / ${dept.name}` })}
                           >
                             <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />

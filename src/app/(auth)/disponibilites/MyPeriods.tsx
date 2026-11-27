@@ -115,7 +115,7 @@ export default function MyPeriods({
                 type="button"
                 variant="secondary"
                 size="sm"
-                className="min-h-11 flex-1 sm:min-h-9 sm:flex-none"
+                className="flex-1 sm:flex-none"
                 onClick={() =>
                   onEdit({
                     id: p.id,
@@ -136,7 +136,7 @@ export default function MyPeriods({
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="min-h-11 flex-1 sm:min-h-9 sm:flex-none"
+                className="flex-1 sm:flex-none"
                 onClick={() => setCancelling(p)}
               >
                 Annuler
@@ -151,6 +151,7 @@ export default function MyPeriods({
         title="Annuler cette indisponibilité ?"
         message="Tu redeviens disponible sur cette période. Les services dont tu avais été retiré(e) et qui n'ont pas encore été pourvus te sont rendus ; tes responsables sont prévenus."
         confirmLabel="Annuler la période"
+        cancelLabel="Garder la période"
         confirming={sending}
         onConfirm={confirmCancel}
         onCancel={() => setCancelling(null)}

@@ -15,6 +15,7 @@ import {
 } from "@/modules/shuttle/schemas";
 import type { ShuttleEntryKind } from "@/generated/prisma/enums";
 import { euro, frDate, lineTitle } from "./format";
+import FileInput from "@/components/ui/FileInput";
 
 const REIMBURSEMENT_TONE: Record<ReimbursementStatus, StatusTone> = {
   REQUESTED: "info",
@@ -119,12 +120,12 @@ function AdvanceBlock({
       {status}
       <div className="flex flex-wrap gap-2">
         {canRequest && (
-          <Button size="sm" className="min-h-11 sm:min-h-9" disabled={busy} onClick={onRequest}>
+          <Button size="sm" disabled={busy} onClick={onRequest}>
             {busy ? "Envoi…" : "Demander le remboursement"}
           </Button>
         )}
         {isAuthor && reimbursement?.status === "REQUESTED" && (
-          <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" disabled={busy} onClick={onCancel}>
+          <Button size="sm" variant="secondary" disabled={busy} onClick={onCancel}>
             Annuler la demande de remboursement
           </Button>
         )}
@@ -240,12 +241,11 @@ export default function EntryDetail({
               {line.receiptRequest.note ?? "La comptabilité attend le justificatif de cette ligne."}
               {isAuthor && (
                 <span className="mt-2 flex flex-wrap items-center gap-2">
-                  <input
-                    type="file"
+                  <FileInput
                     accept="image/jpeg,image/png,image/webp,application/pdf"
                     aria-label="Justificatif"
-                    onChange={(e) => setReceiptFile(e.target.files?.[0] ?? null)}
-                    className="block min-h-11 w-full text-base text-ink file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-control file:border file:border-control-line file:bg-surface file:px-4 file:font-display file:text-sm file:font-semibold file:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                    buttonLabel="Choisir le justificatif"
+                    onFiles={(files) => setReceiptFile(files[0] ?? null)}
                   />
                   <Button
                     size="sm"
@@ -283,7 +283,7 @@ export default function EntryDetail({
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-[15px] leading-[22px] text-ink-muted">Versement d&apos;une avance de budget, lu dans la comptabilité.</p>
               {viewer.manager && (
-                <Link href={`/accounting/requests/${line.requestId}`} className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+                <Link href={`/accounting/requests/${line.requestId}`} className={buttonClasses("ghost", "sm")}>
                   Voir la demande
                 </Link>
               )}
@@ -295,7 +295,7 @@ export default function EntryDetail({
               href={`${base}/receipt`}
               target="_blank"
               rel="noopener noreferrer"
-              className={`${buttonClasses("secondary", "sm")} min-h-11 self-start sm:min-h-9`}
+              className={`${buttonClasses("secondary", "sm")} self-start`}
             >
               <ExternalLink aria-hidden="true" className="size-4" strokeWidth={1.75} /> Voir le justificatif ({line.receiptName ?? "fichier"})
             </a>
@@ -321,10 +321,10 @@ export default function EntryDetail({
                 onChange={(e) => setNote(e.target.value)}
               />
               <div className="flex gap-2">
-                <Button size="sm" className="min-h-11 sm:min-h-9" disabled={busy || (noteFor !== "receipt-request" && !note.trim())} onClick={submitNote}>
+                <Button size="sm" disabled={busy || (noteFor !== "receipt-request" && !note.trim())} onClick={submitNote}>
                   {busy ? "Enregistrement…" : noteFor === "receipt-request" && line.receiptRequest ? "Envoyer la relance" : NOTE_SUBMIT[noteFor]}
                 </Button>
-                <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => setNoteFor(null)}>
+                <Button size="sm" variant="secondary" onClick={() => setNoteFor(null)}>
                   Annuler
                 </Button>
               </div>
@@ -332,47 +332,47 @@ export default function EntryDetail({
           ) : (
             <div className="flex flex-wrap gap-2">
               {editable && (
-                <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => onEdit(line)}>
+                <Button size="sm" variant="secondary" onClick={() => onEdit(line)}>
                   Corriger la ligne
                 </Button>
               )}
               {line.kind === "EXPENSE" && line.category === "DEPOSIT" && !line.returned && !line.depositRetainedAt && (
-                <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => onReturnDeposit(line)}>
+                <Button size="sm" variant="secondary" onClick={() => onReturnDeposit(line)}>
                   Déclarer la restitution
                 </Button>
               )}
               {viewer.manager && line.kind === "EXPENSE" && line.category === "DEPOSIT" && !line.returned && !line.depositRetainedAt && (
-                <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => setNoteFor("retained")}>
+                <Button size="sm" variant="secondary" onClick={() => setNoteFor("retained")}>
                   Marquer non restituée
                 </Button>
               )}
               {viewer.manager && line.source === "ledger" && !line.flagNote && (
-                <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => setNoteFor("flag")}>
+                <Button size="sm" variant="secondary" onClick={() => setNoteFor("flag")}>
                   Signaler la ligne
                 </Button>
               )}
               {viewer.manager && line.source === "ledger" && !line.receiptRequest && (
-                <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => setNoteFor("receipt-request")}>
+                <Button size="sm" variant="secondary" onClick={() => setNoteFor("receipt-request")}>
                   Demander le justificatif
                 </Button>
               )}
               {viewer.manager && line.receiptRequest && (
                 <>
-                  <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => setNoteFor("receipt-request")}>
+                  <Button size="sm" variant="secondary" onClick={() => setNoteFor("receipt-request")}>
                     Relancer l&apos;auteur
                   </Button>
-                  <Button size="sm" className="min-h-11 sm:min-h-9" variant="ghost" disabled={busy} onClick={() => call(`${base}/receipt-request`, { method: "DELETE" }, "Demande annulée")}>
+                  <Button size="sm" variant="ghost" disabled={busy} onClick={() => call(`${base}/receipt-request`, { method: "DELETE" }, "Demande annulée")}>
                     Annuler la demande de justificatif
                   </Button>
                 </>
               )}
               {viewer.manager && line.flagNote && (
-                <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" disabled={busy} onClick={() => call(`${base}/flag`, { method: "DELETE" }, "Signalement levé")}>
+                <Button size="sm" variant="secondary" disabled={busy} onClick={() => call(`${base}/flag`, { method: "DELETE" }, "Signalement levé")}>
                   Lever le signalement
                 </Button>
               )}
               {editable && (
-                <Button size="sm" className="min-h-11 sm:min-h-9" variant="ghost" onClick={() => setConfirmDelete(true)}>
+                <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(true)}>
                   Supprimer la ligne
                 </Button>
               )}

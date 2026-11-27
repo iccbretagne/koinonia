@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import type { GivingNameSize } from "@/generated/prisma/enums";
-import Switch from "./Switch";
+import Switch from "@/components/ui/Switch";
 
 const SIZES: readonly { value: GivingNameSize; label: string }[] = [
   { value: "SMALL", label: "Petit" },
@@ -92,11 +92,11 @@ export default function SupportIdentity({
           checked={hasLogo && value.logoShown}
           disabled={!hasLogo}
           onChange={(v) => onChange({ logoShown: v })}
-          label={`${support} : afficher le logo`}
+          label={`${support} : afficher le logo`} hideLabel
         />
       </Row>
       <Row label="Afficher le nom de l'église">
-        <Switch checked={value.nameShown} onChange={(v) => onChange({ nameShown: v })} label={`${support} : afficher le nom`} />
+        <Switch checked={value.nameShown} onChange={(v) => onChange({ nameShown: v })} label={`${support} : afficher le nom`} hideLabel />
       </Row>
       <SizeChoice
         label={`${support} : taille du nom`}

@@ -359,7 +359,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
           },
         ]}
         actions={(r) => (
-          <Link href={`/accounting/requests/${r.id}`} className={`${buttonClasses("ghost", "sm")} min-h-11 whitespace-nowrap sm:min-h-9`}>
+          <Link href={`/accounting/requests/${r.id}`} className={`${buttonClasses("ghost", "sm")} whitespace-nowrap`}>
             Ouvrir
             <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
           </Link>

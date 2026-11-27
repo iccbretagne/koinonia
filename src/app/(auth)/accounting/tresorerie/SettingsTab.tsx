@@ -81,10 +81,10 @@ function AccountRow({ account }: { readonly account: AccountView }) {
         {account.archived && <StatusChip tone="warning">Archivé</StatusChip>}
         <span className="text-[15px] leading-[22px] text-ink-muted">Départ : {euro(account.openingBalance)} au {frDate(account.openingDate)}</span>
         <div className="ml-auto flex gap-2">
-          <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setEditing((v) => !v)}>{editing ? "Fermer" : "Modifier"}</Button>
+          <Button variant="ghost" size="sm" onClick={() => setEditing((v) => !v)}>{editing ? "Fermer" : "Modifier"}</Button>
           <Button
             variant="ghost"
-            size="sm" className="min-h-11 sm:min-h-9"
+            size="sm"
             disabled={busy}
             onClick={() => void run(() => api(`/api/accounting/tresorerie/accounts/${account.id}`, { method: "PATCH", json: { archived: !account.archived } }), account.archived ? "Compte réactivé" : "Compte archivé")}
           >
@@ -120,11 +120,11 @@ function NamedList({
             <span className={i.active ? "text-ink" : "text-ink-muted line-through"}>{i.name}</span>
             {i.system && <StatusChip tone="info">Utilisée par Koinonia</StatusChip>}
             <div className="ml-auto flex gap-1">
-              <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => void run(() => api(`${base}/${i.id}`, { method: "PATCH", json: { active: !i.active } }), i.active ? "Désactivée" : "Réactivée")}>
+              <Button variant="ghost" size="sm" disabled={busy} onClick={() => void run(() => api(`${base}/${i.id}`, { method: "PATCH", json: { active: !i.active } }), i.active ? "Désactivée" : "Réactivée")}>
                 {i.active ? "Désactiver" : "Réactiver"}
               </Button>
               {!i.system && (
-                <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => void run(() => api(`${base}/${i.id}`, { method: "DELETE" }), "Supprimée")}>
+                <Button variant="ghost" size="sm" disabled={busy} onClick={() => void run(() => api(`${base}/${i.id}`, { method: "DELETE" }), "Supprimée")}>
                   Supprimer
                 </Button>
               )}

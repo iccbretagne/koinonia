@@ -52,7 +52,6 @@ export default function ManagersTab({ campaignId, managers }: { readonly campaig
             <Button
               type="button"
               size="sm"
-              className="min-h-11 sm:min-h-9"
               variant="ghost"
               disabled={busy || last}
               title={last ? "Une campagne garde toujours au moins un gestionnaire" : undefined}

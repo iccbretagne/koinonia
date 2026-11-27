@@ -76,7 +76,7 @@ function SectionTitle({ title, href, linkLabel }: { readonly title: string; read
     <div className="flex items-center justify-between gap-3">
       <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">{title}</h2>
       {href && linkLabel && (
-        <Link href={href} className={`${buttonClasses("ghost", "sm")} min-h-11 shrink-0 sm:min-h-9`}>
+        <Link href={href} className={`${buttonClasses("ghost", "sm")} shrink-0`}>
           {linkLabel}
         </Link>
       )}

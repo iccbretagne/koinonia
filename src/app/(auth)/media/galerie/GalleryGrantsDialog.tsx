@@ -130,7 +130,7 @@ export default function GalleryGrantsDialog({ open, onClose }: { readonly open: 
             {picked ? (
               <div className="flex items-center justify-between gap-2 rounded-control bg-brand-soft py-1 pl-3 pr-1">
                 <span className="text-sm text-ink truncate">{picked.name ?? picked.email}</span>
-                <Button type="button" variant="ghost" size="sm" className="min-h-11 shrink-0 sm:min-h-9" onClick={() => setPicked(null)}>Changer de personne</Button>
+                <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={() => setPicked(null)}>Changer de personne</Button>
               </div>
             ) : (
               <div>
@@ -193,9 +193,9 @@ export default function GalleryGrantsDialog({ open, onClose }: { readonly open: 
                       />
                     </div>
                     {g.expiresAt !== null && !g.expired && (
-                      <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => changeEnd(g, "")} disabled={busy}>Retirer la date de fin</Button>
+                      <Button variant="ghost" size="sm" onClick={() => changeEnd(g, "")} disabled={busy}>Retirer la date de fin</Button>
                     )}
-                    <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setRemoving(g)} disabled={busy}>Retirer l&apos;accès</Button>
+                    <Button variant="secondary" size="sm" onClick={() => setRemoving(g)} disabled={busy}>Retirer l&apos;accès</Button>
                   </li>
                 ))}
               </ul>

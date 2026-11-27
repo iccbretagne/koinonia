@@ -12,7 +12,7 @@ function Table({ title, head, rows }: { readonly title: string; readonly head: s
     <section className="overflow-hidden rounded-card border border-line bg-surface">
       <h2 className="px-5 py-4 text-lg font-semibold text-ink">{title}</h2>
       {rows.length === 0 ? (
-        <EmptyState size="sm" className="min-h-11 sm:min-h-9" title="Rien sur la période" />
+        <EmptyState size="sm" title="Rien sur la période" />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-[15px] leading-[22px]">

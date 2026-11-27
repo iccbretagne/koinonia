@@ -74,15 +74,15 @@ export default function AssignmentActions({ assignmentId, status, name, departme
   return (
     <div className="flex flex-wrap gap-2">
       {status === "PENDING" ? (
-        <Button size="sm" className="min-h-11 sm:min-h-9" onClick={() => setPending("accept")}>
+        <Button size="sm" onClick={() => setPending("accept")}>
           Accueillir
         </Button>
       ) : (
-        <Button size="sm" className="min-h-11 sm:min-h-9" onClick={() => setPending("confirm")}>
+        <Button size="sm" onClick={() => setPending("confirm")}>
           Confirmer le STAR
         </Button>
       )}
-      <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => setPending("send-back")}>
+      <Button size="sm" variant="secondary" onClick={() => setPending("send-back")}>
         Renvoyer au PVS
       </Button>
       {pending && (

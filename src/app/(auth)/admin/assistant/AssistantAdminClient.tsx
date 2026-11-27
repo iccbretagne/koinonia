@@ -10,6 +10,7 @@ import {
   buttonClasses,
   ConfirmModal,
   EmptyState,
+  FilterChip,
   Input,
   Modal,
   SearchInput,
@@ -228,20 +229,13 @@ function QuestionsTab({ pending, entries, status }: { readonly pending: PendingR
         Les questions arrivent sans le nom ni l&apos;église de la personne ; emails, téléphones et liens sont masqués. Un prénom
         peut subsister : supprimez la question si besoin.
       </Alert>
-      <div className="flex flex-wrap gap-2">
+      <nav aria-label="Filtrer par statut" className="flex flex-wrap gap-2">
         {Object.entries(STATUS_LABEL).map(([value, label]) => (
-          <Link
-            key={value}
-            href={`/admin/assistant?onglet=questions&statut=${value}`}
-            aria-current={value === status ? "page" : undefined}
-            className={`inline-flex min-h-11 items-center rounded-full border px-3 text-[13px] font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:min-h-9 ${
-              value === status ? "border-brand bg-brand-soft text-brand-text" : "border-line text-ink-muted hover:text-ink"
-            }`}
-          >
+          <FilterChip key={value} href={`/admin/assistant?onglet=questions&statut=${value}`} pressed={value === status}>
             {label}
-          </Link>
+          </FilterChip>
         ))}
-      </div>
+      </nav>
       {pending.length === 0 ? (
         <EmptyState icon={Inbox} title="Aucune question ici" description="Les questions sans réponse ou jugées « Pas utile » apparaîtront ici." />
       ) : (
@@ -261,16 +255,16 @@ function QuestionsTab({ pending, entries, status }: { readonly pending: PendingR
               </p>
               {status === "OPEN" && (
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => setAnswering(row)}>
+                  <Button size="sm" variant="secondary" onClick={() => setAnswering(row)}>
                     Répondre
                   </Button>
-                  <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => { setLinkKey(""); setLinking(row); }}>
+                  <Button size="sm" variant="secondary" onClick={() => { setLinkKey(""); setLinking(row); }}>
                     Rattacher à une fiche
                   </Button>
-                  <Button size="sm" className="min-h-11 sm:min-h-9" variant="ghost" disabled={busy} onClick={() => void act(row, { action: "offtopic" }, "Question classée hors sujet")}>
+                  <Button size="sm" variant="ghost" disabled={busy} onClick={() => void act(row, { action: "offtopic" }, "Question classée hors sujet")}>
                     Classer hors sujet
                   </Button>
-                  <Button size="sm" className="min-h-11 sm:min-h-9" variant="ghost" onClick={() => setDeleting(row)}>
+                  <Button size="sm" variant="ghost" onClick={() => setDeleting(row)}>
                     Supprimer
                   </Button>
                 </div>
@@ -422,27 +416,27 @@ function BaseTab({ entries }: { readonly entries: AdminEntry[] }) {
             </p>
             <div className="flex flex-wrap gap-2">
               {!e.hidden && (
-                <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => setEditing(e)}>
+                <Button size="sm" variant="secondary" onClick={() => setEditing(e)}>
                   {e.origin === "custom" ? "Modifier" : "Corriger"}
                 </Button>
               )}
               {e.origin === "override" && (
-                <Button size="sm" className="min-h-11 sm:min-h-9" variant="ghost" onClick={() => void patch(e, { action: "restore" }, "Texte fourni rétabli")}>
+                <Button size="sm" variant="ghost" onClick={() => void patch(e, { action: "restore" }, "Texte fourni rétabli")}>
                   Rétablir
                 </Button>
               )}
               {e.origin !== "custom" &&
                 (e.hidden ? (
-                  <Button size="sm" className="min-h-11 sm:min-h-9" variant="ghost" onClick={() => void patch(e, { action: "show" }, "Fiche affichée")}>
+                  <Button size="sm" variant="ghost" onClick={() => void patch(e, { action: "show" }, "Fiche affichée")}>
                     Afficher
                   </Button>
                 ) : (
-                  <Button size="sm" className="min-h-11 sm:min-h-9" variant="ghost" onClick={() => void patch(e, { action: "hide" }, "Fiche masquée")}>
+                  <Button size="sm" variant="ghost" onClick={() => void patch(e, { action: "hide" }, "Fiche masquée")}>
                     Masquer
                   </Button>
                 ))}
               {e.origin === "custom" && (
-                <Button size="sm" className="min-h-11 sm:min-h-9" variant="ghost" onClick={() => setDeleting(e)}>
+                <Button size="sm" variant="ghost" onClick={() => setDeleting(e)}>
                   Supprimer
                 </Button>
               )}
@@ -550,7 +544,7 @@ export default function AssistantAdminClient({
         <Alert
           tone="warning"
           action={
-            <Link href="/admin/assistant?onglet=reglages" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+            <Link href="/admin/assistant?onglet=reglages" className={buttonClasses("secondary", "sm")}>
               Ouvrir les réglages
             </Link>
           }

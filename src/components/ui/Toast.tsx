@@ -126,7 +126,7 @@ export function ToastProvider({ children }: { readonly children: ReactNode }) {
         // `[popover]` impose par défaut `inset: 0` (donc `top: 0`) et `width/height: fit-content` :
         // sans les neutraliser explicitement (`top-auto`, `w-auto`/`md:w-fit`), le conteneur
         // remonterait collé en haut de l'écran au lieu de suivre `bottom-…` ci-dessous.
-        className="pointer-events-none fixed inset-x-4 top-auto bottom-[calc(64px+env(safe-area-inset-bottom)+12px)] z-[70] m-0 w-auto flex justify-center
+        className="pointer-events-none fixed inset-x-4 top-auto bottom-[calc(64px+env(safe-area-inset-bottom)+12px)] z-toast m-0 w-auto flex justify-center
           border-0 bg-transparent p-0 md:inset-x-auto md:bottom-6 md:left-[calc(var(--k-sidebar-width,16rem)+1.5rem)] md:w-fit md:justify-start print:hidden"
       >
         {toast && <ToastView toast={toast} store={store} />}

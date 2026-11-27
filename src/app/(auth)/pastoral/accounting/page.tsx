@@ -113,7 +113,7 @@ export default async function PastoralAccountingPage() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-[17px] font-semibold text-ink">Demandes {now.getFullYear()}</h2>
-          <Link href="/accounting/requests" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+          <Link href="/accounting/requests" className={buttonClasses("ghost", "sm")}>
             Voir toutes les demandes
           </Link>
         </div>

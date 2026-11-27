@@ -81,7 +81,7 @@ export default function LibraryFiltersClient({
   return (
     <div className="mb-4">
       <div className="md:hidden mb-3">
-        <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" aria-expanded={mobileOpen} onClick={() => setMobileOpen((o) => !o)}>
+        <Button variant="secondary" size="sm" aria-expanded={mobileOpen} onClick={() => setMobileOpen((o) => !o)}>
           Filtrer{activeCount > 0 ? ` (${activeCount})` : ""}
         </Button>
       </div>

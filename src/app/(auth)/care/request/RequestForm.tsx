@@ -4,6 +4,7 @@ import { SubmitEvent, useId, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CircleCheck } from "lucide-react";
 import { Alert, Button, Input, Textarea, buttonClasses, fieldLabelClasses } from "@/components/ui";
+import { choiceChipClasses } from "@/components/ui/RadioGroup";
 
 interface Props {
   readonly churchId: string;
@@ -27,13 +28,6 @@ const MOTIFS = ["Renseignements", "Démarches administratives", "Vie familiale",
 const cardClasses = "flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-6";
 const sectionTitleClasses = "font-display text-[17px] font-semibold text-ink";
 
-/** Pastille de choix (radio ou case masquée) : 44 px, focus visible porté par l'étiquette. */
-function choiceClasses(on: boolean): string {
-  return `inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${
-    on ? "border-brand bg-brand-soft text-brand-text" : "border-control-line bg-surface text-ink-muted hover:bg-surface-sunken"
-  }`;
-}
-
 function FieldError({ message }: { readonly message?: string }) {
   if (!message) return null;
   return <p className="mt-1.5 text-[13px] text-danger">{message}</p>;
@@ -45,7 +39,7 @@ function RadioGroup({ name, options, value, onChange }: {
   return (
     <div className="flex flex-wrap gap-2">
       {options.map((opt) => (
-        <label key={opt} className={choiceClasses(value === opt)}>
+        <label key={opt} className={choiceChipClasses(value === opt)}>
           <input type="radio" name={name} value={opt} checked={value === opt}
             onChange={() => onChange(opt)} className="sr-only" />
           {opt}
@@ -237,7 +231,7 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
           </legend>
           <div className="flex flex-wrap gap-2">
             {MOTIFS.map((motif) => (
-              <label key={motif} className={choiceClasses(form.motifs.includes(motif))}>
+              <label key={motif} className={choiceChipClasses(form.motifs.includes(motif))}>
                 <input type="checkbox" checked={form.motifs.includes(motif)}
                   onChange={() => toggleMotif(motif)} className="sr-only" />
                 {motif}

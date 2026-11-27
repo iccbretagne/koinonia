@@ -10,7 +10,7 @@ import Textarea from "@/components/ui/Textarea";
 import { useToast } from "@/components/ui/Toast";
 import { buttonClasses } from "@/components/ui/button-classes";
 
-const contactLinkClasses = `${buttonClasses("ghost", "sm")} min-h-11 max-w-full justify-start break-all sm:min-h-9`;
+const contactLinkClasses = `${buttonClasses("ghost", "sm")} max-w-full justify-start break-all`;
 
 /**
  * Gestes du STAR sur ses services (spec 061) : « Je ne peux plus » (désistement, message
@@ -30,9 +30,6 @@ function formatDay(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
   return d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 }
-
-const onBrandClasses =
-  "inline-flex min-h-11 flex-1 items-center justify-center rounded-control border border-on-brand/50 px-4 font-display text-sm font-semibold text-on-brand transition-colors hover:bg-on-brand/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-brand sm:flex-none";
 
 export function WithdrawButton({
   eventId,
@@ -79,11 +76,11 @@ export function WithdrawButton({
   return (
     <>
       {onBrand ? (
-        <button type="button" className={onBrandClasses} onClick={() => setOpen(true)}>
+        <Button type="button" variant="on-brand-secondary" className="flex-1 sm:flex-none" onClick={() => setOpen(true)}>
           Je ne peux plus
-        </button>
+        </Button>
       ) : (
-        <Button type="button" variant="secondary" size="sm" onClick={() => setOpen(true)} className="min-h-11 sm:min-h-9">
+        <Button type="button" variant="secondary" size="sm" onClick={() => setOpen(true)}>
           Je ne peux plus
         </Button>
       )}
@@ -135,7 +132,7 @@ export function CancelWithdrawalButton({ withdrawalId, eventDate }: { readonly w
 
   return (
     <>
-      <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(true)} className="min-h-11 sm:min-h-9">
+      <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(true)}>
         Annuler mon désistement
       </Button>
       <ConfirmModal

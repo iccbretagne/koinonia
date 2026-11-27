@@ -42,7 +42,7 @@ export default async function FormPage({ params }: Params) {
             tone="info"
             title="Connexion requise"
             action={
-              <Link href={`/?next=${encodeURIComponent(path)}`} className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+              <Link href={`/?next=${encodeURIComponent(path)}`} className={buttonClasses("secondary", "sm")}>
                 Se connecter
               </Link>
             }

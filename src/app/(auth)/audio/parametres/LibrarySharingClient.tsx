@@ -136,7 +136,7 @@ export default function LibrarySharingClient({
                 <p className="font-medium text-ink">{s.churchName}</p>
                 <p className="text-xs text-ink-subtle">{s.churchSlug}</p>
               </div>
-              <Button variant="secondary" size="sm" className="min-h-11 shrink-0 sm:min-h-9" onClick={() => setRevokeTarget(s)}>
+              <Button variant="secondary" size="sm" className="shrink-0" onClick={() => setRevokeTarget(s)}>
                 Révoquer le partage
               </Button>
             </li>

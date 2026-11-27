@@ -167,7 +167,7 @@ export default function CollectionTab({
                     </li>
                   ))}
                 </ul>
-                <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => update(r.key, { cheques: [...r.cheques, { key: newKey(), number: "", amount: "" }] })}>
+                <Button type="button" variant="ghost" size="sm" onClick={() => update(r.key, { cheques: [...r.cheques, { key: newKey(), number: "", amount: "" }] })}>
                   <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} /> Ajouter un chèque
                 </Button>
               </div>

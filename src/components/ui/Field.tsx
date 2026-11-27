@@ -28,9 +28,18 @@ export function useFieldIds({
   return { controlId, messageId, ariaDescribedBy };
 }
 
-export function FieldLabel({ htmlFor, children }: { readonly htmlFor: string; readonly children: ReactNode }) {
+export function FieldLabel({
+  htmlFor,
+  children,
+  hidden = false,
+}: {
+  readonly htmlFor: string;
+  readonly children: ReactNode;
+  /** Libellé lu par les lecteurs d'écran mais masqué à l'écran (`sr-only`). */
+  readonly hidden?: boolean;
+}) {
   return (
-    <label htmlFor={htmlFor} className={fieldLabelClasses}>
+    <label htmlFor={htmlFor} className={hidden ? "sr-only" : fieldLabelClasses}>
       {children}
     </label>
   );

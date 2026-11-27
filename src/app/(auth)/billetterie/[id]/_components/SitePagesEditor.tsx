@@ -42,9 +42,9 @@ function swap<T>(list: T[], i: number, dir: -1 | 1) {
 function Move({ index, count, onMove, onDelete, what }: { readonly index: number; readonly count: number; readonly onMove: (dir: -1 | 1) => void; readonly onDelete: () => void; readonly what: string }) {
   return (
     <div className="flex gap-1">
-      <IconButton size="sm" className="max-sm:size-11" icon={ArrowUp} aria-label={`Monter ${what}`} disabled={index === 0} onClick={() => onMove(-1)} />
-      <IconButton size="sm" className="max-sm:size-11" icon={ArrowDown} aria-label={`Descendre ${what}`} disabled={index === count - 1} onClick={() => onMove(1)} />
-      <IconButton size="sm" className="max-sm:size-11" icon={Trash2} aria-label={`Supprimer ${what}`} onClick={onDelete} />
+      <IconButton size="sm" icon={ArrowUp} aria-label={`Monter ${what}`} disabled={index === 0} onClick={() => onMove(-1)} />
+      <IconButton size="sm" icon={ArrowDown} aria-label={`Descendre ${what}`} disabled={index === count - 1} onClick={() => onMove(1)} />
+      <IconButton size="sm" icon={Trash2} aria-label={`Supprimer ${what}`} onClick={onDelete} />
     </div>
   );
 }
@@ -137,10 +137,10 @@ function ListEditor<T>({ items, max, add, onChange, render, what }: { readonly i
       {items.map((item, i) => (
         <div key={i} className="flex items-start gap-2">
           <div className="min-w-0 flex-1 space-y-2">{render(item, (fn) => { const next = structuredClone(items); fn(next[i]); onChange(next); }, i)}</div>
-          {items.length > 1 && <IconButton size="sm" className="max-sm:size-11" icon={Trash2} aria-label={`Supprimer ${what} ${i + 1}`} onClick={() => onChange(items.filter((_, j) => j !== i))} />}
+          {items.length > 1 && <IconButton size="sm" icon={Trash2} aria-label={`Supprimer ${what} ${i + 1}`} onClick={() => onChange(items.filter((_, j) => j !== i))} />}
         </div>
       ))}
-      {items.length < max && <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => onChange([...items, add()])}>Ajouter {what} ({items.length}/{max})</Button>}
+      {items.length < max && <Button type="button" variant="secondary" size="sm" onClick={() => onChange([...items, add()])}>Ajouter {what} ({items.length}/{max})</Button>}
     </div>
   );
 }
@@ -309,7 +309,7 @@ export default function SitePagesEditor({ doc, edit, tools }: { readonly doc: Si
                 <SectionEditor key={s} section={section} p={p} s={s} count={page.sections.length} edit={edit} tools={tools} pages={doc.pages} />
               ))}
               {page.sections.length < SITE_LIMITS.sections && (
-                <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => edit((d) => void d.pages[p].sections.push({ background: { kind: "none" }, textColor: "text", blocks: [] }))}>Ajouter une bande ({page.sections.length}/{SITE_LIMITS.sections})</Button>
+                <Button type="button" variant="secondary" size="sm" onClick={() => edit((d) => void d.pages[p].sections.push({ background: { kind: "none" }, textColor: "text", blocks: [] }))}>Ajouter une bande ({page.sections.length}/{SITE_LIMITS.sections})</Button>
               )}
             </>
           )}

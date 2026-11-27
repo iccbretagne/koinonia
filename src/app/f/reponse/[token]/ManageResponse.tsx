@@ -98,6 +98,7 @@ export default function ManageResponse({
         title="Annuler votre réponse ?"
         message="Votre réponse passe à « Annulée » et votre place éventuelle est libérée."
         confirmLabel="Annuler ma réponse"
+        cancelLabel="Garder ma réponse"
         confirmingLabel="Annulation en cours…"
         variant="primary"
         confirming={pending === "DELETE"}

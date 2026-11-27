@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Clock, ExternalLink, Presentation } from "lucide-react";
 import { StatusChip } from "@/components/ui";
 import { buttonClasses } from "@/components/ui/button-classes";
-import Switch from "./Switch";
+import Switch from "@/components/ui/Switch";
 import { publicationStatus } from "./settings-state";
 
 /**
@@ -49,7 +49,7 @@ export default function PublicationBlock({
             </p>
           )}
         </div>
-        <Switch checked={draftEnabled} onChange={onToggle} label="Publier la page" />
+        <Switch checked={draftEnabled} onChange={onToggle} label="Publier la page" hideLabel />
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import IconButton from "@/components/ui/IconButton";
 
 type Photo = {
   id: string;
@@ -77,15 +78,7 @@ export default function GalleryView({ data }: { readonly data: GalleryData }) {
           role="none"
           onClick={(e) => { if (!(e.target instanceof HTMLImageElement)) setLightbox(null); }}
         >
-          {/* Visionneuse toujours sombre : bouton clair sur le voile, hors IconButton (encre du thème). */}
-          <button
-            type="button"
-            aria-label="Fermer la photo"
-            className="absolute top-4 right-4 inline-flex size-11 items-center justify-center rounded-control text-on-brand hover:text-on-brand/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-            onClick={() => setLightbox(null)}
-          >
-            <X aria-hidden="true" className="size-6" strokeWidth={1.75} />
-          </button>
+          <IconButton variant="on-dark" icon={X} aria-label="Fermer la photo" onClick={() => setLightbox(null)} className="absolute top-4 right-4" />
           <div className="max-w-3xl w-full">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

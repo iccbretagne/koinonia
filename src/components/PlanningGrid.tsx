@@ -426,7 +426,7 @@ export default function PlanningGrid({
         tone="danger"
         title="Le planning n'a pas pu être chargé."
         action={
-          <Button variant="ghost" size="sm" onClick={fetchPlanning} className="-ml-3 min-h-11 sm:min-h-9">
+          <Button variant="ghost" size="sm" onClick={fetchPlanning} className="-ml-3">
             Réessayer
           </Button>
         }
@@ -509,7 +509,7 @@ export default function PlanningGrid({
           <ul className="mt-1 flex flex-col">
             {withdrawals.map((w) => (
               <li key={w.id}>
-                <Link href={`/planning/remplacements/${w.id}`} className={`${buttonClasses("ghost", "sm")} -ml-3 min-h-11 sm:min-h-9`}>
+                <Link href={`/planning/remplacements/${w.id}`} className={`${buttonClasses("ghost", "sm")} -ml-3`}>
                   Remplacer {w.memberName}
                 </Link>
               </li>
@@ -520,11 +520,11 @@ export default function PlanningGrid({
 
       {canAskTeam && !isReadOnly && availCounts && (
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" size="sm" onClick={() => setConfirmAction("ask")} className="min-h-11 sm:min-h-9">
+          <Button variant="secondary" size="sm" onClick={() => setConfirmAction("ask")}>
             Interroger l&apos;équipe sur leurs disponibilités
           </Button>
           {availCounts.noResponse > 0 && (
-            <Button variant="secondary" size="sm" disabled={!relanceAvailable} onClick={() => setConfirmAction("relance")} className="min-h-11 sm:min-h-9">
+            <Button variant="secondary" size="sm" disabled={!relanceAvailable} onClick={() => setConfirmAction("relance")}>
               {relanceAvailable ? "Relancer les sans-réponse" : "Relance déjà envoyée aujourd'hui"}
             </Button>
           )}

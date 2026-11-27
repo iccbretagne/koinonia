@@ -5,6 +5,7 @@ import { useState, useCallback, useEffect } from "react";
 import type { CollectionConfig } from "@/modules/media";
 import DownloadAllButton from "../../_components/DownloadAllButton";
 import { Button } from "@/components/ui";
+import IconButton from "@/components/ui/IconButton";
 
 type Photo = {
   id: string;
@@ -107,9 +108,7 @@ function Lightbox({
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <div className="flex items-center gap-3 min-w-0">
-          <button onClick={onClose} aria-label="Fermer la visionneuse" className="grid size-11 place-items-center rounded-control text-on-brand/70 hover:text-on-brand transition-colors shrink-0 focus-visible:outline-2 focus-visible:outline-focus">
-            <X className="w-6 h-6" aria-hidden="true" />
-          </button>
+          <IconButton variant="on-dark" icon={X} onClick={onClose} aria-label="Fermer la visionneuse" className="shrink-0" />
           <span className="text-on-brand/80 text-sm truncate">{current.item.filename}</span>
           {current.kind === "file" && (
             <span className="text-xs font-semibold text-on-brand bg-brand/60 rounded-full px-2 py-0.5 shrink-0">
@@ -122,12 +121,8 @@ function Lightbox({
 
       {/* Image */}
       <div className="flex-1 flex items-center justify-center relative px-14 overflow-hidden">
-        <button onClick={onPrev} disabled={index === 0} aria-label="Média précédent" className="absolute left-3 top-1/2 -translate-y-1/2 grid size-11 place-items-center text-on-brand/60 hover:text-on-brand bg-scrim rounded-full transition-all disabled:opacity-20 z-10 focus-visible:outline-2 focus-visible:outline-focus">
-          <ChevronLeft className="w-5 h-5" aria-hidden="true" />
-        </button>
-        <button onClick={onNext} disabled={index === items.length - 1} aria-label="Média suivant" className="absolute right-3 top-1/2 -translate-y-1/2 grid size-11 place-items-center text-on-brand/60 hover:text-on-brand bg-scrim rounded-full transition-all disabled:opacity-20 z-10 focus-visible:outline-2 focus-visible:outline-focus">
-          <ChevronRight className="w-5 h-5" aria-hidden="true" />
-        </button>
+        <IconButton variant="on-dark" icon={ChevronLeft} onClick={onPrev} disabled={index === 0} aria-label="Média précédent" className="absolute left-3 top-1/2 -translate-y-1/2 bg-scrim rounded-full z-10" />
+        <IconButton variant="on-dark" icon={ChevronRight} onClick={onNext} disabled={index === items.length - 1} aria-label="Média suivant" className="absolute right-3 top-1/2 -translate-y-1/2 bg-scrim rounded-full z-10" />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={current.item.thumbnailUrl}

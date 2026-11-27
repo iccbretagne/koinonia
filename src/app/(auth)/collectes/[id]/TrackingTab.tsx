@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
-import { Alert, Button, Checkbox, ConfirmModal, DataTable, FilterChip, Input, Modal, Select, StatusChip, Textarea, buttonClasses } from "@/components/ui";
+import { Alert, Button, Checkbox, ConfirmModal, DataTable, FilterChip, Input, Menu, Modal, Select, StatusChip, Textarea, buttonClasses, type MenuItem } from "@/components/ui";
 import { ASSIGNMENT_STATUSES, ASSIGNMENT_STATUS_LABELS, type AssignmentStatus } from "@/modules/campaigns/schemas";
 import { ASSIGNMENT_STATUS_TONES, formatDateTime, formatDay, parisDayKey, percent } from "../_components/display";
 import { useApi } from "../_components/use-api";
@@ -35,7 +35,7 @@ function IssuesDetails({ row }: { readonly row: Row }) {
   const groups = groupIssues(row.issues);
   return (
     <details className="group max-w-sm">
-      <summary className={`${buttonClasses("ghost", "sm")} min-h-11 list-none sm:min-h-9 [&::-webkit-details-marker]:hidden`}>
+      <summary className={`${buttonClasses("ghost", "sm")} list-none [&::-webkit-details-marker]:hidden`}>
         <ChevronDown aria-hidden="true" className="size-4 transition-transform group-open:rotate-180" strokeWidth={1.75} />
         {row.issues.length} question{row.issues.length > 1 ? "s" : ""} concernée{row.issues.length > 1 ? "s" : ""}
       </summary>
@@ -255,47 +255,40 @@ export default function TrackingTab({
           { header: "Échéance", accessor: (r) => formatDay(r.dueAt), hideOnMobile: true },
           { header: "Dernière relance", accessor: (r) => formatDateTime(r.lastRemindedAt), hideOnMobile: true },
         ]}
-        actions={(r) => (
-          <div className="flex flex-wrap gap-2">
-            <Link href={`/collectes/r/${r.id}`} className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
-              Ouvrir
-            </Link>
-            <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="ghost" onClick={() => onMessage({ kind: messageKindForStatus(r, new Date()), contributionId: r.id })}>
-              Préparer un message
-            </Button>
-            {open && OPEN_STATUSES.includes(r.status) && (
-              <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="ghost" disabled={busy || r.respondents.length === 0} onClick={() => remind(r)}>
-                Relancer
-              </Button>
-            )}
-            {open && (r.status === "SUBMITTED" || r.status === "VALIDATED") && (
-              <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="ghost" disabled={busy} onClick={() => setChanges(r)}>
-                Demander une correction
-              </Button>
-            )}
-            {r.status === "SUBMITTED" && (
-              <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="secondary" disabled={busy} onClick={() => setValidating(r)}>
-                Valider
-              </Button>
-            )}
-            {open && r.status === "SUBMITTED" && (
-              <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="ghost" disabled={busy} onClick={() => setReview({ row: r, action: "reopen" })}>
-                Rouvrir
-              </Button>
-            )}
-            {r.status === "VALIDATED" && (
-              <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="ghost" disabled={busy} onClick={() => setReview({ row: r, action: "unvalidate" })}>
-                Annuler la validation
-              </Button>
-            )}
-            <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="ghost" disabled={busy} onClick={() => setDue({ row: r, value: parisDayKey(r.assignmentDueAt), initial: parisDayKey(r.assignmentDueAt) })}>
-              Changer l&apos;échéance
-            </Button>
-            <Link href={`/collectes/${campaign.id}/apercu/${r.formId}`} className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
-              Voir l&apos;aperçu
-            </Link>
-          </div>
-        )}
+        actions={(r) => {
+          const extra: MenuItem[] = [
+            { label: "Préparer un message", onSelect: () => onMessage({ kind: messageKindForStatus(r, new Date()), contributionId: r.id }) },
+          ];
+          if (open && OPEN_STATUSES.includes(r.status)) {
+            extra.push({ label: "Relancer", disabled: busy || r.respondents.length === 0, onSelect: () => void remind(r) });
+          }
+          if (open && (r.status === "SUBMITTED" || r.status === "VALIDATED")) {
+            extra.push({ label: "Demander une correction", disabled: busy, onSelect: () => setChanges(r) });
+          }
+          if (open && r.status === "SUBMITTED") {
+            extra.push({ label: "Rouvrir", disabled: busy, onSelect: () => setReview({ row: r, action: "reopen" }) });
+          }
+          if (r.status === "VALIDATED") {
+            extra.push({ label: "Annuler la validation", disabled: busy, onSelect: () => setReview({ row: r, action: "unvalidate" }) });
+          }
+          extra.push(
+            { label: "Changer l'échéance", disabled: busy, onSelect: () => setDue({ row: r, value: parisDayKey(r.assignmentDueAt), initial: parisDayKey(r.assignmentDueAt) }) },
+            { label: "Voir l'aperçu", href: `/collectes/${campaign.id}/apercu/${r.formId}` },
+          );
+          return (
+            <div className="flex flex-wrap items-center gap-2">
+              {r.status === "SUBMITTED" ? (
+                <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => setValidating(r)}>
+                  Valider
+                </Button>
+              ) : null}
+              <Link href={`/collectes/r/${r.id}`} className={buttonClasses(r.status === "SUBMITTED" ? "ghost" : "secondary", "sm")}>
+                Ouvrir
+              </Link>
+              <Menu label={`Autres actions pour ${r.label} (${r.formTitle})`} items={extra} size="sm" />
+            </div>
+          );
+        }}
       />
 
       <Modal open={changes !== null} onClose={() => setChanges(null)} title="Demander une correction" mobileLayout="sheet">

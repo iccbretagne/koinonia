@@ -221,7 +221,7 @@ export default function SiteTab({
         <div className="min-w-0 space-y-2">
           <div className="flex items-center justify-between gap-2">
             <h2 className="font-semibold text-ink">Aperçu du brouillon</h2>
-            <Button type="button" size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => setFullPreview(true)}>
+            <Button type="button" size="sm" variant="secondary" onClick={() => setFullPreview(true)}>
               Voir en plein écran
             </Button>
           </div>

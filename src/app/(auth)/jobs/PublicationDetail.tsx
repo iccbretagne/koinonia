@@ -126,7 +126,7 @@ export default function PublicationDetail({
         <Alert
           tone="warning"
           action={
-            <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" disabled={busy} onClick={async () => { if (await send("PATCH", { renew: true }, "Offre confirmée")) onChanged(); }}>
+            <Button size="sm" variant="secondary" disabled={busy} onClick={async () => { if (await send("PATCH", { renew: true }, "Offre confirmée")) onChanged(); }}>
               Confirmer l&apos;offre
             </Button>
           }

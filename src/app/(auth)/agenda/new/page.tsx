@@ -25,7 +25,7 @@ export default async function NewAgendaEntryPage() {
           tone="warning"
           title="Aucun profil pastoral configuré"
           action={
-            <Link href="/admin/pastoral-profiles" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+            <Link href="/admin/pastoral-profiles" className={buttonClasses("secondary", "sm")}>
               Configurer les profils
             </Link>
           }

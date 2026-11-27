@@ -206,10 +206,10 @@ export default function ChurchesClient({ initialChurches }: Props) {
           onSelectionChange={setSelectedIds}
           actions={(c) => (
             <div className="flex gap-2 justify-end">
-              <Link href={`/admin/churches/${c.id}`} className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+              <Link href={`/admin/churches/${c.id}`} className={buttonClasses("ghost", "sm")}>
                 Modifier
               </Link>
-              <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setPendingDelete(c)}>
+              <Button variant="ghost" size="sm" onClick={() => setPendingDelete(c)}>
                 Supprimer
               </Button>
             </div>

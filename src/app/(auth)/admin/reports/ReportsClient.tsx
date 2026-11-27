@@ -4,6 +4,7 @@ import { useId, useState, useMemo } from "react";
 import Link from "next/link";
 import { FileDown } from "lucide-react";
 import { Button, EmptyState, Input, SearchInput, Select, StatusChip, buttonClasses, controlClasses, useToast } from "@/components/ui";
+import Tabs, { TabPanel } from "@/components/ui/Tabs";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -226,23 +227,19 @@ export default function ReportsClient({ events, churchId }: Props) {
   return (
     <div>
       {/* Onglets */}
-      <div role="tablist" aria-label="Comptes rendus" className="mb-6 flex gap-1 overflow-x-auto border-b border-line">
-        {(["list", "stats"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            type="button"
-            role="tab"
-            aria-selected={tab === t}
-            onClick={() => setTab(t)}
-            className={`-mb-px inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-3 font-display text-sm font-semibold leading-5 transition-colors duration-120 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${
-              tab === t ? "border-brand text-brand-text" : "border-transparent text-ink-muted hover:text-ink"
-            }`}
-          >
-            {t === "list" ? "Liste des comptes rendus" : "Statistiques"}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        ariaLabel="Comptes rendus"
+        idBase="reports"
+        value={tab}
+        onChange={setTab}
+        className="mb-6"
+        tabs={[
+          { value: "list", label: "Liste des comptes rendus" },
+          { value: "stats", label: "Statistiques" },
+        ]}
+      />
 
+      <TabPanel idBase="reports" value={tab}>
       {/* ── Onglet Liste ──────────────────────────────────────────────────── */}
       {tab === "list" && (
         <div className="flex flex-col gap-4">
@@ -331,7 +328,7 @@ export default function ReportsClient({ events, churchId }: Props) {
                     {status === "none" && <StatusChip>Aucun compte rendu</StatusChip>}
                     <Link
                       href={`/admin/events/${event.id}/report`}
-                      className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}
+                      className={buttonClasses("secondary", "sm")}
                     >
                       {status === "none" ? "Saisir le compte rendu" : "Ouvrir le compte rendu"}
                     </Link>
@@ -553,6 +550,7 @@ export default function ReportsClient({ events, churchId }: Props) {
           )}
         </div>
       )}
+      </TabPanel>
     </div>
   );
 }

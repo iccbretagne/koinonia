@@ -186,7 +186,7 @@ export default function PushDeviceCard({
             tone="info"
             title="Installez Koinonia sur l'écran d'accueil."
             action={
-              <Link href="/installer" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+              <Link href="/installer" className={buttonClasses("secondary", "sm")}>
                 Voir comment installer
               </Link>
             }

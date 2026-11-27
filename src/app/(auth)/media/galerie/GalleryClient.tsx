@@ -275,8 +275,8 @@ export default function GalleryClient({
           </Button>
           <div className="w-40">
             <Select
-              label=""
-              aria-label="Tri"
+              label="Tri"
+              hideLabel
               value={filters.order}
               onChange={(e) => apply({ order: e.target.value as "desc" | "asc" })}
               options={[{ value: "desc", label: "Plus récent" }, { value: "asc", label: "Plus ancien" }]}
@@ -300,7 +300,7 @@ export default function GalleryClient({
                 {c.label} <X className="size-4" aria-hidden="true" strokeWidth={1.75} />
               </FilterChip>
             ))}
-            <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={clearAll}>Effacer les filtres</Button>
+            <Button type="button" variant="ghost" size="sm" onClick={clearAll}>Effacer les filtres</Button>
           </div>
         )}
       </div>

@@ -68,6 +68,7 @@ export default function CommunicationDetail({ item, ctx }: { readonly item: Queu
         <ReasonForm
           label="Motif de l'annulation"
           confirmLabel="Annuler la publication"
+          cancelLabel="Garder la publication"
           warning={
             item.children.some((c) => c.status === "EN_ATTENTE" || c.status === "EN_COURS")
               ? "Le visuel demandé pour cette publication sera aussi annulé."

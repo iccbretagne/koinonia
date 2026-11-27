@@ -271,7 +271,7 @@ export default function ReservationClient({
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-ink">Billets</h2>
           {active && (
-            <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setDialog({ kind: "qr", title: "Code de la réservation", qr: qrs.booking })}>
+            <Button type="button" variant="secondary" size="sm" onClick={() => setDialog({ kind: "qr", title: "Code de la réservation", qr: qrs.booking })}>
               <QrCode className="size-4" aria-hidden="true" /> Afficher le code de groupe
             </Button>
           )}
@@ -294,14 +294,14 @@ export default function ReservationClient({
               </div>
               {p.status === "ACTIVE" && qr && p.ticketUrl && (
                 <div className="flex flex-wrap gap-2">
-                  <Button type="button" size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => setDialog({ kind: "qr", title: `Billet de ${name}`, qr })}>
+                  <Button type="button" size="sm" variant="secondary" onClick={() => setDialog({ kind: "qr", title: `Billet de ${name}`, qr })}>
                     <QrCode className="size-4" aria-hidden="true" /> Afficher le billet
                   </Button>
-                  <Button type="button" size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => shareTicket(name, p.ticketUrl!)}>
+                  <Button type="button" size="sm" variant="secondary" onClick={() => shareTicket(name, p.ticketUrl!)}>
                     <Share2 className="size-4" aria-hidden="true" /> Transmettre le billet
                   </Button>
                   {view.can.rename && (
-                    <Button type="button" size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => setDialog({ kind: "rename", participantId: p.id, firstName: p.firstName, lastName: p.lastName })}>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => setDialog({ kind: "rename", participantId: p.id, firstName: p.firstName, lastName: p.lastName })}>
                       <Pencil className="size-4" aria-hidden="true" /> Corriger le nom
                     </Button>
                   )}
@@ -310,7 +310,6 @@ export default function ReservationClient({
                       type="button"
                       size="sm"
                       variant="ghost"
-                      className="min-h-11 sm:min-h-9"
                       onClick={() => setDialog({ kind: "cancelParticipant", participantId: p.id, name, noRefund: hasNonRefundablePaid(view, p.id) })}
                     >
                       <X className="size-4" aria-hidden="true" /> Annuler ce billet
@@ -333,7 +332,7 @@ export default function ReservationClient({
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-ink">Options</h2>
             {view.can.editOptions && publicEvent && publicEvent.options.length > 0 && (
-              <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setDialog({ kind: "options" })}>
+              <Button type="button" variant="secondary" size="sm" onClick={() => setDialog({ kind: "options" })}>
                 Modifier les options
               </Button>
             )}

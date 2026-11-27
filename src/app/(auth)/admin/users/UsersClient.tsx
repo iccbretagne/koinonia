@@ -362,12 +362,12 @@ export default function UsersClient({
               </div>
               <div className="flex flex-wrap gap-2">
                 {canManageRoles && (
-                  <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => openEditDisplayName(user)}>
+                  <Button variant="secondary" size="sm" onClick={() => openEditDisplayName(user)}>
                     Modifier le nom d&apos;affichage
                   </Button>
                 )}
                 {canManageRoles && user.neverConnected && (
-                  <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => handleDeleteUser(user.id, user.email)}>
+                  <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(user.id, user.email)}>
                     Supprimer
                   </Button>
                 )}

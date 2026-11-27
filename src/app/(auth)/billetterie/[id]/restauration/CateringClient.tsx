@@ -204,7 +204,7 @@ export default function CateringClient({ eventId, menus, hasLabels }: { readonly
   return (
     <div className="mx-auto max-w-xl space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <Link href={`/billetterie/${eventId}`} className={`${buttonClasses("ghost", "sm")} min-h-11 min-w-0 sm:min-h-9`}>
+        <Link href={`/billetterie/${eventId}`} className={`${buttonClasses("ghost", "sm")} min-w-0`}>
           <ArrowLeft aria-hidden="true" className="size-4 shrink-0" strokeWidth={1.75} />
           <span className="truncate">Retour à {snapshot?.event.title ?? "l'événement"}</span>
         </Link>

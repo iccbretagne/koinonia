@@ -157,7 +157,7 @@ export default function ItemEditor<T extends AnyItem>({
           {any.type === "multiple" && (
             <p className="text-[13px] text-ink-muted">Un choix exclusif (« Aucun ») ne peut pas être coché avec un autre.</p>
           )}
-          <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9 self-start" disabled={any.choices.length >= 100} onClick={() => onChange(addChoice(item, takenIds()))}>
+          <Button type="button" variant="secondary" size="sm" className="self-start" disabled={any.choices.length >= 100} onClick={() => onChange(addChoice(item, takenIds()))}>
             <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
             Ajouter un choix
           </Button>
@@ -203,7 +203,7 @@ export default function ItemEditor<T extends AnyItem>({
             type="button"
             variant="secondary"
             size="sm"
-            className="min-h-11 sm:min-h-9 self-start"
+            className="self-start"
             disabled={any.fields.length >= 30}
             onClick={() => onChange(addGroupField(any, takenIds()) as T)}
           >

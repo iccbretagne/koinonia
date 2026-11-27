@@ -136,7 +136,7 @@ function MainSection({ target, url, signedIn }: { readonly target: InstallTarget
           title="Koinonia est déjà installée sur cet appareil."
           action={
             signedIn ? (
-              <Link href="/profile/notifications" className={`${buttonClasses("ghost", "sm")} -ml-3 min-h-11 sm:min-h-9`}>
+              <Link href="/profile/notifications" className={`${buttonClasses("ghost", "sm")} -ml-3`}>
                 Activer les notifications
               </Link>
             ) : undefined

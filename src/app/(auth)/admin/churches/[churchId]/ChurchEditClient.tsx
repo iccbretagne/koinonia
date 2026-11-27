@@ -180,7 +180,7 @@ export default function ChurchEditClient({ church, profiles, supervisors, canEdi
                 action={
                   <Link
                     href={canEditIdentity ? `/admin/pastoral-profiles?churchId=${church.id}` : "/admin/pastoral-profiles"}
-                    className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}
+                    className={buttonClasses("secondary", "sm")}
                   >
                     Créer un profil pastoral pour {church.name}
                   </Link>

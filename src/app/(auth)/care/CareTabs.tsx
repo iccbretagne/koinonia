@@ -160,10 +160,10 @@ function QualifyForm({ req, churchId, onDone, onCancel }: {
         />
         {error && <Alert tone="danger">{error}</Alert>}
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => setRejectMode(false)} disabled={processing}>
+          <Button size="sm" variant="secondary" onClick={() => setRejectMode(false)} disabled={processing}>
             Annuler
           </Button>
-          <Button size="sm" className="min-h-11 sm:min-h-9" onClick={() => setConfirmReject(true)} disabled={processing || !reasonCode}>
+          <Button size="sm" onClick={() => setConfirmReject(true)} disabled={processing || !reasonCode}>
             {processing ? "Refus en cours…" : "Refuser la demande"}
           </Button>
         </div>
@@ -199,13 +199,13 @@ function QualifyForm({ req, churchId, onDone, onCancel }: {
       />
       {error && <Alert tone="danger">{error}</Alert>}
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-        <Button size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={onCancel} disabled={processing}>
+        <Button size="sm" variant="ghost" onClick={onCancel} disabled={processing}>
           Annuler
         </Button>
-        <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => setRejectMode(true)} disabled={processing}>
+        <Button size="sm" variant="secondary" onClick={() => setRejectMode(true)} disabled={processing}>
           Refuser la demande
         </Button>
-        <Button size="sm" className="min-h-11 sm:min-h-9" onClick={validate} disabled={processing || !assignee}>
+        <Button size="sm" onClick={validate} disabled={processing || !assignee}>
           {processing ? "Envoi en cours…" : "Confier la demande"}
         </Button>
       </div>
@@ -254,7 +254,7 @@ function RequestsTab({ requests: initial, churchId }: { readonly requests: Appoi
                     onDone={(id) => { setRequests((prev) => prev.filter((r) => r.id !== id)); setExpanded(null); }}
                   />
                 ) : (
-                  <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => setExpanded(req.id)}>
+                  <Button size="sm" variant="secondary" onClick={() => setExpanded(req.id)}>
                     Traiter la demande
                   </Button>
                 )}

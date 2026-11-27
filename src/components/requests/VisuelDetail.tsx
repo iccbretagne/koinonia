@@ -209,6 +209,7 @@ export default function VisuelDetail({
         <ReasonForm
           label="Motif de l'annulation"
           confirmLabel="Annuler la demande"
+          cancelLabel="Garder la demande"
           busy={busy}
           onCancel={() => setMode(null)}
           onConfirm={(reason) => void ctx.act({ status: "ANNULE", reviewNotes: reason }, { success: "Demande de visuel annulée" })}

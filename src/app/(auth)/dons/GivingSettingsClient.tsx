@@ -13,7 +13,7 @@ import {
   toPublicGivingPage,
   type GivingPageContent,
 } from "@/modules/giving/schemas";
-import { Alert, Button, ConfirmModal, Input, Textarea, buttonClasses, useToast } from "@/components/ui";
+import { Alert, Button, ConfirmModal, Input, SegmentedControl, Tabs, Textarea, buttonClasses, tabIds, useToast } from "@/components/ui";
 import GivingPageView from "@/app/donner/_components/GivingPageView";
 import GivingPageHeader from "@/app/donner/_components/GivingPageHeader";
 import type { GivingNameSize } from "@/generated/prisma/enums";
@@ -195,13 +195,6 @@ export default function GivingSettingsClient({
     }
   }
 
-  const toggleClass = (active: boolean) =>
-    `min-h-11 flex-1 rounded-control px-3 font-display text-sm font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${active ? "bg-surface text-ink shadow-card" : "text-ink-muted hover:text-ink"}`;
-  const tabClass = (active: boolean) =>
-    `-mb-px min-h-11 border-b-2 px-3 font-display text-sm font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
-      active ? "border-brand text-brand-text" : "border-transparent text-ink-muted hover:text-ink"
-    }`;
-
   return (
     <div className="flex flex-col gap-4">
       <PublicationBlock
@@ -225,7 +218,7 @@ export default function GivingSettingsClient({
           title="Aucune adresse comptable configurée."
           action={
             churchSettingsHref ? (
-              <Link href={churchSettingsHref} className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+              <Link href={churchSettingsHref} className={buttonClasses("secondary", "sm")}>
                 Ouvrir les paramètres de l&apos;église
               </Link>
             ) : undefined
@@ -240,42 +233,33 @@ export default function GivingSettingsClient({
         </Alert>
       )}
 
-      <div role="tablist" aria-label="Support" className="flex gap-2 border-b border-line">
-        {(
-          [
-            ["page", "Page publique"],
-            ["slide", "Slide de projection"],
-          ] as const
-        ).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            role="tab"
-            id={`support-tab-${value}`}
-            aria-selected={support === value}
-            aria-controls="support-panel"
-            className={tabClass(support === value)}
-            onClick={() => selectSupport(value)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        ariaLabel="Support"
+        idBase="support"
+        value={support}
+        onChange={selectSupport}
+        tabs={[
+          { value: "page", label: "Page publique" },
+          { value: "slide", label: "Slide de projection" },
+        ]}
+      />
 
-      <fieldset className="flex gap-1 rounded-control bg-surface-sunken p-1 lg:hidden">
-        <legend className="sr-only">Affichage</legend>
-        <button type="button" aria-pressed={mobileView === "form"} className={toggleClass(mobileView === "form")} onClick={() => setMobileView("form")}>
-          Paramètres
-        </button>
-        <button type="button" aria-pressed={mobileView === "preview"} className={toggleClass(mobileView === "preview")} onClick={() => setMobileView("preview")}>
-          Aperçu
-        </button>
-      </fieldset>
+      <SegmentedControl
+        label="Affichage"
+        fullWidth
+        className="lg:hidden"
+        value={mobileView}
+        onChange={setMobileView}
+        options={[
+          { value: "form", label: "Paramètres" },
+          { value: "preview", label: "Aperçu" },
+        ]}
+      />
 
       <div
-        id="support-panel"
+        id={tabIds("support", support).panel}
         role="tabpanel"
-        aria-labelledby={`support-tab-${support}`}
+        aria-labelledby={tabIds("support", support).tab}
         className={`grid gap-6 lg:items-start ${
           support === "slide" ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,560px)]" : "lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]"
         }`}

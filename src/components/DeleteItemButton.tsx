@@ -49,7 +49,7 @@ export default function DeleteItemButton({ endpoint, redirectTo, extraMessage, b
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={`${ghostDangerClasses} min-h-11 sm:min-h-9`}>
+      <button type="button" onClick={() => setOpen(true)} className={ghostDangerClasses}>
         <Trash2 aria-hidden="true" className="size-4" strokeWidth={1.75} />
         Supprimer la demande
       </button>
@@ -63,7 +63,7 @@ export default function DeleteItemButton({ endpoint, redirectTo, extraMessage, b
             <ul className="flex flex-col gap-1">
               {blockedBy.map((b) => (
                 <li key={b.href}>
-                  <Link href={b.href} className={`${buttonClasses("ghost", "sm")} -ml-3 min-h-11 sm:min-h-9`}>
+                  <Link href={b.href} className={`${buttonClasses("ghost", "sm")} -ml-3`}>
                     {b.label}
                     <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
                   </Link>

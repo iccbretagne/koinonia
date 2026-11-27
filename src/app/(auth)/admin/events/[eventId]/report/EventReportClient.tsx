@@ -272,7 +272,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
 
       {/* Navigation + export */}
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={handleExportPDF}>
+        <Button type="button" variant="secondary" size="sm" onClick={handleExportPDF}>
           <FileDown className="size-4" aria-hidden="true" strokeWidth={1.75} />
           Exporter en PDF
         </Button>
@@ -305,7 +305,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Sections</h2>
-          <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={addSection}>
+          <Button type="button" variant="secondary" size="sm" onClick={addSection}>
             <Plus className="size-4" aria-hidden="true" strokeWidth={1.75} />
             Ajouter une section libre
           </Button>

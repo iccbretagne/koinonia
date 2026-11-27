@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
-import Switch from "./Switch";
+import Switch from "@/components/ui/Switch";
 
 /** Carte de réglages du paramétrage des dons, repliée quand son interrupteur est éteint. */
 export default function Section({
@@ -28,7 +28,7 @@ export default function Section({
           <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">{title}</h2>
           {description && <p className="mt-0.5 text-[13px] leading-[18px] text-ink-muted">{description}</p>}
         </div>
-        {toggle && <Switch checked={toggle.checked} onChange={toggle.onChange} label={`Afficher : ${title}`} />}
+        {toggle && <Switch checked={toggle.checked} onChange={toggle.onChange} label={`Afficher : ${title}`} hideLabel />}
       </div>
       {open && children && (
         <div className="mt-4 flex flex-col gap-4">

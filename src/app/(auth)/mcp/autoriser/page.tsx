@@ -5,6 +5,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import Alert from "@/components/ui/Alert";
 import Checkbox from "@/components/ui/Checkbox";
 import AuthorizeForm from "./AuthorizeForm";
+import RadioGroup from "@/components/ui/RadioGroup";
 
 /** Ce qu'un assistant connecté peut lire (spec 081) ; les actions sont une case à part (lot 2). */
 const READS = [
@@ -90,15 +91,12 @@ export default async function AuthorizeAssistantPage({
               </p>
             </>
           ) : (
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium text-ink mb-1">Pour quelle église ?</legend>
-              {available.map((c, i) => (
-                <label key={c.id} className="flex min-h-11 items-center gap-2 text-sm text-ink">
-                  <input type="radio" name="church_id" value={c.id} defaultChecked={i === 0} className="size-5 accent-brand" />
-                  {c.name}
-                </label>
-              ))}
-            </fieldset>
+            <RadioGroup
+              legend="Pour quelle église ?"
+              name="church_id"
+              defaultValue={available[0].id}
+              options={available.map((c) => ({ value: c.id, label: c.name }))}
+            />
           )}
 
           <div className="text-sm text-ink-muted space-y-1">

@@ -8,6 +8,7 @@ import Checkbox from "@/components/ui/Checkbox";
 import { useToast } from "@/components/ui/Toast";
 import type { SlotView } from "@/modules/serving";
 import { DEFAULT_INTERVIEW_MINUTES } from "@/modules/serving/schemas";
+import { choiceChipClasses } from "@/components/ui/RadioGroup";
 
 type Slot = Omit<SlotView, "startsAt"> & { startsAt: string };
 type Interviewer = { id: string; name: string };
@@ -17,13 +18,6 @@ const dayKey = (iso: string) => new Date(iso).toLocaleDateString("fr-CA", { time
 const timeKey = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
 const dayLabel = (key: string) =>
   new Date(`${key}T12:00:00Z`).toLocaleDateString("fr-FR", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
-/** Pastille de choix (radio masquée) : 44 px, focus visible porté par l'étiquette. */
-function choiceClasses(on: boolean): string {
-  return `inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${
-    on ? "border-brand bg-brand-soft text-brand-text" : "border-control-line bg-surface text-ink-muted hover:bg-surface-sunken"
-  }`;
-}
-
 const WEEKDAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
 /** Jours AAAA-MM-JJ entre deux dates incluses, limités aux jours de la semaine choisis (0 = lundi). */
@@ -79,7 +73,7 @@ function SlotForm({
           <legend className={`${fieldLabelClasses} mb-2`}>Type d&apos;ajout</legend>
           <div className="flex flex-wrap gap-2">
             {(["one", "series"] as const).map((m) => (
-              <label key={m} className={choiceClasses(f.mode === m)}>
+              <label key={m} className={choiceChipClasses(f.mode === m)}>
                 <input type="radio" name="mode" value={m} checked={f.mode === m} onChange={() => set("mode", m)} className="sr-only" />
                 {m === "one" ? "Un créneau" : "Une série"}
               </label>
@@ -135,7 +129,7 @@ function SlotForm({
         <legend className={`${fieldLabelClasses} mb-2`}>Où</legend>
         <div className="flex flex-wrap gap-2">
           {(["location", "visio"] as const).map((p) => (
-            <label key={p} className={choiceClasses(f.place === p)}>
+            <label key={p} className={choiceChipClasses(f.place === p)}>
               <input type="radio" name="place" value={p} checked={f.place === p} onChange={() => set("place", p)} className="sr-only" />
               {p === "location" ? "Sur place" : "En visio"}
             </label>
@@ -286,7 +280,7 @@ export default function InterviewSlotsClient({
           tone="warning"
           title={`${pending} entretien${pending > 1 ? "s" : ""} à compléter`}
           action={
-            <Link href="/candidatures?onglet=todo" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+            <Link href="/candidatures?onglet=todo" className={buttonClasses("secondary", "sm")}>
               Voir les candidatures
             </Link>
           }
@@ -316,7 +310,7 @@ export default function InterviewSlotsClient({
                         {s.interviewer ? `Reçu par ${s.interviewer.name}` : "Personne qui reçoit à choisir"}
                       </p>
                       {s.candidate && (
-                        <Link href={`/candidatures/${s.candidate.id}`} className={`${buttonClasses("ghost", "sm")} -ml-3 min-h-11 sm:min-h-9`}>
+                        <Link href={`/candidatures/${s.candidate.id}`} className={`${buttonClasses("ghost", "sm")} -ml-3`}>
                           {s.candidate.firstName} {s.candidate.lastName}
                           <ChevronRight className="size-4" aria-hidden="true" />
                         </Link>

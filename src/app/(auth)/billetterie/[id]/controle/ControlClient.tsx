@@ -184,7 +184,7 @@ export default function ControlClient({ eventId }: { readonly eventId: string })
   return (
     <div className="mx-auto max-w-xl space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <Link href={`/billetterie/${eventId}`} className={`${buttonClasses("ghost", "sm")} min-h-11 min-w-0 sm:min-h-9`}>
+        <Link href={`/billetterie/${eventId}`} className={`${buttonClasses("ghost", "sm")} min-w-0`}>
           <ArrowLeft aria-hidden="true" className="size-4 shrink-0" strokeWidth={1.75} />
           <span className="truncate">Retour à {snapshot.event.title}</span>
         </Link>
@@ -403,7 +403,7 @@ function WalkInModal({
           </div>
         ))}
         {people.length < 10 && (
-          <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setPeople((l) => [...l, blank()])}>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setPeople((l) => [...l, blank()])}>
             <Plus className="size-4" aria-hidden="true" /> Ajouter une personne
           </Button>
         )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Alert, Button, Modal, Select, StatusChip } from "@/components/ui";
+import { Alert, Button, FileInput, Modal, RadioGroup, Select, StatusChip } from "@/components/ui";
 import type { ImportPreview, ImportResult, MergeStrategy } from "@/lib/config-backup-types";
 
 type ConfigCategory = "structure" | "members" | "links";
@@ -101,43 +101,34 @@ function ExportSection() {
 
   return (
     <div className="flex flex-col gap-4">
-      <fieldset className="min-w-0">
-        <legend className="mb-1 block text-sm font-semibold text-ink">Périmètre</legend>
-        <div className="flex flex-col">
-          <label className="flex min-h-11 cursor-pointer items-center gap-3 text-[15px] text-ink">
-            <input
-              type="radio"
-              name="scope"
-              value="all"
-              checked={scope === "all"}
-              onChange={() => setScope("all")}
-              className="size-5 accent-brand"
-            />
-            <span>Toutes les églises</span>
-          </label>
-          <label className="flex min-h-11 cursor-pointer items-center gap-3 text-[15px] text-ink">
-            <input
-              type="radio"
-              name="scope"
-              value="specific"
-              checked={scope !== "all"}
-              onChange={() => { loadChurches().catch(() => undefined); setScope(churches[0]?.id ?? ""); }}
-              className="size-5 accent-brand"
-            />
-            <span>Une église spécifique</span>
-          </label>
-        </div>
+      <div className="flex flex-col">
+        <RadioGroup
+          legend="Périmètre"
+          name="scope"
+          value={scope === "all" ? "all" : "specific"}
+          onChange={(v) => {
+            if (v === "all") setScope("all");
+            else {
+              loadChurches().catch(() => undefined);
+              setScope(churches[0]?.id ?? "");
+            }
+          }}
+          options={[
+            { value: "all", label: "Toutes les églises" },
+            { value: "specific", label: "Une église spécifique" },
+          ]}
+        />
         {scope !== "all" && (
           <Select
-            label=""
-            aria-label="Église à exporter"
+            label="Église à exporter"
+            hideLabel
             className="mt-2"
             value={scope}
             onChange={(e) => setScope(e.target.value)}
             options={churches.map((c) => ({ value: c.id, label: c.name }))}
           />
         )}
-      </fieldset>
+      </div>
 
       <fieldset className="min-w-0">
         <legend className="mb-1 block text-sm font-semibold text-ink">Catégories</legend>
@@ -261,15 +252,12 @@ function ImportSection() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <Button variant="secondary" onClick={() => fileRef.current?.click()} disabled={loading}>
-          {loading ? "Analyse…" : "Choisir un fichier JSON"}
-        </Button>
-        <input
+        <FileInput
           ref={fileRef}
-          type="file"
           accept=".json"
-          className="hidden"
           aria-label="Fichier de configuration (.json)"
+          buttonLabel={loading ? "Analyse en cours…" : "Choisir un fichier JSON"}
+          fileNames={[]}
           onChange={handleFileChange}
           disabled={loading}
         />
@@ -358,32 +346,13 @@ function ImportSection() {
 
             {/* Strategy */}
             <div>
-              <p className="mb-2 text-sm font-semibold text-ink">Stratégie de fusion</p>
-              <div className="flex flex-col gap-2">
-                {STRATEGY_OPTIONS.map((opt) => (
-                  <label
-                    key={opt.value}
-                    className={`flex cursor-pointer gap-3 rounded-control border-2 p-3 transition-colors ${
-                      strategy === opt.value
-                        ? "border-brand bg-brand-soft"
-                        : "border-line hover:border-control-line"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="strategy"
-                      value={opt.value}
-                      checked={strategy === opt.value}
-                      onChange={() => setStrategy(opt.value)}
-                      className="mt-0.5 size-5 shrink-0 accent-brand"
-                    />
-                    <div className="text-sm font-semibold text-ink">
-                      {opt.label}
-                      <span className="mt-0.5 block text-[13px] font-normal leading-[18px] text-ink-muted">{opt.desc}</span>
-                    </div>
-                  </label>
-                ))}
-              </div>
+              <RadioGroup
+                legend="Stratégie de fusion"
+                name="strategy"
+                value={strategy}
+                onChange={setStrategy}
+                options={STRATEGY_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label, description: opt.desc }))}
+              />
               {strategy === "REPLACE" && (
                 <Alert tone="warning" className="mt-2">
                   La stratégie REPLACE supprime les entités absentes du fichier. Cette action est irréversible pour les données supprimées.

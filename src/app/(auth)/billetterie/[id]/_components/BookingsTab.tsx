@@ -89,7 +89,7 @@ export default function BookingsTab({
                     {p.entryPrice > 0 && ` · entrée ${CHARGE_STATUS_LABEL[p.entryStatus].toLowerCase()}`}
                   </span>
                   {canManage && p.status === "ACTIVE" && b.participants.filter((x) => x.status === "ACTIVE").length > 1 && (
-                    <Button type="button" size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => setCancel({ bookingId: b.id, participantId: p.id, label: `${p.firstName} ${p.lastName}` })}>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => setCancel({ bookingId: b.id, participantId: p.id, label: `${p.firstName} ${p.lastName}` })}>
                       Annuler l&apos;inscription
                     </Button>
                   )}
@@ -108,10 +108,10 @@ export default function BookingsTab({
             )}
             {canManage && b.status === "ACTIVE" && (
               <div className="flex flex-wrap gap-2 border-t border-line pt-2">
-                <Button type="button" size="sm" variant="secondary" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => call(`/api/ticketing/events/${eventId}/bookings/${b.id}`, "PATCH", { action: "remind" }, "Récapitulatif renvoyé")}>
+                <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => call(`/api/ticketing/events/${eventId}/bookings/${b.id}`, "PATCH", { action: "remind" }, "Récapitulatif renvoyé")}>
                   Renvoyer le récapitulatif
                 </Button>
-                <Button type="button" size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => setCancel({ bookingId: b.id, participantId: null, label: b.reference })}>
+                <Button type="button" size="sm" variant="ghost" onClick={() => setCancel({ bookingId: b.id, participantId: null, label: b.reference })}>
                   Annuler la réservation
                 </Button>
               </div>

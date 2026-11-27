@@ -94,7 +94,7 @@ export default function ServiceInfoEditor({ service }: { readonly service: Servi
               service.planningEventTitle ||
               new Date(service.serviceDate).toLocaleDateString("fr-FR")}
           </h1>
-          <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setEditing(true)}>
+          <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
             Modifier les informations
           </Button>
         </div>

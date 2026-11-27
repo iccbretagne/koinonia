@@ -8,6 +8,7 @@ import Alert from "@/components/ui/Alert";
 import PageHeader from "@/components/ui/PageHeader";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
+import SegmentedControl from "@/components/ui/SegmentedControl";
 import DataTable from "@/components/ui/DataTable";
 import { useToast } from "@/components/ui/Toast";
 import { isAbsencePast } from "@/lib/absence-lock";
@@ -363,26 +364,16 @@ export default function AbsencesClient({
           <div className="flex items-center justify-between flex-wrap gap-2">
             <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Vue d&apos;ensemble</h2>
             <div className="flex items-center gap-2 flex-wrap">
-              <fieldset aria-label="Affichage" className="inline-flex w-fit gap-0.5 rounded-control bg-surface-sunken p-[3px]">
-                {(
-                  [
-                    ["table", "Tableau"],
-                    ["timeline", "Frise"],
-                  ] as const
-                ).map(([value, text]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    aria-pressed={viewMode === value}
-                    onClick={() => setViewMode(value)}
-                    className={`min-h-11 rounded-[7px] px-4 font-display text-sm font-semibold transition-colors duration-120 sm:min-h-9 ${
-                      viewMode === value ? "bg-surface text-brand-text shadow-card" : "text-ink-muted hover:text-ink"
-                    }`}
-                  >
-                    {text}
-                  </button>
-                ))}
-              </fieldset>
+              <SegmentedControl
+                label="Affichage"
+                size="sm"
+                value={viewMode}
+                onChange={setViewMode}
+                options={[
+                  { value: "table", label: "Tableau" },
+                  { value: "timeline", label: "Frise" },
+                ]}
+              />
               <Button size="sm" variant="secondary" onClick={exportAbsences} disabled={exporting}>
                 {exporting ? "Export en cours…" : "Exporter"}
               </Button>

@@ -3,6 +3,7 @@
 import { SubmitEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Input, Select, Textarea, fieldLabelClasses } from "@/components/ui";
+import { choiceChipClasses } from "@/components/ui/RadioGroup";
 
 interface Profile { id: string; name: string; role: string }
 interface Props { readonly churchId: string; readonly profiles: Profile[] }
@@ -12,13 +13,6 @@ const ROLE_LABELS: Record<string, string> = {
   ASSISTANT_PASTEUR: "Assistante Pasteur",
   BERGER: "Berger",
 };
-
-/** Pastille de choix (radio masquée) : 44 px, focus visible porté par l'étiquette. */
-function choiceClasses(on: boolean): string {
-  return `inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${
-    on ? "border-brand bg-brand-soft text-brand-text" : "border-control-line bg-surface text-ink-muted hover:bg-surface-sunken"
-  }`;
-}
 
 export default function NewEntryForm({ churchId, profiles }: Props) {
   const router = useRouter();
@@ -82,7 +76,7 @@ export default function NewEntryForm({ churchId, profiles }: Props) {
         <legend className={`${fieldLabelClasses} mb-2`}>Type</legend>
         <div className="flex flex-wrap gap-2">
           {(["ACTIVITY", "APPOINTMENT"] as const).map((t) => (
-            <label key={t} className={choiceClasses(form.type === t)}>
+            <label key={t} className={choiceChipClasses(form.type === t)}>
               <input
                 type="radio"
                 name="type"

@@ -113,7 +113,7 @@ function EntryDetail({
           <Alert
             tone="info"
             title={SOURCE_LABEL[line.source]}
-            action={line.link && <Link href={line.link} className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>Ouvrir l&apos;origine</Link>}
+            action={line.link && <Link href={line.link} className={buttonClasses("ghost", "sm")}>Ouvrir l&apos;origine</Link>}
           >
             Cette ligne se modifie à son origine.
             
@@ -128,14 +128,14 @@ function EntryDetail({
           ))}
         </dl>
         {line.hasReceipt && (
-          <a href={`/api/accounting/tresorerie/entries/${line.id}/receipt`} target="_blank" rel="noreferrer" className={`${buttonClasses("secondary", "sm")} min-h-11 self-start sm:min-h-9`}>
+          <a href={`/api/accounting/tresorerie/entries/${line.id}/receipt`} target="_blank" rel="noreferrer" className={`${buttonClasses("secondary", "sm")} self-start`}>
             <Paperclip aria-hidden="true" className="size-4" strokeWidth={1.75} /> Voir le justificatif
           </a>
         )}
         {own && (
           <div>
             {history === null ? (
-              <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => void loadHistory()}>Voir l&apos;historique</Button>
+              <Button variant="ghost" size="sm" onClick={() => void loadHistory()}>Voir l&apos;historique</Button>
             ) : (
               <ul className="flex flex-col gap-1 text-[13px] leading-[18px] text-ink-muted">
                 {history.map((h) => (
@@ -307,7 +307,7 @@ export default function LedgerTab({
           { header: "Solde", align: "right", accessor: (l) => <span className={l.runningBalance < 0 ? "text-danger" : ""}>{euro(l.runningBalance)}</span> },
         ]}
         actions={(l) => (
-          <Button size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => setDetailId(l.id)}>
+          <Button size="sm" variant="ghost" onClick={() => setDetailId(l.id)}>
             Voir le détail
           </Button>
         )}

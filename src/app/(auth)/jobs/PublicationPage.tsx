@@ -25,7 +25,7 @@ export default function PublicationPage({
   const back = `/jobs?tab=${tabOf(publication.kind)}`;
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
-      <Link href={back} className={`${buttonClasses("ghost", "sm")} min-h-11 self-start sm:min-h-9`}>
+      <Link href={back} className={`${buttonClasses("ghost", "sm")} self-start`}>
         <ArrowLeft aria-hidden="true" className="size-4" />
         Retour aux offres
       </Link>

@@ -29,15 +29,15 @@ export default function ExportBar({
 }) {
   return (
     <div className={`flex flex-wrap gap-2 ${className}`}>
-      <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={onCopy} disabled={!!exporting} title="Copier l'image">
+      <Button variant="secondary" size="sm" onClick={onCopy} disabled={!!exporting} title="Copier l'image">
         <ClipboardCopy aria-hidden="true" className="size-4" strokeWidth={1.75} />
         <span className="sr-only sm:not-sr-only">{exporting === "copy" ? "Copie…" : "Copier l'image"}</span>
       </Button>
-      <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={onDownload} disabled={!!exporting} title="Télécharger en PNG">
+      <Button variant="secondary" size="sm" onClick={onDownload} disabled={!!exporting} title="Télécharger en PNG">
         <ImageDown aria-hidden="true" className="size-4" strokeWidth={1.75} />
         <span className="sr-only sm:not-sr-only">{exporting === "image" || exporting === "png" ? "Export…" : "Télécharger en PNG"}</span>
       </Button>
-      <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={onPdf} disabled={!!exporting} title={pdfLabel}>
+      <Button variant="secondary" size="sm" onClick={onPdf} disabled={!!exporting} title={pdfLabel}>
         <FileDown aria-hidden="true" className="size-4" strokeWidth={1.75} />
         <span className="sr-only sm:not-sr-only">{exporting === "pdf" ? "Export…" : pdfLabel}</span>
       </Button>

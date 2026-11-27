@@ -1,9 +1,9 @@
 "use client";
 
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Badge } from "./Badge";
-import { iconButtonClasses } from "./button-classes";
+import { iconButtonClasses, type IconButtonVariant } from "./button-classes";
 
 interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "aria-label"> {
   /** Nom accessible, obligatoire : « Fermer », « Notifications, 3 non lues ». */
@@ -13,8 +13,12 @@ interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
   readonly children?: ReactNode;
   /** Compteur en pastille en haut à droite ; le nombre est à reprendre dans `aria-label`. */
   readonly badge?: number;
-  /** `md` = 44px (défaut, cible tactile), `sm` = 36px (densité desktop uniquement). */
+  /** `md` = 44px (défaut, cible tactile) ; `sm` = 44px sur mobile puis 36px (densité desktop). */
   readonly size?: "sm" | "md";
+  /** `on-dark` : sur le fond noir d'une visionneuse plein écran (lightbox, galerie par lien). */
+  readonly variant?: IconButtonVariant;
+  /** Référence du `<button>` (focus initial d'une visionneuse). */
+  readonly ref?: Ref<HTMLButtonElement>;
 }
 
 /**
@@ -27,6 +31,7 @@ export default function IconButton({
   children,
   badge,
   size = "md",
+  variant = "default",
   className = "",
   type = "button",
   title,
@@ -36,7 +41,7 @@ export default function IconButton({
     <button
       type={type}
       title={title ?? props["aria-label"]}
-      className={`${iconButtonClasses(size)} ${className}`}
+      className={`${iconButtonClasses(size, variant)} ${className}`}
       {...props}
     >
       {Icon ? <Icon aria-hidden="true" className="size-5" strokeWidth={1.75} /> : children}

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { Button, ConfirmModal, Input, buttonClasses } from "@/components/ui";
-import { FILE_INPUT } from "@/app/(auth)/billetterie/[id]/_components/file-input-classes";
+import FileInput from "@/components/ui/FileInput";
 import SequenceListEditor, { type SourceSummary, type SegmentSummary } from "./SequenceListEditor";
 import PublishModal, { type PublishSegmentSummary } from "./PublishModal";
 
@@ -302,7 +302,7 @@ export default function AudioServiceClient({
 
   return (
     <div className="space-y-6">
-      <Link href="/audio/production" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+      <Link href="/audio/production" className={buttonClasses("ghost", "sm")}>
         <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
         Retour à la file d&apos;attente
       </Link>
@@ -363,14 +363,14 @@ export default function AudioServiceClient({
       {canDeposit && (
         <section className="border border-line rounded-card p-4">
           <h2 className="font-semibold text-ink mb-2">Dépôt des séquences</h2>
-          <input
+          <FileInput
             ref={fileInputRef}
-            type="file"
             accept="audio/*"
             multiple
+            buttonLabel="Déposer des séquences"
             aria-label="Déposer des séquences audio"
+            fileNames={[]}
             onChange={(e) => handleFilesSelected(e.target.files)}
-            className={FILE_INPUT}
           />
 
           {interrupted.length > 0 && (
@@ -381,7 +381,6 @@ export default function AudioServiceClient({
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="min-h-11 sm:min-h-9"
                     onClick={() => dismissInterrupted(r.sourceId)}
                     disabled={dismissing === r.sourceId}
                   >

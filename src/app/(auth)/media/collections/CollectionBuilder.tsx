@@ -248,7 +248,7 @@ export default function CollectionBuilder({
                 <Input label="Au" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
               </div>
               {(dateFrom || dateTo) && (
-                <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => { setDateFrom(""); setDateTo(""); }}>
+                <Button type="button" variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); }}>
                   Effacer les dates
                 </Button>
               )}

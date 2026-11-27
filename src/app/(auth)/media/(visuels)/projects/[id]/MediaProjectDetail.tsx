@@ -282,10 +282,10 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
                 </p>
               </div>
               <div className="flex gap-1.5 shrink-0">
-                <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => copy(url, token.id)}>
+                <Button type="button" variant="secondary" size="sm" onClick={() => copy(url, token.id)}>
                   {copied === token.id ? "Copié !" : "Copier le lien"}
                 </Button>
-                <IconButton icon={Trash2} aria-label="Supprimer le lien" size="sm" className="max-sm:size-11" onClick={() => setPendingDeleteToken(token.id)} />
+                <IconButton icon={Trash2} aria-label="Supprimer le lien" size="sm" onClick={() => setPendingDeleteToken(token.id)} />
               </div>
             </div>
           );
@@ -306,10 +306,10 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
             <Input label="Étiquette (facultative)" placeholder="Ex : Révision client" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
             {error && <p className="text-[13px] text-danger">{error}</p>}
             <div className="flex flex-wrap gap-2 justify-end">
-              <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => { setOpen(false); setError(null); }}>
+              <Button type="button" variant="ghost" size="sm" onClick={() => { setOpen(false); setError(null); }}>
                 Annuler
               </Button>
-              <Button onClick={createToken} disabled={creating} size="sm" className="min-h-11 sm:min-h-9">
+              <Button onClick={createToken} disabled={creating} size="sm">
                 {creating ? "Création en cours…" : "Créer le lien"}
               </Button>
             </div>
@@ -549,7 +549,7 @@ function NewVersionUpload({ fileId, onDone }: { readonly fileId: string; readonl
     <div>
       <input ref={inputRef} type="file" className="hidden" onChange={onFileChange} />
       {!showForm ? (
-        <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => inputRef.current?.click()}>
+        <Button type="button" variant="secondary" size="sm" onClick={() => inputRef.current?.click()}>
           <Plus className="size-4" aria-hidden="true" strokeWidth={1.75} /> Ajouter une version
         </Button>
       ) : (
@@ -562,10 +562,10 @@ function NewVersionUpload({ fileId, onDone }: { readonly fileId: string; readonl
             </div>
           )}
           <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" className="min-h-11 sm:min-h-9" onClick={upload} disabled={uploading}>
+            <Button type="button" size="sm" onClick={upload} disabled={uploading}>
               {uploading ? `Envoi en cours (${pct} %)…` : "Envoyer la version"}
             </Button>
-            <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => { setShowForm(false); setPendingFile(null); }}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => { setShowForm(false); setPendingFile(null); }}>
               Annuler
             </Button>
           </div>
@@ -715,7 +715,7 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
         onCancel={() => setPendingDelete(false)}
       />
     )}
-    <div className="fixed inset-0 z-[60] flex">
+    <div className="fixed inset-0 z-modal flex">
       <div className="absolute inset-0 bg-scrim" aria-hidden="true" onClick={onClose} />
       <div className="relative ml-auto w-full max-w-xl bg-surface h-full flex flex-col shadow-overlay overflow-hidden">
         {/* Header */}
@@ -723,9 +723,9 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
           {/* Navigation prev/next */}
           {allFiles.length > 1 && (
             <div className="flex items-center gap-1 shrink-0">
-              <IconButton icon={ChevronLeft} aria-label="Fichier précédent" size="sm" className="max-sm:size-11" onClick={() => hasPrev && onNavigate(allFiles[fileIndex - 1])} disabled={!hasPrev} />
+              <IconButton icon={ChevronLeft} aria-label="Fichier précédent" size="sm" onClick={() => hasPrev && onNavigate(allFiles[fileIndex - 1])} disabled={!hasPrev} />
               <span className="text-xs text-ink-subtle tabular-nums w-10 text-center">{fileIndex + 1}/{allFiles.length}</span>
-              <IconButton icon={ChevronRight} aria-label="Fichier suivant" size="sm" className="max-sm:size-11" onClick={() => hasNext && onNavigate(allFiles[fileIndex + 1])} disabled={!hasNext} />
+              <IconButton icon={ChevronRight} aria-label="Fichier suivant" size="sm" onClick={() => hasNext && onNavigate(allFiles[fileIndex + 1])} disabled={!hasNext} />
             </div>
           )}
           <div className="flex-1 min-w-0">
@@ -742,9 +742,9 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {canManage && (
-              <IconButton icon={Trash2} aria-label="Supprimer ce fichier" className="max-sm:size-11" onClick={() => setPendingDelete(true)} />
+              <IconButton icon={Trash2} aria-label="Supprimer ce fichier" onClick={() => setPendingDelete(true)} />
             )}
-            <IconButton icon={X} aria-label="Fermer le fichier" className="max-sm:size-11" onClick={onClose} />
+            <IconButton icon={X} aria-label="Fermer le fichier" onClick={onClose} />
           </div>
         </div>
 
@@ -866,8 +866,8 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
           <div className="shrink-0 flex items-end gap-2 px-4 py-3 border-t border-line bg-surface">
             <div className="min-w-0 flex-1">
               <Textarea
-                label=""
-                aria-label="Commentaire"
+                label="Commentaire"
+                hideLabel
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Ajouter un commentaire…"
@@ -904,7 +904,7 @@ function NoFiles({
         {projectEmpty ? "Aucun fichier dans ce projet" : "Aucun résultat pour ces filtres"}
       </p>
       {filtered && (
-        <Button type="button" variant="ghost" size="sm" className="mt-2 min-h-11 sm:min-h-9" onClick={onReset}>
+        <Button type="button" variant="ghost" size="sm" className="mt-2" onClick={onReset}>
           Réinitialiser les filtres
         </Button>
       )}
@@ -1104,7 +1104,7 @@ export default function MediaProjectDetail({
         {/* ── Header ──────────────────────────────────────────── */}
         <div className="bg-surface rounded-card border border-line shadow-card overflow-hidden">
           <div className="p-5">
-            <Link href="/media/projects" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9 -ml-2 mb-3`}>
+            <Link href="/media/projects" className={`${buttonClasses("ghost", "sm")} -ml-2 mb-3`}>
               <ChevronLeft className="size-4" aria-hidden="true" strokeWidth={1.75} />
               Retour aux projets
             </Link>
@@ -1122,7 +1122,7 @@ export default function MediaProjectDetail({
                 )}
               </div>
               {canManage && (
-                <Button type="button" variant="ghost" size="sm" className="min-h-11 shrink-0 sm:min-h-9" onClick={() => setConfirmDelete(true)}>
+                <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={() => setConfirmDelete(true)}>
                   Supprimer le projet
                 </Button>
               )}
@@ -1182,8 +1182,8 @@ export default function MediaProjectDetail({
               <div className="flex items-center gap-2 shrink-0">
                 <div className="w-40">
                   <Select
-                    label=""
-                    aria-label="Type de fichier"
+                    label="Type de fichier"
+                    hideLabel
                     value={typeFilter}
                     onChange={(e) => setTypeFilter(e.target.value as MediaFileType | "")}
                     options={[{ value: "", label: "Tous les types" }, ...(Object.keys(FILE_TYPE_LABELS) as MediaFileType[]).map((t) => ({ value: t, label: FILE_TYPE_LABELS[t] }))]}

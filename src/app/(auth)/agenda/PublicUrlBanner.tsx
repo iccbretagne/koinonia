@@ -22,7 +22,7 @@ export default function PublicUrlBanner({ slug }: { readonly slug: string }) {
         <p className="mb-0.5 text-xs font-semibold text-ink">Lien public — formulaire de demande de RDV</p>
         <p className="truncate text-xs text-ink-muted">{url}</p>
       </div>
-      <Button type="button" variant="secondary" size="sm" onClick={copy} className="min-h-11 shrink-0 sm:min-h-9">
+      <Button type="button" variant="secondary" size="sm" onClick={copy} className="shrink-0">
         {copied ? (
           <>
             <Check aria-hidden="true" className="size-4" strokeWidth={1.75} />

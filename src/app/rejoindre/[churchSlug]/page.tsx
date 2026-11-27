@@ -59,7 +59,7 @@ export default async function RejoindrePublicPage({
             href={`${process.env.NEXT_PUBLIC_FAMILIES_URL ?? "https://familles.iccrennes.fr"}`}
             target="_blank"
             rel="noopener noreferrer"
-            className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}
+            className={buttonClasses("ghost", "sm")}
           >
             Trouver ta famille
           </a>

@@ -23,13 +23,13 @@ export default function EventFormsBlock({ forms, manage = false }: { readonly fo
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {manage && (
-                <Link href={`/formulaires/${f.id}?onglet=resultats`} className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+                <Link href={`/formulaires/${f.id}?onglet=resultats`} className={buttonClasses("ghost", "sm")}>
                   <ChartColumn aria-hidden="true" className="size-4" strokeWidth={1.75} />
                   Voir les résultats
                 </Link>
               )}
               {f.open && (
-                <Link href={f.path} className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`} aria-label={`Répondre au formulaire ${f.title}`}>
+                <Link href={f.path} className={buttonClasses("secondary", "sm")} aria-label={`Répondre au formulaire ${f.title}`}>
                   Répondre
                 </Link>
               )}

@@ -277,15 +277,15 @@ function QuestionCard({
           {draft.choices.map((c, i) => (
             <div key={c.key} className="grid grid-cols-[1fr_110px_44px] items-end gap-2">
               <Input
-                label=""
-                aria-label={`Choix ${i + 1}`}
+                label={`Choix ${i + 1}`}
+                hideLabel
                 value={c.label}
                 maxLength={200}
                 onChange={(e) => onChange({ ...draft, choices: draft.choices.map((x) => (x.key === c.key ? { ...x, label: e.target.value } : x)) })}
               />
               <Input
-                label=""
-                aria-label={`Places du choix ${i + 1}`}
+                label={`Places du choix ${i + 1}`}
+                hideLabel
                 type="number"
                 min={1}
                 placeholder="Places"
@@ -305,7 +305,6 @@ function QuestionCard({
             type="button"
             variant="ghost"
             size="sm"
-            className="min-h-11 sm:min-h-9"
             onClick={() => onChange({ ...draft, choices: [...draft.choices, { key: tempKey(), label: "", capacity: "" }] })}
           >
             <Plus className="size-4" aria-hidden="true" /> Ajouter un choix
@@ -395,7 +394,7 @@ function Construction({ form, usage }: { readonly form: Form; readonly usage: Us
             Ajoutez « Je viens » (oui / non) et « Nombre d&apos;accompagnants » : l&apos;onglet Résultats affichera le total des
             participants, accompagnants compris. Vous pouvez aussi cocher ce réglage sur une question oui / non ou nombre existante.
           </p>
-          <Button type="button" variant="secondary" size="sm" className="mt-3 min-h-11 sm:min-h-9" disabled={busy || form.purgedAt !== null} onClick={addParticipationQuestions}>
+          <Button type="button" variant="secondary" size="sm" className="mt-3" disabled={busy || form.purgedAt !== null} onClick={addParticipationQuestions}>
             <Plus className="size-4" aria-hidden="true" /> Ajouter « Je viens » et « Nombre d&apos;accompagnants »
           </Button>
         </Alert>
@@ -740,7 +739,7 @@ function Responses({ form, responses: all, manage }: { readonly form: Form; read
                     ))}
                     <td className="px-3 py-2 text-right">
                       {open && manage && (
-                        <Button type="button" size="sm" variant="ghost" className="min-h-11 whitespace-nowrap sm:min-h-9" onClick={() => setCancelling(r.id)}>
+                        <Button type="button" size="sm" variant="ghost" className="whitespace-nowrap" onClick={() => setCancelling(r.id)}>
                           Annuler la réponse
                         </Button>
                       )}
@@ -758,6 +757,7 @@ function Responses({ form, responses: all, manage }: { readonly form: Form; read
         title="Annuler cette réponse ?"
         message="La réponse passe à « Annulée » et libère sa place."
         confirmLabel="Annuler la réponse"
+        cancelLabel="Garder la réponse"
         confirmingLabel="Annulation en cours…"
         variant="primary"
         confirming={busy}

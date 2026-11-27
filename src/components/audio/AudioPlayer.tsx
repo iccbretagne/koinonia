@@ -166,7 +166,7 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
     <div className="pb-[calc(192px+env(safe-area-inset-bottom))] md:pb-0">
       {backHref && (
         <div className="mb-4">
-          <Link href={backHref} className={`${buttonClasses("ghost", "sm")} -ml-3 min-h-11 sm:min-h-9`}>
+          <Link href={backHref} className={`${buttonClasses("ghost", "sm")} -ml-3`}>
             <ChevronLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
             {backLabel ?? "Retour"}
           </Link>
@@ -191,7 +191,7 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
           )}
         </div>
         {onShare && (
-          <Button variant="secondary" size="sm" onClick={() => onShare(null)} className="min-h-11 shrink-0 sm:min-h-9">
+          <Button variant="secondary" size="sm" onClick={() => onShare(null)} className="shrink-0">
             <Share2 aria-hidden="true" className="size-4" strokeWidth={1.75} />
             Partager
           </Button>
@@ -246,10 +246,10 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
           {resumeOffer !== null && (
             <div className="mb-2 flex flex-wrap items-center gap-x-2 rounded-control bg-brand-soft py-1 pl-3 pr-1 text-[13px] text-ink">
               <span className="flex-1">Reprendre à {formatDuration(resumeOffer * 1000)} ?</span>
-              <Button type="button" variant="ghost" size="sm" onClick={acceptResume} className="min-h-11 sm:min-h-9">
+              <Button type="button" variant="ghost" size="sm" onClick={acceptResume}>
                 Reprendre
               </Button>
-              <Button type="button" variant="ghost" size="sm" onClick={declineResume} className="min-h-11 sm:min-h-9">
+              <Button type="button" variant="ghost" size="sm" onClick={declineResume}>
                 Reprendre du début
               </Button>
             </div>
@@ -258,7 +258,7 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
           {loadError ? (
             <div className="flex items-center gap-2 text-sm text-danger py-2">
               <span className="flex-1">Impossible de charger l&apos;audio.</span>
-              <Button variant="secondary" size="sm" onClick={retry} className="min-h-11 sm:min-h-9">
+              <Button variant="secondary" size="sm" onClick={retry}>
                 Réessayer
               </Button>
             </div>

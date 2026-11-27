@@ -167,8 +167,8 @@ export default function PastoralProfilesAdmin({ churchId, profiles: initial, use
                   <td className="px-4 py-3 text-ink-muted">{p.user?.displayName ?? p.user?.name ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap justify-end gap-2">
-                      <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => startEdit(p)}>Modifier</Button>
-                      <Button size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => del(p.id)} disabled={deleting === p.id}>
+                      <Button size="sm" variant="secondary" onClick={() => startEdit(p)}>Modifier</Button>
+                      <Button size="sm" variant="ghost" onClick={() => del(p.id)} disabled={deleting === p.id}>
                         {deleting === p.id ? "Suppression…" : "Supprimer"}
                       </Button>
                     </div>

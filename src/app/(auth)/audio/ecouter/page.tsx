@@ -104,7 +104,7 @@ export default async function AudioLibraryPage({
           {hasActiveFilters ? (
             <>
               <p className="text-ink-muted mb-4">Aucun résultat pour cette recherche.</p>
-              <Link href="/audio/ecouter" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+              <Link href="/audio/ecouter" className={buttonClasses("secondary", "sm")}>
                 Voir tous les enregistrements
               </Link>
             </>

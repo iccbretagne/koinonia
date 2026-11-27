@@ -65,7 +65,7 @@ export default function OpeningChecklist({
                 {c.detail && <span className="block text-[13px] text-ink-muted">{c.detail}</span>}
               </span>
               {!c.done && (
-                <Link href={c.href} className={`${buttonClasses("ghost", "sm")} min-h-11 shrink-0 sm:min-h-9`}>
+                <Link href={c.href} className={`${buttonClasses("ghost", "sm")} shrink-0`}>
                   Régler
                 </Link>
               )}

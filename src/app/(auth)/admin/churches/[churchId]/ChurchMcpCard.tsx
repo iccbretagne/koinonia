@@ -96,7 +96,7 @@ export default function ChurchMcpCard({
                   {c.lastUsedAt === null ? "" : ` · utilisé le ${dayFmt.format(new Date(c.lastUsedAt))}`}
                 </p>
               </div>
-              <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setRemoving(c)} disabled={saving}>
+              <Button variant="ghost" size="sm" onClick={() => setRemoving(c)} disabled={saving}>
                 Révoquer
               </Button>
             </li>

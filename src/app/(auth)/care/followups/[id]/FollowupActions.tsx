@@ -78,11 +78,10 @@ export default function FollowupActions({
 
   // Une seule action principale à l'écran : l'étape suivante, sinon l'affectation, sinon la réouverture.
   const primary = canWorkflow ? "workflow" : canAssign || canReassign ? "assign" : canReopen ? "reopen" : null;
-  const act = "min-h-11 sm:min-h-9";
   const card = "flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card md:p-5";
   const footer = "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end";
   const cancel = (
-    <Button size="sm" variant="secondary" className={act} onClick={() => setMode("none")} disabled={loading}>
+    <Button size="sm" variant="secondary" onClick={() => setMode("none")} disabled={loading}>
       Annuler
     </Button>
   );
@@ -102,7 +101,7 @@ export default function FollowupActions({
           </div>
           <div className={footer}>
             {cancel}
-            <Button size="sm" className={act} disabled={loading || !assignee} onClick={() => assignOrReassign(mode)}>
+            <Button size="sm" disabled={loading || !assignee} onClick={() => assignOrReassign(mode)}>
               {loading ? "Enregistrement en cours…" : canAssign ? "Assigner le référent" : "Réaffecter le suivi"}
             </Button>
           </div>
@@ -122,7 +121,7 @@ export default function FollowupActions({
           />
           <div className={footer}>
             {cancel}
-            <Button size="sm" className={act} disabled={loading || !handbackReason.trim()} onClick={handback}>
+            <Button size="sm" disabled={loading || !handbackReason.trim()} onClick={handback}>
               {loading ? "Enregistrement en cours…" : "Rendre au référent"}
             </Button>
           </div>
@@ -132,7 +131,7 @@ export default function FollowupActions({
       {mode === "none" && (canAssign || canReassign || canWorkflow || canHandback || canAbandon || canReopen) && (
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           {canWorkflow && nextAction && (
-            <Button size="sm" className={act} disabled={loading} onClick={() => patch({ action: nextAction.action })}>
+            <Button size="sm" disabled={loading} onClick={() => patch({ action: nextAction.action })}>
               {nextAction.label}
             </Button>
           )}
@@ -140,7 +139,6 @@ export default function FollowupActions({
             <Button
               size="sm"
               variant={primary === "assign" ? "primary" : "secondary"}
-              className={act}
               disabled={loading}
               onClick={() => setMode(canAssign ? "assign" : "reassign")}
             >
@@ -148,17 +146,17 @@ export default function FollowupActions({
             </Button>
           )}
           {canHandback && (
-            <Button size="sm" variant="secondary" className={act} disabled={loading} onClick={() => setMode("handback")}>
+            <Button size="sm" variant="secondary" disabled={loading} onClick={() => setMode("handback")}>
               Rendre au référent
             </Button>
           )}
           {canReopen && (
-            <Button size="sm" variant={primary === "reopen" ? "primary" : "secondary"} className={act} disabled={loading} onClick={() => patch({ action: "reopen" })}>
+            <Button size="sm" variant={primary === "reopen" ? "primary" : "secondary"} disabled={loading} onClick={() => patch({ action: "reopen" })}>
               Rouvrir le suivi
             </Button>
           )}
           {canAbandon && (
-            <Button size="sm" variant="secondary" className={act} disabled={loading} onClick={() => setConfirmAbandon(true)}>
+            <Button size="sm" variant="secondary" disabled={loading} onClick={() => setConfirmAbandon(true)}>
               Abandonner le suivi
             </Button>
           )}
@@ -187,7 +185,7 @@ export default function FollowupActions({
             rows={3}
           />
           <div className="flex justify-end">
-            <Button size="sm" variant="secondary" className={act} disabled={loading} onClick={() => patch({ action: "note", notes })}>
+            <Button size="sm" variant="secondary" disabled={loading} onClick={() => patch({ action: "note", notes })}>
               {loading ? "Enregistrement en cours…" : "Enregistrer les notes"}
             </Button>
           </div>

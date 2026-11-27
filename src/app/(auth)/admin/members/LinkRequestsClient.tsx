@@ -195,7 +195,6 @@ export default function LinkRequestsClient({
               <Button
                 size="sm"
                 variant="secondary"
-                className="min-h-11 sm:min-h-9"
                 onClick={() => { setApproveModal(req); setError(null); }}
                 disabled={processing === req.id}
               >
@@ -204,7 +203,6 @@ export default function LinkRequestsClient({
               <Button
                 size="sm"
                 variant="ghost"
-                className="min-h-11 sm:min-h-9"
                 onClick={() => { setRejectModal(req); setRejectReason(""); setError(null); }}
                 disabled={processing === req.id}
               >

@@ -53,10 +53,9 @@ function PostChip({ eventId, post }: { readonly eventId: string; readonly post: 
   return (
     <li className="flex items-center gap-1 rounded-chip border border-line bg-surface py-0.5 pl-3 pr-0.5 text-[13px] text-ink">
       {post.name}
-      <IconButton size="sm" className="max-sm:size-11" icon={Pencil} aria-label={`Renommer le poste ${post.name}`} onClick={() => setName(post.name)} />
+      <IconButton size="sm" icon={Pencil} aria-label={`Renommer le poste ${post.name}`} onClick={() => setName(post.name)} />
       <IconButton
         size="sm"
-        className="max-sm:size-11"
         icon={Trash2}
         aria-label={`Supprimer le poste ${post.name}`}
         disabled={busy}

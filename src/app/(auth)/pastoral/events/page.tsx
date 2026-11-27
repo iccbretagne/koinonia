@@ -114,7 +114,7 @@ export default async function PastoralEventsPage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-[17px] font-semibold text-ink">À venir</h2>
-            <Link href="/events" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>Voir l&apos;agenda de l&apos;église</Link>
+            <Link href="/events" className={buttonClasses("ghost", "sm")}>Voir l&apos;agenda de l&apos;église</Link>
           </div>
           {upcoming.length === 0 ? (
             <p className="text-sm text-ink-muted">Aucun événement planifié.</p>
@@ -166,7 +166,7 @@ export default async function PastoralEventsPage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-[17px] font-semibold text-ink">30 derniers jours</h2>
-            <Link href="/pastoral/reports" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>Voir les comptes rendus</Link>
+            <Link href="/pastoral/reports" className={buttonClasses("ghost", "sm")}>Voir les comptes rendus</Link>
           </div>
           {recent.length === 0 ? (
             <p className="text-sm text-ink-muted">Aucun événement sur les 30 derniers jours.</p>

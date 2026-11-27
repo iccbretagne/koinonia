@@ -7,6 +7,7 @@ import { defaultTicketVisual, TICKET_FIELDS, TICKET_FONTS, ticketVisualSchema, t
 import TicketVisualV2Tab from "./TicketVisualV2Tab";
 import { convertTicketVisual, type TicketVisual as AnyVisual } from "@/modules/ticketing/schemas";
 import { useApi } from "../../use-api";
+import FileInput from "@/components/ui/FileInput";
 
 type Image = { id: string; name: string; width: number; height: number };
 const labels = { participant: "Nom, référence et catégorie", date: "Date et heure", location: "Lieu", address: "Adresse" };
@@ -88,9 +89,9 @@ export function LegacyTicketVisualTab({ eventId, initial, images: initialImages,
       <div className="grid items-start gap-6 lg:grid-cols-2">
         <div className="space-y-4">
           {canEdit && <div className="space-y-3 rounded-card border border-line bg-surface p-4">
-            <Input type="file" label="Déposer un fond ou une image de vignette" accept="image/png,image/jpeg,image/webp,image/svg+xml" disabled={uploading || busy} onChange={(e) => { void upload(e.target.files?.[0]); e.target.value = ""; }} hint="8 Mo au plus. Fond portrait, 600 px de large au moins, sans QR ni nom. Recadré au format 2:3." />
+            <FileInput label="Déposer un fond ou une image de vignette" accept="image/png,image/jpeg,image/webp,image/svg+xml" buttonLabel="Choisir une image" disabled={uploading || busy} resetAfterSelect onFiles={(files) => void upload(files[0])} hint="8 Mo au plus. Fond portrait, 600 px de large au moins, sans QR ni nom. Recadré au format 2:3." />
             <p className="text-sm text-ink-muted">Identifiants utilisables par votre assistant IA :</p>
-            {images.map((i) => <div key={i.id} className="flex items-center justify-between gap-2 text-sm text-ink-muted"><span className="break-all">{i.name} · {i.id}</span><Button size="sm" variant="ghost" className="min-h-11 sm:min-h-9" disabled={busy} onClick={async () => { if (await call(`${base}/images/${i.id}`, "DELETE", undefined, "Image supprimée")) setImages((list) => list.filter((a) => a.id !== i.id)); }}>Supprimer</Button></div>)}
+            {images.map((i) => <div key={i.id} className="flex items-center justify-between gap-2 text-sm text-ink-muted"><span className="break-all">{i.name} · {i.id}</span><Button size="sm" variant="ghost" disabled={busy} onClick={async () => { if (await call(`${base}/images/${i.id}`, "DELETE", undefined, "Image supprimée")) setImages((list) => list.filter((a) => a.id !== i.id)); }}>Supprimer</Button></div>)}
             {!doc && images.some((i) => i.height > i.width && i.width >= 600) && <Button onClick={() => setDoc(defaultTicketVisual(images.find((i) => i.height > i.width && i.width >= 600)!.id))}>Créer le brouillon</Button>}
           </div>}
           {doc && canEdit && <>

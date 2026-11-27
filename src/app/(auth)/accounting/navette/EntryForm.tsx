@@ -1,9 +1,10 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, FileText, Image as ImageIcon, Upload, X } from "lucide-react";
+import { Camera, FileText, Image as ImageIcon, X } from "lucide-react";
 import { Alert, Button, Checkbox, FilterChip, IconButton, Input, Modal, Select, Textarea, fieldLabelClasses, useToast } from "@/components/ui";
+import FileInput from "@/components/ui/FileInput";
 import type { LedgerLine } from "@/modules/shuttle";
 import {
   AUTHOR_EDIT_WINDOW_HOURS,
@@ -125,8 +126,6 @@ function ReceiptField({
   readonly onPick: (f: File | undefined) => void;
   readonly onClear: () => void;
 }) {
-  const photoRef = useRef<HTMLInputElement>(null);
-  const docRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const hint =
     existingReceipt && !file
@@ -164,40 +163,13 @@ function ReceiptField({
         </div>
       ) : (
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button type="button" variant="secondary" onClick={() => photoRef.current?.click()}>
-            <Camera aria-hidden="true" className="size-4" strokeWidth={1.75} /> Prendre une photo
-          </Button>
-          <Button type="button" variant="secondary" onClick={() => docRef.current?.click()}>
-            <Upload aria-hidden="true" className="size-4" strokeWidth={1.75} /> Choisir un document
-          </Button>
+          <FileInput accept="image/*" capture="environment" icon={Camera} buttonLabel="Prendre une photo" aria-label="Photo du justificatif" resetAfterSelect onFiles={(files) => onPick(files[0])} />
+          <FileInput accept="image/jpeg,image/png,image/webp,application/pdf" buttonLabel="Choisir un document" aria-label="Document justificatif" resetAfterSelect onFiles={(files) => onPick(files[0])} />
         </div>
       )}
       <p className="mt-2 text-[13px] leading-[18px] text-ink-muted">
         {hint}
       </p>
-      <input
-        ref={photoRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        aria-label="Photo du justificatif"
-        onChange={(e) => {
-          onPick(e.target.files?.[0]);
-          e.target.value = "";
-        }}
-      />
-      <input
-        ref={docRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,application/pdf"
-        className="hidden"
-        aria-label="Document justificatif"
-        onChange={(e) => {
-          onPick(e.target.files?.[0]);
-          e.target.value = "";
-        }}
-      />
     </fieldset>
   );
 }

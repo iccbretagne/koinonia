@@ -572,15 +572,15 @@ export default function EventsClient({ initialEvents, churches }: Props) {
 
                   {/* Actions */}
                   <div className="flex flex-wrap gap-1 shrink-0 justify-end items-center">
-                    <Link href={`/events/${ev.id}/star-view`} className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+                    <Link href={`/events/${ev.id}/star-view`} className={buttonClasses("secondary", "sm")}>
                       Planning
                     </Link>
                     {seriesParentId && seriesParentId !== ev.id && (
-                      <Link href={`/admin/events/${seriesParentId}`} className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`} title="Configurer toute la série">
+                      <Link href={`/admin/events/${seriesParentId}`} className={buttonClasses("secondary", "sm")} title="Configurer toute la série">
                         Série
                       </Link>
                     )}
-                    <Link href={`/admin/events/${ev.id}`} className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+                    <Link href={`/admin/events/${ev.id}`} className={buttonClasses("secondary", "sm")}>
                       Configurer
                     </Link>
                     <IconButton icon={Copy} aria-label={`Dupliquer le planning de ${ev.title}`} title="Dupliquer le planning" onClick={() => openDuplicate(ev)} />

@@ -277,7 +277,7 @@ export default function CampaignEditor({
                         {custom === undefined ? (
                           <StatusChip tone="neutral">Par défaut</StatusChip>
                         ) : (
-                          <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setMessage(kind, undefined)}>
+                          <Button type="button" variant="ghost" size="sm" onClick={() => setMessage(kind, undefined)}>
                             Rétablir le texte par défaut
                           </Button>
                         )}
@@ -336,7 +336,7 @@ export default function CampaignEditor({
                     )
                   }
                 >
-                  <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setPreviewForm(fi)}>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setPreviewForm(fi)}>
                     <Eye aria-hidden="true" className="size-4" strokeWidth={1.75} />
                     Aperçu
                   </Button>
@@ -420,7 +420,7 @@ export default function CampaignEditor({
                       type="button"
                       variant="secondary"
                       size="sm"
-                      className="min-h-11 sm:min-h-9 self-start"
+                      className="self-start"
                       onClick={() => setDef((x) => addAssignment(x, fi))}
                     >
                       <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
@@ -521,8 +521,8 @@ export default function CampaignEditor({
                               </ul>
                               <div className="sm:w-72">
                                 <Select
-                                  label=""
-                                  aria-label="Ajouter une question"
+                                  label="Ajouter une question"
+                                  hideLabel
                                   value=""
                                   placeholder="Ajouter une question…"
                                   options={ITEM_TYPES.map((t) => ({
@@ -550,7 +550,7 @@ export default function CampaignEditor({
                       type="button"
                       variant="secondary"
                       size="sm"
-                      className="min-h-11 sm:min-h-9 self-start"
+                      className="self-start"
                       onClick={() =>
                         setDef((x) => {
                           const next = addSection(x, fi);
@@ -632,7 +632,7 @@ export default function CampaignEditor({
                 Un contrôle compare des questions numériques ou oui/non : ajoutez-en d&apos;abord.
               </p>
             )}
-            <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9 self-start" onClick={() => setDef((x) => addRule(x))}>
+            <Button type="button" variant="secondary" size="sm" className="self-start" onClick={() => setDef((x) => addRule(x))}>
               <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
               Ajouter un contrôle
             </Button>

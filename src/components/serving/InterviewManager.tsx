@@ -157,6 +157,7 @@ export default function InterviewManager({ token, afterSubmit = false }: { reado
             title="Annuler ton rendez-vous ?"
             message="Le créneau sera libéré pour un autre candidat. Tu pourras en choisir un autre ensuite."
             confirmLabel="Annuler le rendez-vous"
+            cancelLabel="Garder le rendez-vous"
             confirmingLabel="Annulation…"
             confirming={busy}
             onCancel={() => setConfirmCancel(false)}

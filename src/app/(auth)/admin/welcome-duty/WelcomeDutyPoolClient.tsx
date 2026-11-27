@@ -156,7 +156,6 @@ export default function WelcomeDutyPoolClient() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="min-h-11 sm:min-h-9"
                       onClick={() => removeFamily(f)}
                       disabled={removing === f.id}
                     >
@@ -184,10 +183,10 @@ export default function WelcomeDutyPoolClient() {
                     <td className="px-4 py-3 text-ink-muted">{lastServed(f)}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap justify-end gap-2">
-                        <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => toggleActive(f)} disabled={removing === f.id}>
+                        <Button variant="secondary" size="sm" onClick={() => toggleActive(f)} disabled={removing === f.id}>
                           Réactiver
                         </Button>
-                        <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => removeFamily(f)} disabled={removing === f.id}>
+                        <Button variant="ghost" size="sm" onClick={() => removeFamily(f)} disabled={removing === f.id}>
                           Supprimer
                         </Button>
                       </div>

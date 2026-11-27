@@ -41,7 +41,7 @@ export default async function AudioSettingsPage() {
         Le département de captation audio se configure désormais parmi les{" "}
         fonctions départementales (fonction « Captation Audio »).
       </p>
-      <Link href="/admin/departments/functions" className={`${buttonClasses("secondary", "sm")} mb-6 min-h-11 sm:min-h-9`}>
+      <Link href="/admin/departments/functions" className={`${buttonClasses("secondary", "sm")} mb-6`}>
         Configurer les fonctions départementales
       </Link>
       <AudioSettingsClient

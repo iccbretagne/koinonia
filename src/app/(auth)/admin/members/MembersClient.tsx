@@ -626,8 +626,8 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
         </div>
         <div className="w-full sm:w-64">
           <Select
-            label=""
-            aria-label="Filtrer par département"
+            label="Filtrer par département"
+            hideLabel
             value={filterDept}
             onChange={(e) => setFilterDept(e.target.value)}
             placeholder="Tous les départements"
@@ -651,7 +651,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
           {(search || filterDept) && ` sur ${members.length}`}
         </p>
         {!readOnly && filtered.length > 0 && (
-          <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={toggleSelectAll}>
+          <Button type="button" variant="ghost" size="sm" onClick={toggleSelectAll}>
             {selectedIds.size === filtered.length ? "Tout désélectionner" : "Tout sélectionner"}
           </Button>
         )}
@@ -725,13 +725,13 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                   <div className="flex gap-2 flex-wrap pt-1 border-t border-line">
                     {canLink && (
                       m.userLink ? (
-                        <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => handleUnlink(m)}>
+                        <Button variant="ghost" size="sm" onClick={() => handleUnlink(m)}>
                           Délier le compte
                         </Button>
                       ) : (
                         <Button
                           variant="secondary"
-                          size="sm" className="min-h-11 sm:min-h-9"
+                          size="sm"
                           onClick={() => { setLinkModal(m); setUserQuery(""); setSelectedUser(null); setUserResults([]); setLinkError(null); }}
                         >
                           Lier un compte
@@ -740,20 +740,20 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                     )}
                     {!readOnly && (
                       <>
-                        <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => openEdit(m)}>
+                        <Button variant="secondary" size="sm" onClick={() => openEdit(m)}>
                           Modifier
                         </Button>
                         {m.allDepartments.length > 1 &&
                           m.allDepartments.some((d) => manageableIds.has(d.id)) && (
                             <Button
                               variant="ghost"
-                              size="sm" className="min-h-11 sm:min-h-9"
+                              size="sm"
                               onClick={() => { setRemoveError(null); setRemoveModal(m); }}
                             >
                               Retirer d&apos;un département
                             </Button>
                           )}
-                        <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setPendingDelete(m)}>
+                        <Button variant="ghost" size="sm" onClick={() => setPendingDelete(m)}>
                           Supprimer
                         </Button>
                       </>
@@ -842,7 +842,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                     <Button
                       type="button"
                       variant="ghost"
-                      size="sm" className="min-h-11 sm:min-h-9"
+                      size="sm"
                       onClick={() => {
                         setModalOpen(false);
                         setDuplicateCandidates(null);
@@ -857,7 +857,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
               <Button
                 type="button"
                 variant="secondary"
-                size="sm" className="min-h-11 sm:min-h-9"
+                size="sm"
                 disabled={loading}
                 onClick={() => submitMember(true)}
               >
@@ -958,7 +958,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                   </span>
                   <Button
                     variant="secondary"
-                    size="sm" className="min-h-11 sm:min-h-9"
+                    size="sm"
                     disabled={removeLoading !== null}
                     onClick={() => removeModal && handleRemoveDept(removeModal, d.id)}
                   >

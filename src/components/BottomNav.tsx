@@ -57,7 +57,7 @@ export default function BottomNav({ destinations, active, moreBadge, moreOpen = 
     <nav
       aria-label="Navigation rapide"
       data-tour="bottom-nav"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden print:hidden"
+      className="fixed inset-x-0 bottom-0 z-nav border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden print:hidden"
     >
       <div className="flex">
         {destinations.map((d) => {

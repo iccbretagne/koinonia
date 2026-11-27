@@ -8,6 +8,8 @@ import InterviewManager from "@/components/serving/InterviewManager";
 import { Alert, Button, Input, Textarea, buttonClasses, fieldLabelClasses } from "@/components/ui";
 import Checkbox from "@/components/ui/Checkbox";
 import { MARITAL_STATUSES, MARITAL_STATUS_LABEL, PCNC_TRAININGS, PHOTO_MAX_BYTES } from "@/modules/serving/schemas";
+import { choiceChipClasses } from "@/components/ui/RadioGroup";
+import FileInput from "@/components/ui/FileInput";
 
 /**
  * Fiche de candidature au service (spec 077), reprise du formulaire proposé par Jenny
@@ -22,12 +24,6 @@ const YES_NO = [
 ];
 
 const MARITAL_OPTIONS = MARITAL_STATUSES.map((value) => ({ value, label: MARITAL_STATUS_LABEL[value] }));
-
-function pillClasses(selected: boolean) {
-  return `inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${
-    selected ? "border-brand bg-brand-soft text-brand-text" : "border-control-line bg-surface text-ink-muted hover:bg-surface-sunken"
-  }`;
-}
 
 function Card({ title, children }: { readonly title: string; readonly children: ReactNode }) {
   return (
@@ -56,7 +52,7 @@ function Pills({
       <legend className={`${fieldLabelClasses} mb-2`}>{legend}</legend>
       <div className="flex flex-wrap gap-2">
         {options.map((opt) => (
-          <label key={opt.value} className={pillClasses(value === opt.value)}>
+          <label key={opt.value} className={choiceChipClasses(value === opt.value)}>
             <input
               type="radio"
               name={name}
@@ -213,24 +209,17 @@ export default function ServingForm({ churchSlug, churchName, retentionMonths, t
       {globalError && <Alert tone="danger">{globalError}</Alert>}
 
       <Card title="Qui es-tu ?">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${uid}-photo`} className={fieldLabelClasses}>
-            Photo d&apos;identité
-          </label>
-          <input
-            id={`${uid}-photo`}
-            type="file"
-            name="photo"
-            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-            required
-            onChange={onPhotoChange}
-            aria-describedby={`${uid}-photo-hint`}
-            className="w-full text-sm text-ink-muted file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-control file:border file:border-control-line file:bg-surface file:px-4 file:font-display file:text-sm file:font-semibold file:text-ink hover:file:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-          />
-          <p id={`${uid}-photo-hint`} className={errors.photo ? "text-[13px] text-danger" : "text-[13px] text-ink-muted"}>
-            {errors.photo ?? "Visage bien visible, fond neutre. JPEG, PNG, WebP ou HEIC, 8 Mo au plus."}
-          </p>
-        </div>
+        <FileInput
+          id={`${uid}-photo`}
+          label="Photo d'identité"
+          name="photo"
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+          required
+          buttonLabel="Choisir une photo"
+          onChange={onPhotoChange}
+          error={errors.photo}
+          hint="Visage bien visible, fond neutre. JPEG, PNG, WebP ou HEIC, 8 Mo au plus."
+        />
         {preview && (
           <canvas
             ref={previewRef}
@@ -285,7 +274,7 @@ export default function ServingForm({ churchSlug, churchName, retentionMonths, t
             {PCNC_TRAININGS.map((t) => {
               const checked = trainings.includes(t);
               return (
-                <label key={t} className={pillClasses(checked)}>
+                <label key={t} className={choiceChipClasses(checked)}>
                   <input type="checkbox" name="pcncTrainings" value={t} checked={checked} onChange={() => toggleTraining(t)} className="sr-only" />
                   {t}
                 </label>

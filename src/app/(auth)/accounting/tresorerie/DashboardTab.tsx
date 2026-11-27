@@ -93,7 +93,7 @@ export default function DashboardTab({ dashboard: d }: { readonly dashboard: Das
           </div>
           <div className="flex items-center border-t border-line px-5 py-3">
             <h3 className="font-display text-[15px] font-semibold leading-[22px] text-ink">Derniers mouvements</h3>
-            <Link href="/accounting/tresorerie?onglet=registre" className={`${buttonClasses("ghost", "sm")} ml-auto min-h-11 sm:min-h-9`}>Voir le registre</Link>
+            <Link href="/accounting/tresorerie?onglet=registre" className={`${buttonClasses("ghost", "sm")} ml-auto`}>Voir le registre</Link>
           </div>
           {d.recent.length === 0 ? (
             <EmptyState size="sm" title="Aucun mouvement ce mois-ci" />

@@ -633,7 +633,7 @@ export default function RequestForm({
     <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-5">
       {/* Retour au choix du type de demande — en édition, il n'y a pas d'étape 1 à regagner */}
       {!isEditMode && (
-        <Button type="button" variant="ghost" size="sm" onClick={reset} className="-ml-3 min-h-11 w-fit sm:min-h-9">
+        <Button type="button" variant="ghost" size="sm" onClick={reset} className="-ml-3 w-fit">
           <ChevronLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
           Changer de type de demande
         </Button>
@@ -704,7 +704,7 @@ export default function RequestForm({
               {announcementEvents.length === 0 ? (
                 <Alert
                   tone="warning"
-                  action={<Link href="/admin/events" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>Configurer les événements</Link>}
+                  action={<Link href="/admin/events" className={buttonClasses("secondary", "sm")}>Configurer les événements</Link>}
                 >
                   Aucun événement ouvert à la diffusion dans les 90 prochains jours.
                 </Alert>

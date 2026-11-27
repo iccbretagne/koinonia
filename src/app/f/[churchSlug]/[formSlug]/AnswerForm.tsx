@@ -152,7 +152,7 @@ export default function AnswerForm({
       {recoverable && turnstileSiteKey && (
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-[14px] text-ink-muted">Vous avez déjà répondu ?</p>
-          <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setRecovering(true)}>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setRecovering(true)}>
             Retrouver ma réponse
           </Button>
         </div>
@@ -181,6 +181,7 @@ export default function AnswerForm({
         title="Annuler votre réponse ?"
         message="Votre réponse passe à « Annulée » et votre place éventuelle est libérée."
         confirmLabel="Annuler ma réponse"
+        cancelLabel="Garder ma réponse"
         confirmingLabel="Annulation en cours…"
         variant="primary"
         confirming={cancelling}

@@ -148,7 +148,7 @@ export function ExternalAnchor({ href, children }: { readonly href: string; read
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={`${buttonClasses("ghost", "sm")} -ml-3 min-h-11 max-w-full break-all sm:min-h-9`}
+      className={`${buttonClasses("ghost", "sm")} -ml-3 max-w-full break-all`}
     >
       {children}
       <ExternalLink aria-hidden="true" className="size-4" />

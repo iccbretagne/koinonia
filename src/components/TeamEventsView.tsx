@@ -92,14 +92,14 @@ function TeamEventRow({
       </div>
       {canEdit && (
         <div className="flex shrink-0 justify-end gap-1">
-          <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => onEdit(ev)} aria-label={`Modifier « ${ev.title} »`}>
+          <Button variant="ghost" size="sm" onClick={() => onEdit(ev)} aria-label={`Modifier « ${ev.title} »`}>
             <Pencil aria-hidden="true" className="size-4" strokeWidth={1.75} />
             Modifier
           </Button>
           <button
             type="button"
             onClick={() => onDelete(ev)}
-            className={`${ghostDangerClasses} min-h-11 sm:min-h-9`}
+            className={ghostDangerClasses}
             aria-label={`Supprimer « ${ev.title} »`}
           >
             <Trash2 aria-hidden="true" className="size-4" strokeWidth={1.75} />
@@ -304,7 +304,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
           </p>
         </div>
         {canEdit && !(period === "upcoming" && !loading && events.length === 0) && (
-          <Button size="sm" className="min-h-11 sm:min-h-9" onClick={openCreate}>
+          <Button size="sm" onClick={openCreate}>
             <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
             Nouvel événement
           </Button>

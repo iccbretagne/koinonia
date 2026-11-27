@@ -187,7 +187,7 @@ function MessageTemplatesForm({ campaign }: { readonly campaign: Campaign }) {
               type="button"
               size="sm"
               variant="ghost"
-              className="min-h-11 sm:min-h-9 self-start"
+              className="self-start"
               disabled={isDefault}
               onClick={() => setValues((v) => ({ ...v, [k]: DEFAULT_MESSAGE_TEMPLATES[k] }))}
             >

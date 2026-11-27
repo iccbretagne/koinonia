@@ -3,7 +3,7 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import Link from "next/link";
 import { FileText } from "lucide-react";
-import { Button, Checkbox, Modal, StatusChip, buttonClasses, useToast } from "@/components/ui";
+import { Button, Checkbox, Modal, RadioGroup, StatusChip, buttonClasses, useToast } from "@/components/ui";
 
 interface Department {
   id: string;
@@ -154,31 +154,17 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
             <p className="text-[15px] leading-[22px] text-ink-muted">
               Vous souhaitez <span className="font-semibold text-ink">{actionLabel(pendingAction)}</span>. Appliquer à :
             </p>
-            <fieldset className="flex flex-col">
-              <legend className="sr-only">Portée de la modification</legend>
-              <label className="flex min-h-11 cursor-pointer items-center gap-3">
-                <input
-                  type="radio"
-                  name="seriesScope"
-                  value="single"
-                  checked={seriesScope === "single"}
-                  onChange={() => setSeriesScope("single")}
-                  className="size-5 accent-brand"
-                />
-                <span className="text-[15px] text-ink">Cet événement uniquement</span>
-              </label>
-              <label className="flex min-h-11 cursor-pointer items-center gap-3">
-                <input
-                  type="radio"
-                  name="seriesScope"
-                  value="future"
-                  checked={seriesScope === "future"}
-                  onChange={() => setSeriesScope("future")}
-                  className="size-5 accent-brand"
-                />
-                <span className="text-[15px] text-ink">Cet événement et les suivants de la série</span>
-              </label>
-            </fieldset>
+            <RadioGroup
+              legend="Portée de la modification"
+              hideLegend
+              name="seriesScope"
+              value={seriesScope}
+              onChange={setSeriesScope}
+              options={[
+                { value: "single", label: "Cet événement uniquement" },
+                { value: "future", label: "Cet événement et les suivants de la série" },
+              ]}
+            />
             <div className="flex justify-end gap-3">
               <Button variant="secondary" onClick={() => setPendingAction(null)}>Annuler</Button>
               <Button onClick={() => executeAction(pendingAction, seriesScope === "future")}>Appliquer</Button>
@@ -218,7 +204,7 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
         {toggleRow("welcomeDutyEnabled", "Familles de service attendues", savingWelcomeDuty, "Si activé, cet événement apparaît dans le planning d'accueil pour l'affectation des familles.")}
         {welcomeDutyEnabled && (
           <div className="mt-3">
-            <Link href="/admin/welcome-duty" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+            <Link href="/admin/welcome-duty" className={buttonClasses("secondary", "sm")}>
               Gérer les affectations
             </Link>
           </div>

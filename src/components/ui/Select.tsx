@@ -7,10 +7,13 @@ import { controlClasses } from "./field-classes";
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   /**
-   * Libellé visible. Une chaîne vide masque le libellé (filtre de liste) : le `placeholder` sert
-   * alors de nom accessible, à défaut d'un `aria-label` explicite.
+   * Libellé du champ, toujours fourni. Avec `hideLabel`, il reste le nom accessible mais n'est pas
+   * affiché (filtre d'une barre d'outils, choix d'une ligne de tableau). Une chaîne vide est encore
+   * acceptée (le `placeholder` ou un `aria-label` nomme alors le champ) mais à éviter.
    */
   readonly label: string;
+  /** Masque le libellé à l'écran (`sr-only`) en le gardant comme nom accessible. */
+  readonly hideLabel?: boolean;
   readonly options: { value: string; label: string }[];
   readonly error?: string;
   readonly placeholder?: string;
@@ -21,6 +24,7 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 /** Liste déroulante native avec libellé, aide et erreur (docs/design-system/components/Field.md). */
 export default function Select({
   label,
+  hideLabel = false,
   options,
   error,
   hint,
@@ -37,7 +41,11 @@ export default function Select({
 
   return (
     <div className="flex flex-col gap-1.5">
-      {label && <FieldLabel htmlFor={controlId}>{label}</FieldLabel>}
+      {label && (
+        <FieldLabel htmlFor={controlId} hidden={hideLabel}>
+          {label}
+        </FieldLabel>
+      )}
       <div className="relative">
         <select
           id={controlId}

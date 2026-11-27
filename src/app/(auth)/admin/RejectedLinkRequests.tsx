@@ -41,7 +41,7 @@ export default function RejectedLinkRequests<T extends RejectedLinkRequest>({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}
+        className={buttonClasses("ghost", "sm")}
       >
         <ChevronRight aria-hidden="true" className={`size-4 transition-transform ${open ? "rotate-90" : ""}`} strokeWidth={1.75} />
         {open ? "Masquer" : "Afficher"} {rejected.length > 1 ? `les ${rejected.length} demandes refusées` : "la demande refusée"}
@@ -77,7 +77,6 @@ export default function RejectedLinkRequests<T extends RejectedLinkRequest>({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="min-h-11 sm:min-h-9"
                     onClick={() => onReconsider(r)}
                     disabled={busyId === r.id}
                   >

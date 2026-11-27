@@ -312,7 +312,7 @@ export default function NoAccessClient({
         <button
           onClick={skipReconcile}
           disabled={linking}
-          className={`${buttonClasses("ghost", "sm")} min-h-11 self-start sm:min-h-9`}
+          className={`${buttonClasses("ghost", "sm")} self-start`}
         >
           Aucune de ces fiches ne me correspond
         </button>
@@ -439,7 +439,7 @@ export default function NoAccessClient({
               {noMatchStage === "hidden" && (
                 <button
                   onClick={() => setNoMatchStage("confirming")}
-                  className={`${buttonClasses("ghost", "sm")} min-h-11 self-start sm:min-h-9`}
+                  className={`${buttonClasses("ghost", "sm")} self-start`}
                 >
                   Aucune de ces fiches n&apos;est la mienne
                 </button>
@@ -509,7 +509,7 @@ export default function NoAccessClient({
             </>
           )}
 
-          <button type="button" onClick={() => { setNoMatchStage("hidden"); setStep("identity"); }} className={`${buttonClasses("ghost", "sm")} min-h-11 self-start sm:min-h-9`}>
+          <button type="button" onClick={() => { setNoMatchStage("hidden"); setStep("identity"); }} className={`${buttonClasses("ghost", "sm")} self-start`}>
             Modifier mon nom
           </button>
         </div>
@@ -666,7 +666,7 @@ export default function NoAccessClient({
 
           <button
             onClick={() => setStep(isNewStar ? "department" : "match")}
-            className={`${buttonClasses("ghost", "sm")} min-h-11 self-start sm:min-h-9`}
+            className={`${buttonClasses("ghost", "sm")} self-start`}
           >
             Revenir
           </button>

@@ -4,6 +4,7 @@ import { Loader2, Plus, Trash2, Users, X } from "lucide-react";
 import { SubmitEvent, useEffect, useId, useState } from "react";
 import Image from "next/image";
 import { Alert, Button, EmptyState, IconButton, Select, StatusChip, fieldLabelClasses, type StatusTone } from "@/components/ui";
+import { choiceChipClasses } from "@/components/ui/RadioGroup";
 
 interface UserRef {
   id: string;
@@ -178,11 +179,7 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
                 {(["BERGER", "CO_BERGER"] as const).map((r) => (
                   <label
                     key={r}
-                    className={`inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${
-                      form.role === r
-                        ? "border-brand bg-brand-soft text-brand-text"
-                        : "border-control-line bg-surface text-ink-muted hover:bg-surface-sunken"
-                    }`}
+                    className={choiceChipClasses(form.role === r)}
                   >
                     <input
                       type="radio"

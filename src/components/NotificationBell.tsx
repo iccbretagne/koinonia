@@ -133,7 +133,7 @@ export default function NotificationBell() {
     );
 
   const markAll = unreadCount > 0 && (
-    <Button type="button" variant="ghost" size="sm" onClick={markAllRead} className="min-h-11 sm:min-h-9">
+    <Button type="button" variant="ghost" size="sm" onClick={markAllRead}>
       Tout marquer comme lu
     </Button>
   );
@@ -158,7 +158,7 @@ export default function NotificationBell() {
       />
 
       {open === "dropdown" && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-96 overflow-hidden rounded-card border border-line bg-surface shadow-float">
+        <div className="absolute right-0 top-full z-overlay mt-2 w-96 overflow-hidden rounded-card border border-line bg-surface shadow-float">
           <div className="flex items-center justify-between gap-2 border-b border-line py-2 pl-4 pr-2">
             <h2 className="font-display text-[15px] font-semibold leading-5 text-ink">Notifications</h2>
             {markAll}

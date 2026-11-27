@@ -90,22 +90,22 @@ export default function InterviewBlock({
           <div className="flex flex-wrap gap-2 pt-1">
             {current.status === "TO_COMPLETE" ? (
               <>
-                <Button size="sm" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => void act({ action: "outcome", status: "DONE" }, "Entretien noté réalisé")}>
+                <Button size="sm" disabled={busy} onClick={() => void act({ action: "outcome", status: "DONE" }, "Entretien noté réalisé")}>
                   Noter réalisé
                 </Button>
-                <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => void act({ action: "outcome", status: "NO_SHOW" }, "Absence notée")}>
+                <Button size="sm" variant="secondary" disabled={busy} onClick={() => void act({ action: "outcome", status: "NO_SHOW" }, "Absence notée")}>
                   Noter absent
                 </Button>
-                <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => void act({ action: "outcome", status: "EXCUSED" }, "Excuse notée")}>
+                <Button size="sm" variant="secondary" disabled={busy} onClick={() => void act({ action: "outcome", status: "EXCUSED" }, "Excuse notée")}>
                   Noter excusé
                 </Button>
               </>
             ) : (
               <>
-                <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => void openPicker()}>
+                <Button size="sm" variant="secondary" disabled={busy} onClick={() => void openPicker()}>
                   Déplacer le rendez-vous
                 </Button>
-                <Button size="sm" variant="ghost" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => setCancelling(true)}>
+                <Button size="sm" variant="ghost" disabled={busy} onClick={() => setCancelling(true)}>
                   Annuler le rendez-vous
                 </Button>
               </>
@@ -116,11 +116,11 @@ export default function InterviewBlock({
         <div className="space-y-2">
           <p className="text-sm text-ink-muted">Aucun rendez-vous en cours.</p>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => void openPicker()}>
+            <Button size="sm" disabled={busy} onClick={() => void openPicker()}>
               Fixer un rendez-vous
             </Button>
             {hasEmail ? (
-              <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" disabled={busy} onClick={() => void act({ action: "invite" }, "Invitation envoyée")}>
+              <Button size="sm" variant="secondary" disabled={busy} onClick={() => void act({ action: "invite" }, "Invitation envoyée")}>
                 Inviter à choisir un créneau
               </Button>
             ) : (
@@ -177,6 +177,7 @@ export default function InterviewBlock({
         title="Annuler le rendez-vous ?"
         message={`Le créneau sera libéré${hasEmail ? " et le candidat invité à en choisir un autre" : ""}.`}
         confirmLabel="Annuler le rendez-vous"
+        cancelLabel="Garder le rendez-vous"
         confirmingLabel="Annulation en cours…"
         variant="primary"
         confirming={busy}

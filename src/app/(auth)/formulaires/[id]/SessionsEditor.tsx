@@ -121,11 +121,11 @@ export default function SessionsEditor({
           <p className="text-[13px] font-semibold text-ink-muted">Niveaux</p>
           {s.levels.map((l, li) => (
             <div key={l.key} className="grid grid-cols-[90px_1fr_100px_44px] items-end gap-2">
-              <Input label="" aria-label={`Code du niveau ${li + 1}`} placeholder="001" value={l.code} maxLength={20} onChange={(e) => setLevel(s, l.key, { code: e.target.value })} />
-              <Input label="" aria-label={`Intitulé du niveau ${li + 1}`} placeholder="Intitulé (facultatif)" value={l.label} maxLength={150} onChange={(e) => setLevel(s, l.key, { label: e.target.value })} />
+              <Input label={`Code du niveau ${li + 1}`} hideLabel placeholder="001" value={l.code} maxLength={20} onChange={(e) => setLevel(s, l.key, { code: e.target.value })} />
+              <Input label={`Intitulé du niveau ${li + 1}`} hideLabel placeholder="Intitulé (facultatif)" value={l.label} maxLength={150} onChange={(e) => setLevel(s, l.key, { label: e.target.value })} />
               <Input
-                label=""
-                aria-label={`Places du niveau ${li + 1}`}
+                label={`Places du niveau ${li + 1}`}
+                hideLabel
                 type="number"
                 min={1}
                 placeholder="Places"
@@ -149,7 +149,6 @@ export default function SessionsEditor({
             type="button"
             variant="ghost"
             size="sm"
-            className="min-h-11 sm:min-h-9"
             onClick={() => setSession(s.key, { levels: [...s.levels, newLevel(String(s.levels.length + 1).padStart(3, "0"))] })}
           >
             <Plus className="size-4" aria-hidden="true" /> Ajouter un niveau

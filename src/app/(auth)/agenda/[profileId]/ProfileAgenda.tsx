@@ -35,7 +35,7 @@ function fmtDate(d: Date) {
 
 /** Navigation d'une semaine à l'autre : liens (et non boutons), libellés courts sous 640 px. */
 function WeekNav({ prevHref, nextHref, label }: { readonly prevHref: string; readonly nextHref: string; readonly label: string }) {
-  const navLinkClasses = `${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`;
+  const navLinkClasses = `${buttonClasses("secondary", "sm")}`;
   return (
     <nav aria-label="Changer de semaine" className="mb-6 flex items-center justify-between gap-2">
       <Link href={prevHref} className={navLinkClasses} aria-label="Semaine précédente">

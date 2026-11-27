@@ -7,6 +7,7 @@ import { buttonClasses } from "@/components/ui/button-classes";
 import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
 import Select from "@/components/ui/Select";
+import SegmentedControl from "@/components/ui/SegmentedControl";
 import Modal from "@/components/ui/Modal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import DataTable from "@/components/ui/DataTable";
@@ -835,7 +836,7 @@ export default function RoomsBookingClient({
                     setFilterRoomId("");
                     setFilterChecklistStatus("");
                   }}
-                  className={`${buttonClasses("ghost", "sm")} m-2 min-h-11 sm:min-h-9`}
+                  className={`${buttonClasses("ghost", "sm")} m-2`}
                 >
                   Voir mes {myUpcoming.length} réservations
                 </button>
@@ -846,27 +847,17 @@ export default function RoomsBookingClient({
       )}
 
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
-        <fieldset aria-label="Affichage" className="inline-flex w-fit gap-0.5 rounded-control bg-surface-sunken p-[3px]">
-          {(
-            [
-              ["week", "Semaine"],
-              ["month", "Mois"],
-              ["list", "Liste"],
-            ] as const
-          ).map(([value, labelText]) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={view === value}
-              onClick={() => setView(value)}
-              className={`min-h-11 rounded-[7px] px-4 font-display text-sm font-semibold transition-colors duration-120 sm:min-h-9 ${
-                view === value ? "bg-surface text-brand-text shadow-card" : "text-ink-muted hover:text-ink"
-              }`}
-            >
-              {labelText}
-            </button>
-          ))}
-        </fieldset>
+        <SegmentedControl
+          label="Affichage"
+          size="sm"
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "week", label: "Semaine" },
+            { value: "month", label: "Mois" },
+            { value: "list", label: "Liste" },
+          ]}
+        />
         {canReserve && (
           <Button onClick={openForm} disabled={rooms.length === 0}>
             Nouvelle réservation
@@ -1099,6 +1090,7 @@ export default function RoomsBookingClient({
         title={cancelTarget?.scope === "series" ? "Annuler la série" : "Annuler la réservation"}
         message={cancelMessage}
         confirmLabel="Annuler la réservation"
+        cancelLabel="Garder la réservation"
         confirming={cancelling}
         onConfirm={confirmCancel}
         onCancel={() => setCancelTarget(null)}

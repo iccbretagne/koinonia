@@ -155,28 +155,28 @@ export default async function PastoralDashboardPage() {
                   <SwitchChurchLink
                     churchId={church.id}
                     href="/pastoral/members"
-                    className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}
+                    className={buttonClasses("ghost", "sm")}
                   >
                     Membres
                   </SwitchChurchLink>
                   <SwitchChurchLink
                     churchId={church.id}
                     href="/pastoral/events"
-                    className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}
+                    className={buttonClasses("ghost", "sm")}
                   >
                     Événements
                   </SwitchChurchLink>
                   <SwitchChurchLink
                     churchId={church.id}
                     href="/pastoral/reports"
-                    className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}
+                    className={buttonClasses("ghost", "sm")}
                   >
                     Comptes rendus
                   </SwitchChurchLink>
                   <SwitchChurchLink
                     churchId={church.id}
                     href="/pastoral/accounting"
-                    className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}
+                    className={buttonClasses("ghost", "sm")}
                   >
                     Comptabilité
                   </SwitchChurchLink>
@@ -192,7 +192,7 @@ export default async function PastoralDashboardPage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-[17px] font-semibold text-ink">Mon agenda</h2>
-            <Link href={`/agenda/${profile.id}`} className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+            <Link href={`/agenda/${profile.id}`} className={buttonClasses("ghost", "sm")}>
               Voir l&apos;agenda
             </Link>
           </div>
@@ -221,7 +221,7 @@ export default async function PastoralDashboardPage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-[17px] font-semibold text-ink">Événements</h2>
-            <Link href="/events" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+            <Link href="/events" className={buttonClasses("ghost", "sm")}>
               Voir le calendrier
             </Link>
           </div>

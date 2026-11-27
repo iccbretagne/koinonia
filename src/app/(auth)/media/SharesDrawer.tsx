@@ -104,14 +104,13 @@ export default function SharesDrawer({ open, onClose }: { readonly open: boolean
               </p>
             )}
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => copyLink(share.url)}>
+              <Button size="sm" variant="secondary" onClick={() => copyLink(share.url)}>
                 Copier le lien
               </Button>
               {share.canRevoke && (
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="min-h-11 sm:min-h-9"
                   disabled={revokingId === share.id}
                   onClick={() => setConfirmId(share.id)}
                 >

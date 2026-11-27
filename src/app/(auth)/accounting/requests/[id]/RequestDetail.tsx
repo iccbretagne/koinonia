@@ -279,7 +279,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
             tone="info"
             title={`Correction de la demande « ${req.correctionOf.label} ».`}
             action={
-              <Link href={`/accounting/requests/${req.correctionOf.id}`} className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+              <Link href={`/accounting/requests/${req.correctionOf.id}`} className={buttonClasses("ghost", "sm")}>
                 Voir la demande d&apos;origine
               </Link>
             }
@@ -342,7 +342,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
             isOwn ? (
               <Link
                 href={`/accounting/requests/new?correctionOf=${req.id}`}
-                className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}
+                className={buttonClasses("secondary", "sm")}
               >
                 <PencilLine aria-hidden="true" className="size-4" strokeWidth={1.75} />
                 Corriger la demande
@@ -380,7 +380,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="min-h-11 shrink-0 sm:min-h-9"
+                    className="shrink-0"
                     onClick={() => {
                       setReleasingPaymentId(p.id);
                       setReleaseDate(new Date().toISOString().slice(0, 10));
@@ -491,7 +491,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
       {/* Annulation (demandeur) */}
       {isOwn && req.status === "SUBMITTED" && (
         <div className="flex justify-end">
-          <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setConfirmCancel(true)}>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmCancel(true)}>
             Annuler la demande
           </Button>
         </div>
@@ -572,7 +572,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
               type="button"
               variant="ghost"
               size="sm"
-              className="min-h-11 self-start sm:min-h-9"
+              className="self-start"
               onClick={() => setPaymentLines((ls) => [...ls, { id: crypto.randomUUID(), amount: "", scheduledDate: "", note: "" }])}
             >
               <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
@@ -725,11 +725,11 @@ function ArchiveBar({ archived, manual, disabled, onChange }: {
         <p className="text-[15px] leading-[22px] text-ink-muted">{hint}</p>
       </div>
       {manual ? (
-        <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" disabled={disabled} onClick={() => onChange(false)}>
+        <Button variant="secondary" size="sm" disabled={disabled} onClick={() => onChange(false)}>
           Désarchiver
         </Button>
       ) : !archived && (
-        <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" disabled={disabled} onClick={() => onChange(true)}>
+        <Button variant="secondary" size="sm" disabled={disabled} onClick={() => onChange(true)}>
           <Archive className="size-4" aria-hidden="true" strokeWidth={1.75} />
           Archiver
         </Button>

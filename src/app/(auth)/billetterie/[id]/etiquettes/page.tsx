@@ -58,7 +58,7 @@ export default async function LabelsPage({
   return (
     <div className="space-y-4">
       <div className="space-y-3 print:hidden">
-        <Link href={`/billetterie/${id}/restauration`} className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+        <Link href={`/billetterie/${id}/restauration`} className={buttonClasses("ghost", "sm")}>
           <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
           Retour à la distribution
         </Link>

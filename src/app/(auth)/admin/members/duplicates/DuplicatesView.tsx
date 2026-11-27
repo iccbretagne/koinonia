@@ -197,7 +197,7 @@ function MergeModal({
           <MemberCard member={target} isSource={false} label="Sera conservé" />
         </div>
 
-        <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={swap}>
+        <Button type="button" variant="ghost" size="sm" onClick={swap}>
           <ArrowLeftRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
           Inverser source et cible
         </Button>
@@ -457,7 +457,7 @@ export default function DuplicatesView({ groups, allMembers, churchId, canAssign
             <div key={group.members.map((m) => m.id).join("-")} className="rounded-card border border-line bg-surface p-4">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <StatusChip tone={REASON_TONE[group.reason]}>{REASON_LABEL[group.reason]}</StatusChip>
-                <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setMergeGroup(group)}>
+                <Button variant="secondary" size="sm" onClick={() => setMergeGroup(group)}>
                   Fusionner
                 </Button>
               </div>

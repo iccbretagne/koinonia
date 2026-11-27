@@ -6,4 +6,5 @@ Fenêtre modale pour une décision ou un formulaire court. Reprend `Modal` et `C
 - Mobile : devient une `BottomSheet` pour une confirmation, un plein écran avec barre supérieure pour un formulaire.
 - En-tête : titre `title-sm` en `ink` et `IconButton` Fermer. Pied : actions à droite, la principale en dernier.
 - Confirmation d'une action irréversible : le titre pose la question (« Supprimer la fiche de Marie Kouassi ? »), le corps dit la conséquence, le bouton répète le verbe (`danger` « Supprimer la fiche »). Pour une action réversible, préférer un `Toast` avec « Annuler ».
+- `ConfirmModal` : `cancelLabel` (défaut « Annuler ») quand « Annuler » serait ambigu — confirmer « Annuler ma réponse » et refuser « Garder ma réponse » ; `confirmingLabel` (défaut « En cours… ») pendant l'envoi, à préciser (« Suppression en cours… »).
 - Focus piégé, Échap ferme, focus rendu au déclencheur.

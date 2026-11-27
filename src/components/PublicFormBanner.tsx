@@ -42,11 +42,11 @@ export default function PublicFormBanner({
         <p className="mb-0.5 text-[13px] font-semibold leading-[18px] text-brand-text">{label}</p>
         <p className="truncate text-[13px] leading-[18px] text-ink-muted">{url}</p>
       </div>
-      <a href={url} target="_blank" rel="noopener noreferrer" className={`${buttonClasses("ghost", "sm")} min-h-11 shrink-0 sm:min-h-9`}>
+      <a href={url} target="_blank" rel="noopener noreferrer" className={`${buttonClasses("ghost", "sm")} shrink-0`}>
         <ExternalLink aria-hidden="true" className="size-4" strokeWidth={1.75} />
         Ouvrir le formulaire
       </a>
-      <Button variant="secondary" size="sm" onClick={copy} className="min-h-11 shrink-0 sm:min-h-9" aria-live="polite">
+      <Button variant="secondary" size="sm" onClick={copy} className="shrink-0" aria-live="polite">
         {copied ? (
           <>
             <Check aria-hidden="true" className="size-4" strokeWidth={2} />
