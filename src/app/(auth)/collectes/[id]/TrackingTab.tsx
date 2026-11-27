@@ -93,7 +93,11 @@ export default function TrackingTab({
   const [issueFilter, setIssueFilter] = useState<TrackingFilter | null>(null);
   const [review, setReview] = useState<{ row: Row; action: ReviewAction } | null>(null);
   const [reviewReason, setReviewReason] = useState("");
-  const [due, setDue] = useState<{ row: Row; value: string } | null>(null);
+  /** `initial` : jour de l'échéance propre à la contribution (vide si elle suit la campagne). */
+  const [due, setDue] = useState<{ row: Row; value: string; initial: string } | null>(null);
+  // Une valeur inchangée n'est jamais renvoyée : une échéance précise (heure posée par l'import)
+  // n'est pas ramenée à 23 h 59 par un simple « Enregistrer ».
+  const dueChanged = !!due?.value && due.value !== due.initial;
 
   const rows: Row[] = useMemo(
     () =>
@@ -251,41 +255,41 @@ export default function TrackingTab({
         ]}
         actions={(r) => (
           <div className="flex flex-wrap gap-2">
-            <Link href={`/collectes/r/${r.id}`} className={buttonClasses("secondary", "sm")}>
+            <Link href={`/collectes/r/${r.id}`} className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
               Ouvrir
             </Link>
-            <Button type="button" size="sm" variant="ghost" onClick={() => onMessage({ kind: messageKindForStatus(r, new Date()), contributionId: r.id })}>
+            <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="ghost" onClick={() => onMessage({ kind: messageKindForStatus(r, new Date()), contributionId: r.id })}>
               Message
             </Button>
             {open && OPEN_STATUSES.includes(r.status) && (
-              <Button type="button" size="sm" variant="ghost" disabled={busy || r.respondents.length === 0} onClick={() => remind(r)}>
+              <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="ghost" disabled={busy || r.respondents.length === 0} onClick={() => remind(r)}>
                 Relancer
               </Button>
             )}
             {open && (r.status === "SUBMITTED" || r.status === "VALIDATED") && (
-              <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => setChanges(r)}>
+              <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="ghost" disabled={busy} onClick={() => setChanges(r)}>
                 Demander une correction
               </Button>
             )}
             {r.status === "SUBMITTED" && (
-              <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => setValidating(r)}>
+              <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="secondary" disabled={busy} onClick={() => setValidating(r)}>
                 Valider
               </Button>
             )}
             {open && r.status === "SUBMITTED" && (
-              <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => setReview({ row: r, action: "reopen" })}>
+              <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="ghost" disabled={busy} onClick={() => setReview({ row: r, action: "reopen" })}>
                 Rouvrir
               </Button>
             )}
             {r.status === "VALIDATED" && (
-              <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => setReview({ row: r, action: "unvalidate" })}>
+              <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="ghost" disabled={busy} onClick={() => setReview({ row: r, action: "unvalidate" })}>
                 Annuler la validation
               </Button>
             )}
-            <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => setDue({ row: r, value: parisDayKey(r.dueAt) })}>
+            <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="ghost" disabled={busy} onClick={() => setDue({ row: r, value: parisDayKey(r.assignmentDueAt), initial: parisDayKey(r.assignmentDueAt) })}>
               Échéance
             </Button>
-            <Link href={`/collectes/${campaign.id}/apercu/${r.formId}`} className={buttonClasses("ghost", "sm")}>
+            <Link href={`/collectes/${campaign.id}/apercu/${r.formId}`} className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
               Aperçu
             </Link>
           </div>
@@ -354,7 +358,11 @@ export default function TrackingTab({
           onChange={(e) => setReviewReason(e.target.value)}
           rows={3}
           maxLength={2000}
-          hint={review?.action === "reopen" ? "Transmis aux répondants avec la notification." : "Gardé dans l'historique de la contribution."}
+          hint={
+            review?.action === "reopen"
+              ? "Affiché aux répondants dans le questionnaire, jamais dans la notification."
+              : "Gardé dans l'historique de la contribution."
+          }
         />
       </ConfirmModal>
 
@@ -363,13 +371,13 @@ export default function TrackingTab({
           className="flex flex-col gap-4"
           onSubmit={(e) => {
             e.preventDefault();
-            if (due?.value) void saveDue(due.value);
+            if (due?.value && dueChanged) void saveDue(due.value);
           }}
         >
           <p className="text-[15px] leading-[22px] text-ink-muted">
             {due?.row.assignmentDueAt
-              ? "Cette contribution a sa propre échéance."
-              : `Échéance de la campagne : ${formatDay(campaign.dueAt)}.`}{" "}
+              ? `Cette contribution a sa propre échéance (campagne : ${formatDay(campaign.dueAt)}).`
+              : `Cette contribution suit l'échéance de la campagne : ${formatDay(campaign.dueAt)}.`}{" "}
             Une échéance repoussée permet une nouvelle relance automatique deux jours avant.
           </p>
           <Input
@@ -377,7 +385,11 @@ export default function TrackingTab({
             type="date"
             value={due?.value ?? ""}
             onChange={(e) => setDue((d) => (d ? { ...d, value: e.target.value } : d))}
-            hint="Fin de journée, heure de Paris."
+            hint={
+              due?.row.assignmentDueAt
+                ? "Fin de journée, heure de Paris."
+                : `Vide : échéance de la campagne (${formatDay(campaign.dueAt)}). Fin de journée, heure de Paris.`
+            }
             required
           />
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
@@ -389,7 +401,7 @@ export default function TrackingTab({
                 Effacer (échéance de la campagne)
               </Button>
             )}
-            <Button type="submit" disabled={busy || !due?.value}>
+            <Button type="submit" disabled={busy || !dueChanged}>
               {busy ? "Enregistrement…" : "Enregistrer"}
             </Button>
           </div>

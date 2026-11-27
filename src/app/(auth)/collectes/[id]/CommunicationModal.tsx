@@ -244,17 +244,17 @@ export default function CommunicationModal({
                   hint={e.guest ? "Contient un lien personnel : à envoyer à cette seule personne, par un canal privé." : undefined}
                 />
                 <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                  <Button type="button" size="sm" onClick={() => void copy(textOf(e), "Message copié", fieldId)}>
+                  <Button type="button" size="sm" className="min-h-11 sm:min-h-9" onClick={() => void copy(textOf(e), "Message copié", fieldId)}>
                     <Copy aria-hidden="true" className="size-4" strokeWidth={1.75} />
                     Copier
                   </Button>
                   {e.assignmentId ? (
-                    <Link href={`/collectes/r/${e.assignmentId}`} target="_blank" className={buttonClasses("secondary", "sm")}>
+                    <Link href={`/collectes/r/${e.assignmentId}`} target="_blank" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
                       <ExternalLink aria-hidden="true" className="size-4" strokeWidth={1.75} />
                       Ouvrir le questionnaire
                     </Link>
                   ) : (
-                    <Link href="/collectes" target="_blank" className={buttonClasses("secondary", "sm")}>
+                    <Link href="/collectes" target="_blank" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
                       <ExternalLink aria-hidden="true" className="size-4" strokeWidth={1.75} />
                       Ouvrir les questionnaires
                     </Link>
@@ -266,6 +266,7 @@ export default function CommunicationModal({
                         type="button"
                         size="sm"
                         variant="ghost"
+                        className="min-h-11 sm:min-h-9"
                         disabled={loadingGuest !== null}
                         onClick={() => void prepareGuest(e.assignmentId as string, g.id, g.name)}
                       >
