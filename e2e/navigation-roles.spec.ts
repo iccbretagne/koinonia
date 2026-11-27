@@ -4,11 +4,23 @@ import { expect, test } from "./roles";
 /**
  * Navigation par rôle : espaces visibles (sidebar desktop, barre du bas + panneau « Plus »
  * mobile). Table de données volontairement petite, à mettre à jour avec src/lib/navigation.ts
- * (spec 092). Constat du comportement actuel, pas une prescription : en cas d'écart légitime,
- * corriger la table.
+ * (spec 092, lot 1 : onze espaces). Constat du comportement, pas une prescription : en cas d'écart
+ * légitime, corriger la table.
  */
 
-const SPACES = ["Accueil", "Planning", "Agenda", "Personnes", "Demandes", "Médias", "Ressources", "Administration"] as const;
+const SPACES = [
+  "Accueil",
+  "Planning",
+  "Événements",
+  "Pastoral",
+  "Personnes",
+  "Demandes",
+  "Finances",
+  "Médias",
+  "Ressources",
+  "Administration",
+  "Plateforme",
+] as const;
 type Space = (typeof SPACES)[number];
 
 interface RoleNav {
@@ -18,21 +30,23 @@ interface RoleNav {
   bottom: string[];
 }
 
-const ALL_ADMIN: Space[] = ["Accueil", "Planning", "Agenda", "Personnes", "Demandes", "Médias", "Ressources", "Administration"];
-const DEPT_HEAD: Space[] = ["Accueil", "Planning", "Agenda", "Personnes", "Demandes", "Médias", "Ressources"];
+const SUPER_ADMIN: Space[] = ["Accueil", "Planning", "Événements", "Pastoral", "Personnes", "Demandes", "Finances", "Médias", "Ressources", "Administration", "Plateforme"];
+const ADMIN: Space[] = SUPER_ADMIN.filter((s) => s !== "Plateforme");
+const MINISTRE: Space[] = ["Accueil", "Planning", "Événements", "Personnes", "Demandes", "Médias", "Ressources", "Administration"];
+const DEPT_HEAD: Space[] = ["Accueil", "Planning", "Événements", "Personnes", "Demandes", "Médias", "Ressources"];
 
 export const NAV_BY_ROLE: Record<string, RoleNav> = {
-  "super-admin": { spaces: ALL_ADMIN, bottom: ["Accueil", "Agenda", "Demandes", "Personnes"] },
-  admin: { spaces: ALL_ADMIN, bottom: ["Accueil", "Agenda", "Demandes", "Personnes"] },
-  secretaire: { spaces: ALL_ADMIN, bottom: ["Accueil", "Agenda", "Demandes", "Personnes"] },
-  ministre: { spaces: ALL_ADMIN, bottom: ["Accueil", "Planning", "Agenda", "Personnes"] },
-  "resp-accueil": { spaces: DEPT_HEAD, bottom: ["Accueil", "Planning", "Agenda", "Personnes"] },
-  "resp-secretariat": { spaces: DEPT_HEAD, bottom: ["Accueil", "Planning", "Agenda", "Personnes"] },
+  "super-admin": { spaces: SUPER_ADMIN, bottom: ["Accueil", "Événements", "Demandes", "Personnes"] },
+  admin: { spaces: ADMIN, bottom: ["Accueil", "Événements", "Demandes", "Personnes"] },
+  secretaire: { spaces: ADMIN, bottom: ["Accueil", "Événements", "Demandes", "Personnes"] },
+  ministre: { spaces: MINISTRE, bottom: ["Accueil", "Planning", "Événements", "Personnes"] },
+  "resp-accueil": { spaces: DEPT_HEAD, bottom: ["Accueil", "Planning", "Événements", "Personnes"] },
+  "resp-secretariat": { spaces: DEPT_HEAD, bottom: ["Accueil", "Planning", "Événements", "Personnes"] },
   "faiseur-disciples": { spaces: ["Accueil", "Planning", "Personnes", "Médias", "Ressources"], bottom: ["Accueil", "Planning", "Personnes"] },
-  reporter: { spaces: ["Accueil", "Agenda", "Personnes", "Médias", "Ressources"], bottom: ["Accueil", "Agenda"] },
-  star: { spaces: DEPT_HEAD, bottom: ["Accueil", "Mon planning", "Agenda", "Demandes"] },
-  comptable: { spaces: ["Accueil", "Personnes", "Demandes", "Médias", "Ressources", "Administration"], bottom: ["Accueil", "Comptabilité"] },
-  "referent-soins": { spaces: ["Accueil", "Personnes", "Médias", "Ressources"], bottom: ["Accueil", "Suivi"] },
+  reporter: { spaces: ["Accueil", "Événements", "Personnes", "Médias", "Ressources"], bottom: ["Accueil", "Événements"] },
+  star: { spaces: DEPT_HEAD, bottom: ["Accueil", "Mon planning", "Événements", "Demandes"] },
+  comptable: { spaces: ["Accueil", "Personnes", "Demandes", "Finances", "Médias", "Ressources"], bottom: ["Accueil", "Demandes comptables"] },
+  "referent-soins": { spaces: ["Accueil", "Pastoral", "Médias", "Ressources"], bottom: ["Accueil", "Suivi"] },
 };
 
 /** Lignes de navigation visibles sous forme de texte (le texte inclut pastilles et « (nouvel onglet) »). */
