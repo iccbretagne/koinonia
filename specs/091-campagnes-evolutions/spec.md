@@ -61,12 +61,19 @@ collecté par le moteur existant.
 ### Communication (EVOL-01, EVOL-04)
 
 1. Depuis la campagne, le gestionnaire ouvre « Communication ». Il choisit un type de message :
+   - annonce de lancement, adressée à tous (ajout après la recette) ;
    - demande initiale ;
    - point d'avancement ;
    - relance collective ;
    - relance individuelle ;
    - rappel d'échéance dépassée ;
-   - demande de nouvelle soumission.
+   - demande de nouvelle soumission ;
+   - clôture et remerciements, adressée à tous (ajout après la recette).
+
+   L'annonce de lancement et la clôture sont des messages collectifs : un seul texte pour tout
+   le groupe, avec le seul lien vers les questionnaires. L'annonce liste les questionnaires et
+   destinataires sollicités ; la clôture donne l'avancement final et remercie les services ayant
+   répondu.
 2. Il choisit les contributions concernées : par statut, par retard, toutes celles restant à
    transmettre, ou une contribution précise. Il règle aussi le niveau de détail, l'affichage des
    services ayant répondu ou restant à répondre, et l'inclusion des destinataires confidentiels

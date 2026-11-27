@@ -7,27 +7,30 @@ import type { AssignmentStatus } from "../schemas";
  * réexporté par `@/modules/campaigns/schemas` pour la fenêtre « Communication ».
  *
  * Générer un message n'envoie rien. Format compatible WhatsApp : `*gras*`, `_italique_`, sauts de
- * ligne, liens en clair, aucun HTML. Les messages **collectifs** (`progress`, `collective`) ne
+ * ligne, liens en clair, aucun HTML. Les messages **collectifs** (`launch`, `progress`,
+ * `collective`, `closing`) ne
  * portent jamais de lien personnel ni de lien de contribution : seulement `${appUrl}/collectes`.
  *
  * Ce fichier n'importe que des types depuis `../schemas` (qui le réexporte) : aucune valeur n'y
  * est lue au chargement.
  */
 
-export const MESSAGE_KINDS = ["initial", "progress", "collective", "individual", "overdue", "resubmission"] as const;
+export const MESSAGE_KINDS = ["launch", "initial", "progress", "collective", "individual", "overdue", "resubmission", "closing"] as const;
 export type MessageKind = (typeof MESSAGE_KINDS)[number];
 
 export const MESSAGE_KIND_LABELS: Record<MessageKind, string> = {
-  initial: "Demande initiale",
+  launch: "Annonce de lancement (à tous)",
+  initial: "Demande initiale (une par destinataire)",
   progress: "Point d'avancement",
   collective: "Relance collective",
   individual: "Relance individuelle",
   overdue: "Rappel d'échéance dépassée",
   resubmission: "Demande de nouvelle soumission",
+  closing: "Clôture et remerciements (à tous)",
 };
 
 /** Messages adressés à tous (aucun lien de contribution) ; les autres sont un par contribution. */
-export const COLLECTIVE_MESSAGE_KINDS: readonly MessageKind[] = ["progress", "collective"];
+export const COLLECTIVE_MESSAGE_KINDS: readonly MessageKind[] = ["launch", "progress", "collective", "closing"];
 export const isCollectiveKind = (kind: MessageKind) => COLLECTIVE_MESSAGE_KINDS.includes(kind);
 
 /** Longueur maximale d'un modèle (validation du format v1 et des paramètres). */
@@ -66,12 +69,15 @@ export const MESSAGE_PLACEHOLDERS: readonly MessagePlaceholder[] = [
   { key: "statuts", description: "Compteurs par statut (niveau de détail « complet » seulement)", kinds: COLLECTIVE },
   { key: "repondu", description: "Liste des contributions transmises (si « services ayant répondu » est coché)", kinds: COLLECTIVE },
   { key: "a_repondre", description: "Liste des contributions restant à transmettre (si « services restant à répondre » est coché)", kinds: COLLECTIVE },
+  { key: "sollicites", description: "Liste de toutes les contributions comptées : questionnaires et destinataires sollicités", kinds: COLLECTIVE },
   { key: "perimetre", description: "Ligne de périmètre quand des contributions confidentielles ne sont pas comptées", kinds: COLLECTIVE },
 ];
 
 const SIGNATURE = "Sois béni(e) !\nLa Coordination générale";
 
 export const DEFAULT_MESSAGE_TEMPLATES: Record<MessageKind, string> = {
+  launch:
+    "Bonjour à tous,\n\nLe *{{campagne}}* de {{eglise}} est lancé ! Nous sollicitons la contribution de chaque service pour faire le bilan.\n\n{{sollicites}}\n\n{{perimetre}}\n\nChaque responsable reçoit le lien de son questionnaire ; il est aussi accessible depuis Koinonia.\nMerci de le compléter au plus tard le *{{echeance}}*.\n👉 {{lien}}\n\nMerci d'avance pour votre disponibilité et votre contribution.\n\nSoyez béni(e)s !\nLa Coordination générale",
   initial:
     "Bonjour,\n\nDans le cadre du {{campagne}} de {{eglise}}, nous sollicitons ta contribution pour {{destinataire}}.\n\nMerci de compléter le questionnaire au plus tard le {{echeance}}.\n\n👉 Accéder au questionnaire :\n{{lien}}\n\nMerci pour ta disponibilité et ta contribution.\n\n" +
     SIGNATURE,
@@ -88,6 +94,8 @@ export const DEFAULT_MESSAGE_TEMPLATES: Record<MessageKind, string> = {
     "*Point d'avancement — {{campagne}}*\n_{{eglise}}, au {{date}}_\n\n{{avancement}}\n{{statuts}}\n\n{{repondu}}\n\n{{a_repondre}}\n\n{{perimetre}}\n\nÉchéance : *{{echeance}}*.\n👉 Les questionnaires : {{lien}}\n\nMerci à tous pour votre mobilisation !\nLa Coordination générale",
   collective:
     "Bonjour à tous,\n\nPour le {{campagne}} de {{eglise}}, *{{restantes}} contribution(s)* restent à transmettre ({{avancement}}).\n\n{{a_repondre}}\n\n{{perimetre}}\n\nMerci de compléter vos questionnaires au plus tard le *{{echeance}}*.\n👉 {{lien}}\n\nMerci pour votre disponibilité et votre contribution.\n\nSoyez béni(e)s !\nLa Coordination générale",
+  closing:
+    "Bonjour à tous,\n\nLe *{{campagne}}* de {{eglise}} est désormais clôturé.\n\n{{avancement}}\n\n{{repondu}}\n\n{{perimetre}}\n\nUn grand merci à chacun pour le temps consacré et la qualité des informations transmises : votre contribution est précieuse pour le bilan.\n\nSoyez béni(e)s !\nLa Coordination générale",
 };
 
 /**
@@ -196,8 +204,10 @@ const DONE: readonly AssignmentStatus[] = ["SUBMITTED", "VALIDATED"];
 const NOT_DONE: readonly AssignmentStatus[] = ["NOT_STARTED", "IN_PROGRESS", "CHANGES_REQUESTED"];
 
 const DEFAULT_STATUSES: Record<MessageKind, readonly AssignmentStatus[] | null> = {
+  launch: null,
   initial: null,
   progress: null,
+  closing: null,
   collective: NOT_DONE,
   individual: NOT_DONE,
   overdue: NOT_DONE,
@@ -317,6 +327,7 @@ export function composeMessage(kind: MessageKind, ctx: MessageContext, options: 
           : "",
       repondu: options.showDone ? block("Ont répondu :", done, detail) : "",
       a_repondre: options.showRemaining ?? true ? block("Restent à répondre :", remaining, detail) : "",
+      sollicites: block("Questionnaires et destinataires sollicités :", targets, detail),
       perimetre,
     };
     let text = renderTemplate(template, vars);

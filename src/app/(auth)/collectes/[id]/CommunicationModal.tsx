@@ -20,6 +20,7 @@ import {
   buildMessageContext,
   composeOptions,
   initialSettings,
+  withKind,
   type CommunicationSettings,
   type TargetMode,
 } from "./pilotage";
@@ -156,7 +157,7 @@ export default function CommunicationModal({
           <Select
             label="Type de message"
             value={settings.kind}
-            onChange={(e) => set("kind", e.target.value as MessageKind)}
+            onChange={(e) => setSettings((prev) => withKind(prev, e.target.value as MessageKind))}
             options={MESSAGE_KINDS.map((k) => ({ value: k, label: MESSAGE_KIND_LABELS[k] }))}
           />
           <Select

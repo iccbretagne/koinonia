@@ -776,7 +776,8 @@ seule (`ENABLED_MODULES`) :
   **jamais de valeur de réponse** dans le texte. Exports XLSX/CSV (`exports.ts`)
 - **Évolutions post-recette** (spec 091) : **Communication** (`messages.ts`) : messages à copier
   (format WhatsApp), composés à partir de l'état réel (compteurs et taux **par contribution**) ;
-  **rien n'est envoyé** ni compté comme relance. Collectif : jamais de lien personnel, de valeur
+  **rien n'est envoyé** ni compté comme relance. Huit types, dont quatre collectifs (annonce de
+  lancement, point d'avancement, relance collective, clôture et remerciements). Collectif : jamais de lien personnel, de valeur
   ni d'email, confidentiels exclus par défaut ; individuel : un message par personne, avec son
   lien direct (adresse Koinonia, ou lien personnel actif pour une personne sans compte). Textes
   par défaut, modèles par campagne (`Campaign.messageTemplates`, `campaign.messages` du format v1).
