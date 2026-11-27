@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Alert, Button, EmptyState, Modal, SkeletonList } from "@/components/ui";
 
 type BackupEntry = {
   key: string;
@@ -43,92 +44,44 @@ function RestoreModal({
 }) {
   const [step, setStep] = useState<1 | 2>(1);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      e.preventDefault();
-      onCancel();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onCancel]);
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-scrim backdrop-blur-sm" aria-hidden="true" onClick={onCancel} />
-      <div className="relative bg-surface rounded-2xl shadow-overlay w-full max-w-md p-6 space-y-4">
-        {step === 1 ? (
-          <>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-danger-soft flex items-center justify-center text-danger text-xl shrink-0">
-                ⚠️
-              </div>
-              <h2 className="text-lg font-bold text-ink">Restaurer une sauvegarde</h2>
-            </div>
-            <div className="bg-danger-soft border border-danger/30 rounded-xl p-4 space-y-2 text-sm text-danger">
-              <p className="font-semibold">Cette action est irréversible.</p>
-              <ul className="list-disc pl-4 space-y-1">
-                <li>Toutes les données actuelles seront <strong>écrasées</strong> par cette sauvegarde.</li>
-                <li>Les modifications effectuées depuis la date de sauvegarde seront <strong>perdues définitivement</strong>.</li>
-                <li>L&apos;application sera indisponible pendant la restauration.</li>
-              </ul>
-            </div>
-            <div className="text-sm text-ink-muted">
-              <span className="font-medium">Sauvegarde sélectionnée :</span>
-              <br />
-              <span className="text-ink-muted text-xs">{keyToLabel(backup.key)}</span>
-              <span className="ml-2 text-ink-subtle text-xs">({formatBytes(backup.sizeBytes)})</span>
-            </div>
-            <div className="flex gap-2 justify-end pt-2">
-              <button
-                onClick={onCancel}
-                className="px-4 py-2 text-sm rounded-lg border border-line text-ink-muted hover:bg-surface-sunken transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={() => setStep(2)}
-                className="px-4 py-2 text-sm rounded-lg bg-danger text-on-danger font-medium hover:bg-danger/90 transition-colors"
-              >
-                Je comprends, continuer →
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-danger-soft flex items-center justify-center text-danger text-xl shrink-0">
-                🔴
-              </div>
-              <h2 className="text-lg font-bold text-ink">Confirmation finale</h2>
-            </div>
-            <p className="text-sm text-ink-muted">
-              Confirmez-vous la restauration de la base de données vers la sauvegarde du{" "}
-              <strong>{formatDate(backup.lastModified)}</strong> ?
-            </p>
-            <p className="text-xs text-danger font-medium">
-              Toutes les données actuelles seront définitivement perdues.
-            </p>
-            <div className="flex gap-2 justify-end pt-2">
-              <button
-                onClick={onCancel}
-                disabled={loading}
-                className="px-4 py-2 text-sm rounded-lg border border-line text-ink-muted hover:bg-surface-sunken transition-colors disabled:opacity-50"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={onConfirm}
-                disabled={loading}
-                className="px-4 py-2 text-sm rounded-lg bg-danger text-on-danger font-medium hover:bg-danger/90 disabled:opacity-50 transition-colors"
-              >
-                {loading ? "Restauration en cours…" : "Restaurer maintenant"}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
+    <Modal open onClose={onCancel} title={step === 1 ? "Restaurer une sauvegarde" : "Confirmation finale"}>
+      {step === 1 ? (
+        <div className="flex flex-col gap-4">
+          <Alert tone="danger" title="Cette action est irréversible.">
+            <ul className="list-disc space-y-1 pl-4">
+              <li>Toutes les données actuelles seront <strong>écrasées</strong> par cette sauvegarde.</li>
+              <li>Les modifications effectuées depuis la date de sauvegarde seront <strong>perdues définitivement</strong>.</li>
+              <li>L&apos;application sera indisponible pendant la restauration.</li>
+            </ul>
+          </Alert>
+          <div className="text-sm text-ink-muted">
+            <span className="font-semibold text-ink">Sauvegarde sélectionnée :</span>
+            <br />
+            <span className="text-[13px]">{keyToLabel(backup.key)}</span>
+            <span className="ml-2 text-[13px]">({formatBytes(backup.sizeBytes)})</span>
+          </div>
+          <div className="flex flex-wrap justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={onCancel}>Annuler</Button>
+            <Button onClick={() => setStep(2)}>Continuer</Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <p className="text-[15px] leading-[22px] text-ink-muted">
+            Confirmez-vous la restauration de la base de données vers la sauvegarde du{" "}
+            <strong className="text-ink">{formatDate(backup.lastModified)}</strong> ?
+          </p>
+          <Alert tone="danger">Toutes les données actuelles seront définitivement perdues.</Alert>
+          <div className="flex flex-wrap justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={onCancel} disabled={loading}>Annuler</Button>
+            <Button variant="danger" onClick={onConfirm} disabled={loading}>
+              {loading ? "Restauration…" : "Restaurer la sauvegarde"}
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
   );
 }
 
@@ -228,81 +181,66 @@ export default function BackupsClient() {
   }
 
   return (
-    <div className="space-y-5 max-w-3xl">
+    <div className="flex max-w-3xl flex-col gap-5">
       {/* ── Actions ─────────────────────────────────────────────── */}
-      <div className="bg-surface rounded-2xl border border-line shadow-card p-5">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="rounded-card border border-line bg-surface p-5 shadow-card">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-sm font-semibold text-ink">Déclencher une sauvegarde</h2>
-            <p className="text-xs text-ink-muted mt-0.5">Crée un dump SQL compressé et le stocke sur S3.</p>
+            <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Déclencher une sauvegarde</h2>
+            <p className="mt-0.5 text-[13px] leading-[18px] text-ink-muted">Crée un dump SQL compressé et le stocke sur S3.</p>
           </div>
-          <button
-            onClick={triggerBackup}
-            disabled={triggering}
-            className="px-4 py-2 text-sm rounded-xl bg-brand text-on-brand font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors shrink-0"
-          >
-            {triggering ? "Sauvegarde en cours…" : "Sauvegarder maintenant"}
-          </button>
+          <Button onClick={triggerBackup} disabled={triggering} className="shrink-0">
+            {triggering ? "Sauvegarde…" : "Sauvegarder maintenant"}
+          </Button>
         </div>
         {triggerResult && (
-          <p className={`text-xs mt-3 px-3 py-2 rounded-lg ${triggerResult.startsWith("Erreur") ? "bg-danger-soft text-danger" : "bg-success-soft text-success"}`}>
+          <Alert tone={triggerResult.startsWith("Erreur") ? "danger" : "success"} className="mt-3">
             {triggerResult}
-          </p>
+          </Alert>
         )}
         {restoreResult && (
-          <p className={`text-xs mt-3 px-3 py-2 rounded-lg ${restoreResult.success ? "bg-success-soft text-success" : "bg-danger-soft text-danger"}`}>
+          <Alert tone={restoreResult.success ? "success" : "danger"} className="mt-3">
             {restoreResult.message}
-          </p>
+          </Alert>
         )}
       </div>
 
       {/* ── Liste ────────────────────────────────────────────────── */}
-      <div className="bg-surface rounded-2xl border border-line shadow-card overflow-hidden">
-        <div className="px-5 py-4 border-b border-line flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-ink">
+      <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-5 py-4">
+          <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">
             Sauvegardes disponibles
             {backups.length > 0 && (
-              <span className="ml-2 text-xs font-normal text-ink-subtle">{backups.length}</span>
+              <span className="ml-2 text-[13px] font-normal text-ink-muted">{backups.length}</span>
             )}
           </h2>
-          <button
-            onClick={() => setRefreshKey((k) => k + 1)}
-            disabled={loading}
-            className="text-xs text-ink-subtle hover:text-brand-text transition-colors disabled:opacity-50"
-          >
-            Actualiser
-          </button>
+          <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setRefreshKey((k) => k + 1)} disabled={loading}>
+            {loading ? "Chargement…" : "Actualiser"}
+          </Button>
         </div>
 
-        {loading && <div className="p-8 text-center text-sm text-ink-subtle">Chargement…</div>}
-        {!loading && error && <div className="p-8 text-center text-sm text-danger">{error}</div>}
+        {loading && <SkeletonList rows={3} className="p-5" />}
+        {!loading && error && <Alert tone="danger" className="m-5">{error}</Alert>}
         {!loading && !error && backups.length === 0 && (
-          <div className="p-8 text-center text-sm text-ink-subtle">Aucune sauvegarde disponible.</div>
+          <EmptyState size="sm" title="Aucune sauvegarde disponible" />
         )}
         {!loading && !error && backups.length > 0 && (
           <ul className="divide-y divide-line">
             {backups.map((b) => (
-              <li key={b.key} className="flex items-center justify-between gap-4 px-5 py-3.5 hover:bg-surface-sunken transition-colors">
+              <li key={b.key} className="flex flex-wrap items-center justify-between gap-4 px-5 py-3.5">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-ink truncate">{keyToLabel(b.key)}</p>
-                  <p className="text-xs text-ink-subtle mt-0.5">
+                  <p className="truncate text-[15px] font-semibold text-ink">{keyToLabel(b.key)}</p>
+                  <p className="mt-0.5 text-[13px] leading-[18px] text-ink-muted">
                     {formatDate(b.lastModified)} · {formatBytes(b.sizeBytes)}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => downloadBackup(b)}
-                    disabled={downloadingKey === b.key}
-                    className="text-xs text-brand-text hover:text-brand-text border border-brand/20 hover:border-brand/40 rounded-lg px-3 py-1.5 hover:bg-brand-soft disabled:opacity-50 transition-colors"
-                  >
-                    {downloadingKey === b.key ? "…" : "Télécharger"}
-                  </button>
-                  <button
-                    onClick={() => { setRestoreResult(null); setRestoreTarget(b); }}
-                    className="text-xs text-danger hover:text-danger border border-danger/30 hover:border-danger/30 rounded-lg px-3 py-1.5 hover:bg-danger-soft transition-colors"
-                  >
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => downloadBackup(b)} disabled={downloadingKey === b.key}>
+                    {downloadingKey === b.key ? "Préparation…" : "Télécharger"}
+                  </Button>
+                  <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => { setRestoreResult(null); setRestoreTarget(b); }}>
                     Restaurer
-                  </button>
+                  </Button>
                 </div>
               </li>
             ))}

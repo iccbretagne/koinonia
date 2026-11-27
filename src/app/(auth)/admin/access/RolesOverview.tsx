@@ -16,13 +16,13 @@ export default function RolesOverview({ roleCounts, hideTransverseRoles }: Props
     : ALL_ROLES;
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       {CATEGORY_ORDER.map((category) => {
         const roles = visibleRoles.filter((r) => ROLE_CATEGORY[r] === category);
         if (roles.length === 0) return null;
         return (
           <div key={category}>
-            <h2 className="text-sm font-semibold text-ink-muted uppercase tracking-wide mb-2">
+            <h2 className="mb-2 font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-subtle">
               {ROLE_CATEGORY_LABELS[category]}
             </h2>
             <div className="space-y-2">
@@ -30,13 +30,13 @@ export default function RolesOverview({ roleCounts, hideTransverseRoles }: Props
                 <Link
                   key={role}
                   href={`/admin/access/roles/${role}`}
-                  className="flex items-center justify-between gap-3 bg-surface rounded-lg border border-line shadow-card px-4 py-3 hover:border-brand/30 transition-colors"
+                  className="flex min-h-16 items-center justify-between gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-card transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-ink">{ROLE_LABELS[role]}</p>
-                    <p className="text-xs text-ink-muted mt-0.5">{ROLE_DESCRIPTIONS[role]}</p>
+                    <p className="text-[15px] font-semibold leading-[22px] text-ink">{ROLE_LABELS[role]}</p>
+                    <p className="text-[13px] leading-[18px] text-ink-muted">{ROLE_DESCRIPTIONS[role]}</p>
                   </div>
-                  <span className="shrink-0 text-xs font-medium bg-brand-soft text-brand-text border border-brand/20 px-2.5 py-1 rounded-full">
+                  <span className="shrink-0 text-[15px] font-semibold tabular-nums text-ink-muted" aria-label={`${roleCounts[role] ?? 0} détenteur${(roleCounts[role] ?? 0) > 1 ? "s" : ""}`}>
                     {roleCounts[role] ?? 0}
                   </span>
                 </Link>

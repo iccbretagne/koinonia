@@ -2,14 +2,15 @@ import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import DiscipleshipClient from "./DiscipleshipClient";
+import { PageHeader } from "@/components/ui";
 
 export default async function DiscipleshipPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) {
     return (
-      <div>
-        <h1 className="text-2xl font-bold text-ink mb-6">Discipolat</h1>
+      <div className="flex flex-col gap-6">
+        <PageHeader title="Discipolat" />
         <p className="text-ink-muted">Aucune église sélectionnée.</p>
       </div>
     );
@@ -57,8 +58,8 @@ export default async function DiscipleshipPage() {
   ]);
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-ink mb-6">Discipolat</h1>
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Discipolat" />
       <DiscipleshipClient
         churchId={churchId}
         members={members}

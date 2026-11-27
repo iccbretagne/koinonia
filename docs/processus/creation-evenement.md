@@ -8,7 +8,7 @@ Remplace le calendrier qui n'existait que dans la tête du secrétariat.
 
 ## Le déclencheur
 
-Une date est arrêtée. Le secrétariat ou un administrateur ouvre **Agenda → Gérer les événements → Nouvel événement**, et renseigne :
+Une date est arrêtée. Le secrétariat ou un administrateur ouvre **Agenda → Gérer les événements → Créer un événement**, et renseigne :
 
 - le **titre** et le **type** de l'événement ;
 - la **date et l'heure** ;
@@ -43,7 +43,7 @@ Vient ensuite le choix des **départements associés** : ce sont eux, et eux seu
 | Pour… | Aller à… |
 |---|---|
 | Créer, modifier, supprimer | Agenda → **Gérer les événements** |
-| Configurer et associer les départements | Le bouton **Config** de l'événement |
+| Configurer et associer les départements | Le bouton **Configurer** de l'événement |
 | Ouvrir la grille de service | Le bouton **Planning** de l'événement |
 | Copier les affectations d'un événement vers un autre | Le bouton **Dupliquer le planning** de l'événement |
 | Voir le calendrier d'ensemble | Agenda → **Agenda de l'église** |

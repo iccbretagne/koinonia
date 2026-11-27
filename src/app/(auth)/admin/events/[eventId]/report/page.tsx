@@ -3,6 +3,7 @@ import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import EventReportClient from "./EventReportClient";
+import { PageHeader } from "@/components/ui";
 
 export default async function EventReportPage({
   params,
@@ -53,18 +54,15 @@ export default async function EventReportPage({
   });
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-ink">Compte rendu</h1>
-        <p className="text-sm text-ink-muted mt-1">
-          {event.title} &mdash;{" "}
-          {new Date(event.date).toLocaleDateString("fr-FR", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-          })}
-        </p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Compte rendu"
+        description={`${event.title} — ${new Date(event.date).toLocaleDateString("fr-FR", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        })}`}
+      />
 
       <EventReportClient
         eventId={event.id}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import Modal from "@/components/ui/Modal";
+import { Alert, Button, Modal, Select, StatusChip } from "@/components/ui";
 import type { ImportPreview, ImportResult, MergeStrategy } from "@/lib/config-backup-types";
 
 type ConfigCategory = "structure" | "members" | "links";
@@ -100,74 +100,75 @@ function ExportSection() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <fieldset className="min-w-0">
-        <legend className="block text-sm font-medium text-ink-muted mb-1">Périmètre</legend>
-        <div className="flex flex-col gap-2">
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
+        <legend className="mb-1 block text-sm font-semibold text-ink">Périmètre</legend>
+        <div className="flex flex-col">
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 text-[15px] text-ink">
             <input
               type="radio"
               name="scope"
               value="all"
               checked={scope === "all"}
               onChange={() => setScope("all")}
-              className="text-brand-text focus:ring-focus"
+              className="size-5 accent-brand"
             />
             <span>Toutes les églises</span>
           </label>
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 text-[15px] text-ink">
             <input
               type="radio"
               name="scope"
               value="specific"
               checked={scope !== "all"}
               onChange={() => { loadChurches().catch(() => undefined); setScope(churches[0]?.id ?? ""); }}
-              className="text-brand-text focus:ring-focus"
+              className="size-5 accent-brand"
             />
             <span>Une église spécifique</span>
           </label>
         </div>
         {scope !== "all" && (
-          <select
+          <Select
+            label=""
+            aria-label="Église à exporter"
+            className="mt-2"
             value={scope}
             onChange={(e) => setScope(e.target.value)}
-            className="mt-2 w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:ring-focus focus:border-brand"
-          >
-            {churches.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+            options={churches.map((c) => ({ value: c.id, label: c.name }))}
+          />
         )}
       </fieldset>
 
-      <div>
-        <p className="block text-sm font-medium text-ink-muted mb-2">Catégories</p>
-        <div className="space-y-2">
+      <fieldset className="min-w-0">
+        <legend className="mb-1 block text-sm font-semibold text-ink">Catégories</legend>
+        <div className="flex flex-col">
           {(["structure", "members", "links"] as ConfigCategory[]).map((cat) => (
-            <label key={cat} className="flex items-center gap-2 text-sm cursor-pointer">
+            <label key={cat} className="flex min-h-11 cursor-pointer items-center gap-3 text-[15px] text-ink">
               <input
                 type="checkbox"
                 checked={categories.includes(cat)}
                 onChange={() => toggleCategory(cat)}
-                className="rounded border-control-line text-brand-text focus:ring-focus"
+                className="size-5 accent-brand"
               />
               {CATEGORY_LABELS[cat]}
             </label>
           ))}
         </div>
-      </div>
+      </fieldset>
 
       {error && (
-        <p className="text-xs bg-danger-soft text-danger px-3 py-2 rounded-lg">{error}</p>
+        <Alert tone="danger">{error}</Alert>
       )}
 
-      <button
+      <Button
+        variant="secondary"
+        className="self-start"
         onClick={handleExport}
         disabled={loading || categories.length === 0}
-        className="px-4 py-2 text-sm rounded-xl bg-brand text-on-brand font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
+        title={categories.length === 0 ? "Choisissez au moins une catégorie" : undefined}
       >
-        {loading ? "Export en cours…" : "Exporter"}
-      </button>
+        {loading ? "Export…" : "Exporter la configuration"}
+      </Button>
     </div>
   );
 }
@@ -258,72 +259,71 @@ function ImportSection() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <label className="px-4 py-2 text-sm rounded-xl bg-surface border border-brand text-brand-text font-medium hover:bg-brand-soft cursor-pointer transition-colors">
-          {loading ? "Analyse en cours…" : "Choisir un fichier JSON"}
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".json"
-            className="hidden"
-            onChange={handleFileChange}
-            disabled={loading}
-          />
-        </label>
-        <p className="text-xs text-ink-muted">Fichier exporté depuis Koinonia (.json)</p>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <Button variant="secondary" onClick={() => fileRef.current?.click()} disabled={loading}>
+          {loading ? "Analyse…" : "Choisir un fichier JSON"}
+        </Button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".json"
+          className="hidden"
+          aria-label="Fichier de configuration (.json)"
+          onChange={handleFileChange}
+          disabled={loading}
+        />
+        <p className="text-[13px] leading-[18px] text-ink-muted">Fichier exporté depuis Koinonia (.json)</p>
       </div>
 
       {error && (
-        <p className="text-xs bg-danger-soft text-danger px-3 py-2 rounded-lg">{error}</p>
+        <Alert tone="danger">{error}</Alert>
       )}
 
       {importResult && (
-        <div className="bg-success-soft border border-success/30 rounded-xl p-4 text-sm space-y-2">
-          <p className="font-semibold text-success">Import terminé</p>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-success text-xs">
+        <Alert tone="success" title="Import terminé">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-[13px]">
             <span>Créés : <strong>{importResult.created}</strong></span>
             <span>Mis à jour : <strong>{importResult.updated}</strong></span>
             <span>Ignorés : <strong>{importResult.skipped}</strong></span>
             <span>Erreurs : <strong>{importResult.errors}</strong></span>
           </div>
           {importResult.warnings.length > 0 && (
-            <div className="mt-2 space-y-1">
-              <p className="text-xs font-medium text-warning">Avertissements :</p>
-              <ul className="text-xs text-warning list-disc pl-4 space-y-0.5">
+            <div className="mt-2 flex flex-col gap-1">
+              <p className="text-[13px] font-semibold">Avertissements :</p>
+              <ul className="list-disc space-y-0.5 pl-4 text-[13px]">
                 {importResult.warnings.map((w) => (
                   <li key={w}>{w}</li>
                 ))}
               </ul>
             </div>
           )}
-        </div>
+        </Alert>
       )}
 
       {/* Preview modal */}
       <Modal open={showModal} onClose={() => setShowModal(false)} title="Analyser le fichier d'import">
         {preview && (
-          <div className="space-y-5">
-            <div className="text-xs text-ink-muted">
+          <div className="flex flex-col gap-5">
+            <div className="text-[13px] leading-[18px] text-ink-muted">
               Exporté le {new Date(preview.exportedAt).toLocaleString("fr-FR")}
             </div>
 
             {/* Churches */}
             <div>
-              <p className="text-sm font-medium text-ink-muted mb-2">Églises dans le fichier</p>
-              <ul className="space-y-1">
+              <p className="mb-2 text-sm font-semibold text-ink">Églises dans le fichier</p>
+              <ul className="flex flex-col gap-1">
                 {preview.churches.map((c) => (
                   <li key={c.id} className="flex items-center gap-2 text-sm">
-                    <span className={`inline-block w-2 h-2 rounded-full ${c.existsInTarget ? "bg-success" : "bg-warning"}`} />
-                    <span className="font-medium">{c.name}</span>
-                    <span className="text-xs text-ink-subtle">{c.existsInTarget ? "existe" : "nouvelle"}</span>
+                    <span className="font-semibold text-ink">{c.name}</span>
+                    <StatusChip tone={c.existsInTarget ? "success" : "warning"}>{c.existsInTarget ? "Existe" : "Nouvelle"}</StatusChip>
                   </li>
                 ))}
               </ul>
             </div>
 
             {/* Counts */}
-            <div className="bg-surface-sunken rounded-xl p-3 grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="grid grid-cols-3 gap-2 rounded-control border border-line p-3 text-center text-[13px]">
               {[
                 ["Ministères", preview.counts.ministries],
                 ["Départements", preview.counts.departments],
@@ -340,15 +340,15 @@ function ImportSection() {
 
             {/* Categories */}
             <div>
-              <p className="text-sm font-medium text-ink-muted mb-2">Catégories à importer</p>
-              <div className="space-y-1.5">
+              <p className="mb-1 text-sm font-semibold text-ink">Catégories à importer</p>
+              <div className="flex flex-col">
                 {(["structure", "members", "links"] as ConfigCategory[]).map((cat) => (
-                  <label key={cat} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <label key={cat} className="flex min-h-11 cursor-pointer items-center gap-3 text-[15px] text-ink">
                     <input
                       type="checkbox"
                       checked={categories.includes(cat)}
                       onChange={() => toggleCategory(cat)}
-                      className="rounded border-control-line text-brand-text focus:ring-focus"
+                      className="size-5 accent-brand"
                     />
                     {CATEGORY_LABELS[cat]}
                   </label>
@@ -358,12 +358,12 @@ function ImportSection() {
 
             {/* Strategy */}
             <div>
-              <p className="text-sm font-medium text-ink-muted mb-2">Stratégie de fusion</p>
-              <div className="space-y-2">
+              <p className="mb-2 text-sm font-semibold text-ink">Stratégie de fusion</p>
+              <div className="flex flex-col gap-2">
                 {STRATEGY_OPTIONS.map((opt) => (
                   <label
                     key={opt.value}
-                    className={`flex gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors ${
+                    className={`flex cursor-pointer gap-3 rounded-control border-2 p-3 transition-colors ${
                       strategy === opt.value
                         ? "border-brand bg-brand-soft"
                         : "border-line hover:border-control-line"
@@ -375,37 +375,33 @@ function ImportSection() {
                       value={opt.value}
                       checked={strategy === opt.value}
                       onChange={() => setStrategy(opt.value)}
-                      className="mt-0.5 text-brand-text focus:ring-focus shrink-0"
+                      className="mt-0.5 size-5 shrink-0 accent-brand"
                     />
-                    <div className="text-sm font-medium text-ink">
+                    <div className="text-sm font-semibold text-ink">
                       {opt.label}
-                      <span className="block text-xs font-normal text-ink-muted mt-0.5">{opt.desc}</span>
+                      <span className="mt-0.5 block text-[13px] font-normal leading-[18px] text-ink-muted">{opt.desc}</span>
                     </div>
                   </label>
                 ))}
               </div>
               {strategy === "REPLACE" && (
-                <p className="text-xs text-warning bg-warning-soft border border-warning/30 rounded-lg px-3 py-2 mt-2">
-                  ⚠️ La stratégie REPLACE supprime les entités absentes du fichier. Cette action est irréversible pour les données supprimées.
-                </p>
+                <Alert tone="warning" className="mt-2">
+                  La stratégie REPLACE supprime les entités absentes du fichier. Cette action est irréversible pour les données supprimées.
+                </Alert>
               )}
             </div>
 
-            <div className="flex gap-2 justify-end pt-1">
-              <button
-                onClick={() => setShowModal(false)}
-                disabled={loading}
-                className="px-4 py-2 text-sm rounded-lg border border-line text-ink-muted hover:bg-surface-sunken transition-colors disabled:opacity-50"
-              >
+            <div className="flex flex-wrap justify-end gap-2 pt-1">
+              <Button variant="secondary" onClick={() => setShowModal(false)} disabled={loading}>
                 Annuler
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleConfirmImport}
                 disabled={loading || categories.length === 0}
-                className="px-4 py-2 text-sm rounded-xl bg-brand text-on-brand font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
+                title={categories.length === 0 ? "Choisissez au moins une catégorie" : undefined}
               >
-                {loading ? "Import en cours…" : "Confirmer l'import"}
-              </button>
+                {loading ? "Import…" : "Importer la configuration"}
+              </Button>
             </div>
           </div>
         )}
@@ -418,11 +414,11 @@ function ImportSection() {
 
 export default function ConfigBackupClient() {
   return (
-    <div className="space-y-4 max-w-3xl">
-      <div className="bg-surface rounded-2xl border border-line shadow-card overflow-hidden">
-        <div className="px-5 py-4 border-b border-line">
-          <h2 className="text-sm font-semibold text-ink">Exporter la configuration</h2>
-          <p className="text-xs text-ink-muted mt-0.5">
+    <div className="flex max-w-3xl flex-col gap-4">
+      <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+        <div className="border-b border-line px-5 py-4">
+          <h3 className="font-display text-[17px] font-semibold leading-6 text-ink">Exporter la configuration</h3>
+          <p className="mt-0.5 text-[13px] leading-[18px] text-ink-muted">
             Génère un fichier JSON contenant la structure organisationnelle (églises, ministères,
             départements), les membres et/ou les liaisons utilisateurs.
           </p>
@@ -432,10 +428,10 @@ export default function ConfigBackupClient() {
         </div>
       </div>
 
-      <div className="bg-surface rounded-2xl border border-line shadow-card overflow-hidden">
-        <div className="px-5 py-4 border-b border-line">
-          <h2 className="text-sm font-semibold text-ink">Importer une configuration</h2>
-          <p className="text-xs text-ink-muted mt-0.5">
+      <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+        <div className="border-b border-line px-5 py-4">
+          <h3 className="font-display text-[17px] font-semibold leading-6 text-ink">Importer une configuration</h3>
+          <p className="mt-0.5 text-[13px] leading-[18px] text-ink-muted">
             Restaure partiellement la configuration depuis un fichier JSON exporté.
             Un résumé est affiché avant toute modification.
           </p>

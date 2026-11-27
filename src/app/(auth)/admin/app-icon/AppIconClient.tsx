@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Copy, ImageUp, RotateCcw } from "lucide-react";
-import { Alert, Button, ConfirmModal, StatusChip, useToast } from "@/components/ui";
+import { Alert, Button, ConfirmModal, controlClasses, EmptyState, StatusChip, useToast } from "@/components/ui";
 import type { AppIconPreview as PreviewData, AppIconState } from "@/modules/core";
 import { APP_ICON_MAX_BYTES } from "@/modules/core/schemas";
 import AppIconPreview from "./AppIconPreview";
@@ -236,20 +236,22 @@ export default function AppIconClient({ initialState }: { readonly initialState:
                 type="color"
                 value={HEX.test(background) ? background : "#ffffff"}
                 onChange={(e) => setBackground(e.target.value)}
-                className="h-10 w-16 cursor-pointer rounded border border-line p-0.5"
+                className="h-11 w-16 cursor-pointer rounded-control border border-control-line p-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
               />
               <input
                 type="text"
                 aria-label="Couleur de fond en hexadécimal"
                 value={background}
                 onChange={(e) => setBackground(e.target.value)}
-                className="w-32 rounded-lg border border-control-line bg-surface px-3 py-2 font-mono text-sm text-ink focus:border-brand focus:outline-none"
+                className={`${controlClasses()} w-32 font-mono`}
               />
               {backgroundChanged && (
                 <Button
                   variant="secondary"
                   size="sm"
+                  className="min-h-11 sm:min-h-9"
                   disabled={busy || !HEX.test(background)}
+                  title={HEX.test(background) ? undefined : "Saisissez une couleur au format #RRGGBB"}
                   onClick={() => requestPreview({ icon: iconFile, badge: badgeFile, background })}
                 >
                   Actualiser l&apos;aperçu
@@ -273,6 +275,9 @@ export default function AppIconClient({ initialState }: { readonly initialState:
             disabled={busy || (!state.custom && !iconFile)}
             className="block text-sm text-ink-muted"
           />
+          {!state.custom && !iconFile && (
+            <p className="text-[13px] leading-[18px] text-ink-muted">Déposez d&apos;abord une icône.</p>
+          )}
           <p className="text-[13px] leading-[18px] text-ink-muted">
             Forme blanche sur fond transparent (PNG ou WebP), affichée en petit dans la barre d&apos;état Android.
             Sans silhouette, une cloche s&apos;affiche.
@@ -283,13 +288,17 @@ export default function AppIconClient({ initialState }: { readonly initialState:
 
         {previewImages && (
           <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium text-ink">Aperçu</p>
+            <p className="font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-subtle">Aperçu</p>
             <AppIconPreview images={previewImages} />
           </div>
         )}
 
         <div className="flex flex-wrap gap-2">
-          <Button onClick={save} disabled={!canSave || backgroundChanged}>
+          <Button
+            onClick={save}
+            disabled={!canSave || backgroundChanged}
+            title={backgroundChanged ? "Actualisez l'aperçu avant d'enregistrer" : !canSave && !busy ? "Déposez une icône à enregistrer" : undefined}
+          >
             <ImageUp aria-hidden="true" className="size-4" />
             {busy ? "Préparation…" : "Enregistrer l'icône"}
           </Button>
@@ -309,7 +318,7 @@ export default function AppIconClient({ initialState }: { readonly initialState:
         </p>
         <p className="mt-2 italic">{ANNOUNCEMENT}</p>
         <div className="mt-2">
-          <Button variant="ghost" size="sm" onClick={copyAnnouncement}>
+          <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={copyAnnouncement}>
             <Copy aria-hidden="true" className="size-4" />
             Copier le message
           </Button>
@@ -321,7 +330,7 @@ export default function AppIconClient({ initialState }: { readonly initialState:
           Historique
         </h2>
         {state.history.length === 0 ? (
-          <p className="text-sm text-ink-muted">Aucun changement d&apos;icône pour l&apos;instant.</p>
+          <EmptyState size="sm" title="Aucun changement d'icône pour l'instant" />
         ) : (
           <ul className="flex flex-col divide-y divide-line rounded-card border border-line bg-surface">
             {state.history.map((entry) => (

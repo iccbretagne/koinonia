@@ -2,11 +2,7 @@
 
 import { SubmitEvent, useState } from "react";
 import Link from "next/link";
-import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
-import Modal from "@/components/ui/Modal";
-import DataTable from "@/components/ui/DataTable";
-import BulkActionBar from "@/components/ui/BulkActionBar";
+import { BulkActionBar, Button, ConfirmModal, DataTable, Input, Modal, buttonClasses, useToast } from "@/components/ui";
 
 interface Church {
   id: string;
@@ -42,6 +38,10 @@ export default function ChurchesClient({ initialChurches }: Props) {
   const [bulkSlug, setBulkSlug] = useState("");
   const [bulkError, setBulkError] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
+  /** Suppression à confirmer : une église ou la sélection. */
+  const [pendingDelete, setPendingDelete] = useState<Church | "selection" | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const toast = useToast();
 
   function openCreate() {
     setName("");
@@ -89,24 +89,26 @@ export default function ChurchesClient({ initialChurches }: Props) {
   }
 
   async function handleDelete(c: Church) {
-    if (!confirm(`Supprimer l'église "${c.name}" ?`)) return;
-
+    setDeleting(true);
     try {
       const res = await fetch(`/api/churches/${c.id}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Erreur lors de la suppression");
+        toast.error(data.error || "Erreur lors de la suppression");
         return;
       }
       setChurches((prev) => prev.filter((x) => x.id !== c.id));
+      setPendingDelete(null);
+      toast.success("Église supprimée");
     } catch {
-      alert("Erreur lors de la suppression");
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setDeleting(false);
     }
   }
 
   async function handleBulkDelete() {
-    if (!confirm(`Supprimer ${selectedIds.size} église(s) ?`)) return;
-
+    setDeleting(true);
     try {
       const res = await fetch("/api/churches", {
         method: "PATCH",
@@ -115,13 +117,17 @@ export default function ChurchesClient({ initialChurches }: Props) {
       });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Erreur lors de la suppression");
+        toast.error(data.error || "Erreur lors de la suppression");
         return;
       }
       setChurches((prev) => prev.filter((c) => !selectedIds.has(c.id)));
+      toast.success(selectedIds.size > 1 ? "Églises supprimées" : "Église supprimée");
       setSelectedIds(new Set());
+      setPendingDelete(null);
     } catch {
-      alert("Erreur lors de la suppression");
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -173,11 +179,10 @@ export default function ChurchesClient({ initialChurches }: Props) {
   return (
     <>
       <div className="mb-4">
-        <Button onClick={openCreate}>Nouvelle église</Button>
+        <Button onClick={openCreate}>Créer une église</Button>
       </div>
 
-      <div className="bg-surface rounded-lg shadow-card">
-        <DataTable
+      <DataTable
           columns={[
             { header: "Nom", accessor: "name" },
             { header: "Slug", accessor: "slug" },
@@ -201,21 +206,20 @@ export default function ChurchesClient({ initialChurches }: Props) {
           onSelectionChange={setSelectedIds}
           actions={(c) => (
             <div className="flex gap-2 justify-end">
-              <Link href={`/admin/churches/${c.id}`}>
-                <Button variant="secondary">Modifier</Button>
+              <Link href={`/admin/churches/${c.id}`} className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+                Modifier
               </Link>
-              <Button variant="danger" onClick={() => handleDelete(c)}>
+              <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setPendingDelete(c)}>
                 Supprimer
               </Button>
             </div>
           )}
         />
-      </div>
 
       <BulkActionBar
         count={selectedIds.size}
         onEdit={openBulkEdit}
-        onDelete={handleBulkDelete}
+        onDelete={() => setPendingDelete("selection")}
         onClear={() => setSelectedIds(new Set())}
       />
 
@@ -251,7 +255,7 @@ export default function ChurchesClient({ initialChurches }: Props) {
               Annuler
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Enregistrement..." : "Créer"}
+              {loading ? "Création…" : "Créer l'église"}
             </Button>
           </div>
         </form>
@@ -260,7 +264,7 @@ export default function ChurchesClient({ initialChurches }: Props) {
       <Modal
         open={bulkModalOpen}
         onClose={() => setBulkModalOpen(false)}
-        title={`Modifier ${selectedIds.size} église(s)`}
+        title={selectedIds.size > 1 ? `Modifier ${selectedIds.size} églises` : "Modifier 1 église"}
       >
         <p className="text-sm text-ink-muted mb-4">
           Seuls les champs remplis seront modifiés.
@@ -288,11 +292,31 @@ export default function ChurchesClient({ initialChurches }: Props) {
               Annuler
             </Button>
             <Button type="submit" disabled={bulkLoading}>
-              {bulkLoading ? "Enregistrement..." : "Appliquer"}
+              {bulkLoading ? "Enregistrement…" : "Appliquer"}
             </Button>
           </div>
         </form>
       </Modal>
+
+      <ConfirmModal
+        open={pendingDelete !== null}
+        title={
+          pendingDelete === "selection"
+            ? selectedIds.size > 1
+              ? `Supprimer ${selectedIds.size} églises ?`
+              : "Supprimer 1 église ?"
+            : `Supprimer l'église « ${pendingDelete?.name ?? ""} » ?`
+        }
+        message="La suppression est définitive."
+        confirmLabel={pendingDelete === "selection" && selectedIds.size > 1 ? "Supprimer les églises" : "Supprimer l'église"}
+        confirmingLabel="Suppression…"
+        confirming={deleting}
+        onConfirm={() => {
+          if (pendingDelete === "selection") void handleBulkDelete();
+          else if (pendingDelete) void handleDelete(pendingDelete);
+        }}
+        onCancel={() => setPendingDelete(null)}
+      />
     </>
   );
 }

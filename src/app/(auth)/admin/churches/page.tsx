@@ -1,6 +1,7 @@
 import { requireSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ChurchesClient from "./ChurchesClient";
+import { PageHeader } from "@/components/ui";
 
 export default async function ChurchesPage() {
   await requireSuperAdmin();
@@ -13,8 +14,8 @@ export default async function ChurchesPage() {
   });
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-ink mb-6">Églises</h1>
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Églises" />
       <ChurchesClient
         initialChurches={churches.map((c) => ({
           ...c,

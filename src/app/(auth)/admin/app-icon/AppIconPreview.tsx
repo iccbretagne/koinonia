@@ -29,7 +29,7 @@ function Shape({ label, children }: { readonly label: string; readonly children:
  */
 export default function AppIconPreview({ images }: { readonly images: AppIconPreviewImages }) {
   return (
-    <div className="grid grid-cols-2 gap-4 rounded-card bg-surface-sunken p-4 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-4 rounded-card border border-line bg-bg p-4 sm:grid-cols-4">
       <Shape label="iPhone">
         <img src={images.icon} alt="" width={72} height={72} className="size-[72px] rounded-[22%] shadow-card" />
       </Shape>

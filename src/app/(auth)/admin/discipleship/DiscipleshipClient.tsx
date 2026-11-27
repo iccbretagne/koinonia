@@ -1,9 +1,23 @@
 "use client";
 
 import { SubmitEvent, useCallback, useEffect, useId, useRef, useState } from "react";
-import Button from "@/components/ui/Button";
-import Select from "@/components/ui/Select";
-import Modal from "@/components/ui/Modal";
+import { Check, Plus, X } from "lucide-react";
+import {
+  Alert,
+  Button,
+  Checkbox,
+  ConfirmModal,
+  EmptyState,
+  FilterChip,
+  IconButton,
+  Input,
+  Modal,
+  Select,
+  SkeletonList,
+  StatusChip,
+  controlClasses,
+  useToast,
+} from "@/components/ui";
 
 /** Membre existant (id) ou nouveau disciple saisi par son nom. */
 type DiscipleSelection = string | { firstName: string; lastName: string } | null;
@@ -92,17 +106,18 @@ export default function DiscipleshipClient({ churchId, members, allAssignedDisci
 
   return (
     <div>
-      {/* Tab bar + toggle "Tous / Mes disciples" */}
-      <div className="flex flex-wrap items-end justify-between gap-2 mb-6 border-b-2 border-line">
-        <div className="flex gap-1">
+      {/* Onglets internes (même rendu que Tabs, qui ne gère que des liens) + filtre "Tous / Mes disciples" */}
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-2 border-b border-line">
+        <div role="tablist" aria-label="Discipolat" className="flex gap-1 overflow-x-auto">
           {(["relations", "appel", "stats"] as const).map((tab) => (
             <button
               key={tab}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-3 sm:py-2 text-sm font-medium rounded-t-lg transition-colors ${
-                activeTab === tab
-                  ? "bg-brand text-on-brand"
-                  : "text-ink-muted hover:text-brand-text hover:bg-brand-soft"
+              className={`-mb-px inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-3 font-display text-sm font-semibold leading-5 transition-colors duration-120 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${
+                activeTab === tab ? "border-brand text-brand-text" : "border-transparent text-ink-muted hover:text-ink"
               }`}
             >
               {TAB_LABELS[tab]}
@@ -111,27 +126,9 @@ export default function DiscipleshipClient({ churchId, members, allAssignedDisci
         </div>
 
         {showMineFilter && (
-          <div className="flex rounded-lg border border-brand/20 overflow-hidden mb-0.5">
-            <button
-              onClick={() => setFilterMine(false)}
-              className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-                !filterMine
-                  ? "bg-brand text-on-brand"
-                  : "bg-surface text-brand-text hover:bg-brand-soft"
-              }`}
-            >
-              Tous
-            </button>
-            <button
-              onClick={() => setFilterMine(true)}
-              className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-                filterMine
-                  ? "bg-brand text-on-brand"
-                  : "bg-surface text-brand-text hover:bg-brand-soft"
-              }`}
-            >
-              Mes disciples
-            </button>
+          <div className="mb-2 flex gap-2">
+            <FilterChip pressed={!filterMine} onClick={() => setFilterMine(false)}>Tous</FilterChip>
+            <FilterChip pressed={filterMine} onClick={() => setFilterMine(true)}>Mes disciples</FilterChip>
           </div>
         )}
       </div>
@@ -153,7 +150,7 @@ export default function DiscipleshipClient({ churchId, members, allAssignedDisci
 
 function rateBarClass(rate: number): string {
   if (rate >= 80) return "bg-success";
-  if (rate >= 50) return "bg-accent";
+  if (rate >= 50) return "bg-warning";
   return "bg-danger";
 }
 
@@ -220,27 +217,21 @@ function DiscipleCombobox({
   }
 
   return (
-    <div ref={containerRef} className="space-y-2">
+    <div ref={containerRef} className="flex flex-col gap-2">
       {/* Selected chip */}
       {isSelected && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-brand-soft border border-brand/30 rounded-lg text-sm">
-          <svg aria-hidden="true" className="w-4 h-4 text-brand-text shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-          <span className="flex-1 font-medium text-ink">
+        <div className="flex items-center gap-2 rounded-control border border-brand/30 bg-brand-soft py-1 pl-3 pr-1 text-sm">
+          <Check aria-hidden="true" className="size-4 shrink-0 text-brand-text" strokeWidth={1.75} />
+          <span className="flex-1 font-semibold text-ink">
             {isNew
               ? `${(value as {firstName:string;lastName:string}).firstName} ${(value as {firstName:string;lastName:string}).lastName}`.trim()
               : `${selectedMember?.firstName} ${selectedMember?.lastName}`}
           </span>
           {selectedMember && (
-            <span className="text-xs text-ink-subtle">{getDept(selectedMember.departments)?.ministry?.name ?? "??"} / {getDept(selectedMember.departments)?.name ?? "??"}</span>
+            <span className="text-[13px] leading-[18px] text-ink-muted">{getDept(selectedMember.departments)?.ministry?.name ?? "??"} / {getDept(selectedMember.departments)?.name ?? "??"}</span>
           )}
-          {isNew && <span className="text-xs text-brand-text">nouveau</span>}
-          <button type="button" onClick={handleClear} className="text-ink-subtle hover:text-ink-muted ml-1">
-            <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          {isNew && <StatusChip tone="brand">Nouveau</StatusChip>}
+          <IconButton icon={X} size="sm" aria-label="Changer de disciple" onClick={handleClear} />
         </div>
       )}
 
@@ -250,32 +241,34 @@ function DiscipleCombobox({
           <div className="flex gap-2">
             <input
               type="text"
+              aria-label="Prénom du disciple"
               value={firstName}
               onChange={(e) => handleFieldChange("firstName", e.target.value)}
               placeholder="Prénom"
-              className="flex-1 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+              className={`${controlClasses()} min-w-0 flex-1`}
             />
             <input
               type="text"
+              aria-label="Nom du disciple"
               value={lastName}
               onChange={(e) => handleFieldChange("lastName", e.target.value)}
               placeholder="Nom"
-              className="flex-1 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+              className={`${controlClasses()} min-w-0 flex-1`}
             />
           </div>
 
           {/* Suggestions */}
           {hasInput && filtered.length > 0 && (
-            <ul className="border border-line rounded-lg overflow-hidden text-sm max-h-48 overflow-y-auto">
+            <ul className="max-h-48 overflow-y-auto overflow-hidden rounded-control border border-line text-sm">
               {filtered.map((m) => (
                 <li key={m.id}>
                   <button
                     type="button"
                     onMouseDown={(e) => { e.preventDefault(); selectMember(m); }}
-                    className="w-full text-left px-3 py-2 hover:bg-brand-soft transition-colors border-b border-line last:border-0"
+                    className="min-h-11 w-full border-b border-line px-3 py-2 text-left transition-colors last:border-0 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
                   >
-                    <span className="font-medium text-ink">{m.firstName} {m.lastName}</span>
-                    <span className="ml-2 text-xs text-ink-subtle">{getDept(m.departments)?.ministry?.name ?? "??"} / {getDept(m.departments)?.name ?? "??"}</span>
+                    <span className="font-semibold text-ink">{m.firstName} {m.lastName}</span>
+                    <span className="ml-2 text-[13px] text-ink-muted">{getDept(m.departments)?.ministry?.name ?? "??"} / {getDept(m.departments)?.name ?? "??"}</span>
                   </button>
                 </li>
               ))}
@@ -284,17 +277,20 @@ function DiscipleCombobox({
 
           {/* Create option */}
           {noMatch && (
-            <div className="flex items-center gap-3 px-3 py-2 border border-dashed border-line rounded-lg text-sm">
+            <div className="flex flex-wrap items-center gap-3 rounded-control border border-dashed border-line px-3 py-2 text-sm">
               <span className="flex-1 text-ink-muted">
                 Aucun résultat pour «&nbsp;{[firstName, lastName].filter(Boolean).join(" ")}&nbsp;»
               </span>
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
+                className="min-h-11 sm:min-h-9"
                 onMouseDown={(e) => { e.preventDefault(); confirmNew(); }}
-                className="text-brand-text font-medium hover:underline whitespace-nowrap"
               >
-                + Créer ce membre
-              </button>
+                <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                Créer ce membre
+              </Button>
             </div>
           )}
         </>
@@ -307,6 +303,9 @@ function DiscipleCombobox({
 
 function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, canEditRelation, isFD, linkedMemberId, filterMine }: { readonly churchId: string; readonly members: MemberOption[]; readonly allAssignedDiscipleIds: string[]; readonly canManage: boolean; readonly canEditRelation: boolean; readonly isFD: boolean; readonly linkedMemberId: string | null; readonly filterMine: boolean }) {
   const uid = useId();
+  const toast = useToast();
+  const [pendingDelete, setPendingDelete] = useState<DiscipleshipRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [rows, setRows] = useState<DiscipleshipRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -434,17 +433,21 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
   }
 
   async function handleDelete(row: DiscipleshipRow) {
-    if (!confirm(`Supprimer la relation de discipolat de ${fullName(row.disciple)} ?`)) return;
+    setDeleting(true);
     try {
       const res = await fetch(`/api/discipleships/${row.id}`, { method: "DELETE" });
       if (!res.ok) {
         const json = await res.json();
-        alert(json.error ?? "Erreur");
+        toast.error(json.error ?? "Erreur lors de la suppression");
         return;
       }
       setRows((prev) => prev.filter((r) => r.id !== row.id));
+      setPendingDelete(null);
+      toast.success(isFD ? "Disciple détaché" : "Relation supprimée");
     } catch {
-      alert("Erreur lors de la suppression");
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -522,18 +525,18 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
       <div className="mb-4 flex flex-wrap items-center gap-3">
         {canManage && (
           <Button onClick={() => { setCreateModal(true); setCreateError(null); setDiscipleSelection(null); setNewMakerId(linkedMemberId ?? members[0]?.id ?? ""); }}>
-            Nouvelle relation
+            Créer une relation
           </Button>
         )}
       </div>
 
-      {loading && <p className="text-sm text-ink-subtle">Chargement...</p>}
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {loading && <SkeletonList rows={4} />}
+      {error && <Alert tone="danger">{error}</Alert>}
 
       {!loading && !error && (
-        <div className="bg-surface rounded-lg shadow-card border border-line overflow-hidden">
+        <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
           {displayedRows.length === 0 ? (
-            <p className="text-sm text-ink-subtle p-6">Aucune relation de discipolat.</p>
+            <EmptyState size="sm" title="Aucune relation de discipolat" />
           ) : (
             <>
             {/* Desktop table */}
@@ -553,32 +556,32 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
                     <tr key={row.id} className="border-b border-line hover:bg-surface-sunken transition-colors">
                       <td className="px-4 py-3">
                         <div className="font-medium text-ink">{fullName(row.disciple)}</div>
-                        <div className="text-xs text-ink-subtle">
+                        <div className="text-[13px] leading-[18px] text-ink-muted">
                           {getDept(row.disciple.departments)?.ministry?.name ?? "??"} / {getDept(row.disciple.departments)?.name ?? "??"}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-ink-muted">{fullName(row.discipleMaker)}</td>
                       <td className="px-4 py-3 text-ink-muted">{fullName(row.firstMaker)}</td>
-                      <td className="px-4 py-3 text-ink-subtle text-xs">
+                      <td className="px-4 py-3 text-[13px] text-ink-muted">
                         {row.startedAt ? new Date(row.startedAt).toLocaleDateString("fr-FR") : "—"}
                       </td>
                       {canManage && (
                         <td className="px-4 py-3">
                           <div className="flex gap-2 justify-end">
-                            <Button variant="secondary" size="sm" onClick={() => openEditProfile(row)}>
-                              Éditer
+                            <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => openEditProfile(row)}>
+                              Modifier le profil
                             </Button>
                             {canEditRelation && (
-                              <Button variant="secondary" size="sm" onClick={() => openEditRelation(row)}>
-                                Modifier relation
+                              <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => openEditRelation(row)}>
+                                Modifier la relation
                               </Button>
                             )}
                             {isFD && (
-                              <Button variant="secondary" size="sm" onClick={() => openChangeFD(row)}>
-                                Changer FD
+                              <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => openChangeFD(row)}>
+                                Changer de FD
                               </Button>
                             )}
-                            <Button variant="danger" size="sm" onClick={() => handleDelete(row)}>
+                            <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setPendingDelete(row)}>
                               {isFD ? "Détacher" : "Supprimer"}
                             </Button>
                           </div>
@@ -596,38 +599,38 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
                 <div key={row.id} className="p-4 space-y-2">
                   <div>
                     <div className="font-medium text-ink">{fullName(row.disciple)}</div>
-                    <div className="text-xs text-ink-subtle">{getDept(row.disciple.departments)?.ministry?.name ?? "??"} / {getDept(row.disciple.departments)?.name ?? "??"}</div>
+                    <div className="text-[13px] leading-[18px] text-ink-muted">{getDept(row.disciple.departments)?.ministry?.name ?? "??"} / {getDept(row.disciple.departments)?.name ?? "??"}</div>
                   </div>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                     <div>
-                      <span className="text-xs text-ink-subtle">FD actuel</span>
+                      <span className="text-[13px] leading-[18px] text-ink-muted">FD actuel</span>
                       <div className="text-ink-muted">{fullName(row.discipleMaker)}</div>
                     </div>
                     <div>
-                      <span className="text-xs text-ink-subtle">Premier FD</span>
+                      <span className="text-[13px] leading-[18px] text-ink-muted">Premier FD</span>
                       <div className="text-ink-muted">{fullName(row.firstMaker)}</div>
                     </div>
                     <div className="col-span-2">
-                      <span className="text-xs text-ink-subtle">Depuis</span>
-                      <div className="text-ink-muted text-xs">{row.startedAt ? new Date(row.startedAt).toLocaleDateString("fr-FR") : "—"}</div>
+                      <span className="text-[13px] leading-[18px] text-ink-muted">Depuis</span>
+                      <div className="text-[13px] text-ink-muted">{row.startedAt ? new Date(row.startedAt).toLocaleDateString("fr-FR") : "—"}</div>
                     </div>
                   </div>
                   {canManage && (
                     <div className="flex flex-wrap gap-2 pt-1">
-                      <Button variant="secondary" size="sm" onClick={() => openEditProfile(row)}>
-                        Éditer
+                      <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => openEditProfile(row)}>
+                        Modifier le profil
                       </Button>
                       {canEditRelation && (
-                        <Button variant="secondary" size="sm" onClick={() => openEditRelation(row)}>
-                          Modifier relation
+                        <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => openEditRelation(row)}>
+                          Modifier la relation
                         </Button>
                       )}
                       {isFD && (
-                        <Button variant="secondary" size="sm" onClick={() => openChangeFD(row)}>
-                          Changer FD
+                        <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => openChangeFD(row)}>
+                          Changer de FD
                         </Button>
                       )}
-                      <Button variant="danger" size="sm" onClick={() => handleDelete(row)}>
+                      <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setPendingDelete(row)}>
                         {isFD ? "Détacher" : "Supprimer"}
                       </Button>
                     </div>
@@ -641,17 +644,17 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
       )}
 
       {/* Modal: nouvelle relation */}
-      <Modal open={createModal} onClose={() => setCreateModal(false)} title="Nouvelle relation de discipolat">
+      <Modal open={createModal} onClose={() => setCreateModal(false)} title="Créer une relation de discipolat">
         <form onSubmit={handleCreate} className="space-y-4">
           <fieldset className="min-w-0">
-            <legend className="block text-sm font-medium text-ink-muted mb-1">Disciple</legend>
+            <legend className="mb-1 block text-sm font-semibold text-ink">Disciple</legend>
             <DiscipleCombobox
               options={availableDisciples}
               value={discipleSelection}
               onChange={setDiscipleSelection}
             />
             {discipleSelection && typeof discipleSelection === "object" && (
-              <p className="mt-1 text-xs text-ink-subtle">
+              <p className="mt-1 text-[13px] leading-[18px] text-ink-muted">
                 Nouveau membre — sera ajouté dans «&nbsp;Sans département&nbsp;».
               </p>
             )}
@@ -665,13 +668,17 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
               options={members.map((m) => ({ value: m.id, label: memberLabel(m) }))}
             />
           )}
-          {createError && <p className="text-sm text-danger">{createError}</p>}
+          {createError && <Alert tone="danger">{createError}</Alert>}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" type="button" onClick={() => setCreateModal(false)}>
               Annuler
             </Button>
-            <Button type="submit" disabled={createLoading || !discipleSelection}>
-              {createLoading ? "Enregistrement..." : "Créer"}
+            <Button
+              type="submit"
+              disabled={createLoading || !discipleSelection}
+              title={!discipleSelection ? "Choisissez ou saisissez d'abord un disciple" : undefined}
+            >
+              {createLoading ? "Création…" : "Créer la relation"}
             </Button>
           </div>
         </form>
@@ -681,59 +688,49 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
       <Modal open={!!editProfileRow} onClose={() => setEditProfileRow(null)} title="Modifier le profil du disciple">
         {editProfileRow && (
           <form onSubmit={handleEditProfile} className="space-y-4">
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <label htmlFor={`${uid}-first-name`} className="block text-sm font-medium text-ink-muted mb-1">Prénom</label>
-                <input
-                  id={`${uid}-first-name`}
-                  type="text"
-                  value={editFirstName}
-                  onChange={(e) => setEditFirstName(e.target.value)}
-                  required
-                  className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-                />
-              </div>
-              <div className="flex-1">
-                <label htmlFor={`${uid}-last-name`} className="block text-sm font-medium text-ink-muted mb-1">Nom</label>
-                <input
-                  id={`${uid}-last-name`}
-                  type="text"
-                  value={editLastName}
-                  onChange={(e) => setEditLastName(e.target.value)}
-                  required
-                  className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-                />
-              </div>
-            </div>
-            <div>
-              <label htmlFor={`${uid}-email`} className="block text-sm font-medium text-ink-muted mb-1">Email <span className="text-ink-subtle font-normal">(optionnel)</span></label>
-              <input
-                id={`${uid}-email`}
-                type="email"
-                value={editEmail}
-                onChange={(e) => setEditEmail(e.target.value)}
-                placeholder="prenom.nom@email.com"
-                className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Input
+                id={`${uid}-first-name`}
+                label="Prénom"
+                type="text"
+                value={editFirstName}
+                onChange={(e) => setEditFirstName(e.target.value)}
+                required
+                className="flex-1"
+              />
+              <Input
+                id={`${uid}-last-name`}
+                label="Nom"
+                type="text"
+                value={editLastName}
+                onChange={(e) => setEditLastName(e.target.value)}
+                required
+                className="flex-1"
               />
             </div>
-            <div>
-              <label htmlFor={`${uid}-phone`} className="block text-sm font-medium text-ink-muted mb-1">Téléphone <span className="text-ink-subtle font-normal">(optionnel)</span></label>
-              <input
-                id={`${uid}-phone`}
-                type="tel"
-                value={editPhone}
-                onChange={(e) => setEditPhone(e.target.value)}
-                placeholder="+33 6 00 00 00 00"
-                className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-              />
-            </div>
-            {editProfileError && <p className="text-sm text-danger">{editProfileError}</p>}
+            <Input
+              id={`${uid}-email`}
+              label="Email (facultatif)"
+              type="email"
+              value={editEmail}
+              onChange={(e) => setEditEmail(e.target.value)}
+              placeholder="prenom.nom@email.com"
+            />
+            <Input
+              id={`${uid}-phone`}
+              label="Téléphone (facultatif)"
+              type="tel"
+              value={editPhone}
+              onChange={(e) => setEditPhone(e.target.value)}
+              placeholder="+33 6 00 00 00 00"
+            />
+            {editProfileError && <Alert tone="danger">{editProfileError}</Alert>}
             <div className="flex justify-end gap-2">
               <Button variant="secondary" type="button" onClick={() => setEditProfileRow(null)}>
                 Annuler
               </Button>
               <Button type="submit" disabled={editProfileLoading}>
-                {editProfileLoading ? "Enregistrement..." : "Enregistrer"}
+                {editProfileLoading ? "Enregistrement…" : "Enregistrer"}
               </Button>
             </div>
           </form>
@@ -745,7 +742,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
         {changeFDRow && (
           <form onSubmit={handleChangeFD} className="space-y-4">
             <p className="text-sm text-ink-muted">
-              Disciple : <strong>{fullName(changeFDRow.disciple)}</strong>
+              Disciple : <strong className="text-ink">{fullName(changeFDRow.disciple)}</strong>
             </p>
             <p className="text-sm text-ink-muted">
               FD actuel : {fullName(changeFDRow.discipleMaker)}
@@ -756,13 +753,13 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
               onChange={(e) => setNewFDId(e.target.value)}
               options={members.map((m) => ({ value: m.id, label: memberLabel(m) }))}
             />
-            {changeFDError && <p className="text-sm text-danger">{changeFDError}</p>}
+            {changeFDError && <Alert tone="danger">{changeFDError}</Alert>}
             <div className="flex justify-end gap-2">
               <Button variant="secondary" type="button" onClick={() => setChangeFDRow(null)}>
                 Annuler
               </Button>
               <Button type="submit" disabled={changeFDLoading}>
-                {changeFDLoading ? "Enregistrement..." : "Confirmer"}
+                {changeFDLoading ? "Enregistrement…" : "Changer de FD"}
               </Button>
             </div>
           </form>
@@ -773,10 +770,10 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
       <Modal open={!!editRelationRow} onClose={() => setEditRelationRow(null)} title="Modifier la relation de discipolat">
         {editRelationRow && (
           <form onSubmit={handleEditRelation} className="space-y-4">
-            <div className="px-3 py-2 bg-surface-sunken rounded-lg text-sm">
+            <div className="rounded-control border border-line px-3 py-2 text-sm">
               <span className="text-ink-muted">Disciple : </span>
               <strong className="text-ink">{fullName(editRelationRow.disciple)}</strong>
-              <span className="ml-2 text-xs text-ink-subtle">
+              <span className="ml-2 text-[13px] text-ink-muted">
                 {getDept(editRelationRow.disciple.departments)?.ministry?.name ?? "??"} / {getDept(editRelationRow.disciple.departments)?.name ?? "??"}
               </span>
             </div>
@@ -792,18 +789,33 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
               onChange={(e) => setEditRelationFirstMakerId(e.target.value)}
               options={members.map((m) => ({ value: m.id, label: memberLabel(m) }))}
             />
-            {editRelationError && <p className="text-sm text-danger">{editRelationError}</p>}
+            {editRelationError && <Alert tone="danger">{editRelationError}</Alert>}
             <div className="flex justify-end gap-2">
               <Button variant="secondary" type="button" onClick={() => setEditRelationRow(null)}>
                 Annuler
               </Button>
               <Button type="submit" disabled={editRelationLoading}>
-                {editRelationLoading ? "Enregistrement..." : "Enregistrer"}
+                {editRelationLoading ? "Enregistrement…" : "Enregistrer"}
               </Button>
             </div>
           </form>
         )}
       </Modal>
+
+      <ConfirmModal
+        open={pendingDelete !== null}
+        title={
+          isFD
+            ? `Détacher ${pendingDelete ? fullName(pendingDelete.disciple) : ""} ?`
+            : `Supprimer la relation de discipolat de ${pendingDelete ? fullName(pendingDelete.disciple) : ""} ?`
+        }
+        message={isFD ? "Ce disciple ne sera plus rattaché à vous." : "La relation est supprimée ; la fiche du disciple est conservée."}
+        confirmLabel={isFD ? "Détacher le disciple" : "Supprimer la relation"}
+        confirmingLabel={isFD ? "Détachement…" : "Suppression…"}
+        confirming={deleting}
+        onConfirm={() => { if (pendingDelete) void handleDelete(pendingDelete); }}
+        onCancel={() => setPendingDelete(null)}
+      />
     </>
   );
 }
@@ -929,56 +941,58 @@ function AppelTab({ churchId, canManage, filterMine, linkedMemberId }: { readonl
     return acc;
   }, {} as Record<string, { maker: { id: string; firstName: string; lastName: string }; disciples: DiscipleshipRow[] }>);
 
-  if (loadingEvents) return <p className="text-sm text-ink-subtle">Chargement des événements...</p>;
+  if (loadingEvents) return <SkeletonList rows={4} />;
   if (events.length === 0) return (
-    <p className="text-sm text-ink-muted">
-      Aucun événement suivi pour le discipolat.{" "}
-      <span className="text-ink-subtle">Activez le suivi discipolat sur un événement depuis Administration → Événements → Configurer.</span>
-    </p>
+    <EmptyState
+      title="Aucun événement suivi pour le discipolat"
+      description="Activez le suivi discipolat sur un événement depuis Administration → Événements → Configurer."
+    />
   );
 
   return (
     <div>
       {/* Event selector */}
-      <div className="flex flex-wrap items-end gap-4 mb-6 p-4 bg-surface border border-line rounded-lg">
-        <div className="flex-1 min-w-48">
-          <label htmlFor={`${uid}-event`} className="block text-xs font-medium text-ink-muted mb-1">Événement</label>
-          <select
+      <div className="mb-6 flex flex-wrap items-end gap-4 rounded-card border border-line bg-surface p-4">
+        <div className="min-w-48 flex-1">
+          <Select
             id={`${uid}-event`}
+            label="Événement"
             value={selectedEventId}
             onChange={(e) => setSelectedEventId(e.target.value)}
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-          >
-            {events.map((ev) => (
-              <option key={ev.id} value={ev.id}>
-                {ev.title} — {new Date(ev.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}
-              </option>
-            ))}
-          </select>
+            options={events.map((ev) => ({
+              value: ev.id,
+              label: `${ev.title} — ${new Date(ev.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}`,
+            }))}
+          />
         </div>
         {canManage && (
           <Button onClick={handleSave} disabled={saving || loadingAttendance}>
-            {saving ? "Enregistrement..." : "Enregistrer l'appel"}
+            {saving ? "Enregistrement…" : "Enregistrer l'appel"}
           </Button>
         )}
-        {saved && <span className="text-sm text-success font-medium">Appel enregistré ✓</span>}
+        {saved && (
+          <span role="status" className="flex items-center gap-1.5 text-sm font-semibold text-success">
+            <Check aria-hidden="true" className="size-4" strokeWidth={1.75} />
+            Appel enregistré
+          </span>
+        )}
       </div>
 
-      {error && <p className="text-sm text-danger mb-4">{error}</p>}
+      {error && <Alert tone="danger" className="mb-4">{error}</Alert>}
 
-      {loadingAttendance && <p className="text-sm text-ink-subtle">Chargement...</p>}
+      {loadingAttendance && <SkeletonList rows={4} />}
       {!loadingAttendance && discipleships.length === 0 && (
-        <p className="text-sm text-ink-subtle">Aucun disciple enregistré.</p>
+        <EmptyState size="sm" title="Aucun disciple enregistré" />
       )}
       {!loadingAttendance && discipleships.length > 0 && (
         <div className="space-y-4">
           {Object.values(grouped).map(({ maker, disciples }) => (
-            <div key={maker.id} className="bg-surface rounded-lg shadow-card border border-line overflow-hidden">
-              <div className="px-4 py-3 bg-surface-sunken border-b border-line">
-                <span className="text-sm font-semibold text-ink-muted">
+            <div key={maker.id} className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+              <div className="border-b border-line bg-surface-sunken px-4 py-3">
+                <span className="text-sm font-semibold text-ink">
                   FD : {fullName(maker)}
                 </span>
-                <span className="ml-3 text-xs text-ink-subtle">
+                <span className="ml-3 text-[13px] text-ink-muted">
                   {disciples.filter((d) => presentIds.has(d.discipleId)).length} / {disciples.length} présent{disciples.length > 1 ? "s" : ""}
                 </span>
               </div>
@@ -988,24 +1002,22 @@ function AppelTab({ churchId, canManage, filterMine, linkedMemberId }: { readonl
                   return (
                     <label
                       key={d.id}
-                      className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
+                      className={`flex min-h-11 cursor-pointer flex-wrap items-center gap-3 px-4 py-3 transition-colors ${
                         present ? "bg-success-soft" : "hover:bg-surface-sunken"
                       } ${!canManage ? "pointer-events-none" : ""}`}
                     >
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={present}
                         onChange={() => canManage && togglePresence(d.discipleId)}
                         disabled={!canManage}
-                        className="h-4 w-4 rounded border-control-line text-brand-text focus:ring-focus"
                       />
-                      <span className="text-sm font-medium text-ink">{fullName(d.disciple)}</span>
-                      <span className="text-xs text-ink-subtle">
+                      <span className="text-[15px] font-semibold text-ink">{fullName(d.disciple)}</span>
+                      <span className="text-[13px] text-ink-muted">
                         {getDept(d.disciple.departments)?.ministry?.name ?? "??"} / {getDept(d.disciple.departments)?.name ?? "??"}
                       </span>
-                      <span className={`ml-auto text-xs font-medium ${present ? "text-success" : "text-ink-subtle"}`}>
+                      <StatusChip tone={present ? "success" : "neutral"} className="ml-auto">
                         {present ? "Présent" : "Absent"}
-                      </span>
+                      </StatusChip>
                     </label>
                   );
                 })}
@@ -1022,6 +1034,7 @@ function AppelTab({ churchId, canManage, filterMine, linkedMemberId }: { readonl
 
 function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonly churchId: string; readonly canExport: boolean; readonly filterMine: boolean; readonly linkedMemberId: string | null }) {
   const uid = useId();
+  const toast = useToast();
   const [from, setFrom] = useState(firstDayOfMonthISO());
   const [to, setTo] = useState(todayISO());
   const [data, setData] = useState<{ period: { from: string; to: string }; trackedEvents: { id: string; title: string; date: string }[]; stats: StatRow[] } | null>(null);
@@ -1053,7 +1066,7 @@ function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonl
       const res = await fetch(`/api/discipleships/export?churchId=${churchId}&from=${from}&to=${to}`);
       if (!res.ok) {
         const json = await res.json().catch(() => ({}));
-        alert((json as { error?: string }).error ?? "Erreur lors de l'export");
+        toast.error((json as { error?: string }).error ?? "Erreur lors de l'export");
         return;
       }
       const blob = await res.blob();
@@ -1064,7 +1077,7 @@ function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonl
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      alert("Erreur lors de l'export");
+      toast.error("Erreur lors de l'export");
     } finally {
       setExporting(false);
     }
@@ -1073,47 +1086,29 @@ function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonl
   return (
     <div>
       {/* Period selector */}
-      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3 sm:gap-4 mb-6 p-4 bg-surface border border-line rounded-lg">
-        <div className="flex gap-3 flex-1">
-          <div className="flex-1">
-            <label htmlFor={`${uid}-from`} className="block text-xs font-medium text-ink-muted mb-1">Du</label>
-            <input
-              id={`${uid}-from`}
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-            />
-          </div>
-          <div className="flex-1">
-            <label htmlFor={`${uid}-to`} className="block text-xs font-medium text-ink-muted mb-1">Au</label>
-            <input
-              id={`${uid}-to`}
-              type="date"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-            />
-          </div>
+      <div className="mb-6 flex flex-col gap-3 rounded-card border border-line bg-surface p-4 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4">
+        <div className="flex flex-1 gap-3">
+          <Input id={`${uid}-from`} label="Du" type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="flex-1" />
+          <Input id={`${uid}-to`} label="Au" type="date" value={to} onChange={(e) => setTo(e.target.value)} className="flex-1" />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button onClick={fetchStats} disabled={loading}>
-            {loading ? "Chargement..." : "Actualiser"}
+            {loading ? "Chargement…" : "Actualiser"}
           </Button>
           {canExport && (
             <Button variant="secondary" onClick={handleExport} disabled={exporting}>
-              {exporting ? "Export..." : "Exporter Excel"}
+              {exporting ? "Export…" : "Exporter en Excel"}
             </Button>
           )}
         </div>
       </div>
 
-      {error && <p className="text-sm text-danger mb-4">{error}</p>}
+      {error && <Alert tone="danger" className="mb-4">{error}</Alert>}
 
       {data && (
         <>
           {data.trackedEvents.length === 0 ? (
-            <p className="text-sm text-ink-subtle">Aucun événement suivi sur cette période.</p>
+            <EmptyState size="sm" title="Aucun événement suivi sur cette période" />
           ) : (
             (() => {
               const displayedStats = filterMine && linkedMemberId
@@ -1121,13 +1116,13 @@ function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonl
                 : data.stats;
               return (
             <>
-              <p className="text-xs text-ink-subtle mb-3">
+              <p className="mb-3 text-[13px] leading-[18px] text-ink-muted">
                 {data.trackedEvents.length} événement{data.trackedEvents.length > 1 ? "s" : ""} suivi{data.trackedEvents.length > 1 ? "s" : ""} sur la période
-                {filterMine && <span className="ml-2 text-brand-text font-medium">— Mes disciples uniquement</span>}
+                {filterMine && <span className="ml-2 font-semibold text-ink">— Mes disciples uniquement</span>}
               </p>
-              <div className="bg-surface rounded-lg shadow-card border border-line overflow-hidden">
+              <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
                 {displayedStats.length === 0 ? (
-                  <p className="text-sm text-ink-subtle p-6">Aucun disciple enregistré.</p>
+                  <EmptyState size="sm" title="Aucun disciple enregistré" />
                 ) : (
                   <>
                   {/* Desktop table */}
@@ -1151,16 +1146,16 @@ function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonl
                             </td>
                             <td className="px-4 py-3">
                               {row.stats.rate === null ? (
-                                <span className="text-ink-subtle">—</span>
+                                <span className="text-ink-muted">—</span>
                               ) : (
                                 <div className="flex items-center gap-2">
-                                  <div className="w-24 h-2 bg-surface-sunken rounded-full overflow-hidden">
+                                  <div className="h-2 w-24 overflow-hidden rounded-full bg-line">
                                     <div
                                       className={`h-full rounded-full transition-all ${rateBarClass(row.stats.rate)}`}
                                       style={{ width: `${row.stats.rate}%` }}
                                     />
                                   </div>
-                                  <span className="text-xs font-medium text-ink-muted">{row.stats.rate}%</span>
+                                  <span className="text-[13px] font-semibold text-ink-muted">{row.stats.rate}%</span>
                                 </div>
                               )}
                             </td>
@@ -1177,22 +1172,22 @@ function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonl
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="font-medium text-ink">{fullName(row.disciple)}</div>
-                            <div className="text-xs text-ink-subtle">FD : {fullName(row.discipleMaker)}</div>
+                            <div className="text-[13px] leading-[18px] text-ink-muted">FD : {fullName(row.discipleMaker)}</div>
                           </div>
                           <div className="text-right">
-                            <div className="text-sm font-medium text-ink-muted">{row.stats.present}/{row.stats.totalEvents}</div>
-                            <div className="text-xs text-ink-subtle">présences</div>
+                            <div className="text-sm font-semibold text-ink">{row.stats.present}/{row.stats.totalEvents}</div>
+                            <div className="text-[13px] text-ink-muted">{row.stats.present > 1 ? "présences" : "présence"}</div>
                           </div>
                         </div>
                         {row.stats.rate !== null && (
                           <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 bg-surface-sunken rounded-full overflow-hidden">
+                            <div className="h-2 flex-1 overflow-hidden rounded-full bg-line">
                               <div
                                 className={`h-full rounded-full transition-all ${rateBarClass(row.stats.rate)}`}
                                 style={{ width: `${row.stats.rate}%` }}
                               />
                             </div>
-                            <span className="text-xs font-bold text-ink-muted w-10 text-right">{row.stats.rate}%</span>
+                            <span className="text-[13px] font-semibold text-ink-muted w-10 text-right">{row.stats.rate}%</span>
                           </div>
                         )}
                       </div>

@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Modal from "@/components/ui/Modal";
-import Select from "@/components/ui/Select";
-import Button from "@/components/ui/Button";
+import { Alert, Button, FilterChip, Modal, Select } from "@/components/ui";
 
 export interface ResponsibilitySelection {
   userId: string;
@@ -74,14 +72,14 @@ export default function ResponsibilityModal({
         {subtitle && <p className="text-sm text-ink-muted">{subtitle}</p>}
 
         {fixedUserLabel ? (
-          <p className="text-sm">
-            <span className="text-ink-subtle">Personne : </span>
+          <p className="text-[15px] leading-[22px]">
+            <span className="text-ink-muted">Personne : </span>
             <span className="font-medium text-ink">{fixedUserLabel}</span>
           </p>
         ) : (
           <Select
             label="Personne"
-            placeholder="-- Sélectionner --"
+            placeholder="Choisir"
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
             options={userOptions ?? []}
@@ -89,14 +87,14 @@ export default function ResponsibilityModal({
         )}
 
         {fixedTargetLabel ? (
-          <p className="text-sm">
-            <span className="text-ink-subtle">{mode === "minister" ? "Ministère : " : "Département : "}</span>
+          <p className="text-[15px] leading-[22px]">
+            <span className="text-ink-muted">{mode === "minister" ? "Ministère : " : "Département : "}</span>
             <span className="font-medium text-ink">{fixedTargetLabel}</span>
           </p>
         ) : (
           <Select
             label={mode === "minister" ? "Ministère" : "Département"}
-            placeholder="-- Sélectionner --"
+            placeholder="Choisir"
             value={targetId}
             onChange={(e) => setTargetId(e.target.value)}
             options={targetOptions ?? []}
@@ -105,36 +103,24 @@ export default function ResponsibilityModal({
 
         {mode === "department-head" && (
           <fieldset className="min-w-0">
-            <legend className="block text-sm font-medium text-ink-muted mb-2">Type</legend>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setIsDeputy(false)}
-                className={`flex-1 py-2 text-sm rounded-lg border-2 font-medium transition-colors ${
-                  !isDeputy ? "border-brand bg-brand text-on-brand" : "border-line text-ink-muted hover:bg-surface-sunken"
-                }`}
-              >
+            <legend className="mb-2 block text-sm font-semibold text-ink">Type</legend>
+            <div className="flex flex-wrap gap-2">
+              <FilterChip pressed={!isDeputy} onClick={() => setIsDeputy(false)}>
                 Responsable principal
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsDeputy(true)}
-                className={`flex-1 py-2 text-sm rounded-lg border-2 font-medium transition-colors ${
-                  isDeputy ? "border-control-line bg-surface-sunken text-ink-muted" : "border-line text-ink-muted hover:bg-surface-sunken"
-                }`}
-              >
+              </FilterChip>
+              <FilterChip pressed={isDeputy} onClick={() => setIsDeputy(true)}>
                 Responsable adjoint
-              </button>
+              </FilterChip>
             </div>
           </fieldset>
         )}
 
-        {error && <p className="text-sm text-danger">{error}</p>}
+        {error && <Alert tone="danger">{error}</Alert>}
 
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="secondary" onClick={onClose}>Annuler</Button>
           <Button onClick={handleSubmit} disabled={!userId || !targetId || loading}>
-            {loading ? "…" : submitLabel}
+            {loading ? "Enregistrement…" : submitLabel}
           </Button>
         </div>
       </div>

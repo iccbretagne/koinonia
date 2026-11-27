@@ -5,6 +5,7 @@ import AccessTabs from "./AccessTabs";
 import PeopleList from "./PeopleList";
 import RolesOverview from "./RolesOverview";
 import RequestsPanel from "./RequestsPanel";
+import { PageHeader } from "@/components/ui";
 
 export default async function AccessPage() {
   const session = await requireAuth();
@@ -107,13 +108,11 @@ export default async function AccessPage() {
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-ink">Accès &amp; rôles</h1>
-        <p className="text-sm text-ink-muted mt-1">
-          Retrouvez une personne pour voir tous ses accès, ou un rôle pour voir tous ses détenteurs.
-        </p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Accès & rôles"
+        description="Retrouvez une personne pour voir tous ses accès, ou un rôle pour voir tous ses détenteurs."
+      />
       <AccessTabs
         requestCount={pendingRequests.length}
         peopleTab={

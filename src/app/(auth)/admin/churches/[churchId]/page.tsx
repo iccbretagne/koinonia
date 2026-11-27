@@ -8,6 +8,7 @@ import ChurchMcpCard from "./ChurchMcpCard";
 import ChurchSitesCard from "./ChurchSitesCard";
 import { registry } from "@/lib/registry";
 import { ticketingSitesEnabled } from "@/lib/ticketing-sites-flag";
+import { PageHeader } from "@/components/ui";
 
 export default async function ChurchDetailPage({
   params,
@@ -79,10 +80,8 @@ export default async function ChurchDetailPage({
   };
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-ink mb-6">
-        {canEditIdentity ? "Modifier l'église" : "Paramètres de l'église"}
-      </h1>
+    <div className="flex flex-col gap-6">
+      <PageHeader title={canEditIdentity ? "Modifier l'église" : "Paramètres de l'église"} />
       <ChurchEditClient
         canEditIdentity={canEditIdentity}
         church={{

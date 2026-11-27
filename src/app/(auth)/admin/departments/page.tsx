@@ -1,6 +1,7 @@
 import { requireChurchPermission, getCurrentChurchId, requireAuth, getUserDepartmentScope } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import DepartmentsClient from "./DepartmentsClient";
+import { PageHeader } from "@/components/ui";
 
 export default async function DepartmentsPage() {
   const session = await requireAuth();
@@ -40,8 +41,8 @@ export default async function DepartmentsPage() {
   });
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-ink mb-6">Départements</h1>
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Départements" />
       <DepartmentsClient
         initialDepartments={departments}
         ministries={ministries.map((m) => ({

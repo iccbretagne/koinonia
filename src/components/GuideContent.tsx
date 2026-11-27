@@ -594,7 +594,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Administrer l'assistant",
-    description: "Le Super Admin active l'assistant pour toute l'instance dans « Assistant » (Configuration) et suit son usage. L'onglet « Questions à traiter » regroupe les questions restées sans réponse ou jugées « Pas utile », anonymes : « Répondre » ajoute une fiche à la base, « Rattacher à… » en fait une formulation d'une fiche existante, « Hors sujet » la classe. La réponse sert dès la question suivante. L'onglet « Base » permet de corriger, masquer ou rétablir les fiches fournies et d'en ajouter ; une mise à jour de Koinonia ne les efface pas. L'Admin d'une église peut couper l'assistant pour son église dans « Paramètres de l'église ».",
+    description: "Le Super Admin active l'assistant pour toute l'instance dans « Assistant » (Configuration) et suit son usage. L'onglet « Questions à traiter » regroupe les questions restées sans réponse ou jugées « Pas utile », anonymes : « Répondre » ajoute une fiche à la base, « Rattacher à une fiche » en fait une formulation d'une fiche existante, « Classer hors sujet » la classe. La réponse sert dès la question suivante. L'onglet « Base » permet de corriger, masquer ou rétablir les fiches fournies et d'en ajouter ; une mise à jour de Koinonia ne les efface pas. L'Admin d'une église peut couper l'assistant pour son église dans « Paramètres de l'église ».",
     category: "Profil",
     screenshotTitle: "Administration de l'assistant",
     screenshotFile: "guide-assistant-admin.png",
