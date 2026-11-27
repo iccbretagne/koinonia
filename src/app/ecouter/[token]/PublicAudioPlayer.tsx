@@ -30,6 +30,7 @@ export default function PublicAudioPlayer({ token, backHref, service }: Props) {
       }}
       backHref={backHref}
       backLabel="Retour à l'événement"
+      withBottomNav={false}
       // Pas de bouton Partager ici : la page est déjà atteinte via un lien de partage,
       // et l'expérience de la page publique doit rester strictement inchangée (spec 021).
     />

@@ -41,6 +41,11 @@ interface Props {
   readonly onShare?: (segmentId: string | null) => void;
   readonly backHref?: string | null;
   readonly backLabel?: string;
+  /**
+   * Barre du bas mobile présente (espace connecté) : le lecteur fixe se pose 64 px au-dessus.
+   * `false` sur la page publique d'écoute, qui n'en a pas : le lecteur touche le bas de l'écran.
+   */
+  readonly withBottomNav?: boolean;
 }
 
 function formatDuration(ms: number): string {
@@ -50,7 +55,7 @@ function formatDuration(ms: number): string {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backHref, backLabel }: Props) {
+export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backHref, backLabel, withBottomNav = true }: Props) {
   const segments = service.segments;
   const [currentId, setCurrentId] = useState<string | null>(segments[0]?.id ?? null);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -163,7 +168,7 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
   );
 
   return (
-    <div className="pb-[calc(192px+env(safe-area-inset-bottom))] md:pb-0">
+    <div className={`${withBottomNav ? "pb-[calc(192px+env(safe-area-inset-bottom))]" : "pb-[calc(128px+env(safe-area-inset-bottom))]"} md:pb-0`}>
       {backHref && (
         <div className="mb-4">
           <Link href={backHref} className={`${buttonClasses("ghost", "sm")} -ml-3`}>
@@ -230,7 +235,7 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
       </ul>
 
       {current && (
-        <div data-k-bottom-bar className="fixed bottom-[calc(64px+env(safe-area-inset-bottom))] md:bottom-auto inset-x-0 md:static bg-surface border-t md:border border-line md:rounded-card shadow-float md:shadow-card p-3 md:p-4 z-20">
+        <div data-k-bottom-bar className={`fixed ${withBottomNav ? "bottom-[calc(64px+env(safe-area-inset-bottom))]" : "bottom-0 pb-[calc(12px+env(safe-area-inset-bottom))]"} md:bottom-auto inset-x-0 md:static bg-surface border-t md:border border-line md:rounded-card shadow-float md:shadow-card p-3 md:p-4 z-sticky`}>
           <div className="flex items-center justify-between mb-1">
             <p className="font-medium text-ink text-sm truncate pr-2">{current.title}</p>
             <select

@@ -51,7 +51,7 @@ export function saveProgress(segmentId: string, position: number, duration: numb
   writeStore(store);
 }
 
-/** Supprime explicitement une entrée — utilisé quand l'auditeur choisit « Depuis le début ». */
+/** Supprime explicitement une entrée — utilisé quand l'auditeur choisit « Reprendre du début ». */
 export function clearProgress(segmentId: string): void {
   const store = readStore();
   delete store[segmentId];
