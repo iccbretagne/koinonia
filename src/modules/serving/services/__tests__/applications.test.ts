@@ -266,10 +266,11 @@ describe("countServingQueue (spec 092, file de l'Accueil)", () => {
       } as ServingActor["user"],
     };
     prismaMock.department.findMany.mockResolvedValue([{ id: "d1", ministryId: "m1" }, { id: "d2", ministryId: "m1" }]);
-    prismaMock.servingAssignment.count.mockResolvedValueOnce(4).mockResolvedValueOnce(2);
+    prismaMock.servingAssignment.count.mockResolvedValueOnce(4);
+    prismaMock.servingApplication.count.mockResolvedValueOnce(2);
     await expect(countServingQueue(lead)).resolves.toEqual({ view: "department", count: 2 });
-    expect(prismaMock.servingAssignment.count).toHaveBeenLastCalledWith({
-      where: { status: "PENDING", departmentId: { in: ["d1"] }, application: { churchId: CHURCH } },
+    expect(prismaMock.servingApplication.count).toHaveBeenLastCalledWith({
+      where: { churchId: CHURCH, assignments: { some: { status: "PENDING", departmentId: { in: ["d1"] } } } },
     });
   });
 

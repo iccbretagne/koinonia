@@ -213,7 +213,11 @@ export async function countServingQueue(
   if (deptIds.length === 0) return null;
   const [any, count] = await Promise.all([
     prisma.servingAssignment.count({ where: { departmentId: { in: deptIds }, application: { churchId: actor.churchId } } }),
-    prisma.servingAssignment.count({ where: { status: "PENDING", departmentId: { in: deptIds }, application: { churchId: actor.churchId } } }),
+    // Fiches distinctes (comme l'onglet), pas affectations : une fiche affectée à deux de ses
+    // départements ne compte qu'une fois.
+    prisma.servingApplication.count({
+      where: { churchId: actor.churchId, assignments: { some: { status: "PENDING", departmentId: { in: deptIds } } } },
+    }),
   ]);
   // Même condition que `hasServingAccess` : un responsable sans aucune affectation n'a pas l'espace.
   if (any === 0) return null;
