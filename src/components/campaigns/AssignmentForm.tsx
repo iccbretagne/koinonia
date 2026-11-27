@@ -1181,6 +1181,13 @@ export default function AssignmentForm({
           <span className="whitespace-pre-line">{view.assignment.reviewReason ?? "Reprenez vos réponses puis soumettez à nouveau."}</span>
         </Alert>
       )}
+      {status === "IN_PROGRESS" && view.assignment.reopened && editable && (
+        <Alert tone="warning" title="Questionnaire rouvert : à soumettre de nouveau.">
+          <span className="whitespace-pre-line">
+            {view.assignment.reviewReason ?? "Vos réponses sont conservées : reprenez-les si besoin puis soumettez à nouveau."}
+          </span>
+        </Alert>
+      )}
       {readOnlyNotice}
       {view.form.intro && <p className="whitespace-pre-line text-[15px] leading-6 text-ink">{view.form.intro}</p>}
 

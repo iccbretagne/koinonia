@@ -98,6 +98,7 @@ export function previewAssignmentView(
       status: "NOT_STARTED",
       dueAt: dueDate(a.dueAt) ?? dueDate(campaign.dueAt),
       reviewReason: null,
+      reopened: false,
       startedAt: null,
       submittedAt: null,
       submittedByName: null,

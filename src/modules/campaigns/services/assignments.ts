@@ -147,6 +147,12 @@ export interface AssignmentView {
     /** Échéance de l'affectation, à défaut celle de la campagne. */
     dueAt: Date | null;
     reviewReason: string | null;
+    /**
+     * Contribution rouverte par un gestionnaire (« Soumis » → « En cours », spec 091) : seul ce
+     * chemin pose `reviewedAt` sur une contribution « En cours » (le démarrage part de « Non
+     * commencé », qui n'a jamais été revu). Le motif éventuel est dans `reviewReason`.
+     */
+    reopened: boolean;
     startedAt: Date | null;
     submittedAt: Date | null;
     submittedByName: string | null;
@@ -184,6 +190,7 @@ export async function getAssignmentView(access: AssignmentAccess): Promise<Assig
       status: true,
       dueAt: true,
       reviewReason: true,
+      reviewedAt: true,
       startedAt: true,
       submittedAt: true,
       submittedByName: true,
@@ -245,6 +252,7 @@ export async function getAssignmentView(access: AssignmentAccess): Promise<Assig
       status: a.status,
       dueAt: a.dueAt ?? a.campaign.dueAt,
       reviewReason: a.reviewReason,
+      reopened: a.status === "IN_PROGRESS" && a.reviewedAt !== null,
       startedAt: a.startedAt,
       submittedAt: a.submittedAt,
       submittedByName: a.submittedByName,

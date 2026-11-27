@@ -72,6 +72,7 @@ type Row = { code: string; value: unknown; qualifier: string; note: string | nul
 let answers: Map<string, Row>;
 let assignmentStatus: string;
 let campaignStatus: string;
+let review: { reviewReason: string | null; reviewedAt: Date | null };
 
 const access = (role: "respondent" | "manager" = "respondent") =>
   ({
@@ -86,6 +87,7 @@ beforeEach(() => {
   answers = new Map();
   assignmentStatus = "NOT_STARTED";
   campaignStatus = "OPEN";
+  review = { reviewReason: null, reviewedAt: null };
 
   db.campaignForm.findUnique.mockImplementation(async () => ({
     revision: 3,
@@ -101,7 +103,7 @@ beforeEach(() => {
       label: "Intégration",
       status: assignmentStatus,
       dueAt: null,
-      reviewReason: null,
+      ...review,
       startedAt: null,
       submittedAt: null,
       submittedByName: null,
@@ -226,6 +228,26 @@ describe("submitAssignment / reviewAssignment", () => {
     await expect(reviewAssignment(access("manager"), { action: "request_changes", reason: "x" })).rejects.toMatchObject({
       statusCode: 409,
     });
+  });
+});
+
+describe("getAssignmentView : contribution rouverte", () => {
+  it("« En cours » revue par un gestionnaire ⇒ rouverte, avec le motif", async () => {
+    assignmentStatus = "IN_PROGRESS";
+    review = { reviewReason: "Chiffre à revoir", reviewedAt: new Date() };
+    const view = await getAssignmentView(access());
+    expect(view.assignment).toMatchObject({ reopened: true, reviewReason: "Chiffre à revoir" });
+  });
+
+  it("« En cours » jamais revue (démarrée par le répondant) ⇒ pas rouverte", async () => {
+    assignmentStatus = "IN_PROGRESS";
+    expect((await getAssignmentView(access())).assignment.reopened).toBe(false);
+  });
+
+  it("correction demandée : le motif reste celui de la correction, pas une réouverture", async () => {
+    assignmentStatus = "CHANGES_REQUESTED";
+    review = { reviewReason: "B à vérifier", reviewedAt: new Date() };
+    expect((await getAssignmentView(access())).assignment.reopened).toBe(false);
   });
 });
 
