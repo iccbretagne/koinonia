@@ -55,7 +55,8 @@ test("liens publics et pages de compte : jamais redirigés", async ({ asRole }) 
 test("entrée hostile : jamais vers une autre origine", async ({ asRole, baseURL }) => {
   const page = await asRole("admin");
   for (const path of ["//evil.example/events", "/accounting/requests/%2F%2Fevil.example", "/accounting/requests/%5Cevil.example", "/accounting/requests/%2e%2e"]) {
-    const res = await page.request.get(path, { maxRedirects: 0 });
+    // Adresse absolue construite à la main : le client ne doit pas lire `//x` comme un autre hôte.
+    const res = await page.request.get(`${baseURL}${path}`, { maxRedirects: 0 });
     const location = res.headers()["location"];
     if (location) expect(new URL(location, baseURL).origin, path).toBe(new URL(baseURL!).origin);
   }

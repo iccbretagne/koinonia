@@ -39,6 +39,7 @@ Rôles : `super-admin`, `admin`, `secretaire`, `ministre`, `resp-accueil`, `resp
 | `navigation-roles.spec.ts` | espaces visibles par rôle (sidebar, barre du bas, panneau « Plus ») ; table `NAV_BY_ROLE` à mettre à jour avec `src/lib/navigation.ts` |
 | `mobile-back.spec.ts` | chevron « Retour à … » sur les pages de détail, nom de l'église sur les pages de navigation |
 | `a11y.spec.ts` | axe (WCAG 2 A et AA) sur `/accueil` par rôle et viewport, panneau « Plus », palette ; violations connues dans `KNOWN_VIOLATIONS` |
+| `legacy-redirects.spec.ts` | spec 092, lot 4 : ancienne adresse → nouvelle par rôle (307, même origine, sans cache, requête conservée) ; liens publics, pages de compte et méthodes autres que GET/HEAD jamais redirigés ; entrées hostiles |
 | `forbidden.spec.ts` | un STAR sur une URL d'administration : HTTP 200 + page « Accès refusé » (comportement actuel) |
 
 ## Sécurité
