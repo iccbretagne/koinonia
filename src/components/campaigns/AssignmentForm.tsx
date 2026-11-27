@@ -37,8 +37,7 @@ import {
   type Rule,
   type ScalarItem,
 } from "@/modules/campaigns/schemas";
-import { allowedQualifiers, completeness, flattenItems, validateAnswerValue } from "@/modules/campaigns/services/definition";
-import { evaluateRules, ruleScope } from "@/modules/campaigns/services/rules";
+import { allowedQualifiers, completeness, evaluateRules, flattenItems, ruleScope, validateAnswerValue } from "@/modules/campaigns/schemas";
 import type { AssignmentView } from "@/modules/campaigns";
 
 /**

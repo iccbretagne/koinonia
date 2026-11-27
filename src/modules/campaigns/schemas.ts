@@ -489,4 +489,5 @@ export {
   type PreviewFormInput,
   type PreviewAssignmentInput,
 } from "./services/preview";
-export { validateDefinition, flattenItems, completeness, allowedQualifiers, type Completeness } from "./services/definition";
+export { validateDefinition, flattenItems, completeness, allowedQualifiers, validateAnswerValue, type Completeness } from "./services/definition";
+export { evaluateRules, ruleScope } from "./services/rules";
