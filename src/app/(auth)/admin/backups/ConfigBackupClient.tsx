@@ -383,32 +383,32 @@ function ImportSection() {
 
 export default function ConfigBackupClient() {
   return (
-    <div className="flex max-w-3xl flex-col gap-4">
-      <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-        <div className="border-b border-line px-5 py-4">
+    <div className="flex max-w-3xl flex-col gap-6">
+      <section className="flex flex-col gap-3">
+        <div>
           <h3 className="font-display text-[17px] font-semibold leading-6 text-ink">Exporter la configuration</h3>
           <p className="mt-0.5 text-[13px] leading-[18px] text-ink-muted">
             Génère un fichier JSON contenant la structure organisationnelle (églises, ministères,
             départements), les membres et/ou les liaisons utilisateurs.
           </p>
         </div>
-        <div className="p-5">
+        <div>
           <ExportSection />
         </div>
-      </div>
+      </section>
 
-      <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-        <div className="border-b border-line px-5 py-4">
+      <section className="flex flex-col gap-3">
+        <div>
           <h3 className="font-display text-[17px] font-semibold leading-6 text-ink">Importer une configuration</h3>
           <p className="mt-0.5 text-[13px] leading-[18px] text-ink-muted">
             Restaure partiellement la configuration depuis un fichier JSON exporté.
             Un résumé est affiché avant toute modification.
           </p>
         </div>
-        <div className="p-5">
+        <div>
           <ImportSection />
         </div>
-      </div>
+      </section>
     </div>
   );
 }

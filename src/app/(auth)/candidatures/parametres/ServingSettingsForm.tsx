@@ -57,7 +57,7 @@ export default function ServingSettingsForm({ churchId, initial }: Props) {
 
   return (
     <form onSubmit={save} className="space-y-4">
-      <section className="rounded-card border border-line bg-surface p-4 shadow-card sm:p-5 space-y-4">
+      <section className="space-y-4">
         <h2 className="font-display text-[17px] font-semibold text-ink">Durées</h2>
         <Input
           label="Durée d'observation (mois)"
@@ -94,7 +94,7 @@ export default function ServingSettingsForm({ churchId, initial }: Props) {
         />
       </section>
 
-      <section className="rounded-card border border-line bg-surface p-4 shadow-card sm:p-5 space-y-4">
+      <section className="space-y-4">
         <h2 className="font-display text-[17px] font-semibold text-ink">Adresse email du PVS</h2>
         <p className="text-sm text-ink-muted">
           Reçoit une copie des notifications de nouvelle candidature et de renvoi, avec un lien vers Koinonia seulement.

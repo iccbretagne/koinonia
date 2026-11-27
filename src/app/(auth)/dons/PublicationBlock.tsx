@@ -28,7 +28,7 @@ export default function PublicationBlock({
 }) {
   const status = publicationStatus(savedEnabled, draftEnabled);
   return (
-    <section aria-labelledby="giving-publication" className="rounded-card border border-line bg-surface p-5">
+    <section aria-labelledby="giving-publication">
       <div className="flex items-start gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">

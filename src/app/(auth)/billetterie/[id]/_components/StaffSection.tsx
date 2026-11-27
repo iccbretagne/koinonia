@@ -238,7 +238,7 @@ export default function StaffSection({
         </ul>
       )}
 
-      <fieldset className="space-y-3 rounded-card border border-line bg-surface p-4">
+      <fieldset className="space-y-3">
         <legend className="px-1 font-semibold text-ink">Affecter</legend>
         <Select
           label="Qui"

@@ -118,7 +118,7 @@ export default function JustificationPanel({ justification: initial, requestId, 
   }
 
   return (
-    <section className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card md:p-5">
+    <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Justificatifs</h2>
         <StatusChip tone={chip.tone}>{chip.label}</StatusChip>

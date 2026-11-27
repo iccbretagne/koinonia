@@ -100,7 +100,7 @@ export default function PastoralProfilesAdmin({ churchId, profiles: initial, use
   return (
     <div className="flex flex-col gap-6">
       {/* Formulaire */}
-      <div className="rounded-card border border-line bg-surface p-5 shadow-card">
+      <div>
         <h2 className="mb-4 font-display text-[17px] font-semibold leading-6 text-ink">
           {editId ? "Modifier le profil" : "Créer un profil"}
         </h2>

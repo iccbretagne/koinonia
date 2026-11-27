@@ -25,7 +25,7 @@ import type { DomainView } from "@/modules/ticketing";
 
 function Card({ title, children }: { readonly title: string; readonly children: ReactNode }) {
   return (
-    <section className="space-y-3 rounded-card border border-line bg-surface p-4">
+    <section className="space-y-3">
       <h2 className="font-semibold text-ink">{title}</h2>
       {children}
     </section>

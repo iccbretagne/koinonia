@@ -82,7 +82,7 @@ export default async function CareFollowupDetailPage({
         </div>
       </PageHeader>
 
-      <div className="mb-4 flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card md:p-5">
+      <div className="mb-4 flex flex-col gap-3">
         {followUp.assignedConseillerMsdp && (
           <p className="text-sm text-ink-muted">
             Référent : <strong>{followUp.assignedConseillerMsdp.name ?? followUp.assignedConseillerMsdp.email}</strong>

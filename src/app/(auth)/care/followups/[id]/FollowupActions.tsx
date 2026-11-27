@@ -78,7 +78,7 @@ export default function FollowupActions({
 
   // Une seule action principale à l'écran : l'étape suivante, sinon l'affectation, sinon la réouverture.
   const primary = canWorkflow ? "workflow" : canAssign || canReassign ? "assign" : canReopen ? "reopen" : null;
-  const card = "flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card md:p-5";
+  const card = "flex flex-col gap-3";
   const footer = "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end";
   const cancel = (
     <Button size="sm" variant="secondary" onClick={() => setMode("none")} disabled={loading}>

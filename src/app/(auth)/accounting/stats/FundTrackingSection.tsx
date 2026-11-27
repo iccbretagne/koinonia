@@ -40,7 +40,7 @@ export default function FundTrackingSection({ data }: { readonly data: FundTrack
   const globalRate = rate(totals);
 
   return (
-    <section className="flex flex-col gap-5 rounded-card border border-line bg-surface p-4 shadow-card md:p-5">
+    <section className="flex flex-col gap-5">
       <div>
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Suivi de l&apos;argent versé</h2>
         <p className="mt-0.5 text-[15px] leading-[22px] text-ink-muted">

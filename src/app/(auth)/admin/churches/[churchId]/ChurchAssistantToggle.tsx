@@ -32,7 +32,7 @@ export default function ChurchAssistantToggle({ churchId, disabled }: { readonly
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+    <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="min-w-0 flex-1 font-display text-[17px] font-semibold leading-6 text-ink">Assistant</h2>
         <StatusChip tone={disabled ? "neutral" : "success"}>{disabled ? "Coupé" : "Proposé"}</StatusChip>

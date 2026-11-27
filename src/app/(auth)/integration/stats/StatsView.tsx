@@ -123,7 +123,7 @@ export default function StatsView({
       </div>
 
       {/* Funnel */}
-      <div className="rounded-card border border-line bg-surface p-5 shadow-card">
+      <div>
         <h2 className="mb-4 font-display text-[17px] font-semibold text-ink">Entonnoir de progression</h2>
         {total === 0 ? (
           <p className="text-sm text-ink-muted">Aucune donnée.</p>
@@ -151,7 +151,7 @@ export default function StatsView({
       </div>
 
       {/* Tendance mensuelle */}
-      <div className="rounded-card border border-line bg-surface p-5 shadow-card">
+      <div>
         <h2 className="mb-4 font-display text-[17px] font-semibold text-ink">Demandes par mois (12 derniers mois)</h2>
         {byMonth.every((m) => m.count === 0) ? (
           <p className="text-sm text-ink-muted">Aucune demande sur la période.</p>
@@ -179,7 +179,7 @@ export default function StatsView({
       {/* Bottom row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Par famille */}
-        <div className="rounded-card border border-line bg-surface p-5 shadow-card lg:col-span-1">
+        <div className="lg:col-span-1">
           <h2 className="mb-4 font-display text-[17px] font-semibold text-ink">Par famille (top 10)</h2>
           {byFamily.length === 0 ? (
             <p className="text-sm text-ink-muted">Aucune affectation.</p>
@@ -192,7 +192,7 @@ export default function StatsView({
         </div>
 
         {/* Par tranche d'âge */}
-        <div className="rounded-card border border-line bg-surface p-5 shadow-card">
+        <div>
           <h2 className="mb-4 font-display text-[17px] font-semibold text-ink">Tranche d&apos;âge</h2>
           <BarChart
             data={byAgeRange.map((r) => ({ label: AGE_LABELS[r.ageRange] ?? r.ageRange, count: r.count }))}
@@ -201,7 +201,7 @@ export default function StatsView({
         </div>
 
         {/* Par statut église + soins pastoraux */}
-        <div className="rounded-card border border-line bg-surface p-5 shadow-card space-y-5">
+        <div className="space-y-5">
           <div>
             <h2 className="mb-4 font-display text-[17px] font-semibold text-ink">Situation à l&apos;église</h2>
             <BarChart
@@ -232,7 +232,7 @@ export default function StatsView({
       )}
 
       {abandoned > 0 && (
-        <div className="rounded-card border border-line bg-surface p-5 shadow-card">
+        <div>
           <h2 className="mb-4 font-display text-[17px] font-semibold text-ink">Motifs d&apos;abandon</h2>
           <BarChart
             data={[...byAbandonReason]

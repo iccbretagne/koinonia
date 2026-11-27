@@ -82,7 +82,7 @@ export default function CreateUserClient({ churchId, availableMembers, departmen
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex max-w-lg flex-col gap-6 rounded-card border border-line bg-surface p-5 shadow-card">
+    <form onSubmit={handleSubmit} className="flex max-w-lg flex-col gap-6">
       <Input
         label="Adresse e-mail Google attendue"
         type="email"

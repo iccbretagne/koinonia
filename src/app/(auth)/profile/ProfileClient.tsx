@@ -14,7 +14,7 @@ export default function ProfileClient({ churches, ministries }: { readonly churc
           Choisissez l&apos;église et indiquez votre fiche STAR : un administrateur validera le lien.
         </p>
       </div>
-      <div className="rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+      <div>
         <NoAccessClient churches={churches} ministries={ministries} />
       </div>
     </section>

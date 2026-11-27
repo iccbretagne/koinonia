@@ -97,12 +97,12 @@ export default async function PastoralEventsPage() {
 
       {/* Stats année */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="rounded-card border border-line bg-surface p-4 shadow-card text-center col-span-2 md:col-span-1">
+        <div className="text-center col-span-2 md:col-span-1">
           <p className="text-2xl font-bold text-brand-text">{totalThisYear}</p>
           <p className="text-xs text-ink-muted mt-1">Événements {now.getFullYear()}</p>
         </div>
         {yearStats.toSorted((a, b) => b._count - a._count).slice(0, 3).map((g) => (
-          <div key={g.type} className="rounded-card border border-line bg-surface p-4 shadow-card text-center">
+          <div key={g.type} className="text-center">
             <p className="text-2xl font-bold text-ink">{g._count}</p>
             <p className="text-xs text-ink-muted mt-1">{EVENT_TYPE_LABELS[g.type] ?? g.type}</p>
           </div>

@@ -120,7 +120,7 @@ export default function CollectionTab({
   return (
     <form onSubmit={(e) => void submit(e)} className="flex flex-wrap items-start gap-6">
       <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-6">
-        <section className="grid gap-4 rounded-card border border-line bg-surface p-5 sm:grid-cols-3">
+        <section className="grid gap-4 sm:grid-cols-3">
           <Select
             label="Culte"
             value={eventId}
@@ -132,7 +132,7 @@ export default function CollectionTab({
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-lg font-semibold text-ink">Par catégorie</h2>
+          <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Par catégorie</h2>
           <p className="text-[15px] leading-[22px] text-ink-muted">Le total des espèces, sans le détail des billets et des pièces ; les chèques un par un, sans nom de donateur.</p>
           {rows.map((r) => {
             const isSpecial = r.categoryId === special?.id;
@@ -183,8 +183,8 @@ export default function CollectionTab({
         </section>
       </div>
 
-      <aside className="flex flex-[1_1_300px] flex-col gap-4 rounded-card border border-line bg-surface p-5">
-        <h2 className="text-lg font-semibold text-ink">Récapitulatif</h2>
+      <aside className="flex flex-[1_1_300px] flex-col gap-4">
+        <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Récapitulatif</h2>
         <ul className="space-y-2 text-[15px] leading-[22px]">
           {recap.byCategory.map((c) => (
             <li key={c.key} className="flex justify-between gap-3">

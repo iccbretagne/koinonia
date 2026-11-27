@@ -152,10 +152,7 @@ export default function DeptFunctionsClient({ departments }: Props) {
               .sort((a, b) => a.localeCompare(b));
 
             return (
-              <div
-                key={fn.key}
-                className="rounded-card border border-line bg-surface p-5 shadow-card"
-              >
+              <div key={fn.key}>
                 <div className="mb-1 flex items-center gap-2">
                   <span aria-hidden="true" className="text-xl">{fn.icon}</span>
                   <h3 className="font-display text-[17px] font-semibold leading-6 text-ink">{fn.label}</h3>

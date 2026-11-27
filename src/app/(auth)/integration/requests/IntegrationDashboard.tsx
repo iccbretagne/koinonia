@@ -176,7 +176,7 @@ export default function IntegrationDashboard({
     <div className="flex flex-col gap-5">
       {/* Bandeau "À traiter" */}
       {actionable.length > 0 && (
-        <section aria-labelledby="integration-todo" className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card">
+        <section aria-labelledby="integration-todo" className="flex flex-col gap-3">
           <h2 id="integration-todo" className="flex items-center gap-2 font-display text-[15px] font-semibold text-ink">
             <span aria-hidden="true" className="size-2 rounded-full bg-brand" />
             À traiter

@@ -7,7 +7,7 @@ import OpeningChecklist from "./OpeningChecklist";
 
 function Stat({ label, value, hint }: { readonly label: string; readonly value: string; readonly hint?: string }) {
   return (
-    <div className="rounded-card border border-line bg-surface p-4">
+    <div>
       <p className="text-[13px] text-ink-muted">{label}</p>
       <p className="text-2xl font-bold text-ink">{value}</p>
       {hint && <p className="text-[13px] text-ink-subtle">{hint}</p>}
@@ -78,7 +78,7 @@ export default function Overview({
         </section>
       )}
 
-      <section className="space-y-3 rounded-card border border-line bg-surface p-4">
+      <section className="space-y-3">
         <h2 className="text-lg font-bold text-ink">Lien public</h2>
         {event.status === "DRAFT" && <p className="text-[13px] text-warning">Brouillon : la page publique sera visible une fois les inscriptions ouvertes.</p>}
         <CopyRow label="Adresse à partager (WhatsApp, affiche…)" display={publicUrl} value={publicUrl} />

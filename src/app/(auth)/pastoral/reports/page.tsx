@@ -58,15 +58,15 @@ export default async function PastoralReportsPage() {
 
       {/* Résumé */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-card border border-line bg-surface p-4 shadow-card text-center">
+        <div className="text-center">
           <p className="text-2xl font-bold text-success">{withReport.length}</p>
           <p className="text-xs text-ink-muted mt-1">{withReport.length > 1 ? "CR rédigés" : "CR rédigé"}</p>
         </div>
-        <div className="rounded-card border border-line bg-surface p-4 shadow-card text-center">
+        <div className="text-center">
           <p className={`text-2xl font-bold ${withoutReport.length > 0 ? "text-warning" : "text-ink-muted"}`}>{withoutReport.length}</p>
           <p className="text-xs text-ink-muted mt-1">En attente</p>
         </div>
-        <div className="rounded-card border border-line bg-surface p-4 shadow-card text-center">
+        <div className="text-center">
           <p className="text-2xl font-bold text-ink">{events.length}</p>
           <p className="text-xs text-ink-muted mt-1">{events.length > 1 ? "Événements au total" : "Événement au total"}</p>
         </div>

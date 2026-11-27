@@ -22,7 +22,7 @@ export default function Section({
 }) {
   const open = toggle ? toggle.checked : true;
   return (
-    <section id={id} tabIndex={id ? -1 : undefined} className="scroll-mt-4 rounded-card border border-line bg-surface p-5 outline-none">
+    <section id={id} tabIndex={id ? -1 : undefined} className="scroll-mt-4 outline-none">
       <div className="flex items-start gap-4">
         <div className="min-w-0 flex-1">
           <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">{title}</h2>

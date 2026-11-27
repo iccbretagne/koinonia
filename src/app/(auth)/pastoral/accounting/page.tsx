@@ -79,7 +79,7 @@ export default async function PastoralAccountingPage() {
           { label: "En attente", value: fmtAmount(pendingAmount), sub: `${submittedCount + processingCount} en cours`, color: "text-warning" },
           { label: "Retards paiement", value: overduePayments.length.toString(), sub: overduePayments.length > 0 ? "à régulariser" : "Aucun retard", color: overduePayments.length > 0 ? "text-danger" : "text-ink-muted" },
         ].map((kpi) => (
-          <div key={kpi.label} className="flex flex-col gap-1 rounded-card border border-line bg-surface p-4 shadow-card">
+          <div key={kpi.label} className="flex flex-col gap-1">
             <p className="text-xs text-ink-muted">{kpi.label}</p>
             <p className={`text-xl font-bold ${kpi.color}`}>{kpi.value}</p>
             <p className="text-xs text-ink-muted">{kpi.sub}</p>

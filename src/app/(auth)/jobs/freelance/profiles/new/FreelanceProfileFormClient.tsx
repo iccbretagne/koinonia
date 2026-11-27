@@ -87,7 +87,7 @@ export default function FreelanceProfileFormClient({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5 rounded-card border border-line bg-surface p-4 shadow-card sm:p-6">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {error && (
         <Alert tone="danger">{error}</Alert>
       )}

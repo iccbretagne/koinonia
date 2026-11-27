@@ -208,7 +208,7 @@ async function RestrictedEvent({ id, view }: { readonly id: string; readonly vie
       {view === "site" && site ? (
         <SiteTab eventId={id} site={site} event={event} title={event.title} churchSlug={event.churchSlug} eventSlug={event.slug} publicUrl={siteStatus?.url ?? null} warnings={siteStatus?.warnings ?? []} />
       ) : (
-        <div className="space-y-2 rounded-card border border-line bg-surface p-4">
+        <div className="space-y-2">
           <p className="text-[15px] text-ink">Page d&apos;inscription : <span className="break-all text-ink-muted">{`${appUrl()}/inscription/${event.churchSlug}/${event.slug}`}</span></p>
           {event.description && <p className="whitespace-pre-line text-[15px] text-ink-muted">{event.description}</p>}
         </div>

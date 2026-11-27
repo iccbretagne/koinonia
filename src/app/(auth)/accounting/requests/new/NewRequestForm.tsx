@@ -125,7 +125,7 @@ export default function NewRequestForm({ departments, correction, complement, re
   ].filter((opt) => !correction || opt.value !== "recurring");
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-5 rounded-card border border-line bg-surface p-4 shadow-card md:p-5">
+    <form onSubmit={submit} className="flex flex-col gap-5">
       {correction && (
         <Alert tone="warning" title={`Correction de « ${correction.label} ».`}>
           Les informations de la demande rejetée sont reprises, modifiez ce qui doit l&apos;être.
@@ -213,8 +213,8 @@ export default function NewRequestForm({ departments, correction, complement, re
 
       {/* Récurrence */}
       {mode === "recurring" && (
-        <fieldset className="flex min-w-0 flex-col gap-4 rounded-card border border-line p-4">
-          <legend className="px-1 font-display text-[15px] font-semibold leading-[22px] text-ink">Récurrence</legend>
+        <fieldset className="flex min-w-0 flex-col gap-4">
+          <legend className="mb-1 font-display text-[15px] font-semibold leading-[22px] text-ink">Récurrence</legend>
           <div className="flex flex-wrap items-end gap-3">
             <Input
               label="Tous les"

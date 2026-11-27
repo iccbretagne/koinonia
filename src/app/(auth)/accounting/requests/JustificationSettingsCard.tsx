@@ -35,7 +35,7 @@ export default function JustificationSettingsCard({ initial }: { readonly initia
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card" aria-labelledby="relances-justificatifs">
+    <section className="flex flex-col gap-3" aria-labelledby="relances-justificatifs">
       <div>
         <h2 id="relances-justificatifs" className="font-display text-[17px] font-semibold leading-6 text-ink">Relances des justificatifs</h2>
         <p className="mt-0.5 text-[15px] leading-[22px] text-ink-muted">

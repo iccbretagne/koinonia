@@ -18,7 +18,7 @@ export default function DomainCard({ eventId, domain }: { readonly eventId: stri
   const [host, setHost] = useState("");
   const base = `/api/ticketing/events/${eventId}/site/domain`;
   return (
-    <section className="space-y-3 rounded-card border border-line bg-surface p-4">
+    <section className="space-y-3">
       <h2 className="font-semibold text-ink">Domaine dédié</h2>
       {!domain ? (
         <>

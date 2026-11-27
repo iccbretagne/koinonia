@@ -16,7 +16,7 @@ export default function CareItemFooter({ related, relatedStatusLabels, historyUr
   return (
     <>
       {related.length > 0 && (
-        <section className="mt-4 rounded-card border border-line bg-surface p-4 shadow-card md:p-5">
+        <section className="mt-4">
           <h2 className="mb-2 font-display text-[15px] font-semibold text-ink">Autres demandes de la personne</h2>
           <ul className="flex flex-col divide-y divide-line">
             {related.map((r) => (

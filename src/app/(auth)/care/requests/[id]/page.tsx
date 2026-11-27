@@ -97,7 +97,7 @@ export default async function CareRequestDetailPage({
         </div>
       </PageHeader>
 
-      <div className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card md:p-5">
+      <div className="flex flex-col gap-3">
         <p className="break-words text-sm text-ink-muted">
           {item.email} {item.phone && `· ${item.phone}`}
         </p>

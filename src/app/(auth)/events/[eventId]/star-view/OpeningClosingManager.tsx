@@ -153,7 +153,7 @@ export default function OpeningClosingManager({ eventId, data, onChange, embedde
   }
 
   return (
-    <div className={embedded ? "print:hidden" : "mb-6 rounded-card border border-line bg-surface p-4 print:hidden"}>
+    <div className={embedded ? "print:hidden" : "mb-6 print:hidden"}>
       <h2 className={embedded ? "mb-3 font-display text-[15px] font-semibold leading-[22px] text-ink" : "mb-3 font-display text-[17px] font-semibold leading-6 text-ink"}>
         Ouverture / Fermeture
       </h2>

@@ -262,7 +262,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
             { label: "Total adultes", value: totalAdultes },
             { label: "Total général", value: totalGeneral },
           ].map((stat) => (
-            <div key={stat.label} className="rounded-card border border-line bg-surface p-4 text-center shadow-card">
+            <div key={stat.label} className="text-center">
               <div className="font-display text-2xl font-bold text-ink">{stat.value ?? 0}</div>
               <div className="mt-1 text-[13px] leading-[18px] text-ink-muted">{stat.label}</div>
             </div>
@@ -280,7 +280,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
       </div>
 
       {/* Orateur et titre du message */}
-      <div className="rounded-card border border-line bg-surface p-4">
+      <div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input
             id={`${uid}-speaker`}
@@ -377,7 +377,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
       </div>
 
       {/* Champs globaux */}
-      <div className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4">
+      <div className="flex flex-col gap-4">
         <Textarea
           id={`${uid}-notes`}
           label="Observations générales"

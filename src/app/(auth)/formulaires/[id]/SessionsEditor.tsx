@@ -89,7 +89,7 @@ export default function SessionsEditor({
     );
 
   return (
-    <section className="space-y-3 rounded-card border border-line bg-surface p-4 shadow-card">
+    <section className="space-y-3">
       <div>
         <h2 className="font-display text-[17px] font-semibold text-ink">Sessions et niveaux</h2>
         <p className="text-[14px] text-ink-muted">

@@ -61,7 +61,7 @@ const OPEN_STATUSES: readonly AssignmentStatus[] = ["NOT_STARTED", "IN_PROGRESS"
 
 function Indicator({ label, value, detail }: { readonly label: string; readonly value: string; readonly detail?: string }) {
   return (
-    <div className="flex flex-col gap-0.5 rounded-card border border-line bg-surface px-4 py-3">
+    <div className="flex flex-col gap-0.5">
       <span className="text-[13px] leading-[18px] text-ink-muted">{label}</span>
       <span className="font-display text-[22px] font-bold leading-7 tabular-nums text-ink">{value}</span>
       {detail && <span className="text-[13px] leading-[18px] text-ink-subtle">{detail}</span>}

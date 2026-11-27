@@ -498,7 +498,7 @@ function ValidationProgress({
   readonly progressPct: number;
 }) {
   return (
-    <div className="px-5 pb-4">
+    <div>
       <div className="flex items-center justify-between mb-1.5">
         <p className="text-xs text-ink-muted">Progression de la validation</p>
         <p className="text-xs font-semibold text-ink-muted">{progressPct}%</p>
@@ -676,8 +676,8 @@ export default function MediaEventDetail({
   return (
     <div className="space-y-5">
       {/* ── Header ──────────────────────────────────────────── */}
-      <div className="bg-surface rounded-card border border-line shadow-card overflow-hidden">
-        <div className="p-5">
+      <div className="flex flex-col gap-4">
+        <div>
           <Link href="/media/events" className={`${buttonClasses("ghost", "sm")} -ml-2 mb-3`}>
             <ChevronLeft className="size-4" aria-hidden="true" strokeWidth={1.75} />
             Retour aux événements
@@ -717,7 +717,7 @@ export default function MediaEventDetail({
 
           {/* ── Panneau d'édition ──────────────────────────────────────── */}
           {editMode && (
-            <div className="mt-4 p-4 bg-bg border border-line rounded-card space-y-3">
+            <div className="mt-4 space-y-3">
               <Input label="Nom de l'événement" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nom de l'événement" />
               <Select
                 label="Lier à un événement planning"
@@ -756,7 +756,7 @@ export default function MediaEventDetail({
 
       {/* ── Liens de partage ──────────────────────────────────── */}
       {canManage && (
-        <div className="bg-surface rounded-card border border-line shadow-card p-5">
+        <div>
           <ShareLinksHeading count={event.shareTokens.length} />
           <ShareTokenSection eventId={event.id} tokens={event.shareTokens} onRefresh={refreshEvent} />
         </div>

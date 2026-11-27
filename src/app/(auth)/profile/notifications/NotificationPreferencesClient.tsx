@@ -133,7 +133,7 @@ export default function NotificationPreferencesClient({ initialView }: { readonl
       <h2 id="channel-prefs-title" className="font-display text-[17px] font-semibold leading-6 text-ink">
         {showPush ? "Email et appareils" : "Emails"}
       </h2>
-      <div className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+      <div className="flex flex-col gap-4">
         {!initialView.hasEmail && (
           <Alert tone="warning">
             Aucune adresse email sur votre compte : les réglages email resteront sans effet tant qu&apos;aucune

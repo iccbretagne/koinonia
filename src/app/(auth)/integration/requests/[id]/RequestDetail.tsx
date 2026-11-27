@@ -979,7 +979,7 @@ function MsdpProgress({ steps, followUp }: { readonly steps: StepData[]; readonl
   );
 }
 
-const cardClasses = "flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card md:p-5";
+const cardClasses = "flex flex-col gap-4";
 const sectionTitleClasses = "font-display text-[15px] font-semibold leading-[22px] text-ink";
 
 /** Étapes clés du parcours : jalons (modifiables par l'équipe) ou création du dossier. */

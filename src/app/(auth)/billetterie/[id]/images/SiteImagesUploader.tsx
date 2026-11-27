@@ -76,7 +76,7 @@ export default function SiteImagesUploader({ eventId, assets }: { readonly event
         Retour à l&apos;éditeur du site
       </Link>
 
-      <section className="space-y-3 rounded-card border border-line bg-surface p-4">
+      <section className="space-y-3">
         <h2 className="font-semibold text-ink">Déposer des images</h2>
         <FileInput
           multiple

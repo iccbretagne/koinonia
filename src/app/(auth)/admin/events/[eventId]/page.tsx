@@ -63,7 +63,7 @@ export default async function EventDetailPage({
       />
 
       {audioService && (
-        <section className="flex flex-col items-start gap-2 rounded-card border border-line bg-surface p-4">
+        <section className="flex flex-col items-start gap-2">
           <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Enregistrement audio</h2>
           {audioService.status === "PUBLISHED" ? (
             <a

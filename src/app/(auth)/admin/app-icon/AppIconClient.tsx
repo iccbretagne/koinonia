@@ -199,7 +199,7 @@ export default function AppIconClient({ initialState }: { readonly initialState:
 
       <section
         aria-labelledby={`${id}-upload`}
-        className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5"
+        className="flex flex-col gap-4"
       >
         <h2 id={`${id}-upload`} className="font-display text-[17px] font-semibold leading-6 text-ink">
           Déposer une icône

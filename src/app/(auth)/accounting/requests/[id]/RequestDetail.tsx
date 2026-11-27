@@ -11,7 +11,6 @@ import JustificationPanel, { type Justification } from "./JustificationPanel";
 
 type DateLike = string | Date;
 
-const CARD = "rounded-card border border-line bg-surface p-4 shadow-card md:p-5";
 const SECTION_TITLE = "font-display text-[17px] font-semibold leading-6 text-ink";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -237,10 +236,10 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
     .reduce((s, p) => s + Number(p.releasedAmount ?? p.amount), 0);
 
   return (
-    <div className="flex max-w-3xl flex-col gap-4">
+    <div className="flex max-w-3xl flex-col gap-6">
 
       {/* Header */}
-      <div className={`${CARD} flex flex-col gap-3`}>
+      <div className="flex flex-col gap-3">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
           <div className="flex flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -291,7 +290,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
 
       {/* Détails */}
       {req.description && (
-        <section className={`${CARD} flex flex-col gap-2`}>
+        <section className="flex flex-col gap-2">
           <h2 className={SECTION_TITLE}>Description</h2>
           <p className="whitespace-pre-line text-[15px] leading-[22px] text-ink">{req.description}</p>
         </section>
@@ -311,7 +310,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
 
       {/* Pièces jointes */}
       {(req.attachments.length > 0 || (isOwn && req.status === "SUBMITTED")) && (
-        <section className={`${CARD} flex flex-col gap-3`}>
+        <section className="flex flex-col gap-3">
           <h2 className={SECTION_TITLE}>
             Pièces jointes
             {req.attachments.length > 0 && <span className="ml-1 font-normal text-ink-subtle">({req.attachments.length})</span>}
@@ -356,7 +355,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
 
       {/* Plan de paiement */}
       {req.status === "APPROVED" && req.payments.length > 0 && (
-        <section className={`${CARD} flex flex-col gap-3`}>
+        <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
             <h2 className={SECTION_TITLE}>Plan de paiement</h2>
             <div className="text-right">
@@ -431,7 +430,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
       )}
 
       {!justification && claimable && (
-        <section className={`${CARD} flex flex-col gap-3`}>
+        <section className="flex flex-col gap-3">
           <h2 className={SECTION_TITLE}>Justificatifs</h2>
           <p className="text-[15px] leading-[22px] text-ink-muted">
             Versée avant la mise en service du suivi : aucun justificatif n&apos;a été demandé. En les réclamant, le
@@ -447,7 +446,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
 
       {/* Corrections liées */}
       {req.corrections.length > 0 && (
-        <section className={`${CARD} flex flex-col gap-2`}>
+        <section className="flex flex-col gap-2">
           <h2 className={SECTION_TITLE}>Corrections soumises</h2>
           <ul className="-mx-2 flex flex-col">
             {req.corrections.map((c) => (
@@ -467,7 +466,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
 
       {/* Actions comptable — only when an action is possible */}
       {canManage && (req.status === "SUBMITTED" || req.status === "PROCESSING") && (
-        <section className={`${CARD} flex flex-col gap-3`}>
+        <section className="flex flex-col gap-3">
           <h2 className={SECTION_TITLE}>Actions</h2>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             {req.status === "SUBMITTED" && (

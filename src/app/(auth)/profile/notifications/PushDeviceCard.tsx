@@ -140,7 +140,7 @@ export default function PushDeviceCard({
       <h2 id="push-device-title" className="font-display text-[17px] font-semibold leading-6 text-ink">
         Notifications sur cet appareil
       </h2>
-      <div className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+      <div className="flex flex-col gap-4">
         <div className="flex items-start gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-full bg-brand-soft text-brand-text">
             <Smartphone aria-hidden="true" className="size-5" strokeWidth={1.75} />

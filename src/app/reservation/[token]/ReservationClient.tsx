@@ -199,7 +199,7 @@ export default function ReservationClient({
       )}
       {!active && <Alert tone="info" title="Réservation annulée.">Les billets de cette réservation ne sont plus valables.</Alert>}
 
-      <section className="rounded-card border border-line bg-surface p-4">
+      <section>
         <CopyRow label="Référence à indiquer avec votre paiement" display={view.reference} value={view.reference} mono />
         <dl className="mt-3 grid grid-cols-2 gap-2 text-[15px]">
           <dt className="text-ink-muted">Total</dt>
@@ -224,7 +224,7 @@ export default function ReservationClient({
       </section>
 
       {active && balances.due > 0 && (
-        <section className="space-y-3 rounded-card border border-line bg-surface p-4" aria-label="Paiement">
+        <section className="space-y-3" aria-label="Paiement">
           <h2 className="text-lg font-bold text-ink">Payer</h2>
           {instructions.wero && <CopyRow label="Wero — numéro ou email du bénéficiaire" display={instructions.wero} value={instructions.wero} />}
           {instructions.revolut && (

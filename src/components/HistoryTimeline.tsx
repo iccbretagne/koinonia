@@ -61,7 +61,7 @@ export default function HistoryTimeline({ fetchUrl, statusLabels, actionLabels, 
   const statusLabel = (s: string | null) => (s ? statusLabels[s] ?? s : "—");
 
   return (
-    <div className="bg-surface rounded-card border border-line p-4 md:p-5 space-y-3">
+    <div className="space-y-3">
       <h2 className="text-sm font-semibold text-ink-muted">{title}</h2>
       {error && <p className="text-sm text-ink-subtle">Historique indisponible.</p>}
       {!error && entries === null && <p className="text-sm text-ink-subtle">Chargement…</p>}

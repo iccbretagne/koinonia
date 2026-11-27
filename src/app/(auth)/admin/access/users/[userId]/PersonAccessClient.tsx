@@ -301,7 +301,7 @@ export default function PersonAccessClient({
         Revenir aux accès
       </Link>
 
-      <div className="flex items-center gap-4 rounded-card border border-line bg-surface p-5 shadow-card">
+      <div className="flex items-center gap-4">
         <Avatar person={person} />
         <div className="min-w-0">
           <h1 className="truncate font-display text-[22px] font-bold leading-7 text-ink">{person.name}</h1>

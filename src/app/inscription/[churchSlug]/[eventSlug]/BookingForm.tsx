@@ -215,7 +215,7 @@ export default function BookingForm({
             </Button>
           )}
           {bookingOptions.length > 0 && (
-            <fieldset className="space-y-3 rounded-card border border-line bg-surface p-4">
+            <fieldset className="space-y-3">
               <legend className="font-semibold text-ink">Pour la réservation</legend>
               <OptionList options={bookingOptions} choices={booking} onChange={setBooking} />
             </fieldset>
@@ -234,14 +234,14 @@ export default function BookingForm({
               onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))}
             />
           ))}
-          <fieldset className="space-y-3 rounded-card border border-line bg-surface p-4">
+          <fieldset className="space-y-3">
             <legend className="font-semibold text-ink">Contact de la réservation</legend>
             <Input label="Nom" autoComplete="name" value={contact.name} onChange={(e) => setContact({ ...contact, name: e.target.value })} />
             <Input label="Email" type="email" autoComplete="email" hint="Vos billets et le lien de votre réservation y seront envoyés." value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} />
             <Input label="Téléphone (facultatif)" type="tel" autoComplete="tel" value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} />
           </fieldset>
           {unaccompanied && (
-            <fieldset className="space-y-3 rounded-card border border-line bg-surface p-4">
+            <fieldset className="space-y-3">
               <legend className="font-semibold text-ink">Responsable légal</legend>
               <p className="text-[13px] text-ink-muted">Un mineur sans adulte dans la réservation exige un responsable joignable pendant l&apos;événement.</p>
               <Input label="Nom du responsable" value={guardian.name} onChange={(e) => setGuardian({ ...guardian, name: e.target.value })} />
@@ -257,7 +257,7 @@ export default function BookingForm({
 
       {step === 3 && (
         <section className="space-y-4" aria-label="Récapitulatif">
-          <div className="rounded-card border border-line bg-surface p-4">
+          <div>
             <ul className="space-y-1 text-[15px] text-ink">
               {participants.map((p) => (
                 <li key={p.uid}>

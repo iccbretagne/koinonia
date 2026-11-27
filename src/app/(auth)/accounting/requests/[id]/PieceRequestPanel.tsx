@@ -90,7 +90,7 @@ export default function PieceRequestPanel({
       )}
 
       {requested && isOwn && (
-        <div className="flex flex-col gap-2 rounded-card border border-line bg-surface p-4 shadow-card">
+        <div className="flex flex-col gap-2">
           <FileInput
             id="piece-files"
             label="Déposer les pièces demandées (JPEG, PNG ou PDF, 5 Mo chacune)"

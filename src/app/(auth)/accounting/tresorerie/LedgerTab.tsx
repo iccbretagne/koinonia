@@ -268,14 +268,14 @@ export default function LedgerTab({
         </Alert>
       ))}
 
-      <section className="grid grid-cols-2 overflow-hidden rounded-card border border-line bg-surface md:grid-cols-4 md:divide-x md:divide-line">
+      <section className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-0 md:divide-x md:divide-line">
         {[
           ["Solde d'ouverture", p.opening, "text-ink"],
           ["Entrées", p.inflows, "text-success"],
           ["Sorties", p.outflows, "text-danger"],
           ["Solde de clôture", p.closing, "text-brand-text"],
         ].map(([label, value, tone]) => (
-          <div key={label as string} className="p-4">
+          <div key={label as string} className="md:px-4 md:first:pl-0">
             <p className="text-[13px] leading-[18px] text-ink-muted">{label as string}</p>
             <p className={`mt-1 text-lg font-semibold tabular-nums ${tone as string}`}>{euro(value as number)}</p>
           </div>

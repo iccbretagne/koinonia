@@ -191,7 +191,7 @@ function UsageTab({ stats }: { readonly stats: StatsPeriod }) {
       </p>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {tiles.map((tile) => (
-          <div key={tile.label} className="rounded-card border border-line bg-surface p-4 shadow-card">
+          <div key={tile.label}>
             <p className="text-[13px] text-ink-muted">{tile.label}</p>
             <p className="font-display text-2xl font-bold tabular-nums text-ink">{tile.value}</p>
           </div>
@@ -504,7 +504,7 @@ function SettingsTab({ enabled }: { readonly enabled: boolean }) {
   }
 
   return (
-    <section className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+    <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
         <MessageCircleQuestion aria-hidden="true" className="size-6 text-brand-text" strokeWidth={1.75} />
         <p className="min-w-0 flex-1 font-semibold text-ink">L&apos;assistant est {enabled ? "activé" : "désactivé"} pour toute l&apos;instance</p>

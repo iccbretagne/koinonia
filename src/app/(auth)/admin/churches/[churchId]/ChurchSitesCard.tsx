@@ -29,7 +29,7 @@ export default function ChurchSitesCard({ churchId, enabled }: { readonly church
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+    <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="min-w-0 flex-1 font-display text-[17px] font-semibold leading-6 text-ink">Sites d&apos;événement</h2>
         <StatusChip tone={enabled ? "success" : "neutral"}>{enabled ? "Activé" : "Coupé"}</StatusChip>

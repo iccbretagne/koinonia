@@ -71,7 +71,7 @@ export default function InterviewBlock({
   }
 
   return (
-    <section className="space-y-3 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+    <section className="space-y-3">
       <h2 className="font-display text-[17px] font-semibold text-ink">Entretien</h2>
       {repeatedNoShow && <Alert tone="warning" title="Absent à deux entretiens d'affilée." />}
       {scheduling && (

@@ -112,7 +112,7 @@ function NamedList({
   const { busy, error, run } = useAction();
   const [name, setName] = useState("");
   return (
-    <section className="rounded-card border border-line bg-surface p-5 shadow-card">
+    <section>
       <h2 className="mb-2 font-display text-[17px] font-semibold leading-6 text-ink">{title}</h2>
       <ul className="divide-y divide-line">
         {items.map((i) => (
@@ -168,8 +168,8 @@ export default function SettingsTab({
           Créez la caisse principale (et les autres comptes de l&apos;église) avec leur solde actuel : c&apos;est le point de départ de la trésorerie.
         </Alert>
       )}
-      <section className="rounded-card border border-line bg-surface p-5">
-        <h2 className="mb-2 text-lg font-semibold text-ink">Comptes de trésorerie</h2>
+      <section>
+        <h2 className="mb-2 font-display text-[17px] font-semibold leading-6 text-ink">Comptes de trésorerie</h2>
         <p className="mb-3 text-[15px] leading-[22px] text-ink-muted">L&apos;argent que l&apos;église détient elle-même. Le compte bancaire commun n&apos;est pas suivi ici.</p>
         {accounts.length > 0 && (
           <ul className="mb-4 divide-y divide-line">

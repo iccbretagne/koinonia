@@ -89,9 +89,9 @@ export default function BudgetTab({
   const table = (direction: "IN" | "OUT") => {
     const items = comparison.filter((c) => c.direction === direction);
     return (
-      <section className="overflow-hidden rounded-card border border-line bg-surface">
-        <h2 className="px-5 py-4 text-lg font-semibold text-ink">{direction === "IN" ? "Entrées" : "Sorties"}</h2>
-        <div className="overflow-x-auto">
+      <section className="flex flex-col gap-3">
+        <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">{direction === "IN" ? "Entrées" : "Sorties"}</h2>
+        <div className="overflow-x-auto rounded-card border border-line bg-surface">
           <table className="w-full min-w-[720px] border-collapse text-[15px] leading-[22px]">
             <thead>
               <tr className="bg-surface-sunken text-left text-ink-muted">

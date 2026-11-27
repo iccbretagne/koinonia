@@ -102,7 +102,7 @@ export default function Results({ results, anonymous, manage, formId }: { readon
             ["Accompagnants", p.companions],
             ["Ne viennent pas", p.notAttending],
           ].map(([label, value]) => (
-            <div key={label} className="rounded-card border border-line bg-surface p-3 shadow-card">
+            <div key={label}>
               <dt className="text-[13px] text-ink-muted">{label}</dt>
               <dd className="text-2xl font-semibold text-ink">{value}</dd>
             </div>

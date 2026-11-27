@@ -132,7 +132,7 @@ export default function RequestActions({
   const sending = processing ? "Enregistrement en cours…" : null;
 
   return (
-    <section className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card md:p-5">
+    <section className="flex flex-col gap-4">
       {error && <Alert tone="danger">{error}</Alert>}
 
       {mode === "none" && (

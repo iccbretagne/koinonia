@@ -29,7 +29,7 @@ const SERIES = { primary: "#7c4dff", danger: "#e5484d", secondary: "#38B6FF" };
 
 function StatTile({ label, value, accent = false }: { readonly label: string; readonly value: React.ReactNode; readonly accent?: boolean }) {
   return (
-    <div className="rounded-card border border-line bg-surface p-4 shadow-card">
+    <div>
       <p className="text-[13px] leading-[18px] text-ink-muted">{label}</p>
       <p className={`font-display text-[28px] font-bold leading-[34px] tabular-nums ${accent ? "text-brand-text" : "text-ink"}`}>{value}</p>
     </div>
@@ -243,7 +243,7 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
 
               {/* Bar chart: services per member */}
               {data.members.length > 0 && (
-                <div className="rounded-card border border-line bg-surface shadow-card p-4">
+                <div>
                   <h3 className="mb-4 font-display text-[17px] font-semibold leading-6 text-ink">
                     Services par STAR
                   </h3>
@@ -271,7 +271,7 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
 
               {/* Line chart: monthly trend */}
               {data.trend.length > 1 && (
-                <div className="rounded-card border border-line bg-surface shadow-card p-4">
+                <div>
                   <h3 className="mb-4 font-display text-[17px] font-semibold leading-6 text-ink">
                     Tendance mensuelle
                   </h3>
@@ -345,7 +345,7 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
                   </div>
 
                   {/* Bar chart: assignments per task */}
-                  <div className="rounded-card border border-line bg-surface shadow-card p-4">
+                  <div>
                     <h3 className="mb-4 font-display text-[17px] font-semibold leading-6 text-ink">
                       Répartition par tâche
                     </h3>

@@ -183,7 +183,7 @@ export default function BackupsClient() {
   return (
     <div className="flex max-w-3xl flex-col gap-5">
       {/* ── Actions ─────────────────────────────────────────────── */}
-      <div className="rounded-card border border-line bg-surface p-5 shadow-card">
+      <div>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Déclencher une sauvegarde</h2>

@@ -142,7 +142,7 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
 
       {/* Formulaire d'ajout */}
       {showForm && (
-        <section className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5 shadow-card">
+        <section className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-2">
             <h2 className="font-display text-[17px] font-semibold text-ink">Nouvelle affectation</h2>
             <IconButton icon={X} aria-label="Fermer le formulaire" onClick={() => setShowForm(false)} />

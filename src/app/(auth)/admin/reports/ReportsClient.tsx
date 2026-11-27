@@ -370,7 +370,7 @@ export default function ReportsClient({ events, churchId }: Props) {
           </div>
 
           {/* Export Excel */}
-          <div className="flex flex-col gap-3 rounded-card border border-line bg-surface px-5 py-4 shadow-card sm:flex-row sm:flex-wrap sm:items-end">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
             <div className="flex flex-1 gap-3">
               <Input id={`${uid}-export-from`} label="Du" type="date" value={exportFrom} onChange={(e) => setExportFrom(e.target.value)} className="flex-1" />
               <Input id={`${uid}-export-to`} label="Au" type="date" value={exportTo} onChange={(e) => setExportTo(e.target.value)} className="flex-1" />
@@ -406,12 +406,12 @@ export default function ReportsClient({ events, churchId }: Props) {
 
           {/* Bloc Présence (Accueil) */}
           {accueilAgg ? (
-            <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-              <div className="border-b border-line px-5 py-3">
+            <div className="flex flex-col gap-3">
+              <div>
                 <h3 className="font-display text-[17px] font-semibold leading-6 text-ink">Présence au culte (Accueil)</h3>
                 <p className="mt-0.5 text-[13px] leading-[18px] text-ink-muted">{accueilAgg.count} culte{accueilAgg.count > 1 ? "s" : ""} avec statistiques</p>
               </div>
-              <div className="p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
                   { label: "Hommes (total)",   value: accueilAgg.hommes,    sub: `moy. ${Math.round(accueilAgg.hommes / accueilAgg.count)}/culte` },
                   { label: "Femmes (total)",    value: accueilAgg.femmes,    sub: `moy. ${Math.round(accueilAgg.femmes / accueilAgg.count)}/culte` },
@@ -432,11 +432,11 @@ export default function ReportsClient({ events, churchId }: Props) {
 
           {/* Bloc Intégration */}
           {integrationAgg ? (
-            <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-              <div className="border-b border-line px-5 py-3">
+            <div className="flex flex-col gap-3">
+              <div>
                 <h3 className="font-display text-[17px] font-semibold leading-6 text-ink">Intégration</h3>
               </div>
-              <div className="p-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                 {[
                   { label: "Nouveaux (H)", value: integrationAgg.hommes },
                   { label: "Nouveaux (F)", value: integrationAgg.femmes },
@@ -457,11 +457,11 @@ export default function ReportsClient({ events, churchId }: Props) {
 
           {/* Bloc Sainte Cène */}
           {sainteCeneAgg ? (
-            <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-              <div className="border-b border-line px-5 py-3">
+            <div className="flex flex-col gap-3">
+              <div>
                 <h3 className="font-display text-[17px] font-semibold leading-6 text-ink">Sainte Cène</h3>
               </div>
-              <div className="p-5 grid grid-cols-2 gap-4 max-w-xs">
+              <div className="grid grid-cols-2 gap-4 max-w-xs">
                 {[
                   { label: "Supports utilisés", value: sainteCeneAgg.supportsUtilises },
                   { label: "Supports restants",  value: sainteCeneAgg.supportsRestants },
@@ -479,12 +479,12 @@ export default function ReportsClient({ events, churchId }: Props) {
 
           {/* Bloc Navette */}
           {navetteAgg ? (
-            <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-              <div className="border-b border-line px-5 py-3">
+            <div className="flex flex-col gap-3">
+              <div>
                 <h3 className="font-display text-[17px] font-semibold leading-6 text-ink">Navette</h3>
                 <p className="mt-0.5 text-[13px] leading-[18px] text-ink-muted">{navetteAgg.count} culte{navetteAgg.count > 1 ? "s" : ""} avec statistiques</p>
               </div>
-              <div className="p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
                   { label: "Hommes (total)",  value: navetteAgg.hommes,    sub: `moy. ${Math.round(navetteAgg.hommes / navetteAgg.count)}/culte` },
                   { label: "Femmes (total)",  value: navetteAgg.femmes,    sub: `moy. ${Math.round(navetteAgg.femmes / navetteAgg.count)}/culte` },
@@ -505,11 +505,11 @@ export default function ReportsClient({ events, churchId }: Props) {
 
           {/* Détail par événement */}
           {withReport > 0 && (
-            <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
-              <div className="px-5 py-3 border-b border-line">
+            <div className="flex flex-col gap-3">
+              <div>
                 <h3 className="font-display text-[17px] font-semibold leading-6 text-ink">Détail par événement</h3>
               </div>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto rounded-card border border-line bg-surface">
                 <table className="w-full min-w-[600px] text-sm">
                   <thead>
                     <tr className="bg-surface-sunken text-[13px] text-ink-muted">

@@ -27,7 +27,7 @@ const MARITAL_OPTIONS = MARITAL_STATUSES.map((value) => ({ value, label: MARITAL
 
 function Card({ title, children }: { readonly title: string; readonly children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-6">
+    <section className="flex flex-col gap-4">
       <h2 className="font-display text-[17px] font-semibold text-ink">{title}</h2>
       {children}
     </section>

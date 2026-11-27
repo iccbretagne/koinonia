@@ -173,7 +173,7 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
         </Alert>
       )}
 
-      <section className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+      <section className="flex flex-col gap-4">
         <Input label="Titre" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} required />
         <Textarea
           label="Texte"
@@ -202,7 +202,7 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
         </div>
       </section>
 
-      <section className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+      <section className="flex flex-col gap-3">
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Sévérité</h2>
         <RadioGroup
           legend="Sévérité"
@@ -215,7 +215,7 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
         />
       </section>
 
-      <section className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+      <section className="flex flex-col gap-4">
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Public</h2>
         {isSuperAdmin && !editing && (
           <label className="flex min-h-11 items-center gap-2 text-[15px] text-ink">
@@ -290,7 +290,7 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
         )}
       </section>
 
-      <section className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+      <section className="flex flex-col gap-4">
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Période</h2>
         {!locked && (
           <div className="flex flex-col gap-2">

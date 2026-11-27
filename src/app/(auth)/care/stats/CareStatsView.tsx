@@ -114,12 +114,12 @@ export default function CareStatsView({ appointments, msdp }: Props) {
         </div>
 
         {appointments.total === 0 ? (
-          <div className="rounded-card border border-line bg-surface p-6 text-center text-sm text-ink-muted shadow-card">
+          <div className="text-center text-sm text-ink-muted">
             Aucune demande de rendez-vous pastoral pour l&apos;instant.
           </div>
         ) : (
           <>
-            <div className="rounded-card border border-line bg-surface p-5 shadow-card">
+            <div>
               <h3 className="font-display text-[17px] font-semibold text-ink mb-4">Entonnoir de progression</h3>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2">
                 {APPOINTMENT_FUNNEL_STATUSES.map((s) => {
@@ -143,14 +143,14 @@ export default function CareStatsView({ appointments, msdp }: Props) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="rounded-card border border-line bg-surface p-5 shadow-card">
+              <div>
                 <h3 className="font-display text-[17px] font-semibold text-ink mb-4">Par référent</h3>
                 <BarChart
                   data={appointments.byAssignee.map((a) => ({ label: a.name, count: a.count }))}
                   total={appointments.total}
                 />
               </div>
-              <div className="rounded-card border border-line bg-surface p-5 shadow-card">
+              <div>
                 <h3 className="font-display text-[17px] font-semibold text-ink mb-4">Motifs de refus</h3>
                 <BarChart
                   data={appointments.byRejectReason.map((r) => ({
@@ -190,12 +190,12 @@ export default function CareStatsView({ appointments, msdp }: Props) {
         </div>
 
         {msdp.total === 0 ? (
-          <div className="rounded-card border border-line bg-surface p-6 text-center text-sm text-ink-muted shadow-card">
+          <div className="text-center text-sm text-ink-muted">
             Aucun suivi MSDP démarré. Les suivis apparaissent ici une fois créés depuis une demande avec appel au salut.
           </div>
         ) : (
           <>
-            <div className="rounded-card border border-line bg-surface p-5 shadow-card">
+            <div>
               <h3 className="font-display text-[17px] font-semibold text-ink mb-4">Entonnoir MSDP</h3>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2">
                 {MSDP_FUNNEL_STATUSES.map((s) => {
@@ -219,7 +219,7 @@ export default function CareStatsView({ appointments, msdp }: Props) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="rounded-card border border-line bg-surface p-5 shadow-card">
+              <div>
                 <h3 className="font-display text-[17px] font-semibold text-ink mb-4">Suivis démarrés par mois (12 derniers mois)</h3>
                 {msdp.byMonth.every((m) => m.count === 0) ? (
                   <p className="text-sm text-ink-muted">Aucun suivi sur la période.</p>
@@ -244,7 +244,7 @@ export default function CareStatsView({ appointments, msdp }: Props) {
                 })()}
               </div>
 
-              <div className="rounded-card border border-line bg-surface p-5 shadow-card space-y-4">
+              <div className="space-y-4">
                 <h3 className="font-display text-[17px] font-semibold text-ink">Jalons parcours (dossiers actifs)</h3>
                 <div className="space-y-3">
                   {[

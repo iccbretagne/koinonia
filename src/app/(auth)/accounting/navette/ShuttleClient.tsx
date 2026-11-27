@@ -222,7 +222,7 @@ export default function ShuttleClient({
         }
       />
 
-      <section aria-label="Solde" className="rounded-card border border-line bg-surface p-4 shadow-card">
+      <section aria-label="Solde">
         <p className="text-[15px] leading-[22px] text-ink-muted">Solde à date</p>
         <p className={`font-display text-3xl font-bold tabular-nums ${ledger.balanceToDate < 0 ? "text-danger" : "text-ink"}`}>
           {euro(ledger.balanceToDate)}
@@ -274,7 +274,7 @@ export default function ShuttleClient({
             ["Écart", p.net],
             ["Solde de fin", p.closingBalance],
           ].map(([label, value]) => (
-            <div key={label as string} className="rounded-control border border-line bg-surface px-3 py-2">
+            <div key={label as string}>
               <dt className="text-[13px] leading-[18px] text-ink-muted">{label}</dt>
               <dd className="font-semibold text-ink">
                 <Amount value={value as number} />
@@ -298,11 +298,11 @@ export default function ShuttleClient({
 
       {view === "repartition" && (
         <div className="grid gap-6 md:grid-cols-2">
-          <section className="rounded-card border border-line bg-surface p-4 shadow-card">
+          <section>
             <h2 className="mb-3 font-display text-[17px] font-semibold leading-6 text-ink">Sorties par type</h2>
             <Bars items={ledger.byCategory.map((c) => ({ label: EXPENSE_CATEGORY_LABEL[c.category], value: c.total }))} />
           </section>
-          <section className="rounded-card border border-line bg-surface p-4 shadow-card">
+          <section>
             <h2 className="mb-3 font-display text-[17px] font-semibold leading-6 text-ink">Par mois</h2>
             {ledger.byMonth.length === 0 ? (
               <p className="text-[15px] leading-[22px] text-ink-muted">Rien sur la période.</p>
@@ -333,7 +333,7 @@ export default function ShuttleClient({
               </table>
             )}
           </section>
-          <section className="rounded-card border border-line bg-surface p-4 shadow-card md:col-span-2">
+          <section className="md:col-span-2">
             <h2 className="mb-3 font-display text-[17px] font-semibold leading-6 text-ink">Coût par location</h2>
             <Bars items={ledger.byRental.map((r) => ({ label: r.label, value: r.cost }))} />
           </section>
@@ -434,7 +434,7 @@ export default function ShuttleClient({
       {view === "locations" && (
         <div className="flex flex-col gap-6">
           <form
-            className="grid gap-3 rounded-card border border-line bg-surface p-4 shadow-card sm:grid-cols-5 sm:items-end"
+            className="grid gap-3 sm:grid-cols-5 sm:items-end"
             onSubmit={async (e) => {
               e.preventDefault();
               const ok = await json(
@@ -480,7 +480,7 @@ export default function ShuttleClient({
 
       {view === "reglages" && manager && (
         <form
-          className="flex max-w-md flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card"
+          className="flex max-w-md flex-col gap-3"
           onSubmit={(e) => {
             e.preventDefault();
             const value = threshold.trim() === "" ? null : Number(threshold.replace(",", "."));

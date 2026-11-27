@@ -294,7 +294,7 @@ function SectionEditor({ section, p, s, count, edit, tools, pages }: { readonly 
 
 export default function SitePagesEditor({ doc, edit, tools }: { readonly doc: SiteDocument; readonly edit: Edit; readonly tools: ImageTools }) {
   return (
-    <section className="space-y-3 rounded-card border border-line bg-surface p-4">
+    <section className="space-y-3">
       <h2 className="font-semibold text-ink">Pages ({doc.pages.length}/{SITE_LIMITS.pages})</h2>
       <p className="text-[13px] text-ink-muted">La première page est l&apos;accueil. Les pages automatiques se mettent à jour avec l&apos;événement.</p>
       {doc.pages.map((page, p) => (

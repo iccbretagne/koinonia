@@ -361,7 +361,7 @@ export default function AudioServiceClient({
       )}
 
       {canDeposit && (
-        <section className="border border-line rounded-card p-4">
+        <section>
           <h2 className="font-semibold text-ink mb-2">Dépôt des séquences</h2>
           <FileInput
             ref={fileInputRef}
@@ -419,7 +419,7 @@ export default function AudioServiceClient({
         </section>
       )}
 
-      <section className="border border-line rounded-card p-4">
+      <section>
         <h2 className="font-semibold text-ink mb-3">Nommer et ordonner les séquences</h2>
         <SequenceListEditor
           serviceId={service.id}
@@ -451,7 +451,7 @@ export default function AudioServiceClient({
 
       {/* Actions destructrices/irréversibles regroupées à part — pas au même niveau visuel que
           Publier, pour ne pas pouvoir les déclencher par inadvertance (spec 020). */}
-      <section className="border border-danger/30 rounded-card p-4 space-y-2">
+      <section className="space-y-2">
         <h2 className="text-sm font-semibold text-danger">Zone de danger</h2>
         {service.status === "PUBLISHED" ? (
           <div className="space-y-1">

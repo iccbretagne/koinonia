@@ -946,7 +946,7 @@ function AppelTab({ churchId, canManage, filterMine, linkedMemberId }: { readonl
   return (
     <div>
       {/* Event selector */}
-      <div className="mb-6 flex flex-wrap items-end gap-4 rounded-card border border-line bg-surface p-4">
+      <div className="mb-6 flex flex-wrap items-end gap-4">
         <div className="min-w-48 flex-1">
           <Select
             id={`${uid}-event`}
@@ -1080,7 +1080,7 @@ function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonl
   return (
     <div>
       {/* Period selector */}
-      <div className="mb-6 flex flex-col gap-3 rounded-card border border-line bg-surface p-4 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4">
         <div className="flex flex-1 gap-3">
           <Input id={`${uid}-from`} label="Du" type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="flex-1" />
           <Input id={`${uid}-to`} label="Au" type="date" value={to} onChange={(e) => setTo(e.target.value)} className="flex-1" />

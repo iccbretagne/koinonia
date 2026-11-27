@@ -38,7 +38,7 @@ function Figure({ label, value, previous, lastYear, tone }: {
   readonly tone?: string;
 }) {
   return (
-    <div className="flex flex-col gap-1 p-4">
+    <div className="flex flex-col gap-1 md:px-4 md:first:pl-0">
       <span className="text-[13px] leading-[18px] text-ink-muted">{label}</span>
       <span className={`text-lg font-semibold tabular-nums ${tone ?? "text-ink"}`}>{euro(value)}</span>
       {previous !== undefined && <Delta now={value} before={previous} label="vs mois précédent" />}
@@ -81,26 +81,24 @@ export default function DashboardTab({ dashboard: d }: { readonly dashboard: Das
       </section>
 
       <div className="flex flex-wrap items-start gap-6">
-        <section className="min-w-0 flex-[999_1_560px] overflow-hidden rounded-card border border-line bg-surface shadow-card">
-          <div className="flex items-center gap-3 px-5 py-4">
-            <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">{monthTitle(d.month)}, tous comptes</h2>
-          </div>
-          <div className="grid grid-cols-2 border-t border-line md:grid-cols-4 md:divide-x md:divide-line">
+        <section className="flex min-w-0 flex-[999_1_560px] flex-col gap-4">
+          <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">{monthTitle(d.month)}, tous comptes</h2>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-0 md:divide-x md:divide-line">
             <Figure label="Ouverture" value={d.period.opening} />
             <Figure label="Entrées" value={d.period.inflows} previous={d.previous.inflows} lastYear={d.lastYear.inflows} tone="text-success" />
             <Figure label="Sorties" value={d.period.outflows} previous={d.previous.outflows} lastYear={d.lastYear.outflows} tone="text-danger" />
             <Figure label="Clôture" value={d.period.closing} />
           </div>
-          <div className="flex items-center border-t border-line px-5 py-3">
+          <div className="flex items-center border-t border-line pt-3">
             <h3 className="font-display text-[15px] font-semibold leading-[22px] text-ink">Derniers mouvements</h3>
             <Link href="/accounting/tresorerie?onglet=registre" className={`${buttonClasses("ghost", "sm")} ml-auto`}>Voir le registre</Link>
           </div>
           {d.recent.length === 0 ? (
             <EmptyState size="sm" title="Aucun mouvement ce mois-ci" />
           ) : (
-            <ul className="divide-y divide-line border-t border-line">
+            <ul className="-mt-1 divide-y divide-line">
               {d.recent.map((l) => (
-                <li key={l.id} className="flex items-center gap-3 px-5 py-3 text-[15px] leading-[22px]">
+                <li key={l.id} className="flex items-center gap-3 py-3 text-[15px] leading-[22px]">
                   <span className="w-12 shrink-0 tabular-nums text-ink-muted">{frDate(l.date).slice(0, 5)}</span>
                   <span className="min-w-0 flex-1 truncate text-ink">{l.label}</span>
                   {l.source !== "treasury" && <StatusChip tone="info">Repris</StatusChip>}

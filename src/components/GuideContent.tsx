@@ -864,7 +864,7 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
       </div>
 
       {/* Description du rôle */}
-      <div className="mb-6 rounded-card border border-line bg-surface p-4">
+      <div className="mb-6">
         <h2 className="text-lg font-semibold text-brand-text">{ROLE_LABELS[activeRole]}</h2>
         <p className="text-sm text-ink-muted mt-1">{ROLE_DESCRIPTIONS[activeRole]}</p>
         {activeRole === "MINISTER" && (
@@ -884,9 +884,9 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
         {categories.map((category) => (
           <section key={category}>
             <h3 className="text-base font-semibold text-ink mb-4 border-b pb-2">{category}</h3>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-6 sm:grid-cols-2">
               {visibleFeatures.filter((f) => f.category === category).map((feature) => (
-                <div key={feature.name} className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4">
+                <div key={feature.name} className="flex flex-col gap-3">
                   <div className="flex items-center justify-between gap-2">
                     <h4 className="text-sm font-semibold text-ink">{feature.name}</h4>
                     <AccessBadge level={feature.access[activeRole]} />

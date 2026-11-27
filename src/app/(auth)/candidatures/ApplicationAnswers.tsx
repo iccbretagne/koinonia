@@ -54,7 +54,7 @@ function Section({ title, items }: { readonly title: string; readonly items: Ite
   const visible = items.filter((i) => i.value !== null && i.value !== "");
   if (visible.length === 0) return null;
   return (
-    <section className="rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+    <section>
       <h2 className="mb-3 font-display text-[17px] font-semibold text-ink">{title}</h2>
       <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
         {visible.map((i) => (
@@ -73,7 +73,7 @@ export default function ApplicationAnswers({ app }: { readonly app: Answers }) {
     [app.street, [app.postalCode, app.city].filter(Boolean).join(" "), app.country].filter(Boolean).join(", ") || null;
   return (
     <div className="space-y-4">
-      <section className="rounded-card border border-line bg-surface p-4 shadow-card sm:p-5 flex flex-col-reverse sm:flex-row gap-4 sm:items-start">
+      <section className="flex flex-col-reverse sm:flex-row gap-4 sm:items-start">
         <dl className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
           {[
             { label: "Date de naissance", value: day(app.birthDate) },

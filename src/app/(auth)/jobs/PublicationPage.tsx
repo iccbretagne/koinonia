@@ -29,7 +29,7 @@ export default function PublicationPage({
         <ArrowLeft aria-hidden="true" className="size-4" />
         Retour aux offres
       </Link>
-      <article className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-6">
+      <article className="flex flex-col gap-4">
         <h1 className="font-display text-[22px] font-bold leading-7 text-ink">{publication.title}</h1>
         <PublicationDetail
           publication={publication}

@@ -25,7 +25,7 @@ const AGE_RANGES = ["18-20 ans", "21-30 ans", "31-40 ans", "41-50 ans", "+50 ans
 const DURATIONS = ["Moins de 1 an", "1 à 2 ans", "2 à 3 ans", "3 à 5 ans", "+ 5 ans"];
 const MOTIFS = ["Renseignements", "Démarches administratives", "Vie familiale", "Croissance spirituelle", "Oppressions", "Maladie", "Service", "Études"];
 
-const cardClasses = "flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-6";
+const cardClasses = "flex flex-col gap-4";
 const sectionTitleClasses = "font-display text-[17px] font-semibold text-ink";
 
 function FieldError({ message }: { readonly message?: string }) {

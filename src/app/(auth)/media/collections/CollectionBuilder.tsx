@@ -195,7 +195,7 @@ export default function CollectionBuilder({
   return (
     <div className="space-y-5 max-w-3xl">
       {selection && (
-        <div className="bg-surface rounded-card border border-line shadow-card p-5">
+        <div>
           <h2 className="font-display text-[15px] font-semibold text-ink">Contenu du lien</h2>
           <p className="text-sm text-ink-muted mt-1">
             {selection.photoIds.length + selection.fileIds.length} média{selection.photoIds.length + selection.fileIds.length > 1 ? "s" : ""} sélectionné{selection.photoIds.length + selection.fileIds.length > 1 ? "s" : ""} dans la galerie : seuls ces médias seront visibles par le lien.
@@ -204,7 +204,7 @@ export default function CollectionBuilder({
       )}
       {!selection && (<>
       {/* ── Scope ─────────────────────────────────────────────────────────── */}
-      <div className="bg-surface rounded-card border border-line shadow-card p-5 space-y-3">
+      <div className="space-y-3">
         <h2 className="font-display text-[15px] font-semibold text-ink">Contenu à inclure</h2>
         {!lockedScope && (
           <div className="flex gap-2 flex-wrap">
@@ -338,7 +338,7 @@ export default function CollectionBuilder({
       </>)}
 
       {/* ── Options ────────────────────────────────────────────────────────── */}
-      <div className="bg-surface rounded-card border border-line shadow-card p-5 space-y-4">
+      <div className="space-y-4">
         <h2 className="font-display text-[15px] font-semibold text-ink">Options du lien</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input

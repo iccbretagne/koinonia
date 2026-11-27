@@ -247,7 +247,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {/* Identité */}
-      <div className="bg-surface rounded-card border border-line p-4 sm:p-6 space-y-4">
+      <div className="space-y-4">
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Qui es-tu ?</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -421,7 +421,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
       </div>
 
       {/* Profil */}
-      <div className="bg-surface rounded-card border border-line p-4 sm:p-6 space-y-4">
+      <div className="space-y-4">
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Ton profil</h2>
 
         <RadioGroup
@@ -456,7 +456,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
       </div>
 
       {/* Appel au salut */}
-      <div className="bg-surface rounded-card border border-line p-4 sm:p-6 space-y-3">
+      <div className="space-y-3">
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Appel au salut</h2>
         <label className="flex items-start gap-3 cursor-pointer group">
           <div className="mt-0.5">
@@ -488,7 +488,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
 
       {/* Soin pastoral — case affichée seulement si `care` est actif (spec 052) */}
       {showPastoralCare && (
-      <div className="bg-surface rounded-card border border-line p-4 sm:p-6 space-y-3">
+      <div className="space-y-3">
         <div>
           <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Soins pastoraux</h2>
           <p className="text-sm text-ink-muted mt-1">

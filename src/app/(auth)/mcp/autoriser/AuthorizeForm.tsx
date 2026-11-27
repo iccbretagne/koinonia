@@ -43,7 +43,7 @@ export default function AuthorizeForm({
   return (
     <form
       onSubmit={(e) => void decide(e, "allow")}
-      className="flex flex-col gap-5 rounded-card border border-line bg-surface p-5 shadow-card"
+      className="flex flex-col gap-5"
     >
       {children}
       {error !== null && <p role="alert" className="text-sm text-danger">{error}</p>}

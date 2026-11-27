@@ -71,7 +71,7 @@ export default function NewEntryForm({ churchId, profiles }: Props) {
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-5 rounded-card border border-line bg-surface p-4 shadow-card sm:p-6">
+    <form onSubmit={submit} className="flex flex-col gap-5">
       <fieldset className="min-w-0">
         <legend className={`${fieldLabelClasses} mb-2`}>Type</legend>
         <div className="flex flex-wrap gap-2">

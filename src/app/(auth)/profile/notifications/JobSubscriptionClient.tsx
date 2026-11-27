@@ -69,7 +69,7 @@ export default function JobSubscriptionClient() {
     return (
       <section className="flex flex-col gap-3" aria-busy="true">
         {heading}
-        <div className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4 sm:p-5">
+        <div className="flex flex-col gap-3">
           <Skeleton className="h-5 w-56" />
           <Skeleton className="h-5 w-40" />
           <Skeleton className="h-9 w-full" />
@@ -88,7 +88,7 @@ export default function JobSubscriptionClient() {
   return (
     <section className="flex flex-col gap-3">
       {heading}
-      <div className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+      <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
           {channels.map(({ key, label, hint }) => (
             <label key={key} className="flex min-h-11 cursor-pointer items-start gap-3 py-1.5">

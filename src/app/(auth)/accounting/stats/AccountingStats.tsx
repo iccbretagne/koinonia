@@ -61,12 +61,6 @@ function fmt(amount: number) {
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(amount);
 }
 
-function kpiBorderClass(accent?: boolean, warning?: boolean): string {
-  if (accent) return "border-brand/30 bg-brand-soft";
-  if (warning) return "border-warning/30 bg-warning-soft";
-  return "border-line";
-}
-
 function kpiValueClass(accent?: boolean, warning?: boolean): string {
   if (accent) return "text-brand-text";
   if (warning) return "text-warning";
@@ -87,9 +81,7 @@ function KpiCard({
   readonly warning?: boolean;
 }) {
   return (
-    <div
-      className={`rounded-card border bg-surface p-4 shadow-card sm:p-5 ${kpiBorderClass(accent, warning)}`}
-    >
+    <div>
       <p className="mb-1 text-[13px] font-semibold leading-[18px] text-ink-muted">{label}</p>
       <p className={`text-2xl font-bold tabular-nums ${kpiValueClass(accent, warning)}`}>{value}</p>
       {sub && <p className="mt-1 text-[13px] leading-[18px] text-ink-muted">{sub}</p>}
@@ -99,7 +91,7 @@ function KpiCard({
 
 function Section({ title, children }: { readonly title: string; readonly children: React.ReactNode }) {
   return (
-    <section className="rounded-card border border-line bg-surface p-4 shadow-card md:p-5">
+    <section>
       <h2 className="mb-4 font-display text-[17px] font-semibold leading-6 text-ink">{title}</h2>
       {children}
     </section>

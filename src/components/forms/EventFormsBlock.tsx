@@ -10,7 +10,7 @@ import type { EventForm } from "@/modules/forms";
 export default function EventFormsBlock({ forms, manage = false }: { readonly forms: readonly EventForm[]; readonly manage?: boolean }) {
   if (forms.length === 0) return null;
   return (
-    <section className="flex flex-col gap-2 rounded-card border border-line bg-surface p-4">
+    <section className="flex flex-col gap-2">
       <h2 className="flex items-center gap-2 font-display text-[17px] font-semibold leading-6 text-ink">
         <ClipboardList className="size-5 text-ink-subtle" aria-hidden="true" strokeWidth={1.75} /> Formulaires
       </h2>

@@ -136,7 +136,6 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
     );
   }
 
-  const SECTION = "rounded-card border border-line bg-surface p-4 shadow-card";
   const H2 = "mb-3 font-display text-[17px] font-semibold leading-6 text-ink";
 
   return (
@@ -173,17 +172,17 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
         )}
       </Modal>
 
-      <section className={SECTION}>
+      <section>
         <h2 className={H2}>Annonces</h2>
         {toggleRow("allowAnnouncements", "Accepter les demandes d'annonces", savingAnnouncements, "Si activé, cet événement apparaîtra dans le sélecteur lors de la soumission d'une annonce.")}
       </section>
 
-      <section className={SECTION}>
+      <section>
         <h2 className={H2}>Discipolat</h2>
         {toggleRow("trackedForDiscipleship", "Suivre les présences pour le discipolat", savingDiscipleship, "Si activé, cet événement apparaîtra dans le module discipolat pour l'enregistrement des présences des disciples.")}
       </section>
 
-      <section className={SECTION}>
+      <section>
         <h2 className={H2}>Compte rendu</h2>
         <div className="flex flex-col gap-1">
           {toggleRow("reportEnabled", "Activer le compte rendu", savingReport)}
@@ -199,7 +198,7 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
         )}
       </section>
 
-      <section className={SECTION}>
+      <section>
         <h2 className={H2}>Service d&apos;accueil</h2>
         {toggleRow("welcomeDutyEnabled", "Familles de service attendues", savingWelcomeDuty, "Si activé, cet événement apparaît dans le planning d'accueil pour l'affectation des familles.")}
         {welcomeDutyEnabled && (
@@ -216,7 +215,7 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {Object.entries(grouped).map(([ministry, deps]) => (
-            <div key={ministry} className={SECTION}>
+            <div key={ministry}>
               <h3 className="mb-2 font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-subtle">
                 {ministry}
               </h3>

@@ -94,7 +94,7 @@ export default async function CandidaturePage({ params }: { readonly params: Pro
       )}
 
       {app.assignments.length > 0 && (
-        <section className="rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+        <section>
           <h2 className="mb-3 font-display text-[17px] font-semibold text-ink">Affectations</h2>
           <ul className="space-y-3">
             {app.assignments.map((a) => (

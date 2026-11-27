@@ -45,7 +45,7 @@ export default function IntegrationSettingsClient({
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card md:p-5">
+    <div className="flex flex-col gap-4">
       <Input
         label="Attente de recontact (jours)"
         type="number"

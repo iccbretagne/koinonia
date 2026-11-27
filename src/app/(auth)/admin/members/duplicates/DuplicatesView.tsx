@@ -383,7 +383,7 @@ export default function DuplicatesView({ groups, allMembers, churchId, canAssign
     <div className="flex flex-col gap-6">
       {/* Bulk STAR assign */}
       {canAssignStarRoles && (
-      <section className="rounded-card border border-line bg-surface p-4">
+      <section>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Assigner le rôle STAR aux membres liés sans accès</h2>
@@ -405,7 +405,7 @@ export default function DuplicatesView({ groups, allMembers, churchId, canAssign
       )}
 
       {/* Fusion manuelle */}
-      <section className="rounded-card border border-line bg-surface p-4">
+      <section>
         <h2 className="mb-1 font-display text-[17px] font-semibold leading-6 text-ink">Fusion manuelle</h2>
         <p className="mb-4 text-[15px] leading-[22px] text-ink-muted">
           Sélectionnez deux membres à fusionner, même s&apos;ils ne sont pas détectés automatiquement comme doublons.

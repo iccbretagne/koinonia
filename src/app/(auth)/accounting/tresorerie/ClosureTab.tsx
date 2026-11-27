@@ -72,25 +72,25 @@ export default function ClosureTab({
   return (
     <div className="flex flex-wrap items-start gap-6">
       <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-6">
-        <section className="overflow-hidden rounded-card border border-line bg-surface">
-          <div className="flex items-center gap-3 px-5 py-4">
-            <h2 className="text-lg font-semibold text-ink">{monthTitle(month)}, tous comptes</h2>
+        <section className="flex flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">{monthTitle(month)}, tous comptes</h2>
             {closed ? <StatusChip tone="success">Clôturé</StatusChip> : <StatusChip tone="warning">Ouvert</StatusChip>}
           </div>
-          <div className="grid grid-cols-2 border-t border-line md:grid-cols-4 md:divide-x md:divide-line">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-0 md:divide-x md:divide-line">
             {[
               ["Ouverture", p.opening],
               ["Entrées", p.inflows],
               ["Sorties", p.outflows],
               ["Clôture", p.closing],
             ].map(([label, value]) => (
-              <div key={label as string} className="p-4">
+              <div key={label as string} className="md:px-4 md:first:pl-0">
                 <p className="text-[15px] leading-[22px] text-ink-muted">{label as string}</p>
                 <p className="mt-1 text-lg font-semibold tabular-nums">{euro(value as number)}</p>
               </div>
             ))}
           </div>
-          <p className="border-t border-line px-5 py-3 text-[15px] leading-[22px] text-ink-muted">{ledger.lines.length} ligne{ledger.lines.length > 1 ? "s" : ""} sur le mois.</p>
+          <p className="border-t border-line pt-3 text-[15px] leading-[22px] text-ink-muted">{ledger.lines.length} ligne{ledger.lines.length > 1 ? "s" : ""} sur le mois.</p>
         </section>
         {ledger.warnings.map((w) => (
           <Alert key={w.accountId} tone="danger" title={`${w.accountName} passe sous zéro le ${frDate(w.date)}`}>
@@ -101,7 +101,7 @@ export default function ClosureTab({
       </div>
 
       <aside className="flex flex-[1_1_300px] flex-col gap-4">
-        <section className="flex flex-col gap-3 rounded-card border border-line bg-surface p-5">
+        <section className="flex flex-col gap-3">
           <p className="text-[15px] leading-[22px] text-ink">
             Une fois clôturé, {monthTitle(month).toLowerCase()} ne peut plus être modifié. Seul un Admin peut le rouvrir, avec un motif.
           </p>
@@ -109,8 +109,8 @@ export default function ClosureTab({
             {closed ? `${monthTitle(month)} est clôturé` : `Clôturer ${monthTitle(month).toLowerCase()}`}
           </Button>
         </section>
-        <section className="rounded-card border border-line bg-surface p-5">
-          <h2 className="mb-2 font-semibold text-ink">Mois clôturés</h2>
+        <section>
+          <h2 className="mb-2 font-display text-[17px] font-semibold leading-6 text-ink">Mois clôturés</h2>
           {data.closures.length === 0 ? (
             <p className="text-[15px] leading-[22px] text-ink-muted">Aucun mois clôturé.</p>
           ) : (

@@ -111,7 +111,7 @@ export default function ServiceInfoEditor({ service }: { readonly service: Servi
   }
 
   return (
-    <div className="mb-6 border border-line rounded-card bg-surface p-4 space-y-3">
+    <div className="mb-6 space-y-3">
       {error && <p className="text-sm text-danger">{error}</p>}
       <Input label="Date du culte" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       <ServiceEventFields

@@ -58,7 +58,7 @@ export default async function SystemMessagePage({ params }: { readonly params: P
       <div>
         <StatusChip tone={SEVERITY_TONE[message.severity]}>{SEVERITY_LABEL[message.severity]}</StatusChip>
       </div>
-      <div className="whitespace-pre-line rounded-card border border-line bg-surface p-4 text-[15px] leading-[24px] text-ink shadow-card sm:p-5">
+      <div className="whitespace-pre-line text-[15px] leading-[24px] text-ink">
         {message.body}
       </div>
       {message.linkUrl && (
