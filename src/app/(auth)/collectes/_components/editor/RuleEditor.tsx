@@ -187,9 +187,9 @@ export default function RuleEditor({
             onChange={(e) =>
               setSimple(
                 e.target.value === "implies" && simple.kind === "compare"
-                  ? { kind: "implies", when: simple.compare, then: simple.compare }
+                  ? { kind: "implies", when: simple.compare, consequence: simple.compare }
                   : simple.kind === "implies"
-                    ? { kind: "compare", compare: simple.then }
+                    ? { kind: "compare", compare: simple.consequence }
                     : simple
               )
             }
@@ -201,7 +201,7 @@ export default function RuleEditor({
               <p className="text-[13px] font-semibold text-ink">Si</p>
               <ComparisonEditor comparison={simple.when} candidates={candidates} onInvalid={onInvalid} onChange={(when) => setSimple({ ...simple, when })} />
               <p className="text-[13px] font-semibold text-ink">Alors</p>
-              <ComparisonEditor comparison={simple.then} candidates={candidates} onInvalid={onInvalid} onChange={(then) => setSimple({ ...simple, then })} />
+              <ComparisonEditor comparison={simple.consequence} candidates={candidates} onInvalid={onInvalid} onChange={(consequence) => setSimple({ ...simple, consequence })} />
             </>
           )}
           <Button type="button" variant="ghost" size="sm" className="self-start" onClick={() => setJson(true)}>

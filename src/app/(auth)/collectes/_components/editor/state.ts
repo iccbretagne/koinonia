@@ -322,7 +322,7 @@ export interface SimpleComparison {
   left: SimpleOperand;
   right: SimpleOperand;
 }
-export type SimpleRule = { kind: "compare"; compare: SimpleComparison } | { kind: "implies"; when: SimpleComparison; then: SimpleComparison };
+export type SimpleRule = { kind: "compare"; compare: SimpleComparison } | { kind: "implies"; when: SimpleComparison; consequence: SimpleComparison };
 
 export const COMPARATOR_LABELS: Record<Comparator, string> = {
   lte: "≤ inférieur ou égal à",
@@ -355,8 +355,8 @@ function toSimpleComparison(check: RuleCheck): SimpleComparison | null {
 export function toSimpleRule(check: RuleCheck): SimpleRule | null {
   if ("implies" in check) {
     const when = toSimpleComparison(check.implies[0]);
-    const then = toSimpleComparison(check.implies[1]);
-    return when && then ? { kind: "implies", when, then } : null;
+    const consequence = toSimpleComparison(check.implies[1]);
+    return when && consequence ? { kind: "implies", when, consequence } : null;
   }
   const compare = toSimpleComparison(check);
   return compare ? { kind: "compare", compare } : null;
@@ -369,7 +369,7 @@ export function fromSimpleComparison(c: SimpleComparison): RuleCheck {
 }
 
 export function fromSimpleRule(rule: SimpleRule): RuleCheck {
-  if (rule.kind === "implies") return { implies: [fromSimpleComparison(rule.when), fromSimpleComparison(rule.then)] };
+  if (rule.kind === "implies") return { implies: [fromSimpleComparison(rule.when), fromSimpleComparison(rule.consequence)] };
   return fromSimpleComparison(rule.compare);
 }
 
