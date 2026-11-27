@@ -93,6 +93,8 @@ interface Props {
   readonly claimable?: boolean;
   /** Le demandeur a encore un compte dans l'église (spec 086) : sinon, pas de demande de pièce. */
   readonly submitterActive?: boolean;
+  /** Lecture pastorale (spec 092) : aucune action, pièces listées sans ouverture ni téléchargement. */
+  readonly readOnly?: boolean;
 }
 
 function fmt(d: DateLike | null) {
@@ -142,7 +144,7 @@ function WorkflowBar({ status }: { readonly status: string }) {
   );
 }
 
-export default function RequestDetail({ request: initial, canManage, isOwn, treasuryAccounts = [], archived = false, justification = null, claimable = false, submitterActive = true }: Props) {
+export default function RequestDetail({ request: initial, canManage, isOwn, treasuryAccounts = [], archived = false, justification = null, claimable = false, submitterActive = true, readOnly = false }: Props) {
   const router = useRouter();
   const uid = useId();
   const [req, setReq] = useState(initial);
@@ -321,6 +323,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
             requestId={req.id}
             canUpload={isOwn && req.status === "SUBMITTED"}
             canDelete={isOwn && req.status === "SUBMITTED"}
+            canOpen={!readOnly}
             onChange={(updated) => setReq((r) => ({ ...r, attachments: updated }))}
           />
         </section>

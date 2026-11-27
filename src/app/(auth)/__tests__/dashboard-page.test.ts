@@ -70,7 +70,7 @@ describe("DashboardPage", () => {
 
   it("redirige un pasteur vers sa vue, sauf choix explicite de la vue admin", async () => {
     mockAuth.mockResolvedValue(seen(createSession({ ...createAdminSession().user, pastoralChurchIds: ["church-1"] })));
-    await expect(render({ dept: "d1" })).rejects.toThrow("REDIRECT:/pastoral");
+    await expect(render({ dept: "d1" })).rejects.toThrow("REDIRECT:/accueil");
     viewModeCookie = "admin";
     await expect(render({ dept: "d1" })).resolves.toBeDefined();
   });

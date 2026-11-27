@@ -525,6 +525,17 @@ de `/integration/stats` au lot 1, `care:view`) — sans introduire de permission
   sans code spécifique — voir ADR-0009. Décision actée : la chaîne d'appartenance (`Member` →
   `member_departments`) n'est pas fusionnée avec le périmètre de responsabilité
 
+**Exceptions de droits de la navigation par métier** (spec 092, lot 3 — matrice inchangée, détail
+dans [docs/auth.md](docs/auth.md)) :
+- « Mes demandes » (`/requests`) : tout compte de l'église (`requireChurchAccess`), ses propres
+  demandes seulement ; « Nouvelle demande » exige toujours `members:view`
+- Demande de RDV pastoral (`/care/request`, `POST /api/care/requests`) : tout compte de l'église,
+  5 demandes par heure et par compte
+- Lecture pastorale (`hasPastoralRead`, église de l'objet) des comptes rendus et des demandes
+  comptables : lecture seule, sans écriture, ni téléchargement de pièce, ni export. La vue
+  pastorale est un **filtre** de la navigation commune (`PASTORAL_VIEW_HREFS`) ; tableau pastoral
+  sur `/accueil`, anciens `/pastoral/{events,reports,accounting}` redirigés
+
 **Événements d'équipe** (spec 044, issue #522) : rendez-vous internes à un département
 (répétition, réunion, formation), distincts des événements d'église (`TeamEvent`, table
 `team_events`). Gérés via les permissions existantes `planning:department`/`planning:edit` +

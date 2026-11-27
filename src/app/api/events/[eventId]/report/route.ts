@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireAuth, requireChurchPermission, resolveChurchId, hasPastoralRead } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { upsertSchema } from "./contract";
 import { saveReport } from "./_core";
@@ -11,10 +11,14 @@ export async function GET(
 ) {
   try {
     const { eventId } = await params;
+    const session = await requireAuth();
     const churchId = await resolveChurchId("event", eventId);
-    // reports:view OR events:manage — try both, fail if neither
-    let authorized = false;
+    // reports:view OR events:manage — try both, fail if neither. Lecture pastorale (spec 092,
+    // exception 3) : un profil pastoral dans l'église DE L'ÉVÉNEMENT lit le compte rendu, sans
+    // jamais pouvoir l'écrire (le PUT garde reports:edit/events:manage).
+    let authorized = hasPastoralRead(session, churchId);
     for (const perm of ["reports:view", "events:manage"] as const) {
+      if (authorized) break;
       try {
         await requireChurchPermission(perm, churchId);
         authorized = true;

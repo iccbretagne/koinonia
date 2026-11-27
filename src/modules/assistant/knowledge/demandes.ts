@@ -102,7 +102,7 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
       "besoin d'un accompagnement",
     ],
     answer:
-      "Déposez la demande depuis la tuile « Rendez-vous pastoral » de « Mes demandes » (ou le lien « Demande RDV pastoral » pour un STAR). Suivez ensuite son état au même endroit.",
+      "Déposez la demande depuis « Demander un rendez-vous » dans « Mes demandes », ouverte à tout compte de l’église. Suivez ensuite son état au même endroit.",
     href: paths.care.request(),
     hrefLabel: "Demande de rendez-vous pastoral",
     audience: { permissions: ["planning:view"] },

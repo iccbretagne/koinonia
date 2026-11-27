@@ -1,4 +1,4 @@
-import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
+import { requireChurchAccess, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowLeft, CalendarHeart, Plus } from "lucide-react";
@@ -36,7 +36,8 @@ export default async function CareRequestPage({
   const fromRequests = from === "requests";
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p className="text-sm text-ink-muted">Aucune église sélectionnée.</p>;
-  await requireChurchPermission("planning:view", churchId);
+  // Spec 092 (exception 2) : tout compte de l'église, rôle ou profil pastoral.
+  await requireChurchAccess(churchId);
 
   // Aligné sur « Mes demandes » : la liste d'abord, le formulaire sur demande explicite.
   const showForm = fromRequests || isNew === "1";

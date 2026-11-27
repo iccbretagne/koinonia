@@ -1,13 +1,21 @@
-import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
+import { requireChurchPermission, getCurrentChurchId, requireAuth, hasPastoralRead } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ReportsClient from "./ReportsClient";
 import { PageHeader } from "@/components/ui";
+
+/** `reports:view` par rôle dans l'église (sans lever d'erreur). */
+function canReadReports(churchId: string) {
+  return requireChurchPermission("reports:view", churchId).then(() => true, () => false);
+}
 
 export default async function ReportsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p className="text-ink-muted">Aucune église sélectionnée.</p>;
-  await requireChurchPermission("reports:view", churchId);
+  // Lecture pastorale (spec 092, exception 3) : un profil pastoral de l'église lit tous les
+  // comptes rendus, sans saisie ni export. Sinon, garde inchangée (`reports:view`).
+  const readOnly = hasPastoralRead(session, churchId) && !(await canReadReports(churchId));
+  if (!readOnly) await requireChurchPermission("reports:view", churchId);
 
   const events = await prisma.event.findMany({
     where: { churchId, reportEnabled: true },
@@ -42,6 +50,7 @@ export default async function ReportsPage() {
 
       <ReportsClient
         churchId={churchId}
+        readOnly={readOnly}
         events={events.map((e) => ({
           id: e.id,
           title: e.title,

@@ -45,6 +45,7 @@ export default async function AccountingRequestDetailPage({
 
   // Scope : gestionnaires voient tout ; propriétaire aussi ; sinon vérifier le périmètre
   const isMinister = roles.includes("MINISTER");
+  let readOnly = false;
   if (!canManage && !isOwn) {
     const userRoles = await prisma.userChurchRole.findMany({
       where: { userId: session.user.id!, churchId },
@@ -60,12 +61,22 @@ export default async function AccountingRequestDetailPage({
     } else {
       allowedDeptIds = userRoles.flatMap((r) => r.departments.map((d) => d.departmentId));
     }
-    if (!req.departmentId || !allowedDeptIds.includes(req.departmentId)) return notFound();
+    const inScope = !!req.departmentId && allowedDeptIds.includes(req.departmentId);
+    // Lecture pastorale (spec 092, exception 3) : toute demande de l'église, en consultation.
+    if (!inScope && !isPastoral) return notFound();
+    readOnly = !inScope;
   }
 
   // Prisma returns Decimal objects for amount fields — serialize before passing to Client Component
   const serialized = {
     ...req,
+    // Lecture pastorale : ni email du demandeur, ni clé de stockage des pièces.
+    ...(readOnly
+      ? {
+          submittedBy: { ...req.submittedBy, email: null },
+          attachments: req.attachments.map((a) => ({ id: a.id, filename: a.filename, mimeType: a.mimeType, size: a.size })),
+        }
+      : {}),
     amount: req.amount.toString(),
     payments: req.payments.map((p) => ({
       ...p,
@@ -81,7 +92,7 @@ export default async function AccountingRequestDetailPage({
       : [];
 
   // Justificatifs après la remise des fonds (spec 078), avec le périmètre de la compta.
-  const justification = await getRequestJustification(req.id, {
+  const justification = readOnly ? null : await getRequestJustification(req.id, {
     userId: session.user.id!,
     churchId,
     manage: canManage,
@@ -99,6 +110,7 @@ export default async function AccountingRequestDetailPage({
         request={serialized}
         canManage={canManage}
         isOwn={isOwn}
+        readOnly={readOnly}
         treasuryAccounts={treasuryAccounts}
         justification={justification}
         archived={isRequestArchived({ ...req, justification: justification ? { status: justification.status } : null })}

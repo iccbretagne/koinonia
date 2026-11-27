@@ -95,8 +95,8 @@ describe("landingHref", () => {
     expect(landingHref({ isPastoral: false, hasPlanningAccess: false, hasStarPlanning: false })).toBe("/accueil");
   });
 
-  it("la vue pastorale a son propre accueil", () => {
-    expect(landingHref({ isPastoral: true, hasPlanningAccess: true, hasStarPlanning: true })).toBe("/pastoral");
+  it("la vue pastorale arrive aussi sur l'Accueil (tableau pastoral, spec 092 lot 3)", () => {
+    expect(landingHref({ isPastoral: true, hasPlanningAccess: true, hasStarPlanning: true })).toBe("/accueil");
   });
 });
 
@@ -204,14 +204,39 @@ describe("buildSpaces", () => {
     expect(resources.pages.find((p) => p.href === "/jobs")?.badge).toBe(3);
   });
 
-  it("vue pastorale : mêmes entrées que la navigation pastorale actuelle", () => {
-    const spaces = buildSpaces({ ...admin, isPastoral: true, homeHref: "/pastoral" });
+  it("vue pastorale = filtre de la navigation commune (spec 092, lot 3)", () => {
+    const spaces = buildSpaces({ ...admin, hasMyPlanning: true, hasAvailability: true, isPastoral: true, homeHref: "/accueil" });
     const links = spaces.flatMap((s) => s.pages.map((p) => p.href));
-    expect(spaces[0].href).toBe("/pastoral");
+    expect(spaces[0].href).toBe("/accueil");
+    // Lecture pastorale, écrans personnels, Pastoral et Administration.
     expect(links).toEqual(
-      expect.arrayContaining(["/pastoral/members", "/pastoral/events", "/pastoral/reports", "/pastoral/accounting", "/events", "/jobs", "/agenda", "/care"])
+      expect.arrayContaining([
+        "/planning", "/disponibilites", "/events", "/admin/reports", "/pastoral/members", "/admin/discipleship",
+        "/requests", "/accounting/requests", "/audio", "/jobs", "/agenda", "/care", "/admin/departments",
+      ])
     );
+    // Aucun doublon pastoral ni écran de gestion.
+    for (const gone of ["/pastoral/events", "/pastoral/reports", "/pastoral/accounting", "/admin/events", "/admin/welcome-duty", "/secretariat/requests", "/media", "/admin/members", "/integration/requests", "/rooms"]) {
+      expect(links).not.toContain(gone);
+    }
     expect(links.some((h) => h.startsWith("/dashboard"))).toBe(false);
+    expect(links.filter((h) => h === "/pastoral/members")).toHaveLength(1);
+  });
+
+  it("vue pastorale : un pasteur également STAR garde Mon planning et Audio", () => {
+    const links = buildSpaces({ ...star, isPastoral: true, homeHref: "/accueil" }).flatMap((s) => s.pages.map((p) => p.href));
+    expect(links).toEqual(expect.arrayContaining(["/planning", "/audio"]));
+  });
+
+  it("vue pastorale : retour à la vue normale ⇒ mêmes espaces que sans profil", () => {
+    expect(buildSpaces({ ...admin, isPastoral: false }).map((s) => s.key)).toEqual(buildSpaces(admin).map((s) => s.key));
+  });
+
+  it("vue pastorale : demandes comptables en consultation même sans accounting:manage", () => {
+    const pastor: NavigationInput = { departments: [], configLinks: [], requestLinks: [{ href: "/requests", label: "Mes demandes" }], mediaLinks: [], hasAccounting: true, hasEventsAccess: true, hasReports: true, isPastoral: true, homeHref: "/accueil" };
+    const spaces = buildSpaces(pastor);
+    expect(spaces.find((s) => s.key === "finances")?.pages.map((p) => p.href)).toEqual(["/accounting/requests"]);
+    expect(spaces.find((s) => s.key === "events")?.pages.map((p) => p.href)).toEqual(["/events", "/admin/reports"]);
   });
 });
 
@@ -312,10 +337,10 @@ describe("bottomDestinations", () => {
   });
 
   it("vue pastorale : « Mes membres » mène à la page pastorale, comme la barre latérale (spec 092)", () => {
-    const spaces = buildSpaces({ ...admin, isPastoral: true, homeHref: "/pastoral" });
+    const spaces = buildSpaces({ ...admin, isPastoral: true, homeHref: "/accueil" });
     const destinations = bottomDestinations(spaces, { role: "ADMIN", isPastoral: true });
     expect(destinations.map((d) => [d.label, d.href])).toEqual([
-      ["Accueil", "/pastoral"],
+      ["Accueil", "/accueil"],
       ["Mes membres", "/pastoral/members"],
     ]);
     const sidebar = spaces.flatMap((s) => s.pages).find((p) => p.label === "Mes membres");

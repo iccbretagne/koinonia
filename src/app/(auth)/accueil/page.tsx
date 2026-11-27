@@ -33,6 +33,9 @@ import { loadMyRequests } from "../requests/my-requests-data";
 import { REQUEST_TYPE_LABEL, requestStatus, requestTypeIcon } from "../requests/request-display";
 import { pickFirstName } from "./first-name";
 import InstallCard from "./InstallCard";
+import PastoralDashboard from "./PastoralDashboard";
+import { cookies } from "next/headers";
+import { isPastoralView } from "@/lib/view-mode";
 import TodoBlock from "./TodoBlock";
 import { SkeletonList } from "@/components/ui/Skeleton";
 import { countUnstaffedDepartments, getStaffingGapViewer } from "@/modules/planning";
@@ -443,6 +446,20 @@ export default async function TodayPage() {
     return (
       <EmptyState icon={Church} title="Aucune église sélectionnée" description="Choisissez une église dans le menu." />
     );
+  }
+
+  // Vue pastorale (spec 092, lot 3) : l'Accueil rend le tableau pastoral (ex-`/pastoral`).
+  const isPastoralChurch = (session.user.pastoralChurchIds ?? []).includes(churchId);
+  if (
+    isPastoralChurch &&
+    isPastoralView({
+      isPastoral: isPastoralChurch,
+      hasClassicRole: session.user.churchRoles.some((r) => r.churchId === churchId),
+      viewModeCookie: (await cookies()).get("koinonia-view-mode")?.value,
+    })
+  ) {
+    const pastoral = await PastoralDashboard({ session, currentChurchId: churchId });
+    if (pastoral) return pastoral;
   }
 
   const planningModule = registry.has("planning");

@@ -15,8 +15,9 @@ export const contract = defineContract({
   },
   POST: {
     summary: "Demande de rendez-vous pastoral (membre connecté)",
-    description: "Limité en débit. Journalisé.",
-    access: "planning:view",
+    description: "Limité en débit (5 demandes par heure et par compte). Journalisé.",
+    access: "session",
+    accessNote: "tout compte de l'église `churchId` (rôle ou profil pastoral, spec 092)",
     body: { contentType: "application/json", description: "Demande (`appointmentSubmitSchema` du module care) : motifs, détails, disponibilités" },
     status: 201,
     response: "Demande créée",

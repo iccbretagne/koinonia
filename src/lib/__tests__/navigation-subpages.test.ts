@@ -178,7 +178,7 @@ describe("navigation — sous-pages nommées", () => {
     }
     expect(parentLink(star, "/messages/x1")).toEqual({ href: "/accueil", label: "Accueil" });
     expect(parentLink(star, "/mcp/autoriser")).toEqual({ href: "/accueil", label: "Accueil" });
-    expect(parentLink(star, "/pastoral/members")).toEqual({ href: "/pastoral", label: "Accueil" });
+    expect(parentLink(star, "/pastoral/members")).toEqual({ href: "/accueil", label: "Accueil" });
     // Sans l'espace Questionnaires : retour à l'Accueil, d'où le questionnaire est proposé.
     expect(parentLink(star, "/collectes/r/x1")).toEqual({ href: "/accueil", label: "Accueil" });
     expect(parentLink(star, "/profile")).toEqual({ href: "/accueil", label: "Accueil" });

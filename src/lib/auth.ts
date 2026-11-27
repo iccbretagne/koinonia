@@ -491,6 +491,21 @@ const PASTORAL_READ_PERMISSIONS = new Set([
   "accounting:stats",
 ]);
 
+/** Liste figée (test) : un ajout élargirait en silence tous les appelants de `requireChurchPermission`. */
+export const PASTORAL_READ_PERMISSION_LIST: readonly string[] = [...PASTORAL_READ_PERMISSIONS];
+
+/**
+ * Lecture pastorale étendue (spec 092, exception 3) : un profil pastoral dans **cette** église
+ * ouvre en lecture seule les comptes rendus et le détail des demandes comptables de toute
+ * l'église. Ce n'est pas une permission : le helper est appelé nommément, et seulement, par ces
+ * chemins de lecture — jamais par une écriture, un export ni un téléchargement de pièce, et
+ * jamais par l'assistant ou le serveur MCP (leur `viewer` ne lit que `rolePermissions`).
+ * `churchId` est celui de l'objet lu, jamais le contexte affiché.
+ */
+export function hasPastoralRead(session: Session, churchId: string): boolean {
+  return (session.user.pastoralChurchIds ?? []).includes(churchId);
+}
+
 export async function requireChurchPermission(
   permission: string,
   churchId: string

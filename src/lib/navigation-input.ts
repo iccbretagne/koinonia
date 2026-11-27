@@ -190,13 +190,8 @@ async function serviceTeamLinks(
     });
   }
 
-  // Spec 043 : pour qui a "members:view" (accès à "Mes demandes"), la demande de RDV
-  // pastoral devient une tuile dans /requests/new — lien de menu autonome retiré pour ne
-  // pas dupliquer. Le STAR (planning:view sans members:view) n'a pas "Mes demandes" :
-  // il garde ce lien autonome, seul moyen d'accès pour lui.
-  if (!userPermissions.has("members:view")) {
-    requestLinks.push({ href: paths.care.request(), label: "Demander un rendez-vous" });
-  }
+  // Spec 092 (exception 2) : la demande de RDV pastoral passe par « Mes demandes », ouverte à
+  // tout compte — plus de lien de menu autonome.
 
   // Protocole check for agenda access (don't inherit from isGlobalManager — role permissions handle that)
   return { requestLinks, mediaLinks, isProtocoleMember: isInTeam("PROTOCOLE") };
@@ -214,9 +209,8 @@ async function requestAndMediaLinks(
   const mediaLinks: (NavLink & { matchPrefixes?: string[] })[] = [];
   let isProtocoleMember = false;
 
-  if (userPermissions.has("members:view")) {
-    requestLinks.push({ href: paths.requests(), label: "Mes demandes" });
-  }
+  // « Mes demandes » (spec 092, exception 1) est ajouté par `loadNavigationInput` pour tout
+  // compte de l'église, après le calcul de `hasAnyNavigation` (il ne compte pas comme accès).
   if (currentChurchId && userPermissions.has("planning:view")) {
     const teamLinks = await serviceTeamLinks(churchRoles, currentChurchId, userPermissions, isSuperAdmin);
     requestLinks.push(...teamLinks.requestLinks);
@@ -424,7 +418,10 @@ export async function loadNavigationInput(
   const famillesUrl = process.env.FAMILLES_URL ?? "https://familles.iccrennes.fr";
 
   const hasDiscipleship = userPermissions.has("discipleship:view");
-  const hasAccounting = userPermissions.has("accounting:view");
+  // Lecture pastorale (spec 092, exception 3) : un profil pastoral de l'église courante lit les
+  // demandes comptables et les comptes rendus de toute l'église, en lecture seule (gardes
+  // `hasPastoralRead` côté serveur ; ni pièce, ni export, ni écriture).
+  const hasAccounting = userPermissions.has("accounting:view") || (isPastoral && registry.has("accounting"));
   const hasAccountingManage = userPermissions.has("accounting:manage");
   const hasAccountingStats = userPermissions.has("accounting:stats");
   const hasShuttle = await isShuttleVisible(session, currentChurchId);
@@ -458,7 +455,7 @@ export async function loadNavigationInput(
   // le STAR n'a pas planning:department, contrairement à planning:view.
   const hasPlanningAccess = userPermissions.has("planning:department");
   const hasMembersAccess = userPermissions.has("members:view");
-  const hasReports = userPermissions.has("reports:view");
+  const hasReports = userPermissions.has("reports:view") || (isPastoral && registry.has("planning"));
   const hasRooms = userPermissions.has("rooms:view");
   // "Mon planning", événements STAR et absences reposent sur planning:view (conservé
   // par le STAR), volontairement dissocié de hasPlanningAccess (spec 031/#462).
@@ -499,6 +496,11 @@ export async function loadNavigationInput(
       hasReports, hasRooms, hasMyPlanning, showStarEvents, hasAbsences, hasAvailability,
     ].some(Boolean);
 
+  // « Mes demandes » pour tout compte de l'église (spec 092, exception 1), en consultation : la
+  // page ne lit que ce qui appartient au compte. Ajouté après `hasAnyNavigation` pour ne pas
+  // ouvrir l'application à un compte dont aucun module n'est actif.
+  if (currentChurchId) requestLinks.unshift({ href: paths.requests(), label: "Mes demandes" });
+
   return {
     nav: {
       departments: allDepartments,
@@ -532,7 +534,7 @@ export async function loadNavigationInput(
       hasRooms,
       myRegistrations: registrations,
       // Actions de la palette (spec 092) : mêmes conditions que les écrans cibles.
-      hasCareRequest: registry.has("care") && hasStarPlanning,
+      hasCareRequest: registry.has("care") && !!currentChurchId,
       hasAccountingSubmit: registry.has("accounting") && userPermissions.has("accounting:submit"),
     },
     canAccessDashboard,

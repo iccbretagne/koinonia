@@ -33,7 +33,7 @@ export async function requirePastoralActiveChurch() {
       select: PROFILE_SELECT,
     });
   }
-  if (!profile) redirect(paths.pastoral());
+  if (!profile) redirect(paths.accueil());
 
   const activeChurchId = currentChurchId ?? profile.responsibleForChurch?.id ?? profile.churchId;
   return { session, activeChurchId };

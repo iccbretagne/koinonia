@@ -156,7 +156,7 @@ export default async function AuthLayout({
   async function switchToPastoralMode() {
     "use server";
     (await cookies()).set("koinonia-view-mode", "pastoral", { path: "/", maxAge: 2592000 });
-    redirect(paths.pastoral());
+    redirect(paths.accueil());
   }
   // Rôle principal dans l'église courante (spec 092) : priorité fixe, présentation seule
   // (barre du bas, visite guidée) — aucun droit n'en dépend.

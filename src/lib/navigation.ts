@@ -155,7 +155,7 @@ export interface NavigationInput {
 /**
  * Page d'accueil actuelle d'un rôle — même logique que `defaultLandingPage` (`src/app/page.tsx`) :
  * `/dashboard` exige `planning:department`, `/planning` `planning:view`, `/profile` sinon. La vue
- * pastorale a son propre accueil. `TODAY_HREF`, une fois renseignée, prend le pas pour tous.
+ * pastorale arrive aussi sur l'Accueil (tableau pastoral). `TODAY_HREF` prend le pas pour tous.
  */
 export function landingHref({
   isPastoral,
@@ -166,7 +166,7 @@ export function landingHref({
   readonly hasPlanningAccess: boolean;
   readonly hasStarPlanning: boolean;
 }): string {
-  if (isPastoral) return paths.pastoral();
+  if (isPastoral) return paths.accueil();
   if (TODAY_HREF) return TODAY_HREF;
   if (hasPlanningAccess) return paths.dashboard();
   if (hasStarPlanning) return paths.planning();
@@ -292,28 +292,35 @@ function financePagesFor(input: NavigationInput, giving: NavPage[]): NavPage[] {
   return pages;
 }
 
-/** Vue pastorale : navigation simplifiée, mêmes écrans qu'avant, rangés dans les espaces communs (lot 3 : filtre). */
-function buildPastoralSpaces(input: NavigationInput): NavSpace[] {
-  const { platform, giving, admin } = splitConfig(input);
-  const spaces = [
-    homeSpace(input.homeHref),
-    space("events", "Événements", Calendar, "service", [
-      { href: paths.pastoral.events(), label: "Événements pastoraux" },
-      ...(input.hasEventsAccess ? [{ href: paths.events(), label: "Calendrier de l'église" }] : []),
-      { href: paths.pastoral.reports(), label: "Comptes rendus" },
-    ]),
-    space("pastoral", "Pastoral", HeartHandshake, "service", pastoralPagesFor(input)),
-    space("people", "Personnes", Users, "service", [
-      { href: paths.pastoral.members(), label: "Mes membres" },
-      ...(input.hasDiscipleship ? [{ href: paths.admin.discipleship(), label: "Discipolat" }] : []),
-    ]),
-    space("requests", "Demandes", Inbox, "service", input.hasCampaigns ? [{ href: paths.collectes(), label: "Questionnaires" }] : []),
-    space("finances", "Finances", Wallet, "service", [{ href: paths.pastoral.accounting(), label: "Demandes comptables" }, ...giving]),
-    space("resources", "Ressources", Package, "church", input.hasJobs ? [jobsPage(input)] : []),
-    space("admin", "Administration", Settings, "church", admin),
-    space("platform", "Plateforme", Server, "church", platform),
-  ];
-  return spaces.filter((s): s is NavSpace => s !== null);
+/**
+ * Vue pastorale = filtre de la navigation commune (spec 092, lot 3, défaut Q3). Pages gardées dans
+ * les espaces de service : la lecture pastorale (calendrier, comptes rendus, discipolat, demandes
+ * comptables en consultation) et les écrans personnels du compte. Les espaces Pastoral,
+ * Administration et Plateforme sont gardés entiers (ce que le layout a autorisé), les liens
+ * externes (Familles) aussi. Tout écran de gestion (gérer les événements, traitement des demandes,
+ * grille des départements, billetterie, trésorerie…) disparaît. Ce filtre ne décide d'aucun droit.
+ */
+const PASTORAL_VIEW_HREFS: ReadonlySet<string> = new Set([
+  paths.planning(),
+  paths.disponibilites(),
+  paths.events(),
+  paths.planning.events(),
+  paths.admin.reports(),
+  paths.pastoral.members(),
+  paths.admin.discipleship(),
+  paths.requests(),
+  paths.collectes(),
+  paths.billetterie.mesReservations(),
+  paths.formulaires.mesReponses(),
+  paths.accounting.requests(),
+  paths.accounting.stats(),
+  paths.accounting.navette(),
+  paths.audio(),
+  paths.jobs(),
+]);
+
+function pastoralFilter(pages: NavPage[]): NavPage[] {
+  return pages.filter((p) => p.external || PASTORAL_VIEW_HREFS.has(p.href));
 }
 
 function planningPagesFor(input: NavigationInput): NavPage[] {
@@ -410,8 +417,7 @@ function resourcePagesFor(input: NavigationInput): NavPage[] {
  * espace sans page n'apparaît pas.
  */
 export function buildSpaces(input: NavigationInput): NavSpace[] {
-  if (input.isPastoral) return buildPastoralSpaces(input);
-
+  const pastoral = input.isPastoral === true;
   const { platform, giving, admin } = splitConfig(input);
   const media: NavPage[] = input.mediaLinks.map((l) => ({
     href: l.href,
@@ -419,21 +425,34 @@ export function buildSpaces(input: NavigationInput): NavSpace[] {
     matchPrefixes: l.matchPrefixes,
   }));
 
+  // Vue pastorale : filtre des mêmes pages (voir `PASTORAL_VIEW_HREFS`).
+  const keep = (pages: NavPage[]) => (pastoral ? pastoralFilter(pages) : pages);
+  let people = peoplePagesFor(input);
+  let finances = financePagesFor(input, giving);
+  if (pastoral) {
+    // « Mes membres » (lecture pastorale de l'église) remplace la gestion des fiches STAR.
+    people = [{ href: paths.pastoral.members(), label: "Mes membres" }, ...people.filter((p) => p.href !== paths.admin.members())];
+    // Demandes comptables en consultation (lecture pastorale), même sans `accounting:manage`.
+    if (input.hasAccounting && !finances.some((p) => p.href === paths.accounting.requests())) {
+      finances = [{ href: paths.accounting.requests(), label: "Demandes comptables", matchPrefixes: [PREFIXES.accounting] }, ...finances];
+    }
+  }
+
   const spaces = [
     homeSpace(input.homeHref),
-    space("planning", "Planning", LayoutGrid, "service", planningPagesFor(input), {
+    space("planning", "Planning", LayoutGrid, "service", keep(planningPagesFor(input)), {
       dataTour: "sidebar-planning",
       // La grille par département (/dashboard) redirige vers le premier département.
-      href: input.hasPlanningAccess && input.departments.length > 0 ? paths.dashboard() : undefined,
-      emptyMessage: input.hasPlanningAccess ? "Aucun département assigné." : undefined,
+      href: !pastoral && input.hasPlanningAccess && input.departments.length > 0 ? paths.dashboard() : undefined,
+      emptyMessage: !pastoral && input.hasPlanningAccess ? "Aucun département assigné." : undefined,
     }),
-    space("events", "Événements", Calendar, "service", eventsPagesFor(input), { dataTour: "sidebar-events" }),
+    space("events", "Événements", Calendar, "service", keep(eventsPagesFor(input)), { dataTour: "sidebar-events" }),
     space("pastoral", "Pastoral", HeartHandshake, "service", pastoralPagesFor(input), { dataTour: "sidebar-pastoral" }),
-    space("people", "Personnes", Users, "service", peoplePagesFor(input), { dataTour: "sidebar-members" }),
-    space("requests", "Demandes", Inbox, "service", requestPagesFor(input), { dataTour: "sidebar-service" }),
-    space("finances", "Finances", Wallet, "service", financePagesFor(input, giving)),
-    space("media", "Médias", Image, "church", media),
-    space("resources", "Ressources", Package, "church", resourcePagesFor(input), { dataTour: "sidebar-ressources" }),
+    space("people", "Personnes", Users, "service", keep(people), { dataTour: "sidebar-members" }),
+    space("requests", "Demandes", Inbox, "service", keep(requestPagesFor(input)), { dataTour: "sidebar-service" }),
+    space("finances", "Finances", Wallet, "service", keep(finances)),
+    space("media", "Médias", Image, "church", keep(media)),
+    space("resources", "Ressources", Package, "church", keep(resourcePagesFor(input)), { dataTour: "sidebar-ressources" }),
     space("admin", "Administration", Settings, "church", admin, { dataTour: "sidebar-config" }),
     space("platform", "Plateforme", Server, "church", platform),
   ];
@@ -799,8 +818,8 @@ export function parentLink(spaces: readonly NavSpace[], pathname: string, dept: 
   });
   if (viaChain) return viaChain;
 
-  // Vue pastorale (lot 3) : ses écrans reviennent à l'accueil pastoral, comme avant.
-  if (pathname.startsWith(`${paths.pastoral()}/`)) return { href: paths.pastoral(), label: "Accueil" };
+  // Vue pastorale : « Mes membres » revient à l'Accueil (tableau pastoral, spec 092 lot 3).
+  if (pathname.startsWith(`${paths.pastoral()}/`)) return { href: paths.accueil(), label: "Accueil" };
 
   // Écran hors des espaces du rôle (lien reçu, notification…) : retour à l'Accueil, sauf s'il est
   // lui-même une page d'espace d'un autre rôle (aucun parent dans le registre).
@@ -920,7 +939,7 @@ export function bottomDestinations(
     // Vue pastorale : destinations actuelles (accueil pastoral + membres).
     const home = spaces.find((s) => s.key === "home");
     return [
-      { key: "home", label: "Accueil", href: home?.href ?? paths.pastoral(), icon: House, space: "home" },
+      { key: "home", label: "Accueil", href: home?.href ?? paths.accueil(), icon: House, space: "home" },
       { key: "members", label: "Mes membres", href: paths.pastoral.members(), icon: Users, prefixes: [paths.pastoral.members()] },
     ];
   }

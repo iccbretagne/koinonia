@@ -33,6 +33,8 @@ interface EventItem {
 interface Props {
   readonly events: EventItem[];
   readonly churchId: string;
+  /** Lecture pastorale (spec 092) : ni saisie ni export Excel (l'export reste refusé côté serveur). */
+  readonly readOnly?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -98,7 +100,7 @@ function fmtDateTime(iso: string) {
 
 type Tab = "list" | "stats";
 
-export default function ReportsClient({ events, churchId }: Props) {
+export default function ReportsClient({ events, churchId, readOnly = false }: Props) {
   const uid = useId();
   const [tab, setTab] = useState<Tab>("list");
   const [monthFilter, setMonthFilter] = useState<string>("all");
@@ -331,7 +333,7 @@ export default function ReportsClient({ events, churchId }: Props) {
                       href={paths.admin.eventReport(event.id)}
                       className={buttonClasses("secondary", "sm")}
                     >
-                      {status === "none" ? "Saisir le compte rendu" : "Ouvrir le compte rendu"}
+                      {status === "none" && !readOnly ? "Saisir le compte rendu" : "Ouvrir le compte rendu"}
                     </Link>
                   </div>
                 </div>
@@ -371,6 +373,7 @@ export default function ReportsClient({ events, churchId }: Props) {
           </div>
 
           {/* Export Excel */}
+          {!readOnly && (
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
             <div className="flex flex-1 gap-3">
               <Input id={`${uid}-export-from`} label="Du" type="date" value={exportFrom} onChange={(e) => setExportFrom(e.target.value)} className="flex-1" />
@@ -404,6 +407,7 @@ export default function ReportsClient({ events, churchId }: Props) {
               {exporting ? "Export…" : "Exporter en Excel"}
             </Button>
           </div>
+          )}
 
           {/* Bloc Présence (Accueil) */}
           {accueilAgg ? (

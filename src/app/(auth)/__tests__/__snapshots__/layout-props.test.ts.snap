@@ -589,7 +589,7 @@ exports[`AuthLayout — props de navigation > Comptable 1`] = `
   "hasAvailability": false,
   "hasBothRoles": false,
   "hasCampaigns": false,
-  "hasCareRequest": false,
+  "hasCareRequest": true,
   "hasDiscipleship": false,
   "hasEventsAccess": false,
   "hasEventsManage": false,
@@ -617,7 +617,12 @@ exports[`AuthLayout — props de navigation > Comptable 1`] = `
     "reservations": false,
     "responses": false,
   },
-  "requestLinks": [],
+  "requestLinks": [
+    {
+      "href": "/requests",
+      "label": "Mes demandes",
+    },
+  ],
   "servingLinks": [],
   "showStarEvents": false,
   "user": {
@@ -753,7 +758,7 @@ exports[`AuthLayout — props de navigation > Pasteur seul (profil pastoral, vue
   "departments": [],
   "famillesUrl": "https://familles.iccrennes.fr",
   "hasAbsences": false,
-  "hasAccounting": false,
+  "hasAccounting": true,
   "hasAccountingManage": false,
   "hasAccountingStats": false,
   "hasAccountingSubmit": false,
@@ -770,13 +775,13 @@ exports[`AuthLayout — props de navigation > Pasteur seul (profil pastoral, vue
   "hasMembersAccess": true,
   "hasMyPlanning": false,
   "hasPlanningAccess": false,
-  "hasReports": false,
+  "hasReports": true,
   "hasRooms": false,
   "hasShuttle": false,
   "hasTicketing": false,
   "hasTreasury": false,
   "headerColor": "#123456",
-  "homeHref": "/pastoral",
+  "homeHref": "/accueil",
   "integrationLinks": [],
   "isPastoral": true,
   "mediaLinks": [],
@@ -1037,7 +1042,7 @@ exports[`AuthLayout — props de navigation > Référent soins pastoraux 1`] = `
   "hasAvailability": false,
   "hasBothRoles": false,
   "hasCampaigns": false,
-  "hasCareRequest": false,
+  "hasCareRequest": true,
   "hasDiscipleship": false,
   "hasEventsAccess": false,
   "hasEventsManage": false,
@@ -1065,7 +1070,12 @@ exports[`AuthLayout — props de navigation > Référent soins pastoraux 1`] = `
     "reservations": false,
     "responses": false,
   },
-  "requestLinks": [],
+  "requestLinks": [
+    {
+      "href": "/requests",
+      "label": "Mes demandes",
+    },
+  ],
   "servingLinks": [],
   "showStarEvents": false,
   "user": {
@@ -1146,8 +1156,8 @@ exports[`AuthLayout — props de navigation > STAR du Protocole 1`] = `
   },
   "requestLinks": [
     {
-      "href": "/care/request",
-      "label": "Demander un rendez-vous",
+      "href": "/requests",
+      "label": "Mes demandes",
     },
   ],
   "servingLinks": [],
@@ -1226,8 +1236,8 @@ exports[`AuthLayout — props de navigation > STAR lié, berger de famille 1`] =
   },
   "requestLinks": [
     {
-      "href": "/care/request",
-      "label": "Demander un rendez-vous",
+      "href": "/requests",
+      "label": "Mes demandes",
     },
   ],
   "servingLinks": [],
