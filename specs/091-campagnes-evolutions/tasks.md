@@ -16,11 +16,11 @@
 - [x] MCP : `campaign_import_contract`, `campaign_structure`, `export_campaign_definition`, `reopen_contribution_*`, `mergeHiddenConfidential` à l'import + tests
 
 ## Lot 2 — Pilotage (UI, P1)
-- [ ] Communication (modale, messages individuels et collectifs, copie) ; action « Message » par ligne
-- [ ] Modèles de messages dans Paramètres
-- [ ] Suivi : filtres, questions concernées, « Exploitable », Rouvrir / Annuler la validation / Échéance / Aperçu
-- [ ] Répondants : Remplacer, Voir le lien
-- [ ] Préparer l'ouverture (synthèse) ; Export : définition JSON, Dupliquer
+- [x] Communication (modale, messages individuels et collectifs, copie) ; action « Message » par ligne
+- [x] Modèles de messages dans Paramètres
+- [x] Suivi : filtres, questions concernées, « Exploitable », Rouvrir / Annuler la validation / Échéance / Aperçu
+- [x] Répondants : Remplacer, Voir le lien
+- [x] Préparer l'ouverture (synthèse) ; Export : définition JSON, Dupliquer
 
 ## Lot 3 — Aperçu et éditeur (UI, P1 pour l'aperçu, P2 pour l'éditeur)
 - [ ] `AssignmentForm` en mode aperçu ; page `/collectes/[id]/apercu/[formId]` (cadre téléphone)

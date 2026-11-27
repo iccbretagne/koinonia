@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Button, ConfirmModal, PageHeader, StatusChip, Tabs } from "@/components/ui";
+import { MessageSquareText, PencilLine } from "lucide-react";
+import { Alert, Button, ConfirmModal, PageHeader, StatusChip, Tabs, buttonClasses } from "@/components/ui";
 import { CAMPAIGN_STATUS_LABELS } from "@/modules/campaigns/schemas";
 import { CAMPAIGN_STATUS_TONES, formatDay } from "../_components/display";
 import { CAMPAIGN_TABS, type CampaignOverviewData, type CampaignTab } from "./types";
@@ -13,6 +14,9 @@ import RespondentsTab from "./RespondentsTab";
 import ManagersTab from "./ManagersTab";
 import SettingsTab from "./SettingsTab";
 import ExportTab from "./ExportTab";
+import CommunicationModal, { type CommunicationPreset } from "./CommunicationModal";
+import ReadinessPanel from "./ReadinessPanel";
+import { readinessFailures, type ReadinessLike } from "./pilotage";
 
 const TAB_LABELS: Record<CampaignTab, string> = {
   suivi: "Suivi",
@@ -56,13 +60,25 @@ export default function CampaignView({
   tab,
   overview,
   codeForms,
+  readiness,
+  appUrl,
+  canDuplicate,
 }: {
   readonly tab: CampaignTab;
   readonly overview: CampaignOverviewData;
   readonly codeForms: Record<string, string>;
+  /** Synthèse « Préparer l'ouverture » (brouillon seulement). */
+  readonly readiness: ReadinessLike | null;
+  /** Origine publique de l'application (liens des messages). */
+  readonly appUrl: string;
+  /** `campaigns:manage` dans l'église de la campagne (duplication). */
+  readonly canDuplicate: boolean;
 }) {
   const { call, busy } = useApi();
   const [pending, setPending] = useState<StatusAction | null>(null);
+  // `undefined` : fenêtre fermée ; `null` : ouverte sans ciblage (message collectif).
+  const [communication, setCommunication] = useState<CommunicationPreset | null | undefined>(undefined);
+  const failures = pending === "open" ? readinessFailures(readiness) : [];
   const { campaign } = overview;
   const base = `/collectes/${campaign.id}`;
 
@@ -95,9 +111,19 @@ export default function CampaignView({
           </span>
         }
         actions={
-          <Button type="button" variant={statusAction.variant === "danger" ? "secondary" : "primary"} onClick={() => setPending(action)} disabled={busy}>
-            {statusAction.label}
-          </Button>
+          <>
+            <Button type="button" variant="secondary" onClick={() => setCommunication(null)}>
+              <MessageSquareText aria-hidden="true" className="size-4" strokeWidth={1.75} />
+              Communication
+            </Button>
+            <Link href={`${base}/editer`} className={buttonClasses("secondary")}>
+              <PencilLine aria-hidden="true" className="size-4" strokeWidth={1.75} />
+              Éditer
+            </Link>
+            <Button type="button" variant={statusAction.variant === "danger" ? "secondary" : "primary"} onClick={() => setPending(action)} disabled={busy}>
+              {statusAction.label}
+            </Button>
+          </>
         }
       >
         <Tabs
@@ -111,12 +137,17 @@ export default function CampaignView({
         />
       </PageHeader>
 
-      {tab === "suivi" && <TrackingTab overview={overview} />}
+      {tab === "suivi" && campaign.status === "DRAFT" && readiness && <ReadinessPanel readiness={readiness} />}
+      {tab === "suivi" && <TrackingTab overview={overview} onMessage={(preset) => setCommunication(preset)} />}
       {tab === "controles" && <ChecksTab checks={overview.checks} forms={overview.forms} codeForms={codeForms} />}
       {tab === "repondants" && <RespondentsTab campaignId={campaign.id} campaignStatus={campaign.status} forms={overview.forms} />}
       {tab === "gestionnaires" && <ManagersTab campaignId={campaign.id} managers={overview.managers} />}
       {tab === "parametres" && <SettingsTab campaign={campaign} />}
-      {tab === "export" && <ExportTab campaignId={campaign.id} forms={overview.forms} />}
+      {tab === "export" && <ExportTab campaign={campaign} forms={overview.forms} canDuplicate={canDuplicate} />}
+
+      {communication !== undefined && (
+        <CommunicationModal overview={overview} appUrl={appUrl} preset={communication} onClose={() => setCommunication(undefined)} />
+      )}
 
       <ConfirmModal
         open={pending !== null}
@@ -127,7 +158,17 @@ export default function CampaignView({
         confirming={busy}
         onConfirm={confirmStatus}
         onCancel={() => setPending(null)}
-      />
+      >
+        {failures.length > 0 && (
+          <Alert tone="warning" title="Points à vérifier avant l'ouverture.">
+            <ul className="list-disc pl-5">
+              {failures.map((f) => (
+                <li key={f}>{f}</li>
+              ))}
+            </ul>
+          </Alert>
+        )}
+      </ConfirmModal>
     </div>
   );
 }

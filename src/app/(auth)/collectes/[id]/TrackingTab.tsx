@@ -2,13 +2,58 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Alert, Button, Checkbox, DataTable, Modal, Select, StatusChip, Textarea, buttonClasses } from "@/components/ui";
+import { Alert, Button, Checkbox, ConfirmModal, DataTable, FilterChip, Input, Modal, Select, StatusChip, Textarea, buttonClasses } from "@/components/ui";
 import { ASSIGNMENT_STATUSES, ASSIGNMENT_STATUS_LABELS, type AssignmentStatus } from "@/modules/campaigns/schemas";
-import { ASSIGNMENT_STATUS_TONES, formatDateTime, formatDay, percent } from "../_components/display";
+import { ASSIGNMENT_STATUS_TONES, formatDateTime, formatDay, parisDayKey, percent } from "../_components/display";
 import { useApi } from "../_components/use-api";
+import type { CommunicationPreset } from "./CommunicationModal";
+import { TRACKING_FILTERS, TRACKING_FILTER_LABELS, groupIssues, matchesTrackingFilter, messageKindForStatus, type TrackingFilter } from "./pilotage";
 import type { AssignmentData, CampaignOverviewData } from "./types";
 
-type Row = AssignmentData & { formTitle: string; confidential: boolean };
+type Row = AssignmentData & { formId: string; formTitle: string; confidential: boolean };
+type ReviewAction = "reopen" | "unvalidate";
+
+const REVIEW_ACTIONS: Record<ReviewAction, { title: string; message: string; label: string; success: string }> = {
+  reopen: {
+    title: "Rouvrir la contribution ?",
+    message: "Elle repasse « En cours », réponses et fichiers intacts. Ses répondants sont prévenus et devront la soumettre de nouveau.",
+    label: "Rouvrir",
+    success: "Contribution rouverte",
+  },
+  unvalidate: {
+    title: "Annuler la validation ?",
+    message: "Elle revient à « Soumis » et perd la mention de la Pasteure. Vous pourrez ensuite la rouvrir. Aucune notification n'est envoyée.",
+    label: "Annuler la validation",
+    success: "Validation annulée",
+  },
+};
+
+/** Questions concernées d'une ligne, dépliables, sans ouvrir le questionnaire. */
+function IssuesDetails({ row }: { readonly row: Row }) {
+  if (row.issues.length === 0) return <span className="text-ink-subtle">—</span>;
+  const groups = groupIssues(row.issues);
+  return (
+    <details className="group max-w-sm">
+      <summary className="inline-flex min-h-11 cursor-pointer items-center text-[13px] font-semibold text-brand-text md:min-h-0">
+        {row.issues.length} question{row.issues.length > 1 ? "s" : ""} concernée{row.issues.length > 1 ? "s" : ""}
+      </summary>
+      <div className="mt-1 flex flex-col gap-2">
+        {groups.map((g) => (
+          <div key={g.kind}>
+            <p className="text-[13px] font-semibold leading-[18px] text-ink">{g.label}</p>
+            <ul className="list-disc pl-5 text-[13px] leading-[18px] text-ink-muted">
+              {g.items.map((i) => (
+                <li key={`${i.kind}-${i.code}`} className="break-words">
+                  {i.label}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
 
 const OPEN_STATUSES: readonly AssignmentStatus[] = ["NOT_STARTED", "IN_PROGRESS", "CHANGES_REQUESTED"];
 
@@ -29,7 +74,14 @@ function completenessLabel(row: Row): string {
 }
 
 /** Onglet Suivi : indicateurs, filtres, affectations et gestes de pilotage par ligne. */
-export default function TrackingTab({ overview }: { readonly overview: CampaignOverviewData }) {
+export default function TrackingTab({
+  overview,
+  onMessage,
+}: {
+  readonly overview: CampaignOverviewData;
+  /** Ouvre la fenêtre « Communication » pré-ciblée sur une contribution. */
+  readonly onMessage: (preset: CommunicationPreset) => void;
+}) {
   const { call, busy } = useApi();
   const { campaign, progress } = overview;
   const [statusFilter, setStatusFilter] = useState("");
@@ -38,15 +90,21 @@ export default function TrackingTab({ overview }: { readonly overview: CampaignO
   const [reason, setReason] = useState("");
   const [validating, setValidating] = useState<Row | null>(null);
   const [pastoral, setPastoral] = useState(false);
+  const [issueFilter, setIssueFilter] = useState<TrackingFilter | null>(null);
+  const [review, setReview] = useState<{ row: Row; action: ReviewAction } | null>(null);
+  const [reviewReason, setReviewReason] = useState("");
+  const [due, setDue] = useState<{ row: Row; value: string } | null>(null);
 
   const rows: Row[] = useMemo(
     () =>
       overview.forms.flatMap((f) =>
-        f.assignments.map((a) => ({ ...a, formTitle: f.title, confidential: f.confidential }))
+        f.assignments.map((a) => ({ ...a, formId: f.id, formTitle: f.title, confidential: f.confidential }))
       ),
     [overview.forms]
   );
-  const shown = rows.filter((r) => (!statusFilter || r.status === statusFilter) && (!formFilter || r.formTitle === formFilter));
+  const shown = rows.filter(
+    (r) => (!statusFilter || r.status === statusFilter) && (!formFilter || r.formTitle === formFilter) && matchesTrackingFilter(r, issueFilter)
+  );
   const open = campaign.status === "OPEN";
 
   async function remind(row: Row) {
@@ -81,6 +139,27 @@ export default function TrackingTab({ overview }: { readonly overview: CampaignO
     }
   }
 
+  async function confirmReview() {
+    if (!review) return;
+    const motive = reviewReason.trim();
+    const ok = await call(
+      `/api/campaigns/assignments/${review.row.id}/review`,
+      "POST",
+      { action: review.action, ...(motive ? { reason: motive } : {}) },
+      REVIEW_ACTIONS[review.action].success
+    );
+    if (ok) {
+      setReview(null);
+      setReviewReason("");
+    }
+  }
+
+  async function saveDue(value: string | null) {
+    if (!due) return;
+    const ok = await call(`/api/campaigns/assignments/${due.row.id}`, "PATCH", { dueAt: value }, value ? "Échéance enregistrée" : "Échéance de la campagne rétablie");
+    if (ok) setDue(null);
+  }
+
   const done = progress.byStatus.SUBMITTED + progress.byStatus.VALIDATED;
 
   return (
@@ -91,7 +170,7 @@ export default function TrackingTab({ overview }: { readonly overview: CampaignO
         </Alert>
       )}
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
         <Indicator label="Avancement" value={percent(progress.rate)} detail={`${done}/${progress.total} rendus`} />
         <Indicator
           label="Soumis / validés"
@@ -102,6 +181,11 @@ export default function TrackingTab({ overview }: { readonly overview: CampaignO
         <Indicator label="Estimations" value={String(progress.estimates)} />
         <Indicator label="À rechercher" value={String(progress.toResearch)} />
         <Indicator label="Fichiers reçus" value={`${progress.filesReceived} / ${progress.filesExpected}`} detail="demandes avec fichier" />
+        <Indicator
+          label="Exploitables"
+          value={`${progress.exploitable} / ${progress.total}`}
+          detail="soumis, sans point bloquant"
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:max-w-2xl">
@@ -117,6 +201,15 @@ export default function TrackingTab({ overview }: { readonly overview: CampaignO
           onChange={(e) => setFormFilter(e.target.value)}
           options={[{ value: "", label: "Tous les questionnaires" }, ...overview.forms.map((f) => ({ value: f.title, label: f.title }))]}
         />
+      </div>
+
+      <div role="group" aria-label="Points d'attention" className="flex flex-wrap gap-2">
+        {TRACKING_FILTERS.map((f) => (
+          <FilterChip key={f} pressed={issueFilter === f} onClick={() => setIssueFilter((cur) => (cur === f ? null : f))}>
+            {TRACKING_FILTER_LABELS[f]}
+            <span className="tabular-nums text-ink-subtle">{rows.filter((r) => matchesTrackingFilter(r, f)).length}</span>
+          </FilterChip>
+        ))}
       </div>
 
       <DataTable<Row>
@@ -143,11 +236,13 @@ export default function TrackingTab({ overview }: { readonly overview: CampaignO
             accessor: (r) => (
               <span className="flex flex-wrap items-center gap-1">
                 <StatusChip tone={ASSIGNMENT_STATUS_TONES[r.status]}>{ASSIGNMENT_STATUS_LABELS[r.status]}</StatusChip>
+                {r.exploitable && <StatusChip tone="success">Exploitable</StatusChip>}
                 {r.pastoralValidated && <StatusChip tone="success">Pasteure</StatusChip>}
               </span>
             ),
           },
           { header: "Complétude", accessor: completenessLabel },
+          { header: "Questions concernées", accessor: (r) => <IssuesDetails row={r} /> },
           { header: "Estimations", accessor: (r) => r.completeness.estimates.length, align: "right" },
           { header: "À rechercher", accessor: (r) => r.completeness.toResearch.length, align: "right" },
           { header: "Fichiers", accessor: (r) => `${r.completeness.filesReceived}/${r.completeness.filesExpected}`, align: "right" },
@@ -159,6 +254,9 @@ export default function TrackingTab({ overview }: { readonly overview: CampaignO
             <Link href={`/collectes/r/${r.id}`} className={buttonClasses("secondary", "sm")}>
               Ouvrir
             </Link>
+            <Button type="button" size="sm" variant="ghost" onClick={() => onMessage({ kind: messageKindForStatus(r, new Date()), contributionId: r.id })}>
+              Message
+            </Button>
             {open && OPEN_STATUSES.includes(r.status) && (
               <Button type="button" size="sm" variant="ghost" disabled={busy || r.respondents.length === 0} onClick={() => remind(r)}>
                 Relancer
@@ -174,6 +272,22 @@ export default function TrackingTab({ overview }: { readonly overview: CampaignO
                 Valider
               </Button>
             )}
+            {open && r.status === "SUBMITTED" && (
+              <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => setReview({ row: r, action: "reopen" })}>
+                Rouvrir
+              </Button>
+            )}
+            {r.status === "VALIDATED" && (
+              <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => setReview({ row: r, action: "unvalidate" })}>
+                Annuler la validation
+              </Button>
+            )}
+            <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => setDue({ row: r, value: parisDayKey(r.dueAt) })}>
+              Échéance
+            </Button>
+            <Link href={`/collectes/${campaign.id}/apercu/${r.formId}`} className={buttonClasses("ghost", "sm")}>
+              Aperçu
+            </Link>
           </div>
         )}
       />
@@ -219,6 +333,67 @@ export default function TrackingTab({ overview }: { readonly overview: CampaignO
             </Button>
           </div>
         </div>
+      </Modal>
+
+      <ConfirmModal
+        open={review !== null}
+        title={review ? REVIEW_ACTIONS[review.action].title : ""}
+        message={review ? `« ${review.row.label} » : ${REVIEW_ACTIONS[review.action].message}` : ""}
+        confirmLabel={review ? REVIEW_ACTIONS[review.action].label : "Confirmer"}
+        variant="primary"
+        confirming={busy}
+        onConfirm={() => void confirmReview()}
+        onCancel={() => {
+          setReview(null);
+          setReviewReason("");
+        }}
+      >
+        <Textarea
+          label="Motif (facultatif)"
+          value={reviewReason}
+          onChange={(e) => setReviewReason(e.target.value)}
+          rows={3}
+          maxLength={2000}
+          hint={review?.action === "reopen" ? "Transmis aux répondants avec la notification." : "Gardé dans l'historique de la contribution."}
+        />
+      </ConfirmModal>
+
+      <Modal open={due !== null} onClose={() => setDue(null)} title={`Échéance · ${due?.row.label ?? ""}`} mobileLayout="sheet">
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (due?.value) void saveDue(due.value);
+          }}
+        >
+          <p className="text-[15px] leading-[22px] text-ink-muted">
+            {due?.row.assignmentDueAt
+              ? "Cette contribution a sa propre échéance."
+              : `Échéance de la campagne : ${formatDay(campaign.dueAt)}.`}{" "}
+            Une échéance repoussée permet une nouvelle relance automatique deux jours avant.
+          </p>
+          <Input
+            label="Échéance de la contribution"
+            type="date"
+            value={due?.value ?? ""}
+            onChange={(e) => setDue((d) => (d ? { ...d, value: e.target.value } : d))}
+            hint="Fin de journée, heure de Paris."
+            required
+          />
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
+            <Button type="button" variant="secondary" onClick={() => setDue(null)} disabled={busy}>
+              Annuler
+            </Button>
+            {due?.row.assignmentDueAt && (
+              <Button type="button" variant="ghost" onClick={() => void saveDue(null)} disabled={busy}>
+                Effacer (échéance de la campagne)
+              </Button>
+            )}
+            <Button type="submit" disabled={busy || !due?.value}>
+              {busy ? "Enregistrement…" : "Enregistrer"}
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

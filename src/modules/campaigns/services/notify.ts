@@ -25,8 +25,9 @@ const REMIND_INTERVAL_MS = 24 * 3600_000;
 const DUE_REMINDER_WINDOW_MS = 48 * 3600_000;
 const OPEN_STATUSES: CampaignAssignmentStatus[] = ["NOT_STARTED", "IN_PROGRESS", "CHANGES_REQUESTED"];
 
-function appUrl(): string {
-  return process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+/** Origine publique de l'application (liens des notifications et des messages), sans `/` final. */
+export function appUrl(): string {
+  return (process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000").replace(/\/+$/, "");
 }
 
 /** Lien personnel absolu d'un répondant sans compte, ou null s'il n'a pas (encore) de lien. */

@@ -102,5 +102,6 @@ export {
   respondentLink,
   runDueReminders,
   assignmentPath,
+  appUrl as campaignsAppUrl,
 } from "./services/notify";
 export { runCampaignTasks } from "./services/tasks";

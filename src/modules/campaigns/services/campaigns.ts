@@ -285,7 +285,10 @@ export interface AssignmentOverview {
   key: string;
   label: string;
   status: CampaignAssignmentStatus;
+  /** Échéance applicable : celle de la contribution, à défaut celle de la campagne. */
   dueAt: Date | null;
+  /** Échéance propre de la contribution (null : celle de la campagne s'applique). */
+  assignmentDueAt: Date | null;
   submittedAt: Date | null;
   submittedByName: string | null;
   validatedAt: Date | null;
@@ -325,7 +328,7 @@ export function assignmentIssues(
   const issues: AssignmentIssue[] = [
     ...c.missing.filter((code) => !pendingFileCodes.includes(code)).map(issue("missing")),
     ...pendingFileCodes.map(issue("file_pending")),
-    ...c.toResearch.map(issue("to_research")),
+    ...c.toResearch.filter((code) => !pendingFileCodes.includes(code)).map(issue("to_research")),
     ...c.estimates.map(issue("estimate")),
     ...violatedChecks.map((r) => ({ code: r.key, label: r.message, kind: "check" as const })),
   ];
@@ -419,9 +422,10 @@ export async function getCampaignOverview(campaignId: string) {
       const fileCount = new Map<string, number>();
       for (const file of a.files) fileCount.set(file.requestCode, (fileCount.get(file.requestCode) ?? 0) + 1);
       const c = completeness(items, answersByCode, fileCount);
-      // « Fichier transmis » annoncé mais aucun fichier déposé : un fichier attendu, pas une réponse manquante.
+      // Demande de fichier non satisfaite (obligatoire sans état, « à rechercher », ou « fichier
+      // transmis » sans dépôt) : un fichier attendu, pas une réponse manquante ni « à rechercher ».
       const pendingFiles = items
-        .filter((i) => i.type === "file_request" && (answersByCode.get(i.code)?.value as { status?: unknown } | null | undefined)?.status === "FILE_SENT" && !fileCount.get(i.code))
+        .filter((i) => i.type === "file_request" && (c.missing.includes(i.code) || c.toResearch.includes(i.code)))
         .map((i) => i.code);
       const { issues, exploitable } = assignmentIssues(items, c, pendingFiles, violatedByAssignment.get(a.id) ?? [], a.status);
       return {
@@ -430,6 +434,7 @@ export async function getCampaignOverview(campaignId: string) {
         label: a.label,
         status: a.status,
         dueAt: a.dueAt ?? campaign.dueAt,
+        assignmentDueAt: a.dueAt,
         submittedAt: a.submittedAt,
         submittedByName: a.submittedByName,
         validatedAt: a.validatedAt,

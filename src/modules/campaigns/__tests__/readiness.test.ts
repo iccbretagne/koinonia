@@ -93,6 +93,15 @@ describe("assignmentIssues", () => {
     expect(r.issues[2]).toEqual({ code: "r1", label: "N2 ≤ N1", kind: "check" });
     expect(assignmentIssues(items, c(), [], [], "IN_PROGRESS").exploitable).toBe(false);
   });
+
+  it("une demande de fichier « à rechercher » n'est listée qu'une fois, comme fichier attendu", () => {
+    const r = assignmentIssues(items, c({ toResearch: ["F", "N1"] }), ["F"], [], "SUBMITTED");
+    expect(r.issues.map((i) => [i.code, i.kind])).toEqual([
+      ["F", "file_pending"],
+      ["N1", "to_research"],
+    ]);
+    expect(r.exploitable).toBe(false);
+  });
 });
 
 describe("paramètres : modèles de messages", () => {
