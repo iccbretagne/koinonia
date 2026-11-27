@@ -11,6 +11,7 @@ import SystemMessageBanner from "@/components/SystemMessageBanner";
 import type { RoleKey as TourRoleKey } from "@/lib/tour-steps";
 import { landingHref } from "@/lib/navigation";
 import { isPastoralView } from "@/lib/view-mode";
+import { primaryRole } from "@/lib/roles";
 import { churchLogoSources } from "@/modules/core/schemas";
 import { isShuttleVisible } from "@/modules/shuttle/auth";
 import { isTreasuryVisible } from "@/modules/treasury/auth";
@@ -578,8 +579,9 @@ export default async function AuthLayout({
   const hasAvailability = memberLink !== null;
   const hasAbsences = userPermissions.has("absences:view");
 
-  // Determine the user's primary role for the current church
-  const currentRole = churchRoles.find((r) => r.churchId === currentChurchId)?.role ?? "DEPARTMENT_HEAD";
+  // Rôle principal dans l'église courante (spec 092) : priorité fixe, présentation seule
+  // (barre du bas, visite guidée) — aucun droit n'en dépend.
+  const currentRole = primaryRole(churchRoles, currentChurchId, session.user.isSuperAdmin);
 
   // Spec 038 (CA10) : un utilisateur dont TOUS les rôles ne portent que sur des modules
   // désactivés sur cette instance (ex. Comptable sans le module accounting) conserve un

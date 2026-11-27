@@ -13,6 +13,8 @@ import {
   ASSIGNABLE_BY_MINISTER,
   PRIVILEGED_ROLES,
   canGrantRole,
+  primaryRole,
+  PRIMARY_ROLE_ORDER,
 } from "@/lib/roles";
 import type { Role } from "@/generated/prisma/client";
 
@@ -82,3 +84,49 @@ describe("canGrantRole", () => {
     }
   });
 });
+
+describe("primaryRole (spec 092) — rôle principal déterministe", () => {
+  const C = "church-1";
+  const rows = (...roles: Role[]) => roles.map((role) => ({ churchId: C, role }));
+  const rank = (r: Role) => PRIMARY_ROLE_ORDER.indexOf(r);
+
+  it("couvre tous les rôles du schéma", () => {
+    expect(new Set(PRIMARY_ROLE_ORDER)).toEqual(new Set(SCHEMA_ROLES));
+  });
+
+  it("ordre fixé par la spec", () => {
+    expect(PRIMARY_ROLE_ORDER).toEqual([
+      "SUPER_ADMIN", "ADMIN", "SECRETARY", "ACCOUNTANT", "PASTORAL_CARE_REFERENT",
+      "MINISTER", "DEPARTMENT_HEAD", "REPORTER", "DISCIPLE_MAKER", "STAR",
+    ]);
+  });
+
+  const pairs = SCHEMA_ROLES.flatMap((a) => SCHEMA_ROLES.filter((b) => b !== a).map((b) => [a, b] as const));
+  it.each(pairs)("%s + %s : même résultat dans les deux ordres, le mieux classé", (a, b) => {
+    const expected = rank(a) < rank(b) ? a : b;
+    expect(primaryRole(rows(a, b), C, false)).toBe(expected);
+    expect(primaryRole(rows(b, a), C, false)).toBe(expected);
+  });
+
+  it("Comptable + STAR : Comptable, quel que soit l'ordre", () => {
+    expect(primaryRole(rows("STAR", "ACCOUNTANT"), C, false)).toBe("ACCOUNTANT");
+    expect(primaryRole(rows("ACCOUNTANT", "STAR"), C, false)).toBe("ACCOUNTANT");
+  });
+
+  it("Super Admin (drapeau) passe devant tout, même sans rôle d'église", () => {
+    expect(primaryRole([], C, true)).toBe("SUPER_ADMIN");
+    expect(primaryRole(rows("STAR"), C, true)).toBe("SUPER_ADMIN");
+  });
+
+  it("le rôle Secrétaire virtuel compte comme un rôle réel", () => {
+    const virtual = { id: `virtual-secretariat-${C}`, churchId: C, role: "SECRETARY" as Role };
+    expect(primaryRole([{ churchId: C, role: "DEPARTMENT_HEAD" }, virtual], C, false)).toBe("SECRETARY");
+  });
+
+  it("sans rôle dans l'église courante ⇒ STAR (les rôles d'une autre église sont ignorés)", () => {
+    expect(primaryRole([], C, false)).toBe("STAR");
+    expect(primaryRole([{ churchId: "other", role: "ADMIN" }], C, false)).toBe("STAR");
+    expect(primaryRole(rows("ADMIN"), null, false)).toBe("STAR");
+  });
+});
+

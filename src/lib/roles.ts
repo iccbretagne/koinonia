@@ -104,3 +104,37 @@ export const ALL_ROLES: readonly Role[] = [
   "PASTORAL_CARE_REFERENT",
   "ACCOUNTANT",
 ];
+
+/**
+ * Ordre de priorité du **rôle principal** (spec 092) : le premier rôle de l'église courante
+ * dans cet ordre, quel que soit l'ordre de création des rôles. Le Super Admin prend le rang de
+ * l'Admin.
+ */
+export const PRIMARY_ROLE_ORDER: readonly Role[] = [
+  "SUPER_ADMIN",
+  "ADMIN",
+  "SECRETARY",
+  "ACCOUNTANT",
+  "PASTORAL_CARE_REFERENT",
+  "MINISTER",
+  "DEPARTMENT_HEAD",
+  "REPORTER",
+  "DISCIPLE_MAKER",
+  "STAR",
+];
+
+/**
+ * Rôle principal dans l'église courante — **présentation seule** (barre du bas, visite guidée,
+ * profil par défaut du guide) : il ne donne ni ne retire aucun droit, les permissions restant
+ * calculées sur l'ensemble des rôles (`rolePermissions`). Le rôle Secrétaire virtuel (équipe
+ * Secrétariat) compte comme un rôle réel. Sans rôle dans l'église (pasteur seul) : `STAR`.
+ */
+export function primaryRole(
+  churchRoles: readonly { readonly churchId: string; readonly role: Role }[],
+  churchId: string | null | undefined,
+  isSuperAdmin: boolean
+): Role {
+  if (isSuperAdmin) return "SUPER_ADMIN";
+  const held = new Set(churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role));
+  return PRIMARY_ROLE_ORDER.find((r) => held.has(r)) ?? "STAR";
+}
