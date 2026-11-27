@@ -6,12 +6,19 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.47.0] - 2026-11-28
+
 ### Ajouté
 
+- Navigation par métier : 11 espaces (Accueil, Planning, Événements, Pastoral, Personnes, Demandes, Finances, Médias, Ressources, Administration, Plateforme réservée au Super Admin), une seule définition partagée par la barre latérale, la barre du bas, le panneau « Plus », le fil d'Ariane et la recherche ⌘K. Barre du bas selon le rôle principal (priorité fixe), bloc « À traiter » sur l'Accueil (chaque chiffre est celui de l'écran qu'il ouvre), chevron retour vers l'écran parent sur mobile. (Spec 092, ADR-0033, PR #787 à #791.)
+- Vue pastorale gardée comme filtre de la navigation commune : lecture des comptes rendus et des demandes comptables sans action, pièce jointe ni export. « Mes demandes » et la demande de rendez-vous pastoral ouverts à tout compte de l'église (email du compte, 5 demandes par heure). (Spec 092, PR #790.)
+- Écran refusé : vraie réponse HTTP 403 et page « Accès refusé » commune, avec retour à l'Accueil. (PR #793.)
+- Tests de bout en bout Playwright : navigation par rôle, accessibilité (axe), retour mobile, accès refusés, redirections, lecture pastorale ; exécutés par la CI. (PR #786, #793.)
 - Design system : nouveaux composants `Menu` (actions « ⋯ », feuille du bas sur mobile), `SegmentedControl` (changer la vue d'une page), `Switch` (interrupteur), `RadioGroup` (choix unique, en liste ou en pastilles) et `FileInput` (sélecteur de fichier en bouton), et mode piloté par état de `Tabs` (onglets reliés à leur panneau). Fiches dans `docs/design-system/components/`.
 
 ### Modifié
 
+- Adresses alignées sur les espaces (`/evenements`, `/finances`, `/personnes`, `/plateforme`…) : chaque ancienne adresse redirige (307, temporaire) vers la nouvelle, requête conservée, pages seulement — jamais l'API, les liens publics à jeton ni les sites d'événement. Un module coupé répond 404 aux deux adresses. « Calendrier de l'église » devient un seul écran `/evenements`. Le script manuel `dist/092-rewrite-stored-paths.mjs` réécrit les liens mémorisés (notifications, messages système, aide de l'assistant), à blanc par défaut, avec sauvegarde et restauration — voir `docs/production.md`, « Bascule des adresses par espace ». Service worker `koinonia-v7` : rouvrir une fois en ligne les écrans hors ligne de la billetterie. (Spec 092, PR #791, #792.)
 - Interface entière mise en conformité avec le design system : liens internes et actions distingués (liens `next/link`, boutons pour les actions), contrôles refaits à la main remplacés par les composants communs (champs, listes, interrupteurs, choix, fichiers, onglets, menus d'actions), couleurs sur les seuls tokens sémantiques (clair et sombre), cibles tactiles de 44 px sur mobile, focus clavier visible, libellés de bouton à l'infinitif et « … en cours » pendant l'envoi, squelettes de chargement y compris sur les pages publiques, et fil d'Ariane nommé sur toutes les pages connectées (plus de « Détail »). Le lecteur audio de la page publique d'écoute se pose en bas de l'écran, faute de barre du bas.
 
 ## [v1.46.0] - 2026-11-27
