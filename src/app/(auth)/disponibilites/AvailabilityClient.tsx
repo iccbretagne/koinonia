@@ -19,6 +19,7 @@ import UnavailabilityPeriodForm, {
   withdrawalSummary,
 } from "@/components/UnavailabilityPeriodForm";
 import MyPeriods from "./MyPeriods";
+import { paths } from "@/lib/paths";
 
 type Answer = "AVAILABLE" | "IF_NEEDED" | "UNAVAILABLE";
 type State = Answer | "NO_RESPONSE" | "NOT_ASKED";
@@ -344,7 +345,7 @@ export default function AvailabilityClient({
         <Alert
           tone="info"
           action={
-            <Link href="/profile" className={buttonClasses("secondary", "sm")}>
+            <Link href={paths.profile()} className={buttonClasses("secondary", "sm")}>
               Ouvrir mon profil
             </Link>
           }

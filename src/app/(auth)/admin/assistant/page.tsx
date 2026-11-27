@@ -3,6 +3,7 @@ import { PageHeader, Tabs } from "@/components/ui";
 import { countOpenPending, getInstanceSettings, listAdminEntries, listPending, readStats } from "@/modules/assistant";
 import { PENDING_STATUSES } from "@/modules/assistant/schemas";
 import AssistantAdminClient from "./AssistantAdminClient";
+import { paths } from "@/lib/paths";
 
 const TABS = [
   { key: "usage", label: "Usage" },
@@ -43,7 +44,7 @@ export default async function AssistantAdminPage({
       <Tabs
         ariaLabel="Sections de l'assistant"
         tabs={TABS.map((t) => ({
-          href: `/admin/assistant?onglet=${t.key}`,
+          href: paths.admin.assistant({ onglet: t.key }),
           label: t.label,
           active: t.key === tab,
           count: t.key === "questions" ? open : undefined,

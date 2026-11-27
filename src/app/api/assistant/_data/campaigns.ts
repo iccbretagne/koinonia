@@ -3,6 +3,7 @@ import { z } from "zod";
 import { boundedAnswer, type AssistantDataParams, type DataAnswerItem } from "@/core/assistant";
 import { prisma } from "@/lib/prisma";
 import { REFUSED, formatDay, paramsSchema, type DataQuestion } from "./common";
+import { paths } from "@/lib/paths";
 
 /**
  * Questions de données des campagnes de collecte (spec 090, lot 5). Lecture d'**état** seulement :
@@ -84,7 +85,7 @@ export const CAMPAIGNS_QUESTIONS: DataQuestion[] = [
               due(c.dueAt),
               c.assignments.total ? `${pct(done / c.assignments.total)} soumis ou validés (${done}/${c.assignments.total})` : "aucun questionnaire",
             ].join(" · "),
-            href: `/collectes/${c.id}`,
+            href: paths.collectes.campaign(c.id),
           };
         }),
         ...toFill.map((a) => ({
@@ -99,7 +100,7 @@ export const CAMPAIGNS_QUESTIONS: DataQuestion[] = [
       ];
       return boundedAnswer({
         title: "Mes collectes",
-        href: "/collectes",
+        href: paths.collectes(),
         hrefLabel: "Collectes",
         items,
         empty: "Aucune campagne de collecte à gérer ni questionnaire à remplir.",
@@ -158,7 +159,7 @@ export const CAMPAIGNS_QUESTIONS: DataQuestion[] = [
       const done = p.byStatus.SUBMITTED + p.byStatus.VALIDATED;
       return boundedAnswer({
         title: `Avancement de « ${overview.campaign.title} » (clé ${overview.campaign.key}) : ${done}/${p.total} soumis ou validés`,
-        href: `/collectes/${overview.campaign.id}`,
+        href: paths.collectes.campaign(overview.campaign.id),
         hrefLabel: "Pilotage",
         items,
         empty: "Cette campagne n'a encore aucun questionnaire.",

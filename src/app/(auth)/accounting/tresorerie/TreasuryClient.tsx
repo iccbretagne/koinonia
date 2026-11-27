@@ -20,6 +20,7 @@ import DepositTab from "./DepositTab";
 import LedgerTab, { type LedgerFilters } from "./LedgerTab";
 import ReportsTab from "./ReportsTab";
 import SettingsTab from "./SettingsTab";
+import { paths } from "@/lib/paths";
 
 
 const TAB_LABEL: Record<TreasuryTab, string> = {
@@ -72,7 +73,7 @@ export default function TreasuryClient({
       <PageHeader eyebrow="Comptabilité" title="Trésorerie" description="Entrées, sorties et soldes des comptes de l'église." />
       <Tabs
         ariaLabel="Trésorerie"
-        tabs={TREASURY_TABS.map((t) => ({ href: `/accounting/tresorerie?onglet=${t}`, label: TAB_LABEL[t], active: t === tab }))}
+        tabs={TREASURY_TABS.map((t) => ({ href: paths.accounting.tresorerie({ onglet: t }), label: TAB_LABEL[t], active: t === tab }))}
       />
       {noAccount && tab !== "reglages" ? (
         <SettingsTab accounts={accounts} categories={categories} purposes={purposes} firstRun />

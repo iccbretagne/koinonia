@@ -2,6 +2,7 @@ import { requirePastoralActiveChurch } from "../active-church";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { PageHeader, StatusChip, buttonClasses } from "@/components/ui";
+import { paths } from "@/lib/paths";
 function progressTextClass(pct: number): string {
   if (pct === 100) return "text-success";
   return pct > 50 ? "text-brand-text" : "text-warning";
@@ -114,7 +115,7 @@ export default async function PastoralEventsPage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-[17px] font-semibold text-ink">À venir</h2>
-            <Link href="/events" className={buttonClasses("ghost", "sm")}>Voir l&apos;agenda de l&apos;église</Link>
+            <Link href={paths.events()} className={buttonClasses("ghost", "sm")}>Voir l&apos;agenda de l&apos;église</Link>
           </div>
           {upcoming.length === 0 ? (
             <p className="text-sm text-ink-muted">Aucun événement planifié.</p>
@@ -166,7 +167,7 @@ export default async function PastoralEventsPage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-[17px] font-semibold text-ink">30 derniers jours</h2>
-            <Link href="/pastoral/reports" className={buttonClasses("ghost", "sm")}>Voir les comptes rendus</Link>
+            <Link href={paths.pastoral.reports()} className={buttonClasses("ghost", "sm")}>Voir les comptes rendus</Link>
           </div>
           {recent.length === 0 ? (
             <p className="text-sm text-ink-muted">Aucun événement sur les 30 derniers jours.</p>

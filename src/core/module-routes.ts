@@ -8,10 +8,15 @@ import type { ModuleManifest, ModuleRoutes } from "./module-registry";
  * manifestes (dont seul le champ `routes` est lu) et d'une liste noyau explicite, puis
  * résout un chemin au **préfixe le plus long**.
  *
- * Utilisé par `src/lib/module-routes.ts` (composition, filtrée par les modules actifs)
- * et par le test d'exhaustivité (`src/lib/__tests__/routes-exhaustivite.test.ts`), qui
- * construit la table sur la base de **tous** les manifestes, actifs ou non — une route
- * doit être revendiquée indépendamment du réglage de déploiement.
+ * La table est toujours construite sur **tous** les manifestes, actifs ou non (amendement
+ * d'ADR-0012, spec 092) : le propriétaire d'une adresse est le plus long préfixe déclaré,
+ * quel que soit l'état de son module. Si ce propriétaire est inactif, l'adresse est
+ * orpheline — même si un préfixe plus court appartient à un module actif ou au noyau
+ * (`/admin/messages` sous `/admin`, `/accounting/navette` sous `/accounting`).
+ *
+ * `resolveDeclared` ignore l'état des modules : c'est la lecture du test d'exhaustivité
+ * (`src/lib/__tests__/routes-exhaustivite.test.ts`) et de la documentation OpenAPI — une
+ * route doit être revendiquée indépendamment du réglage de déploiement.
  */
 
 export type RouteOwnerKind = "module" | "noyau" | "orphan";
@@ -42,8 +47,15 @@ interface PrefixEntry {
 
 export class RouteTable {
   private readonly entries: PrefixEntry[];
+  /** Modules actifs ; `null` = tous les modules passés au constructeur sont actifs. */
+  private readonly active: ReadonlySet<string> | null;
 
-  constructor(manifests: readonly ModuleManifest[], noyau: NoyauRoutes) {
+  /**
+   * @param manifests tous les manifestes connus (actifs ou non)
+   * @param active noms des modules actifs ; omis = tous actifs
+   */
+  constructor(manifests: readonly ModuleManifest[], noyau: NoyauRoutes, active?: Iterable<string>) {
+    this.active = active ? new Set(active) : null;
     const entries: PrefixEntry[] = [];
 
     for (const name of ["noyau"] as const) {
@@ -74,7 +86,12 @@ export class RouteTable {
     return this.entries;
   }
 
-  resolve(pathname: string): RouteOwner {
+  private isActive(owner: string): boolean {
+    return owner === "noyau" || this.active === null || this.active.has(owner);
+  }
+
+  /** Propriétaire déclaré (plus long préfixe), sans tenir compte de l'état des modules. */
+  resolveDeclared(pathname: string): RouteOwner {
     const normalized = normalizePath(pathname);
     for (const entry of this.entries) {
       if (matchesPrefix(normalized, entry.prefix)) {
@@ -85,7 +102,18 @@ export class RouteTable {
         };
       }
     }
-    return { kind: "orphan", owner: null, matchedPrefix: null };
+    return ORPHAN;
+  }
+
+  /**
+   * Propriétaire effectif : le propriétaire déclaré s'il est actif, sinon orphelin. Jamais
+   * de repli sur un préfixe plus court — un écran d'un module coupé n'est pas servi par le
+   * module ou le noyau qui possède son préfixe parent.
+   */
+  resolve(pathname: string): RouteOwner {
+    const declared = this.resolveDeclared(pathname);
+    if (declared.owner === null || !this.isActive(declared.owner)) return ORPHAN;
+    return declared;
   }
 
   /**
@@ -95,15 +123,29 @@ export class RouteTable {
    * même adresse reste protégé).
    */
   isPublic(pathname: string, method: string): boolean {
+    // Même règle que `resolve` : une adresse orpheline (propriétaire coupé) n'est jamais publique.
+    if (this.resolve(pathname).kind === "orphan") return false;
+    return this.matchesPublic(pathname, method, true);
+  }
+
+  /** `isPublic` sans tenir compte de l'état des modules (cohérence contrats ↔ manifestes). */
+  isPublicDeclared(pathname: string, method: string): boolean {
+    return this.matchesPublic(pathname, method, false);
+  }
+
+  private matchesPublic(pathname: string, method: string, activeOnly: boolean): boolean {
     const normalized = normalizePath(pathname);
     for (const entry of this.entries) {
       if (!entry.public) continue;
+      if (activeOnly && !this.isActive(entry.owner)) continue;
       if (entry.method && entry.method !== method) continue;
       if (matchesPrefix(normalized, entry.prefix)) return true;
     }
     return false;
   }
 }
+
+const ORPHAN: RouteOwner = Object.freeze({ kind: "orphan", owner: null, matchedPrefix: null });
 
 function normalizePath(pathname: string): string {
   // Ignore la chaîne de requête et la barre finale (sauf racine).

@@ -10,6 +10,7 @@ import StatusChip from "@/components/ui/StatusChip";
 import { serviceStatusDescriptor } from "@/components/ui/status";
 import { buttonClasses } from "@/components/ui/button-classes";
 import { CancelWithdrawalButton, DeadlinePassedNotice, WithdrawButton, type LeaderContact } from "./WithdrawalActions";
+import { paths } from "@/lib/paths";
 
 type PlanningEntry = {
   id: string;
@@ -374,7 +375,7 @@ export function NextServiceCard({
       )}
       <div className="flex flex-wrap gap-2">
         <Link
-          href={`/events/${event.id}/star-view`}
+          href={paths.events.starView(event.id)}
           className={`${buttonClasses("on-brand")} flex-1 sm:flex-none`}
         >
           Voir l&apos;équipe

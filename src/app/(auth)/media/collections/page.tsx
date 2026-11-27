@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { paths } from "@/lib/paths";
 
 /**
  * L'écran dédié « Collections » disparaît (spec 049) : le partage est désormais une action
@@ -6,5 +7,5 @@ import { redirect } from "next/navigation";
  * de l'accueil. Redirection conservée pour les anciens liens/favoris.
  */
 export default function CollectionsPage() {
-  redirect("/media");
+  redirect(paths.media());
 }

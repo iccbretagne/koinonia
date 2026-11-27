@@ -61,6 +61,7 @@ import {
 import ItemEditor from "./ItemEditor";
 import RuleEditor from "./RuleEditor";
 import { CheckField, Disclosure, IssueCount, IssueList, NumberField, RowActions } from "./fields";
+import { paths } from "@/lib/paths";
 
 /**
  * Éditeur graphique d'une campagne (spec 091, EVOL-11). Son état est le document
@@ -172,7 +173,8 @@ export default function CampaignEditor({
       setSaved(snapshot(def));
       setSaveOpen(false);
       toast.success(result.campaign.action === "create" ? "Campagne créée" : "Campagne enregistrée");
-      router.push(`/collectes/${result.campaignId ?? campaignId ?? ""}`);
+      const savedId = result.campaignId ?? campaignId;
+      router.push(savedId ? paths.collectes.campaign(savedId) : paths.collectes());
       router.refresh();
     } catch {
       setImportError({

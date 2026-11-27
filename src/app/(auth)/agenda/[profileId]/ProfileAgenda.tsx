@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CalendarDays, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { EmptyState, StatusChip, buttonClasses } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 interface EntryRequest { id: string; firstName: string; lastName: string; qualificationNote: string | null }
 interface Creator { id: string; name: string | null; displayName: string | null }
@@ -80,8 +81,8 @@ export default function ProfileAgenda({ profile, entries, weekStart }: Props) {
   return (
     <div>
       <WeekNav
-        prevHref={`/agenda/${profile.id}?week=${toLocalISO(prevWeek)}`}
-        nextHref={`/agenda/${profile.id}?week=${toLocalISO(nextWeek)}`}
+        prevHref={paths.agenda.profile(profile.id, { week: toLocalISO(prevWeek) })}
+        nextHref={paths.agenda.profile(profile.id, { week: toLocalISO(nextWeek) })}
         label={`${fromLabel} — ${toLabel}`}
       />
 

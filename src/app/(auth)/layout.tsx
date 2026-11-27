@@ -11,38 +11,40 @@ import SystemMessageBanner from "@/components/SystemMessageBanner";
 import type { RoleKey as TourRoleKey } from "@/lib/tour-steps";
 import { landingHref } from "@/lib/navigation";
 import { isPastoralView } from "@/lib/view-mode";
+import { primaryRole } from "@/lib/roles";
 import { churchLogoSources } from "@/modules/core/schemas";
 import { isShuttleVisible } from "@/modules/shuttle/auth";
 import { isTreasuryVisible } from "@/modules/treasury/auth";
 import { isTicketingVisible } from "@/modules/ticketing/auth";
 import { pickFirstName } from "./accueil/first-name";
 import type { Session } from "next-auth";
+import { paths, PREFIXES } from "@/lib/paths";
 
 // Liens de la section Configuration (paramétrage — pas les outils quotidiens)
 const configLinksDef = [
   // Structure organisationnelle
-  { href: "/admin/churches",              label: "Églises",           permissions: ["church:manage"] },
-  { href: "/admin/ministries",            label: "Ministères",        permissions: ["departments:manage"] },
-  { href: "/admin/departments",           label: "Départements",      permissions: ["departments:manage"] },
-  { href: "/admin/departments/functions", label: "Fonctions dép.",    permissions: ["events:manage"] },
-  { href: "/admin/rooms",                 label: "Salles",            permissions: ["rooms:manage"] },
+  { href: paths.admin.churches(),              label: "Églises",           permissions: ["church:manage"] },
+  { href: paths.admin.ministries(),            label: "Ministères",        permissions: ["departments:manage"] },
+  { href: paths.admin.departments(),           label: "Départements",      permissions: ["departments:manage"] },
+  { href: paths.admin.departmentFunctions(), label: "Fonctions dép.",    permissions: ["events:manage"] },
+  { href: paths.admin.rooms(),                 label: "Salles",            permissions: ["rooms:manage"] },
   // Messages système (spec 071) : masqué si le module n'est pas actif, même pour un Super Admin
-  ...(registry.has("messages") ? [{ href: "/admin/messages", label: "Messages système", permissions: ["messages:publish"] }] : []),
+  ...(registry.has("messages") ? [{ href: paths.admin.messages(), label: "Messages système", permissions: ["messages:publish"] }] : []),
   // Personnes
-  { href: "/admin/users",                 label: "Utilisateurs",      permissions: ["users:manage"] },
-  { href: "/admin/access",                label: "Accès & rôles",     permissions: ["access:manage"] },
-  { href: "/admin/pastoral-profiles",     label: "Profils pastoraux", permissions: ["church:settings"] },
+  { href: paths.admin.users(),                 label: "Utilisateurs",      permissions: ["users:manage"] },
+  { href: paths.admin.access(),                label: "Accès & rôles",     permissions: ["access:manage"] },
+  { href: paths.admin.pastoralProfiles(),     label: "Profils pastoraux", permissions: ["church:settings"] },
   // Finances (spec 065) : masqué si le module n'est pas actif, même pour un Super Admin
-  ...(registry.has("giving") ? [{ href: "/dons", label: "Page de dons", permissions: ["giving:manage"] }] : []),
+  ...(registry.has("giving") ? [{ href: paths.dons(), label: "Page de dons", permissions: ["giving:manage"] }] : []),
   // Système
-  { href: "/admin/audit-logs",            label: "Historique",        permissions: ["church:settings"] },
-  { href: "/admin/backups",               label: "Sauvegardes",       permissions: [], superAdminOnly: true },
-  { href: "/admin/api",                   label: "API",               permissions: [], superAdminOnly: true },
-  { href: "/admin/app-icon",              label: "Icône de l'application", permissions: [], superAdminOnly: true },
-  ...(registry.has("ticketing") ? [{ href: "/admin/site-domains", label: "Domaines des sites", permissions: [] as string[], superAdminOnly: true }] : []),
+  { href: paths.admin.auditLogs(),            label: "Historique",        permissions: ["church:settings"] },
+  { href: paths.admin.backups(),               label: "Sauvegardes",       permissions: [], superAdminOnly: true },
+  { href: paths.admin.api(),                   label: "API",               permissions: [], superAdminOnly: true },
+  { href: paths.admin.appIcon(),              label: "Icône de l'application", permissions: [], superAdminOnly: true },
+  ...(registry.has("ticketing") ? [{ href: paths.admin.siteDomains(), label: "Domaines des sites", permissions: [] as string[], superAdminOnly: true }] : []),
   // Assistant de prise en main (spec 075) : base commune à l'instance
-  ...(registry.has("assistant") ? [{ href: "/admin/assistant", label: "Assistant", permissions: [] as string[], superAdminOnly: true }] : []),
-  ...(registry.has("mcp") ? [{ href: "/admin/mcp", label: "Assistants IA (MCP)", permissions: [] as string[], superAdminOnly: true }] : []),
+  ...(registry.has("assistant") ? [{ href: paths.admin.assistant(), label: "Assistant", permissions: [] as string[], superAdminOnly: true }] : []),
+  ...(registry.has("mcp") ? [{ href: paths.admin.mcp(), label: "Assistants IA (MCP)", permissions: [] as string[], superAdminOnly: true }] : []),
 ];
 
 type NavLink = { href: string; label: string };
@@ -130,7 +132,7 @@ function configLinks(userPermissions: Set<string>, isSuperAdmin: boolean, curren
   // Sans la liste des églises (church:manage, plateforme), un Admin rejoint directement les
   // paramètres de la sienne.
   if (currentChurchId && !userPermissions.has("church:manage") && userPermissions.has("church:settings")) {
-    visibleConfigLinks.unshift({ href: `/admin/churches/${currentChurchId}`, label: "Paramètres de l'église" });
+    visibleConfigLinks.unshift({ href: paths.admin.church(currentChurchId), label: "Paramètres de l'église" });
   }
   return visibleConfigLinks;
 }
@@ -171,7 +173,7 @@ async function serviceTeamLinks(
   const isMemberOf = (fn: string) => isGlobalManager || isInTeam(fn);
 
   if (isMemberOf("SECRETARIAT"))
-    requestLinks.push({ href: "/secretariat/requests", label: "Traitement des demandes" });
+    requestLinks.push({ href: paths.secretariat.requests(), label: "Traitement des demandes" });
 
   // Espace « Communication & Production » (spec 049, sur le modèle d'Audio — spec 021) :
   // un seul lien de menu, les cartes réellement affichées à l'accueil dépendent de
@@ -200,9 +202,9 @@ async function serviceTeamLinks(
   };
   if (buildMediaSpaceCards(mediaSpaceAccess).length > 0) {
     mediaLinks.push({
-      href: "/media",
+      href: paths.media(),
       label: "Communication & Production",
-      matchPrefixes: ["/media", "/communication"],
+      matchPrefixes: [paths.media(), PREFIXES.communication],
     });
   }
 
@@ -211,7 +213,7 @@ async function serviceTeamLinks(
   // pas dupliquer. Le STAR (planning:view sans members:view) n'a pas "Mes demandes" :
   // il garde ce lien autonome, seul moyen d'accès pour lui.
   if (!userPermissions.has("members:view")) {
-    requestLinks.push({ href: "/agenda/request", label: "Demande RDV pastoral" });
+    requestLinks.push({ href: paths.care.request(), label: "Demande RDV pastoral" });
   }
 
   // Protocole check for agenda access (don't inherit from isGlobalManager — role permissions handle that)
@@ -246,7 +248,7 @@ async function requestAndMediaLinks(
   let isProtocoleMember = false;
 
   if (userPermissions.has("members:view")) {
-    requestLinks.push({ href: "/requests", label: "Mes demandes" });
+    requestLinks.push({ href: paths.requests(), label: "Mes demandes" });
   }
   if (currentChurchId && userPermissions.has("planning:view")) {
     const teamLinks = await serviceTeamLinks(churchRoles, currentChurchId, userPermissions, isSuperAdmin);
@@ -257,18 +259,18 @@ async function requestAndMediaLinks(
   // Accès nominatif à la galerie (spec 080) : seule voie vers l'espace pour un compte sans
   // équipe média — une requête, seulement si le lien n'est pas déjà là.
   const hasChurchRole = churchRoles.some((r) => r.churchId === currentChurchId);
-  if (currentChurchId && hasChurchRole && !mediaLinks.some((l) => l.href === "/media")) {
+  if (currentChurchId && hasChurchRole && !mediaLinks.some((l) => l.href === paths.media())) {
     const grant = await prisma.mediaGalleryGrant.findUnique({
       where: { churchId_userId: { churchId: currentChurchId, userId } },
       select: { expiresAt: true },
     });
     if (grant && (grant.expiresAt === null || grant.expiresAt > new Date())) {
-      mediaLinks.unshift({ href: "/media", label: "Communication & Production", matchPrefixes: ["/media", "/communication"] });
+      mediaLinks.unshift({ href: paths.media(), label: "Communication & Production", matchPrefixes: [paths.media(), PREFIXES.communication] });
     }
   }
   // Lien "Audio" (spec 021 : un seul lien, onglets à droits distincts derrière)
   if (currentChurchId && userPermissions.has("audio:listen")) {
-    mediaLinks.push({ href: "/audio", label: "Audio" });
+    mediaLinks.push({ href: paths.audio(), label: "Audio" });
   }
   return { requestLinks, mediaLinks, isProtocoleMember };
 }
@@ -307,13 +309,13 @@ async function integrationLinks(
   }).then((c) => c > 0);
 
   if (isIntegrationMember || isBerger) {
-    links.push({ href: "/integration/requests", label: "Intégration" });
+    links.push({ href: paths.integration.requests(), label: "Intégration" });
   }
   if (isIntegrationMember) {
     links.push(
-      { href: "/integration/leaders", label: "Bergers de famille" },
-      { href: "/integration/parcours", label: "Parcours d'intégration" },
-      { href: "/integration/stats", label: "Statistiques intégration" },
+      { href: paths.integration.leaders(), label: "Bergers de famille" },
+      { href: paths.integration.parcours(), label: "Parcours d'intégration" },
+      { href: paths.integration.stats(), label: "Statistiques intégration" },
     );
   }
   // Réglage des délais de relance (spec 051) : même règle que requireIntegrationSettingsAccess
@@ -322,7 +324,7 @@ async function integrationLinks(
     .filter((r) => r.churchId === currentChurchId && r.role === "DEPARTMENT_HEAD")
     .flatMap((r) => r.departments.map((d) => d.department.id));
   if (isIntegrationGlobalManager || (await hasDepartmentWithFunction(currentChurchId, headDeptIds, ["INTEGRATION"]))) {
-    links.push({ href: "/integration/parametres", label: "Paramètres intégration" });
+    links.push({ href: paths.integration.parametres(), label: "Paramètres intégration" });
   }
   return links;
 }
@@ -342,11 +344,11 @@ async function agendaLinks(
       where: { userId: session.user.id, churchId: currentChurchId },
       select: { id: true },
     });
-    if (ownProfile) links.push({ href: `/agenda/${ownProfile.id}`, label: "Mon agenda" });
+    if (ownProfile) links.push({ href: paths.agenda.profile(ownProfile.id), label: "Mon agenda" });
   }
 
-  if (userPermissions.has("agenda:view") || isProtocoleMember) links.push({ href: "/agenda", label: "Vue agenda" });
-  if (userPermissions.has("agenda:manage") || isProtocoleMember) links.push({ href: "/agenda/schedule", label: "Planification" });
+  if (userPermissions.has("agenda:view") || isProtocoleMember) links.push({ href: paths.agenda(), label: "Vue agenda" });
+  if (userPermissions.has("agenda:manage") || isProtocoleMember) links.push({ href: paths.agenda.schedule(), label: "Planification" });
   // L'ajout direct à l'agenda (/agenda/new) se fait depuis le bouton « Ajouter à l'agenda » de la
   // vue agenda : ce n'est pas une destination de navigation.
 
@@ -354,7 +356,7 @@ async function agendaLinks(
   // convertis, module `care` — remplace l'ancien lien « Qualification » de l'agenda.
   // Accès : care:qualify, care:view, ou accompagnant d'au moins une demande/suivi en charge.
   if (currentChurchId && registry.has("care") && (await hasCareAccess(session, currentChurchId, userPermissions))) {
-    links.push({ href: "/care", label: "Suivi pastoral" });
+    links.push({ href: paths.care(), label: "Suivi pastoral" });
   }
   return links;
 }
@@ -472,7 +474,7 @@ export default async function AuthLayout({
             const { servingActorFromSession } = await import("@/modules/serving/auth");
             return hasServingAccess(await servingActorFromSession(session, currentChurchId));
           })
-          .then((ok) => (ok ? [{ href: "/candidatures", label: "Candidatures" }] : []))
+          .then((ok) => (ok ? [{ href: paths.candidatures(), label: "Candidatures" }] : []))
           .catch(() => [])
       : [];
 
@@ -557,7 +559,7 @@ export default async function AuthLayout({
   async function switchToPastoralMode() {
     "use server";
     (await cookies()).set("koinonia-view-mode", "pastoral", { path: "/", maxAge: 2592000 });
-    redirect("/pastoral");
+    redirect(paths.pastoral());
   }
   // Entrée "Événements" hebdomadaire (STAR) — mutuellement exclusive avec la
   // section Événements existante (Liste/Calendrier), réservée à events:view.
@@ -578,8 +580,9 @@ export default async function AuthLayout({
   const hasAvailability = memberLink !== null;
   const hasAbsences = userPermissions.has("absences:view");
 
-  // Determine the user's primary role for the current church
-  const currentRole = churchRoles.find((r) => r.churchId === currentChurchId)?.role ?? "DEPARTMENT_HEAD";
+  // Rôle principal dans l'église courante (spec 092) : priorité fixe, présentation seule
+  // (barre du bas, visite guidée) — aucun droit n'en dépend.
+  const currentRole = primaryRole(churchRoles, currentChurchId, session.user.isSuperAdmin);
 
   // Spec 038 (CA10) : un utilisateur dont TOUS les rôles ne portent que sur des modules
   // désactivés sur cette instance (ex. Comptable sans le module accounting) conserve un

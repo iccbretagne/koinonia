@@ -9,6 +9,7 @@ import Button from "@/components/ui/Button";
 import { Checkbox, ConfirmModal, FilterChip, IconButton, Input, Select, StatusChip, buttonClasses, type StatusTone } from "@/components/ui";
 import type { MediaEventStatus, MediaPhotoStatus, MediaTokenType } from "@/generated/prisma/enums";
 import MediaLightbox from "@/components/media/MediaLightbox";
+import { paths } from "@/lib/paths";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -287,8 +288,8 @@ function ShareTokenSection({ eventId, tokens, onRefresh }: {
   }
 
   function getTokenUrl(token: ShareToken) {
-    const paths: Record<MediaTokenType, string> = { VALIDATOR: "v", PREVALIDATOR: "v", MEDIA: "d", MEDIA_ALL: "d", GALLERY: "g", COLLECTION: "c" };
-    return `${origin}/media/${paths[token.type]}/${token.token}`;
+    const tokenPaths: Record<MediaTokenType, string> = { VALIDATOR: "v", PREVALIDATOR: "v", MEDIA: "d", MEDIA_ALL: "d", GALLERY: "g", COLLECTION: "c" };
+    return `${origin}/media/${tokenPaths[token.type]}/${token.token}`;
   }
 
   async function copy(url: string, id: string) {
@@ -638,7 +639,7 @@ export default function MediaEventDetail({
 
   async function deleteEvent() {
     await fetch(`/api/media-events/${event.id}`, { method: "DELETE" });
-    router.push("/media/events");
+    router.push(paths.media.events());
   }
 
   function toggleSelect(id: string) {
@@ -678,7 +679,7 @@ export default function MediaEventDetail({
       {/* ── Header ──────────────────────────────────────────── */}
       <div className="flex flex-col gap-4">
         <div>
-          <Link href="/media/events" className={`${buttonClasses("ghost", "sm")} -ml-2 mb-3`}>
+          <Link href={paths.media.events()} className={`${buttonClasses("ghost", "sm")} -ml-2 mb-3`}>
             <ChevronLeft className="size-4" aria-hidden="true" strokeWidth={1.75} />
             Retour aux événements
           </Link>

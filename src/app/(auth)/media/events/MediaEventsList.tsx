@@ -7,6 +7,7 @@ import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import { Checkbox, Input, SearchInput, Select, StatusChip, buttonClasses, type StatusTone } from "@/components/ui";
 import CollectionBuilder from "../collections/CollectionBuilder";
+import { paths } from "@/lib/paths";
 
 type PhotoCounts = { pending: number; prevalidated: number; approved: number; rejected: number };
 
@@ -122,7 +123,7 @@ export default function MediaEventsList({
             <>
               <p className="text-lg font-medium mb-2">Aucun événement média</p>
               {canUpload && (
-                <Link href="/media/events/new" className={buttonClasses("secondary")}>
+                <Link href={paths.media.newEvent()} className={buttonClasses("secondary")}>
                   Créer le premier événement
                 </Link>
               )}
@@ -151,7 +152,7 @@ export default function MediaEventsList({
           return (
             <Link
               key={event.id}
-              href={`/media/events/${event.id}`}
+              href={paths.media.event(event.id)}
               className={`block bg-surface rounded-card shadow-card border p-4 hover:border-brand transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                 hasActivity ? "border-warning/30" : "border-line"
               }`}

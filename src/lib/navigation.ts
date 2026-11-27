@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { matchesPath } from "./nav-match";
 import type { RoleKey } from "./tour-steps";
+import { paths, PREFIXES } from "@/lib/paths";
 
 /**
  * Entrées de navigation de l'espace authentifié (spec 055, lot 3 — docs/design-system/guidelines/
@@ -34,7 +35,7 @@ import type { RoleKey } from "./tour-steps";
  * logique que `defaultLandingPage` de `src/app/page.tsx`). La renseigner suffit à basculer
  * sidebar, barre du bas, panneau « Plus » et palette.
  */
-export const TODAY_HREF: string | null = "/accueil";
+export const TODAY_HREF: string | null = paths.accueil();
 
 export type SpaceKey = "home" | "planning" | "agenda" | "people" | "requests" | "media" | "resources" | "admin";
 
@@ -147,14 +148,14 @@ export function landingHref({
   readonly hasPlanningAccess: boolean;
   readonly hasStarPlanning: boolean;
 }): string {
-  if (isPastoral) return "/pastoral";
+  if (isPastoral) return paths.pastoral();
   if (TODAY_HREF) return TODAY_HREF;
-  if (hasPlanningAccess) return "/dashboard";
-  if (hasStarPlanning) return "/planning";
-  return "/profile";
+  if (hasPlanningAccess) return paths.dashboard();
+  if (hasStarPlanning) return paths.planning();
+  return paths.profile();
 }
 
-const CARE_HREF = "/care";
+const CARE_HREF = paths.care();
 
 function space(
   key: SpaceKey,
@@ -208,30 +209,30 @@ function pastoralPages(input: NavigationInput) {
 
 function jobsPage(input: NavigationInput): NavPage {
   return {
-    href: "/jobs",
+    href: paths.jobs(),
     label: "Offres",
-    matchPrefixes: ["/jobs", "/admin/jobs"],
+    matchPrefixes: [paths.jobs(), paths.admin.jobs()],
     badge: input.jobsUnseenCount && input.jobsUnseenCount > 0 ? input.jobsUnseenCount : undefined,
   };
 }
 
 /** Blocs de l'espace Administration dans la sidebar desktop. */
 const CONFIG_BLOCKS: Record<string, string> = {
-  "/admin/churches": "Organisation",
-  "/admin/ministries": "Organisation",
-  "/admin/departments": "Organisation",
-  "/admin/departments/functions": "Organisation",
-  "/admin/rooms": "Organisation",
-  "/admin/messages": "Organisation",
-  "/admin/users": "Accès",
-  "/admin/access": "Accès",
-  "/admin/pastoral-profiles": "Accès",
-  "/dons": "Finances",
-  "/admin/audit-logs": "Plateforme",
-  "/admin/backups": "Plateforme",
-  "/admin/api": "Plateforme",
-  "/admin/app-icon": "Plateforme",
-  "/admin/site-domains": "Plateforme",
+  [paths.admin.churches()]: "Organisation",
+  [paths.admin.ministries()]: "Organisation",
+  [paths.admin.departments()]: "Organisation",
+  [paths.admin.departmentFunctions()]: "Organisation",
+  [paths.admin.rooms()]: "Organisation",
+  [paths.admin.messages()]: "Organisation",
+  [paths.admin.users()]: "Accès",
+  [paths.admin.access()]: "Accès",
+  [paths.admin.pastoralProfiles()]: "Accès",
+  [paths.dons()]: "Finances",
+  [paths.admin.auditLogs()]: "Plateforme",
+  [paths.admin.backups()]: "Plateforme",
+  [paths.admin.api()]: "Plateforme",
+  [paths.admin.appIcon()]: "Plateforme",
+  [paths.admin.siteDomains()]: "Plateforme",
 };
 
 function configPages(input: NavigationInput): NavPage[] {
@@ -239,16 +240,16 @@ function configPages(input: NavigationInput): NavPage[] {
     href: l.href,
     label: l.label,
     // Paramètres de l'église d'un Admin : `/admin/churches/<id>`
-    sidebarBlock: CONFIG_BLOCKS[l.href] ?? (l.href.startsWith("/admin/churches/") ? "Organisation" : undefined),
+    sidebarBlock: CONFIG_BLOCKS[l.href] ?? (l.href.startsWith(`${paths.admin.churches()}/`) ? "Organisation" : undefined),
   }));
 }
 
 /** Libellés des pages d'intégration sous l'intitulé « Intégration » de la sidebar desktop. */
 const INTEGRATION_SHORT_LABELS: Record<string, string> = {
-  "/integration/requests": "Demandes",
-  "/integration/parcours": "Parcours",
-  "/integration/stats": "Statistiques",
-  "/integration/parametres": "Paramètres",
+  [paths.integration.requests()]: "Demandes",
+  [paths.integration.parcours()]: "Parcours",
+  [paths.integration.stats()]: "Statistiques",
+  [paths.integration.parametres()]: "Paramètres",
 };
 
 /** Vue pastorale : navigation simplifiée, mêmes entrées que la sidebar et le menu mobile actuels. */
@@ -257,19 +258,19 @@ function buildPastoralSpaces(input: NavigationInput): NavSpace[] {
   const spaces = [
     homeSpace(input.homeHref),
     space("people", "Personnes", Users, "service", [
-      { href: "/pastoral/members", label: "Mes membres" },
-      ...(input.hasDiscipleship ? [{ href: "/admin/discipleship", label: "Discipolat" }] : []),
+      { href: paths.pastoral.members(), label: "Mes membres" },
+      ...(input.hasDiscipleship ? [{ href: paths.admin.discipleship(), label: "Discipolat" }] : []),
       ...carePages,
     ]),
     space("agenda", "Agenda", Calendar, "service", [
-      { href: "/pastoral/events", label: "Événements" },
-      ...(input.hasEventsAccess ? [{ href: "/events", label: "Agenda de l'église" }] : []),
-      { href: "/pastoral/reports", label: "Comptes rendus" },
+      { href: paths.pastoral.events(), label: "Événements" },
+      ...(input.hasEventsAccess ? [{ href: paths.events(), label: "Agenda de l'église" }] : []),
+      { href: paths.pastoral.reports(), label: "Comptes rendus" },
       ...agendaPages,
     ]),
     space("requests", "Demandes", Inbox, "service", [
-      { href: "/pastoral/accounting", label: "Comptabilité" },
-      ...(input.hasCampaigns ? [{ href: "/collectes", label: "Questionnaires" }] : []),
+      { href: paths.pastoral.accounting(), label: "Comptabilité" },
+      ...(input.hasCampaigns ? [{ href: paths.collectes(), label: "Questionnaires" }] : []),
     ]),
     space("resources", "Ressources", Package, "church", input.hasJobs ? [jobsPage(input)] : []),
     space("admin", "Administration", Settings, "church", configPages(input)),
@@ -279,14 +280,14 @@ function buildPastoralSpaces(input: NavigationInput): NavSpace[] {
 
 function planningPagesFor(input: NavigationInput): NavPage[] {
   const pages: NavPage[] = [];
-  if (input.hasMyPlanning) pages.push({ href: "/planning", label: "Mon planning" });
+  if (input.hasMyPlanning) pages.push({ href: paths.planning(), label: "Mon planning" });
   // Une seule entrée : « Disponibilités » (réponses du STAR), ou la vue d'ensemble pour qui n'a pas de fiche liée.
   // Les deux écrans se rejoignent par des onglets (AvailabilityTabs).
-  if (input.hasAvailability) pages.push({ href: "/disponibilites", label: "Disponibilités" });
-  else if (input.hasAbsences) pages.push({ href: "/absences", label: "Disponibilités" });
+  if (input.hasAvailability) pages.push({ href: paths.disponibilites(), label: "Disponibilités" });
+  else if (input.hasAbsences) pages.push({ href: paths.absences(), label: "Disponibilités" });
   if (input.hasPlanningAccess) {
     for (const d of input.departments) {
-      pages.push({ href: `/dashboard?dept=${d.id}`, label: d.name, deptId: d.id, group: d.ministryName || undefined });
+      pages.push({ href: paths.dashboard({ dept: d.id }), label: d.name, deptId: d.id, group: d.ministryName || undefined });
     }
   }
   return pages;
@@ -298,32 +299,32 @@ function agendaPagesFor(input: NavigationInput, agendaPages: NavPage[]): NavPage
   const church = "Église";
   // STAR sans events:view : vue hebdomadaire (spec 043).
   if (input.showStarEvents) {
-    agenda.push({ href: "/planning/events", label: "Agenda de l'église", sidebarBlock: church });
+    agenda.push({ href: paths.planning.events(), label: "Agenda de l'église", sidebarBlock: church });
   }
   if (input.hasEventsAccess) {
-    agenda.push({ href: "/events", label: "Agenda de l'église", sidebarBlock: church });
+    agenda.push({ href: paths.events(), label: "Agenda de l'église", sidebarBlock: church });
     if (input.hasEventsManage) {
       agenda.push(
-        { href: "/admin/events", label: "Gérer les événements", sidebarBlock: church },
-        { href: "/admin/welcome-duty", label: "Service d'accueil", sidebarBlock: church },
+        { href: paths.admin.events(), label: "Gérer les événements", sidebarBlock: church },
+        { href: paths.admin.welcomeDuty(), label: "Service d'accueil", sidebarBlock: church },
       );
     }
     if (input.hasReports) {
-      agenda.push({ href: "/admin/reports", label: "Comptes rendus", dataTour: "sidebar-reports", sidebarBlock: church });
+      agenda.push({ href: paths.admin.reports(), label: "Comptes rendus", dataTour: "sidebar-reports", sidebarBlock: church });
     }
   }
   // Trame des annonces : seulement avec le droit de lecture effectif (#676) — ni events:view
   // (Reporter) ni planning:view seul (STAR hors modération) ne suffisent.
   if (input.hasAnnouncementSheet) {
-    agenda.push({ href: "/events/announcement-sheets", label: "Trame des annonces", sidebarBlock: church });
+    agenda.push({ href: paths.events.announcementSheets(), label: "Trame des annonces", sidebarBlock: church });
   }
   // Inscriptions publiques (billetterie, formulaires) : bloc distinct des pages d'événements.
   const signups = "Inscriptions";
   if (input.hasTicketing) {
-    agenda.push({ href: "/billetterie", label: "Billetterie", sidebarBlock: signups });
+    agenda.push({ href: paths.billetterie(), label: "Billetterie", sidebarBlock: signups });
   }
   if (input.hasForms) {
-    agenda.push({ href: "/formulaires", label: "Formulaires", sidebarBlock: signups });
+    agenda.push({ href: paths.formulaires(), label: "Formulaires", sidebarBlock: signups });
   }
   agenda.push(...agendaPages);
   return agenda;
@@ -331,8 +332,8 @@ function agendaPagesFor(input: NavigationInput, agendaPages: NavPage[]): NavPage
 
 function peoplePagesFor(input: NavigationInput, carePages: NavPage[]): NavPage[] {
   const people: NavPage[] = [];
-  if (input.hasMembersAccess) people.push({ href: "/admin/members", label: "STAR" });
-  if (input.hasDiscipleship) people.push({ href: "/admin/discipleship", label: "Discipolat" });
+  if (input.hasMembersAccess) people.push({ href: paths.admin.members(), label: "STAR" });
+  if (input.hasDiscipleship) people.push({ href: paths.admin.discipleship(), label: "Discipolat" });
   for (const l of input.servingLinks ?? []) people.push({ href: l.href, label: l.label });
   for (const l of input.integrationLinks ?? []) {
     people.push({ href: l.href, label: l.label, sidebarBlock: "Intégration", sidebarLabel: INTEGRATION_SHORT_LABELS[l.href] });
@@ -348,31 +349,31 @@ function requestPagesFor(input: NavigationInput): NavPage[] {
   const requests: NavPage[] = input.requestLinks.map((l) => ({ href: l.href, label: l.label }));
   // Collectes (spec 090) : questionnaires à remplir ou à piloter, là où répondants et responsables
   // vont déjà (barre du bas), avant le bloc Comptabilité.
-  if (input.hasCampaigns) requests.push({ href: "/collectes", label: "Questionnaires" });
+  if (input.hasCampaigns) requests.push({ href: paths.collectes(), label: "Questionnaires" });
   // « Navette » et « Trésorerie » se rangent sous « Comptabilité » (specs 073, 076) : un bloc de
   // sidebar les regroupe, et leur préfixe plus long l'emporte sur celui de la comptabilité.
   const accountingBlock = input.hasShuttle || input.hasTreasury ? ACCOUNTING_BLOCK : undefined;
   if (input.hasAccounting) {
     requests.push({
-      href: "/accounting/requests",
+      href: paths.accounting.requests(),
       label: "Comptabilité",
-      matchPrefixes: ["/accounting"],
+      matchPrefixes: [PREFIXES.accounting],
       sidebarBlock: accountingBlock,
       sidebarLabel: accountingBlock ? "Demandes" : undefined,
     });
   }
   if (input.hasShuttle) {
-    requests.push({ href: "/accounting/navette", label: "Navette", sidebarBlock: accountingBlock });
+    requests.push({ href: paths.accounting.navette(), label: "Navette", sidebarBlock: accountingBlock });
   }
   if (input.hasTreasury) {
-    requests.push({ href: "/accounting/tresorerie", label: "Trésorerie", sidebarBlock: accountingBlock });
+    requests.push({ href: paths.accounting.tresorerie(), label: "Trésorerie", sidebarBlock: accountingBlock });
   }
   return requests;
 }
 
 function resourcePagesFor(input: NavigationInput): NavPage[] {
   const resources: NavPage[] = [];
-  if (input.hasRooms) resources.push({ href: "/rooms", label: "Salles" });
+  if (input.hasRooms) resources.push({ href: paths.rooms(), label: "Salles" });
   if (input.hasJobs) resources.push(jobsPage(input));
   return resources;
 }
@@ -401,7 +402,7 @@ export function buildSpaces(input: NavigationInput): NavSpace[] {
     space("planning", "Planning", LayoutGrid, "service", planningPages, {
       dataTour: "sidebar-planning",
       // La grille par département (/dashboard) redirige vers le premier département.
-      href: input.hasPlanningAccess && input.departments.length > 0 ? "/dashboard" : undefined,
+      href: input.hasPlanningAccess && input.departments.length > 0 ? paths.dashboard() : undefined,
       emptyMessage: input.hasPlanningAccess ? "Aucun département assigné." : undefined,
     }),
     space("agenda", "Agenda", Calendar, "service", agenda, { dataTour: "sidebar-events" }),
@@ -524,14 +525,14 @@ function pagePrefixes(page: NavPage): readonly string[] {
 function matchLength(page: NavPage, pathname: string, dept: string | null): number | null {
   if (page.external) return null;
   if (page.deptId) {
-    return matchesPath(pathname, "/dashboard") && dept === page.deptId ? "/dashboard".length + 1000 : null;
+    return matchesPath(pathname, paths.dashboard()) && dept === page.deptId ? paths.dashboard().length + 1000 : null;
   }
   const lengths = pagePrefixes(page).filter((prefix) => matchesPath(pathname, prefix)).map((prefix) => prefix.length);
   return lengths.length > 0 ? Math.max(...lengths) : null;
 }
 
 /** Écran du service à remplacer (spec 061), sans entrée de navigation propre. */
-const REPLACEMENT_PATH = "/planning/remplacements";
+const REPLACEMENT_PATH = PREFIXES.planningRemplacements;
 const REPLACEMENT_LABEL = "Remplacement";
 
 /**
@@ -558,7 +559,7 @@ export function resolveActive(spaces: readonly NavSpace[], pathname: string, dep
 
   // Grille de planning sans département choisi (ou hors de la liste) : l'espace reste actif.
   const planning = spaces.find((s) => s.key === "planning");
-  if (planning && planning.pages.some((p) => p.deptId) && matchesPath(pathname, "/dashboard")) {
+  if (planning && planning.pages.some((p) => p.deptId) && matchesPath(pathname, paths.dashboard())) {
     return { space: "planning", page: null };
   }
 
@@ -577,8 +578,8 @@ export interface Crumb {
 
 /** Pages de compte, hors espaces : présentes dans le menu compte et la palette. */
 export const ACCOUNT_PAGES: readonly { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/profile", label: "Mon profil", icon: UserRound },
-  { href: "/guide", label: "Guide d'utilisation", icon: BookOpen },
+  { href: paths.profile(), label: "Mon profil", icon: UserRound },
+  { href: paths.guide(), label: "Guide d'utilisation", icon: BookOpen },
 ];
 
 /**
@@ -647,8 +648,8 @@ const SUBPAGE_LABELS: Record<string, string> = {
  * notification, assistant IA) : un seul segment de fil d'Ariane, nommé par leur préfixe.
  */
 const STANDALONE_LABELS: readonly { readonly prefix: string; readonly label: string }[] = [
-  { prefix: "/messages", label: "Message de l'administration" },
-  { prefix: "/mcp/autoriser", label: "Connecter un assistant IA" },
+  { prefix: PREFIXES.messages, label: "Message de l'administration" },
+  { prefix: paths.mcp.autoriser(), label: "Connecter un assistant IA" },
 ];
 
 /**
@@ -695,7 +696,7 @@ function findPage(spaces: readonly NavSpace[], active: ActiveNav): { space: NavS
 /** Le chemin courant descend-il sous la page de navigation (page de détail) ? */
 function isDeeper(pathname: string, page: NavPage): boolean {
   // Page de département : seule la grille `/dashboard` lui correspond, ses statistiques sont plus bas.
-  if (page.deptId) return pathOf(pathname) !== "/dashboard";
+  if (page.deptId) return pathOf(pathname) !== paths.dashboard();
   return !pagePrefixes(page).includes(pathname) && pathname !== pathOf(page.href);
 }
 
@@ -762,9 +763,9 @@ export function parentLink(spaces: readonly NavSpace[], pathname: string, dept: 
 function fallbackParent(spaces: readonly NavSpace[], pathname: string): { href: string; label: string } | null {
   const path = pathOf(pathname);
   const navPages = spaces.flatMap((s) => s.pages).filter((p) => !p.external);
-  const home = TODAY_HREF ?? "/accueil";
+  const home = TODAY_HREF ?? paths.accueil();
   if (path === "/" || path === home || navPages.some((p) => pathOf(p.href) === path)) return null;
-  if (path.startsWith("/pastoral")) return path === "/pastoral" ? null : { href: "/pastoral", label: "Accueil" };
+  if (path.startsWith(paths.pastoral())) return path === paths.pastoral() ? null : { href: paths.pastoral(), label: "Accueil" };
   const segments = path.split("/").filter(Boolean);
   for (let i = segments.length - 1; i > 0; i--) {
     const ancestor = `/${segments.slice(0, i).join("/")}`;
@@ -815,7 +816,7 @@ function candidate(spaces: readonly NavSpace[], c: Candidate): BottomDestination
       return home ? { key: "home", label: "Accueil", href: home.href, icon: House, space: "home" } : null;
     }
     case "myPlanning": {
-      const p = pageIn("planning", "/planning");
+      const p = pageIn("planning", paths.planning());
       return p ? { key: "myPlanning", label: "Mon planning", href: p.href, icon: CalendarCheck, prefixes: [] } : null;
     }
     case "care": {
@@ -823,8 +824,8 @@ function candidate(spaces: readonly NavSpace[], c: Candidate): BottomDestination
       return p ? { key: "care", label: "Suivi", href: p.href, icon: HeartHandshake, prefixes: [CARE_HREF] } : null;
     }
     case "accounting": {
-      const p = pageIn("requests", "/accounting/requests");
-      return p ? { key: "accounting", label: "Comptabilité", href: p.href, icon: Wallet, prefixes: ["/accounting"] } : null;
+      const p = pageIn("requests", paths.accounting.requests());
+      return p ? { key: "accounting", label: "Comptabilité", href: p.href, icon: Wallet, prefixes: [PREFIXES.accounting] } : null;
     }
     default: {
       const s = bySpace(c);
@@ -848,8 +849,8 @@ export function bottomDestinations(
     // Vue pastorale : destinations actuelles (accueil pastoral + membres).
     const home = spaces.find((s) => s.key === "home");
     return [
-      { key: "home", label: "Accueil", href: home?.href ?? "/pastoral", icon: House, space: "home" },
-      { key: "members", label: "Mes membres", href: "/admin/members", icon: Users, prefixes: ["/admin/members"] },
+      { key: "home", label: "Accueil", href: home?.href ?? paths.pastoral(), icon: House, space: "home" },
+      { key: "members", label: "Mes membres", href: paths.pastoral.members(), icon: Users, prefixes: [paths.pastoral.members()] },
     ];
   }
 

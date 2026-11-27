@@ -6,6 +6,7 @@ import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import { Checkbox, SearchInput, StatusChip, buttonClasses } from "@/components/ui";
 import CollectionBuilder from "../../collections/CollectionBuilder";
+import { paths } from "@/lib/paths";
 
 type FileCounts = { inReview: number; revisionRequested: number; finalApproved: number; pending: number };
 
@@ -75,7 +76,7 @@ export default function MediaProjectsList({
             <>
               <p className="text-lg font-medium mb-2">Aucun projet média</p>
               {canUpload && (
-                <Link href="/media/projects/new" className={buttonClasses("secondary")}>
+                <Link href={paths.media.newProject()} className={buttonClasses("secondary")}>
                   Créer le premier projet
                 </Link>
               )}
@@ -95,7 +96,7 @@ export default function MediaProjectsList({
           return (
             <Link
               key={project.id}
-              href={`/media/projects/${project.id}`}
+              href={paths.media.project(project.id)}
               className={`block bg-surface rounded-card shadow-card border p-4 hover:border-brand transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                 hasActivity ? "border-warning/30" : "border-line"
               }`}

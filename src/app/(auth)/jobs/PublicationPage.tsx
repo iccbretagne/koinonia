@@ -7,6 +7,7 @@ import { buttonClasses } from "@/components/ui";
 import type { Publication } from "@/modules/jobs";
 import PublicationDetail from "./PublicationDetail";
 import { tabOf } from "./board";
+import { paths } from "@/lib/paths";
 
 /**
  * Page de détail d'une publication (liens directs, partages WhatsApp — spec 064) : même contenu
@@ -22,7 +23,7 @@ export default function PublicationPage({
   readonly nowMs: number;
 }) {
   const router = useRouter();
-  const back = `/jobs?tab=${tabOf(publication.kind)}`;
+  const back = paths.jobs({ tab: tabOf(publication.kind) });
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
       <Link href={back} className={`${buttonClasses("ghost", "sm")} self-start`}>

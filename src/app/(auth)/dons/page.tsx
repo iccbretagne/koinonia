@@ -2,6 +2,7 @@ import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/
 import { getGivingSettings } from "@/modules/giving";
 import { PageHeader } from "@/components/ui";
 import GivingSettingsClient from "./GivingSettingsClient";
+import { paths } from "@/lib/paths";
 
 export default async function GivingSettingsPage({
   searchParams,
@@ -33,7 +34,7 @@ export default async function GivingSettingsPage({
       />
       <GivingSettingsClient
         settings={settings}
-        churchSettingsHref={canEditChurch ? `/admin/churches/${churchId}` : null}
+        churchSettingsHref={canEditChurch ? paths.admin.church(churchId) : null}
         initialSupport={(await searchParams).support === "slide" ? "slide" : "page"}
       />
     </div>

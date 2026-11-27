@@ -16,6 +16,7 @@ import {
   buttonClasses,
   type StatusTone,
 } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 const TILE = "rounded-card border border-line bg-surface px-4 py-3 shadow-card";
 
@@ -220,7 +221,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
               return (
                 <li key={r.id}>
                   <Link
-                    href={`/accounting/requests/${r.id}`}
+                    href={paths.accounting.request(r.id)}
                     className="flex min-h-11 items-center justify-between gap-3 rounded-control border border-line bg-surface px-3 py-2.5 transition-colors duration-120 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                   >
                     <div className="min-w-0">
@@ -359,7 +360,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
           },
         ]}
         actions={(r) => (
-          <Link href={`/accounting/requests/${r.id}`} className={`${buttonClasses("ghost", "sm")} whitespace-nowrap`}>
+          <Link href={paths.accounting.request(r.id)} className={`${buttonClasses("ghost", "sm")} whitespace-nowrap`}>
             Ouvrir
             <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
           </Link>

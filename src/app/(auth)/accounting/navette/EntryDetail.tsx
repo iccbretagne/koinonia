@@ -16,6 +16,7 @@ import {
 import type { ShuttleEntryKind } from "@/generated/prisma/enums";
 import { euro, frDate, lineTitle } from "./format";
 import FileInput from "@/components/ui/FileInput";
+import { paths } from "@/lib/paths";
 
 const REIMBURSEMENT_TONE: Record<ReimbursementStatus, StatusTone> = {
   REQUESTED: "info",
@@ -283,7 +284,7 @@ export default function EntryDetail({
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-[15px] leading-[22px] text-ink-muted">Versement d&apos;une avance de budget, lu dans la comptabilité.</p>
               {viewer.manager && (
-                <Link href={`/accounting/requests/${line.requestId}`} className={buttonClasses("ghost", "sm")}>
+                <Link href={paths.accounting.request(line.requestId)} className={buttonClasses("ghost", "sm")}>
                   Voir la demande
                 </Link>
               )}

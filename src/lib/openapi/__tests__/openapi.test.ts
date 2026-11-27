@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { fullRouteTable } from "@/lib/module-routes";
+import { routeTable } from "@/lib/module-routes";
 import { listRouteFiles, loadContracts, routeMethods } from "../collect";
 import { buildOpenApiDocument } from "../document";
 
@@ -33,7 +33,7 @@ describe("contrats OpenAPI des routes", () => {
     if (!route.hasContract) return;
     const [entry] = await loadContracts([route]);
     for (const [method, op] of Object.entries(entry.contract)) {
-      const isPublic = NOYAU_OPEN(route.path) || fullRouteTable.isPublic(route.path.replace(/\[[^\]]+\]/g, "x"), method);
+      const isPublic = NOYAU_OPEN(route.path) || routeTable.isPublicDeclared(route.path.replace(/\[[^\]]+\]/g, "x"), method);
       if (op.access === "public") expect(isPublic, `${method} ${route.path} déclaré public sans l'être au manifeste`).toBe(true);
     }
   });

@@ -6,6 +6,7 @@ import { LocalEngine, type AnswerEngine, type SuggestionRef } from "./engine";
 import { loadKnowledge } from "./knowledge";
 import { recordPending } from "./pending";
 import { incrementStats, type StatField } from "./stats";
+import { paths } from "@/lib/paths";
 
 /**
  * Orchestration d'une question (spec 075) : moteur → question de données éventuelle →
@@ -13,7 +14,7 @@ import { incrementStats, type StatField } from "./stats";
  * seule la question sans réponse est gardée, sans compte ni église.
  */
 
-export const GUIDE_HREF = "/guide";
+export const GUIDE_HREF = paths.guide();
 export const DATA_UNAVAILABLE =
   "Je n'arrive pas à lire ces informations pour le moment. Ouvrez l'écran pour les voir.";
 

@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ROLE_LABELS, ROLE_DESCRIPTIONS, ALL_ROLES } from "@/lib/roles";
 import type { Role } from "@/generated/prisma/client";
+import { paths } from "@/lib/paths";
 
 type RoleKey = Role;
 
@@ -838,7 +839,7 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
             Lancez une visite guidée pour découvrir les fonctionnalités principales.
           </p>
         </div>
-        <Button onClick={() => router.push("/dashboard?tour=1")} type="button" className="shrink-0">
+        <Button onClick={() => router.push(paths.dashboard({ tour: "1" }))} type="button" className="shrink-0">
           <CirclePlay aria-hidden="true" className="size-4" strokeWidth={1.75} />
           Lancer la visite guidée
         </Button>

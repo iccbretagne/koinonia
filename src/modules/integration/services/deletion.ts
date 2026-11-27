@@ -1,6 +1,7 @@
 import { ApiError } from "@/lib/api-utils";
 import { deleteItemNotifications } from "@/lib/notifications";
 import type { Prisma } from "@/generated/prisma/client";
+import { paths } from "@/lib/paths";
 
 /**
  * Suppression définitive d'une demande d'intégration (spec 057, ADR-0019) : historique,
@@ -14,7 +15,7 @@ export async function deleteIntegrationRequest(
 ): Promise<void> {
   await tx.auditLog.deleteMany({ where: { entityType: "FamilyIntegrationRequest", entityId: id } });
   await deleteItemNotifications(tx, "FamilyIntegrationRequest", id, [
-    `/integration/requests/${id}`,
+    paths.integration.request(id),
     `/admin/integration/requests/${id}`,
   ]);
   const { count } = await tx.familyIntegrationRequest.deleteMany({ where: { id, churchId } });

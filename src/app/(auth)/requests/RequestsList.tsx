@@ -15,6 +15,7 @@ import { buttonClasses } from "@/components/ui/button-classes";
 import { useToast } from "@/components/ui/Toast";
 import { REQUEST_TYPE_LABEL as TYPE_LABEL, requestStatus, requestTypeIcon } from "./request-display";
 import { formatAssignedDepts, type DeptFunction } from "@/lib/department-functions";
+import { paths } from "@/lib/paths";
 
 const ANNOUNCEMENT_TYPES = new Set(["VISUEL", "DIFFUSION_INTERNE", "RESEAUX_SOCIAUX"]);
 
@@ -164,7 +165,7 @@ function RequestCard({ req, onUpdated }: { readonly req: RequestItem; readonly o
 
         {isPending && (
           <div className="flex flex-wrap gap-2">
-            <Link href={`/requests/${req.id}/edit`} className={buttonClasses("secondary", "sm")}>
+            <Link href={paths.requests.edit(req.id)} className={buttonClasses("secondary", "sm")}>
               <Pencil aria-hidden="true" className="size-4" strokeWidth={1.75} />
               Modifier la demande
             </Link>
@@ -243,7 +244,7 @@ export default function RequestsList({ requests }: Props) {
           title="Aucune demande envoyée"
           description="Annonce, visuel, événement ou accès : faites votre première demande."
           action={
-            <Link href="/requests/new" className={buttonClasses("primary")}>
+            <Link href={paths.requests.newRequest()} className={buttonClasses("primary")}>
               <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
               Nouvelle demande
             </Link>

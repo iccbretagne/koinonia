@@ -4,6 +4,7 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import Link from "next/link";
 import { FileText } from "lucide-react";
 import { Button, Checkbox, Modal, RadioGroup, StatusChip, buttonClasses, useToast } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 interface Department {
   id: string;
@@ -141,7 +142,7 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap gap-3">
-        <Link href={`/events/${eventId}/star-view`} className={buttonClasses("secondary")}>
+        <Link href={paths.events.starView(eventId)} className={buttonClasses("secondary")}>
           Voir le planning des STAR
         </Link>
       </div>
@@ -190,7 +191,7 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
         </div>
         {reportEnabled && (
           <div className="mt-4">
-            <Link href={`/admin/events/${eventId}/report`} className={buttonClasses("primary")}>
+            <Link href={paths.admin.eventReport(eventId)} className={buttonClasses("primary")}>
               <FileText aria-hidden="true" className="size-4" strokeWidth={1.75} />
               Saisir le compte rendu
             </Link>
@@ -203,7 +204,7 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
         {toggleRow("welcomeDutyEnabled", "Familles de service attendues", savingWelcomeDuty, "Si activé, cet événement apparaît dans le planning d'accueil pour l'affectation des familles.")}
         {welcomeDutyEnabled && (
           <div className="mt-3">
-            <Link href="/admin/welcome-duty" className={buttonClasses("secondary", "sm")}>
+            <Link href={paths.admin.welcomeDuty()} className={buttonClasses("secondary", "sm")}>
               Gérer les affectations
             </Link>
           </div>

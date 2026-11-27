@@ -7,6 +7,7 @@ import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
 import { ASSIGNABLE_BY_MINISTER, canGrantRole } from "@/lib/roles";
 import type { Prisma, Role } from "@/generated/prisma/client";
 import { roleSchema, patchSchema } from "./contract";
+import { paths } from "@/lib/paths";
 
 // { id, isDeputy? } — format enrichi pour gérer principal vs adjoint
 
@@ -200,7 +201,7 @@ export async function POST(
         type: "ROLE_ASSIGNED",
         title: "Nouveau rôle attribué",
         message: `Le rôle ${role} vous a été attribué dans cette église.`,
-        link: "/profile",
+        link: paths.profile(),
       }).catch(() => {});
     }
 

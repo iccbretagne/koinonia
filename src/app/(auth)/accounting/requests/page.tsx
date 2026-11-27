@@ -10,6 +10,7 @@ import { isTreasuryVisible } from "@/modules/treasury/auth";
 import AccountingNav from "../AccountingNav";
 import { getJustificationSettings, isJustificationClaimable, isRequestArchived } from "@/modules/accounting";
 import JustificationSettingsCard from "./JustificationSettingsCard";
+import { paths } from "@/lib/paths";
 
 export default async function AccountingRequestsPage() {
   const session = await requireAuth();
@@ -24,7 +25,9 @@ export default async function AccountingRequestsPage() {
   }
 
   const canManage = perms.has("accounting:manage");
-  const canSubmit = perms.has("accounting:submit") || isPastoral;
+  // `POST /api/accounting/requests` exige `accounting:submit` : le bouton ne s'affiche pas pour
+  // un pasteur qui ne l'a pas (spec 092 — jamais de lien vers un refus).
+  const canSubmit = perms.has("accounting:submit");
   const canViewStats = perms.has("accounting:stats") || isPastoral;
   const canViewShuttle = await isShuttleVisible(session, churchId);
   const canViewTreasury = await isTreasuryVisible(session, churchId);
@@ -105,7 +108,7 @@ export default async function AccountingRequestsPage() {
         description={canManage ? "Gestion des demandes financières" : "Mes demandes financières"}
         actions={
           canSubmit && (
-            <Link href="/accounting/requests/new" className={buttonClasses("primary", "md")}>
+            <Link href={paths.accounting.newRequest()} className={buttonClasses("primary", "md")}>
               <Plus aria-hidden="true" className="size-4" strokeWidth={2} />
               Nouvelle demande
             </Link>

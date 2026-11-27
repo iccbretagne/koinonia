@@ -8,6 +8,7 @@ import { Alert } from "@/components/ui";
 import { buttonClasses } from "@/components/ui/button-classes";
 import PageHeader from "@/components/ui/PageHeader";
 import CampaignEditor from "../../_components/editor/CampaignEditor";
+import { paths } from "@/lib/paths";
 
 type Props = { readonly params: Promise<{ id: string }> };
 
@@ -40,10 +41,10 @@ export default async function EditCampaignPage({ params }: Props) {
           définition JSON complète : son aperçu indiquera ce qui change avant tout enregistrement.
         </Alert>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Link href={`/collectes/${id}/import`} className={buttonClasses("primary")}>
+          <Link href={paths.collectes.importInto(id)} className={buttonClasses("primary")}>
             Importer une définition JSON
           </Link>
-          <Link href={`/collectes/${id}`} className={buttonClasses("secondary")}>
+          <Link href={paths.collectes.campaign(id)} className={buttonClasses("secondary")}>
             Retour à la campagne
           </Link>
         </div>
@@ -57,7 +58,7 @@ export default async function EditCampaignPage({ params }: Props) {
       <CampaignEditor
         initial={definition}
         campaignId={id}
-        backHref={`/collectes/${id}`}
+        backHref={paths.collectes.campaign(id)}
         notice={
           campaign.status !== "DRAFT" ? (
             <Alert tone="warning" title="Cette campagne n'est plus en brouillon.">

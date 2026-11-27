@@ -1,3 +1,5 @@
+import { paths } from "@/lib/paths";
+
 /** Contenu d'une notification native (spec 068) : jamais plus que ce que montre la cloche. */
 export interface PushPayload {
   title: string;
@@ -8,7 +10,7 @@ export interface PushPayload {
 
 const TITLE_MAX = 120;
 const BODY_MAX = 240;
-const FALLBACK_URL = "/accueil";
+const FALLBACK_URL = paths.accueil();
 
 function truncate(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;

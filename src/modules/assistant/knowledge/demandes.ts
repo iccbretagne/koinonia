@@ -1,4 +1,5 @@
 import type { KnowledgeEntry } from "./types";
+import { paths, PREFIXES } from "@/lib/paths";
 
 /** 6. Demandes (KB-080 à KB-085). */
 export const DEMANDES: readonly KnowledgeEntry[] = [
@@ -15,11 +16,11 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
     ],
     answer:
       "Dans « Mes demandes », touchez « Nouvelle demande » : renseignez le titre, le brief, la date limite et les canaux (annonce interne, réseaux sociaux, visuel).",
-    href: "/requests/new",
+    href: paths.requests.newRequest(),
     hrefLabel: "Nouvelle demande",
     audience: { permissions: ["members:view"] },
     otherwise: "Un STAR fait passer sa demande d'annonce ou de visuel par son responsable de département.",
-    screens: ["/requests", "/media", "/communication"],
+    screens: [paths.requests(), paths.media(), PREFIXES.communication],
   },
   {
     key: "KB-081",
@@ -27,10 +28,10 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
     title: "Suivre mes demandes",
     questions: ["Où en est ma demande ?", "ma demande est refusée pourquoi", "statut de ma demande", "suivre mes demandes"],
     answer: "« Mes demandes » affiche l'état de chacune : En attente, En cours, Livrée, Refusée (avec le motif).",
-    href: "/requests",
+    href: paths.requests(),
     hrefLabel: "Mes demandes",
     audience: { permissions: ["members:view"] },
-    screens: ["/requests"],
+    screens: [paths.requests()],
   },
   {
     key: "KB-082",
@@ -39,11 +40,11 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
     questions: ["Demandes à traiter", "approuver une demande", "refuser une demande", "file du secrétariat"],
     answer:
       "« Traitement des demandes » a trois onglets (À traiter, En cours, Traitées) et une file triée par échéance. Ouvrez une demande pour l'approuver, la refuser avec un motif ou marquer une annonce diffusée.",
-    href: "/secretariat/requests",
+    href: paths.secretariat.requests(),
     hrefLabel: "Traitement des demandes",
     audience: { permissions: ["events:manage"], predicates: ["secretariatTeam"] },
     otherwise: "Le traitement des demandes revient au Secrétariat et à l'administration de l'église.",
-    screens: ["/secretariat"],
+    screens: [PREFIXES.secretariat],
   },
   {
     key: "KB-083",
@@ -52,11 +53,11 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
     questions: ["Demandes de visuels", "livrer un visuel", "demandes réseaux sociaux", "marquer publiée"],
     answer:
       "Dans « Communication & Production », ouvrez Visuels (onglet Demandes) ou Réseaux sociaux : prenez en charge, puis marquez livré ou publié (avec le lien si besoin). Une annulation demande un motif, transmis au demandeur.",
-    href: "/media",
+    href: paths.media(),
     hrefLabel: "Communication & Production",
     audience: { permissions: ["events:manage"], predicates: ["mediaTeam"] },
     otherwise: "Ces demandes sont traitées par les équipes Production Média et Communication.",
-    screens: ["/media", "/communication"],
+    screens: [paths.media(), PREFIXES.communication],
   },
   {
     key: "KB-084",
@@ -65,11 +66,11 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
     questions: ["Partager les photos du culte", "lien de partage", "envoyer les photos", "révoquer un lien"],
     answer:
       "Depuis Photos ou Visuels, « Partager une sélection » crée un lien. Le bouton « Partages » liste les liens actifs et permet de les révoquer.",
-    href: "/media",
+    href: paths.media(),
     hrefLabel: "Communication & Production",
     audience: { permissions: ["media:view"], predicates: ["mediaTeam"] },
     otherwise: "Le partage des photos revient aux équipes Photos et Production Média.",
-    screens: ["/media"],
+    screens: [paths.media()],
   },
   {
     key: "KB-110",
@@ -84,11 +85,11 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
     ],
     answer:
       "Dans « Communication & Production », la carte Galerie montre toutes les photos et tous les visuels validés, par mois. Filtrez par type, période, événement ou projet, ou cherchez un nom ; touchez un média pour l'ouvrir et le télécharger, ou « Sélectionner » pour en télécharger plusieurs (200 au plus) ou les partager. Un Admin ou le Ministre des équipes média donne un accès à une personne précise avec le bouton « Gérer les accès ».",
-    href: "/media/galerie",
+    href: paths.media.galerie(),
     hrefLabel: "Galerie",
     audience: { predicates: ["mediaGallery"] },
     otherwise: "La galerie est ouverte aux équipes Photos, Production Média et Communication, à leur Ministre, à l'administration et aux personnes à qui l'accès a été donné.",
-    screens: ["/media/galerie"],
+    screens: [paths.media.galerie()],
   },
   {
     key: "KB-085",
@@ -102,9 +103,9 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
     ],
     answer:
       "Déposez la demande depuis la tuile « Rendez-vous pastoral » de « Mes demandes » (ou le lien « Demande RDV pastoral » pour un STAR). Suivez ensuite son état au même endroit.",
-    href: "/care/request",
+    href: paths.care.request(),
     hrefLabel: "Demande de rendez-vous pastoral",
     audience: { permissions: ["planning:view"] },
-    screens: ["/requests", "/accueil"],
+    screens: [paths.requests(), paths.accueil()],
   },
 ];

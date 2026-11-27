@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { createNotification } from "@/lib/notifications";
+import { paths } from "@/lib/paths";
 
 /**
  * Accès délégué aux formulaires et partage (spec 085). Un accès (`forms_grants`) ouvre l'outil
@@ -54,7 +55,7 @@ export async function grantFormsAccess(churchId: string, actorId: string, userId
     type: "FORMS_ACCESS_GRANTED",
     title: "Accès aux formulaires",
     message: "Vous pouvez créer et gérer vos propres formulaires.",
-    link: "/formulaires",
+    link: paths.formulaires(),
   });
   return { created: true };
 }
@@ -71,7 +72,7 @@ export async function revokeFormsAccess(churchId: string, actorId: string, userI
     type: "FORMS_ACCESS_REVOKED",
     title: "Accès aux formulaires retiré",
     message: "Vous ne pouvez plus gérer de formulaires. Vos formulaires restent en ligne.",
-    link: "/formulaires",
+    link: paths.formulaires(),
   });
 }
 
@@ -130,7 +131,7 @@ export async function addFormManager(formId: string, churchId: string, actorId: 
     type: "FORM_SHARED",
     title: form.title,
     message: "Ce formulaire est partagé avec vous : vous pouvez le gérer.",
-    link: `/formulaires/${formId}`,
+    link: paths.formulaires.form(formId),
     entityType: "Form",
     entityId: formId,
   });
@@ -151,7 +152,7 @@ export async function removeFormManager(formId: string, churchId: string, actorI
     type: "FORM_UNSHARED",
     title: existing.form.title,
     message: "Ce formulaire n'est plus partagé avec vous.",
-    link: "/formulaires",
+    link: paths.formulaires(),
     entityType: "Form",
     entityId: formId,
   });

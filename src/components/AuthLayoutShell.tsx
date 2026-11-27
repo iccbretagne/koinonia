@@ -29,6 +29,7 @@ import {
 // omettaient PASTORAL_CARE_REFERENT, privant ce role des etapes de tour ciblees.
 import type { RoleKey } from "@/lib/tour-steps";
 import type { ChurchLogoSources } from "@/modules/core/schemas";
+import { paths } from "@/lib/paths";
 
 interface AuthLayoutShellProps extends Omit<NavigationInput, "jobsUnseenCount" | "isPastoral"> {
   /** Vue pastorale active. */
@@ -129,7 +130,7 @@ export default function AuthLayoutShell({
   }, [hasJobs]);
 
   useEffect(() => {
-    if (!hasJobs || pathname !== "/jobs" || jobsUnseenCount === 0) return;
+    if (!hasJobs || pathname !== paths.jobs() || jobsUnseenCount === 0) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronisation avec une source externe (route courante)
     setJobsUnseenCount(0);
     fetch("/api/jobs/unseen-count", { method: "POST" }).catch(() => {

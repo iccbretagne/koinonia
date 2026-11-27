@@ -1,4 +1,5 @@
 import { formatServiceDate } from "./rules";
+import { paths } from "@/lib/paths";
 
 /**
  * Notifications du désistement (spec 061), envoyées **hors transaction** et immédiatement — un
@@ -18,8 +19,8 @@ export const WITHDRAWAL_TYPES = {
   kept: "SERVICE_WITHDRAWAL_KEPT",
 } as const;
 
-const STAR_LINK = "/planning";
-export const withdrawalLink = (id: string) => `/planning/remplacements/${id}`;
+const STAR_LINK = paths.planning();
+export const withdrawalLink = (id: string) => paths.planning.remplacement(id);
 
 export interface WithdrawalNotice {
   withdrawalId: string;

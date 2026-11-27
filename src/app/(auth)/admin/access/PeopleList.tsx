@@ -6,6 +6,7 @@ import Image from "next/image";
 import type { Role } from "@/generated/prisma/client";
 import { ROLE_SHORT_LABELS } from "@/lib/roles";
 import { EmptyState, SearchInput, StatusChip } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 interface Person {
   id: string;
@@ -58,7 +59,7 @@ export default function PeopleList({ people }: Props) {
       {filtered.map((person) => (
         <Link
           key={person.id}
-          href={`/admin/access/users/${person.id}`}
+          href={paths.admin.accessUser(person.id)}
           className="flex min-h-16 items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-card transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         >
           <Avatar person={person} />

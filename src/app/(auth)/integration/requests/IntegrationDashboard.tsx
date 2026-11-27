@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Alert, Button, EmptyState, FilterChip, SearchInput, StatusChip, buttonClasses, type StatusTone } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 const STATUS_LABELS: Record<string, string> = {
   SUBMITTED:      "Reçue",
@@ -188,7 +189,7 @@ export default function IntegrationDashboard({
               const days = daysSince(r.submittedAt);
               return (
                 <li key={r.id}>
-                  <Link href={`/integration/requests/${r.id}`} className={rowLinkClasses}>
+                  <Link href={paths.integration.request(r.id)} className={rowLinkClasses}>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-ink">
                         {r.firstName} {r.lastName}
@@ -230,7 +231,7 @@ export default function IntegrationDashboard({
           <ul className="flex flex-col gap-1.5">
             {toRelance.map((r) => (
               <li key={r.id}>
-                <Link href={`/integration/requests/${r.id}`} className={rowLinkClasses}>
+                <Link href={paths.integration.request(r.id)} className={rowLinkClasses}>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-ink">
                       {r.firstName} {r.lastName}
@@ -361,7 +362,7 @@ export default function IntegrationDashboard({
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Link
-                          href={`/integration/requests/${r.id}`}
+                          href={paths.integration.request(r.id)}
                           aria-label={`${nextAction ?? "Voir la demande"} — ${r.firstName} ${r.lastName}`}
                           className={`${buttonClasses("ghost", "sm")} whitespace-nowrap`}
                         >
@@ -385,7 +386,7 @@ export default function IntegrationDashboard({
               return (
                 <li key={r.id}>
                   <Link
-                    href={`/integration/requests/${r.id}`}
+                    href={paths.integration.request(r.id)}
                     className="block px-4 py-3 transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
                   >
                     <div className="flex items-start justify-between gap-2">

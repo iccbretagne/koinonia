@@ -11,6 +11,7 @@ import { useModalDialog } from "@/components/ui/use-modal-dialog";
 import { PERSONA_NAME, QUESTION_MAX, type AskResponse, type AssistantExpression, type SuggestionRef } from "@/modules/assistant/schemas";
 import AssistantAvatar, { type AssistantPersonaKey } from "./AssistantAvatar";
 import { useKeyboardBox } from "./keyboard-box";
+import { paths } from "@/lib/paths";
 
 type Message =
   | { id: number; from: "me"; text: string }
@@ -278,7 +279,7 @@ export default function AssistantPanel({
           </div>
           <div className="flex flex-wrap items-center justify-between gap-x-2">
             <p className="text-xs text-ink-muted">Réponses selon votre rôle. Rien n&apos;est conservé à la fermeture.</p>
-            <Link href="/guide" className={`${buttonClasses("ghost", "sm")} -mr-3`}>
+            <Link href={paths.guide()} className={`${buttonClasses("ghost", "sm")} -mr-3`}>
               Ouvrir le guide
             </Link>
           </div>

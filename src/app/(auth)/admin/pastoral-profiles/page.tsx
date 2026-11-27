@@ -4,6 +4,7 @@ import { PageHeader, buttonClasses } from "@/components/ui";
 import { requireAuth, requireChurchPermission, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PastoralProfilesAdmin from "./PastoralProfilesAdmin";
+import { paths } from "@/lib/paths";
 
 /**
  * Les profils pastoraux sont propres à une église. `?churchId=` (lien depuis la fiche d'une
@@ -48,7 +49,7 @@ export default async function PastoralProfilesPage({
         }
         actions={
           requestedChurchId ? (
-            <Link href={`/admin/churches/${churchId}`} className={buttonClasses("secondary", "md")}>
+            <Link href={paths.admin.church(churchId)} className={buttonClasses("secondary", "md")}>
               <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
               Revenir à la fiche de l&apos;église
             </Link>

@@ -5,7 +5,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import PageHeader from "@/components/ui/PageHeader";
 import RequestForm from "./RequestForm";
 import { loadRequestFormData } from "../request-form-options";
-import { parseRequestPrefill } from "../prefill";
+import { parseRequestPrefill } from "@/lib/request-prefill";
 
 export default async function NewRequestPage({
   searchParams,

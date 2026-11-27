@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import HistoryTimeline from "@/components/HistoryTimeline";
 import type { listRelatedItems } from "@/modules/care";
+import { paths } from "@/lib/paths";
 
 interface Props {
   readonly related: Awaited<ReturnType<typeof listRelatedItems>>;
@@ -22,7 +23,7 @@ export default function CareItemFooter({ related, relatedStatusLabels, historyUr
             {related.map((r) => (
               <li key={`${r.kind}-${r.id}`}>
                 <Link
-                  href={r.kind === "request" ? `/care/requests/${r.id}` : `/care/followups/${r.id}`}
+                  href={r.kind === "request" ? paths.care.requestDetail(r.id) : paths.care.followup(r.id)}
                   className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm text-ink transition-colors hover:text-brand-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 >
                   <span>

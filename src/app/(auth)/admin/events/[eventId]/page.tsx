@@ -8,6 +8,7 @@ import { getOrCreatePrimaryShareToken, buildPublicAudioUrl } from "@/modules/aud
 import EventDetailClient from "./EventDetailClient";
 import EventFormsBlock from "@/components/forms/EventFormsBlock";
 import { registry } from "@/lib/registry";
+import { paths } from "@/lib/paths";
 
 export default async function EventDetailPage({
   params,
@@ -85,7 +86,7 @@ export default async function EventDetailPage({
                 {audioService.segments.length > 1 ? "s" : ""} prête
                 {audioService.segments.length > 1 ? "s" : ""}
               </p>
-              <Link href={`/audio/production/${audioService.id}`} className={buttonClasses("secondary", "md")}>
+              <Link href={paths.audio.productionService(audioService.id)} className={buttonClasses("secondary", "md")}>
                 Suivre la production
               </Link>
             </>

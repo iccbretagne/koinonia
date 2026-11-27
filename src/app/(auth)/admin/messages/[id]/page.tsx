@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/ui";
 import { getAudienceOptions, getMessageChurchId, getMessageForAuthor } from "@/modules/messages";
 import { requireMessageAuthorAccess } from "@/modules/messages/auth";
 import MessageForm from "../MessageForm";
+import { paths } from "@/lib/paths";
 
 /** Correction d'un message système (spec 071) : l'église qui fait foi est celle du message. */
 export default async function EditSystemMessagePage({ params }: { readonly params: Promise<{ id: string }> }) {
@@ -14,10 +15,10 @@ export default async function EditSystemMessagePage({ params }: { readonly param
     () => true,
     () => false
   );
-  if (!allowed) redirect("/admin/messages");
+  if (!allowed) redirect(paths.admin.messages());
 
   const message = await getMessageForAuthor(id);
-  if (message.status === "past") redirect("/admin/messages?etat=passes");
+  if (message.status === "past") redirect(paths.admin.messages({ etat: "passes" }));
   const optionsChurchId = churchId ?? (await getCurrentChurchId(session));
   const options = optionsChurchId ? await getAudienceOptions(optionsChurchId) : { ministries: [] };
 

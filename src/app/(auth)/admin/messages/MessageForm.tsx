@@ -8,6 +8,7 @@ import { ROLE_LABELS } from "@/lib/roles";
 import type { AudienceOptions, MessageStatus, SystemMessageView } from "@/modules/messages";
 import { SEVERITIES, SEVERITY_LABEL, type Audience } from "@/modules/messages/schemas";
 import type { Role } from "@/generated/prisma/enums";
+import { paths } from "@/lib/paths";
 
 const ROLE_ORDER: Role[] = [
   "ADMIN",
@@ -152,7 +153,7 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
         return;
       }
       toast.success(editing ? "Message mis à jour" : submitLabel(false, startNow).toast);
-      router.push(`/admin/messages?etat=${startNow || locked ? "en-cours" : "programmes"}`);
+      router.push(paths.admin.messages({ etat: startNow || locked ? "en-cours" : "programmes" }));
       router.refresh();
     } catch {
       setError("Enregistrement impossible. Vérifiez votre connexion.");
@@ -335,7 +336,7 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
         >
           {busy ? "Enregistrement…" : submitLabel(editing, startNow).button}
         </Button>
-        <Button variant="ghost" onClick={() => router.push("/admin/messages")} disabled={busy}>
+        <Button variant="ghost" onClick={() => router.push(paths.admin.messages())} disabled={busy}>
           Annuler
         </Button>
       </div>

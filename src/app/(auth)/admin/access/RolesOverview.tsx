@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Role } from "@/generated/prisma/client";
 import { ALL_ROLES, ROLE_LABELS, ROLE_DESCRIPTIONS, ROLE_CATEGORY, ROLE_CATEGORY_LABELS, ASSIGNABLE_BY_MINISTER, type RoleCategory } from "@/lib/roles";
+import { paths } from "@/lib/paths";
 
 interface Props {
   readonly roleCounts: Record<string, number>;
@@ -29,7 +30,7 @@ export default function RolesOverview({ roleCounts, hideTransverseRoles }: Props
               {roles.map((role) => (
                 <Link
                   key={role}
-                  href={`/admin/access/roles/${role}`}
+                  href={paths.admin.accessRole(role)}
                   className="flex min-h-16 items-center justify-between gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-card transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 >
                   <div className="min-w-0">

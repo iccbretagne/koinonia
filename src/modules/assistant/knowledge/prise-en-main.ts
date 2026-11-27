@@ -1,4 +1,5 @@
 import { ALL, type KnowledgeEntry } from "./types";
+import { paths } from "@/lib/paths";
 
 /** 1. Prise en main (base-connaissances.md, KB-001 à KB-010). */
 export const PRISE_EN_MAIN: readonly KnowledgeEntry[] = [
@@ -16,10 +17,10 @@ export const PRISE_EN_MAIN: readonly KnowledgeEntry[] = [
     ],
     answer:
       "Utilisez la recherche en haut de l'écran (⌘K sur Mac, Ctrl K sur PC, ou la loupe sur téléphone). Tapez le nom d'une page, d'un STAR ou d'un événement, puis choisissez un résultat. Sur téléphone, le bouton « Plus » de la barre du bas liste tous vos espaces.",
-    href: "/accueil",
+    href: paths.accueil(),
     hrefLabel: "Accueil",
     audience: ALL,
-    screens: ["/accueil"],
+    screens: [paths.accueil()],
   },
   {
     key: "KB-002",
@@ -28,10 +29,10 @@ export const PRISE_EN_MAIN: readonly KnowledgeEntry[] = [
     questions: ["À quoi sert l'accueil ?", "c'est quoi « Aujourd'hui »", "page d'accueil", "résumé de ma semaine"],
     answer:
       "« Aujourd'hui » rassemble vos prochains services, les événements à venir, vos demandes en attente et des raccourcis vers vos espaces. Elle s'adapte à votre rôle.",
-    href: "/accueil",
+    href: paths.accueil(),
     hrefLabel: "Accueil",
     audience: ALL,
-    screens: ["/accueil"],
+    screens: [paths.accueil()],
   },
   {
     key: "KB-003",
@@ -47,10 +48,10 @@ export const PRISE_EN_MAIN: readonly KnowledgeEntry[] = [
     ],
     answer:
       "Ouvrez « Mon profil » et demandez la liaison à votre fiche STAR. Une fois la liaison validée par l'administration de l'église, « Mon planning », les disponibilités et le filtre « Mes disciples » se débloquent. La validation revient à l'Admin, au Secrétaire ou au Ministre de votre ministère.",
-    href: "/profile",
+    href: paths.profile(),
     hrefLabel: "Mon profil",
     audience: ALL,
-    screens: ["/profile", "/planning", "/accueil"],
+    screens: [paths.profile(), paths.planning(), paths.accueil()],
   },
   {
     key: "KB-004",
@@ -58,10 +59,10 @@ export const PRISE_EN_MAIN: readonly KnowledgeEntry[] = [
     title: "Changer le thème (clair, sombre)",
     questions: ["Mode sombre", "thème noir", "l'écran est trop clair", "changer les couleurs"],
     answer: "Dans « Mon profil », choisissez Clair, Sombre ou Système (suit le réglage de votre téléphone ou ordinateur).",
-    href: "/profile",
+    href: paths.profile(),
     hrefLabel: "Mon profil",
     audience: ALL,
-    screens: ["/profile"],
+    screens: [paths.profile()],
   },
   {
     key: "KB-005",
@@ -79,7 +80,7 @@ export const PRISE_EN_MAIN: readonly KnowledgeEntry[] = [
     href: "/installer",
     hrefLabel: "Installer l'application",
     audience: ALL,
-    screens: ["/accueil", "/profile"],
+    screens: [paths.accueil(), paths.profile()],
   },
   {
     key: "KB-006",
@@ -95,10 +96,10 @@ export const PRISE_EN_MAIN: readonly KnowledgeEntry[] = [
     ],
     answer:
       "Sur iPhone, installez d'abord Koinonia sur l'écran d'accueil (voir « Installer l'application »). Puis, dans « Mes notifications », touchez « Activer les notifications sur cet appareil » et choisissez domaine par domaine ce qui arrive sur l'appareil.",
-    href: "/profile/notifications",
+    href: paths.profile.notifications(),
     hrefLabel: "Mes notifications",
     audience: ALL,
-    screens: ["/profile"],
+    screens: [paths.profile()],
   },
   {
     key: "KB-007",
@@ -113,10 +114,10 @@ export const PRISE_EN_MAIN: readonly KnowledgeEntry[] = [
     ],
     answer:
       "Dans « Mes notifications », coupez l'interrupteur général ou réglez domaine par domaine (planning, demandes, comptabilité…) les emails et les notifications sur l'appareil. Les messages urgents de l'administration arrivent par email dans tous les cas.",
-    href: "/profile/notifications",
+    href: paths.profile.notifications(),
     hrefLabel: "Mes notifications",
     audience: ALL,
-    screens: ["/profile"],
+    screens: [paths.profile()],
   },
   {
     key: "KB-008",
@@ -125,7 +126,7 @@ export const PRISE_EN_MAIN: readonly KnowledgeEntry[] = [
     questions: ["C'est quoi le bandeau en haut ?", "fermer le message", "le message revient", "message de l'église"],
     answer:
       "Le bandeau affiche les messages de votre église ou de Koinonia qui vous concernent. « Lire le message » ouvre le message complet ; la croix le ferme sur tous vos appareils. Un message urgent reste affiché jusqu'à la fin de sa période.",
-    href: "/accueil",
+    href: paths.accueil(),
     hrefLabel: "Accueil",
     audience: ALL,
     module: "messages",
@@ -145,7 +146,7 @@ export const PRISE_EN_MAIN: readonly KnowledgeEntry[] = [
     title: "Le guide d'utilisation",
     questions: ["Mode d'emploi", "tuto", "aide", "guide", "comment ça marche Koinonia"],
     answer: "Le guide d'utilisation décrit chaque fonction, avec ce que votre rôle peut faire.",
-    href: "/guide",
+    href: paths.guide(),
     hrefLabel: "Guide d'utilisation",
     audience: ALL,
   },
@@ -162,7 +163,7 @@ export const PRISE_EN_MAIN: readonly KnowledgeEntry[] = [
     ],
     answer:
       "Dans « Mon profil › Assistants IA connectés », copiez l'adresse du serveur et ajoutez-la comme connecteur dans votre assistant (Claude, ChatGPT…). Pour ChatGPT, passez par chatgpt.com (pas l'application) : Paramètres › Plugins › Ajouter un serveur MCP personnalisé, authentification OAuth (ancien affichage : Connecteurs › Avancé › mode développeur) ; offres Plus et supérieures. Il vous renvoie vers Koinonia : choisissez l'église et autorisez. Il lit seulement ce que vous voyez déjà. Si vous cochez la case des actions, il peut aussi déclarer une absence ou répondre à une demande de disponibilité pour vous, toujours après votre confirmation dans la conversation (et, si vous êtes responsable, remplir ou recopier un planning, attribuer les tâches du département, relancer les sans-réponse, publier des consignes, saisir pour un STAR, remplir un compte rendu, créer des événements, réserver une salle, proposer des créneaux d'entretien aux candidats ou conduire un événement de billetterie — création, paramétrage, équipe, paiements, réservations, restauration — selon votre rôle sur l'événement) ; vous pouvez révoquer l'accès à tout moment. L'administrateur de l'église doit d'abord activer la fonction.",
-    href: "/profile/assistants",
+    href: paths.profile.assistants(),
     hrefLabel: "Assistants connectés",
     audience: ALL,
     module: "mcp",

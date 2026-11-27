@@ -43,8 +43,4 @@ export const roomsModule = defineModule({
       visibleWith: ["rooms:reserve", "rooms:manage"],
     },
   ],
-
-  navigation: [
-    { label: "Salles", icon: "rooms", href: "/rooms", permission: "rooms:view" },
-  ],
 });

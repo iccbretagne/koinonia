@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { ApiError } from "@/lib/api-utils";
+import { paths } from "@/lib/paths";
 
 /**
  * « Demander une pièce » (spec 086) : la compta demande une pièce sur une demande financière ; le
@@ -62,7 +63,7 @@ export async function requestPiece(requestId: string, actor: PieceActor, note?: 
     type: "ACCOUNTING_PIECE_REQUESTED",
     title: reminder ? "Pièce demandée (relance)" : "Pièce demandée",
     message: `La comptabilité demande une pièce pour « ${req.label} »${cleanNote ? ` : ${cleanNote}` : "."}`,
-    link: `/accounting/requests/${requestId}`,
+    link: paths.accounting.request(requestId),
   });
   return updated;
 }
@@ -93,7 +94,7 @@ async function notifyAccounting(churchId: string, req: { id: string; label: stri
   const content = {
     title: "Nouvelle pièce sur une demande",
     message: `${who} a déposé ${count} pièce${count > 1 ? "s" : ""} sur « ${req.label} ».`,
-    link: `/accounting/requests/${req.id}`,
+    link: paths.accounting.request(req.id),
   };
   const emails = parseEmailList(church?.accountingEmails);
   if (emails.length > 0) {

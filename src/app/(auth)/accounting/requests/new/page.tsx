@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/ui";
 import { assertOverageAllowed } from "@/modules/accounting";
 import NewRequestForm from "./NewRequestForm";
+import { paths } from "@/lib/paths";
 
 type SelectableDepartment = { id: string; name: string; ministry: { name: string } };
 
@@ -114,7 +115,7 @@ export default async function NewAccountingRequestPage({
 }) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) redirect("/accounting/requests");
+  if (!churchId) redirect(paths.accounting.requests());
   const { from } = await searchParams;
   const fromRequests = from === "requests";
 
@@ -126,7 +127,7 @@ export default async function NewAccountingRequestPage({
   const isPastoral = (session.user.pastoralChurchIds ?? []).includes(churchId);
 
   if (!perms.has("accounting:submit") && !isPastoral) {
-    redirect("/accounting/requests");
+    redirect(paths.accounting.requests());
   }
 
   const isAdmin = perms.has("accounting:manage") || isPastoral;
@@ -142,7 +143,7 @@ export default async function NewAccountingRequestPage({
         departments={departments}
         correction={correction}
         complement={correction ? null : complement}
-        redirectTo={fromRequests ? "/requests" : "/accounting/requests"}
+        redirectTo={fromRequests ? paths.requests() : paths.accounting.requests()}
       />
     </div>
   );

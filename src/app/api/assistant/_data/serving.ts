@@ -2,6 +2,7 @@ import { boundedAnswer } from "@/core/assistant";
 import { prisma } from "@/lib/prisma";
 import { dayKey } from "@/lib/paris-days";
 import { REFUSED, formatDay, formatTime, fullName, paramsSchema, type DataQuestion } from "./common";
+import { paths } from "@/lib/paths";
 
 /**
  * Questions de données des entretiens de candidature (spec 082). Même droit que l'écran
@@ -30,12 +31,12 @@ export const SERVING_QUESTIONS: DataQuestion[] = [
       });
       return boundedAnswer({
         title: "Mes entretiens",
-        href: "/candidatures/entretiens",
+        href: paths.candidatures.entretiens(),
         hrefLabel: "Entretiens",
         items: rows.map((r) => ({
           label: `${formatDay(r.startsAt)} ${formatTime(r.startsAt)} · ${fullName(r.application)}`,
           detail: place(r),
-          href: `/candidatures/${r.application.id}`,
+          href: paths.candidatures.application(r.application.id),
         })),
         empty: "Vous ne recevez aucun entretien à venir.",
       });
@@ -57,12 +58,12 @@ export const SERVING_QUESTIONS: DataQuestion[] = [
       });
       return boundedAnswer({
         title: toComplete > 0 ? `Candidatures à planifier (et ${toComplete} entretien(s) à compléter)` : "Candidatures à planifier",
-        href: "/candidatures",
+        href: paths.candidatures(),
         hrefLabel: "Candidatures",
         items: rows.map((r) => ({
           label: fullName(r),
           detail: `${SCHEDULING_REASON_LABEL[r.schedulingReason!]}${r.schedulingSince ? ` · depuis le ${formatDay(r.schedulingSince)}` : ""}`,
-          href: `/candidatures/${r.id}`,
+          href: paths.candidatures.application(r.id),
         })),
         empty: "Aucune candidature n'attend de rendez-vous.",
       });
@@ -78,7 +79,7 @@ export const SERVING_QUESTIONS: DataQuestion[] = [
       const slots = (await listFreeSlots(churchId)).filter((s) => !params.day || dayKey(new Date(s.startsAt)) === params.day);
       return boundedAnswer({
         title: "Créneaux d'entretien libres",
-        href: "/candidatures/entretiens",
+        href: paths.candidatures.entretiens(),
         hrefLabel: "Entretiens",
         items: slots.map((s) => {
           const at = new Date(s.startsAt);

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isDevLoginEnabled, SESSION_COOKIE_NAME } from "@/lib/auth";
 import { DEV_USERS } from "../../../../../prisma/fixtures/dev-users";
+import { paths } from "@/lib/paths";
 
 const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 jours — aligné sur le défaut NextAuth
 
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
   const expires = new Date(Date.now() + SESSION_MAX_AGE_MS);
   await prisma.session.create({ data: { sessionToken, userId: dbUser.id, expires } });
 
-  const response = NextResponse.redirect(new URL("/dashboard", request.url));
+  const response = NextResponse.redirect(new URL(paths.dashboard(), request.url));
   response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
     httpOnly: true,
     sameSite: "lax",

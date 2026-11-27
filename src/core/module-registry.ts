@@ -14,13 +14,6 @@ export interface RouteDescriptor {
   method?: string;
 }
 
-export interface NavigationItem {
-  label: string;
-  icon?: string;
-  href: string;
-  permission?: Permission;
-}
-
 export interface JobDescriptor {
   name: string;
   schedule: string;
@@ -67,7 +60,6 @@ export interface ModuleManifest {
   optionalDependencies?: readonly string[];
   routes?: ModuleRoutes;
   permissions?: Record<Permission, readonly RoleName[]>;
-  navigation?: NavigationItem[];
   jobs?: JobDescriptor[];
   notificationDomains?: NotificationDomainDescriptor[];
 }

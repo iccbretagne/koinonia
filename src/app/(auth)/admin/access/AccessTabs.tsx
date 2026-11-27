@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { Tabs } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 type Tab = "personnes" | "roles" | "demandes";
 
@@ -35,7 +36,7 @@ export default function AccessTabs({ peopleTab, rolesTab, requestsTab, requestCo
       <Tabs
         ariaLabel="Vues des accès"
         tabs={TAB_ORDER.map((t) => ({
-          href: `/admin/access?onglet=${t}`,
+          href: paths.admin.access({ onglet: t }),
           label: TAB_LABELS[t],
           active: t === tab,
           count: t === "demandes" && requestCount > 0 ? requestCount : undefined,

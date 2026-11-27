@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { FilterChip } from "@/components/ui";
 import FundTrackingSection, { type FundTrackingData } from "./FundTrackingSection";
+import { paths } from "@/lib/paths";
 
 const MONTH_NAMES = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
 
@@ -342,7 +343,7 @@ export default function AccountingStats({
               return (
                 <li key={p.id} className="border-b border-line last:border-0">
                   <Link
-                    href={`/accounting/requests/${p.requestId}`}
+                    href={paths.accounting.request(p.requestId)}
                     className="flex min-h-11 items-center justify-between gap-3 rounded-control px-2 py-2 transition-colors duration-120 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                   >
                     <div className="min-w-0">

@@ -1,6 +1,7 @@
 "use client";
 
 import { Tabs } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 type Tab = "requests" | "stats" | "navette" | "tresorerie";
 
@@ -23,10 +24,10 @@ export default function AccountingNav({
   readonly active: Tab;
 }) {
   const tabs: { key: Tab; href: string; label: string }[] = [
-    ...(canViewRequests ? [{ key: "requests" as const, href: "/accounting/requests", label: "Demandes" }] : []),
-    ...(canViewStats ? [{ key: "stats" as const, href: "/accounting/stats", label: "Statistiques" }] : []),
-    ...(canViewShuttle ? [{ key: "navette" as const, href: "/accounting/navette", label: "Navette" }] : []),
-    ...(canViewTreasury ? [{ key: "tresorerie" as const, href: "/accounting/tresorerie", label: "Trésorerie" }] : []),
+    ...(canViewRequests ? [{ key: "requests" as const, href: paths.accounting.requests(), label: "Demandes" }] : []),
+    ...(canViewStats ? [{ key: "stats" as const, href: paths.accounting.stats(), label: "Statistiques" }] : []),
+    ...(canViewShuttle ? [{ key: "navette" as const, href: paths.accounting.navette(), label: "Navette" }] : []),
+    ...(canViewTreasury ? [{ key: "tresorerie" as const, href: paths.accounting.tresorerie(), label: "Trésorerie" }] : []),
   ];
   if (tabs.length < 2) return null;
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, CircleAlert, Info, TriangleAlert, X, type LucideIcon } from "lucide-react";
 import IconButton from "@/components/ui/IconButton";
 import { buttonClasses } from "@/components/ui/button-classes";
+import { paths } from "@/lib/paths";
 
 export interface SystemMessageBannerItem {
   id: string;
@@ -81,7 +82,7 @@ export default function SystemMessageBanner({
           {preview ? (
             <span className={`${readClasses} pointer-events-none`}>Lire le message</span>
           ) : (
-            <Link href={`/messages/${current.id}`} className={readClasses}>
+            <Link href={paths.messages.message(current.id)} className={readClasses}>
               Lire le message
             </Link>
           )}

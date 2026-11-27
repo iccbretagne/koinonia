@@ -6,6 +6,7 @@ import { Alert, Button, buttonClasses, controlClasses, Input, Select, Textarea }
 import Link from "next/link";
 import { churchLogoSrc } from "@/modules/core/schemas";
 import ChurchLogoSlot from "./ChurchLogoSlot";
+import { paths } from "@/lib/paths";
 
 interface Church {
   id: string;
@@ -179,7 +180,7 @@ export default function ChurchEditClient({ church, profiles, supervisors, canEdi
                 title="Aucun profil pastoral dans cette église."
                 action={
                   <Link
-                    href={canEditIdentity ? `/admin/pastoral-profiles?churchId=${church.id}` : "/admin/pastoral-profiles"}
+                    href={canEditIdentity ? paths.admin.pastoralProfiles({ churchId: church.id }) : paths.admin.pastoralProfiles()}
                     className={buttonClasses("secondary", "sm")}
                   >
                     Créer un profil pastoral pour {church.name}
@@ -213,7 +214,7 @@ export default function ChurchEditClient({ church, profiles, supervisors, canEdi
             <Button
               variant="secondary"
               type="button"
-              onClick={() => router.push("/admin/churches")}
+              onClick={() => router.push(paths.admin.churches())}
             >
               Revenir aux églises
             </Button>

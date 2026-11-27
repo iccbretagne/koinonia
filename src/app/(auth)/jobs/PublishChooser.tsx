@@ -6,12 +6,13 @@ import { Briefcase, ChevronRight, Laptop, Plus, UserRoundSearch, Wrench, type Lu
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import type { PublicationKind } from "@/modules/jobs";
+import { paths } from "@/lib/paths";
 
 const CHOICES: readonly { kind: PublicationKind; href: string; title: string; description: string; icon: LucideIcon }[] = [
-  { kind: "OFFER", href: "/jobs/new", title: "Une offre", description: "Emploi, stage ou alternance à pourvoir", icon: Briefcase },
-  { kind: "MISSION", href: "/jobs/freelance/missions/new", title: "Une mission freelance", description: "Un travail à confier à un indépendant", icon: Wrench },
-  { kind: "SEEKER", href: "/jobs/seekers/new", title: "Mon profil de recherche", description: "Je cherche un emploi, un stage ou une alternance", icon: UserRoundSearch },
-  { kind: "FREELANCE", href: "/jobs/freelance/profiles/new", title: "Mes services de freelance", description: "Je propose mes compétences en indépendant", icon: Laptop },
+  { kind: "OFFER", href: paths.jobs.newOffer(), title: "Une offre", description: "Emploi, stage ou alternance à pourvoir", icon: Briefcase },
+  { kind: "MISSION", href: paths.jobs.newMission(), title: "Une mission freelance", description: "Un travail à confier à un indépendant", icon: Wrench },
+  { kind: "SEEKER", href: paths.jobs.newSeeker(), title: "Mon profil de recherche", description: "Je cherche un emploi, un stage ou une alternance", icon: UserRoundSearch },
+  { kind: "FREELANCE", href: paths.jobs.newFreelanceProfile(), title: "Mes services de freelance", description: "Je propose mes compétences en indépendant", icon: Laptop },
 ];
 
 /**

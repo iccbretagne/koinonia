@@ -8,6 +8,7 @@ import { admitToChurch } from "@/lib/admission";
 import { createNotification } from "@/lib/notifications";
 import type { Session } from "next-auth";
 import { schema } from "./contract";
+import { paths } from "@/lib/paths";
 
 type LinkRequest = {
   id: string;
@@ -73,7 +74,7 @@ async function rejectRequest(linkRequest: LinkRequest, rejectReason: string | un
     message: rejectReason
       ? `Votre demande de liaison a été refusée : ${rejectReason}`
       : "Votre demande de liaison compte STAR a été refusée.",
-    link: "/profile",
+    link: paths.profile(),
   });
   return updated;
 }
@@ -191,7 +192,7 @@ export async function PATCH(
       type: "MEMBER_LINK_APPROVED",
       title: "Demande de liaison approuvée",
       message: "Votre compte a été lié à votre fiche STAR. Vous pouvez maintenant accéder à votre planning.",
-      link: "/planning",
+      link: paths.planning(),
     });
 
     return successResponse({ approved: true });

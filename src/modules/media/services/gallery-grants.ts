@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { paths } from "@/lib/paths";
 
 /**
  * Accès nominatifs à la galerie médias (spec 080) : lecture et téléchargement, sans partage,
@@ -115,7 +116,7 @@ export async function upsertGalleryGrant(
       message: input.expiresAt
         ? `Vous pouvez parcourir et télécharger les photos et visuels de l'église jusqu'au ${input.expiresAt.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })}.`
         : "Vous pouvez parcourir et télécharger les photos et visuels de l'église.",
-      link: "/media/galerie",
+      link: paths.media.galerie(),
     });
   }
 

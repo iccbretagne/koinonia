@@ -9,6 +9,7 @@ import type { Role } from "@/generated/prisma/client";
 import { Alert, Button, EmptyState, IconButton, PageHeader, Select, StatusChip, buttonClasses } from "@/components/ui";
 import { useConfirm } from "../../../use-confirm";
 import ResponsibilityModal, { type ResponsibilitySelection } from "../../ResponsibilityModal";
+import { paths } from "@/lib/paths";
 
 interface DeptRef {
   id: string;
@@ -241,7 +242,7 @@ export default function RoleHoldersClient({ churchId, role, label, description, 
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/admin/access" className={`${buttonClasses("ghost", "sm")} self-start`}>
+      <Link href={paths.admin.access()} className={`${buttonClasses("ghost", "sm")} self-start`}>
         <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
         Revenir aux accès
       </Link>
@@ -280,7 +281,7 @@ export default function RoleHoldersClient({ churchId, role, label, description, 
             <div key={h.roleId} className="flex min-h-16 items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-card">
               <Avatar user={h.user} />
               <Link
-                href={`/admin/access/users/${h.user.id}`}
+                href={paths.admin.accessUser(h.user.id)}
                 className="min-w-0 flex-1 rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
               >
                 <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{h.user.name}</p>
@@ -313,7 +314,7 @@ export default function RoleHoldersClient({ churchId, role, label, description, 
                   <p className="text-[15px] font-semibold leading-[22px] text-ink">{ministry.name}</p>
                   {holder ? (
                     <Link
-                      href={`/admin/access/users/${holder.user.id}`}
+                      href={paths.admin.accessUser(holder.user.id)}
                       className={`${buttonClasses("ghost", "sm")} -ml-3`}
                     >
                       <Avatar user={holder.user} size={16} /> {holder.user.name}
@@ -363,7 +364,7 @@ export default function RoleHoldersClient({ churchId, role, label, description, 
                           return (
                             <span key={h.roleId} className="inline-flex items-center gap-1">
                               <Link
-                                href={`/admin/access/users/${h.user.id}`}
+                                href={paths.admin.accessUser(h.user.id)}
                                 className={buttonClasses("secondary", "sm")}
                               >
                                 <Avatar user={h.user} size={16} />

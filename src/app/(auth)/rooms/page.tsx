@@ -5,6 +5,7 @@ import { isControlTeamMember } from "@/modules/rooms";
 import RoomsBookingClient from "./RoomsBookingClient";
 import { buttonClasses } from "@/components/ui/button-classes";
 import PageHeader from "@/components/ui/PageHeader";
+import { paths } from "@/lib/paths";
 
 export default async function RoomsPage() {
   const session = await requireAuth();
@@ -29,7 +30,7 @@ export default async function RoomsPage() {
         title="Salles"
         actions={
           isControlTeam && (
-            <Link href="/rooms/checklists" className={buttonClasses("secondary")}>
+            <Link href={paths.rooms.checklists()} className={buttonClasses("secondary")}>
               Contrôler les mains courantes
             </Link>
           )

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
+import { paths } from "@/lib/paths";
 
 export default async function AdminPage() {
   const session = await requireAuth();
@@ -14,13 +15,13 @@ export default async function AdminPage() {
   const userPermissions = new Set(churchRoles.flatMap((r) => rolePermissions[r.role] ?? []));
 
   if (session.user.isSuperAdmin || userPermissions.has("church:manage")) {
-    redirect("/admin/churches");
+    redirect(paths.admin.churches());
   }
   if (userPermissions.has("users:manage")) {
-    redirect("/admin/users");
+    redirect(paths.admin.users());
   }
   if (userPermissions.has("access:manage")) {
-    redirect("/admin/access");
+    redirect(paths.admin.access());
   }
 
   throw new Error("FORBIDDEN");

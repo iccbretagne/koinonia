@@ -3,6 +3,7 @@ import { requireAuth, requirePlatformPermission } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { createNotification } from "@/lib/notifications";
 import { createProfileSchema } from "./contract";
+import { paths } from "@/lib/paths";
 
 export async function GET() {
   try {
@@ -67,7 +68,7 @@ async function notifyFreelanceProfileSubscribers(profile: {
           type:    "FREELANCE_PROFILE",
           title:   "Nouveau freelance disponible",
           message: `${authorName} propose ses services : « ${profile.title} »`,
-          link:    `/jobs/freelance/profiles/${profile.id}`,
+          link:    paths.jobs.freelanceProfile(profile.id),
         });
       }
     })

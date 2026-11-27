@@ -6,6 +6,7 @@ import { EVENT_TYPE_OPTIONS, getEventTypeLabel } from "@/lib/event-types";
 import LibraryFiltersClient from "./LibraryFiltersClient";
 import ResumeBanner from "./ResumeBanner";
 import { StatusChip, buttonClasses } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 const searchParamsSchema = z.object({
   q: z.string().trim().min(1).optional().catch(undefined),
@@ -104,7 +105,7 @@ export default async function AudioLibraryPage({
           {hasActiveFilters ? (
             <>
               <p className="text-ink-muted mb-4">Aucun résultat pour cette recherche.</p>
-              <Link href="/audio/ecouter" className={buttonClasses("secondary", "sm")}>
+              <Link href={paths.audio.ecouter()} className={buttonClasses("secondary", "sm")}>
                 Voir tous les enregistrements
               </Link>
             </>
@@ -117,7 +118,7 @@ export default async function AudioLibraryPage({
           {services.map((s) => (
             <li key={s.id}>
               <Link
-                href={`/audio/ecouter/${s.id}`}
+                href={paths.audio.ecouterService(s.id)}
                 className="block bg-surface rounded-card shadow-card border border-line p-4 hover:border-brand/40 transition-colors h-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
               >
                 <div className="flex items-center justify-between mb-2 gap-2">

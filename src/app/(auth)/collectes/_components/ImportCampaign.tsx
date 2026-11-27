@@ -7,6 +7,7 @@ import { Button, Textarea, useToast } from "@/components/ui";
 import type { ImportPreview } from "@/modules/campaigns";
 import ImportPreviewView, { ImportErrorAlert, importErrorFrom, isPreviewBlocked, type ImportError } from "./ImportPreviewView";
 import FileInput from "@/components/ui/FileInput";
+import { paths } from "@/lib/paths";
 
 /**
  * Import d'une définition de campagne (spec 090) : coller ou déposer un JSON, vérifier (aperçu
@@ -75,7 +76,7 @@ export default function ImportCampaign({
         return;
       }
       toast.success(result.campaign.action === "create" ? "Campagne créée" : "Définition appliquée");
-      if (result.campaignId) router.push(`/collectes/${result.campaignId}`);
+      if (result.campaignId) router.push(paths.collectes.campaign(result.campaignId));
       router.refresh();
     } catch {
       setError({ title: "Connexion impossible. Réessayez dans un instant.", items: [] });

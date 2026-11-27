@@ -1,4 +1,5 @@
 import type { PaymentMethodsConfig } from "./schemas";
+import { paths } from "@/lib/paths";
 
 export interface ReadinessCheck {
   key: string;
@@ -29,7 +30,7 @@ export interface ReadinessEvent {
  * les autres sont des conseils.
  */
 export function readinessChecks(event: ReadinessEvent): ReadinessCheck[] {
-  const tab = (vue: string) => `/billetterie/${event.id}?vue=${vue}`;
+  const tab = (vue: string) => paths.billetterie.event(event.id, { vue });
   const pm = event.paymentMethods;
   const offered = event.options.filter((o) => o.active);
   const paid = event.tariffs.some((t) => t.price > 0) || offered.some((o) => o.price > 0);

@@ -11,6 +11,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import PageHeader from "@/components/ui/PageHeader";
 import { Church, Settings2 } from "lucide-react";
 import { countUnstaffedDepartments, getStaffingGapViewer } from "@/modules/planning";
+import { paths } from "@/lib/paths";
 
 export default async function ChurchAgendaPage() {
   const session = await auth();
@@ -58,7 +59,7 @@ export default async function ChurchAgendaPage() {
         description="Calendrier, plusieurs mois ou liste, au choix."
         actions={
           canManageEvents ? (
-            <Link href="/admin/events" className={buttonClasses("secondary")}>
+            <Link href={paths.admin.events()} className={buttonClasses("secondary")}>
               <Settings2 aria-hidden="true" className="size-4" strokeWidth={1.75} />
               Gérer les événements
             </Link>

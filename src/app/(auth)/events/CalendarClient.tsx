@@ -14,6 +14,7 @@ import UnstaffedChip from "@/components/UnstaffedChip";
 import StatusChip, { statusToneClasses } from "@/components/ui/StatusChip";
 import { useToast } from "@/components/ui/Toast";
 import { EVENT_TYPES, getEventTypeLabel } from "@/lib/event-types";
+import { paths } from "@/lib/paths";
 
 interface CalendarEvent {
   id: string;
@@ -158,7 +159,7 @@ function DaysGrid({
                 {dayEvents.map((ev) => (
                   <Link
                     key={ev.id}
-                    href={`/events/${ev.id}/star-view`}
+                    href={paths.events.starView(ev.id)}
                     className={`block truncate rounded-chip px-1.5 py-1 text-xs font-semibold transition-[filter] hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus ${statusToneClasses[eventTypeTone(ev.type)]}`}
                     title={eventLinkTitle(ev)}
                   >
@@ -197,7 +198,7 @@ function EventRows({ events }: { readonly events: CalendarEvent[] }) {
         return (
           <li key={ev.id} className="border-t border-line first:border-t-0">
             <Link
-              href={`/events/${ev.id}/star-view`}
+              href={paths.events.starView(ev.id)}
               className="flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
             >
               <DateTile date={d} />

@@ -5,6 +5,7 @@ import { notifyUsers } from "@/lib/notifications";
 import { logger } from "@/lib/logger";
 import type { CampaignAssignmentStatus } from "@/generated/prisma/client";
 import { newSalt, respondentTokenPair } from "./tokens";
+import { paths } from "@/lib/paths";
 
 /**
  * Notifications des campagnes de collecte (spec 090), domaine `campaigns` (« Collectes »).
@@ -46,7 +47,7 @@ export async function ensureRespondentLink(respondent: { id: string; tokenSalt: 
   return respondentLink({ id: respondent.id, tokenSalt: salt })!;
 }
 
-export const assignmentPath = (assignmentId: string) => `/collectes/r/${assignmentId}`;
+export const assignmentPath = (assignmentId: string) => paths.collectes.reponse(assignmentId);
 
 const dayFr = (d: Date) => d.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
@@ -237,7 +238,7 @@ export async function notifyAssignmentSubmitted(assignmentId: string): Promise<v
       type: "CAMPAIGN_SUBMITTED",
       title: `Questionnaire soumis : ${a.campaign.title}`,
       message: a.label === a.form.title ? `« ${a.form.title} » a été soumis.` : `« ${a.form.title} » (${a.label}) a été soumis.`,
-      link: `/collectes/${a.campaignId}`,
+      link: paths.collectes.campaign(a.campaignId),
       entityType: "CampaignAssignment",
       entityId: a.id,
     });

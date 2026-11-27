@@ -64,6 +64,7 @@ const ALLOWLIST: Record<string, string> = {
   "src/app/(auth)/admin/events/page.tsx": EVENTS_MANAGE_LEGIT,
   "src/app/(auth)/admin/events/[eventId]/page.tsx": EVENTS_MANAGE_LEGIT,
   "src/app/(auth)/admin/events/[eventId]/report/page.tsx": `${EVENTS_MANAGE_LEGIT} (ou reports:view)`,
+  "src/app/(auth)/pastoral/reports/page.tsx": `${EVENTS_MANAGE_LEGIT} (ou reports:view) — même règle que la page du compte rendu, pour n'en faire un lien que si elle s'ouvre (spec 092)`,
   "src/app/(auth)/admin/welcome-duty/page.tsx": EVENTS_MANAGE_LEGIT,
   "src/app/(auth)/events/page.tsx": EVENTS_MANAGE_LEGIT,
   "src/app/api/departments/[departmentId]/route.ts": EVENTS_MANAGE_LEGIT,

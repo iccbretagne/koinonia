@@ -49,8 +49,4 @@ export const careModule = defineModule({
       visibleWith: ["care:qualify", "care:view"],
     },
   ],
-
-  navigation: [
-    { label: "Suivi pastoral", icon: "heart", href: "/care", permission: "care:view" },
-  ],
 });

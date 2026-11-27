@@ -22,6 +22,7 @@ import {
 import { useConfirm } from "../use-confirm";
 import { ROLE_LABELS } from "@/lib/roles";
 import type { Role } from "@/generated/prisma/client";
+import { paths } from "@/lib/paths";
 
 interface UserRole {
   id: string;
@@ -302,7 +303,7 @@ export default function UsersClient({
       <div className="mb-4 flex flex-col gap-3">
         {canManageRoles && (
           <div className="flex justify-end">
-            <Link href="/admin/users/new" className={buttonClasses("primary")}>
+            <Link href={paths.admin.newUser()} className={buttonClasses("primary")}>
               <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
               Créer un utilisateur
             </Link>

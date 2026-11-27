@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Alert, Button, ConfirmModal, Input, StatusChip, buttonClasses, useToast } from "@/components/ui";
 import type { BudgetComparison, BudgetRow, CategoryView } from "@/modules/treasury";
 import { api, errorText, euro, toNumber } from "./format";
+import { paths } from "@/lib/paths";
 
 const pct = (r: number | null) => (r === null ? "—" : `${Math.round(r * 100)} %`);
 
@@ -141,9 +142,9 @@ export default function BudgetTab({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <nav aria-label="Année" className="flex items-center gap-2 text-[15px] leading-[22px]">
-          <Link className={buttonClasses("ghost", "sm")} aria-label={`Budget ${year - 1}`} href={`/accounting/tresorerie?onglet=budget&annee=${year - 1}`}><ChevronLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />{year - 1}</Link>
+          <Link className={buttonClasses("ghost", "sm")} aria-label={`Budget ${year - 1}`} href={paths.accounting.tresorerie({ onglet: "budget", annee: year - 1 })}><ChevronLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />{year - 1}</Link>
           <span className="text-lg font-semibold text-ink">{year}</span>
-          <Link className={buttonClasses("ghost", "sm")} aria-label={`Budget ${year + 1}`} href={`/accounting/tresorerie?onglet=budget&annee=${year + 1}`}>{year + 1}<ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} /></Link>
+          <Link className={buttonClasses("ghost", "sm")} aria-label={`Budget ${year + 1}`} href={paths.accounting.tresorerie({ onglet: "budget", annee: year + 1 })}>{year + 1}<ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} /></Link>
         </nav>
         {over > 0 && <StatusChip tone="danger">{over} dépassement{over > 1 ? "s" : ""}</StatusChip>}
         {warn > 0 && <StatusChip tone="warning">{warn} à surveiller</StatusChip>}

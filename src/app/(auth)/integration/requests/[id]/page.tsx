@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import RequestDetail from "./RequestDetail";
 import DeleteItemButton from "@/components/DeleteItemButton";
+import { paths } from "@/lib/paths";
 
 export default async function IntegrationRequestDetailPage({
   params,
@@ -63,9 +64,9 @@ export default async function IntegrationRequestDetailPage({
   const canDelete = await canDeleteIntegrationRequest(session, churchId);
   const blockedBy = [
     ...(appointmentRequest
-      ? [{ label: "Demande de rendez-vous pastoral liée", href: `/care/requests/${appointmentRequest.id}` }]
+      ? [{ label: "Demande de rendez-vous pastoral liée", href: paths.care.requestDetail(appointmentRequest.id) }]
       : []),
-    ...(msdpFollowUp ? [{ label: "Suivi de nouveau converti lié", href: `/care/followups/${msdpFollowUp.id}` }] : []),
+    ...(msdpFollowUp ? [{ label: "Suivi de nouveau converti lié", href: paths.care.followup(msdpFollowUp.id) }] : []),
   ];
 
   return (
@@ -83,7 +84,7 @@ export default async function IntegrationRequestDetailPage({
         <div className="mt-6 flex justify-end">
           <DeleteItemButton
             endpoint={`/api/integration/requests/${id}`}
-            redirectTo="/integration/requests"
+            redirectTo={paths.integration.requests()}
             blockedBy={blockedBy}
           />
         </div>

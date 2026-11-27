@@ -14,6 +14,7 @@ import { SERVICE_STATUS, SERVICE_STATUS_ORDER, serviceStatusDescriptor } from "@
 import { useToast } from "@/components/ui/Toast";
 import type { ServiceStatus } from "@/generated/prisma/client";
 import TaskPanel from "./TaskPanel";
+import { paths } from "@/lib/paths";
 
 type AvailabilityState = "AVAILABLE" | "IF_NEEDED" | "UNAVAILABLE" | "NO_RESPONSE" | "NOT_ASKED";
 
@@ -219,7 +220,7 @@ function MemberRow({
       <div className="flex min-w-0 flex-col items-start gap-1">
         <span className="max-w-full truncate text-[15px] font-semibold leading-[22px] text-ink">{name}</span>
         {withdrawal && (
-          <Link href={`/planning/remplacements/${withdrawal.id}`} className="rounded-chip focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+          <Link href={paths.planning.remplacement(withdrawal.id)} className="rounded-chip focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
             <StatusChip tone="warning" icon={UserMinus}>À remplacer</StatusChip>
           </Link>
         )}
@@ -509,7 +510,7 @@ export default function PlanningGrid({
           <ul className="mt-1 flex flex-col">
             {withdrawals.map((w) => (
               <li key={w.id}>
-                <Link href={`/planning/remplacements/${w.id}`} className={`${buttonClasses("ghost", "sm")} -ml-3`}>
+                <Link href={paths.planning.remplacement(w.id)} className={`${buttonClasses("ghost", "sm")} -ml-3`}>
                   Remplacer {w.memberName}
                 </Link>
               </li>

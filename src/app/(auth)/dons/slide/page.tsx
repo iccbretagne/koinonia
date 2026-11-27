@@ -6,6 +6,7 @@ import { EmptyState, PageHeader, buttonClasses } from "@/components/ui";
 import GivingSlide from "./GivingSlide";
 import { qrPath } from "@/lib/qr";
 import { toSlideProps } from "./slide-props";
+import { paths } from "@/lib/paths";
 
 export default async function GivingSlidePage() {
   const session = await requireAuth();
@@ -28,7 +29,7 @@ export default async function GivingSlidePage() {
         title="Slide de projection"
         description="À projeter pendant le temps des offrandes : le QR code mène à la page de dons."
         actions={
-          <Link href="/dons?support=slide" className={buttonClasses("secondary")}>
+          <Link href={paths.dons({ support: "slide" })} className={buttonClasses("secondary")}>
             Paramétrer la slide
           </Link>
         }
@@ -41,7 +42,7 @@ export default async function GivingSlidePage() {
           title="La page de dons n'est pas active"
           description="Active-la et enregistre-la : la slide renvoie vers elle."
           action={
-            <Link href="/dons" className={buttonClasses("primary")}>
+            <Link href={paths.dons()} className={buttonClasses("primary")}>
               Paramétrer la page
             </Link>
           }

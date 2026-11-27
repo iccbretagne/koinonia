@@ -8,6 +8,7 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import { ConfirmModal as UiConfirmModal, FilterChip, IconButton, Input, Select, StatusChip, Textarea, buttonClasses, type StatusTone } from "@/components/ui";
 import type { MediaFileStatus, MediaFileType, MediaTokenType } from "@/generated/prisma/enums";
+import { paths } from "@/lib/paths";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -246,8 +247,8 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
   }
 
   function getTokenUrl(token: ShareToken) {
-    const paths: Record<MediaTokenType, string> = { VALIDATOR: "v", PREVALIDATOR: "v", MEDIA: "d", MEDIA_ALL: "d", GALLERY: "g", COLLECTION: "c" };
-    return `${origin}/media/${paths[token.type]}/${token.token}`;
+    const tokenPaths: Record<MediaTokenType, string> = { VALIDATOR: "v", PREVALIDATOR: "v", MEDIA: "d", MEDIA_ALL: "d", GALLERY: "g", COLLECTION: "c" };
+    return `${origin}/media/${tokenPaths[token.type]}/${token.token}`;
   }
 
   async function copy(url: string, id: string) {
@@ -1030,7 +1031,7 @@ export default function MediaProjectDetail({
   async function deleteProject() {
     setConfirmDelete(false);
     await fetch(`/api/media-projects/${project.id}`, { method: "DELETE" });
-    router.push("/media/projects");
+    router.push(paths.media.projects());
   }
 
   async function deleteFile(fileId: string) {
@@ -1104,7 +1105,7 @@ export default function MediaProjectDetail({
         {/* ── Header ──────────────────────────────────────────── */}
         <div className="flex flex-col gap-4">
           <div>
-            <Link href="/media/projects" className={`${buttonClasses("ghost", "sm")} -ml-2 mb-3`}>
+            <Link href={paths.media.projects()} className={`${buttonClasses("ghost", "sm")} -ml-2 mb-3`}>
               <ChevronLeft className="size-4" aria-hidden="true" strokeWidth={1.75} />
               Retour aux projets
             </Link>

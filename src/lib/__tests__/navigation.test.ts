@@ -22,7 +22,7 @@ const FAMILLES = "https://familles.example";
 const star: NavigationInput = {
   departments: [],
   configLinks: [],
-  requestLinks: [{ href: "/agenda/request", label: "Demande RDV pastoral" }],
+  requestLinks: [{ href: "/care/request", label: "Demande RDV pastoral" }],
   mediaLinks: [{ href: "/audio", label: "Audio" }],
   agendaLinks: [],
   integrationLinks: [],
@@ -117,7 +117,7 @@ describe("buildSpaces", () => {
   it("STAR : aucune grille par département, les liens STAR des événements, le RDV pastoral autonome", () => {
     const links = hrefs(star);
     expect(links).toEqual(
-      expect.arrayContaining(["/planning", "/disponibilites", "/planning/events", "/events/announcement-sheets", "/agenda/request", "/audio", "/jobs", FAMILLES])
+      expect.arrayContaining(["/planning", "/disponibilites", "/planning/events", "/events/announcement-sheets", "/care/request", "/audio", "/jobs", FAMILLES])
     );
     expect(links.some((h) => h.startsWith("/dashboard"))).toBe(false);
     expect(links).not.toContain("/events");
@@ -304,12 +304,15 @@ describe("bottomDestinations", () => {
     expect(labels(accountant, "ACCOUNTANT")).toEqual(["Accueil", "Comptabilité"]);
   });
 
-  it("vue pastorale : destinations actuelles", () => {
+  it("vue pastorale : « Mes membres » mène à la page pastorale, comme la barre latérale (spec 092)", () => {
     const spaces = buildSpaces({ ...admin, isPastoral: true, homeHref: "/pastoral" });
-    expect(bottomDestinations(spaces, { role: "ADMIN", isPastoral: true }).map((d) => [d.label, d.href])).toEqual([
+    const destinations = bottomDestinations(spaces, { role: "ADMIN", isPastoral: true });
+    expect(destinations.map((d) => [d.label, d.href])).toEqual([
       ["Accueil", "/pastoral"],
-      ["Mes membres", "/admin/members"],
+      ["Mes membres", "/pastoral/members"],
     ]);
+    const sidebar = spaces.flatMap((s) => s.pages).find((p) => p.label === "Mes membres");
+    expect(sidebar?.href).toBe("/pastoral/members");
   });
 
   it("active la destination de l'espace courant", () => {

@@ -11,6 +11,7 @@ import {
 } from "../schemas";
 import { currentBalance, fromIsoDate, isActiveReimbursement, reimbursementStatus } from "./ledger-read";
 import { storeReceipt, type StoredReceipt } from "./receipts";
+import { paths } from "@/lib/paths";
 
 /**
  * Écriture du registre de la navette (spec 073) : déclaratif, sans approbation. Chaque mutation
@@ -110,7 +111,7 @@ async function notifyManagers(churchId: string, actor: ShuttleActor, entry: Shut
     recipients,
     `Navette : ligne ${ACTION_VERB[action]}`,
     `${entryTitle(entry)} de ${amount} ${ACTION_VERB[action]} par ${actor.name}.`,
-    action === "DELETE" ? "/accounting/navette" : `/accounting/navette?ligne=${entry.id}`,
+    action === "DELETE" ? paths.accounting.navette() : paths.accounting.navette({ ligne: entry.id }),
     `SHUTTLE_ENTRY_${action}`
   );
 }
@@ -127,7 +128,7 @@ async function alertLowBalance(churchId: string, before: number, after: number) 
     recipients,
     "Navette : solde bas",
     `Le solde de la navette est de ${fmtEuro(after)}, sous le seuil de ${fmtEuro(threshold)}.`,
-    "/accounting/navette",
+    paths.accounting.navette(),
     "SHUTTLE_LOW_BALANCE"
   );
 }
@@ -302,7 +303,7 @@ export async function deleteEntry(entryId: string, actor: ShuttleActor, now = ne
 /** Notifie l'auteur d'une ligne (signalement, remboursement…), s'il n'est pas l'acteur. */
 export async function notifyEntryAuthor(entry: ShuttleEntry, actorId: string, title: string, message: string, type: string) {
   if (!entry.createdById || entry.createdById === actorId) return;
-  await notify([entry.createdById], title, message, `/accounting/navette?ligne=${entry.id}`, type);
+  await notify([entry.createdById], title, message, paths.accounting.navette({ ligne: entry.id }), type);
 }
 
 export { loadEntry as loadShuttleEntry, fmtEuro, notify as notifyShuttleUsers };

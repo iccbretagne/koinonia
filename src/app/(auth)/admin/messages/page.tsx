@@ -5,6 +5,7 @@ import { PageHeader, Tabs } from "@/components/ui";
 import { buttonClasses } from "@/components/ui/button-classes";
 import { listMessages, type MessageStatus } from "@/modules/messages";
 import MessagesClient from "./MessagesClient";
+import { paths } from "@/lib/paths";
 
 const TABS: { key: string; status: MessageStatus; label: string }[] = [
   { key: "en-cours", status: "active", label: "En cours" },
@@ -35,7 +36,7 @@ export default async function SystemMessagesPage({
         title="Messages système"
         description="Un bandeau en haut de Koinonia et une notification pour les personnes choisies, le temps de la période."
         actions={
-          <Link href="/admin/messages/new" className={buttonClasses("primary", "md")}>
+          <Link href={paths.admin.newMessage()} className={buttonClasses("primary", "md")}>
             <Plus aria-hidden="true" className="size-4" />
             Créer un message
           </Link>
@@ -44,7 +45,7 @@ export default async function SystemMessagesPage({
         <Tabs
           ariaLabel="État des messages"
           tabs={TABS.map((t) => ({
-            href: `/admin/messages?etat=${t.key}`,
+            href: paths.admin.messages({ etat: t.key }),
             label: t.label,
             count: counts[t.key],
             active: t.key === tab.key,

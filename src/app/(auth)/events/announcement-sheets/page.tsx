@@ -8,6 +8,7 @@ import StatusChip from "@/components/ui/StatusChip";
 import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canReadAnnouncementSheet } from "@/modules/planning";
+import { paths } from "@/lib/paths";
 
 function parseMonth(param: string | undefined): Date {
   if (param && /^\d{4}-\d{2}$/.test(param)) {
@@ -61,8 +62,8 @@ export default async function AnnouncementSheetsPage({
 
       <PeriodNav
         label={monthStart.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
-        prev={{ href: `/events/announcement-sheets?month=${monthKey(prevMonth)}` }}
-        next={{ href: `/events/announcement-sheets?month=${monthKey(nextMonth)}` }}
+        prev={{ href: paths.events.announcementSheets({ month: monthKey(prevMonth) }) }}
+        next={{ href: paths.events.announcementSheets({ month: monthKey(nextMonth) }) }}
         prevLabel="Mois précédent"
         nextLabel="Mois suivant"
       />
@@ -76,7 +77,7 @@ export default async function AnnouncementSheetsPage({
           {events.map((event) => (
             <li key={event.id} className="border-t border-line first:border-t-0">
               <Link
-                href={`/events/${event.id}/star-view`}
+                href={paths.events.starView(event.id)}
                 className="flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
               >
                 <DateTile date={event.date} />

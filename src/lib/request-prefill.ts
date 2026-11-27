@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { paths } from "@/lib/paths";
 
 /**
  * Préremplissage du formulaire « Nouvelle demande » par l'adresse (spec 081, lot 2) : un assistant
@@ -35,5 +36,5 @@ export function requestPrefillHref(prefill: RequestPrefill): string {
   const query = new URLSearchParams(
     Object.entries(prefill).flatMap(([k, v]) => (typeof v === "string" && v !== "" ? [[k, v]] : []))
   );
-  return `/requests/new?${query.toString()}`;
+  return `${paths.requests.newRequest()}?${query.toString()}`;
 }

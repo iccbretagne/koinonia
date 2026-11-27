@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { DataTable } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 /** Cases du suivi de l'argent versé (spec 078), dans l'ordre d'affichage. */
 const BOXES = [
@@ -93,7 +94,7 @@ export default function FundTrackingSection({ data }: { readonly data: FundTrack
               {data.requestIds[open].map((id) => (
                 <li key={id}>
                   <Link
-                    href={`/accounting/requests/${id}`}
+                    href={paths.accounting.request(id)}
                     className="flex min-h-11 items-center justify-between gap-2 px-3 py-2 text-[15px] leading-[22px] text-ink transition-colors duration-120 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                   >
                     <span className="min-w-0 truncate">{data.labels[id] ?? "Demande"}</span>

@@ -39,6 +39,7 @@ import {
 import { computeUsage, itemHolds } from "./stock";
 import { deriveToken, hashToken, isTokenShape, newSalt, tokenPair } from "./tokens";
 import { closedReason } from "./events";
+import { paths } from "@/lib/paths";
 
 /**
  * Réservations (spec 074) : inscription publique sous verrou de l'événement, gestion par le
@@ -210,7 +211,7 @@ async function maybeAlertSeats(eventId: string, seatsLeft: number) {
     type: "TICKETING_SEATS_LOW",
     title: `${event.title} : bientôt complet`,
     message: seatsMessage(seatsLeft),
-    link: `/billetterie/${eventId}`,
+    link: paths.billetterie.event(eventId),
   });
 }
 
@@ -591,7 +592,7 @@ async function afterChange(bookingId: string, result: PatchResult) {
       type: "TICKETING_PICKUP_CANCELLED",
       title: `${booking.event.title} : annulation`,
       message: `La réservation ${booking.reference} a annulé une option à retirer sur place.`,
-      link: `/billetterie/${booking.eventId}`,
+      link: paths.billetterie.event(booking.eventId),
     });
   }
 }

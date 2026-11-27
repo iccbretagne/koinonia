@@ -8,6 +8,7 @@ import { getFunctionDepartmentsMap } from "@/lib/function-departments";
 import { notifyDeptMembers } from "@/lib/notifications";
 import type { RequestType } from "@/generated/prisma/client";
 import { DEMAND_TYPES, createVisuelSchema, createDemandSchema } from "./contract";
+import { paths } from "@/lib/paths";
 
 /**
  * Attache le destinataire d'une demande (spec 046) : la fonction déduite de son type, et les
@@ -161,7 +162,7 @@ async function createVisuel(_request: Request, body: unknown) {
     type: "REQUEST_SUBMITTED",
     title: "Nouvelle demande de visuel",
     message: `« ${data.title} » a été soumis par ${session.user.displayName ?? session.user.name ?? "un utilisateur"}.`,
-    link: "/media/requests",
+    link: paths.media.requests(),
   }).catch(() => {});
 
   return successResponse(created, 201);
@@ -193,7 +194,7 @@ async function createDemand(_request: Request, body: unknown) {
     type: "REQUEST_SUBMITTED",
     title: "Nouvelle demande",
     message: `« ${data.title} » a été soumis par ${session.user.displayName ?? session.user.name ?? "un utilisateur"}.`,
-    link: "/secretariat/requests",
+    link: paths.secretariat.requests(),
   }).catch(() => {});
 
   return successResponse(created, 201);

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { createNotification, notifyDeptMembers, notifyUsers } from "@/lib/notifications";
 import { DEPT_FN } from "@/lib/department-functions";
 import { DEFAULT_CARE_SETTINGS, type CareDelays } from "./settings";
+import { paths } from "@/lib/paths";
 
 /**
  * Relances de l'espace suivi pastoral (spec 052, T60), pour les deux sortes de demandes :
@@ -71,7 +72,7 @@ interface RelanceItem {
 }
 
 function linkOf(item: RelanceItem): string {
-  return `/care/${item.kind}/${item.id}`;
+  return item.kind === "requests" ? paths.care.requestDetail(item.id) : paths.care.followup(item.id);
 }
 
 function entityOf(item: RelanceItem): { entityType: string; entityId: string } {

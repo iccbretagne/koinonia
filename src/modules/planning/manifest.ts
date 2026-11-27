@@ -101,11 +101,4 @@ export const planningModule = defineModule({
       visibleWith: ["planning:view", "media:view"],
     },
   ],
-
-  navigation: [
-    { label: "Planning",    icon: "planning",    href: "/dashboard",    permission: "planning:department" },
-    { label: "Événements",  icon: "calendar",    href: "/events",       permission: "events:view" },
-    { label: "Membres",     icon: "members",     href: "/admin/members",permission: "members:view" },
-    { label: "Annonces",    icon: "megaphone",   href: "/announcements",permission: "events:view" },
-  ],
 });

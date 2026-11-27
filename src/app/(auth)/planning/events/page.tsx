@@ -11,6 +11,7 @@ import { getEventTypeLabel } from "@/lib/event-types";
 import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { weekBounds, shiftWeek, currentWeekMonday, buildWeekEventsQuery } from "@/lib/week";
+import { paths } from "@/lib/paths";
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -59,8 +60,8 @@ export default async function StarWeeklyEventsPage({
 
       <PeriodNav
         label={formatWeekLabel(start, end)}
-        prev={{ href: `/planning/events?week=${prevWeek}` }}
-        next={{ href: `/planning/events?week=${nextWeek}` }}
+        prev={{ href: paths.planning.events({ week: prevWeek }) }}
+        next={{ href: paths.planning.events({ week: nextWeek }) }}
         prevLabel="Semaine précédente"
         nextLabel="Semaine suivante"
       />
@@ -72,7 +73,7 @@ export default async function StarWeeklyEventsPage({
             title="Aucun événement cette semaine"
             description="Passez à la semaine suivante pour voir les prochains événements."
             action={
-              <Link href={`/planning/events?week=${nextWeek}`} className={buttonClasses("secondary")}>
+              <Link href={paths.planning.events({ week: nextWeek })} className={buttonClasses("secondary")}>
                 Voir la semaine suivante
               </Link>
             }
@@ -86,7 +87,7 @@ export default async function StarWeeklyEventsPage({
             return (
               <li key={event.id} className="border-t border-line first:border-t-0">
                 <Link
-                  href={`/events/${event.id}/star-view`}
+                  href={paths.events.starView(event.id)}
                   className="flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
                 >
                   <DateTile date={event.date} />

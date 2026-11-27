@@ -66,8 +66,4 @@ export const mediaModule = defineModule({
       visibleWith: ["media:upload", "media:review"],
     },
   ],
-
-  navigation: [
-    { label: "Communication & Production", icon: "media", href: "/media", permission: "media:view" },
-  ],
 });

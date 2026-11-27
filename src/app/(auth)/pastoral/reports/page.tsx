@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Check, ChevronRight } from "lucide-react";
 import { PageHeader, StatusChip, buttonClasses } from "@/components/ui";
+import { rolePermissions } from "@/lib/registry";
+import { paths } from "@/lib/paths";
 function fmt(d: Date) {
   return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
 }
@@ -17,7 +19,17 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 };
 
 export default async function PastoralReportsPage() {
-  const { activeChurchId } = await requirePastoralActiveChurch();
+  const { session, activeChurchId } = await requirePastoralActiveChurch();
+
+  // Le compte rendu (`/admin/events/[id]/report`) n'est ouvert qu'avec `events:manage` ou
+  // `reports:view` dans l'église de l'événement : sans ce droit, la ligne n'est pas un lien
+  // (spec 092 — jamais de lien vers un refus ; la lecture pastorale arrive au lot 3).
+  const perms = new Set(
+    session.user.churchRoles
+      .filter((r) => r.churchId === activeChurchId)
+      .flatMap((r) => rolePermissions[r.role] ?? [])
+  );
+  const canOpenReport = perms.has("events:manage") || perms.has("reports:view");
 
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
@@ -86,12 +98,14 @@ export default async function PastoralReportsPage() {
                   <p className="text-sm font-medium text-ink">{e.title}</p>
                   <p className="text-xs text-ink-muted">{fmt(e.date)} · {EVENT_TYPE_LABELS[e.type] ?? e.type}</p>
                 </div>
-                <Link
-                  href={`/admin/events/${e.id}/report`}
-                  className={`${buttonClasses("secondary", "sm")} shrink-0`}
-                >
-                  Rédiger le CR
-                </Link>
+                {canOpenReport && (
+                  <Link
+                    href={paths.admin.eventReport(e.id)}
+                    className={`${buttonClasses("secondary", "sm")} shrink-0`}
+                  >
+                    Rédiger le CR
+                  </Link>
+                )}
               </div>
             ))}
           </div>
@@ -116,10 +130,14 @@ export default async function PastoralReportsPage() {
                 {withReport.map((e) => (
                   <tr key={e.id} className="transition-colors hover:bg-surface-sunken">
                     <td className="px-4 py-3">
-                      <Link href={`/admin/events/${e.id}/report`} className="inline-flex min-h-11 items-center gap-1 rounded-control font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:min-h-0">
-                        {e.title}
-                        <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
-                      </Link>
+                      {canOpenReport ? (
+                        <Link href={paths.admin.eventReport(e.id)} className="inline-flex min-h-11 items-center gap-1 rounded-control font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:min-h-0">
+                          {e.title}
+                          <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
+                        </Link>
+                      ) : (
+                        <span className="font-medium text-ink">{e.title}</span>
+                      )}
                       <p className="text-xs text-ink-subtle mt-0.5">{fmt(e.date)}</p>
                     </td>
                     <td className="px-4 py-3 text-ink-muted hidden md:table-cell">

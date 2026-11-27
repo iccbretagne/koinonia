@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useId } from "react";
 import { ROLE_LABELS as ROLE_LABELS_BASE } from "@/lib/roles";
 import { buttonClasses } from "@/components/ui/button-classes";
 import { controlClasses, fieldLabelClasses, textareaClasses } from "@/components/ui/field-classes";
+import { paths } from "@/lib/paths";
 
 type Church = { id: string; name: string };
 
@@ -135,8 +136,7 @@ export default function NoAccessClient({
       // Rechargement complet VOLONTAIRE : la session serveur (strategie DB) doit relire les
       // roles fraichement accordes. `router.push()` conserverait le cache client et l'utilisateur
       // arriverait sur un dashboard calcule avec ses anciens droits.
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.assign("/dashboard");
+      window.location.assign(paths.dashboard());
     } catch (e) {
       setLinkError(e instanceof Error ? e.message : "Une erreur est survenue");
       setLinking(false);

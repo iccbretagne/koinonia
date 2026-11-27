@@ -1,5 +1,6 @@
 import { resolveRecipients } from "./audience";
 import { parseAudience } from "./messages";
+import { paths } from "@/lib/paths";
 
 /**
  * Notification des messages système au début de leur période (spec 071) : appelée juste après
@@ -43,7 +44,7 @@ async function notifyMessage(message: DueMessage): Promise<number> {
     type: "SYSTEM_MESSAGE",
     title: message.title,
     message: excerpt(message.body),
-    link: `/messages/${message.id}`,
+    link: paths.messages.message(message.id),
     entityType: "SystemMessage",
     entityId: message.id,
   };

@@ -12,6 +12,7 @@ import type { TicketingAgeGroup } from "@/generated/prisma/enums";
 import { capacityLevel, capacityTone } from "@/components/ticketing/format";
 import NetworkBar from "../_offline/NetworkBar";
 import { useFieldSync } from "../_offline/use-field-sync";
+import { paths } from "@/lib/paths";
 
 type Mode = "IN" | "OUT" | "AUTO";
 type Participant = ReceptionSnapshot["participants"][number];
@@ -184,7 +185,7 @@ export default function ControlClient({ eventId }: { readonly eventId: string })
   return (
     <div className="mx-auto max-w-xl space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <Link href={`/billetterie/${eventId}`} className={`${buttonClasses("ghost", "sm")} min-w-0`}>
+        <Link href={paths.billetterie.event(eventId)} className={`${buttonClasses("ghost", "sm")} min-w-0`}>
           <ArrowLeft aria-hidden="true" className="size-4 shrink-0" strokeWidth={1.75} />
           <span className="truncate">Retour à {snapshot.event.title}</span>
         </Link>

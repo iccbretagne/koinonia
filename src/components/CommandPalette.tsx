@@ -7,6 +7,7 @@ import IconButton from "@/components/ui/IconButton";
 import { useModalDialog } from "@/components/ui/use-modal-dialog";
 import { filterByQuery, normalizeText, type SearchablePage } from "@/lib/navigation";
 import { resetLoadingToIdle, type Remote } from "./command-palette-remote";
+import { paths } from "@/lib/paths";
 
 /** Clé localStorage des pages récemment ouvertes depuis la palette (confort par personne). */
 const RECENT_KEY = "koinonia-recent-pages";
@@ -195,7 +196,7 @@ function PaletteBody({ onClose, pages, churchId, canSearchMembers, canSearchEven
                 id: `member:${m.id}`,
                 label: name,
                 context: m.departments?.map((d) => d.department.name).join(", ") || undefined,
-                href: `/admin/members?q=${encodeURIComponent(name)}`,
+                href: paths.admin.members({ q: name }),
                 icon: UserRound,
                 memberSearch: name,
               };
@@ -216,7 +217,7 @@ function PaletteBody({ onClose, pages, churchId, canSearchMembers, canSearchEven
               id: `event:${e.id}`,
               label: e.title,
               context: dateFormat.format(new Date(e.date)),
-              href: `/events/${e.id}/star-view`,
+              href: paths.events.starView(e.id),
               icon: CalendarDays,
             })),
           });
@@ -252,7 +253,7 @@ function PaletteBody({ onClose, pages, churchId, canSearchMembers, canSearchEven
         // Sans stockage, la liste s'ouvre simplement sans filtre.
       }
       // Déjà sur la liste : son filtre n'est lu qu'au montage, on la recharge.
-      if (pathname === "/admin/members") {
+      if (pathname === paths.admin.members()) {
         window.location.assign(result.href);
         return;
       }

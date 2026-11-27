@@ -16,6 +16,7 @@ import TeamEventsView from "@/components/TeamEventsView";
 import EmptyState from "@/components/ui/EmptyState";
 import PageHeader from "@/components/ui/PageHeader";
 import { CalendarSearch, Church, LayoutGrid } from "lucide-react";
+import { paths } from "@/lib/paths";
 
 /** État vide commun : aucun département ou aucun événement sélectionné. */
 function SelectPrompt({ needsDepartment }: { readonly needsDepartment: boolean }) {
@@ -76,7 +77,7 @@ async function dashboardRedirect(
     if (view !== "event") qs.set("view", view);
     if (tour) qs.set("tour", tour);
     if (shouldTriggerTour) qs.set("tour", "1");
-    return `/dashboard?${qs.toString()}`;
+    return `${paths.dashboard()}?${qs.toString()}`;
   }
   // If dept is already selected but tour hasn't been seen, redirect with tour=1
   if (!shouldTriggerTour) return null;
@@ -85,7 +86,7 @@ async function dashboardRedirect(
   if (event) qs.set("event", event);
   if (view !== "event") qs.set("view", view);
   qs.set("tour", "1");
-  return `/dashboard?${qs.toString()}`;
+  return `${paths.dashboard()}?${qs.toString()}`;
 }
 
 /** Contenu principal selon la vue : planning hebdo/mensuel, tâches, équipe, ou grille d'un événement. */
@@ -157,7 +158,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
   const pastoralChurchIds = session.user.pastoralChurchIds ?? [];
   const isPastoralChurch = currentChurchId ? pastoralChurchIds.includes(currentChurchId) : false;
   const hasClassicRole = session.user.churchRoles.some((r) => r.churchId === currentChurchId);
-  if (isPastoralView({ isPastoral: isPastoralChurch, hasClassicRole, viewModeCookie: viewMode })) redirect("/pastoral");
+  if (isPastoralView({ isPastoral: isPastoralChurch, hasClassicRole, viewModeCookie: viewMode })) redirect(paths.pastoral());
 
   if (!currentChurchId) {
     return (

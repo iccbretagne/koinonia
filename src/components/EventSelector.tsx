@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import Select from "@/components/ui/Select";
+import { paths } from "@/lib/paths";
 
 interface Event {
   id: string;
@@ -86,7 +87,7 @@ export default function EventSelector({
     const params = new URLSearchParams(window.location.search);
     if (selectedDeptId) params.set("dept", selectedDeptId);
     params.set("event", eventId);
-    router.replace(`/dashboard?${params.toString()}`);
+    router.replace(`${paths.dashboard()}?${params.toString()}`);
   }, [selectedMonth, monthEvents, selectedEventId, selectedDeptId, router]);
 
   function handleMonthChange(ym: string) {
@@ -98,7 +99,7 @@ export default function EventSelector({
     const params = new URLSearchParams(window.location.search);
     if (selectedDeptId) params.set("dept", selectedDeptId);
     params.set("event", eventId);
-    router.push(`/dashboard?${params.toString()}`);
+    router.push(`${paths.dashboard()}?${params.toString()}`);
   }
 
   if (events.length === 0) {

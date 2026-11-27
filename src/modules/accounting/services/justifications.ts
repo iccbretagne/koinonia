@@ -15,6 +15,7 @@ import {
   remainderOf,
   type DelaySettings,
 } from "./justification-rules";
+import { paths } from "@/lib/paths";
 
 /**
  * Justificatifs après la remise des fonds (spec 078) : ouverture au dernier versement, dépôt des
@@ -177,7 +178,7 @@ export async function notifyJustificationOpened(opened: OpenedJustification): Pr
     type: "ACCOUNTING_JUSTIFICATION_DUE",
     title: "Justificatifs attendus",
     message: `Déposez les factures de « ${opened.label} » avant le ${opened.dueAt.toLocaleDateString("fr-FR")}.`,
-    link: `/accounting/requests/${opened.requestId}`,
+    link: paths.accounting.request(opened.requestId),
   });
 }
 
@@ -322,7 +323,7 @@ async function notifySubmitter(j: JustificationRow, type: string, title: string,
   const userId = submitterOf(j);
   if (!userId) return;
   const { createNotification } = await import("@/lib/notifications");
-  await createNotification({ userId, domain: "accounting", type, title, message, link: `/accounting/requests/${j.requests[0].id}` });
+  await createNotification({ userId, domain: "accounting", type, title, message, link: paths.accounting.request(j.requests[0].id) });
 }
 
 const labelOf = (j: Pick<JustificationRow, "requests" | "period">) =>
@@ -354,7 +355,7 @@ export async function submitJustification(id: string, v: Viewer, input: { spentA
     type: "ACCOUNTING_JUSTIFICATION_SUBMITTED",
     title: "Justificatifs à vérifier",
     message: `${labelOf(result.j)} : ${fmt(result.spent)} dépensés.`,
-    link: `/accounting/requests/${result.j.requests[0].id}`,
+    link: paths.accounting.request(result.j.requests[0].id),
   });
   return getJustification(id, v);
 }
@@ -481,7 +482,7 @@ export async function runJustificationReminders(now = new Date()) {
     if (claim.count !== 1) continue;
     const count = j.reminderCount + 1;
     const submitter = submitterOf(j);
-    const link = `/accounting/requests/${j.requests[0].id}`;
+    const link = paths.accounting.request(j.requests[0].id);
     const remainder = remainderOf(Number(j.releasedAmount), Number(j.spentAmount ?? j.releasedAmount));
     const message =
       j.status === "RETURN_DUE"

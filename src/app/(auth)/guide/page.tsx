@@ -1,15 +1,13 @@
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import GuideContent from "@/components/GuideContent";
-import type { Role } from "@/generated/prisma/client";
+import { primaryRole } from "@/lib/roles";
 import PageHeader from "@/components/ui/PageHeader";
 
 export default async function GuidePage() {
   const session = await requireAuth();
   const currentChurchId = await getCurrentChurchId(session);
 
-  const currentRole: Role = session.user.churchRoles.find(
-    (r) => r.churchId === currentChurchId
-  )?.role ?? "DEPARTMENT_HEAD";
+  const currentRole = primaryRole(session.user.churchRoles, currentChurchId, session.user.isSuperAdmin);
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">

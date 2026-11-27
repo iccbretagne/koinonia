@@ -8,6 +8,7 @@ import type { StatusTone } from "@/components/ui";
 import { ROLE_LABELS } from "@/lib/roles";
 import type { MessageListItem, MessageStatus } from "@/modules/messages";
 import { SEVERITY_LABEL, type Audience } from "@/modules/messages/schemas";
+import { paths } from "@/lib/paths";
 
 const SEVERITY_TONE: Record<MessageListItem["severity"], StatusTone> = {
   INFO: "info",
@@ -44,7 +45,7 @@ function renderTitle(m: MessageListItem) {
       {m.readOnly ? (
         <span className="font-semibold text-ink">{m.title}</span>
       ) : (
-        <Link href={`/admin/messages/${m.id}`} className="font-semibold text-ink hover:underline">
+        <Link href={paths.admin.message(m.id)} className="font-semibold text-ink hover:underline">
           {m.title}
         </Link>
       )}

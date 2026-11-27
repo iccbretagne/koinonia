@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 import { Button, Checkbox, Input, Modal, Select } from "@/components/ui";
 import { FORM_KIND_LABELS, FORM_KINDS } from "@/modules/forms/schemas";
 import { useApi } from "./use-api";
+import { paths } from "@/lib/paths";
 
 /** « Créer un formulaire » : titre, type et diffusion ; questions et réglages ensuite. */
 export default function CreateFormButton() {
@@ -19,7 +20,7 @@ export default function CreateFormButton() {
 
   async function submit() {
     const form = await call<{ id: string }>("/api/forms", "POST", { title, kind, access, anonymous: kind === "SURVEY" && anonymous }, "Formulaire créé");
-    if (form) router.push(`/formulaires/${form.id}`);
+    if (form) router.push(paths.formulaires.form(form.id));
   }
 
   return (

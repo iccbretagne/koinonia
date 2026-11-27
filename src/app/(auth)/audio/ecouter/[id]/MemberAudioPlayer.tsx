@@ -3,6 +3,7 @@
 import { useState } from "react";
 import AudioPlayer, { type AudioPlayerService } from "@/components/audio/AudioPlayer";
 import { buildStreamUrl } from "./stream-url";
+import { paths } from "@/lib/paths";
 
 interface Props {
   readonly serviceId: string;
@@ -62,7 +63,7 @@ export default function MemberAudioPlayer({ serviceId, service }: Props) {
           });
         }}
         onShare={share}
-        backHref="/audio/ecouter"
+        backHref={paths.audio.ecouter()}
         backLabel="Retour à la bibliothèque"
       />
     </div>

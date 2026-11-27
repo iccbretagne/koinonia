@@ -7,6 +7,7 @@ import { Button, IconButton, Input, Modal, SearchInput, Select, buttonClasses } 
 import type { ChurchAccount, TeamView } from "@/modules/ticketing";
 import { useApi } from "../../use-api";
 import { fromLocalInput, toLocalInput } from "./SettingsTab";
+import { paths } from "@/lib/paths";
 
 type Assignment = TeamView["assignments"][number];
 type Department = { id: string; name: string; ministry: string };
@@ -210,7 +211,7 @@ export default function StaffSection({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-bold text-ink">Postes et planning de l&apos;équipe</h2>
         {team.assignments.length > 0 && (
-          <Link href={`/billetterie/${eventId}/badges`} className={buttonClasses("secondary")}>
+          <Link href={paths.billetterie.badges(eventId)} className={buttonClasses("secondary")}>
             <Printer className="size-4" aria-hidden="true" strokeWidth={1.75} /> Imprimer les badges
           </Link>
         )}

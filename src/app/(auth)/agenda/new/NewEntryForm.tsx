@@ -4,6 +4,7 @@ import { SubmitEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Input, Select, Textarea, fieldLabelClasses } from "@/components/ui";
 import { choiceChipClasses } from "@/components/ui/RadioGroup";
+import { paths } from "@/lib/paths";
 
 interface Profile { id: string; name: string; role: string }
 interface Props { readonly churchId: string; readonly profiles: Profile[] }
@@ -61,7 +62,7 @@ export default function NewEntryForm({ churchId, profiles }: Props) {
         setError(d.error || "L'enregistrement a échoué. Veuillez réessayer.");
         return;
       }
-      router.push("/agenda");
+      router.push(paths.agenda());
       router.refresh();
     } catch {
       setError("Erreur réseau. Veuillez réessayer.");

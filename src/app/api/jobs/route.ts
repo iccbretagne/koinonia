@@ -5,6 +5,7 @@ import { successResponse, errorResponse } from "@/lib/api-utils";
 import { buildJobOfferEmail } from "@/lib/email";
 import { createNotification, dispatchUserEmails } from "@/lib/notifications";
 import { jobSchema } from "./contract";
+import { paths } from "@/lib/paths";
 
 export async function GET(request: Request) {
   try {
@@ -106,7 +107,7 @@ async function notifySubscribers(job: {
             type:    "JOB_OFFER",
             title:   `Nouvelle offre ${typeLabel}`,
             message: `${job.title} chez ${job.company}`,
-            link:    `/jobs/${job.id}`,
+            link:    paths.jobs.offer(job.id),
           },
           { email: false }
         );

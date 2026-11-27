@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Input, Modal, Select, StatusChip, Textarea, buttonClasses, type StatusTone } from "@/components/ui";
 import AttachmentManager, { type AttachmentItem } from "@/app/(auth)/accounting/components/AttachmentManager";
+import { paths } from "@/lib/paths";
 
 /** Justification telle que renvoyée par `/api/accounting/justifications/[id]` (spec 078). */
 export interface Justification {
@@ -174,7 +175,7 @@ export default function JustificationPanel({ justification: initial, requestId, 
                       {label} (cette demande)
                     </span>
                   ) : (
-                    <Link href={`/accounting/requests/${r.id}`} className={LIST_LINK}>{label}</Link>
+                    <Link href={paths.accounting.request(r.id)} className={LIST_LINK}>{label}</Link>
                   )}
                 </li>
               );
@@ -238,7 +239,7 @@ export default function JustificationPanel({ justification: initial, requestId, 
       )}
 
       {j.isSubmitter && overageLeft > 0 && j.status !== "AWAITING" && (
-        <Link href={`/accounting/requests/new?complement=${j.id}`} className={`${buttonClasses("secondary")} self-start`}>
+        <Link href={paths.accounting.newRequest({ complement: j.id })} className={`${buttonClasses("secondary")} self-start`}>
           Demander le complément ({eur(overageLeft)})
         </Link>
       )}
@@ -246,7 +247,7 @@ export default function JustificationPanel({ justification: initial, requestId, 
         <ul className="-mx-2 flex flex-col">
           {j.overages.map((o) => (
             <li key={o.id}>
-              <Link href={`/accounting/requests/${o.id}`} className={LIST_LINK}>
+              <Link href={paths.accounting.request(o.id)} className={LIST_LINK}>
                 Complément : {o.label} — {eur(o.amount)}
               </Link>
             </li>

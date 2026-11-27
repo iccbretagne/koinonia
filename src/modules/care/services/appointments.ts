@@ -20,6 +20,7 @@ import {
   notifyRequesterRejected,
 } from "./notifications";
 import { createFollowUpFromAppointmentOrientation } from "./followups";
+import { paths } from "@/lib/paths";
 
 /**
  * Demandes de rendez-vous pastoral (spec 052). Le dépôt (lot 1) reste à comportement
@@ -74,7 +75,7 @@ export async function submitAppointmentRequest(
     title: "Nouvelle demande de RDV",
     // Sans l'objet : il s'affiche aussi sur un écran verrouillé (notification native, spec 068).
     message: `${data.firstName} ${data.lastName} a soumis une demande de rendez-vous pastoral.`,
-    link: "/care",
+    link: paths.care(),
     entityType: "AppointmentRequest",
     entityId: request.id,
   }).catch(() => {});

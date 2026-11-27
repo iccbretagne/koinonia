@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Alert, Button, EmptyState, Input, buttonClasses, useToast } from "@/components/ui";
 import FileInput from "@/components/ui/FileInput";
+import { paths } from "@/lib/paths";
 
 interface Asset {
   readonly id: string;
@@ -71,7 +72,7 @@ export default function SiteImagesUploader({ eventId, assets }: { readonly event
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href={`/billetterie/${eventId}?vue=site`} className={`${buttonClasses("ghost", "sm")} self-start`}>
+      <Link href={paths.billetterie.event(eventId, { vue: "site" })} className={`${buttonClasses("ghost", "sm")} self-start`}>
         <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
         Retour à l&apos;éditeur du site
       </Link>

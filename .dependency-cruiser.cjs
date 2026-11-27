@@ -347,16 +347,26 @@ module.exports = {
      * doit importer ni `src/lib/registry.ts` (qui tire les index de modules, donc
      * Prisma/NextAuth/S3 — exactement le couplage qu'ADR-0011 a démonté), ni un module
      * directement (même via `index.ts`/`auth.ts`, eux aussi trop lourds pour tourner sur
-     * chaque requête sans base de données). Seul `src/lib/module-routes.ts` (manifestes
-     * seuls) est autorisé.
+     * chaque requête sans base de données). Sont autorisés `src/lib/module-routes.ts`
+     * (manifestes seuls) et, depuis la spec 092 (ADR-0033), le registre des écrans
+     * `src/lib/paths.ts` et la table des anciennes adresses `src/lib/legacy-paths.ts` — deux
+     * fichiers purs, ce que la règle suivante garantit.
      */
     {
       name: "proxy-only-module-routes",
       severity: "error",
       comment:
-        "src/proxy.ts ne doit importer ni src/lib/registry.ts ni un module (src/modules/) — seuls les manifestes, via src/lib/module-routes.ts.",
+        "src/proxy.ts ne doit importer ni src/lib/registry.ts ni un module (src/modules/) — seuls les manifestes (src/lib/module-routes.ts) et les registres purs src/lib/paths.ts / src/lib/legacy-paths.ts.",
       from: { path: "^src/proxy\\.ts$" },
       to: { path: "^src/(lib/registry\\.ts$|modules/)" },
+    },
+    {
+      name: "paths-registries-pure",
+      severity: "error",
+      comment:
+        "src/lib/paths.ts et src/lib/legacy-paths.ts (spec 092) restent purs : aucun import de l'application, pour rester lisibles par le proxy, les composants client et les modules.",
+      from: { path: "^src/lib/(paths|legacy-paths)\\.ts$" },
+      to: { path: "^src/", pathNot: "^src/lib/(paths|legacy-paths)\\.ts$" },
     },
   ],
 

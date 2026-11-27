@@ -5,6 +5,7 @@ import { registry } from "@/lib/registry";
 import { createNotification, notifyUsers } from "@/lib/notifications";
 import { runScheduledTasks, type CronTask, type CronTaskOutcome } from "@/lib/cron-scheduler";
 import { runPushCatchUp } from "@/lib/push/deliver";
+import { paths } from "@/lib/paths";
 
 /**
  * `/api/cron` est une adresse du **noyau** (spec 038, `NOYAU_ROUTES`) : elle répond
@@ -209,7 +210,7 @@ async function remindServingMember(
         type: "PLANNING_REMINDER",
         title: `Rappel : ${event.title}`,
         message: `Vous êtes en service pour ${eventDept.department.name} ${whenLabel}.`,
-        link: `/dashboard`,
+        link: paths.dashboard(),
       },
       member.email ? { email: { subject, html } } : undefined
     ).catch((err) => {
@@ -245,7 +246,7 @@ async function remindDeptHeads(
     type: "PLANNING_REMINDER",
     title: `Rappel : ${event.title}`,
     message: `${planning.member.firstName} ${planning.member.lastName} est en service pour ${eventDept.department.name} ${whenLabel}`,
-    link: `/dashboard?dept=${eventDept.departmentId}&event=${event.id}`,
+    link: paths.dashboard({ dept: eventDept.departmentId, event: event.id }),
   });
   counts.notificationsCreated += deptHeads.length;
 }

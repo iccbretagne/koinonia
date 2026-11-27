@@ -10,6 +10,7 @@ import { getFileOriginalKey, MAX_FILE_SIZE } from "@/modules/media";
 import { createNotification } from "@/lib/notifications";
 import type { z } from "zod";
 import { patchSchema } from "./contract";
+import { paths } from "@/lib/paths";
 
 type MediaFileWithContainers = {
   id: string;
@@ -132,7 +133,7 @@ function notifyProjectCreator(mediaFile: MediaFileContext, status: string, userI
     type: `MEDIA_FILE_${status}`,
     title: notif.title,
     message: notif.message,
-    link: "/media/projects",
+    link: paths.media.projects(),
   }).catch(() => {});
 }
 

@@ -1,6 +1,7 @@
 import { ApiError } from "@/lib/api-utils";
 import { entryTitle, loadShuttleEntry, notifyEntryAuthor, notifyShuttleUsers, shuttleManagerRecipients, type ShuttleActor } from "./ledger";
 import { storeReceipt } from "./receipts";
+import { paths } from "@/lib/paths";
 
 /**
  * « Demander le justificatif » (spec 086) : la gestion demande à l'auteur d'une ligne de redéposer
@@ -86,7 +87,7 @@ export async function submitRequestedReceipt(entryId: string, file: File, actor:
     recipients,
     "Navette : justificatif déposé",
     `${actor.name} a déposé le justificatif de « ${entryTitle(entry)} ».`,
-    `/accounting/navette?ligne=${entryId}`,
+    paths.accounting.navette({ ligne: entryId }),
     "SHUTTLE_RECEIPT_SUBMITTED"
   );
   return { id: entryId };

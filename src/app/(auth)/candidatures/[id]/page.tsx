@@ -14,6 +14,7 @@ import ApplicationActions from "./ApplicationActions";
 import AssignModal from "./AssignModal";
 import AssignmentActions from "./AssignmentActions";
 import InterviewBlock from "./InterviewBlock";
+import { paths } from "@/lib/paths";
 
 /**
  * Fiche de candidature (spec 077). L'église qui fait foi est celle de la candidature ; chaque
@@ -52,7 +53,7 @@ export default async function CandidaturePage({ params }: { readonly params: Pro
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-4">
-      <Link href="/candidatures" className={`${buttonClasses("ghost", "sm")} self-start`}>
+      <Link href={paths.candidatures()} className={`${buttonClasses("ghost", "sm")} self-start`}>
         <ArrowLeft className="size-4" aria-hidden="true" /> Retour aux candidatures
       </Link>
       <PageHeader

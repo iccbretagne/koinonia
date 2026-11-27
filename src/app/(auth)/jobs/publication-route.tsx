@@ -6,6 +6,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import { buttonClasses } from "@/components/ui/button-classes";
 import { loadPublication, type PublicationKind } from "@/modules/jobs";
 import PublicationPage from "./PublicationPage";
+import { paths } from "@/lib/paths";
 
 /** Rendu serveur commun aux quatre pages de détail de l'espace Offres (spec 064). */
 export async function renderPublicationRoute(kind: PublicationKind, id: string) {
@@ -21,7 +22,7 @@ export async function renderPublicationRoute(kind: PublicationKind, id: string) 
         title="Cette publication n'est plus disponible"
         description="Elle a peut-être été pourvue, retirée ou supprimée."
         action={
-          <Link href="/jobs" className={buttonClasses("secondary")}>
+          <Link href={paths.jobs()} className={buttonClasses("secondary")}>
             Voir les offres
           </Link>
         }

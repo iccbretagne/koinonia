@@ -76,3 +76,67 @@ describe("RouteTable — résolution (spec 038)", () => {
     expect(withoutMedia.resolve("/media")).toMatchObject({ kind: "orphan" });
   });
 });
+
+describe("RouteTable — propriétaire inactif (amendement ADR-0012, spec 092)", () => {
+  const accounting: ModuleManifest = {
+    name: "accounting",
+    version: "1.0.0",
+    routes: { authenticated: [{ path: "/accounting" }], api: [{ path: "/api/accounting" }] },
+  };
+  const shuttle: ModuleManifest = {
+    name: "shuttle",
+    version: "1.0.0",
+    routes: {
+      authenticated: [{ path: "/accounting/navette" }],
+      api: [{ path: "/api/accounting/navette" }],
+      public: [{ path: "/api/accounting/navette/public" }],
+    },
+  };
+  const messages: ModuleManifest = {
+    name: "messages",
+    version: "1.0.0",
+    routes: { authenticated: [{ path: "/admin/messages" }] },
+  };
+  const noyauAdmin = { pages: ["/", "/admin"], api: ["/api/auth"] };
+  const all = [accounting, shuttle, messages, media];
+
+  it("un préfixe d'un module coupé sous un préfixe actif est orphelin, sans repli sur le parent", () => {
+    const t = new RouteTable(all, noyauAdmin, ["accounting", "media"]);
+    expect(t.resolve("/accounting/navette")).toMatchObject({ kind: "orphan", owner: null });
+    expect(t.resolve("/accounting/navette/locations/1")).toMatchObject({ kind: "orphan" });
+    expect(t.resolve("/api/accounting/navette/entries")).toMatchObject({ kind: "orphan" });
+    // Sous le noyau aussi.
+    expect(t.resolve("/admin/messages")).toMatchObject({ kind: "orphan" });
+    expect(t.resolve("/admin/messages/42")).toMatchObject({ kind: "orphan" });
+  });
+
+  it("les écrans du parent actif restent résolus", () => {
+    const t = new RouteTable(all, noyauAdmin, ["accounting", "media"]);
+    expect(t.resolve("/accounting/requests")).toMatchObject({ kind: "module", owner: "accounting" });
+    expect(t.resolve("/accounting")).toMatchObject({ owner: "accounting" });
+    expect(t.resolve("/admin")).toMatchObject({ kind: "noyau" });
+    expect(t.resolve("/accounting/navettes")).toMatchObject({ owner: "accounting" });
+  });
+
+  it("resolveDeclared ignore l'état des modules", () => {
+    const t = new RouteTable(all, noyauAdmin, ["accounting"]);
+    expect(t.resolveDeclared("/accounting/navette")).toMatchObject({ kind: "module", owner: "shuttle" });
+    expect(t.resolveDeclared("/admin/messages")).toMatchObject({ owner: "messages" });
+  });
+
+  it("isPublic : jamais vrai sous un propriétaire coupé ; isPublicDeclared l'ignore", () => {
+    const t = new RouteTable(all, noyauAdmin, ["accounting"]);
+    expect(t.isPublic("/api/accounting/navette/public/x", "GET")).toBe(false);
+    expect(t.isPublic("/api/media/gallery/abc", "GET")).toBe(false);
+    expect(t.isPublicDeclared("/api/accounting/navette/public/x", "GET")).toBe(true);
+    const on = new RouteTable(all, noyauAdmin);
+    expect(on.isPublic("/api/accounting/navette/public/x", "GET")).toBe(true);
+  });
+
+  it("sans liste d'actifs, tous les modules passés sont actifs", () => {
+    const t = new RouteTable(all, noyauAdmin);
+    expect(t.resolve("/accounting/navette")).toMatchObject({ owner: "shuttle" });
+    expect(t.resolve("/admin/messages")).toMatchObject({ owner: "messages" });
+  });
+});
+

@@ -7,6 +7,7 @@ import { createNotification } from "@/lib/notifications";
 import { cancelPieceRequest, claimJustification, getAccountingDepartmentScope, requestPiece, setRequestArchived } from "@/modules/accounting";
 import type { z } from "zod";
 import { patchSchema } from "./contract";
+import { paths } from "@/lib/paths";
 
 function hasPermission(permissions: string[], perm: string) {
   return permissions.includes(perm);
@@ -239,7 +240,7 @@ async function createNextOccurrence(
       type:    "ACCOUNTING_NEW_OCCURRENCE",
       title:   "Nouvelle occurrence créée",
       message: `Une nouvelle occurrence de "${current.label}" a été soumise automatiquement.`,
-      link:    `/accounting/requests/${nextReq.id}`,
+      link:    paths.accounting.request(nextReq.id),
     },
     { tx }
   );
@@ -300,7 +301,7 @@ async function notifySubmitter(
       type:    `ACCOUNTING_${status}`,
       title:   titles[status] ?? "Mise à jour demande",
       message: messages[status] ?? `Statut mis à jour : ${status}`,
-      link:    `/accounting/requests/${req.id}`,
+      link:    paths.accounting.request(req.id),
     },
     { email }
   );

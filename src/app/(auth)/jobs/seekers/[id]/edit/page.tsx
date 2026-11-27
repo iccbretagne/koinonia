@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { PageHeader, buttonClasses } from "@/components/ui";
 import SeekerFormClient from "../../new/SeekerFormClient";
+import { paths } from "@/lib/paths";
 
 export default async function EditSeekerPage({
   params,
@@ -19,12 +20,12 @@ export default async function EditSeekerPage({
   const seeker = await prisma.jobSeeker.findUnique({ where: { id } });
 
   if (!seeker) notFound();
-  if (seeker.authorId !== session.user.id) redirect(`/jobs/seekers/${id}`);
-  if (seeker.status !== "ACTIVE") redirect(`/jobs/seekers/${id}`);
+  if (seeker.authorId !== session.user.id) redirect(paths.jobs.seeker(id));
+  if (seeker.status !== "ACTIVE") redirect(paths.jobs.seeker(id));
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
-      <Link href={`/jobs/seekers/${id}`} className={`${buttonClasses("ghost", "sm")} self-start`}>
+      <Link href={paths.jobs.seeker(id)} className={`${buttonClasses("ghost", "sm")} self-start`}>
         <ArrowLeft className="size-4" aria-hidden="true" /> Retour au profil
       </Link>
       <PageHeader title="Modifier le profil" />

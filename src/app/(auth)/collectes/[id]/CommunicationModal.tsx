@@ -26,6 +26,7 @@ import {
 } from "./pilotage";
 import { useCopy } from "./use-copy";
 import type { CampaignOverviewData } from "./types";
+import { paths } from "@/lib/paths";
 
 export interface CommunicationPreset {
   kind: MessageKind;
@@ -250,12 +251,12 @@ export default function CommunicationModal({
                     Copier le message
                   </Button>
                   {e.assignmentId ? (
-                    <Link href={`/collectes/r/${e.assignmentId}`} target="_blank" className={buttonClasses("secondary", "sm")}>
+                    <Link href={paths.collectes.reponse(e.assignmentId)} target="_blank" className={buttonClasses("secondary", "sm")}>
                       <ExternalLink aria-hidden="true" className="size-4" strokeWidth={1.75} />
                       Ouvrir le questionnaire
                     </Link>
                   ) : (
-                    <Link href="/collectes" target="_blank" className={buttonClasses("secondary", "sm")}>
+                    <Link href={paths.collectes()} target="_blank" className={buttonClasses("secondary", "sm")}>
                       <ExternalLink aria-hidden="true" className="size-4" strokeWidth={1.75} />
                       Ouvrir les questionnaires
                     </Link>

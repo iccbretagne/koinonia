@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button, Input, Modal } from "@/components/ui";
 import { useApi } from "./use-api";
+import { paths } from "@/lib/paths";
 
 /** « Créer un événement » : titre, dates et jauge ; le reste se règle dans les paramètres. */
 export default function CreateEventButton() {
@@ -19,7 +20,7 @@ export default function CreateEventButton() {
       endsAt: new Date(form.endsAt).toISOString(),
       capacity: Number(form.capacity),
     }, "Événement créé");
-    if (event) router.push(`/billetterie/${event.id}?vue=parametres`);
+    if (event) router.push(paths.billetterie.event(event.id, { vue: "parametres" }));
   }
   return (
     <>

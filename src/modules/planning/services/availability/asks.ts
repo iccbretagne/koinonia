@@ -4,6 +4,7 @@ import { defaultDb, type DbClient } from "./db";
 import { askDueAt, monthStart } from "./state";
 import { getAvailabilitySettings } from "./settings";
 import { recordReminders, startOfDay } from "./reminders";
+import { paths } from "@/lib/paths";
 
 /**
  * Demandes ciblées de disponibilité (spec 058) : événement ajouté ou déplacé après l'ouverture,
@@ -176,7 +177,7 @@ async function sendAsk(
     type,
     title: type === "AVAILABILITY_ASKED" ? "Indique ta disponibilité" : "Rappel : indique ta disponibilité",
     message: `Es-tu disponible pour « ${event.title} » le ${when} ?`,
-    link: `/disponibilites?event=${event.id}`,
+    link: paths.disponibilites({ event: event.id }),
     entityType: "Event",
     entityId: event.id,
   });

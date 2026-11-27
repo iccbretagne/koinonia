@@ -35,8 +35,4 @@ export const audioModule = defineModule({
     // Administration du module (paramètres — couverture, template de séquences)
     "audio:manage":  ["SUPER_ADMIN", "ADMIN"],
   },
-
-  navigation: [
-    { label: "Audio", icon: "audio", href: "/audio", permission: "audio:listen" },
-  ],
 });

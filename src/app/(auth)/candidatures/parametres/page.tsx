@@ -5,6 +5,7 @@ import { EmptyState, PageHeader, buttonClasses } from "@/components/ui";
 import { getServingSettings } from "@/modules/serving";
 import { requireServingActor } from "@/modules/serving/auth";
 import ServingSettingsForm from "./ServingSettingsForm";
+import { paths } from "@/lib/paths";
 
 /** Réglages des candidatures (spec 077) : Super Admin, Admin, équipe PVS. */
 export default async function CandidaturesParametresPage() {
@@ -19,7 +20,7 @@ export default async function CandidaturesParametresPage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
-      <Link href="/candidatures" className={`${buttonClasses("ghost", "sm")} self-start`}>
+      <Link href={paths.candidatures()} className={`${buttonClasses("ghost", "sm")} self-start`}>
         <ArrowLeft className="size-4" aria-hidden="true" /> Retour aux candidatures
       </Link>
       <PageHeader title="Paramètres des candidatures" />

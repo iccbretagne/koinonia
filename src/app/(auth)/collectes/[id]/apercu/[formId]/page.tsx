@@ -7,6 +7,7 @@ import { requireCampaignManager } from "@/modules/campaigns/auth";
 import { ruleSchema, storedFormDefinitionSchema } from "@/modules/campaigns/schemas";
 import { buttonClasses } from "@/components/ui/button-classes";
 import AssignmentPreview from "@/components/campaigns/AssignmentPreview";
+import { paths } from "@/lib/paths";
 
 type Props = { readonly params: Promise<{ id: string; formId: string }> };
 
@@ -55,7 +56,7 @@ export default async function PreviewPage({ params }: Props) {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
-      <Link href={`/collectes/${id}`} className={`${buttonClasses("ghost", "sm")} self-start`}>
+      <Link href={paths.collectes.campaign(id)} className={`${buttonClasses("ghost", "sm")} self-start`}>
         <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
         Retour à la campagne
       </Link>

@@ -9,6 +9,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import StatusChip from "@/components/ui/StatusChip";
 import { buttonClasses } from "@/components/ui/button-classes";
 import { CAMPAIGN_STATUS_TONES, formatDay, percent } from "./display";
+import { paths } from "@/lib/paths";
 
 /**
  * Campagnes que je pilote dans l'église courante (spec 090) : titre, état, échéance, avancement.
@@ -24,11 +25,11 @@ export default async function ManagedCampaigns({ session }: { readonly session: 
 
   const actions = canCreate ? (
     <div className="flex flex-wrap gap-2">
-      <Link href="/collectes/nouvelle" className={buttonClasses("primary")}>
+      <Link href={paths.collectes.nouvelle()} className={buttonClasses("primary")}>
         <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
         Nouvelle campagne
       </Link>
-      <Link href="/collectes/import" className={buttonClasses("secondary")}>
+      <Link href={paths.collectes.importNew()} className={buttonClasses("secondary")}>
         <Upload aria-hidden="true" className="size-4" strokeWidth={1.75} />
         Importer
       </Link>
@@ -61,7 +62,7 @@ export default async function ManagedCampaigns({ session }: { readonly session: 
             return (
               <li key={c.id} className="border-t border-line first:border-t-0">
                 <Link
-                  href={`/collectes/${c.id}`}
+                  href={paths.collectes.campaign(c.id)}
                   className="flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
                 >
                   <div className="min-w-0 flex-1">

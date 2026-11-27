@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Alert, PageHeader, StatusChip, buttonClasses, type StatusTone } from "@/components/ui";
+import { getAccountingDepartmentScope } from "@/modules/accounting";
+import { paths } from "@/lib/paths";
 function fmt(d: Date) {
   return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
 }
@@ -26,7 +28,7 @@ const STATUS_TONES: Record<string, StatusTone> = {
 };
 
 export default async function PastoralAccountingPage() {
-  const { activeChurchId } = await requirePastoralActiveChurch();
+  const { session, activeChurchId } = await requirePastoralActiveChurch();
 
   const now = new Date();
   const yearStart = new Date(now.getFullYear(), 0, 1);
@@ -41,6 +43,8 @@ export default async function PastoralAccountingPage() {
         amount: true,
         status: true,
         createdAt: true,
+        departmentId: true,
+        submittedById: true,
         department: { select: { name: true } },
         submittedBy: { select: { name: true } },
       },
@@ -52,11 +56,18 @@ export default async function PastoralAccountingPage() {
         scheduledDate: { lt: now },
         releasedAt: null,
       },
-      include: { request: { select: { id: true, label: true } } },
+      include: { request: { select: { id: true, label: true, departmentId: true, submittedById: true } } },
       orderBy: { scheduledDate: "asc" },
     }),
     prisma.church.findUnique({ where: { id: activeChurchId }, select: { name: true } }),
   ]);
+
+  // Le détail d'une demande (`/accounting/requests/[id]`) n'est ouvert qu'aux gestionnaires, au
+  // demandeur et au périmètre de départements de l'appelant : hors de ce périmètre, la ligne
+  // n'est pas un lien (spec 092 — jamais de lien vers un refus ; lecture pastorale au lot 3).
+  const scope = await getAccountingDepartmentScope(session, activeChurchId);
+  const canOpen = (r: { departmentId: string | null; submittedById: string }) =>
+    scope === null || r.submittedById === session.user.id || (r.departmentId !== null && scope.includes(r.departmentId));
 
   // KPIs
   const active = requests.filter((r) => r.status !== "CANCELLED" && r.status !== "REJECTED");
@@ -93,16 +104,23 @@ export default async function PastoralAccountingPage() {
           <ul className="mt-1 flex flex-col">
             {overduePayments.slice(0, 5).map((p) => (
               <li key={p.id}>
-                <Link
-                  href={`/accounting/requests/${p.request.id}`}
-                  className="flex min-h-11 items-center justify-between gap-3 rounded-control text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-                >
-                  <span className="truncate">{p.request.label}</span>
-                  <span className="flex shrink-0 items-center gap-1 font-medium">
-                    {fmtAmount(Number(p.amount))}
-                    <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
-                  </span>
-                </Link>
+                {canOpen(p.request) ? (
+                  <Link
+                    href={paths.accounting.request(p.request.id)}
+                    className="flex min-h-11 items-center justify-between gap-3 rounded-control text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                  >
+                    <span className="truncate">{p.request.label}</span>
+                    <span className="flex shrink-0 items-center gap-1 font-medium">
+                      {fmtAmount(Number(p.amount))}
+                      <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                    </span>
+                  </Link>
+                ) : (
+                  <div className="flex min-h-11 items-center justify-between gap-3 text-sm text-ink">
+                    <span className="truncate">{p.request.label}</span>
+                    <span className="shrink-0 font-medium">{fmtAmount(Number(p.amount))}</span>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -113,7 +131,7 @@ export default async function PastoralAccountingPage() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-[17px] font-semibold text-ink">Demandes {now.getFullYear()}</h2>
-          <Link href="/accounting/requests" className={buttonClasses("ghost", "sm")}>
+          <Link href={paths.accounting.requests()} className={buttonClasses("ghost", "sm")}>
             Voir toutes les demandes
           </Link>
         </div>
@@ -135,10 +153,14 @@ export default async function PastoralAccountingPage() {
                 {requests.slice(0, 15).map((r) => (
                   <tr key={r.id} className="transition-colors hover:bg-surface-sunken">
                     <td className="px-4 py-3">
-                      <Link href={`/accounting/requests/${r.id}`} className="inline-flex min-h-11 items-center gap-1 rounded-control font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:min-h-0">
-                        {r.label}
-                        <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
-                      </Link>
+                      {canOpen(r) ? (
+                        <Link href={paths.accounting.request(r.id)} className="inline-flex min-h-11 items-center gap-1 rounded-control font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:min-h-0">
+                          {r.label}
+                          <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
+                        </Link>
+                      ) : (
+                        <span className="font-medium text-ink">{r.label}</span>
+                      )}
                       <p className="text-xs text-ink-subtle mt-0.5">{fmt(r.createdAt)}</p>
                     </td>
                     <td className="px-4 py-3 text-ink-muted hidden md:table-cell">

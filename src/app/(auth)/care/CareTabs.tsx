@@ -16,6 +16,7 @@ import {
   type StatusTone,
 } from "@/components/ui";
 import AssigneeSelect, { type AssigneeValue } from "./AssigneeSelect";
+import { paths } from "@/lib/paths";
 
 const REJECT_REASON_OPTIONS: [string, string][] = [
   ["OUT_OF_SCOPE", "Hors du champ pastoral"],
@@ -270,7 +271,7 @@ function RequestsTab({ requests: initial, churchId }: { readonly requests: Appoi
           <ul className="flex flex-col gap-2">
             {others.map((req) => (
               <li key={req.id}>
-                <Link href={`/care/requests/${req.id}`} className={rowLinkClasses}>
+                <Link href={paths.care.requestDetail(req.id)} className={rowLinkClasses}>
                   <div className="min-w-0">
                     <p className="font-semibold text-ink">{req.firstName} {req.lastName}</p>
                     <p className="text-xs text-ink-muted">{new Date(req.createdAt).toLocaleDateString("fr-FR")}</p>
@@ -309,7 +310,7 @@ function FollowupsTab({ followUps }: { readonly followUps: FollowUpItem[] }) {
           : f.assignedProfile?.name ?? null;
         return (
           <li key={f.id}>
-            <Link href={`/care/followups/${f.id}`} className={rowLinkClasses}>
+            <Link href={paths.care.followup(f.id)} className={rowLinkClasses}>
               <div className="min-w-0">
                 <p className="font-semibold text-ink">{name || "—"}</p>
                 <p className="text-xs text-ink-muted">

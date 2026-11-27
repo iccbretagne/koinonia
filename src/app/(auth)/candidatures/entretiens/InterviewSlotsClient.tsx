@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/Toast";
 import type { SlotView } from "@/modules/serving";
 import { DEFAULT_INTERVIEW_MINUTES } from "@/modules/serving/schemas";
 import { choiceChipClasses } from "@/components/ui/RadioGroup";
+import { paths } from "@/lib/paths";
 
 type Slot = Omit<SlotView, "startsAt"> & { startsAt: string };
 type Interviewer = { id: string; name: string };
@@ -280,7 +281,7 @@ export default function InterviewSlotsClient({
           tone="warning"
           title={`${pending} entretien${pending > 1 ? "s" : ""} à compléter`}
           action={
-            <Link href="/candidatures?onglet=todo" className={buttonClasses("secondary", "sm")}>
+            <Link href={paths.candidatures({ onglet: "todo" })} className={buttonClasses("secondary", "sm")}>
               Voir les candidatures
             </Link>
           }
@@ -310,7 +311,7 @@ export default function InterviewSlotsClient({
                         {s.interviewer ? `Reçu par ${s.interviewer.name}` : "Personne qui reçoit à choisir"}
                       </p>
                       {s.candidate && (
-                        <Link href={`/candidatures/${s.candidate.id}`} className={`${buttonClasses("ghost", "sm")} -ml-3`}>
+                        <Link href={paths.candidatures.application(s.candidate.id)} className={`${buttonClasses("ghost", "sm")} -ml-3`}>
                           {s.candidate.firstName} {s.candidate.lastName}
                           <ChevronRight className="size-4" aria-hidden="true" />
                         </Link>
