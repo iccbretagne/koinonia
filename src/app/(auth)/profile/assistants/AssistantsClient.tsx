@@ -54,10 +54,10 @@ export default function AssistantsClient({ serverUrl, initial }: { readonly serv
 
   return (
     <>
-      <section className="rounded-card border border-line bg-surface p-4 sm:p-5 shadow-card flex flex-col gap-3">
-        <h2 className="font-display text-[17px] font-semibold text-ink">Adresse du serveur</h2>
+      <section className="flex flex-col gap-3">
+        <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Adresse du serveur</h2>
         <div className="flex items-center gap-2">
-          <code className="min-w-0 flex-1 truncate rounded-lg bg-surface-sunken px-3 py-2 text-sm text-ink">{serverUrl}</code>
+          <code className="min-w-0 flex-1 truncate rounded-control bg-surface-sunken px-3 py-2 text-sm text-ink">{serverUrl}</code>
           <Button variant="secondary" onClick={() => void copy()}>
             <Copy className="w-4 h-4" aria-hidden="true" /> Copier
           </Button>
@@ -76,7 +76,7 @@ export default function AssistantsClient({ serverUrl, initial }: { readonly serv
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="font-display text-[17px] font-semibold text-ink">Connexions</h2>
+        <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Connexions</h2>
         {connections.length === 0 ? (
           <EmptyState title="Aucun assistant connecté" description="Les assistants que vous autorisez apparaissent ici." size="sm" />
         ) : (

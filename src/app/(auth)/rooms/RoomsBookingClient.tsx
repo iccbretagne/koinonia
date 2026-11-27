@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef, useMemo, type ReactNode } from "react";
 import Button from "@/components/ui/Button";
+import PeriodNav from "@/components/PeriodNav";
+import { buttonClasses } from "@/components/ui/button-classes";
 import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
 import Select from "@/components/ui/Select";
@@ -67,6 +69,10 @@ const CHECKLIST_BADGE: Record<Reservation["checklistStatus"], string> = {
   VALIDATED: "bg-success-soft text-success",
   ISSUE_REPORTED: "bg-danger-soft text-danger",
 };
+
+function occurrences(count: number, singular: string, plural: string): string {
+  return `${count} ${count > 1 ? "occurrences" : "occurrence"} ${count > 1 ? plural : singular}`;
+}
 
 function formatDateTime(iso: string): string {
   return new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
@@ -166,7 +172,7 @@ function KeyPersonField({
         autoComplete="off"
       />
       {open && results.length > 0 && (
-        <ul className="absolute z-10 mt-1 w-full bg-surface border border-line rounded-lg shadow-card max-h-48 overflow-y-auto text-sm">
+        <ul className="absolute z-10 mt-1 w-full bg-surface border border-line rounded-control shadow-card max-h-48 overflow-y-auto text-sm">
           {results.map((u) => (
             <li key={u.id}>
               <button
@@ -202,7 +208,7 @@ function ReservationChip({
       type="button"
       onClick={() => onSelect(reservation)}
       title={`${reservation.room.name} — ${reservation.title} — ${formatTime(reservation.startAt)} à ${formatTime(reservation.endAt)}`}
-      className={`w-full text-left px-1.5 py-1 text-xs font-medium rounded-md truncate transition-colors ${
+      className={`w-full text-left px-1.5 py-1 text-xs font-medium rounded-chip truncate transition-colors ${
         mine
           ? "bg-brand text-on-brand hover:bg-brand-hover"
           : "bg-brand-soft text-brand-text hover:bg-brand-hover/20"
@@ -277,7 +283,7 @@ function RoomCalendarView({
     calendarContent = <p className="text-sm text-ink-muted">Aucune salle disponible.</p>;
   } else if (view === "week") {
     calendarContent = (
-      <div className="overflow-x-auto bg-surface rounded-xl shadow-card border border-line">
+      <div className="overflow-x-auto bg-surface rounded-card shadow-card border border-line">
         <div className="min-w-[760px]">
           <div className="grid bg-brand" style={{ gridTemplateColumns: WEEK_GRID_COLS }}>
             <div className="sticky left-0 z-20 bg-brand px-3 py-3 text-xs font-bold text-on-brand uppercase tracking-wider">
@@ -341,7 +347,7 @@ function RoomCalendarView({
     );
   } else {
     calendarContent = (
-      <div className="bg-surface rounded-xl shadow-card border border-line overflow-hidden">
+      <div className="bg-surface rounded-card shadow-card border border-line overflow-hidden">
         <div className="grid grid-cols-7 bg-brand">
           {DAYS_FR.map((day) => (
             <div key={day} className="px-2 py-3 text-xs font-bold text-on-brand text-center uppercase tracking-wider">
@@ -403,29 +409,12 @@ function RoomCalendarView({
             }))}
           />
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onNavigate(-1)}
-            aria-label="Période précédente"
-            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-brand-text hover:bg-brand-soft transition-colors"
-          >
-            <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <span className="px-3 py-2 text-base font-semibold text-brand-text capitalize min-w-[14rem] text-center">
-            {label}
-          </span>
-          <button
-            onClick={() => onNavigate(1)}
-            aria-label="Période suivante"
-            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-brand-text hover:bg-brand-soft transition-colors"
-          >
-            <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
+        <PeriodNav
+          className="w-full sm:w-auto sm:min-w-[20rem]"
+          label={label}
+          prev={{ onClick: () => onNavigate(-1) }}
+          next={{ onClick: () => onNavigate(1) }}
+        />
       </div>
 
       {calendarContent}
@@ -644,7 +633,7 @@ export default function RoomsBookingClient({
 
       if (json.conflicts?.length > 0) {
         setConflictNotice(
-          `${json.reservations.length} occurrence(s) créée(s), ${json.conflicts.length} en conflit ont été ignorée(s).`
+          `${occurrences(json.reservations.length, "créée", "créées")}, ${occurrences(json.conflicts.length, "ignorée car en conflit", "ignorées car en conflit")}.`
         );
       } else {
         setFormOpen(false);
@@ -784,12 +773,12 @@ export default function RoomsBookingClient({
   return (
     <div>
       {myUpcoming.length > 0 && (
-        <div className="mb-4 rounded-xl border border-brand/20 bg-surface overflow-hidden">
+        <div className="mb-4 overflow-hidden rounded-card border border-line bg-surface">
           <button
             type="button"
             onClick={() => setMyResaOpen((o) => !o)}
             aria-expanded={myResaOpen}
-            className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-brand-text hover:bg-brand-soft transition-colors"
+            className="flex min-h-11 w-full items-center justify-between px-4 py-3 font-display text-[15px] font-semibold text-ink transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
           >
             <span>Mes réservations ({myUpcoming.length})</span>
             <svg aria-hidden="true"
@@ -846,9 +835,9 @@ export default function RoomsBookingClient({
                     setFilterRoomId("");
                     setFilterChecklistStatus("");
                   }}
-                  className="w-full text-left px-4 py-2.5 text-xs font-medium text-brand-text hover:bg-brand-soft transition-colors"
+                  className={`${buttonClasses("ghost", "sm")} m-2 min-h-11 sm:min-h-9`}
                 >
-                  Voir mes {myUpcoming.length} réservations →
+                  Voir mes {myUpcoming.length} réservations
                 </button>
               )}
             </div>
@@ -857,7 +846,7 @@ export default function RoomsBookingClient({
       )}
 
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
-        <div className="flex rounded-lg border border-brand/20 overflow-hidden">
+        <fieldset aria-label="Affichage" className="inline-flex w-fit gap-0.5 rounded-control bg-surface-sunken p-[3px]">
           {(
             [
               ["week", "Semaine"],
@@ -867,15 +856,17 @@ export default function RoomsBookingClient({
           ).map(([value, labelText]) => (
             <button
               key={value}
+              type="button"
+              aria-pressed={view === value}
               onClick={() => setView(value)}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                view === value ? "bg-brand text-on-brand" : "bg-surface text-brand-text hover:bg-brand-soft"
+              className={`min-h-11 rounded-[7px] px-4 font-display text-sm font-semibold transition-colors duration-120 sm:min-h-9 ${
+                view === value ? "bg-surface text-brand-text shadow-card" : "text-ink-muted hover:text-ink"
               }`}
             >
               {labelText}
             </button>
           ))}
-        </div>
+        </fieldset>
         {canReserve && (
           <Button onClick={openForm} disabled={rooms.length === 0}>
             Nouvelle réservation
@@ -1038,17 +1029,17 @@ export default function RoomsBookingClient({
               onChange={(e) => setRecurrenceEnd(e.target.value)}
             />
           )}
-          {formError && <p className="text-xs text-danger">{formError}</p>}
-          {conflictNotice && <p className="text-xs text-warning">{conflictNotice}</p>}
+          {formError && <p role="alert" className="text-[13px] leading-[18px] text-danger">{formError}</p>}
+          {conflictNotice && <p role="status" className="text-[13px] leading-[18px] text-warning">{conflictNotice}</p>}
           <div className="flex gap-2 justify-end">
-            <button onClick={() => setFormOpen(false)} className="text-sm text-ink-muted hover:text-ink-muted px-3 py-1.5">
+            <Button variant="ghost" onClick={() => setFormOpen(false)}>
               Annuler
-            </button>
+            </Button>
             <Button
               onClick={submitReservation}
               disabled={submitting || !roomId || !title || (!!recurrenceRule && !recurrenceEnd)}
             >
-              {submitting ? "Réservation…" : "Réserver"}
+              {submitting ? "Réservation en cours…" : "Réserver"}
             </Button>
           </div>
         </div>
@@ -1092,10 +1083,12 @@ export default function RoomsBookingClient({
             />
             <Textarea label="Notes (optionnel)" value={checklistNotes} onChange={(e) => setChecklistNotes(e.target.value)} />
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setChecklistTarget(null)} className="text-sm text-ink-muted hover:text-ink-muted px-3 py-1.5">
+              <Button variant="ghost" onClick={() => setChecklistTarget(null)}>
                 Annuler
-              </button>
-              <Button onClick={submitChecklist}>Confirmer</Button>
+              </Button>
+              <Button onClick={submitChecklist}>
+                {checklistTarget?.phase === "open" ? "Déclarer l'ouverture" : "Déclarer la fermeture"}
+              </Button>
             </div>
           </div>
         )}

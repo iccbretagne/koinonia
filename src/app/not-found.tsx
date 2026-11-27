@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { SearchX } from "lucide-react";
+import { buttonClasses } from "@/components/ui/button-classes";
 
 /**
  * Page 404 globale. Sert aussi bien une adresse qui n'a jamais existé qu'une adresse d'un
@@ -8,20 +10,17 @@ import Link from "next/link";
  */
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-surface-sunken flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-surface rounded-lg border border-line p-8 text-center">
-        <div className="w-16 h-16 bg-brand-soft rounded-full flex items-center justify-center mx-auto mb-4">
-          <span className="text-3xl">🔍</span>
+    <div className="flex min-h-screen items-center justify-center bg-bg p-4">
+      <div className="flex w-full max-w-md flex-col items-center gap-2 rounded-card border border-line bg-surface p-8 text-center shadow-card">
+        <div className="mb-2 grid size-14 place-items-center rounded-full bg-brand-soft text-brand-text">
+          <SearchX aria-hidden="true" className="size-6" strokeWidth={1.75} />
         </div>
-        <h1 className="text-xl font-bold text-ink mb-2">Page introuvable</h1>
-        <p className="text-sm text-ink-muted mb-6">
+        <h1 className="font-display text-[22px] font-bold leading-7 text-balance text-ink">Page introuvable</h1>
+        <p className="text-[15px] leading-[22px] text-ink-muted">
           Cette adresse n&apos;existe pas ou n&apos;est pas disponible sur cette instance.
         </p>
-        <Link
-          href="/"
-          className="inline-block border border-brand text-brand-text rounded-lg px-4 py-2 text-sm font-medium hover:bg-brand-hover hover:text-on-brand transition-colors"
-        >
-          Retour à l&apos;accueil
+        <Link href="/" className={`${buttonClasses("primary")} mt-4`}>
+          Revenir à l&apos;accueil
         </Link>
       </div>
     </div>

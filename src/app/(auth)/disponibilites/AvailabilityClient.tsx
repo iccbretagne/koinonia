@@ -6,6 +6,8 @@ import AvailabilityTabs from "@/components/AvailabilityTabs";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import Alert from "@/components/ui/Alert";
+import PageHeader from "@/components/ui/PageHeader";
+import { buttonClasses } from "@/components/ui/button-classes";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import StatusChip from "@/components/ui/StatusChip";
 import { useToast } from "@/components/ui/Toast";
@@ -95,7 +97,7 @@ function Segmented({
           role="radio"
           aria-checked={value === a.value}
           onClick={() => onChange(a.value)}
-          className={`min-h-[44px] rounded-lg border px-2 text-sm font-medium transition-colors ${
+          className={`min-h-11 rounded-control border px-2 text-sm font-medium transition-colors ${
             value === a.value ? a.active : "border-control-line bg-surface text-ink-muted hover:border-brand"
           }`}
         >
@@ -173,10 +175,10 @@ function EventCard({ event, highlighted, saving, onSave }: CardProps) {
     <div
       ref={ref}
       id={`event-${event.id}`}
-      className={`rounded-xl border bg-surface p-4 space-y-3 ${highlighted ? "border-brand ring-2 ring-focus" : "border-line"}`}
+      className={`rounded-card border bg-surface p-4 space-y-3 ${highlighted ? "border-brand ring-2 ring-focus" : "border-line"}`}
     >
       <div>
-        <h3 className="font-semibold text-ink break-words">{event.title}</h3>
+        <h3 className="break-words text-[15px] font-semibold leading-[22px] text-ink">{event.title}</h3>
         <p className="text-sm text-ink-muted first-letter:uppercase">{dateFmt.format(new Date(event.date))}</p>
       </div>
 
@@ -336,10 +338,17 @@ export default function AvailabilityClient({
 
   if (selfMembers.length === 0 && manageableMembers.length === 0) {
     return (
-      <div className="max-w-xl space-y-3">
-        <h1 className="text-2xl font-bold text-ink">Mes disponibilités</h1>
-        <Alert tone="info">
-          Votre compte n&apos;est lié à aucune fiche STAR. Liez-le depuis <Link className="underline" href="/profile">votre profil</Link> pour indiquer vos disponibilités.
+      <div className="flex max-w-xl flex-col gap-6">
+        <PageHeader title="Mes disponibilités" />
+        <Alert
+          tone="info"
+          action={
+            <Link href="/profile" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+              Ouvrir mon profil
+            </Link>
+          }
+        >
+          Votre compte n&apos;est lié à aucune fiche STAR. Liez-le depuis votre profil pour indiquer vos disponibilités.
         </Alert>
       </div>
     );
@@ -375,16 +384,10 @@ export default function AvailabilityClient({
   return (
     <div className="max-w-2xl space-y-6">
       <AvailabilityTabs self={selfMembers.length > 0} team={canViewOverview} collections={canSettings} />
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">
-            {isSelf ? "Mes disponibilités" : `Disponibilités de ${currentMember?.firstName} ${currentMember?.lastName}`}
-          </h1>
-          <p className="text-sm text-ink-muted mt-1">
-            Indiquez si vous pouvez servir. Votre responsable construit le planning à partir de vos réponses.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title={isSelf ? "Mes disponibilités" : `Disponibilités de ${currentMember?.firstName} ${currentMember?.lastName}`}
+        description="Indiquez si vous pouvez servir. Votre responsable construit le planning à partir de vos réponses."
+      />
 
       {manageableMembers.length > 0 && (
         <Select
@@ -407,7 +410,7 @@ export default function AvailabilityClient({
                 role="tab"
                 aria-selected={key === month}
                 onClick={() => setMonth(key)}
-                className={`shrink-0 min-h-[44px] rounded-full border px-4 text-sm ${
+                className={`shrink-0 min-h-11 rounded-full border px-4 text-sm ${
                   key === month ? "bg-brand text-on-brand border-brand" : "border-control-line text-ink-muted hover:border-brand"
                 }`}
               >

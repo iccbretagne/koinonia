@@ -1,6 +1,7 @@
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import GuideContent from "@/components/GuideContent";
 import type { Role } from "@/generated/prisma/client";
+import PageHeader from "@/components/ui/PageHeader";
 
 export default async function GuidePage() {
   const session = await requireAuth();
@@ -11,11 +12,11 @@ export default async function GuidePage() {
   )?.role ?? "DEPARTMENT_HEAD";
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold text-ink mb-6">Guide des fonctionnalités</h1>
-      <p className="text-ink-muted mb-8">
-        Découvrez les fonctionnalités disponibles selon votre rôle. Sélectionnez un profil pour voir ses accès.
-      </p>
+    <div className="mx-auto flex max-w-5xl flex-col gap-6">
+      <PageHeader
+        title="Guide des fonctionnalités"
+        description="Découvrez les fonctionnalités disponibles selon votre rôle. Sélectionnez un profil pour voir ses accès."
+      />
       <GuideContent defaultRole={currentRole} />
     </div>
   );

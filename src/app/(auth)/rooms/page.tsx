@@ -4,6 +4,8 @@ import { rolePermissions } from "@/lib/registry";
 import { isControlTeamMember } from "@/modules/rooms";
 import RoomsBookingClient from "./RoomsBookingClient";
 import { buttonClasses } from "@/components/ui/button-classes";
+import PageHeader from "@/components/ui/PageHeader";
+
 export default async function RoomsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
@@ -22,15 +24,17 @@ export default async function RoomsPage() {
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-ink">Salles</h1>
-        {isControlTeam && (
-          <Link href="/rooms/checklists" className={buttonClasses("secondary", "sm")}>
-            Contrôle des mains courantes →
-          </Link>
-        )}
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Salles"
+        actions={
+          isControlTeam && (
+            <Link href="/rooms/checklists" className={buttonClasses("secondary")}>
+              Contrôler les mains courantes
+            </Link>
+          )
+        }
+      />
       <RoomsBookingClient
         churchId={churchId}
         canReserve={canReserve}
