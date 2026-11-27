@@ -4,7 +4,7 @@
 - **Statut** : Validée
 - **Créée le** : 2026-11-27
 - **Branche suggérée** : `feat/navigation-metier` (branche de base, sous-PR par lot, une PR finale vers `main`)
-- **Base** : [audit de la navigation](audit.md) (état au commit `20f3024b`)
+- **Base** : [audit de la navigation](audit.md) (état au commit `20f3024b`), [audit des impacts](impacts.md), [correspondance des adresses](url-mapping.txt)
 
 > ⚠️ Cette spec décrit **QUOI** et **POURQUOI** — jamais **COMMENT**.
 > Les adresses citées sont celles que la personne voit et met en favori. Leur forme exacte est
@@ -72,8 +72,18 @@ disciples, Reporter, STAR, Référent soins pastoraux, Comptable. Sont aussi con
 S'y ajoutent les rôles et accès attribués par données : rôles d'événement de billetterie,
 gestionnaires de campagne, accès délégués aux formulaires. Enfin, les pasteurs (vue pastorale).
 
-**Aucun droit ne change.** Chaque personne voit exactement les mêmes écrans qu'aujourd'hui,
-rangés autrement. Le rangement suit les droits existants, il ne les décide pas.
+**Aucun droit ne change, à trois exceptions près**, décidées par le propriétaire et listées
+ci-dessous. Hors de ces exceptions, chaque personne voit exactement les mêmes écrans
+qu'aujourd'hui, rangés autrement. Le rangement suit les droits, il ne les décide pas.
+
+Les trois exceptions :
+1. **Mes demandes** est ouvert à tout compte de l'église, en **consultation** de ce qui le
+   concerne (rendez-vous pastoraux, questionnaires, inscriptions, demandes déjà déposées). Créer
+   une demande interne (annonce, visuel, etc.) reste réservé à qui le peut aujourd'hui.
+2. **Demander un rendez-vous pastoral** est ouvert à tout compte de l'église, et plus seulement à
+   qui a accès au planning.
+3. **La lecture pastorale** s'étend aux comptes rendus et aux demandes comptables des écrans
+   communs, **en lecture seule**, sur le même périmètre que les écrans pastoraux actuels.
 
 ## Comportement attendu
 
@@ -107,8 +117,8 @@ Règles de rangement :
   planification ou suivi. Pour les autres, « Demander un rendez-vous » est accessible depuis
   **Mes demandes** et la recherche.
 - **Familles**, le site externe, reste visible pour tous, rangé dans Ressources.
-- **Mes demandes** est ouvert à tous les comptes, STAR compris. C'est la page de « ce que j'ai
-  demandé ou que je dois remplir » :
+- **Mes demandes** est ouvert à tous les comptes, STAR compris (exception 1). C'est la page de
+  « ce que j'ai demandé ou que je dois remplir » :
   - les demandes internes, pour qui peut en créer ;
   - les demandes de rendez-vous pastoral ;
   - les questionnaires à remplir ;
@@ -182,8 +192,13 @@ personne a accès, chacune avec son compteur et un lien direct :
 - remplacements demandés ;
 - questionnaires soumis à valider.
 
-Sans aucune file, le bloc n'apparaît pas. Les compteurs sont les mêmes que ceux affichés par
-chaque écran concerné.
+Les huit files sont livrées ensemble. Sans aucune file, le bloc n'apparaît pas.
+- Une file qui a déjà un écran avec un compteur affiche **le même nombre** que cet écran. S'il en
+  existe aujourd'hui plusieurs versions qui divergent (par exemple la comptabilité), c'est celle de
+  l'écran qui fait foi.
+- Une file qui n'a pas encore d'écran propre (paiements de billetterie déclarés, remplacements
+  demandés, questionnaires soumis à valider, candidatures à traiter) reçoit une définition écrite
+  au plan. Son lien ouvre l'écran le plus proche, déjà filtré sur ces éléments.
 
 ### La vue pastorale
 
@@ -192,6 +207,12 @@ la navigation commune.
 - Le pasteur retrouve les mêmes espaces, limités à ce que la lecture pastorale lui ouvre :
   Personnes (« Mes membres », discipolat), Événements (calendrier, comptes rendus), Pastoral,
   Finances (consultation).
+- Les écrans propres à la vue pastorale qui doublent un écran commun (événements, comptes rendus,
+  comptabilité) disparaissent. Le pasteur ouvre l'écran commun **en lecture seule** (exception 3) :
+  aucune action de création, de modification ou de validation n'y apparaît, et le serveur les
+  refuse. Seuls « Mes membres » et le tableau pastoral de l'Accueil restent propres aux pasteurs.
+- Les liens de la vue pastorale qui mènent aujourd'hui à un écran refusé au pasteur (saisie d'un
+  compte rendu, détail d'une demande comptable hors périmètre) ouvrent désormais la lecture.
 - Il garde en plus ses propres écrans, par exemple Planning et Audio s'il est aussi STAR.
 - « Mes membres » mène au même écran depuis la barre du bas, la barre latérale et la recherche.
 - L'Accueil de la vue pastorale montre le tableau pastoral actuel.
@@ -225,15 +246,32 @@ Sans saisie, elle propose d'abord les destinations du rôle principal.
 Chaque écran connecté a une adresse qui commence par son espace (par exemple `/finances/…`,
 `/evenements/…`, `/personnes/…`, `/plateforme/…`).
 
-**Toute ancienne adresse redirige de façon permanente vers la nouvelle**, avec le même objet et
-les mêmes paramètres. Cela couvre :
+**Toute ancienne adresse redirige vers la nouvelle**, avec le même objet et les mêmes
+paramètres. La redirection est d'abord **temporaire** pendant une période d'observation de deux à
+quatre semaines, pour qu'un retour arrière reste possible. Elle devient ensuite **permanente** et
+n'a pas d'échéance. Cela couvre :
 - les liens enregistrés dans les notifications existantes ;
 - les liens des emails déjà envoyés ;
 - les favoris et raccourcis de l'application installée ;
 - les redirections historiques déjà en place.
 
 Les adresses **publiques** ne changent pas : dons, inscription, billet, réservation, formulaire,
-collecte, servir, entretien, rejoindre, installer, connexion d'un assistant IA. Les liens par
+collecte, servir, entretien, rejoindre, installer, connexion d'un assistant IA, liens de partage
+des médias. Les pages des **sites d'événement** ne sont jamais touchées par une redirection, même
+quand leur nom ressemble à celui d'un ancien écran (par exemple « billetterie »).
+
+Restent aussi à leur adresse, hors préfixe d'espace : l'Accueil, Mon profil et ses sous-pages, le
+Guide, un message de l'administration, l'autorisation d'un assistant IA.
+
+Les adresses mémorisées par l'application elle-même (aide contextuelle de l'assistant, liens des
+messages système, liens des notifications) sont réécrites vers la nouvelle adresse au moment de la
+bascule. Elles ne dépendent pas des redirections.
+
+Un écran de module désactivé répond comme une page inexistante, à l'ancienne comme à la nouvelle
+adresse. Ce n'est pas toujours le cas aujourd'hui, et c'est corrigé avant la bascule.
+
+Les écrans **hors ligne** de la billetterie (contrôle d'entrée, restauration) restent utilisables
+après la bascule. La bascule n'est pas déployée pendant un événement en cours. Les liens par
 jeton déjà distribués non plus. Les notifications et emails créés après la livraison portent
 directement la nouvelle adresse.
 
@@ -268,6 +306,12 @@ directement la nouvelle adresse.
   - Un lien comptable reçu par notification ouvre bien la demande.
 - **Membre de l'équipe Navette sans autre droit comptable.** Finances ne contient que la Navette.
   Mes demandes y renvoie.
+- **Pasteur, sur un compte rendu ou une demande comptable en vue pastorale.** Il lit l'écran
+  commun, sans aucun bouton d'action. Une tentative d'écriture est refusée.
+- **STAR qui demande un rendez-vous pastoral.** Il le demande depuis Mes demandes, sans avoir
+  besoin d'un accès au planning.
+- **Retour arrière pendant la période d'observation.** Une version de secours remet les anciennes
+  adresses. Les liens émis entre-temps sous les nouvelles adresses continuent de fonctionner.
 - **Inscrit à un événement de billetterie sans rôle.** Il retrouve sa réservation dans Événements ›
   Mes inscriptions, et depuis Mes demandes.
 - **Référent soins pastoraux.** Ses demandes sont dans Pastoral › Suivi pastoral, et non plus
@@ -295,7 +339,13 @@ directement la nouvelle adresse.
 **Structure**
 - [ ] Les espaces sont exactement ceux du tableau ci-dessus. Aucun espace n'apparaît vide.
 - [ ] Pour chaque rôle et cas d'équipe de l'audit (§2.1–2.3), l'ensemble des écrans accessibles
-      est identique avant et après. Seuls le rangement, les libellés et les adresses changent.
+      est identique avant et après, en dehors des trois exceptions listées. Seuls le rangement,
+      les libellés et les adresses changent.
+- [ ] Tout compte de l'église peut ouvrir Mes demandes et demander un rendez-vous pastoral. Il ne
+      peut créer une demande interne que s'il le pouvait déjà.
+- [ ] En vue pastorale, les comptes rendus et les demandes comptables communs s'ouvrent en lecture
+      seule, sur le périmètre pastoral actuel. Aucune action n'est affichée, et toute écriture est
+      refusée côté serveur.
 - [ ] Plateforme n'est visible que du Super Admin. Administration ne contient aucun réglage de
       plateforme.
 - [ ] Finances regroupe les demandes comptables, les statistiques, la navette, la trésorerie et la
@@ -324,16 +374,25 @@ directement la nouvelle adresse.
 - [ ] Un onglet a pour parent l'écran qui porte les onglets, jamais un onglet frère.
 
 **Accueil, recherche, vue pastorale**
-- [ ] L'Accueil affiche « À traiter » avec les seules files accessibles. Chaque compteur est égal
-      à celui de l'écran visé.
+- [ ] L'Accueil affiche « À traiter » avec les huit files, limitées à celles qui sont accessibles.
+      Une file qui a un écran affiche le même nombre que cet écran. Les autres suivent la
+      définition écrite au plan.
 - [ ] La recherche propose les actions fréquentes autorisées, et rien d'autre.
 - [ ] En vue pastorale, « Mes membres » ouvre le même écran depuis tous les menus. Un pasteur
       aussi STAR garde Planning et Audio.
 
 **Adresses**
 - [ ] L'adresse de chaque écran connecté commence par le préfixe de son espace.
-- [ ] Chaque ancienne adresse d'un écran connecté redirige de façon permanente vers la nouvelle,
-      avec l'identifiant et les paramètres. Un test couvre la liste complète.
+- [ ] Chaque ancienne adresse d'un écran connecté redirige vers la nouvelle, avec l'identifiant et
+      les paramètres : de façon temporaire pendant l'observation, puis permanente. Un test couvre
+      la liste complète.
+- [ ] Aucune page d'un site d'événement ni aucun lien de partage public n'est redirigé.
+- [ ] Un écran de module désactivé répond comme une page inexistante, à l'ancienne comme à la
+      nouvelle adresse.
+- [ ] Les adresses mémorisées par l'application (aide contextuelle, messages système,
+      notifications) sont réécrites. L'aide contextuelle de l'assistant s'affiche sur les mêmes
+      écrans qu'avant.
+- [ ] Les écrans hors ligne de la billetterie fonctionnent après la bascule.
 - [ ] Un lien de notification créé avant la livraison ouvre le bon écran.
 - [ ] Les adresses publiques et les liens par jeton sont inchangés.
 - [ ] Aucune redirection ne boucle. Une ancienne adresse inexistante répond comme une adresse
@@ -347,9 +406,8 @@ directement la nouvelle adresse.
 
 ## Hors périmètre
 
-- Toute modification de droits, de permissions ou de périmètres : la refonte range, elle
-  n'ouvre ni ne ferme d'accès. La seule ouverture est **Mes demandes** pour tous les comptes, qui
-  ne montre que ce que la personne a déjà le droit de voir.
+- Toute modification de droits, de permissions ou de périmètres autre que les trois exceptions
+  listées. En particulier, la création de demandes internes n'est pas ouverte à d'autres rôles.
 - Les adresses publiques, les liens par jeton, les sites d'événement et les adresses techniques
   utilisées par les assistants IA et les intégrations.
 - La refonte visuelle des écrans eux-mêmes : la spec 055 et la mise en conformité s'appliquent
@@ -357,7 +415,8 @@ directement la nouvelle adresse.
 - La fusion d'écrans en doublon autres que ceux cités. Par exemple, « Calendrier de l'église » et
   « Gérer les événements » restent deux entrées (voir question 4).
 - La recherche plein texte des demandes dans la palette.
-- La suppression de la vue pastorale.
+- La suppression de la vue pastorale (elle devient un filtre).
+- Les adresses des services internes (API) : elles ne bougent pas.
 
 ## Questions ouvertes
 
@@ -391,11 +450,22 @@ Choix complémentaires validés par le propriétaire (2026-11-27) :
 7. **Libellé « Dossiers d'intégration »** — remplace « Demandes » dans le groupe
    Intégration.
 
-Découpage de livraison suggéré, à confirmer au plan :
-- **Lot 0** : corrections (H1 à H4, déclarations mortes) ;
-- **Lot 1** : espaces, libellés et parenté ;
-- **Lot 2** : barre du bas, « Plus », Accueil « À traiter » et recherche ;
-- **Lot 3** : vue pastorale ;
-- **Lot 4** : adresses et redirections, avec le guide, l'assistant et la documentation.
+Arbitrages complémentaires après l'[audit des impacts](impacts.md) (2026-11-27) :
+- la lecture pastorale est étendue (exception 3) ;
+- Mes demandes : consultation et rendez-vous pour tous, sans dépôt de demande interne
+  (exceptions 1 et 2) ;
+- toutes les adresses sont alignées, en dernier lot, d'abord en redirection temporaire ;
+- les huit files de « À traiter » sont livrées ensemble.
+
+Découpage de livraison, à préciser au plan :
+- **Lot 0** : corrections. Écrans de modules désactivés, rôle principal déterministe, liens
+  pastoraux cassés, déclarations mortes. Registre unique des adresses, sans changer d'adresse.
+- **Lot 1** : espaces, libellés et parenté, sur les adresses actuelles.
+- **Lot 2** : barre du bas, « Plus », Accueil « À traiter » (huit files) et recherche.
+- **Lot 3** : vue pastorale en filtre et extension de la lecture pastorale, Mes demandes ouvert
+  à tous.
+- **Lot 4** : bascule des adresses, avec redirections temporaires, réécriture des adresses
+  mémorisées, et mise à jour du guide, de l'assistant et de la documentation dans la même PR.
+- **Lot 5** : passage en redirection permanente, après l'observation.
 
 Chaque lot est une sous-PR vers `feat/navigation-metier`, avec un passage en recette.
