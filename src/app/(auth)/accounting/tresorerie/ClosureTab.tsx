@@ -85,12 +85,12 @@ export default function ClosureTab({
               ["Clôture", p.closing],
             ].map(([label, value]) => (
               <div key={label as string} className="p-4">
-                <p className="text-sm text-ink-muted">{label as string}</p>
+                <p className="text-[15px] leading-[22px] text-ink-muted">{label as string}</p>
                 <p className="mt-1 text-lg font-semibold tabular-nums">{euro(value as number)}</p>
               </div>
             ))}
           </div>
-          <p className="border-t border-line px-5 py-3 text-sm text-ink-muted">{ledger.lines.length} ligne{ledger.lines.length > 1 ? "s" : ""} sur le mois.</p>
+          <p className="border-t border-line px-5 py-3 text-[15px] leading-[22px] text-ink-muted">{ledger.lines.length} ligne{ledger.lines.length > 1 ? "s" : ""} sur le mois.</p>
         </section>
         {ledger.warnings.map((w) => (
           <Alert key={w.accountId} tone="danger" title={`${w.accountName} passe sous zéro le ${frDate(w.date)}`}>
@@ -102,7 +102,7 @@ export default function ClosureTab({
 
       <aside className="flex flex-[1_1_300px] flex-col gap-4">
         <section className="flex flex-col gap-3 rounded-card border border-line bg-surface p-5">
-          <p className="text-sm text-ink">
+          <p className="text-[15px] leading-[22px] text-ink">
             Une fois clôturé, {monthTitle(month).toLowerCase()} ne peut plus être modifié. Seul un Admin peut le rouvrir, avec un motif.
           </p>
           <Button disabled={closed || busy} onClick={() => setConfirm(true)}>
@@ -112,15 +112,15 @@ export default function ClosureTab({
         <section className="rounded-card border border-line bg-surface p-5">
           <h2 className="mb-2 font-semibold text-ink">Mois clôturés</h2>
           {data.closures.length === 0 ? (
-            <p className="text-sm text-ink-muted">Aucun mois clôturé.</p>
+            <p className="text-[15px] leading-[22px] text-ink-muted">Aucun mois clôturé.</p>
           ) : (
-            <ul className="divide-y divide-line text-sm">
+            <ul className="divide-y divide-line text-[15px] leading-[22px]">
               {data.closures.map((c) => (
                 <li key={c.month} className="flex items-center gap-2 py-2">
                   <span className="font-semibold text-ink">{monthTitle(c.month)}</span>
-                  <span className="text-ink-subtle">le {frDate(c.closedAt)}</span>
+                  <span className="text-ink-muted">le {frDate(c.closedAt)}</span>
                   {canReopen && (
-                    <Button variant="ghost" size="sm" className="ml-auto" onClick={() => setReopen(c.month)}>Rouvrir</Button>
+                    <Button variant="ghost" size="sm" className="ml-auto min-h-11 sm:min-h-9" onClick={() => setReopen(c.month)}>Rouvrir</Button>
                   )}
                 </li>
               ))}
@@ -128,8 +128,8 @@ export default function ClosureTab({
           )}
           {data.reopenings.length > 0 && (
             <>
-              <h3 className="mb-1 mt-4 text-sm font-semibold text-ink">Réouvertures</h3>
-              <ul className="space-y-1 text-sm text-ink-muted">
+              <h3 className="mb-1 mt-4 text-[15px] leading-[22px] font-semibold text-ink">Réouvertures</h3>
+              <ul className="space-y-1 text-[15px] leading-[22px] text-ink-muted">
                 {data.reopenings.map((r) => (
                   <li key={`${r.month}-${r.at}`}>
                     {monthTitle(r.month)} rouvert le {frDate(r.at)} par {r.by} · « {r.reason} »

@@ -2,7 +2,7 @@
 
 import { Download, Eye, FileText, ImageIcon, Loader2, Upload, X } from "lucide-react";
 import { useState, useRef } from "react";
-import { IconButton } from "@/components/ui";
+import { Alert, ConfirmModal, IconButton } from "@/components/ui";
 
 export interface AttachmentItem {
   id: string;
@@ -29,14 +29,8 @@ function fmtSize(b: number) {
 }
 
 function FileIcon({ mimeType }: { readonly mimeType: string }) {
-  if (mimeType === "application/pdf") {
-    return (
-      <FileText className="w-5 h-5 text-danger" aria-hidden="true" />
-    );
-  }
-  return (
-    <ImageIcon className="w-5 h-5 text-info" aria-hidden="true" />
-  );
+  const Icon = mimeType === "application/pdf" ? FileText : ImageIcon;
+  return <Icon className="size-5 shrink-0 text-ink-muted" aria-hidden="true" strokeWidth={1.75} />;
 }
 
 async function handleDownload(id: string, filename: string) {
@@ -81,6 +75,7 @@ export default function AttachmentManager({
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<AttachmentItem | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleFiles(files: FileList | null) {
@@ -119,7 +114,6 @@ export default function AttachmentManager({
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Supprimer définitivement cette pièce jointe ?")) return;
     setDeletingId(id);
     try {
       const res = await fetch(`/api/accounting/attachments/${id}`, { method: "DELETE" });
@@ -128,7 +122,7 @@ export default function AttachmentManager({
       setAttachments(updated);
       onChange?.(updated);
     } catch { setUploadError("Erreur réseau"); }
-    finally { setDeletingId(null); }
+    finally { setDeletingId(null); setPendingDelete(null); }
   }
 
   // Drag-and-drop handlers
@@ -138,29 +132,28 @@ export default function AttachmentManager({
   }
 
   return (
-    <div className={`space-y-2 ${className}`}>
+    <div className={`flex flex-col gap-2 ${className}`}>
 
       {/* Liste */}
       {attachments.length > 0 && (
-        <div className="space-y-1.5">
+        <ul className="flex flex-col gap-1.5">
           {attachments.map((a) => (
-            <div
+            <li
               key={a.id}
-              className="flex items-center gap-2 bg-surface-sunken border border-line rounded-lg px-3 py-2"
+              className="flex items-center gap-1 rounded-control border border-line py-1 pl-3 pr-1"
             >
               <FileIcon mimeType={a.mimeType} />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-ink truncate">{a.filename}</p>
-                <p className="text-xs text-ink-subtle">{fmtSize(a.size)}</p>
+              <div className="ml-1 min-w-0 flex-1">
+                <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{a.filename}</p>
+                <p className="text-[13px] leading-[18px] text-ink-subtle">{fmtSize(a.size)}</p>
               </div>
-              <IconButton size="sm" icon={Eye} aria-label={`Voir ${a.filename}`} title="Voir" onClick={() => handleView(a.id)} />
-              <IconButton size="sm" icon={Download} aria-label={`Télécharger ${a.filename}`} title="Télécharger" onClick={() => handleDownload(a.id, a.filename)} />
+              <IconButton icon={Eye} aria-label={`Voir ${a.filename}`} title="Voir" onClick={() => handleView(a.id)} />
+              <IconButton icon={Download} aria-label={`Télécharger ${a.filename}`} title="Télécharger" onClick={() => handleDownload(a.id, a.filename)} />
               {canDelete && (
                 <IconButton
-                  size="sm"
                   aria-label={`Supprimer ${a.filename}`}
                   title="Supprimer"
-                  onClick={() => handleDelete(a.id)}
+                  onClick={() => setPendingDelete(a)}
                   disabled={deletingId === a.id}
                   className="hover:text-danger"
                 >
@@ -171,9 +164,9 @@ export default function AttachmentManager({
                   )}
                 </IconButton>
               )}
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
       {/* Zone d'upload */}
@@ -184,20 +177,19 @@ export default function AttachmentManager({
             onDrop={onDrop}
             onDragOver={onDragOver}
             onClick={() => inputRef.current?.click()}
-            className="relative w-full flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-line rounded-xl px-4 py-4 text-center cursor-pointer hover:border-brand/40 hover:bg-brand-hover/[0.02] focus-visible:ring-2 focus-visible:ring-focus outline-none transition-colors"
+            disabled={uploading}
+            className="relative flex min-h-11 w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-card border border-dashed border-control-line px-4 py-4 text-center transition-colors duration-120 hover:border-brand hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed"
           >
             {uploading ? (
-              <div className="flex items-center gap-2 text-sm text-brand-text">
-                <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+              <span className="flex items-center gap-2 text-[15px] text-ink-muted" aria-live="polite">
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" strokeWidth={1.75} />
                 Envoi en cours…
-              </div>
+              </span>
             ) : (
               <>
-                <Upload className="w-6 h-6 text-ink-subtle" aria-hidden="true" />
-                <p className="text-sm text-ink-muted">
-                  <span className="font-medium text-brand-text">Cliquer</span> ou glisser-déposer
-                </p>
-                <p className="text-xs text-ink-subtle">JPEG, PNG, PDF · max 5 Mo</p>
+                <Upload className="size-6 text-ink-subtle" aria-hidden="true" strokeWidth={1.75} />
+                <span className="font-display text-sm font-semibold text-brand-text">Ajouter une pièce jointe</span>
+                <span className="text-[13px] leading-[18px] text-ink-muted">Choisir un fichier ou le glisser ici · JPEG, PNG, PDF · 5 Mo maximum</span>
               </>
             )}
           </button>
@@ -212,15 +204,25 @@ export default function AttachmentManager({
             onChange={(e) => handleFiles(e.target.files)}
             disabled={uploading}
           />
-          {uploadError && (
-            <p className="text-xs text-danger bg-danger-soft border border-danger/30 rounded-lg px-3 py-2">{uploadError}</p>
-          )}
         </>
       )}
 
+      {uploadError && <Alert tone="danger" role="alert">{uploadError}</Alert>}
+
       {attachments.length === 0 && !canUpload && (
-        <p className="text-sm text-ink-subtle italic">Aucune pièce jointe.</p>
+        <p className="text-[15px] leading-[22px] text-ink-muted">Aucune pièce jointe.</p>
       )}
+
+      <ConfirmModal
+        open={pendingDelete !== null}
+        title={`Supprimer « ${pendingDelete?.filename ?? ""} » ?`}
+        message="La pièce jointe est supprimée définitivement."
+        confirmLabel="Supprimer la pièce jointe"
+        confirmingLabel="Suppression…"
+        confirming={deletingId !== null}
+        onConfirm={() => pendingDelete && handleDelete(pendingDelete.id)}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

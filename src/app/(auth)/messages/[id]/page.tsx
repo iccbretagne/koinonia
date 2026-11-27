@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { requireAuth } from "@/lib/auth";
-import { PageHeader, StatusChip } from "@/components/ui";
+import { PageHeader, StatusChip, buttonClasses } from "@/components/ui";
 import type { StatusTone } from "@/components/ui";
 import {
   getMessageChurchId,
@@ -65,11 +65,11 @@ export default async function SystemMessagePage({ params }: { readonly params: P
         <p>
           <Link
             href={message.linkUrl}
-            className="inline-flex items-center gap-1.5 text-[15px] font-semibold text-brand-text underline underline-offset-2"
+            className={buttonClasses("secondary", "md")}
             {...(message.linkUrl.startsWith("https://") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
           >
             {message.linkLabel ?? "En savoir plus"}
-            {message.linkUrl.startsWith("https://") && <ExternalLink aria-hidden="true" className="size-4" />}
+            {message.linkUrl.startsWith("https://") && <ExternalLink aria-hidden="true" className="size-4" strokeWidth={1.75} />}
           </Link>
         </p>
       )}

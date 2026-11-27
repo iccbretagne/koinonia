@@ -13,7 +13,7 @@ import {
   toPublicGivingPage,
   type GivingPageContent,
 } from "@/modules/giving/schemas";
-import { Alert, Button, ConfirmModal, Input, Textarea, useToast } from "@/components/ui";
+import { Alert, Button, ConfirmModal, Input, Textarea, buttonClasses, useToast } from "@/components/ui";
 import GivingPageView from "@/app/donner/_components/GivingPageView";
 import GivingPageHeader from "@/app/donner/_components/GivingPageHeader";
 import type { GivingNameSize } from "@/generated/prisma/enums";
@@ -108,7 +108,7 @@ export default function GivingSettingsClient({
 
   function selectSupport(next: Support) {
     setSupport(next);
-    // Mémorisé dans l'adresse (rechargement, lien « Paramétrage » de la slide), sans historique.
+    // Mémorisé dans l'adresse (rechargement, lien « Paramétrer la slide » de la slide), sans historique.
     const url = new URL(window.location.href);
     if (next === "slide") url.searchParams.set("support", "slide");
     else url.searchParams.delete("support");
@@ -196,9 +196,9 @@ export default function GivingSettingsClient({
   }
 
   const toggleClass = (active: boolean) =>
-    `flex-1 rounded-control px-3 py-2 text-sm font-semibold ${active ? "bg-surface text-ink shadow-sm" : "text-ink-muted"}`;
+    `min-h-11 flex-1 rounded-control px-3 font-display text-sm font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${active ? "bg-surface text-ink shadow-card" : "text-ink-muted hover:text-ink"}`;
   const tabClass = (active: boolean) =>
-    `-mb-px min-h-[44px] border-b-2 px-3 font-display text-sm font-semibold transition-colors ${
+    `-mb-px min-h-11 border-b-2 px-3 font-display text-sm font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
       active ? "border-brand text-brand-text" : "border-transparent text-ink-muted hover:text-ink"
     }`;
 
@@ -220,16 +220,20 @@ export default function GivingSettingsClient({
       />
 
       {!settings.hasAccountingEmails && (
-        <Alert tone="warning" title="Aucune adresse comptable configurée.">
+        <Alert
+          tone="warning"
+          title="Aucune adresse comptable configurée."
+          action={
+            churchSettingsHref ? (
+              <Link href={churchSettingsHref} className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+                Ouvrir les paramètres de l&apos;église
+              </Link>
+            ) : undefined
+          }
+        >
           Les alertes de changement de coordonnées iront aux Admins de l&apos;église.{" "}
           {churchSettingsHref ? (
-            <>
-              Ajoute l&apos;adresse de la comptabilité dans les{" "}
-              <Link href={churchSettingsHref} className="font-semibold text-brand-text underline underline-offset-2">
-                paramètres de l&apos;église
-              </Link>
-              .
-            </>
+            "Ajoute l'adresse de la comptabilité dans les paramètres de l'église."
           ) : (
             "Demande à un Admin de l'église d'ajouter l'adresse de la comptabilité dans ses paramètres."
           )}
@@ -376,7 +380,7 @@ export default function GivingSettingsClient({
           aria-label={support === "page" ? "Aperçu de la page publique" : "Aperçu de la slide"}
           className={`lg:sticky lg:top-4 ${mobileView === "preview" ? "" : "hidden lg:block"}`}
         >
-          <p className="mb-2 font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-subtle">
+          <p className="mb-2 font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-muted">
             {support === "page" ? "Aperçu de la page" : "Aperçu de la slide"}
             {draft.enabled ? "" : " — non publiée"}
           </p>

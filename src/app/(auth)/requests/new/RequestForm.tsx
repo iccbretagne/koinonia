@@ -15,6 +15,8 @@ import {
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
 import Checkbox from "@/components/ui/Checkbox";
+import FilterChip from "@/components/ui/FilterChip";
+import { buttonClasses } from "@/components/ui/button-classes";
 import Input from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import { controlClasses, fieldLabelClasses, textareaClasses } from "@/components/ui/field-classes";
@@ -121,7 +123,7 @@ function ChoiceTile({
 function ChoiceGroup({ title, children }: { readonly title: string; readonly children: React.ReactNode }) {
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-subtle">{title}</h2>
+      <h2 className="font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-muted">{title}</h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
     </section>
   );
@@ -631,7 +633,7 @@ export default function RequestForm({
     <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-5">
       {/* Retour au choix du type de demande — en édition, il n'y a pas d'étape 1 à regagner */}
       {!isEditMode && (
-        <Button type="button" variant="ghost" size="sm" onClick={reset} className="-ml-3 w-fit">
+        <Button type="button" variant="ghost" size="sm" onClick={reset} className="-ml-3 min-h-11 w-fit sm:min-h-9">
           <ChevronLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
           Changer de type de demande
         </Button>
@@ -694,15 +696,17 @@ export default function RequestForm({
               <legend className={`${fieldLabelClasses} mb-2`}>
                 Dimanches de diffusion
                 {annTargetEventIds.length > 0 && (
-                  <span className="ml-2 text-xs font-normal text-brand-text">
+                  <span className="ml-2 text-[13px] font-normal leading-[18px] text-brand-text">
                     {annTargetEventIds.length} sélectionné{annTargetEventIds.length > 1 ? "s" : ""}
                   </span>
                 )}
               </legend>
               {announcementEvents.length === 0 ? (
-                <Alert tone="warning">
-                  Aucun événement ouvert à la diffusion dans les 90 prochains jours.{" "}
-                  <Link href="/admin/events" className="font-semibold text-brand-text underline">Configurer les événements</Link>
+                <Alert
+                  tone="warning"
+                  action={<Link href="/admin/events" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>Configurer les événements</Link>}
+                >
+                  Aucun événement ouvert à la diffusion dans les 90 prochains jours.
                 </Alert>
               ) : (
                 <>
@@ -711,21 +715,11 @@ export default function RequestForm({
                       const selected = annTargetEventIds.includes(e.id);
                       const date = new Date(e.date);
                       return (
-                        <button
-                          key={e.id}
-                          type="button"
-                          onClick={() => toggleEvent(e.id)}
-                          aria-pressed={selected}
-                          className={`min-h-10 rounded-full border px-3 text-sm font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
-                            selected
-                              ? "border-brand bg-brand-soft text-brand-text"
-                              : "border-control-line bg-surface text-ink-muted hover:border-brand hover:text-ink"
-                          }`}
-                        >
+                        <FilterChip key={e.id} pressed={selected} onClick={() => toggleEvent(e.id)}>
                           {date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
                           {" · "}
                           {e.title}
-                        </button>
+                        </FilterChip>
                       );
                     })}
                   </div>
@@ -1066,7 +1060,7 @@ export default function RequestForm({
               <legend className={`${fieldLabelClasses} mb-1.5`}>
                 Départements assignés
                 {loadingEventDepts && (
-                  <span className="ml-2 text-xs font-normal text-ink-muted">Chargement…</span>
+                  <span className="ml-2 text-[13px] font-normal leading-[18px] text-ink-muted">Chargement…</span>
                 )}
               </legend>
               <p className="text-[13px] leading-[18px] text-ink-muted">

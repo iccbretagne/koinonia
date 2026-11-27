@@ -2,7 +2,6 @@ import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { registry, rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { getAccountingDepartmentScope, getRequestJustification, isJustificationClaimable, isRequestArchived } from "@/modules/accounting";
 import RequestDetail from "./RequestDetail";
 
@@ -94,13 +93,6 @@ export default async function AccountingRequestDetailPage({
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-6">
-        <Link href="/accounting/requests" className="text-sm text-ink-subtle hover:text-brand-text transition-colors">
-          ← Demandes
-        </Link>
-        <span className="text-ink-subtle">/</span>
-        <span className="text-sm text-ink-muted font-medium truncate">{req.label}</span>
-      </div>
       <RequestDetail
         key={`${req.attachments.length}-${req.pieceRequestCount}-${req.pieceRequestedAt?.getTime() ?? 0}`}
         submitterActive={submitterActive}

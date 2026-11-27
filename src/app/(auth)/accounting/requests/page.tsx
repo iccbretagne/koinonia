@@ -2,6 +2,8 @@ import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { Plus } from "lucide-react";
+import { PageHeader, buttonClasses } from "@/components/ui";
 import AccountingDashboard from "./AccountingDashboard";
 import { isShuttleVisible } from "@/modules/shuttle/auth";
 import { isTreasuryVisible } from "@/modules/treasury/auth";
@@ -97,26 +99,19 @@ export default async function AccountingRequestsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">Comptabilité</h1>
-          <p className="text-sm text-ink-muted mt-0.5">
-            {canManage ? "Gestion des demandes financières" : "Mes demandes financières"}
-          </p>
-        </div>
-        {canSubmit && (
-          <Link
-            href="/accounting/requests/new"
-            className="flex items-center gap-2 px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 transition-opacity"
-          >
-            <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Nouvelle demande
-          </Link>
-        )}
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Comptabilité"
+        description={canManage ? "Gestion des demandes financières" : "Mes demandes financières"}
+        actions={
+          canSubmit && (
+            <Link href="/accounting/requests/new" className={buttonClasses("primary", "md")}>
+              <Plus aria-hidden="true" className="size-4" strokeWidth={2} />
+              Nouvelle demande
+            </Link>
+          )
+        }
+      />
 
       <AccountingNav canViewStats={canViewStats} canViewShuttle={canViewShuttle} canViewTreasury={canViewTreasury} active="requests" />
 

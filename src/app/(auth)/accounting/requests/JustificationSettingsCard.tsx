@@ -1,6 +1,7 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useState } from "react";
+import { Alert, Button, Input } from "@/components/ui";
 
 interface Settings {
   firstReminderDays: number;
@@ -9,7 +10,6 @@ interface Settings {
 
 /** Délais de relance des justificatifs (spec 078), réglés par la compta pour l'église. */
 export default function JustificationSettingsCard({ initial }: { readonly initial: Settings }) {
-  const uid = useId();
   const [first, setFirst] = useState(String(initial.firstReminderDays));
   const [every, setEvery] = useState(String(initial.reminderIntervalDays));
   const [busy, setBusy] = useState(false);
@@ -34,34 +34,44 @@ export default function JustificationSettingsCard({ initial }: { readonly initia
     }
   }
 
-  const input = "w-20 border border-control-line rounded-lg px-3 py-2 text-base bg-surface focus:outline-none focus:border-brand";
   return (
-    <div className="bg-surface rounded-xl border border-line p-4 space-y-3">
+    <section className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card" aria-labelledby="relances-justificatifs">
       <div>
-        <h2 className="text-sm font-semibold text-ink-muted">Relances des justificatifs</h2>
-        <p className="text-xs text-ink-subtle mt-0.5">
+        <h2 id="relances-justificatifs" className="font-display text-[17px] font-semibold leading-6 text-ink">Relances des justificatifs</h2>
+        <p className="mt-0.5 text-[15px] leading-[22px] text-ink-muted">
           Après la remise des fonds, le demandeur est relancé jusqu&apos;au dépôt des factures ; dès la 3e relance, ses
           responsables et le Ministre sont prévenus.
         </p>
       </div>
       <div className="flex flex-wrap items-end gap-4">
-        <div>
-          <label htmlFor={`${uid}-first`} className="block text-xs text-ink-muted mb-1">Première relance (jours)</label>
-          <input id={`${uid}-first`} type="number" min={1} max={60} value={first} onChange={(e) => setFirst(e.target.value)} className={input} />
-        </div>
-        <div>
-          <label htmlFor={`${uid}-every`} className="block text-xs text-ink-muted mb-1">Puis tous les (jours)</label>
-          <input id={`${uid}-every`} type="number" min={1} max={30} value={every} onChange={(e) => setEvery(e.target.value)} className={input} />
-        </div>
-        <button
-          onClick={save}
-          disabled={busy || !dirty}
-          className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-        >
-          {busy ? "Enregistrement…" : "Enregistrer"}
-        </button>
+        <Input
+          label="Première relance (jours)"
+          type="number"
+          min={1}
+          max={60}
+          value={first}
+          onChange={(e) => setFirst(e.target.value)}
+          className="w-28"
+        />
+        <Input
+          label="Puis tous les (jours)"
+          type="number"
+          min={1}
+          max={30}
+          value={every}
+          onChange={(e) => setEvery(e.target.value)}
+          className="w-28"
+        />
+        <Button type="button" variant="secondary" onClick={save} disabled={busy || !dirty}>
+          {busy ? "Enregistrement…" : "Enregistrer les délais"}
+        </Button>
       </div>
-      {message && <p className={`text-xs ${message.ok ? "text-success" : "text-danger"}`}>{message.text}</p>}
-    </div>
+      {!dirty && !message && <p className="text-[13px] leading-[18px] text-ink-muted">Modifiez un délai pour pouvoir l&apos;enregistrer.</p>}
+      {message && (
+        <Alert tone={message.ok ? "success" : "danger"} role={message.ok ? "status" : "alert"}>
+          {message.text}
+        </Alert>
+      )}
+    </section>
   );
 }

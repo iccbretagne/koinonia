@@ -7,7 +7,8 @@ import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import EmptyState from "@/components/ui/EmptyState";
-import Input from "@/components/ui/Input";
+import FilterChip from "@/components/ui/FilterChip";
+import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
 import StatusChip from "@/components/ui/StatusChip";
 import { buttonClasses } from "@/components/ui/button-classes";
@@ -98,7 +99,7 @@ function RequestCard({ req, onUpdated }: { readonly req: RequestItem; readonly o
           {createElement(requestTypeIcon(req.type), { "aria-hidden": true, className: "size-5", strokeWidth: 1.75 })}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-display text-[11px] font-bold uppercase leading-4 tracking-[0.06em] text-ink-subtle">
+          <p className="font-display text-[11px] font-bold uppercase leading-4 tracking-[0.06em] text-ink-muted">
             {TYPE_LABEL[req.type] ?? req.type}
           </p>
           <h3 className="break-words font-sans text-[15px] font-semibold leading-[22px] text-ink">
@@ -119,20 +120,22 @@ function RequestCard({ req, onUpdated }: { readonly req: RequestItem; readonly o
       <div className="flex flex-col gap-2 sm:pl-[52px]">
         {announcementContent && (
           <div>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink-muted">
+            <p className="whitespace-pre-wrap text-[15px] leading-[22px] text-ink-muted">
               {isLong && !expanded
                 ? `${announcementContent.slice(0, PREVIEW_LENGTH).trimEnd()}…`
                 : announcementContent}
             </p>
             {isLong && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setExpanded((v) => !v)}
                 aria-expanded={expanded}
-                className="mt-1 text-[13px] font-semibold text-brand-text hover:underline"
+                className="-ml-3 mt-1 min-h-11 sm:min-h-9"
               >
-                {expanded ? "Voir moins" : "Voir plus"}
-              </button>
+                {expanded ? "Réduire le texte" : "Lire la suite"}
+              </Button>
             )}
           </div>
         )}
@@ -161,11 +164,11 @@ function RequestCard({ req, onUpdated }: { readonly req: RequestItem; readonly o
 
         {isPending && (
           <div className="flex flex-wrap gap-2">
-            <Link href={`/requests/${req.id}/edit`} className={buttonClasses("secondary", "sm")}>
+            <Link href={`/requests/${req.id}/edit`} className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
               <Pencil aria-hidden="true" className="size-4" strokeWidth={1.75} />
-              Modifier
+              Modifier la demande
             </Link>
-            <Button variant="ghost" size="sm" onClick={() => setConfirmOpen(true)} disabled={cancelling}>
+            <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setConfirmOpen(true)} disabled={cancelling}>
               {cancelling ? "Annulation…" : "Annuler la demande"}
             </Button>
           </div>
@@ -258,22 +261,13 @@ export default function RequestsList({ requests }: Props) {
   return (
     <section aria-label="Demandes envoyées" className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
-        <fieldset aria-label="Catégorie" className="inline-flex min-w-0 w-fit gap-0.5 rounded-control bg-surface-sunken p-[3px]">
+        <div role="group" aria-label="Catégorie" className="flex min-w-0 flex-wrap gap-2">
           {categories.map((cat) => (
-            <button
-              key={cat.value}
-              type="button"
-              aria-pressed={category === cat.value}
-              onClick={() => setCategory(cat.value)}
-              className={`min-h-10 rounded-[7px] px-4 font-display text-sm font-semibold transition-colors duration-120
-                focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus ${
-                  category === cat.value ? "bg-surface text-brand-text shadow-card" : "text-ink-muted hover:text-ink"
-                }`}
-            >
+            <FilterChip key={cat.value} pressed={category === cat.value} onClick={() => setCategory(cat.value)}>
               {cat.label}
-            </button>
+            </FilterChip>
           ))}
-        </fieldset>
+        </div>
         <div className="grid grid-cols-2 gap-3 md:contents">
           <div className="md:w-48">
             <Select
@@ -295,9 +289,8 @@ export default function RequestsList({ requests }: Props) {
           </div>
         </div>
         <div className="min-w-[12rem] flex-1">
-          <Input
-            type="search"
-            aria-label="Rechercher"
+          <SearchInput
+            aria-label="Rechercher une demande"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher un titre, un département…"
@@ -306,19 +299,19 @@ export default function RequestsList({ requests }: Props) {
       </div>
 
       <div className="flex items-center justify-between gap-3">
-        <p className="text-[13px] text-ink-muted" aria-live="polite">
+        <p className="text-[13px] leading-[18px] text-ink-muted" aria-live="polite">
           {filtered.length} demande{filtered.length > 1 ? "s" : ""}
           {hasFilters && ` sur ${items.length}`}
         </p>
         {hasFilters && (
-          <Button variant="ghost" size="sm" onClick={resetFilters}>
+          <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={resetFilters}>
             Effacer les filtres
           </Button>
         )}
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-card border border-line bg-surface">
+        <div className="rounded-card border border-line bg-surface shadow-card">
           <EmptyState
             icon={SearchX}
             title="Aucune demande pour ces filtres"
@@ -331,7 +324,7 @@ export default function RequestsList({ requests }: Props) {
           />
         </div>
       ) : (
-        <ul className="overflow-hidden rounded-card border border-line bg-surface">
+        <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
           {filtered.map((req) => (
             <RequestCard key={req.id} req={req} onUpdated={(patch) => handleUpdated(req.id, patch)} />
           ))}
