@@ -8,6 +8,7 @@ import QrSvg from "@/components/ticketing/QrSvg";
 import { canDo, getEventAccess, getEventDetail, listLabels, type LabelSet } from "@/modules/ticketing";
 import MarkPrinted from "./MarkPrinted";
 import styles from "./labels.module.css";
+import { paths } from "@/lib/paths";
 
 /** Formats de planche A4 courants : 3 × 7 (63,5 × 38,1 mm) et 2 × 7 (99,1 × 38,1 mm). */
 const FORMATS = {
@@ -47,7 +48,7 @@ export default async function LabelsPage({
     const next = new URLSearchParams();
     const merged = { set: one("set"), plat: variantId, format: one("format"), qr: one("qr"), ...patch };
     for (const [k, v] of Object.entries(merged)) if (v) next.set(k, v);
-    return `/billetterie/${id}/etiquettes?${next.toString()}`;
+    return `${paths.billetterie.etiquettes(id)}?${next.toString()}`;
   };
   // Même apparence que `FilterChip`, sur un lien (le filtre est dans l'adresse).
   const chip = (active: boolean) =>
@@ -58,7 +59,7 @@ export default async function LabelsPage({
   return (
     <div className="space-y-4">
       <div className="space-y-3 print:hidden">
-        <Link href={`/billetterie/${id}/restauration`} className={buttonClasses("ghost", "sm")}>
+        <Link href={paths.billetterie.restauration(id)} className={buttonClasses("ghost", "sm")}>
           <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
           Retour à la distribution
         </Link>

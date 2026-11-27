@@ -5,6 +5,7 @@ import { EmptyState, PageHeader, buttonClasses } from "@/components/ui";
 import { countToComplete, listInterviewers, listSlots } from "@/modules/serving";
 import { requireServingActor } from "@/modules/serving/auth";
 import InterviewSlotsClient from "./InterviewSlotsClient";
+import { paths } from "@/lib/paths";
 
 /** Créneaux d'entretien (spec 082) : équipe Vie des STAR et administration. */
 export default async function EntretiensPage() {
@@ -24,7 +25,7 @@ export default async function EntretiensPage() {
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-4">
-      <Link href="/candidatures" className={`${buttonClasses("ghost", "sm")} self-start`}>
+      <Link href={paths.candidatures()} className={`${buttonClasses("ghost", "sm")} self-start`}>
         <ArrowLeft className="size-4" aria-hidden="true" /> Retour aux candidatures
       </Link>
       <PageHeader

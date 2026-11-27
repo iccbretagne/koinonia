@@ -12,13 +12,14 @@ import { useToast } from "@/components/ui/Toast";
 import { ActionRow, DetailField } from "@/components/requests/DetailBlocks";
 import type { Publication, PublicationKind, PublicationState } from "@/modules/jobs";
 import { CHIP_LABEL, MODALITY_LABEL, STATE_LABEL, STATE_TONE, expiryLabel, rateLabel, typeLabel } from "./board";
+import { paths } from "@/lib/paths";
 
 /** Route d'API et statuts de chaque sorte de publication (routes existantes, inchangées). */
 const API: Record<PublicationKind, { endpoint: (id: string) => string; edit: (id: string) => string; active: string }> = {
-  OFFER: { endpoint: (id) => `/api/jobs/${id}`, edit: (id) => `/jobs/${id}/edit`, active: "PUBLISHED" },
-  MISSION: { endpoint: (id) => `/api/jobs/freelance/missions/${id}`, edit: (id) => `/jobs/freelance/missions/${id}/edit`, active: "ACTIVE" },
-  SEEKER: { endpoint: (id) => `/api/jobs/seekers/${id}`, edit: (id) => `/jobs/seekers/${id}/edit`, active: "ACTIVE" },
-  FREELANCE: { endpoint: (id) => `/api/jobs/freelance/profiles/${id}`, edit: (id) => `/jobs/freelance/profiles/${id}/edit`, active: "ACTIVE" },
+  OFFER: { endpoint: (id) => `/api/jobs/${id}`, edit: (id) => paths.jobs.editOffer(id), active: "PUBLISHED" },
+  MISSION: { endpoint: (id) => `/api/jobs/freelance/missions/${id}`, edit: (id) => paths.jobs.editMission(id), active: "ACTIVE" },
+  SEEKER: { endpoint: (id) => `/api/jobs/seekers/${id}`, edit: (id) => paths.jobs.editSeeker(id), active: "ACTIVE" },
+  FREELANCE: { endpoint: (id) => `/api/jobs/freelance/profiles/${id}`, edit: (id) => paths.jobs.editFreelanceProfile(id), active: "ACTIVE" },
 };
 
 /** Clôture par l'auteur (pourvue, a trouvé, indisponible) et remise en ligne, hors offres. */

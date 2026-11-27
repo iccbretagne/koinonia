@@ -8,6 +8,7 @@ import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import { buttonClasses } from "@/components/ui/button-classes";
 import { DEV_USERS } from "../../prisma/fixtures/dev-users";
+import { paths } from "@/lib/paths";
 
 // Spec 055 : la page « Aujourd'hui » (/accueil) est l'accueil commun à tous les rôles d'une
 // église — elle n'affiche que les blocs que le rôle voit déjà ailleurs, sous les mêmes gardes.
@@ -16,7 +17,7 @@ import { DEV_USERS } from "../../prisma/fixtures/dev-users";
 async function defaultLandingPage(session: Session) {
   const churchId = await getCurrentChurchId(session);
   const hasChurchRole = session.user.churchRoles.some((r) => r.churchId === churchId);
-  return hasChurchRole ? "/accueil" : "/profile";
+  return hasChurchRole ? paths.accueil() : paths.profile();
 }
 
 /**
@@ -25,7 +26,7 @@ async function defaultLandingPage(session: Session) {
  */
 function safeNext(next: string | string[] | undefined): string | null {
   if (typeof next !== "string") return null;
-  return next.startsWith("/mcp/autoriser?") && !next.includes("//") && !next.includes("\\") ? next : null;
+  return next.startsWith(`${paths.mcp.autoriser()}?`) && !next.includes("//") && !next.includes("\\") ? next : null;
 }
 
 export default async function LoginPage({

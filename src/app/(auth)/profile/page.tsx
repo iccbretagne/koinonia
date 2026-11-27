@@ -12,6 +12,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import StatusChip from "@/components/ui/StatusChip";
 import { Bell, Bot, ChevronRight, Clock, FileText, Link2 } from "lucide-react";
 import { getOwnApplication } from "@/modules/serving";
+import { paths } from "@/lib/paths";
 
 /** Section de la page profil : titre `title-md` puis contenu, sans cadre (une section de page n'est pas une carte). */
 function ProfileSection({
@@ -149,7 +150,7 @@ export default async function ProfilePage() {
           </div>
         </div>
         <Link
-          href="/profile/notifications"
+          href={paths.profile.notifications()}
           className="-mx-2 mt-4 flex min-h-11 items-center gap-3 rounded-control border-t border-line px-2 pt-3 text-[15px] font-semibold text-ink transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-focus"
         >
           <Bell aria-hidden="true" className="size-5 text-ink-subtle" strokeWidth={1.75} />
@@ -158,7 +159,7 @@ export default async function ProfilePage() {
         </Link>
         {registry.has("mcp") && (
           <Link
-            href="/profile/assistants"
+            href={paths.profile.assistants()}
             className="-mx-2 flex min-h-11 items-center gap-3 rounded-control px-2 text-[15px] font-semibold text-ink transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-focus"
           >
             <Bot aria-hidden="true" className="size-5 text-ink-subtle" strokeWidth={1.75} />
@@ -225,7 +226,7 @@ export default async function ProfilePage() {
             {ownApplications.map((o) => (
               <li key={o.church.id}>
                 <Link
-                  href={`/candidatures/ma-fiche?churchId=${o.church.id}`}
+                  href={paths.candidatures.maFiche({ churchId: o.church.id })}
                   className="-mx-2 flex min-h-11 items-center gap-3 rounded-control px-2 py-3 text-[15px] font-semibold text-ink transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-focus"
                 >
                   <FileText aria-hidden="true" className="size-5 text-ink-subtle" strokeWidth={1.75} />

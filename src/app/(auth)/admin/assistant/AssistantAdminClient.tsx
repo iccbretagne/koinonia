@@ -21,6 +21,7 @@ import {
 } from "@/components/ui";
 import type { AdminEntry, StatsPeriod } from "@/modules/assistant";
 import type { EntryInput } from "@/modules/assistant/schemas";
+import { paths } from "@/lib/paths";
 
 interface PendingRow {
   id: string;
@@ -143,7 +144,7 @@ function EntryForm({
         />
         <Textarea label="Réponse" value={answer} onChange={(e) => setAnswer(e.target.value)} rows={5} maxLength={4000} />
         <div className="grid gap-4 sm:grid-cols-2">
-          <Input label="Lien (adresse interne)" placeholder="/disponibilites" value={href} onChange={(e) => setHref(e.target.value)} />
+          <Input label="Lien (adresse interne)" placeholder={paths.disponibilites()} value={href} onChange={(e) => setHref(e.target.value)} />
           <Input label="Libellé du lien" placeholder="Disponibilités" value={hrefLabel} onChange={(e) => setHrefLabel(e.target.value)} />
         </div>
         {showRoles && (
@@ -231,7 +232,7 @@ function QuestionsTab({ pending, entries, status }: { readonly pending: PendingR
       </Alert>
       <nav aria-label="Filtrer par statut" className="flex flex-wrap gap-2">
         {Object.entries(STATUS_LABEL).map(([value, label]) => (
-          <FilterChip key={value} href={`/admin/assistant?onglet=questions&statut=${value}`} pressed={value === status}>
+          <FilterChip key={value} href={paths.admin.assistant({ onglet: "questions", statut: value })} pressed={value === status}>
             {label}
           </FilterChip>
         ))}
@@ -544,7 +545,7 @@ export default function AssistantAdminClient({
         <Alert
           tone="warning"
           action={
-            <Link href="/admin/assistant?onglet=reglages" className={buttonClasses("secondary", "sm")}>
+            <Link href={paths.admin.assistant({ onglet: "reglages" })} className={buttonClasses("secondary", "sm")}>
               Ouvrir les réglages
             </Link>
           }

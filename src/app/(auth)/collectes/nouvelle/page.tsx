@@ -4,6 +4,7 @@ import { hasCampaignsManage } from "@/modules/campaigns/auth";
 import PageHeader from "@/components/ui/PageHeader";
 import CampaignEditor from "../_components/editor/CampaignEditor";
 import { blankDefinition } from "../_components/editor/state";
+import { paths } from "@/lib/paths";
 
 /** Création d'une campagne avec l'éditeur graphique (spec 091, EVOL-11) : `campaigns:manage` dans l'église courante. */
 export default async function NewCampaignPage() {
@@ -17,7 +18,7 @@ export default async function NewCampaignPage() {
         title="Nouvelle campagne"
         description="Composez les questionnaires, leurs destinataires et les contrôles. La campagne reste en brouillon jusqu'à son ouverture."
       />
-      <CampaignEditor initial={blankDefinition()} backHref="/collectes" />
+      <CampaignEditor initial={blankDefinition()} backHref={paths.collectes()} />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { CountBadge, PageHeader, buttonClasses } from "@/components/ui";
 import MembersClient from "./MembersClient";
 import LinkRequestsClient from "./LinkRequestsClient";
+import { paths } from "@/lib/paths";
 
 export default async function MembersPage() {
   const session = await requireAuth();
@@ -115,7 +116,7 @@ export default async function MembersPage() {
         title="STAR"
         actions={
           canManage ? (
-            <Link href="/admin/members/duplicates" className={buttonClasses("secondary", "md")}>
+            <Link href={paths.admin.memberDuplicates()} className={buttonClasses("secondary", "md")}>
               Voir les doublons potentiels
             </Link>
           ) : undefined

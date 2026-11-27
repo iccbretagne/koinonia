@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import RoomChecklistsClient from "./RoomChecklistsClient";
 import { buttonClasses } from "@/components/ui/button-classes";
 import PageHeader from "@/components/ui/PageHeader";
+import { paths } from "@/lib/paths";
 
 export default async function RoomChecklistsPage() {
   const session = await requireAuth();
@@ -49,7 +50,7 @@ export default async function RoomChecklistsPage() {
       <PageHeader
         title="Contrôle des mains courantes"
         actions={
-          <Link href="/rooms" className={buttonClasses("secondary")}>
+          <Link href={paths.rooms()} className={buttonClasses("secondary")}>
             Voir les réservations
           </Link>
         }

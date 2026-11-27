@@ -8,6 +8,7 @@ import { Archive, Check, PencilLine, Plus, Repeat, X, Zap } from "lucide-react";
 import AttachmentManager from "@/app/(auth)/accounting/components/AttachmentManager";
 import PieceRequestPanel from "./PieceRequestPanel";
 import JustificationPanel, { type Justification } from "./JustificationPanel";
+import { paths } from "@/lib/paths";
 
 type DateLike = string | Date;
 
@@ -278,7 +279,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
             tone="info"
             title={`Correction de la demande « ${req.correctionOf.label} ».`}
             action={
-              <Link href={`/accounting/requests/${req.correctionOf.id}`} className={buttonClasses("ghost", "sm")}>
+              <Link href={paths.accounting.request(req.correctionOf.id)} className={buttonClasses("ghost", "sm")}>
                 Voir la demande d&apos;origine
               </Link>
             }
@@ -340,7 +341,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
           action={
             isOwn ? (
               <Link
-                href={`/accounting/requests/new?correctionOf=${req.id}`}
+                href={paths.accounting.newRequest({ correctionOf: req.id })}
                 className={buttonClasses("secondary", "sm")}
               >
                 <PencilLine aria-hidden="true" className="size-4" strokeWidth={1.75} />
@@ -452,7 +453,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
             {req.corrections.map((c) => (
               <li key={c.id}>
                 <Link
-                  href={`/accounting/requests/${c.id}`}
+                  href={paths.accounting.request(c.id)}
                   className="flex min-h-11 items-center justify-between gap-3 rounded-control px-2 text-[15px] text-ink hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 >
                   <span className="min-w-0 truncate">{c.label}</span>

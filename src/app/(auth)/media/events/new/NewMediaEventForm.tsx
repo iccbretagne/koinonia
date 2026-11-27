@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { Alert, Select, Textarea } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 type PlanningEvent = {
   id: string;
@@ -65,7 +66,7 @@ export default function NewMediaEventForm({
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erreur lors de la création");
-      router.push(`/media/events/${json.id}`);
+      router.push(paths.media.event(json.id));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");
     } finally {
@@ -112,7 +113,7 @@ export default function NewMediaEventForm({
         <Button
           type="button"
           variant="secondary"
-          onClick={() => router.push("/media/events")}
+          onClick={() => router.push(paths.media.events())}
           disabled={loading}
         >
           Annuler

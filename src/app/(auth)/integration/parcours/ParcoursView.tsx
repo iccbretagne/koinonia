@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import Link from "next/link";
 import { Check, ChevronRight, Plus } from "lucide-react";
 import { Alert, Button, EmptyState, FilterChip, Input, Modal, PageHeader, SearchInput, StatusChip, Textarea, buttonClasses, type StatusTone } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 export type SourceRequest = {
   id: string;
@@ -241,7 +242,7 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
               )}
               {selected.sourceRequest && (
                 <Link
-                  href={`/integration/requests/${selected.sourceRequest.id}`}
+                  href={paths.integration.request(selected.sourceRequest.id)}
                   className={`${buttonClasses("ghost", "sm")} -ml-3 self-start`}
                 >
                   Voir la demande d&apos;intégration

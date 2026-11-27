@@ -5,6 +5,7 @@ import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { listBackupOptions } from "@/modules/planning";
 import AbsencesClient from "./AbsencesClient";
+import { paths } from "@/lib/paths";
 
 export default async function AbsencesPage() {
   const session = await requireAuth();
@@ -19,7 +20,7 @@ export default async function AbsencesPage() {
   const canView = session.user.isSuperAdmin || userPermissions.has("absences:view");
   const canManage = session.user.isSuperAdmin || userPermissions.has("absences:manage");
   // Sans droit de consultation, la déclaration passe par « Mes disponibilités » (spec 058).
-  if (!canView) redirect("/disponibilites");
+  if (!canView) redirect(paths.disponibilites());
 
   const memberLinks = await prisma.memberUserLink.findMany({
     where: { userId: session.user.id, churchId },

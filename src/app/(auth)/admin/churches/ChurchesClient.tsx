@@ -3,6 +3,7 @@
 import { SubmitEvent, useState } from "react";
 import Link from "next/link";
 import { BulkActionBar, Button, ConfirmModal, DataTable, Input, Modal, buttonClasses, useToast } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 interface Church {
   id: string;
@@ -206,7 +207,7 @@ export default function ChurchesClient({ initialChurches }: Props) {
           onSelectionChange={setSelectedIds}
           actions={(c) => (
             <div className="flex gap-2 justify-end">
-              <Link href={`/admin/churches/${c.id}`} className={buttonClasses("ghost", "sm")}>
+              <Link href={paths.admin.church(c.id)} className={buttonClasses("ghost", "sm")}>
                 Modifier
               </Link>
               <Button variant="ghost" size="sm" onClick={() => setPendingDelete(c)}>

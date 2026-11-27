@@ -10,6 +10,7 @@ import { useApi } from "../_components/use-api";
 import type { CommunicationPreset } from "./CommunicationModal";
 import { TRACKING_FILTERS, TRACKING_FILTER_LABELS, groupIssues, matchesTrackingFilter, messageKindForStatus, type TrackingFilter } from "./pilotage";
 import type { AssignmentData, CampaignOverviewData } from "./types";
+import { paths } from "@/lib/paths";
 
 type Row = AssignmentData & { formId: string; formTitle: string; confidential: boolean };
 type ReviewAction = "reopen" | "unvalidate";
@@ -273,7 +274,7 @@ export default function TrackingTab({
           }
           extra.push(
             { label: "Changer l'échéance", disabled: busy, onSelect: () => setDue({ row: r, value: parisDayKey(r.assignmentDueAt), initial: parisDayKey(r.assignmentDueAt) }) },
-            { label: "Voir l'aperçu", href: `/collectes/${campaign.id}/apercu/${r.formId}` },
+            { label: "Voir l'aperçu", href: paths.collectes.apercu(campaign.id, r.formId) },
           );
           return (
             <div className="flex flex-wrap items-center gap-2">
@@ -282,7 +283,7 @@ export default function TrackingTab({
                   Valider
                 </Button>
               ) : null}
-              <Link href={`/collectes/r/${r.id}`} className={buttonClasses(r.status === "SUBMITTED" ? "ghost" : "secondary", "sm")}>
+              <Link href={paths.collectes.reponse(r.id)} className={buttonClasses(r.status === "SUBMITTED" ? "ghost" : "secondary", "sm")}>
                 Ouvrir
               </Link>
               <Menu label={`Autres actions pour ${r.label} (${r.formTitle})`} items={extra} size="sm" />

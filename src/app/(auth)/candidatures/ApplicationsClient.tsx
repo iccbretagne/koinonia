@@ -6,6 +6,7 @@ import { DataTable, EmptyState, StatusChip, Tabs } from "@/components/ui";
 import type { ApplicationSummary } from "@/modules/serving";
 import { APPLICATION_STATUS_LABEL, SCHEDULING_REASON_LABEL } from "@/modules/serving/schemas";
 import AssignmentChip, { formatDay } from "./AssignmentChip";
+import { paths } from "@/lib/paths";
 
 const formatInterview = (iso: string) =>
   new Date(iso).toLocaleString("fr-FR", { timeZone: "Europe/Paris", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -48,7 +49,7 @@ export default function ApplicationsClient({ tab, tabs, pvs, departments }: Prop
         <Tabs
           ariaLabel="Candidatures"
           tabs={tabs.map((t) => ({
-            href: `/candidatures?onglet=${t}`,
+            href: paths.candidatures({ onglet: t }),
             label: TAB_LABEL[t],
             count: counts[t] || undefined,
             active: t === tab,
@@ -64,7 +65,7 @@ export default function ApplicationsClient({ tab, tabs, pvs, departments }: Prop
             primary: true,
             accessor: (a) =>
               a.canOpen ? (
-                <Link href={`/candidatures/${a.id}`} className="rounded-control font-medium text-ink hover:text-brand-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+                <Link href={paths.candidatures.application(a.id)} className="rounded-control font-medium text-ink hover:text-brand-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
                   {a.firstName} {a.lastName}
                 </Link>
               ) : (

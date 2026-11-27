@@ -20,6 +20,7 @@ import {
 } from "@/components/ui";
 import HistoryTimeline from "@/components/HistoryTimeline";
 import RadioGroup, { choiceChipClasses } from "@/components/ui/RadioGroup";
+import { paths } from "@/lib/paths";
 
 type DateLike = Date | string;
 
@@ -456,7 +457,7 @@ function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, 
         <p className="text-sm text-ink-muted whitespace-pre-line">{followUp.notes}</p>
       )}
       <Link
-        href={`/care/followups/${followUp.id}`}
+        href={paths.care.followup(followUp.id)}
         className={buttonClasses("ghost", "sm")}
       >
         Voir et gérer le suivi
@@ -561,7 +562,7 @@ function RequestHeader({
           {req.salvationCall && <StatusChip tone="brand">Appel au salut</StatusChip>}
           {req.pastoralCareRequested && <StatusChip tone="warning">Soin pastoral</StatusChip>}
           {hasJourney && (
-            <Link href="/integration/parcours" className={buttonClasses("ghost", "sm")}>
+            <Link href={paths.integration.parcours()} className={buttonClasses("ghost", "sm")}>
               Voir le dossier parcours
               <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
             </Link>
@@ -1003,7 +1004,7 @@ function JourneyCard({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className={sectionTitleClasses}>Étapes clés du parcours</h2>
         {journey && (
-          <Link href="/integration/parcours" className={buttonClasses("ghost", "sm")}>
+          <Link href={paths.integration.parcours()} className={buttonClasses("ghost", "sm")}>
             Voir le dossier complet
             <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
           </Link>
@@ -1229,7 +1230,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
     const ok = await patch({ action: "handback", reason: handbackReason.trim() });
     setDialogLoading(false);
     // Le berger n'est plus en charge : retour à sa liste plutôt qu'une fiche qui ne le concerne plus.
-    if (ok) { setHandbackOpen(false); setHandbackReason(""); router.push("/integration/requests"); }
+    if (ok) { setHandbackOpen(false); setHandbackReason(""); router.push(paths.integration.requests()); }
   }
 
   async function submitRelance() {
@@ -1496,7 +1497,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
               <Alert
                 tone="warning"
                 action={
-                  <Link href="/integration/leaders" className={buttonClasses("ghost", "sm")}>
+                  <Link href={paths.integration.leaders()} className={buttonClasses("ghost", "sm")}>
                     Configurer les bergers
                   </Link>
                 }

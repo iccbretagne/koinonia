@@ -29,6 +29,7 @@ import {
   saveState,
   sortQueue,
 } from "./queue-filters";
+import { paths } from "@/lib/paths";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -97,7 +98,7 @@ function NewServiceModal({ open, onClose }: { readonly open: boolean; readonly o
         throw new Error(body.error ?? "Échec de la création");
       }
       const service = await res.json();
-      router.push(`/audio/production/${service.id}`);
+      router.push(paths.audio.productionService(service.id));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");
       setCreating(false);
@@ -335,7 +336,7 @@ export default function AudioQueueClient({ services }: { readonly services: Audi
             : "La date de fin est antérieure à la date de début."
         }
         actions={(row) => (
-          <Button variant="secondary" size="sm" onClick={() => router.push(`/audio/production/${row.id}`)}>
+          <Button variant="secondary" size="sm" onClick={() => router.push(paths.audio.productionService(row.id))}>
             Ouvrir l&apos;enregistrement
           </Button>
         )}

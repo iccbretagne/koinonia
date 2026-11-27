@@ -3,11 +3,12 @@ import { requireAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/ui";
 import { getAppIconState } from "@/modules/core";
 import AppIconClient from "./AppIconClient";
+import { paths } from "@/lib/paths";
 
 /** Icône de l'application (spec 069) : réglage de plateforme, réservé au Super Admin. */
 export default async function AppIconPage() {
   const session = await requireAuth();
-  if (!session.user.isSuperAdmin) redirect("/admin");
+  if (!session.user.isSuperAdmin) redirect(paths.admin());
   const state = await getAppIconState();
 
   return (

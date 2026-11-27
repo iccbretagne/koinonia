@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Users } from "lucide-react";
 import SwitchChurchLink from "@/components/SwitchChurchLink";
 import { PageHeader, StatusChip, buttonClasses } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 const roleLabel: Record<string, string> = {
   PASTEUR: "Pasteur",
@@ -19,7 +20,7 @@ function formatDate(d: Date) {
 export default async function PastoralDashboardPage() {
   const session = await auth();
   if (!session?.user) redirect("/");
-  if (!(session.user.pastoralChurchIds ?? []).length) redirect("/dashboard");
+  if (!(session.user.pastoralChurchIds ?? []).length) redirect(paths.dashboard());
 
   const now = new Date();
   const currentChurchId = await getCurrentChurchId(session);
@@ -59,7 +60,7 @@ export default async function PastoralDashboardPage() {
     });
   }
 
-  if (!profile) redirect("/dashboard");
+  if (!profile) redirect(paths.dashboard());
 
   // Églises supervisées par ce profil pastoral
   const supervisedChurches = await prisma.church.findMany({
@@ -154,28 +155,28 @@ export default async function PastoralDashboardPage() {
                 <div className="flex flex-wrap gap-2">
                   <SwitchChurchLink
                     churchId={church.id}
-                    href="/pastoral/members"
+                    href={paths.pastoral.members()}
                     className={buttonClasses("ghost", "sm")}
                   >
                     Membres
                   </SwitchChurchLink>
                   <SwitchChurchLink
                     churchId={church.id}
-                    href="/pastoral/events"
+                    href={paths.pastoral.events()}
                     className={buttonClasses("ghost", "sm")}
                   >
                     Événements
                   </SwitchChurchLink>
                   <SwitchChurchLink
                     churchId={church.id}
-                    href="/pastoral/reports"
+                    href={paths.pastoral.reports()}
                     className={buttonClasses("ghost", "sm")}
                   >
                     Comptes rendus
                   </SwitchChurchLink>
                   <SwitchChurchLink
                     churchId={church.id}
-                    href="/pastoral/accounting"
+                    href={paths.pastoral.accounting()}
                     className={buttonClasses("ghost", "sm")}
                   >
                     Comptabilité
@@ -192,7 +193,7 @@ export default async function PastoralDashboardPage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-[17px] font-semibold text-ink">Mon agenda</h2>
-            <Link href={`/agenda/${profile.id}`} className={buttonClasses("ghost", "sm")}>
+            <Link href={paths.agenda.profile(profile.id)} className={buttonClasses("ghost", "sm")}>
               Voir l&apos;agenda
             </Link>
           </div>
@@ -221,7 +222,7 @@ export default async function PastoralDashboardPage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-[17px] font-semibold text-ink">Événements</h2>
-            <Link href="/events" className={buttonClasses("ghost", "sm")}>
+            <Link href={paths.events()} className={buttonClasses("ghost", "sm")}>
               Voir le calendrier
             </Link>
           </div>

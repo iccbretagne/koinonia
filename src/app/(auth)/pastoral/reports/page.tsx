@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Check, ChevronRight } from "lucide-react";
 import { PageHeader, StatusChip, buttonClasses } from "@/components/ui";
 import { rolePermissions } from "@/lib/registry";
+import { paths } from "@/lib/paths";
 function fmt(d: Date) {
   return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
 }
@@ -99,7 +100,7 @@ export default async function PastoralReportsPage() {
                 </div>
                 {canOpenReport && (
                   <Link
-                    href={`/admin/events/${e.id}/report`}
+                    href={paths.admin.eventReport(e.id)}
                     className={`${buttonClasses("secondary", "sm")} shrink-0`}
                   >
                     Rédiger le CR
@@ -130,7 +131,7 @@ export default async function PastoralReportsPage() {
                   <tr key={e.id} className="transition-colors hover:bg-surface-sunken">
                     <td className="px-4 py-3">
                       {canOpenReport ? (
-                        <Link href={`/admin/events/${e.id}/report`} className="inline-flex min-h-11 items-center gap-1 rounded-control font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:min-h-0">
+                        <Link href={paths.admin.eventReport(e.id)} className="inline-flex min-h-11 items-center gap-1 rounded-control font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:min-h-0">
                           {e.title}
                           <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
                         </Link>

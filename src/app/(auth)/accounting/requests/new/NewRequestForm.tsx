@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AttachmentManager, { type AttachmentItem } from "@/app/(auth)/accounting/components/AttachmentManager";
 import { Alert, Button, Input, Select, Textarea, buttonClasses, fieldLabelClasses } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 interface Department {
   id: string;
@@ -41,7 +42,7 @@ interface Props {
 
 type RequestMode = "one_shot" | "recurring";
 
-export default function NewRequestForm({ departments, correction, complement, redirectTo = "/accounting/requests" }: Props) {
+export default function NewRequestForm({ departments, correction, complement, redirectTo = paths.accounting.requests() }: Props) {
   const router = useRouter();
   const id = useId();
   const [mode, setMode] = useState<RequestMode>("one_shot");

@@ -8,6 +8,7 @@ import Select from "@/components/ui/Select";
 import Alert from "@/components/ui/Alert";
 import JobFormActions from "../JobFormActions";
 import JobContactFields from "../JobContactFields";
+import { paths } from "@/lib/paths";
 
 type JobType = "EMPLOI" | "STAGE" | "ALTERNANCE";
 
@@ -63,7 +64,7 @@ export default function JobFormClient({ initial }: { readonly initial?: {
       const res    = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data   = await res.json();
       if (!res.ok) { setError(data.error || "Erreur lors de la publication"); return; }
-      router.push(`/jobs/${data.id}`);
+      router.push(paths.jobs.offer(data.id));
     } finally {
       setSaving(false);
     }

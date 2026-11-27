@@ -4,6 +4,7 @@ import { getAvailabilitySettings } from "@/modules/planning";
 import AvailabilitySettingsClient from "./AvailabilitySettingsClient";
 import PageHeader from "@/components/ui/PageHeader";
 import { buttonClasses } from "@/components/ui/button-classes";
+import { paths } from "@/lib/paths";
 
 export default async function AvailabilitySettingsPage() {
   const session = await requireAuth();
@@ -18,7 +19,7 @@ export default async function AvailabilitySettingsPage() {
         title="Réglages de la collecte"
         description="Chaque mois, tous les STAR sont invités à indiquer leurs disponibilités. La collecte s'ouvre automatiquement, même tardivement si le calendrier a été publié tard."
         actions={
-          <Link href="/disponibilites/collectes" className={buttonClasses("secondary")}>
+          <Link href={paths.disponibilites.collectes()} className={buttonClasses("secondary")}>
             Voir les collectes
           </Link>
         }

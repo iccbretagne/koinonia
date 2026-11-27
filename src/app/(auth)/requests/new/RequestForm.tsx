@@ -26,6 +26,7 @@ import { REQUEST_TYPE_ICON } from "../request-display";
 import { EVENT_TYPES, EVENT_TYPE_LABELS } from "@/lib/event-types";
 import { ROLE_LABELS } from "@/lib/roles";
 import type { RequestPrefill } from "@/lib/request-prefill";
+import { paths } from "@/lib/paths";
 
 type RequestCategory = "announcement" | "visual" | "demand" | null;
 type DemandType =
@@ -551,7 +552,7 @@ export default function RequestForm({
       }
 
       toast.success(isEditMode ? "Demande modifiée" : "Demande envoyée");
-      router.push("/requests");
+      router.push(paths.requests());
     } catch {
       setError("Une erreur est survenue.");
     } finally {
@@ -613,10 +614,10 @@ export default function RequestForm({
         {(showCareTile || showAccountingTile) && (
           <ChoiceGroup title="Accompagnement et finances">
             {showCareTile && (
-              <ChoiceTile icon={CalendarHeart} title="Rendez-vous pastoral" href="/care/request?from=requests" />
+              <ChoiceTile icon={CalendarHeart} title="Rendez-vous pastoral" href={paths.care.request({ from: "requests" })} />
             )}
             {showAccountingTile && (
-              <ChoiceTile icon={Wallet} title="Demande comptable" href="/accounting/requests/new?from=requests" />
+              <ChoiceTile icon={Wallet} title="Demande comptable" href={paths.accounting.newRequest({ from: "requests" })} />
             )}
           </ChoiceGroup>
         )}
@@ -702,7 +703,7 @@ export default function RequestForm({
               {announcementEvents.length === 0 ? (
                 <Alert
                   tone="warning"
-                  action={<Link href="/admin/events" className={buttonClasses("secondary", "sm")}>Configurer les événements</Link>}
+                  action={<Link href={paths.admin.events()} className={buttonClasses("secondary", "sm")}>Configurer les événements</Link>}
                 >
                   Aucun événement ouvert à la diffusion dans les 90 prochains jours.
                 </Alert>
@@ -1089,7 +1090,7 @@ export default function RequestForm({
         <Button type="submit" disabled={submitting}>
           {submitLabel}
         </Button>
-        <Button type="button" variant="secondary" onClick={() => isEditMode ? router.push("/requests") : reset()}>
+        <Button type="button" variant="secondary" onClick={() => isEditMode ? router.push(paths.requests()) : reset()}>
           Annuler
         </Button>
       </div>

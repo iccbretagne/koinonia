@@ -7,6 +7,7 @@ import AvailabilityTabs from "@/components/AvailabilityTabs";
 import { buttonClasses } from "@/components/ui/button-classes";
 import PageHeader from "@/components/ui/PageHeader";
 import CollectionsPanel from "./CollectionsPanel";
+import { paths } from "@/lib/paths";
 
 /** Collectes par mois (spec 058) : état de chaque mois et ouverture anticipée — `availability:settings`. */
 export default async function AvailabilityCollectionsPage() {
@@ -30,7 +31,7 @@ export default async function AvailabilityCollectionsPage() {
         title="Collectes des disponibilités"
         description="Chaque collecte s'ouvre automatiquement selon les réglages. Vous pouvez ouvrir celle d'un mois à l'avance : les STAR concernés sont notifiés immédiatement."
         actions={
-          <Link href="/disponibilites/parametres" className={buttonClasses("secondary")}>
+          <Link href={paths.disponibilites.parametres()} className={buttonClasses("secondary")}>
             Modifier les réglages
           </Link>
         }

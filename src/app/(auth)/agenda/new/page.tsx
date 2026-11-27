@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Alert, PageHeader, buttonClasses } from "@/components/ui";
 import NewEntryForm from "./NewEntryForm";
+import { paths } from "@/lib/paths";
 
 export default async function NewAgendaEntryPage() {
   const session = await requireAuth();
@@ -25,7 +26,7 @@ export default async function NewAgendaEntryPage() {
           tone="warning"
           title="Aucun profil pastoral configuré"
           action={
-            <Link href="/admin/pastoral-profiles" className={buttonClasses("secondary", "sm")}>
+            <Link href={paths.admin.pastoralProfiles()} className={buttonClasses("secondary", "sm")}>
               Configurer les profils
             </Link>
           }

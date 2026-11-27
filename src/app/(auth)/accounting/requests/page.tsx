@@ -10,6 +10,7 @@ import { isTreasuryVisible } from "@/modules/treasury/auth";
 import AccountingNav from "../AccountingNav";
 import { getJustificationSettings, isJustificationClaimable, isRequestArchived } from "@/modules/accounting";
 import JustificationSettingsCard from "./JustificationSettingsCard";
+import { paths } from "@/lib/paths";
 
 export default async function AccountingRequestsPage() {
   const session = await requireAuth();
@@ -107,7 +108,7 @@ export default async function AccountingRequestsPage() {
         description={canManage ? "Gestion des demandes financières" : "Mes demandes financières"}
         actions={
           canSubmit && (
-            <Link href="/accounting/requests/new" className={buttonClasses("primary", "md")}>
+            <Link href={paths.accounting.newRequest()} className={buttonClasses("primary", "md")}>
               <Plus aria-hidden="true" className="size-4" strokeWidth={2} />
               Nouvelle demande
             </Link>

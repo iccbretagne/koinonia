@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 import BackupsClient from "./BackupsClient";
 import ConfigBackupClient from "./ConfigBackupClient";
 import { PageHeader } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 export default async function BackupsPage() {
   const session = await requireAuth();
-  if (!session.user.isSuperAdmin) redirect("/admin");
+  if (!session.user.isSuperAdmin) redirect(paths.admin());
 
   return (
     <div className="flex flex-col gap-10">

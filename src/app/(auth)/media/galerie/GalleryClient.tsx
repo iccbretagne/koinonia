@@ -13,6 +13,7 @@ import { useToast } from "@/components/ui/Toast";
 import MediaLightbox from "@/components/media/MediaLightbox";
 import CollectionBuilder from "../collections/CollectionBuilder";
 import GalleryGrantsDialog from "./GalleryGrantsDialog";
+import { paths } from "@/lib/paths";
 
 interface Source {
   type: "event" | "project";
@@ -233,8 +234,8 @@ export default function GalleryClient({
 
   /** Lien vers l'origine, seulement si l'écran correspondant est accessible. */
   function originHref(item: Item): string | null {
-    if (item.source.type === "project") return originAccess.visuals ? `/media/projects/${item.source.id}` : null;
-    if (item.kind === "photo" && originAccess.photos) return `/media/events/${item.source.id}`;
+    if (item.source.type === "project") return originAccess.visuals ? paths.media.project(item.source.id) : null;
+    if (item.kind === "photo" && originAccess.photos) return paths.media.event(item.source.id);
     return null;
   }
 

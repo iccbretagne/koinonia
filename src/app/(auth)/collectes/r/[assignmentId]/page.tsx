@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth";
 import { getAssignmentAccess } from "@/modules/campaigns/auth";
 import { getAssignmentView } from "@/modules/campaigns";
 import AssignmentForm, { type AssignmentViewData } from "@/components/campaigns/AssignmentForm";
+import { paths } from "@/lib/paths";
 
 type Params = { readonly params: Promise<{ assignmentId: string }> };
 
@@ -24,7 +25,7 @@ export default async function AssignmentPage({ params }: Params) {
     <AssignmentForm
       view={JSON.parse(JSON.stringify(view)) as AssignmentViewData}
       apiBase={`/api/campaigns/assignments/${view.assignment.id}`}
-      backHref={access.role === "manager" ? `/collectes/${view.campaign.id}` : undefined}
+      backHref={access.role === "manager" ? paths.collectes.campaign(view.campaign.id) : undefined}
     />
   );
 }

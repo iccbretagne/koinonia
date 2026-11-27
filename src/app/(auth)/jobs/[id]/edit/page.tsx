@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/ui";
 import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import JobFormClient from "../../new/JobFormClient";
+import { paths } from "@/lib/paths";
 
 export default async function EditJobPage({
   params,
@@ -24,7 +25,7 @@ export default async function EditJobPage({
   });
 
   if (!job) notFound();
-  if (job.authorId !== session.user.id) redirect(`/jobs/${id}`);
+  if (job.authorId !== session.user.id) redirect(paths.jobs.offer(id));
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">

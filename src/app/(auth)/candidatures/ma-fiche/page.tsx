@@ -6,6 +6,7 @@ import { EmptyState, PageHeader, StatusChip, buttonClasses } from "@/components/
 import { getOwnApplication } from "@/modules/serving";
 import ApplicationAnswers from "../ApplicationAnswers";
 import { formatDay } from "../AssignmentChip";
+import { paths } from "@/lib/paths";
 
 /**
  * Ma fiche de candidature (spec 077, D8) : le STAR accueilli relit ses réponses, en lecture seule,
@@ -24,7 +25,7 @@ export default async function MyApplicationPage({
   if (!app) {
     return (
       <div className="mx-auto flex max-w-4xl flex-col gap-4">
-        <Link href="/profile" className={`${buttonClasses("ghost", "sm")} self-start`}>
+        <Link href={paths.profile()} className={`${buttonClasses("ghost", "sm")} self-start`}>
           <ArrowLeft className="size-4" aria-hidden="true" /> Retour à « Mon profil »
         </Link>
         <EmptyState icon={FileText} title="Aucune fiche de candidature" description="Aucune fiche de candidature n'est liée à ton compte." />
@@ -34,7 +35,7 @@ export default async function MyApplicationPage({
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-4">
-      <Link href="/profile" className={`${buttonClasses("ghost", "sm")} self-start`}>
+      <Link href={paths.profile()} className={`${buttonClasses("ghost", "sm")} self-start`}>
         <ArrowLeft className="size-4" aria-hidden="true" /> Retour à « Mon profil »
       </Link>
       <PageHeader

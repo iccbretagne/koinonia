@@ -3,6 +3,7 @@
 import { SubmitEvent, useState } from "react";
 import Link from "next/link";
 import { Alert, Button, Input, buttonClasses } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 export default function OnboardClient() {
   const [name, setName] = useState("");
@@ -57,7 +58,7 @@ export default function OnboardClient() {
           tone="success"
           title="Église créée."
           action={
-            <Link href="/admin/churches" className={`${buttonClasses("secondary", "md")} self-start`}>
+            <Link href={paths.admin.churches()} className={`${buttonClasses("secondary", "md")} self-start`}>
               Retour aux églises
             </Link>
           }
@@ -106,7 +107,7 @@ export default function OnboardClient() {
           <Button type="submit" disabled={loading}>
             {loading ? "Création…" : "Créer l'église"}
           </Button>
-          <Link href="/admin/churches" className={buttonClasses("secondary", "md")}>
+          <Link href={paths.admin.churches()} className={buttonClasses("secondary", "md")}>
             Annuler
           </Link>
         </div>

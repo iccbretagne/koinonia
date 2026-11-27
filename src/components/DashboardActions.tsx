@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { CalendarDays, CalendarRange, ChartColumn, ClipboardList, ListChecks, Users, type LucideIcon } from "lucide-react";
 import Tabs, { type TabItem } from "@/components/ui/Tabs";
+import { paths } from "@/lib/paths";
 
 const VIEWS: { view: string; label: string; icon: LucideIcon }[] = [
   { view: "event", label: "Saisie", icon: ClipboardList },
@@ -34,7 +35,7 @@ export default function DashboardActions() {
     const params = new URLSearchParams();
     if (dept) params.set("dept", dept);
     params.set("view", view);
-    return `/dashboard?${params.toString()}`;
+    return `${paths.dashboard()}?${params.toString()}`;
   }
 
   const tabs: TabItem[] = [
@@ -44,7 +45,7 @@ export default function DashboardActions() {
       active: currentView === view,
     })),
     {
-      href: dept ? `/dashboard/stats?dept=${dept}` : "/dashboard/stats",
+      href: dept ? paths.dashboard.stats({ dept }) : paths.dashboard.stats(),
       label: <TabLabel icon={ChartColumn} label="Statistiques" />,
       active: false,
     },

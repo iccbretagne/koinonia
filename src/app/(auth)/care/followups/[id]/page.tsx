@@ -5,6 +5,7 @@ import FollowupActions from "./FollowupActions";
 import DeleteItemButton from "@/components/DeleteItemButton";
 import CareItemFooter from "../../CareItemFooter";
 import { PageHeader, StatusChip, type StatusTone } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 const STATUS_LABEL: Record<string, string> = {
   SUBMITTED: "Reçu",
@@ -107,7 +108,7 @@ export default async function CareFollowupDetailPage({
 
       {access.canDelete && (
         <div className="mt-4 flex justify-end">
-          <DeleteItemButton endpoint={`/api/care/followups/${id}`} redirectTo="/care" />
+          <DeleteItemButton endpoint={`/api/care/followups/${id}`} redirectTo={paths.care()} />
         </div>
       )}
 

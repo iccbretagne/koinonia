@@ -8,6 +8,7 @@ import WhatsAppShare from "@/components/WhatsAppShare";
 import { Button, IconButton, Input, Textarea, buttonClasses } from "@/components/ui";
 import { formatReportWhatsApp, generateReportPDF, type ReportExportData } from "@/lib/report-export";
 import { reportSectionType, reportStatFields } from "@/lib/report-stats";
+import { paths } from "@/lib/paths";
 
 interface Dept { id: string; name: string; ministryName: string }
 
@@ -403,7 +404,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
           {saveStatus === "saving" ? "Enregistrement…" : "Enregistrer maintenant"}
         </Button>
       </div>
-        <Link href="/admin/reports" className={`${buttonClasses("ghost")} self-start`}>
+        <Link href={paths.admin.reports()} className={`${buttonClasses("ghost")} self-start`}>
           <ArrowLeft className="size-4" aria-hidden="true" strokeWidth={1.75} />
           Revenir aux comptes rendus
         </Link>

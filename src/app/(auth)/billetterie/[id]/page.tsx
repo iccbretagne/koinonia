@@ -39,6 +39,7 @@ import PresenceTab from "./_components/PresenceTab";
 import CateringTab from "./_components/CateringTab";
 import EventFormsBlock from "@/components/forms/EventFormsBlock";
 import { registry } from "@/lib/registry";
+import { paths } from "@/lib/paths";
 
 const VIEW_GROUPS = [
   { label: "Préparer", views: ["parametres", "options", "equipe", "site", "billet"] },
@@ -120,7 +121,7 @@ export default async function TicketingEventPage({
   const pending = payments.filter((p) => p.kind === "DECLARATION" && p.status === "PENDING").length;
   const tabs = VIEWS.filter((v) => allowed[v]).map((v) => ({
     view: v,
-    href: `/billetterie/${id}?vue=${v}`,
+    href: paths.billetterie.event(id, { vue: v }),
     label: { apercu: "Aperçu", parametres: "Paramètres", options: "Options", inscrits: "Inscrits", reglements: "Règlements", equipe: "Équipe", presences: "Présences", restauration: "Suivi restauration", site: "Site", billet: "Visuel du billet" }[v],
     active: v === view,
     count: v === "reglements" && pending > 0 ? pending : undefined,
@@ -142,12 +143,12 @@ export default async function TicketingEventPage({
           <div className="flex flex-wrap items-center gap-2">
             <StatusChip tone={event.status === "OPEN" ? "success" : "neutral"}>{EVENT_STATUS_LABEL[event.status]}</StatusChip>
             {can.reception && (
-              <Link href={`/billetterie/${id}/controle`} className={buttonClasses("primary", "md")}>
+              <Link href={paths.billetterie.controle(id)} className={buttonClasses("primary", "md")}>
                 <ScanLine className="size-4" aria-hidden="true" /> Contrôler les entrées
               </Link>
             )}
             {can.catering && event.options.some((o) => o.pickup) && (
-              <Link href={`/billetterie/${id}/restauration`} className={buttonClasses("secondary", "md")}>
+              <Link href={paths.billetterie.restauration(id)} className={buttonClasses("secondary", "md")}>
                 <Utensils className="size-4" aria-hidden="true" /> Distribuer les repas
               </Link>
             )}
@@ -195,8 +196,8 @@ async function RestrictedEvent({ id, view }: { readonly id: string; readonly vie
   const event = await previewEvent(id);
   if (!event) notFound();
   const tabs = [
-    { href: `/billetterie/${id}?vue=apercu`, label: "Aperçu", active: view !== "site" },
-    { href: `/billetterie/${id}?vue=site`, label: "Site", active: view === "site" },
+    { href: paths.billetterie.event(id, { vue: "apercu" }), label: "Aperçu", active: view !== "site" },
+    { href: paths.billetterie.event(id, { vue: "site" }), label: "Site", active: view === "site" },
   ];
   const site = view === "site" ? await getSite(id) : null;
   const siteStatus = view === "site" ? await getSiteStatus(id) : null;

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Alert, PageHeader, StatusChip, buttonClasses, type StatusTone } from "@/components/ui";
 import { getAccountingDepartmentScope } from "@/modules/accounting";
+import { paths } from "@/lib/paths";
 function fmt(d: Date) {
   return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
 }
@@ -105,7 +106,7 @@ export default async function PastoralAccountingPage() {
               <li key={p.id}>
                 {canOpen(p.request) ? (
                   <Link
-                    href={`/accounting/requests/${p.request.id}`}
+                    href={paths.accounting.request(p.request.id)}
                     className="flex min-h-11 items-center justify-between gap-3 rounded-control text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                   >
                     <span className="truncate">{p.request.label}</span>
@@ -130,7 +131,7 @@ export default async function PastoralAccountingPage() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-[17px] font-semibold text-ink">Demandes {now.getFullYear()}</h2>
-          <Link href="/accounting/requests" className={buttonClasses("ghost", "sm")}>
+          <Link href={paths.accounting.requests()} className={buttonClasses("ghost", "sm")}>
             Voir toutes les demandes
           </Link>
         </div>
@@ -153,7 +154,7 @@ export default async function PastoralAccountingPage() {
                   <tr key={r.id} className="transition-colors hover:bg-surface-sunken">
                     <td className="px-4 py-3">
                       {canOpen(r) ? (
-                        <Link href={`/accounting/requests/${r.id}`} className="inline-flex min-h-11 items-center gap-1 rounded-control font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:min-h-0">
+                        <Link href={paths.accounting.request(r.id)} className="inline-flex min-h-11 items-center gap-1 rounded-control font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:min-h-0">
                           {r.label}
                           <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
                         </Link>

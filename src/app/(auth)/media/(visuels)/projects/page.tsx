@@ -4,6 +4,7 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import { rolePermissions } from "@/lib/registry";
 import MediaProjectsList from "./MediaProjectsList";
+import { paths } from "@/lib/paths";
 
 export default async function MediaProjectsPage() {
   const session = await requireAuth();
@@ -59,7 +60,7 @@ export default async function MediaProjectsPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-ink">Visuels</h1>
         {canUpload && (
-          <Link href="/media/projects/new">
+          <Link href={paths.media.newProject()}>
             <Button>+ Nouveau projet visuel</Button>
           </Link>
         )}

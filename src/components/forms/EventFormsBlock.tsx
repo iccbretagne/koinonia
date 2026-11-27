@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChartColumn, ClipboardList } from "lucide-react";
 import { StatusChip, buttonClasses } from "@/components/ui";
 import type { EventForm } from "@/modules/forms";
+import { paths } from "@/lib/paths";
 
 /**
  * Bloc « Formulaires » d'une page d'événement (spec 079, lot 3) : les formulaires publiés
@@ -23,7 +24,7 @@ export default function EventFormsBlock({ forms, manage = false }: { readonly fo
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {manage && (
-                <Link href={`/formulaires/${f.id}?onglet=resultats`} className={buttonClasses("ghost", "sm")}>
+                <Link href={paths.formulaires.form(f.id, { onglet: "resultats" })} className={buttonClasses("ghost", "sm")}>
                   <ChartColumn aria-hidden="true" className="size-4" strokeWidth={1.75} />
                   Voir les résultats
                 </Link>

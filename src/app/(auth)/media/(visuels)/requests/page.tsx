@@ -8,6 +8,7 @@ import Alert from "@/components/ui/Alert";
 import { buttonClasses } from "@/components/ui";
 import StatusChip from "@/components/ui/StatusChip";
 import { VisuelQueue } from "@/components/requests/TeamQueues";
+import { paths } from "@/lib/paths";
 
 export default async function MediaRequestsPage() {
   const session = await requireAuth();
@@ -21,7 +22,7 @@ export default async function MediaRequestsPage() {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader title="Demandes visuels" />
-        <Alert tone="warning" action={<Link href="/admin/departments/functions" className={buttonClasses("secondary", "sm")}>Configurer les fonctions</Link>}>
+        <Alert tone="warning" action={<Link href={paths.admin.departmentFunctions()} className={buttonClasses("secondary", "sm")}>Configurer les fonctions</Link>}>
           Aucun département n&apos;est configuré comme <strong>Production Média</strong>.
         </Alert>
       </div>

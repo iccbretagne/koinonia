@@ -13,6 +13,7 @@ import RequestActions from "./RequestActions";
 import DeleteItemButton from "@/components/DeleteItemButton";
 import CareItemFooter from "../../CareItemFooter";
 import { PageHeader, StatusChip, type StatusTone } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "En attente",
@@ -140,13 +141,13 @@ export default async function CareRequestDetailPage({
         <div className="mt-4 flex justify-end">
           <DeleteItemButton
             endpoint={`/api/care/requests/${id}`}
-            redirectTo="/care"
+            redirectTo={paths.care()}
             extraMessage={
               deletionInfo.hasAgendaEntry ? "Le rendez-vous planifié dans l'agenda sera aussi supprimé." : undefined
             }
             blockedBy={
               deletionInfo.followUpId
-                ? [{ label: "Suivi de nouveau converti lié", href: `/care/followups/${deletionInfo.followUpId}` }]
+                ? [{ label: "Suivi de nouveau converti lié", href: paths.care.followup(deletionInfo.followUpId) }]
                 : []
             }
           />

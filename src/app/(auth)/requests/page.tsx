@@ -10,6 +10,7 @@ import RequestsList from "./RequestsList";
 import { loadMyRequests } from "./my-requests-data";
 import { appointmentStatus } from "./request-display";
 import { listMyRequests, REJECT_REASON_LABELS } from "@/modules/care";
+import { paths } from "@/lib/paths";
 
 export default async function MyRequestsPage() {
   const session = await requireAuth();
@@ -45,12 +46,12 @@ export default async function MyRequestsPage() {
         actions={
           <>
             {showAccountingLink && (
-              <Link href="/accounting/requests" className={buttonClasses("secondary")}>
+              <Link href={paths.accounting.requests()} className={buttonClasses("secondary")}>
                 <Wallet aria-hidden="true" className="size-4" strokeWidth={1.75} />
                 Demandes comptables
               </Link>
             )}
-            <Link href="/requests/new" className={buttonClasses("primary")}>
+            <Link href={paths.requests.newRequest()} className={buttonClasses("primary")}>
               <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
               Nouvelle demande
             </Link>

@@ -17,6 +17,7 @@ import { templatesPayload } from "./pilotage";
 import { parisDayKey, utcDayKey } from "../_components/display";
 import { useApi } from "../_components/use-api";
 import type { CampaignOverviewData } from "./types";
+import { paths } from "@/lib/paths";
 
 type Campaign = CampaignOverviewData["campaign"];
 
@@ -103,7 +104,7 @@ export default function SettingsTab({ campaign }: { readonly campaign: Campaign 
           Questionnaires, questions, destinataires et répondants se mettent à jour en réimportant la définition JSON. Aucune réponse
           saisie n&apos;est perdue : une modification qui en ferait perdre est refusée.
         </p>
-        <Link href={`/collectes/${campaign.id}/import`} className={`${buttonClasses("secondary")} self-start`}>
+        <Link href={paths.collectes.importInto(campaign.id)} className={`${buttonClasses("secondary")} self-start`}>
           <FileJson aria-hidden="true" className="size-4" strokeWidth={1.75} />
           Mettre à jour la définition
         </Link>

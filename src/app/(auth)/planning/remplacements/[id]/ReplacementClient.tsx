@@ -11,6 +11,7 @@ import StatusChip from "@/components/ui/StatusChip";
 import { serviceStatusDescriptor } from "@/components/ui/status";
 import { useToast } from "@/components/ui/Toast";
 import { buttonClasses } from "@/components/ui/button-classes";
+import { paths } from "@/lib/paths";
 
 /**
  * Écran du service à remplacer (spec 061), conçu mobile d'abord : le STAR désisté et son message,
@@ -201,7 +202,7 @@ export default function ReplacementClient({ initial }: { readonly initial: Repla
           )}
           {canReplace && (
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
-              <Link href={`/dashboard?event=${event.id}&dept=${department.id}`} className={buttonClasses("ghost")}>
+              <Link href={paths.dashboard({ event: event.id, dept: department.id })} className={buttonClasses("ghost")}>
                 Ouvrir la grille
               </Link>
               <Button type="button" variant="secondary" onClick={() => setConfirmClose(true)} disabled={pendingMemberId !== null}>

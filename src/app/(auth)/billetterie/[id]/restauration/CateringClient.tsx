@@ -13,6 +13,7 @@ import NetworkBar from "../_offline/NetworkBar";
 import { useFieldSync } from "../_offline/use-field-sync";
 
 import type { DeliveryFeedback } from "../_offline/sync-feedback";
+import { paths } from "@/lib/paths";
 
 type Item = CateringSnapshot["items"][number];
 type View = "distribution" | "menu" | "stock";
@@ -204,12 +205,12 @@ export default function CateringClient({ eventId, menus, hasLabels }: { readonly
   return (
     <div className="mx-auto max-w-xl space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <Link href={`/billetterie/${eventId}`} className={`${buttonClasses("ghost", "sm")} min-w-0`}>
+        <Link href={paths.billetterie.event(eventId)} className={`${buttonClasses("ghost", "sm")} min-w-0`}>
           <ArrowLeft aria-hidden="true" className="size-4 shrink-0" strokeWidth={1.75} />
           <span className="truncate">Retour à {snapshot?.event.title ?? "l'événement"}</span>
         </Link>
         {hasLabels && (
-          <Link href={`/billetterie/${eventId}/etiquettes`} className={buttonClasses("secondary", "md")}>
+          <Link href={paths.billetterie.etiquettes(eventId)} className={buttonClasses("secondary", "md")}>
             <Printer className="size-4" aria-hidden="true" /> Imprimer les étiquettes
           </Link>
         )}

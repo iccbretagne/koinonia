@@ -16,6 +16,7 @@ import { type OpeningClosingData } from "./OpeningClosingManager";
 import { type AnnouncementSheetData } from "./AnnouncementSheetManager";
 import PreparationBanner from "./PreparationBanner";
 import { useSnapshotExport } from "@/components/useSnapshotExport";
+import { paths } from "@/lib/paths";
 
 interface MemberItem {
   id: string;
@@ -148,7 +149,7 @@ export default function StarViewClient({ eventId }: Props) {
   const gapDepartments = data.departments.filter((d) => gapIds.has(d.id));
   const ministries = groupByMinistry(data.departments);
   const gapAction: GapAction = {
-    href: (deptId) => `/dashboard?dept=${deptId}&event=${eventId}`,
+    href: (deptId) => paths.dashboard({ dept: deptId, event: eventId }),
     verb: data.canEditPlanning ? "Planifier" : "Voir",
     icon: data.canEditPlanning ? CalendarPlus : Eye,
   };

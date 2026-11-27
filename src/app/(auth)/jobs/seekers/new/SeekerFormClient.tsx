@@ -9,6 +9,7 @@ import Checkbox from "@/components/ui/Checkbox";
 import { fieldLabelClasses } from "@/components/ui";
 import JobFormActions from "../../JobFormActions";
 import JobContactFields from "../../JobContactFields";
+import { paths } from "@/lib/paths";
 
 interface SeekerInitial {
   id: string;
@@ -87,7 +88,7 @@ export default function SeekerFormClient({
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Erreur lors de la publication"); return; }
-      router.push(`/jobs/seekers/${data.id}`);
+      router.push(paths.jobs.seeker(data.id));
     } finally {
       setSaving(false);
     }

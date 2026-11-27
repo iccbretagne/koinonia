@@ -22,6 +22,7 @@ import type { SiteView } from "@/modules/ticketing";
 import { useApi } from "../../use-api";
 import DomainCard from "./DomainCard";
 import type { DomainView } from "@/modules/ticketing";
+import { paths } from "@/lib/paths";
 
 function Card({ title, children }: { readonly title: string; readonly children: ReactNode }) {
   return (
@@ -189,7 +190,7 @@ export default function SiteTab({
             <Select label="Texte" value={doc.theme.fonts.body} options={SITE_FONTS.map((f) => ({ value: f, label: SITE_FONT_LABEL[f] }))} onChange={(e) => edit((d) => void (d.theme.fonts.body = e.target.value as (typeof SITE_FONTS)[number]))} />
           </Card>
           <Card title="Images et fond">
-            <Link href={`/billetterie/${eventId}/images`} className={`${buttonClasses("secondary")} self-start`}>
+            <Link href={paths.billetterie.images(eventId)} className={`${buttonClasses("secondary")} self-start`}>
               <Images aria-hidden="true" className="size-4" strokeWidth={1.75} />
               Déposer plusieurs images
             </Link>

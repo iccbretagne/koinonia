@@ -7,6 +7,7 @@ import { listMyAssignments } from "@/modules/campaigns";
 import { ASSIGNMENT_STATUS_LABELS } from "@/modules/campaigns/schemas";
 import { ASSIGNMENT_STATUS_TONES } from "./_components/display";
 import ManagedCampaigns from "./_components/ManagedCampaigns";
+import { paths } from "@/lib/paths";
 
 export const metadata: Metadata = { title: "Questionnaires" };
 
@@ -46,7 +47,7 @@ export default async function CampaignsPage() {
               return (
                 <li key={a.id}>
                   <Link
-                    href={`/collectes/r/${a.id}`}
+                    href={paths.collectes.reponse(a.id)}
                     className="flex min-h-11 items-center gap-3 rounded-card border border-line bg-surface p-4 transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                   >
                     <div className="min-w-0 flex-1">

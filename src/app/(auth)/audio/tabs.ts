@@ -2,6 +2,7 @@ import { requireChurchPermission } from "@/lib/auth";
 import { requireAudioAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import type { SpaceCard } from "@/lib/media-space";
+import { paths } from "@/lib/paths";
 
 export interface AudioTab {
   href: string;
@@ -19,9 +20,9 @@ export async function getAccessibleAudioTabs(churchId: string): Promise<AudioTab
   const canManage = await hasAccess(() => requireAudioAccess("audio:manage", churchId));
 
   return [
-    canListen && { href: "/audio/ecouter", label: "(re)Écouter" },
-    canProduce && { href: "/audio/production", label: "Production" },
-    canManage && { href: "/audio/parametres", label: "Paramètres" },
+    canListen && { href: paths.audio.ecouter(), label: "(re)Écouter" },
+    canProduce && { href: paths.audio.production(), label: "Production" },
+    canManage && { href: paths.audio.parametres(), label: "Paramètres" },
   ].filter((t): t is AudioTab => Boolean(t));
 }
 
@@ -53,18 +54,18 @@ export async function getAudioSpaceCards(churchId: string): Promise<SpaceCard[]>
         publishedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
       },
     });
-    cards.push({ href: "/audio/ecouter", title: "(re)Écouter", stats: [`${publishedCount} ${publishedCount > 1 ? "publiés" : "publié"} (30 j)`] });
+    cards.push({ href: paths.audio.ecouter(), title: "(re)Écouter", stats: [`${publishedCount} ${publishedCount > 1 ? "publiés" : "publié"} (30 j)`] });
   }
 
   if (canProduce) {
     const pendingCount = await prisma.audioService.count({
       where: { churchId, status: { in: ["DRAFT", "PENDING_REVIEW"] } },
     });
-    cards.push({ href: "/audio/production", title: "Production", stats: [`${pendingCount} en attente`] });
+    cards.push({ href: paths.audio.production(), title: "Production", stats: [`${pendingCount} en attente`] });
   }
 
   if (canManage) {
-    cards.push({ href: "/audio/parametres", title: "Paramètres" });
+    cards.push({ href: paths.audio.parametres(), title: "Paramètres" });
   }
 
   return cards;

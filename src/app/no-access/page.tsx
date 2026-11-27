@@ -7,6 +7,7 @@ import { Clock, LockKeyhole } from "lucide-react";
 import Alert from "@/components/ui/Alert";
 import { buttonClasses } from "@/components/ui/button-classes";
 import NoAccessClient from "./NoAccessClient";
+import { paths } from "@/lib/paths";
 
 export default async function NoAccessPage() {
   const session = await auth();
@@ -16,7 +17,7 @@ export default async function NoAccessPage() {
   }
 
   if (session.user.isSuperAdmin || session.user.churchRoles.length > 0) {
-    redirect("/dashboard");
+    redirect(paths.dashboard());
   }
 
   const allChurches = await prisma.church.findMany({

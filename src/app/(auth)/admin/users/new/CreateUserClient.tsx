@@ -3,6 +3,7 @@
 import { SubmitEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, Button, FilterChip, Input, Select } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 interface Member {
   id: string;
@@ -72,7 +73,7 @@ export default function CreateUserClient({ churchId, availableMembers, departmen
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Erreur");
 
-      router.push("/admin/users");
+      router.push(paths.admin.users());
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur lors de la création");
@@ -162,7 +163,7 @@ export default function CreateUserClient({ churchId, availableMembers, departmen
         >
           {loading ? "Création…" : "Créer l'utilisateur"}
         </Button>
-        <Button type="button" variant="secondary" onClick={() => router.push("/admin/users")}>
+        <Button type="button" variant="secondary" onClick={() => router.push(paths.admin.users())}>
           Annuler
         </Button>
       </div>

@@ -21,6 +21,7 @@ import ManagersEditor, { type Manager } from "./ManagersEditor";
 import Attendance from "./Attendance";
 import Results from "./Results";
 import type { FormResults } from "@/modules/forms";
+import { paths } from "@/lib/paths";
 
 export type EditorTab = "construction" | "reglages" | "apercu" | "reponses" | "presence" | "resultats";
 
@@ -804,7 +805,7 @@ export default function FormEditor({
   const { call, busy } = useApi();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const path = `/f/${churchSlug}/${form.slug}`;
-  const base = `/formulaires/${form.id}`;
+  const base = paths.formulaires.form(form.id);
   const hasSessions = form.sessions.length > 0;
 
   if (!manage) {
@@ -871,7 +872,7 @@ export default function FormEditor({
           disabled={busy}
           onClick={async () => {
             const copy = await call<{ id: string }>(`/api/forms/${form.id}/duplicate`, "POST", {}, "Copie créée");
-            if (copy) router.push(`/formulaires/${copy.id}`);
+            if (copy) router.push(paths.formulaires.form(copy.id));
           }}
         >
           <Copy className="size-4" aria-hidden="true" /> Dupliquer le formulaire
@@ -912,7 +913,7 @@ export default function FormEditor({
         onConfirm={async () => {
           const done = await call(`/api/forms/${form.id}`, "DELETE", undefined, "Formulaire supprimé");
           setConfirmDelete(false);
-          if (done) router.push("/formulaires");
+          if (done) router.push(paths.formulaires());
         }}
       />
     </div>

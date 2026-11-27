@@ -18,6 +18,7 @@ import { INSTALL_PATH, type InstallTarget } from "@/lib/install/detect";
 import { promptInstall } from "@/lib/install/prompt-store";
 import { useInstallTarget } from "@/lib/install/use-install-target";
 import { qrPath } from "@/lib/qr";
+import { paths } from "@/lib/paths";
 
 const SHARE_TEXT = "Installe Koinonia sur ton téléphone en 1 minute :";
 
@@ -136,7 +137,7 @@ function MainSection({ target, url, signedIn }: { readonly target: InstallTarget
           title="Koinonia est déjà installée sur cet appareil."
           action={
             signedIn ? (
-              <Link href="/profile/notifications" className={`${buttonClasses("ghost", "sm")} -ml-3`}>
+              <Link href={paths.profile.notifications()} className={`${buttonClasses("ghost", "sm")} -ml-3`}>
                 Activer les notifications
               </Link>
             ) : undefined

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FileDown } from "lucide-react";
 import { Button, EmptyState, Input, SearchInput, Select, StatusChip, buttonClasses, controlClasses, useToast } from "@/components/ui";
 import Tabs, { TabPanel } from "@/components/ui/Tabs";
+import { paths } from "@/lib/paths";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -327,7 +328,7 @@ export default function ReportsClient({ events, churchId }: Props) {
                     {status === "empty" && <StatusChip tone="warning">Vide</StatusChip>}
                     {status === "none" && <StatusChip>Aucun compte rendu</StatusChip>}
                     <Link
-                      href={`/admin/events/${event.id}/report`}
+                      href={paths.admin.eventReport(event.id)}
                       className={buttonClasses("secondary", "sm")}
                     >
                       {status === "none" ? "Saisir le compte rendu" : "Ouvrir le compte rendu"}
@@ -528,7 +529,7 @@ export default function ReportsClient({ events, churchId }: Props) {
                         <tr key={e.id} className="hover:bg-surface-sunken">
                           <td className="px-4 py-2">
                             <Link
-                              href={`/admin/events/${e.id}/report`}
+                              href={paths.admin.eventReport(e.id)}
                               className="rounded-control font-semibold text-brand-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                             >
                               {e.title}

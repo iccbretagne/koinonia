@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { paths } from "@/lib/paths";
 
 const PROFILE_SELECT = { id: true, churchId: true, responsibleForChurch: { select: { id: true } } } as const;
 
@@ -12,7 +13,7 @@ const PROFILE_SELECT = { id: true, churchId: true, responsibleForChurch: { selec
 export async function requirePastoralActiveChurch() {
   const session = await auth();
   if (!session?.user) redirect("/");
-  if (!(session.user.pastoralChurchIds ?? []).length) redirect("/dashboard");
+  if (!(session.user.pastoralChurchIds ?? []).length) redirect(paths.dashboard());
 
   const currentChurchId = await getCurrentChurchId(session);
 
@@ -32,7 +33,7 @@ export async function requirePastoralActiveChurch() {
       select: PROFILE_SELECT,
     });
   }
-  if (!profile) redirect("/pastoral");
+  if (!profile) redirect(paths.pastoral());
 
   const activeChurchId = currentChurchId ?? profile.responsibleForChurch?.id ?? profile.churchId;
   return { session, activeChurchId };

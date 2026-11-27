@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, CalendarHeart, Plus } from "lucide-react";
 import { EmptyState, PageHeader, StatusChip, buttonClasses, type StatusTone } from "@/components/ui";
 import RequestForm from "./RequestForm";
+import { paths } from "@/lib/paths";
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "En attente",
@@ -52,7 +53,7 @@ export default async function CareRequestPage({
         <PageHeader
           title="Mes demandes de RDV"
           actions={
-            <Link href="/care/request?new=1" className={buttonClasses("primary")}>
+            <Link href={paths.care.request({ new: "1" })} className={buttonClasses("primary")}>
               <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
               Demander un rendez-vous
             </Link>
@@ -113,7 +114,7 @@ export default async function CareRequestPage({
     : "";
 
   // Retour vers l'écran d'où l'on vient : le choix « Nouvelle demande », ou la liste des RDV.
-  const backHref = fromRequests ? "/requests/new" : "/care/request";
+  const backHref = fromRequests ? paths.requests.newRequest() : paths.care.request();
   const backLabel = fromRequests ? "Nouvelle demande" : "Mes demandes de RDV";
 
   return (

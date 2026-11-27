@@ -7,6 +7,7 @@ import { getSignedStreamUrl } from "@/modules/storage";
 import { listOutgoingShares } from "@/modules/audio";
 import AudioSettingsClient from "./AudioSettingsClient";
 import LibrarySharingClient from "./LibrarySharingClient";
+import { paths } from "@/lib/paths";
 
 export default async function AudioSettingsPage() {
   const session = await requireAuth();
@@ -41,7 +42,7 @@ export default async function AudioSettingsPage() {
         Le département de captation audio se configure désormais parmi les{" "}
         fonctions départementales (fonction « Captation Audio »).
       </p>
-      <Link href="/admin/departments/functions" className={`${buttonClasses("secondary", "sm")} mb-6`}>
+      <Link href={paths.admin.departmentFunctions()} className={`${buttonClasses("secondary", "sm")} mb-6`}>
         Configurer les fonctions départementales
       </Link>
       <AudioSettingsClient

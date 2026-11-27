@@ -9,6 +9,7 @@ import Alert from "@/components/ui/Alert";
 import JobFormActions from "../../../JobFormActions";
 import FreelanceRateFields from "../../FreelanceRateFields";
 import JobContactFields from "../../../JobContactFields";
+import { paths } from "@/lib/paths";
 
 type Modality = "REMOTE" | "ONSITE" | "HYBRID";
 
@@ -77,7 +78,7 @@ export default function MissionFormClient({
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Erreur lors de la publication"); return; }
-      router.push(`/jobs/freelance/missions/${data.id}`);
+      router.push(paths.jobs.mission(data.id));
     } finally {
       setSaving(false);
     }

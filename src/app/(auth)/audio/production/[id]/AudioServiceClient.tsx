@@ -8,6 +8,7 @@ import { Button, ConfirmModal, Input, buttonClasses } from "@/components/ui";
 import FileInput from "@/components/ui/FileInput";
 import SequenceListEditor, { type SourceSummary, type SegmentSummary } from "./SequenceListEditor";
 import PublishModal, { type PublishSegmentSummary } from "./PublishModal";
+import { paths } from "@/lib/paths";
 
 // Doit correspondre à AUDIO_UPLOAD_PART_SIZE (src/modules/audio/services/upload.ts) — dupliqué
 // ici plutôt qu'importé pour ne pas tirer le SDK S3 (modules/storage) dans le bundle client.
@@ -276,7 +277,7 @@ export default function AudioServiceClient({
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? "Échec de la suppression");
       }
-      router.push("/audio/production");
+      router.push(paths.audio.production());
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : "Erreur inconnue");
       setDeleting(false);
@@ -302,7 +303,7 @@ export default function AudioServiceClient({
 
   return (
     <div className="space-y-6">
-      <Link href="/audio/production" className={buttonClasses("ghost", "sm")}>
+      <Link href={paths.audio.production()} className={buttonClasses("ghost", "sm")}>
         <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
         Retour à la file d&apos;attente
       </Link>

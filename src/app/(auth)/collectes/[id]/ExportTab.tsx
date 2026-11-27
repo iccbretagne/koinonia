@@ -7,6 +7,7 @@ import { Alert, Button, Checkbox, Input, Modal, StatusChip, buttonClasses } from
 import { parisDayKey, utcDayKey } from "../_components/display";
 import { useApi } from "../_components/use-api";
 import type { CampaignFormData, CampaignOverviewData } from "./types";
+import { paths } from "@/lib/paths";
 
 type Campaign = CampaignOverviewData["campaign"];
 
@@ -141,7 +142,7 @@ function DuplicateModal({ campaign, onClose }: { readonly campaign: Campaign; re
       },
       "Campagne dupliquée en brouillon"
     );
-    if (created?.campaignId) router.push(`/collectes/${created.campaignId}`);
+    if (created?.campaignId) router.push(paths.collectes.campaign(created.campaignId));
   }
 
   return (

@@ -15,6 +15,7 @@ import CareTabs from "./CareTabs";
 import PublicFormBanner from "@/components/PublicFormBanner";
 import { BarChart3, Settings } from "lucide-react";
 import { Alert, PageHeader, buttonClasses } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 /**
  * Espace « Suivi pastoral » (spec 052) — deux onglets : Rendez-vous (ex-`/agenda/requests`,
@@ -105,13 +106,13 @@ export default async function CarePage() {
           (access.canOverview || access.canQualify) && (
             <>
               {access.canOverview && (
-                <Link href="/care/stats" className={buttonClasses("ghost", "sm")}>
+                <Link href={paths.care.stats()} className={buttonClasses("ghost", "sm")}>
                   <BarChart3 aria-hidden="true" className="size-4" strokeWidth={1.75} />
                   Statistiques
                 </Link>
               )}
               {access.canQualify && (
-                <Link href="/care/parametres" className={buttonClasses("ghost", "sm")}>
+                <Link href={paths.care.parametres()} className={buttonClasses("ghost", "sm")}>
                   <Settings aria-hidden="true" className="size-4" strokeWidth={1.75} />
                   Paramètres
                 </Link>

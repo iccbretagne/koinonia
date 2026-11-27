@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { buttonClasses, statusToneClasses } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 interface Profile { id: string; name: string; role: string }
 interface EntryRequest { id: string; firstName: string; lastName: string; qualificationNote: string | null }
@@ -88,8 +89,8 @@ export default function AgendaCalendar({ profiles, entries, weekStart }: Props) 
   return (
     <div>
       <WeekNav
-        prevHref={`/agenda?week=${toLocalISO(prevWeek)}`}
-        nextHref={`/agenda?week=${toLocalISO(nextWeek)}`}
+        prevHref={paths.agenda({ week: toLocalISO(prevWeek) })}
+        nextHref={paths.agenda({ week: toLocalISO(nextWeek) })}
         label={`${fmtDate(days[0])} — ${fmtDate(days[6])}`}
       />
 
@@ -102,7 +103,7 @@ export default function AgendaCalendar({ profiles, entries, weekStart }: Props) 
                 <h2 className="font-display text-[15px] font-semibold text-ink">{profile.name}</h2>
                 <p className="text-xs text-ink-muted">{ROLE_LABELS[profile.role] ?? profile.role}</p>
               </div>
-              <Link href={`/agenda/${profile.id}`} className={`${buttonClasses("ghost", "sm")} shrink-0`}>
+              <Link href={paths.agenda.profile(profile.id)} className={`${buttonClasses("ghost", "sm")} shrink-0`}>
                 Voir l&apos;agenda
                 <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
               </Link>

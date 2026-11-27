@@ -17,6 +17,7 @@ import ExportTab from "./ExportTab";
 import CommunicationModal, { type CommunicationPreset } from "./CommunicationModal";
 import ReadinessPanel from "./ReadinessPanel";
 import { readinessFailures, type ReadinessLike } from "./pilotage";
+import { paths } from "@/lib/paths";
 
 const TAB_LABELS: Record<CampaignTab, string> = {
   suivi: "Suivi",
@@ -80,7 +81,7 @@ export default function CampaignView({
   const [communication, setCommunication] = useState<CommunicationPreset | null | undefined>(undefined);
   const failures = pending === "open" ? readinessFailures(readiness) : [];
   const { campaign } = overview;
-  const base = `/collectes/${campaign.id}`;
+  const base = paths.collectes.campaign(campaign.id);
 
   let action: StatusAction = "reopen";
   if (campaign.status === "DRAFT") action = "open";

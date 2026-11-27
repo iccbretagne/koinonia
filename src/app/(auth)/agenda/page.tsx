@@ -6,6 +6,7 @@ import PublicUrlBanner from "./PublicUrlBanner";
 import Link from "next/link";
 import { CalendarClock, Plus } from "lucide-react";
 import { Alert, PageHeader, buttonClasses } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 function toLocalISO(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -57,11 +58,11 @@ export default async function AgendaPage({
         title="Agenda pastoral"
         actions={
           <>
-            <Link href="/agenda/schedule" className={buttonClasses("secondary")}>
+            <Link href={paths.agenda.schedule()} className={buttonClasses("secondary")}>
               <CalendarClock aria-hidden="true" className="size-4" strokeWidth={1.75} />
               Planifier les RDV
             </Link>
-            <Link href="/agenda/new" className={buttonClasses("primary")}>
+            <Link href={paths.agenda.newEntry()} className={buttonClasses("primary")}>
               <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
               Ajouter à l&apos;agenda
             </Link>
@@ -74,7 +75,7 @@ export default async function AgendaPage({
           tone="warning"
           title="Aucun profil pastoral configuré"
           action={
-            <Link href="/admin/pastoral-profiles" className={buttonClasses("secondary", "sm")}>
+            <Link href={paths.admin.pastoralProfiles()} className={buttonClasses("secondary", "sm")}>
               Configurer les profils
             </Link>
           }

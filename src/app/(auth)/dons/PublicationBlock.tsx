@@ -7,6 +7,7 @@ import { StatusChip } from "@/components/ui";
 import { buttonClasses } from "@/components/ui/button-classes";
 import Switch from "@/components/ui/Switch";
 import { publicationStatus } from "./settings-state";
+import { paths } from "@/lib/paths";
 
 /**
  * Publication de la page de dons, en tête de l'écran (spec 067). La pastille dit ce que voient
@@ -58,7 +59,7 @@ export default function PublicationBlock({
           Voir la page publique
         </a>
         {savedEnabled ? (
-          <Link href="/dons/slide" className={buttonClasses("secondary")}>
+          <Link href={paths.dons.slide()} className={buttonClasses("secondary")}>
             <Presentation aria-hidden="true" className="size-4" />
             Slide de projection
           </Link>

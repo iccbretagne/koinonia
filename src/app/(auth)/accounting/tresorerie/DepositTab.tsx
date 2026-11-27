@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Alert, Button, Checkbox, EmptyState, Input, Select, useToast } from "@/components/ui";
 import type { AccountView, ChequeInHand } from "@/modules/treasury";
 import { api, errorText, euro, frDate, isoToday, toNumber } from "./format";
+import { paths } from "@/lib/paths";
 
 /**
  * Remise au compte commun (spec 076) : sortie de la caisse avec la référence du bordereau ; les
@@ -46,7 +47,7 @@ export default function DepositTab({ accounts, cheques }: { readonly accounts: A
         json: { accountId, date, ref, cashAmount, chequeIds: chosen.map((c) => c.id) },
       });
       toast.success("Remise enregistrée");
-      router.push("/accounting/tresorerie?onglet=registre");
+      router.push(paths.accounting.tresorerie({ onglet: "registre" }));
       router.refresh();
     } catch (err) {
       setError(errorText(err));

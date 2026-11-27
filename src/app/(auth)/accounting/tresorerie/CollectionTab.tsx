@@ -6,6 +6,7 @@ import { Plus, X } from "lucide-react";
 import { Alert, Button, IconButton, Input, Select, useToast } from "@/components/ui";
 import type { AccountView, CategoryView, PurposeView } from "@/modules/treasury";
 import { api, errorText, euro, frDate, isoToday, toNumber } from "./format";
+import { paths } from "@/lib/paths";
 
 interface Cheque {
   key: number;
@@ -108,7 +109,7 @@ export default function CollectionTab({
         },
       });
       toast.success("Collecte enregistrée");
-      router.push("/accounting/tresorerie?onglet=registre");
+      router.push(paths.accounting.tresorerie({ onglet: "registre" }));
       router.refresh();
     } catch (err) {
       setError(errorText(err));

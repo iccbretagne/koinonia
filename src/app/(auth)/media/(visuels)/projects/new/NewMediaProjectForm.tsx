@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { Alert, Textarea } from "@/components/ui";
+import { paths } from "@/lib/paths";
 
 export default function NewMediaProjectForm({ churchId }: { readonly churchId: string }) {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function NewMediaProjectForm({ churchId }: { readonly churchId: s
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erreur lors de la création");
-      router.push(`/media/projects/${json.id}`);
+      router.push(paths.media.project(json.id));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");
     } finally {
@@ -60,7 +61,7 @@ export default function NewMediaProjectForm({ churchId }: { readonly churchId: s
         <Button
           type="button"
           variant="secondary"
-          onClick={() => router.push("/media/projects")}
+          onClick={() => router.push(paths.media.projects())}
           disabled={loading}
         >
           Annuler

@@ -7,6 +7,7 @@ import Alert from "@/components/ui/Alert";
 import { buttonClasses } from "@/components/ui/button-classes";
 import StatusChip from "@/components/ui/StatusChip";
 import { SecretariatQueue } from "@/components/requests/TeamQueues";
+import { paths } from "@/lib/paths";
 
 export default async function SecretariatRequestsPage() {
   const session = await requireAuth();
@@ -20,7 +21,7 @@ export default async function SecretariatRequestsPage() {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader title="Traitement des demandes" />
-        <Alert tone="warning" action={<Link href="/admin/departments/functions" className={buttonClasses("secondary", "sm")}>Configurer les fonctions</Link>}>
+        <Alert tone="warning" action={<Link href={paths.admin.departmentFunctions()} className={buttonClasses("secondary", "sm")}>Configurer les fonctions</Link>}>
           Aucun département n&apos;est configuré comme <strong>Secrétariat</strong>.
         </Alert>
       </div>

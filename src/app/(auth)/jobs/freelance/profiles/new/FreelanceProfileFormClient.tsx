@@ -9,6 +9,7 @@ import Alert from "@/components/ui/Alert";
 import JobFormActions from "../../../JobFormActions";
 import FreelanceRateFields from "../../FreelanceRateFields";
 import JobContactFields from "../../../JobContactFields";
+import { paths } from "@/lib/paths";
 
 type Modality = "REMOTE" | "ONSITE" | "HYBRID";
 
@@ -80,7 +81,7 @@ export default function FreelanceProfileFormClient({
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Erreur lors de la publication"); return; }
-      router.push(`/jobs/freelance/profiles/${data.id}`);
+      router.push(paths.jobs.freelanceProfile(data.id));
     } finally {
       setSaving(false);
     }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import { rolePermissions } from "@/lib/registry";
 import MediaEventsList from "./MediaEventsList";
+import { paths } from "@/lib/paths";
 
 export default async function MediaEventsPage() {
   const session = await requireAuth();
@@ -61,7 +62,7 @@ export default async function MediaEventsPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-ink">Photos</h1>
         {canUpload && (
-          <Link href="/media/events/new">
+          <Link href={paths.media.newEvent()}>
             <Button>+ Nouvel événement photo</Button>
           </Link>
         )}
