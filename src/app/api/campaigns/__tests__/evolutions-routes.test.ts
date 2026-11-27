@@ -7,7 +7,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const session = { user: { id: "u1", isSuperAdmin: false, churchRoles: [{ churchId: "ch-campagne", role: "ADMIN" }] } };
 vi.mock("@/lib/auth", () => ({ requireAuth: vi.fn(async () => session) }));
-vi.mock("@/lib/rate-limit", () => ({ requireRateLimit: vi.fn(), getClientIp: () => "ip", RATE_LIMIT_MUTATION: {}, RATE_LIMIT_SENSITIVE: {} }));
+const requireRateLimit = vi.fn();
+vi.mock("@/lib/rate-limit", () => ({ requireRateLimit, getClientIp: () => "ip", RATE_LIMIT_MUTATION: {}, RATE_LIMIT_SENSITIVE: {} }));
 const logAudit = vi.fn();
 vi.mock("@/lib/audit", () => ({ logAudit }));
 const requireCampaignManager = vi.fn();
@@ -19,6 +20,8 @@ const svc = {
   exportCampaignDefinition: vi.fn(async () => ({ definition: { format: "koinonia.campaign", version: 1 }, omittedForms: 0, omittedRules: 0 })),
   reviewAssignment: vi.fn(async () => ({ status: "IN_PROGRESS" })),
   setAssignmentDueAt: vi.fn(async () => ({ assignmentDueAt: null, dueAt: null })),
+  getRespondentLink: vi.fn(async () => ({ link: "https://koinonia.test/collecte/x" })),
+  regenerateRespondentLink: vi.fn(),
 };
 vi.mock("@/modules/campaigns", () => svc);
 
@@ -26,6 +29,7 @@ const { POST: duplicate } = await import("../[id]/duplicate/route");
 const { GET: definition } = await import("../[id]/definition/route");
 const { POST: review } = await import("../assignments/[id]/review/route");
 const { PATCH: patchAssignment } = await import("../assignments/[id]/route");
+const { GET: respondentLink } = await import("../assignments/[id]/respondents/[rid]/link/route");
 
 const params = <T,>(p: T) => ({ params: Promise.resolve(p) });
 const json = (method: string, body: unknown) => new Request("http://localhost/x", { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -86,5 +90,20 @@ describe("revue et échéance", () => {
     await patchAssignment(json("PATCH", { dueAt: null }), params({ id: "as1" }));
     expect(svc.setAssignmentDueAt).toHaveBeenLastCalledWith(access, null);
     expect((await patchAssignment(json("PATCH", { dueAt: "demain" }), params({ id: "as1" }))).status).toBe(400);
+  });
+});
+
+describe("GET lien personnel d'un répondant", () => {
+  it("crée un jeton au besoin : débit limité comme les mutations, refus 429 sans jeton créé", async () => {
+    const res = await respondentLink(new Request("http://localhost/x"), params({ id: "as1", rid: "r1" }));
+    expect(res.status).toBe(200);
+    expect(requireRateLimit).toHaveBeenCalledWith(expect.any(Request), expect.objectContaining({ prefix: expect.stringContaining("campaigns-mut:") }));
+    const { ApiError } = await import("@/lib/api-utils");
+    requireRateLimit.mockImplementationOnce(() => {
+      throw new ApiError(429, "Trop de requêtes");
+    });
+    svc.getRespondentLink.mockClear();
+    expect((await respondentLink(new Request("http://localhost/x"), params({ id: "as1", rid: "r1" }))).status).toBe(429);
+    expect(svc.getRespondentLink).not.toHaveBeenCalled();
   });
 });

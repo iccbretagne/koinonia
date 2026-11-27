@@ -11046,7 +11046,7 @@
           "campaigns"
         ],
         "summary": "Lien personnel actif d'un répondant sans compte",
-        "description": "**Accès** : toute personne connectée — gestionnaire de la campagne.\n\nSpec 091. Pour composer un message individuel : renvoie le lien actif (créé s'il n'existe pas encore, sans révoquer un lien existant). Rien n'est envoyé. Répondant avec compte : 400. Consultation journalisée, sans le lien.",
+        "description": "**Accès** : toute personne connectée — gestionnaire de la campagne.\n\nSpec 091. Pour composer un message individuel : renvoie le lien actif (créé s'il n'existe pas encore, sans révoquer un lien existant). Rien n'est envoyé. Répondant avec compte : 400. Consultation journalisée, sans le lien. Débit limité comme les mutations (429).",
         "security": [
           {
             "session": []

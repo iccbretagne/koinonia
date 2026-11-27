@@ -5,10 +5,12 @@ import { limitMutation } from "../../../../_shared";
 
 type Params = { params: Promise<{ id: string; rid: string }> };
 
-export async function GET(_request: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
   try {
     const { id, rid } = await params;
     const access = await requireAssignmentManager(id);
+    // Crée un jeton s'il n'en existe pas : même limite de débit que les mutations.
+    limitMutation(request, access);
     return successResponse(await getRespondentLink(access, rid));
   } catch (error) {
     return errorResponse(error);

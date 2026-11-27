@@ -47,7 +47,11 @@ export default async function PreviewPage({ params }: Props) {
   if (!campaign || !form) notFound();
   const definition = storedFormDefinitionSchema.safeParse(form.definition);
   if (!definition.success) notFound();
-  const rules = ruleSchema.array().safeParse(campaign.rules ?? []);
+  // Règles relues une par une : une règle illisible est ignorée, les autres restent évaluées.
+  const rules = (Array.isArray(campaign.rules) ? campaign.rules : []).flatMap((r) => {
+    const parsed = ruleSchema.safeParse(r);
+    return parsed.success ? [parsed.data] : [];
+  });
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
@@ -75,7 +79,7 @@ export default async function PreviewPage({ params }: Props) {
           sections: definition.data.sections,
         }}
         assignments={form.assignments.map((a) => ({ id: a.id, key: a.key, label: a.label, dueAt: iso(a.dueAt) }))}
-        rules={rules.success ? rules.data : []}
+        rules={rules}
       />
     </div>
   );
