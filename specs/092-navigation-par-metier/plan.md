@@ -923,8 +923,11 @@ puis en recette ; le dépôt n'a pas de suite Playwright en CI et ce plan n'en a
 
 ## Questions ouvertes
 
-Rien dans la spec n'est bloquant ; les points suivants demandent un arbitrage du propriétaire. Le
-plan applique la valeur recommandée tant qu'elle n'est pas contredite.
+Rien dans la spec n'est bloquant. **Arbitrage du propriétaire (2026-11-27)** : les points 2, 3, 4
+et 5 sont tranchés selon le défaut (fusion `/evenements` au lot 4 ; pastoral + personnel +
+Administration ; ni pièces ni export ; toute l'église). Les autres défauts s'appliquent. Le point 13
+est remplacé : le harnais Playwright existe (PR #786, `docs/e2e.md`) ; chaque lot met à jour ses
+scénarios (`e2e/`) et la PR joint leur résultat.
 
 1. **Adresse des demandes comptables pour le Ministre et le Resp. département.** La spec les fait
    passer par Mes demandes, alors que l'écran (liste et détail) appartient à Finances ; un écran n'a
