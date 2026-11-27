@@ -6,9 +6,11 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.46.0] - 2026-11-27
+
 ### Ajouté
 
-- Campagnes de collecte : deux messages adressés à tout le groupe dans « Communication » — annonce de lancement (questionnaires et destinataires sollicités, échéance, lien vers les questionnaires) et clôture avec remerciements (avancement final, services ayant répondu). Modèles personnalisables par campagne. (Spec 091.)
+- Campagnes de collecte : deux messages adressés à tout le groupe dans « Communication » — annonce de lancement (questionnaires et destinataires sollicités, échéance, lien vers les questionnaires) et clôture avec remerciements (avancement final, services ayant répondu). Modèles personnalisables par campagne. (Spec 091, PR #783.)
 
 ## [v1.45.0] - 2026-11-27
 
