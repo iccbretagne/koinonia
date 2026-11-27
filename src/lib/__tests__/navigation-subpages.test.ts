@@ -1,7 +1,7 @@
 import { readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, it, expect } from "vitest";
-import { buildBreadcrumb, buildSpaces, type NavigationInput } from "../navigation";
+import { buildBreadcrumb, buildSpaces, parentLink, type NavigationInput } from "../navigation";
 
 /** Toutes les sections ouvertes : chaque page de `(auth)` trouve son espace. */
 const everything: NavigationInput = {
@@ -157,5 +157,19 @@ describe("navigation — sous-pages nommées", () => {
     });
     expect(buildBreadcrumb(star, "/planning/events").map((c) => c.label)).toEqual(["Agenda de l'église"]);
     expect(buildBreadcrumb(star, "/profile/assistants").map((c) => c.label)).toEqual(["Mon profil", "Assistants connectés"]);
+  });
+
+  it("retour mobile : toute page qui n'est pas une page de navigation a un chevron, même hors des espaces du rôle", () => {
+    const star = buildSpaces({ departments: [], configLinks: [], requestLinks: [], mediaLinks: [], hasMyPlanning: true, showStarEvents: true, homeHref: "/accueil" });
+    for (const sp of [spaces, star]) {
+      const navHrefs = new Set(sp.flatMap((s) => s.pages).map((p) => p.href.split("?")[0]));
+      const missing = pages.filter((p) => !navHrefs.has(p) && !["/accueil", "/absences", "/admin", "/admin/jobs", "/pastoral", "/dashboard"].includes(p) && !parentLink(sp, p, "d1"));
+      expect(missing).toEqual([]);
+    }
+    expect(parentLink(star, "/messages/x1")).toEqual({ href: "/accueil", label: "Accueil" });
+    expect(parentLink(star, "/mcp/autoriser")).toEqual({ href: "/accueil", label: "Accueil" });
+    expect(parentLink(star, "/pastoral/members")).toEqual({ href: "/pastoral", label: "Accueil" });
+    expect(parentLink(star, "/collectes/r/x1")).toEqual({ href: "/accueil", label: "Accueil" });
+    expect(parentLink(spaces, "/collectes/r/x1")).toEqual({ href: "/collectes", label: "Questionnaires" });
   });
 });

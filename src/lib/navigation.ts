@@ -743,7 +743,7 @@ export function parentLink(spaces: readonly NavSpace[], pathname: string, dept: 
   const found = findPage(spaces, active);
   if (!found) {
     const account = ACCOUNT_PAGES.find((p) => matchesPath(pathname, p.href) && pathname !== p.href);
-    return account ? { href: account.href, label: account.label } : null;
+    return account ? { href: account.href, label: account.label } : fallbackParent(spaces, pathname);
   }
   const { page } = found;
   if (found.space.key === "planning" && matchesPath(pathname, REPLACEMENT_PATH)) {
@@ -751,6 +751,27 @@ export function parentLink(spaces: readonly NavSpace[], pathname: string, dept: 
   }
   if (!page || !isDeeper(pathname, page)) return null;
   return { href: page.href, label: page.label };
+}
+
+/**
+ * Repli du retour mobile pour une page hors des espaces du rôle (lien reçu par notification,
+ * message de l'administration, vue pastorale…) : sans lui, ni fil d'Ariane ni chevron. Remonte au
+ * plus proche ancêtre qui est une page de navigation, sinon à l'accueil. `null` sur une page de
+ * premier niveau connue (accueil, page d'espace).
+ */
+function fallbackParent(spaces: readonly NavSpace[], pathname: string): { href: string; label: string } | null {
+  const path = pathOf(pathname);
+  const navPages = spaces.flatMap((s) => s.pages).filter((p) => !p.external);
+  const home = TODAY_HREF ?? "/accueil";
+  if (path === "/" || path === home || navPages.some((p) => pathOf(p.href) === path)) return null;
+  if (path.startsWith("/pastoral")) return path === "/pastoral" ? null : { href: "/pastoral", label: "Accueil" };
+  const segments = path.split("/").filter(Boolean);
+  for (let i = segments.length - 1; i > 0; i--) {
+    const ancestor = `/${segments.slice(0, i).join("/")}`;
+    const page = navPages.find((p) => pathOf(p.href) === ancestor) ?? ACCOUNT_PAGES.find((p) => p.href === ancestor);
+    if (page) return { href: page.href, label: page.label };
+  }
+  return { href: home, label: "Accueil" };
 }
 
 /* ── Barre du bas ─────────────────────────────────────────────────────────── */
