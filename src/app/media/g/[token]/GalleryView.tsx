@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 
 type Photo = {
   id: string;
@@ -36,7 +37,7 @@ export default function GalleryView({ data }: { readonly data: GalleryData }) {
   const { event, photos } = data;
 
   return (
-    <div className="min-h-screen bg-surface-sunken text-ink">
+    <div className="min-h-screen bg-bg text-ink">
       <header className="px-4 py-6 max-w-5xl mx-auto">
         <h1 className="text-2xl font-bold">{event?.name ?? "Galerie"}</h1>
         {event && <p className="text-ink-subtle text-sm mt-1">{formatDate(event.date)}</p>}
@@ -51,9 +52,11 @@ export default function GalleryView({ data }: { readonly data: GalleryData }) {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
             {photos.map((photo) => (
               <button
+                type="button"
                 key={photo.id}
+                aria-label={`Agrandir ${photo.filename}`}
                 onClick={() => setLightbox(photo)}
-                className="aspect-square bg-surface-sunken rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
+                className="aspect-square bg-surface-sunken rounded-control overflow-hidden hover:opacity-90 transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -74,18 +77,21 @@ export default function GalleryView({ data }: { readonly data: GalleryData }) {
           role="none"
           onClick={(e) => { if (!(e.target instanceof HTMLImageElement)) setLightbox(null); }}
         >
+          {/* Visionneuse toujours sombre : bouton clair sur le voile, hors IconButton (encre du thème). */}
           <button
-            className="absolute top-4 right-4 text-on-brand text-2xl hover:text-on-brand/70"
+            type="button"
+            aria-label="Fermer la photo"
+            className="absolute top-4 right-4 inline-flex size-11 items-center justify-center rounded-control text-on-brand hover:text-on-brand/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
             onClick={() => setLightbox(null)}
           >
-            ✕
+            <X aria-hidden="true" className="size-6" strokeWidth={1.75} />
           </button>
           <div className="max-w-3xl w-full">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={lightbox.thumbnailUrl}
               alt={lightbox.filename}
-              className="block w-full rounded-lg max-h-[80vh] object-contain"
+              className="block w-full rounded-card max-h-[80vh] object-contain"
             />
             <p className="text-on-brand/70 text-sm text-center mt-2">{lightbox.filename}</p>
           </div>

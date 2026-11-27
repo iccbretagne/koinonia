@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Camera, CameraOff, Printer } from "lucide-react";
+import { ArrowLeft, Camera, CameraOff, Printer } from "lucide-react";
 import { Alert, Button, Input, Modal, SearchInput, Select, StatusChip, buttonClasses, useToast } from "@/components/ui";
 import { newOpId, sha256Hex } from "@/lib/offline/hash";
 import { startScanner } from "@/lib/offline/scanner";
@@ -204,12 +204,13 @@ export default function CateringClient({ eventId, menus, hasLabels }: { readonly
   return (
     <div className="mx-auto max-w-xl space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <Link href={`/billetterie/${eventId}`} className="text-[13px] text-brand-text underline">
-          ← {snapshot?.event.title ?? "Événement"}
+        <Link href={`/billetterie/${eventId}`} className={`${buttonClasses("ghost", "sm")} min-h-11 min-w-0 sm:min-h-9`}>
+          <ArrowLeft aria-hidden="true" className="size-4 shrink-0" strokeWidth={1.75} />
+          <span className="truncate">Retour à {snapshot?.event.title ?? "l'événement"}</span>
         </Link>
         {hasLabels && (
           <Link href={`/billetterie/${eventId}/etiquettes`} className={buttonClasses("secondary", "md")}>
-            <Printer className="size-4" aria-hidden="true" /> Étiquettes
+            <Printer className="size-4" aria-hidden="true" /> Imprimer les étiquettes
           </Link>
         )}
       </div>

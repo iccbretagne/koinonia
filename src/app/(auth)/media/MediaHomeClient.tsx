@@ -24,7 +24,7 @@ export default function MediaHomeClient({
         cards={cards}
         headerAction={
           showShareButton ? (
-            <Button variant="secondary" size="sm" onClick={() => setDrawerOpen(true)}>
+            <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setDrawerOpen(true)}>
               Partages ({shareCount} lien{shareCount !== 1 ? "s" : ""} actif{shareCount !== 1 ? "s" : ""})
             </Button>
           ) : undefined

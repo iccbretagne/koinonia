@@ -39,8 +39,11 @@ export default function CreateEventButton() {
             value={form.capacity}
             onChange={(e) => setForm({ ...form, capacity: e.target.value })}
           />
+          {(!form.title || !form.startsAt || !form.endsAt || !form.capacity) && (
+            <p className="text-[13px] text-ink-muted">Renseignez le titre, les dates et la jauge pour créer le brouillon.</p>
+          )}
           <Button type="button" disabled={busy || !form.title || !form.startsAt || !form.endsAt || !form.capacity} onClick={submit}>
-            {busy ? "Création…" : "Créer le brouillon"}
+            {busy ? "Création en cours…" : "Créer le brouillon"}
           </Button>
         </div>
       </Modal>

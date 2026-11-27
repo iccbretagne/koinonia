@@ -3,11 +3,12 @@
 import { useState, type ReactNode } from "react";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Button, Checkbox, Input, Select, Textarea, useToast } from "@/components/ui";
+import { Button, Checkbox, IconButton, Input, Select, Textarea, fieldLabelClasses, useToast } from "@/components/ui";
 import type { EventDetail } from "@/modules/ticketing";
 import { AGE_GROUPS, AGE_GROUP_LABEL, EVENT_STATUSES, EVENT_STATUS_LABEL } from "@/modules/ticketing/schemas";
 import type { TicketingAgeGroup } from "@/generated/prisma/enums";
 import { useApi } from "../../use-api";
+import { FILE_INPUT } from "./file-input-classes";
 
 /** `Date` ou ISO → valeur d'un champ `datetime-local` (heure locale). */
 export function toLocalInput(value: Date | string | null | undefined): string {
@@ -32,7 +33,7 @@ function Section({
 }) {
   return (
     <details open={open} className="group rounded-card border border-line bg-surface">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-card px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus [&::-webkit-details-marker]:hidden">
         <span>
           <span className="block font-semibold text-ink">{title}</span>
           {summary && <span className="block text-[13px] text-ink-muted">{summary}</span>}
@@ -169,10 +170,10 @@ export default function SettingsTab({ event }: { readonly event: EventDetail }) 
           hint="Seul un événement « Inscriptions ouvertes » accepte des inscriptions. « Clôturé » arrête les rôles de l'équipe."
         />
         <div className="space-y-1">
-          <p className="text-[13px] font-medium text-ink">Affiche</p>
-          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => uploadPoster(e.target.files?.[0])} className="text-[13px]" />
+          <label htmlFor={`${event.id}-poster`} className={fieldLabelClasses}>Affiche</label>
+          <input id={`${event.id}-poster`} type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => uploadPoster(e.target.files?.[0])} className={FILE_INPUT} />
           {event.posterKey && (
-            <Button type="button" size="sm" variant="ghost" onClick={() => call(`/api/ticketing/events/${event.id}/poster`, "DELETE", undefined, "Affiche retirée")}>
+            <Button type="button" size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => call(`/api/ticketing/events/${event.id}/poster`, "DELETE", undefined, "Affiche retirée")}>
               Retirer l&apos;affiche
             </Button>
           )}
@@ -255,13 +256,11 @@ export default function SettingsTab({ event }: { readonly event: EventDetail }) 
               <Input label={`Question ${i + 1}`} value={q.label} onChange={(e) => setQuestions((l) => l.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} />
             </div>
             <Toggle label="Obligatoire" checked={q.required} onChange={(v) => setQuestions((l) => l.map((x, j) => (j === i ? { ...x, required: v } : x)))} />
-            <Button type="button" variant="ghost" size="sm" aria-label="Retirer la question" onClick={() => setQuestions((l) => l.filter((_, j) => j !== i))}>
-              <Trash2 className="size-4" aria-hidden="true" />
-            </Button>
+            <IconButton icon={Trash2} aria-label={`Retirer la question ${i + 1}`} onClick={() => setQuestions((l) => l.filter((_, j) => j !== i))} />
           </div>
         ))}
         {questions.length < 10 && (
-          <Button type="button" variant="secondary" size="sm" onClick={() => setQuestions((l) => [...l, { id: `q${Date.now().toString(36)}`, label: "", required: false }])}>
+          <Button type="button" variant="secondary" onClick={() => setQuestions((l) => [...l, { id: `q${Date.now().toString(36)}`, label: "", required: false }])}>
             <Plus className="size-4" aria-hidden="true" /> Ajouter une question
           </Button>
         )}
@@ -269,7 +268,7 @@ export default function SettingsTab({ event }: { readonly event: EventDetail }) 
 
       <div data-k-bottom-bar className="sticky bottom-20 z-10 md:bottom-4">
         <Button type="button" onClick={save} disabled={busy}>
-          {busy ? "Enregistrement…" : "Enregistrer les paramètres"}
+          {busy ? "Enregistrement en cours…" : "Enregistrer les paramètres"}
         </Button>
       </div>
     </div>

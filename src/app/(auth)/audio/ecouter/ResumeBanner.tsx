@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Play } from "lucide-react";
 import { findMostRecentResume } from "@/lib/audio-progress";
 
 interface ServiceRef {
@@ -45,9 +46,9 @@ export default function ResumeBanner({ services }: { readonly services: ServiceR
   return (
     <Link
       href={`/audio/ecouter/${resume.service.id}`}
-      className="flex items-center gap-3 bg-brand-soft text-brand-text rounded-xl px-4 py-3 mb-4 hover:bg-brand/15 transition-colors"
+      className="flex min-h-11 items-center gap-3 bg-brand-soft text-brand-text rounded-card px-4 py-3 mb-4 hover:bg-brand/15 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
     >
-      <span className="text-xl shrink-0">▶</span>
+      <Play aria-hidden="true" className="size-5 shrink-0" strokeWidth={1.75} />
       <span className="flex-1 min-w-0">
         <span className="block text-sm font-semibold truncate">
           Reprendre l&apos;écoute — {resume.service.title || "Enregistrement du culte"}

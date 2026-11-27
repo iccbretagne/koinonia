@@ -143,12 +143,12 @@ export default async function TicketingEventPage({
             <StatusChip tone={event.status === "OPEN" ? "success" : "neutral"}>{EVENT_STATUS_LABEL[event.status]}</StatusChip>
             {can.reception && (
               <Link href={`/billetterie/${id}/controle`} className={buttonClasses("primary", "md")}>
-                <ScanLine className="size-4" aria-hidden="true" /> Contrôle
+                <ScanLine className="size-4" aria-hidden="true" /> Contrôler les entrées
               </Link>
             )}
             {can.catering && event.options.some((o) => o.pickup) && (
               <Link href={`/billetterie/${id}/restauration`} className={buttonClasses("secondary", "md")}>
-                <Utensils className="size-4" aria-hidden="true" /> Distribution
+                <Utensils className="size-4" aria-hidden="true" /> Distribuer les repas
               </Link>
             )}
           </div>

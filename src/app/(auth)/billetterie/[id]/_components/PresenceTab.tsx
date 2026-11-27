@@ -1,4 +1,5 @@
 import { Download } from "lucide-react";
+import { buttonClasses } from "@/components/ui";
 import { capacityTone } from "@/components/ticketing/format";
 import type { PresenceView } from "@/modules/ticketing";
 
@@ -50,8 +51,8 @@ export default function PresenceTab({ eventId, presence, canExport }: { readonly
         </section>
       )}
       {canExport && (
-        <a className="inline-flex items-center gap-1 text-[15px] font-semibold text-brand-text underline" href={`/api/ticketing/events/${eventId}/export?type=passages`}>
-          <Download className="size-4" aria-hidden="true" /> Registre des entrées et sorties
+        <a className={`${buttonClasses("secondary")} self-start`} href={`/api/ticketing/events/${eventId}/export?type=passages`}>
+          <Download className="size-4" aria-hidden="true" strokeWidth={1.75} /> Télécharger le registre des entrées et sorties
         </a>
       )}
     </div>

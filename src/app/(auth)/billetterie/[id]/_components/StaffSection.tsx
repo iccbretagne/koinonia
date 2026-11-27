@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, Pencil, Printer, Trash2, X } from "lucide-react";
-import { Button, IconButton, Input, Modal, SearchInput, Select } from "@/components/ui";
+import { Button, IconButton, Input, Modal, SearchInput, Select, buttonClasses } from "@/components/ui";
 import type { ChurchAccount, TeamView } from "@/modules/ticketing";
 import { useApi } from "../../use-api";
 import { fromLocalInput, toLocalInput } from "./SettingsTab";
@@ -29,14 +29,15 @@ function PostChip({ eventId, post }: { readonly eventId: string; readonly post: 
   if (name !== null) {
     return (
       <li className="flex items-center gap-1">
-        <input
-          aria-label={`Nouveau nom du poste ${post.name}`}
-          className="h-9 w-44 rounded-control border border-control-line bg-surface px-2 text-[15px] text-ink"
-          value={name}
-          maxLength={120}
-          autoFocus
-          onChange={(e) => setName(e.target.value)}
-        />
+        <div className="w-44">
+          <Input
+            aria-label={`Nouveau nom du poste ${post.name}`}
+            value={name}
+            maxLength={120}
+            autoFocus
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
         <IconButton
           icon={Check}
           aria-label="Enregistrer le nom"
@@ -45,24 +46,22 @@ function PostChip({ eventId, post }: { readonly eventId: string; readonly post: 
             if (await call(`/api/ticketing/events/${eventId}/posts/${post.id}`, "PATCH", { name: name.trim() }, "Poste renommé")) setName(null);
           }}
         />
-        <IconButton icon={X} aria-label="Annuler" onClick={() => setName(null)} />
+        <IconButton icon={X} aria-label="Annuler le renommage" onClick={() => setName(null)} />
       </li>
     );
   }
   return (
-    <li className="flex items-center gap-1 rounded-chip border border-line bg-surface px-2 py-1 text-[13px] text-ink">
+    <li className="flex items-center gap-1 rounded-chip border border-line bg-surface py-0.5 pl-3 pr-0.5 text-[13px] text-ink">
       {post.name}
-      <button type="button" aria-label={`Renommer le poste ${post.name}`} className="p-1 text-ink-subtle hover:text-ink" onClick={() => setName(post.name)}>
-        <Pencil className="size-3.5" aria-hidden="true" />
-      </button>
-      <button
-        type="button"
+      <IconButton size="sm" className="max-sm:size-11" icon={Pencil} aria-label={`Renommer le poste ${post.name}`} onClick={() => setName(post.name)} />
+      <IconButton
+        size="sm"
+        className="max-sm:size-11"
+        icon={Trash2}
         aria-label={`Supprimer le poste ${post.name}`}
-        className="p-1 text-ink-subtle hover:text-ink"
+        disabled={busy}
         onClick={() => call(`/api/ticketing/events/${eventId}/posts/${post.id}`, "DELETE", undefined, "Poste supprimé")}
-      >
-        <Trash2 className="size-3.5" aria-hidden="true" />
-      </button>
+      />
     </li>
   );
 }
@@ -158,7 +157,7 @@ function EditAssignment({
         </div>
         {assignment.userId && <p className="text-[13px] text-ink-muted">La personne est prévenue du changement.</p>}
         <Button type="button" disabled={busy} onClick={save}>
-          {busy ? "Enregistrement…" : "Enregistrer"}
+          {busy ? "Enregistrement en cours…" : "Enregistrer l'affectation"}
         </Button>
       </div>
     </Modal>
@@ -212,8 +211,8 @@ export default function StaffSection({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-bold text-ink">Postes et planning de l&apos;équipe</h2>
         {team.assignments.length > 0 && (
-          <Link href={`/billetterie/${eventId}/badges`} className="inline-flex items-center gap-1 text-[15px] font-semibold text-brand-text underline">
-            <Printer className="size-4" aria-hidden="true" /> Imprimer les badges
+          <Link href={`/billetterie/${eventId}/badges`} className={buttonClasses("secondary")}>
+            <Printer className="size-4" aria-hidden="true" strokeWidth={1.75} /> Imprimer les badges
           </Link>
         )}
       </div>
@@ -229,7 +228,7 @@ export default function StaffSection({
             if (await call(`/api/ticketing/events/${eventId}/posts`, "POST", { name: post.trim() }, "Poste créé")) setPost("");
           }}
         >
-          Créer
+          Créer le poste
         </Button>
       </div>
       {team.posts.length > 0 && (
@@ -267,8 +266,8 @@ export default function StaffSection({
           <Input label="Début (facultatif)" type="datetime-local" value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} />
           <Input label="Fin (facultative)" type="datetime-local" value={form.endsAt} onChange={(e) => setForm({ ...form, endsAt: e.target.value })} />
         </div>
-        <Button type="button" disabled={busy || (form.who === "member" ? !form.userId : !form.guestName.trim())} onClick={addAssignment}>
-          Affecter
+        <Button type="button" variant="secondary" disabled={busy || (form.who === "member" ? !form.userId : !form.guestName.trim())} onClick={addAssignment}>
+          {busy ? "Affectation en cours…" : "Affecter la personne"}
         </Button>
       </fieldset>
 

@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Alert, Button, EmptyState, Input, useToast } from "@/components/ui";
+import { ArrowLeft } from "lucide-react";
+import { Alert, Button, EmptyState, Input, buttonClasses, useToast } from "@/components/ui";
+import { FILE_INPUT } from "../_components/file-input-classes";
 
 interface Asset {
   readonly id: string;
@@ -68,8 +70,11 @@ export default function SiteImagesUploader({ eventId, assets }: { readonly event
   const pending = rows.filter((r) => r.state !== "done");
 
   return (
-    <div className="space-y-6">
-      <Link href={`/billetterie/${eventId}?vue=site`} className="text-sm font-semibold text-brand-text underline underline-offset-2">Retour à l&apos;éditeur du site</Link>
+    <div className="flex flex-col gap-6">
+      <Link href={`/billetterie/${eventId}?vue=site`} className={`${buttonClasses("ghost", "sm")} min-h-11 self-start sm:min-h-9`}>
+        <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
+        Retour à l&apos;éditeur du site
+      </Link>
 
       <section className="space-y-3 rounded-card border border-line bg-surface p-4">
         <h2 className="font-semibold text-ink">Déposer des images</h2>
@@ -82,12 +87,12 @@ export default function SiteImagesUploader({ eventId, assets }: { readonly event
             add(e.target.files);
             e.target.value = "";
           }}
-          className="text-sm text-ink-muted"
+          className={FILE_INPUT}
         />
         {rows.map((row, i) => (
           <div key={`${row.file.name}-${i}`} className="flex flex-wrap items-start gap-3 border-t border-line pt-3">
             {/* eslint-disable-next-line @next/next/no-img-element -- aperçu local du fichier choisi */}
-            <img src={row.preview} alt="" className="h-16 w-auto rounded border border-line" />
+            <img src={row.preview} alt="" className="h-16 w-auto rounded-chip border border-line" />
             <div className="min-w-48 flex-1">
               <Input label="Texte alternatif (obligatoire)" value={row.alt} maxLength={200} disabled={row.state === "done"} onChange={(e) => patch(i, { alt: e.target.value })} />
             </div>
@@ -99,7 +104,7 @@ export default function SiteImagesUploader({ eventId, assets }: { readonly event
         ))}
         {rows.some((r) => r.state === "error") && <Alert tone="danger">Certaines images sont refusées ; les autres sont envoyées.</Alert>}
         <Button type="button" disabled={busy || !pending.some((r) => r.alt.trim())} onClick={send}>
-          {busy ? "Envoi…" : "Envoyer les images"}
+          {busy ? "Envoi en cours…" : "Envoyer les images"}
         </Button>
       </section>
 
@@ -112,7 +117,7 @@ export default function SiteImagesUploader({ eventId, assets }: { readonly event
             {assets.map((a) => (
               <li key={a.id} className="flex gap-3 rounded-card border border-line bg-surface p-3">
                 {/* eslint-disable-next-line @next/next/no-img-element -- miniature servie par l'API de l'équipe */}
-                <img src={`/api/ticketing/events/${eventId}/site/assets/${a.id}?w=640`} alt={a.alt} className="h-16 w-24 rounded border border-line object-cover" />
+                <img src={`/api/ticketing/events/${eventId}/site/assets/${a.id}?w=640`} alt={a.alt} className="h-16 w-24 rounded-chip border border-line object-cover" />
                 <div className="min-w-0 text-sm">
                   <p className="truncate font-medium text-ink">{a.name || "Sans nom"}</p>
                   <p className="text-ink-muted">{a.width}×{a.height}</p>
@@ -130,7 +135,7 @@ export default function SiteImagesUploader({ eventId, assets }: { readonly event
 /** Libellé d'état d'une ligne de dépôt. */
 function rowStatus(row: { state: string; error?: string; alt: string }): string {
   if (row.state === "done") return "Envoyée";
-  if (row.state === "sending") return "Envoi…";
+  if (row.state === "sending") return "Envoi en cours…";
   if (row.state === "error") return `Refusée : ${row.error}`;
   return row.alt.trim() ? "Prête" : "Texte alternatif manquant : envoi impossible";
 }

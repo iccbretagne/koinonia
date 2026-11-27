@@ -5,6 +5,7 @@ import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/
 import { loadRequestQueue, resolveRequestQueueAccess } from "@/modules/planning";
 import PageHeader from "@/components/ui/PageHeader";
 import Alert from "@/components/ui/Alert";
+import { buttonClasses } from "@/components/ui";
 import StatusChip from "@/components/ui/StatusChip";
 import { VisuelQueue } from "@/components/requests/TeamQueues";
 
@@ -20,7 +21,7 @@ export default async function MediaRequestsPage() {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader title="Demandes visuels" />
-        <Alert tone="warning" action={<Link href="/admin/departments/functions" className="font-semibold underline">Configurer maintenant</Link>}>
+        <Alert tone="warning" action={<Link href="/admin/departments/functions" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>Configurer les fonctions</Link>}>
           Aucun département n&apos;est configuré comme <strong>Production Média</strong>.
         </Alert>
       </div>

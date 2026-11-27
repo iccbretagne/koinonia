@@ -44,7 +44,7 @@ export default function MemberAudioPlayer({ serviceId, service }: Props) {
     <div>
       {confirmation && (
         <output
-          className="fixed top-4 inset-x-4 md:inset-x-auto md:right-4 md:left-auto z-30 bg-ink text-bg text-sm rounded-lg px-4 py-2 shadow-float text-center"
+          className="fixed top-4 inset-x-4 md:inset-x-auto md:right-4 md:left-auto z-30 bg-ink text-bg text-sm rounded-control px-4 py-2 shadow-float text-center"
         >
           {confirmation}
         </output>

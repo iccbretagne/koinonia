@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, QrCode, Share2, UserPlus, X } from "lucide-react";
+import { ExternalLink, Pencil, QrCode, Share2, UserPlus, X } from "lucide-react";
 import CopyRow from "@/app/donner/_components/CopyRow";
 import { OptionList, toSelections, type Choices } from "@/components/ticketing/OptionField";
 import QrSvg from "@/components/ticketing/QrSvg";
 import { formatDateTime } from "@/components/ticketing/format";
-import { Alert, Button, ConfirmModal, Input, Modal, Select, StatusChip, useToast, type StatusTone } from "@/components/ui";
+import { Alert, Button, ConfirmModal, Input, Modal, Select, StatusChip, buttonClasses, useToast, type StatusTone } from "@/components/ui";
 import type { BookingView } from "@/modules/ticketing";
 import {
   AGE_GROUP_LABEL,
@@ -228,18 +228,14 @@ export default function ReservationClient({
           <h2 className="text-lg font-bold text-ink">Payer</h2>
           {instructions.wero && <CopyRow label="Wero — numéro ou email du bénéficiaire" display={instructions.wero} value={instructions.wero} />}
           {instructions.revolut && (
-            <p className="text-[15px]">
-              <a className="font-semibold text-brand-text underline" href={instructions.revolut} target="_blank" rel="noopener noreferrer">
-                Payer avec Revolut
-              </a>
-            </p>
+            <a className={buttonClasses("secondary")} href={instructions.revolut} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="size-4" aria-hidden="true" strokeWidth={1.75} /> Payer avec Revolut
+            </a>
           )}
           {instructions.paypal && (
-            <p className="text-[15px]">
-              <a className="font-semibold text-brand-text underline" href={instructions.paypal} target="_blank" rel="noopener noreferrer">
-                Payer avec PayPal
-              </a>
-            </p>
+            <a className={buttonClasses("secondary")} href={instructions.paypal} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="size-4" aria-hidden="true" strokeWidth={1.75} /> Payer avec PayPal
+            </a>
           )}
           {instructions.transfer && (
             <>
@@ -264,7 +260,7 @@ export default function ReservationClient({
                 />
               </div>
               <Button type="button" disabled={busy || !method} onClick={() => call(`/api/ticketing/public/bookings/${token}/payment`, "POST", { method })}>
-                J&apos;ai payé
+                {busy ? "Envoi en cours…" : "J'ai payé"}
               </Button>
             </div>
           )}
@@ -275,8 +271,8 @@ export default function ReservationClient({
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-ink">Billets</h2>
           {active && (
-            <Button type="button" variant="secondary" size="sm" onClick={() => setDialog({ kind: "qr", title: "Code de la réservation", qr: qrs.booking })}>
-              <QrCode className="size-4" aria-hidden="true" /> Code de groupe
+            <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setDialog({ kind: "qr", title: "Code de la réservation", qr: qrs.booking })}>
+              <QrCode className="size-4" aria-hidden="true" /> Afficher le code de groupe
             </Button>
           )}
         </div>
@@ -298,14 +294,14 @@ export default function ReservationClient({
               </div>
               {p.status === "ACTIVE" && qr && p.ticketUrl && (
                 <div className="flex flex-wrap gap-2">
-                  <Button type="button" size="sm" variant="secondary" onClick={() => setDialog({ kind: "qr", title: `Billet de ${name}`, qr })}>
-                    <QrCode className="size-4" aria-hidden="true" /> Afficher
+                  <Button type="button" size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => setDialog({ kind: "qr", title: `Billet de ${name}`, qr })}>
+                    <QrCode className="size-4" aria-hidden="true" /> Afficher le billet
                   </Button>
-                  <Button type="button" size="sm" variant="secondary" onClick={() => shareTicket(name, p.ticketUrl!)}>
-                    <Share2 className="size-4" aria-hidden="true" /> Transmettre
+                  <Button type="button" size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => shareTicket(name, p.ticketUrl!)}>
+                    <Share2 className="size-4" aria-hidden="true" /> Transmettre le billet
                   </Button>
                   {view.can.rename && (
-                    <Button type="button" size="sm" variant="ghost" onClick={() => setDialog({ kind: "rename", participantId: p.id, firstName: p.firstName, lastName: p.lastName })}>
+                    <Button type="button" size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => setDialog({ kind: "rename", participantId: p.id, firstName: p.firstName, lastName: p.lastName })}>
                       <Pencil className="size-4" aria-hidden="true" /> Corriger le nom
                     </Button>
                   )}
@@ -314,9 +310,10 @@ export default function ReservationClient({
                       type="button"
                       size="sm"
                       variant="ghost"
+                      className="min-h-11 sm:min-h-9"
                       onClick={() => setDialog({ kind: "cancelParticipant", participantId: p.id, name, noRefund: hasNonRefundablePaid(view, p.id) })}
                     >
-                      <X className="size-4" aria-hidden="true" /> Annuler
+                      <X className="size-4" aria-hidden="true" /> Annuler ce billet
                     </Button>
                   )}
                 </div>
@@ -336,8 +333,8 @@ export default function ReservationClient({
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-ink">Options</h2>
             {view.can.editOptions && publicEvent && publicEvent.options.length > 0 && (
-              <Button type="button" variant="secondary" size="sm" onClick={() => setDialog({ kind: "options" })}>
-                Modifier
+              <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setDialog({ kind: "options" })}>
+                Modifier les options
               </Button>
             )}
           </div>
@@ -366,7 +363,7 @@ export default function ReservationClient({
             Mettre à jour mon téléphone
           </Button>
           {view.can.cancel && (
-            <Button type="button" variant="danger" onClick={() => setDialog({ kind: "cancelBooking", noRefund: hasNonRefundablePaid(view, null) })}>
+            <Button type="button" variant="secondary" onClick={() => setDialog({ kind: "cancelBooking", noRefund: hasNonRefundablePaid(view, null) })}>
               Annuler la réservation
             </Button>
           )}
@@ -439,8 +436,8 @@ export default function ReservationClient({
               ? "Attention : une partie de ce qui a été payé n'est pas remboursable (ou le délai de remboursement est passé). Vous ne serez pas remboursé de ces éléments."
               : "Les places et les options seront libérées. Ce qui a été payé et reste remboursable vous sera remboursé par l'organisation."
           }
-          confirmLabel="Annuler"
-          confirmingLabel="Annulation…"
+          confirmLabel="Confirmer l'annulation"
+          confirmingLabel="Annulation en cours…"
           confirming={busy}
           onCancel={() => setDialog(null)}
           onConfirm={() => patch(dialog.kind === "cancelBooking" ? { action: "cancelBooking" } : { action: "cancelParticipant", participantId: dialog.participantId })}
