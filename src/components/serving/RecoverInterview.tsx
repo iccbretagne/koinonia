@@ -33,11 +33,11 @@ export default function RecoverInterview({ churchSlug, turnstileSiteKey }: { rea
 
   return (
     <>
-      <p className="text-center text-sm text-ink-muted">
-        Déjà candidat ?{" "}
-        <button type="button" className="font-semibold text-brand-text underline" onClick={() => setOpen(true)}>
+      <p className="flex flex-wrap items-center justify-center gap-x-1 text-center text-sm text-ink-muted">
+        Déjà candidat ?
+        <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setOpen(true)}>
           Retrouver mon rendez-vous
-        </button>
+        </Button>
       </p>
       <Modal open={open} onClose={() => setOpen(false)} title="Retrouver mon rendez-vous">
         {done ? (

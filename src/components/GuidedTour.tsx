@@ -254,16 +254,16 @@ const TooltipCard = forwardRef<
       </div>
 
       <div className="flex items-center justify-between gap-2 border-t border-line px-5 py-3">
-        <Button variant="ghost" size="sm" onClick={onSkip}>
+        <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={onSkip}>
           Passer
         </Button>
         <div className="flex gap-2">
           {stepIndex > 0 && (
-            <Button variant="secondary" size="sm" onClick={onBack}>
+            <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={onBack}>
               Retour
             </Button>
           )}
-          <Button size="sm" onClick={onNext}>
+          <Button size="sm" className="min-h-11 sm:min-h-9" onClick={onNext}>
             {isLast ? "Terminer" : "Suivant"}
           </Button>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 export interface LightboxItem {
   id: string;
@@ -80,11 +81,16 @@ export default function MediaLightbox<T extends LightboxItem>({
         <div className="flex items-center gap-4 shrink-0 ml-4">
           {/* eslint-disable-next-line no-restricted-syntax -- visionneuse plein écran toujours sombre */}
           <span className="text-sm text-white/50">{safeIndex + 1} / {items.length}</span>
-          {/* eslint-disable-next-line no-restricted-syntax -- visionneuse plein écran toujours sombre */}
-          <button ref={closeRef} onClick={onClose} aria-label="Fermer" className="text-white/50 hover:text-white transition-colors">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer"
+            title="Fermer"
+            // eslint-disable-next-line no-restricted-syntax -- visionneuse plein écran toujours sombre
+            className="-mr-2 grid size-11 place-items-center rounded-control text-white/70 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            <X aria-hidden="true" className="size-6" strokeWidth={1.75} />
           </button>
         </div>
       </div>
@@ -106,30 +112,34 @@ export default function MediaLightbox<T extends LightboxItem>({
       >
         {hasPrev && (
           <button
+            type="button"
             onClick={() => go(-1)}
             aria-label="Précédent"
+            title="Précédent"
             // eslint-disable-next-line no-restricted-syntax -- visionneuse plein écran toujours sombre
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-scrim hover:bg-black/70 flex items-center justify-center text-white text-xl font-light transition-colors z-10 backdrop-blur-sm"
+            className="absolute left-3 top-1/2 z-10 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-scrim text-white backdrop-blur-sm transition-colors hover:bg-black/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
-            ‹
+            <ChevronLeft aria-hidden="true" className="size-6" strokeWidth={1.75} />
           </button>
         )}
         {item.src ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img key={item.id} src={item.src} alt={item.alt} className="max-w-full max-h-full object-contain rounded-xl shadow-overlay select-none" draggable={false} />
+          <img key={item.id} src={item.src} alt={item.alt} className="max-w-full max-h-full object-contain rounded-card shadow-overlay select-none" draggable={false} />
         ) : (
-          <div className="w-64 h-64 bg-control-line rounded-xl flex items-center justify-center text-ink-muted text-sm">
+          <div className="w-64 h-64 bg-control-line rounded-card flex items-center justify-center text-ink-muted text-sm">
             Aperçu indisponible
           </div>
         )}
         {hasNext && (
           <button
+            type="button"
             onClick={() => go(1)}
             aria-label="Suivant"
+            title="Suivant"
             // eslint-disable-next-line no-restricted-syntax -- visionneuse plein écran toujours sombre
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-scrim hover:bg-black/70 flex items-center justify-center text-white text-xl font-light transition-colors z-10 backdrop-blur-sm"
+            className="absolute right-3 top-1/2 z-10 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-scrim text-white backdrop-blur-sm transition-colors hover:bg-black/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
-            ›
+            <ChevronRight aria-hidden="true" className="size-6" strokeWidth={1.75} />
           </button>
         )}
       </div>

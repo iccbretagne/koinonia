@@ -129,7 +129,7 @@ export default function DepartmentTasksView({
           </p>
         </div>
         {!readOnly && !showForm && tasks.length > 0 && (
-          <Button size="sm" onClick={openForm}>
+          <Button size="sm" className="min-h-11 sm:min-h-9" onClick={openForm}>
             <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
             Nouvelle tâche
           </Button>
@@ -209,7 +209,7 @@ export default function DepartmentTasksView({
                   <button
                     type="button"
                     onClick={() => setPendingDelete(task)}
-                    className={`${ghostDangerClasses} shrink-0`}
+                    className={`${ghostDangerClasses} min-h-11 shrink-0 sm:min-h-9`}
                     aria-label={`Supprimer la tâche « ${task.name} »`}
                   >
                     <Trash2 aria-hidden="true" className="size-4" strokeWidth={1.75} />

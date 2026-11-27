@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, type SubmitEvent } from "react";
 import Link from "next/link";
-import { ArrowRight, X } from "lucide-react";
+import { ArrowRight, BookOpen, Check, X } from "lucide-react";
+import FilterChip from "@/components/ui/FilterChip";
 import IconButton from "@/components/ui/IconButton";
 import { buttonClasses } from "@/components/ui/button-classes";
 import { controlClasses } from "@/components/ui/field-classes";
@@ -45,7 +46,7 @@ function SuggestionButtons({ items, onAsk }: { readonly items: readonly Suggesti
 
 function OpenLink({ href, label }: { readonly href: string; readonly label: string }) {
   return (
-    <Link href={href} className={`${buttonClasses("secondary", "sm")} self-start`}>
+    <Link href={href} className={`${buttonClasses("secondary", "sm")} min-h-11 self-start sm:min-h-9`}>
       {label}
       <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
     </Link>
@@ -106,7 +107,8 @@ function BotAnswer({ response, onAsk }: { readonly response: AskResponse; readon
               <SuggestionButtons items={response.suggestions} onAsk={onAsk} />
             </>
           )}
-          <Link href={response.guideHref} className="font-semibold text-brand-text underline-offset-2 hover:underline">
+          <Link href={response.guideHref} className={`${buttonClasses("ghost", "sm")} -ml-3 min-h-11 self-start sm:min-h-9`}>
+            <BookOpen aria-hidden="true" className="size-4" strokeWidth={1.75} />
             Ouvrir le guide d&apos;utilisation
           </Link>
         </>
@@ -227,20 +229,16 @@ export default function AssistantPanel({
                   <div className="flex flex-wrap items-center gap-1.5 text-[13px] text-ink-muted">
                     <span>Cette réponse vous a aidé ?</span>
                     {(["helpful", "notHelpful"] as const).map((value) => (
-                      <button
+                      <FilterChip
                         key={value}
-                        type="button"
                         disabled={!!m.feedback}
-                        aria-pressed={m.feedback === value}
+                        pressed={m.feedback === value}
                         onClick={() => rate(m.id, value === "helpful")}
-                        className={`h-8 rounded-full border px-3 text-[13px] transition-colors duration-120 disabled:cursor-default
-                          focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
-                            m.feedback === value ? "border-brand bg-brand-soft text-brand-text" : "border-control-line bg-surface text-ink"
-                          }`}
+                        className="disabled:cursor-default"
                       >
+                        {m.feedback === value && <Check aria-hidden="true" className="size-4" strokeWidth={1.75} />}
                         {value === "helpful" ? "Utile" : "Pas utile"}
-                        {m.feedback === value ? " ✓" : ""}
-                      </button>
+                      </FilterChip>
                     ))}
                   </div>
                 )}
@@ -278,12 +276,12 @@ export default function AssistantPanel({
               <ArrowRight aria-hidden="true" className="size-5" strokeWidth={1.75} />
             </button>
           </div>
-          <p className="text-xs text-ink-muted">
-            Réponses selon votre rôle. Rien n&apos;est conservé à la fermeture.{" "}
-            <Link href="/guide" className="font-semibold text-brand-text underline-offset-2 hover:underline">
-              Guide d&apos;utilisation
+          <div className="flex flex-wrap items-center justify-between gap-x-2">
+            <p className="text-xs text-ink-muted">Réponses selon votre rôle. Rien n&apos;est conservé à la fermeture.</p>
+            <Link href="/guide" className={`${buttonClasses("ghost", "sm")} -mr-3 min-h-11 sm:min-h-9`}>
+              Ouvrir le guide
             </Link>
-          </p>
+          </div>
         </form>
       </div>
     </dialog>

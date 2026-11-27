@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Check, CircleCheck, CircleDashed, CloudAlert, Lock, MessageSquare, Repeat, TriangleAlert, UserMinus, X, type LucideIcon } from "lucide-react";
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
+import { buttonClasses } from "@/components/ui/button-classes";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import EmptyState from "@/components/ui/EmptyState";
 import { SkeletonList } from "@/components/ui/Skeleton";
@@ -425,7 +426,7 @@ export default function PlanningGrid({
         tone="danger"
         title="Le planning n'a pas pu être chargé."
         action={
-          <Button variant="ghost" size="sm" onClick={fetchPlanning}>
+          <Button variant="ghost" size="sm" onClick={fetchPlanning} className="-ml-3 min-h-11 sm:min-h-9">
             Réessayer
           </Button>
         }
@@ -505,10 +506,10 @@ export default function PlanningGrid({
 
       {withdrawals.length > 0 && (
         <Alert tone="warning" icon={UserMinus} title={plural(withdrawals.length, "service à remplacer.", "services à remplacer.")}>
-          <ul className="mt-1 flex flex-col gap-1">
+          <ul className="mt-1 flex flex-col">
             {withdrawals.map((w) => (
               <li key={w.id}>
-                <Link href={`/planning/remplacements/${w.id}`} className="font-semibold text-brand-text underline">
+                <Link href={`/planning/remplacements/${w.id}`} className={`${buttonClasses("ghost", "sm")} -ml-3 min-h-11 sm:min-h-9`}>
                   Remplacer {w.memberName}
                 </Link>
               </li>
@@ -519,11 +520,11 @@ export default function PlanningGrid({
 
       {canAskTeam && !isReadOnly && availCounts && (
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" size="sm" onClick={() => setConfirmAction("ask")}>
+          <Button variant="secondary" size="sm" onClick={() => setConfirmAction("ask")} className="min-h-11 sm:min-h-9">
             Interroger l&apos;équipe sur leurs disponibilités
           </Button>
           {availCounts.noResponse > 0 && (
-            <Button variant="secondary" size="sm" disabled={!relanceAvailable} onClick={() => setConfirmAction("relance")}>
+            <Button variant="secondary" size="sm" disabled={!relanceAvailable} onClick={() => setConfirmAction("relance")} className="min-h-11 sm:min-h-9">
               {relanceAvailable ? "Relancer les sans-réponse" : "Relance déjà envoyée aujourd'hui"}
             </Button>
           )}

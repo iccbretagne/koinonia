@@ -13,7 +13,7 @@ import {
   SquarePlus,
   type LucideIcon,
 } from "lucide-react";
-import { Alert, Button, useToast } from "@/components/ui";
+import { Alert, Button, buttonClasses, useToast } from "@/components/ui";
 import { INSTALL_PATH, type InstallTarget } from "@/lib/install/detect";
 import { promptInstall } from "@/lib/install/prompt-store";
 import { useInstallTarget } from "@/lib/install/use-install-target";
@@ -130,18 +130,21 @@ function MainSection({ target, url, signedIn }: { readonly target: InstallTarget
   switch (target) {
     case "installed":
       return (
-        <Alert tone="success" icon={CircleCheck} title="Koinonia est déjà installée sur cet appareil.">
-          {signedIn ? (
-            <>
-              Pour recevoir les notifications, activez-les dans{" "}
-              <Link href="/profile/notifications" className="font-semibold underline">
-                Mes notifications
+        <Alert
+          tone="success"
+          icon={CircleCheck}
+          title="Koinonia est déjà installée sur cet appareil."
+          action={
+            signedIn ? (
+              <Link href="/profile/notifications" className={`${buttonClasses("ghost", "sm")} -ml-3 min-h-11 sm:min-h-9`}>
+                Activer les notifications
               </Link>
-              .
-            </>
-          ) : (
-            "Ouvrez-la depuis son icône sur l'écran d'accueil."
-          )}
+            ) : undefined
+          }
+        >
+          {signedIn
+            ? "Pour recevoir les notifications, activez-les dans « Mes notifications »."
+            : "Ouvrez-la depuis son icône sur l'écran d'accueil."}
         </Alert>
       );
     case "ios-safari":

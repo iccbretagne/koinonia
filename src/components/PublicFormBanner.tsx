@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, Copy, Link2 } from "lucide-react";
+import { Check, Copy, ExternalLink, Link2 } from "lucide-react";
 import Button from "@/components/ui/Button";
+import { buttonClasses } from "@/components/ui/button-classes";
 
 /**
  * Bandeau de lien public à copier — partagé entre plusieurs formulaires publics sans session
@@ -39,16 +40,13 @@ export default function PublicFormBanner({
       <Link2 aria-hidden="true" className="size-5 shrink-0 text-brand-text" strokeWidth={1.75} />
       <div className="min-w-0 flex-1">
         <p className="mb-0.5 text-[13px] font-semibold leading-[18px] text-brand-text">{label}</p>
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block truncate text-[13px] leading-[18px] text-ink-muted hover:text-brand-text hover:underline"
-        >
-          {url}
-        </a>
+        <p className="truncate text-[13px] leading-[18px] text-ink-muted">{url}</p>
       </div>
-      <Button variant="secondary" size="sm" onClick={copy} className="shrink-0" aria-live="polite">
+      <a href={url} target="_blank" rel="noopener noreferrer" className={`${buttonClasses("ghost", "sm")} min-h-11 shrink-0 sm:min-h-9`}>
+        <ExternalLink aria-hidden="true" className="size-4" strokeWidth={1.75} />
+        Ouvrir le formulaire
+      </a>
+      <Button variant="secondary" size="sm" onClick={copy} className="min-h-11 shrink-0 sm:min-h-9" aria-live="polite">
         {copied ? (
           <>
             <Check aria-hidden="true" className="size-4" strokeWidth={2} />

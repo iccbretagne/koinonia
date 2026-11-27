@@ -153,7 +153,7 @@ export default function AssistantLauncher({ enabled, persona, firstName }: Assis
             onClick={minimize}
             aria-label={`Réduire ${name}`}
             title="Réduire"
-            className="absolute -left-2 -top-2 grid size-6 cursor-pointer place-items-center rounded-full border border-line bg-surface text-ink-muted
+            className="absolute -left-2 -top-2 grid size-6 cursor-pointer place-items-center rounded-full border border-line bg-surface text-ink-muted before:absolute before:-inset-2.5 before:content-['']
               shadow-card hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           >
             <X aria-hidden="true" className="size-3.5" strokeWidth={2} />

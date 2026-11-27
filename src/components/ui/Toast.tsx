@@ -177,7 +177,7 @@ function ToastView({ toast, store }: { readonly toast: ToastItem; readonly store
               toast.action?.onClick();
               store.dismiss(toast.id);
             }}
-            className="inline-flex min-h-9 shrink-0 items-center rounded-control px-3 font-display text-sm font-semibold text-bg underline underline-offset-[3px]
+            className="inline-flex min-h-11 shrink-0 items-center rounded-control px-3 font-display text-sm font-semibold text-bg sm:min-h-9
               hover:bg-bg/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bg"
           >
             {toast.action.label}
@@ -188,7 +188,7 @@ function ToastView({ toast, store }: { readonly toast: ToastItem; readonly store
           aria-label="Fermer le message"
           title="Fermer"
           onClick={() => store.dismiss(toast.id)}
-          className="grid size-9 shrink-0 place-items-center rounded-control text-bg/70 hover:bg-bg/15 hover:text-bg
+          className="grid size-11 shrink-0 place-items-center rounded-control text-bg/70 sm:size-9 hover:bg-bg/15 hover:text-bg
             focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bg"
         >
           <X aria-hidden="true" className="size-4" strokeWidth={1.75} />

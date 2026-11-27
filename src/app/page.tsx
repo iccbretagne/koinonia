@@ -6,6 +6,7 @@ import { auth, signIn, getCurrentChurchId, isDevLoginEnabled } from "@/lib/auth"
 import { isAuthCookieName } from "@/lib/auth-cookies";
 import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
+import { buttonClasses } from "@/components/ui/button-classes";
 import { DEV_USERS } from "../../prisma/fixtures/dev-users";
 
 // Spec 055 : la page « Aujourd'hui » (/accueil) est l'accueil commun à tous les rôles d'une
@@ -57,14 +58,14 @@ export default async function LoginPage({
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-brand-soft via-bg to-accent-soft p-4">
-      <div className="w-full max-w-md p-8 bg-surface/90 backdrop-blur rounded-2xl shadow-overlay border border-brand/20">
+      <div className="w-full max-w-md p-8 bg-surface/90 backdrop-blur rounded-card shadow-float border border-line">
         <div className="flex flex-col items-center">
           {/* Marque des plumes (commune à toutes les églises ICC) plutôt que le logo complet
               d'une église précise : cette page de connexion est partagée par toutes les
               instances multi-églises, l'église n'est pas encore connue à ce stade. */}
           {/* eslint-disable-next-line @next/next/no-img-element -- SVG statique, pas d'optimisation utile */}
           <img src="/brand/icc-plumes.svg" alt="" width={48} height={48} className="h-12 w-auto mb-4" />
-          <h1 className="mb-2 text-3xl font-bold text-center text-brand-text font-display">
+          <h1 className="mb-2 text-center font-display text-[28px] font-bold leading-[34px] tracking-[-0.015em] text-ink">
             Koinonia
           </h1>
         </div>
@@ -82,7 +83,7 @@ export default async function LoginPage({
         >
           <button
             type="submit"
-            className="flex items-center justify-center w-full gap-3 px-4 py-3 text-ink-muted bg-surface border border-control-line rounded-lg hover:bg-surface-sunken transition-colors"
+            className={`${buttonClasses("secondary")} w-full gap-3`}
           >
             <svg aria-hidden="true" className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -110,12 +111,11 @@ export default async function LoginPage({
             Auth.js cassés subsistent malgré le nettoyage automatique. Un clic
             remplace la purge des données du site dans le navigateur. */}
         <p className="mt-2 text-center">
-          {/* px/py plutôt qu'un lien nu : la cible tactile doit rester
-              confortable au doigt (~44 px) malgré le texte discret. */}
+          {/* Action discrète (ghost) à 44 px de haut sur mobile : cible tactile confortable. */}
           <Link
             href="/api/auth/reset"
             prefetch={false}
-            className="inline-block px-4 py-3 text-xs text-ink-subtle underline hover:text-brand-text"
+            className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}
           >
             Problème de connexion ?
           </Link>

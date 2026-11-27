@@ -194,7 +194,7 @@ fenêtre parasite.
 
 | # | Fichier | Fonction | Compte | URL | Avant la capture |
 |---|---|---|---|---|---|
-| 49 | `guide-comptabilite-demande.png` | Soumettre une demande financière | `resp-accueil` | `/accounting/requests/new` | — |
+| 49 | `guide-comptabilite-demande.png` | Envoyer une demande financière | `resp-accueil` | `/accounting/requests/new` | — |
 | 50 | `guide-comptabilite-gestion.png` | Traiter les demandes financières | `admin` | `/accounting/requests` | — |
 | 51 | `guide-comptabilite-stats.png` | Statistiques comptables | `admin` | `/accounting/stats` | — |
 

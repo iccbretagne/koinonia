@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft, CalendarDays, CornerDownLeft, ExternalLink, Search, UserRound, type LucideIcon } from "lucide-react";
+import IconButton from "@/components/ui/IconButton";
 import { useModalDialog } from "@/components/ui/use-modal-dialog";
 import { filterByQuery, normalizeText, type SearchablePage } from "@/lib/navigation";
 import { resetLoadingToIdle, type Remote } from "./command-palette-remote";
@@ -279,14 +280,7 @@ function PaletteBody({ onClose, pages, churchId, canSearchMembers, canSearchEven
   return (
     <div className="flex h-full max-h-[inherit] flex-col">
       <div className="flex items-center gap-2 border-b border-line px-2 md:px-4">
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Fermer la recherche"
-          className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-control text-ink-muted hover:bg-surface-sunken md:hidden"
-        >
-          <ArrowLeft aria-hidden="true" className="size-5" strokeWidth={1.75} />
-        </button>
+        <IconButton icon={ArrowLeft} onClick={onClose} aria-label="Fermer la recherche" className="md:hidden" />
         <Search aria-hidden="true" className="hidden size-5 shrink-0 text-ink-subtle md:block" strokeWidth={1.75} />
         {/* `data-dialog-body` : useModalDialog y place le focus à l'ouverture (et non sur le retour). */}
         <div data-dialog-body className="flex min-w-0 flex-1">

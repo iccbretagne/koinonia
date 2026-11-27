@@ -60,11 +60,11 @@ export default function OptionField({
           {option.description && <p className="text-[13px] text-ink-muted">{option.description}</p>}
         </div>
         <div className="flex items-center gap-2">
-          <Button type="button" variant="secondary" size="sm" aria-label={`Moins de ${option.label}`} disabled={qty === 0} onClick={() => set(qty - 1)}>
+          <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" aria-label={`Moins de ${option.label}`} disabled={qty === 0} onClick={() => set(qty - 1)}>
             <Minus className="size-4" aria-hidden="true" />
           </Button>
           <span className="w-6 text-center font-semibold" aria-live="polite">{qty}</span>
-          <Button type="button" variant="secondary" size="sm" aria-label={`Plus de ${option.label}`} disabled={soldOut || qty >= 20} onClick={() => set(qty + 1)}>
+          <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" aria-label={`Plus de ${option.label}`} disabled={soldOut || qty >= 20} onClick={() => set(qty + 1)}>
             <Plus className="size-4" aria-hidden="true" />
           </Button>
         </div>

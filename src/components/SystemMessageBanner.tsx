@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, CircleAlert, Info, TriangleAlert, X, type LucideIcon } from "lucide-react";
+import IconButton from "@/components/ui/IconButton";
+import { buttonClasses } from "@/components/ui/button-classes";
 
 export interface SystemMessageBannerItem {
   id: string;
@@ -16,6 +18,9 @@ const TONE: Record<SystemMessageBannerItem["severity"], { box: string; icon: str
   IMPORTANT: { box: "bg-warning-soft", icon: "text-warning", Icon: TriangleAlert },
   URGENT: { box: "bg-danger-soft", icon: "text-danger", Icon: CircleAlert },
 };
+
+/** Action « Lire le message » : bouton ghost, cible de 44 px sur mobile. */
+const readClasses = `${buttonClasses("ghost", "sm")} -ml-3 mt-1 min-h-11 sm:min-h-9`;
 
 function sendReceipt(id: string, action: "seen" | "dismiss") {
   void fetch(`/api/system-messages/${id}/receipt`, {
@@ -74,48 +79,32 @@ export default function SystemMessageBanner({
           <p className="text-[15px] font-semibold leading-[22px] text-ink">{current.title}</p>
           <p className="truncate text-[13px] leading-[18px] text-ink-muted">{current.body}</p>
           {preview ? (
-            <span className="text-[13px] font-semibold leading-[18px] text-ink underline underline-offset-2">Lire</span>
+            <span className={`${readClasses} pointer-events-none`}>Lire le message</span>
           ) : (
-            <Link
-              href={`/messages/${current.id}`}
-              className="text-[13px] font-semibold leading-[18px] text-ink underline underline-offset-2"
-            >
-              Lire
+            <Link href={`/messages/${current.id}`} className={readClasses}>
+              Lire le message
             </Link>
           )}
         </div>
         {visible.length > 1 && (
-          <div className="flex shrink-0 items-center gap-1 text-[13px] text-ink-muted">
-            <button
-              type="button"
+          <div className="-my-1.5 flex shrink-0 items-center gap-1 text-[13px] text-ink-muted">
+            <IconButton
+              icon={ChevronLeft}
               aria-label="Message précédent"
               onClick={() => setIndex((position - 1 + visible.length) % visible.length)}
-              className="grid size-8 place-items-center rounded-control hover:bg-surface focus-visible:outline-2 focus-visible:outline-focus"
-            >
-              <ChevronLeft aria-hidden="true" className="size-4" />
-            </button>
+            />
             <span aria-live="polite">
               {position + 1} sur {visible.length}
             </span>
-            <button
-              type="button"
+            <IconButton
+              icon={ChevronRight}
               aria-label="Message suivant"
               onClick={() => setIndex((position + 1) % visible.length)}
-              className="grid size-8 place-items-center rounded-control hover:bg-surface focus-visible:outline-2 focus-visible:outline-focus"
-            >
-              <ChevronRight aria-hidden="true" className="size-4" />
-            </button>
+            />
           </div>
         )}
         {current.severity !== "URGENT" && !preview && (
-          <button
-            type="button"
-            aria-label="Fermer ce message"
-            onClick={dismiss}
-            className="grid size-8 shrink-0 place-items-center rounded-control text-ink-muted hover:bg-surface focus-visible:outline-2 focus-visible:outline-focus"
-          >
-            <X aria-hidden="true" className="size-4" />
-          </button>
+          <IconButton icon={X} aria-label="Fermer ce message" onClick={dismiss} className="-my-1.5 -mr-2" />
         )}
       </div>
     </section>

@@ -69,11 +69,11 @@ export default function ThemeSelector() {
             role="radio"
             aria-checked={active}
             onClick={() => apply(value)}
-            className={`inline-flex min-h-[40px] items-center gap-2 rounded-[8px] px-3 font-display text-sm font-semibold transition-colors ${
+            className={`inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-[8px] px-3 font-display text-sm font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:min-h-10 ${
               active ? "bg-surface text-brand-text shadow-card" : "text-ink-muted hover:text-ink"
             }`}
           >
-            <Icon aria-hidden="true" className="h-4 w-4" strokeWidth={1.75} />
+            <Icon aria-hidden="true" className="size-4" strokeWidth={1.75} />
             {label}
           </button>
         );

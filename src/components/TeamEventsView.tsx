@@ -92,14 +92,14 @@ function TeamEventRow({
       </div>
       {canEdit && (
         <div className="flex shrink-0 justify-end gap-1">
-          <Button variant="ghost" size="sm" onClick={() => onEdit(ev)} aria-label={`Modifier « ${ev.title} »`}>
+          <Button variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => onEdit(ev)} aria-label={`Modifier « ${ev.title} »`}>
             <Pencil aria-hidden="true" className="size-4" strokeWidth={1.75} />
             Modifier
           </Button>
           <button
             type="button"
             onClick={() => onDelete(ev)}
-            className={ghostDangerClasses}
+            className={`${ghostDangerClasses} min-h-11 sm:min-h-9`}
             aria-label={`Supprimer « ${ev.title} »`}
           >
             <Trash2 aria-hidden="true" className="size-4" strokeWidth={1.75} />
@@ -304,7 +304,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
           </p>
         </div>
         {canEdit && !(period === "upcoming" && !loading && events.length === 0) && (
-          <Button size="sm" onClick={openCreate}>
+          <Button size="sm" className="min-h-11 sm:min-h-9" onClick={openCreate}>
             <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
             Nouvel événement
           </Button>
@@ -318,7 +318,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
             type="button"
             aria-pressed={period === option.value}
             onClick={() => setPeriod(option.value)}
-            className={`min-h-10 rounded-[7px] px-4 font-display text-sm font-semibold transition-colors duration-120
+            className={`min-h-11 rounded-[7px] px-4 font-display sm:min-h-10 text-sm font-semibold transition-colors duration-120
               focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus ${
                 period === option.value ? "bg-surface text-brand-text shadow-card" : "text-ink-muted hover:text-ink"
               }`}

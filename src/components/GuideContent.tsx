@@ -1,8 +1,9 @@
 "use client";
 
-import { Ban, CirclePlay, Eye, Pencil } from "lucide-react";
+import { Ban, CirclePlay, Eye, Pencil, X } from "lucide-react";
+import Button from "@/components/ui/Button";
+import IconButton from "@/components/ui/IconButton";
 import StatusChip from "@/components/ui/StatusChip";
-import { buttonClasses } from "@/components/ui/button-classes";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ROLE_LABELS, ROLE_DESCRIPTIONS, ALL_ROLES } from "@/lib/roles";
@@ -445,7 +446,7 @@ const FEATURES: Feature[] = [
 
   // ── Comptabilité ─────────────────────────────────────────────────────────
   {
-    name: "Soumettre une demande financière",
+    name: "Envoyer une demande financière",
     description: "Déposez une note de frais ou une demande d'avance de budget depuis /accounting/requests/new. Un titulaire de profil pastoral peut également soumettre, indépendamment de son rôle global. Après la remise d'une avance (ou d'une note de frais payée sans pièce), déposez vos factures et le montant dépensé dans le bloc « Justificatifs » de la demande : rendez le reliquat, ou « Demandez le complément » si vous avez dépensé plus. Des relances partent chaque semaine tant que les factures manquent.",
     category: "Comptabilité",
     screenshotTitle: "Nouvelle demande financière",
@@ -786,7 +787,7 @@ function Screenshot({
 
   if (failed) {
     return (
-      <div className="w-full aspect-video bg-surface-sunken rounded-lg border border-dashed border-line flex items-center justify-center">
+      <div className="w-full aspect-video bg-surface-sunken rounded-control border border-dashed border-line flex items-center justify-center">
         <span className="text-xs text-ink-subtle">Capture à venir</span>
       </div>
     );
@@ -796,7 +797,7 @@ function Screenshot({
     <button
       type="button"
       onClick={() => onZoom({ src, alt: title })}
-      className="w-full aspect-video bg-surface-sunken rounded-lg border border-line overflow-hidden cursor-zoom-in group"
+      className="w-full aspect-video bg-surface-sunken rounded-control border border-line overflow-hidden cursor-zoom-in group"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -837,14 +838,10 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
             Lancez une visite guidée pour découvrir les fonctionnalités principales.
           </p>
         </div>
-        <button
-          onClick={() => router.push("/dashboard?tour=1")}
-          type="button"
-          className={`${buttonClasses("primary")} shrink-0`}
-        >
+        <Button onClick={() => router.push("/dashboard?tour=1")} type="button" className="shrink-0">
           <CirclePlay aria-hidden="true" className="size-4" strokeWidth={1.75} />
           Lancer la visite guidée
-        </button>
+        </Button>
       </div>
 
       {/* Onglets par rôle */}
@@ -855,7 +852,7 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
             onClick={() => setActiveRole(role)}
             type="button"
             aria-pressed={activeRole === role}
-            className={`-mb-px inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-3 font-display text-sm font-semibold transition-colors ${
+            className={`-mb-px inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-3 font-display text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${
               activeRole === role
                 ? "border-brand text-brand-text"
                 : "border-transparent text-ink-muted hover:text-ink"
@@ -889,9 +886,9 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
             <h3 className="text-base font-semibold text-ink mb-4 border-b pb-2">{category}</h3>
             <div className="grid gap-4 sm:grid-cols-2">
               {visibleFeatures.filter((f) => f.category === category).map((feature) => (
-                <div key={feature.name} className="border rounded-lg p-4 space-y-3">
+                <div key={feature.name} className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4">
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="text-sm font-medium text-ink-muted">{feature.name}</h4>
+                    <h4 className="text-sm font-semibold text-ink">{feature.name}</h4>
                     <AccessBadge level={feature.access[activeRole]} />
                   </div>
                   <p className="text-xs text-ink-muted">{feature.description}</p>
@@ -914,22 +911,18 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
           role="none"
           onClick={(e) => { if (e.target === e.currentTarget) setZoomedImage(null); }}
         >
-          <button
-            type="button"
+          <IconButton
+            icon={X}
             onClick={() => setZoomedImage(null)}
-            className="absolute top-4 right-4 text-ink bg-surface/90 hover:bg-surface rounded-full shadow-float p-2 transition-colors"
             aria-label="Fermer"
-          >
-            <svg aria-hidden="true" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+            className="absolute right-4 top-4 bg-surface shadow-float"
+          />
           <div className="max-w-full">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={zoomedImage.src}
               alt={zoomedImage.alt}
-              className="block max-w-full max-h-[90vh] object-contain rounded-lg shadow-overlay"
+              className="block max-w-full max-h-[90vh] object-contain rounded-card shadow-overlay"
             />
           </div>
         </div>

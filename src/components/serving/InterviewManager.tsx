@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Button } from "@/components/ui";
+import { Video } from "lucide-react";
+import { Alert, Button, ConfirmModal, buttonClasses } from "@/components/ui";
 import type { PublicInterviewView } from "@/modules/serving";
 
 type View = PublicInterviewView;
@@ -33,7 +34,7 @@ function SlotPicker({ slots, busy, onPick, onDecline, showDecline }: {
               {ofDay.map((s) => (
                 <label
                   key={s.id}
-                  className={`flex min-h-11 cursor-pointer items-start gap-3 rounded-control border p-3 ${chosen === s.id ? "border-brand bg-brand-soft" : "border-line bg-surface"}`}
+                  className={`flex min-h-11 cursor-pointer items-start gap-3 rounded-control border p-3 ${chosen === s.id ? "border-brand bg-brand-soft" : "border-control-line bg-surface"}`}
                 >
                   <input type="radio" name="slot" className="mt-1 size-5 accent-brand" checked={chosen === s.id} disabled={busy} onChange={() => setChosen(s.id)} />
                   <span className="text-[15px] text-ink">
@@ -74,6 +75,7 @@ export default function InterviewManager({ token, afterSubmit = false }: { reado
   const [busy, setBusy] = useState(false);
   const [changing, setChanging] = useState(false);
   const [declined, setDeclined] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
   const url = `/api/serving/public/interview/${encodeURIComponent(token)}`;
   const load = useCallback(async () => {
@@ -120,16 +122,15 @@ export default function InterviewManager({ token, afterSubmit = false }: { reado
           <p className="text-[13px] font-semibold uppercase tracking-wide text-ink-muted">Ton entretien</p>
           <p className="text-lg font-semibold text-ink first-letter:uppercase">{dateTime(i.startsAt)}</p>
           <p className="text-[15px] text-ink">
-            {i.durationMinutes} min ·{" "}
-            {i.visioUrl ? (
-              <a href={i.visioUrl} className="font-semibold text-brand-text underline" target="_blank" rel="noopener noreferrer">
-                Rejoindre la visio
-              </a>
-            ) : (
-              (i.location ?? "lieu communiqué par l'équipe")
-            )}
+            {i.durationMinutes} min · {i.visioUrl ? "en visio" : (i.location ?? "lieu communiqué par l'équipe")}
             {i.interviewerName ? ` · avec ${i.interviewerName}` : ""}
           </p>
+          {i.visioUrl && (
+            <a href={i.visioUrl} className={buttonClasses("secondary")} target="_blank" rel="noopener noreferrer">
+              <Video aria-hidden="true" className="size-4" strokeWidth={1.75} />
+              Rejoindre la visio
+            </a>
+          )}
           {i.past ? null : i.canChange ? (
             <div className="flex flex-wrap gap-3">
               {view.freeSlots.length > 0 && (
@@ -141,9 +142,7 @@ export default function InterviewManager({ token, afterSubmit = false }: { reado
                 type="button"
                 variant="ghost"
                 disabled={busy}
-                onClick={() => {
-                  if (confirm("Annuler ton rendez-vous ?")) void act({ action: "cancel" }, "Ton rendez-vous est annulé. Tu peux en choisir un autre quand tu veux.");
-                }}
+                onClick={() => setConfirmCancel(true)}
               >
                 Annuler le rendez-vous
               </Button>
@@ -153,6 +152,20 @@ export default function InterviewManager({ token, afterSubmit = false }: { reado
               Ton entretien est dans moins de 24 heures : pour le changer ou l&apos;annuler, contacte l&apos;équipe Vie des STAR{contact}.
             </p>
           )}
+          <ConfirmModal
+            open={confirmCancel}
+            title="Annuler ton rendez-vous ?"
+            message="Le créneau sera libéré pour un autre candidat. Tu pourras en choisir un autre ensuite."
+            confirmLabel="Annuler le rendez-vous"
+            confirmingLabel="Annulation…"
+            confirming={busy}
+            onCancel={() => setConfirmCancel(false)}
+            onConfirm={() =>
+              void act({ action: "cancel" }, "Ton rendez-vous est annulé. Tu peux en choisir un autre quand tu veux.").then(() =>
+                setConfirmCancel(false)
+              )
+            }
+          />
         </div>
       ) : declined ? (
         <Alert tone="info" title="C'est noté : l'équipe Vie des STAR te recontactera pour fixer un rendez-vous." />

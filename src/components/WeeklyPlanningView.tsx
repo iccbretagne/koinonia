@@ -297,6 +297,7 @@ export default function WeeklyPlanningView({
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                className="min-h-11 sm:min-h-9"
                                 onClick={() => startEdit(event.id, event.notice?.content ?? "")}
                               >
                                 <Pencil aria-hidden="true" className="size-4" strokeWidth={1.75} />
@@ -306,7 +307,7 @@ export default function WeeklyPlanningView({
                                 type="button"
                                 onClick={() => setPendingNoticeDelete(event.id)}
                                 disabled={saving}
-                                className={ghostDangerClasses}
+                                className={`${ghostDangerClasses} min-h-11 sm:min-h-9`}
                               >
                                 <Trash2 aria-hidden="true" className="size-4" strokeWidth={1.75} />
                                 Supprimer
@@ -327,10 +328,10 @@ export default function WeeklyPlanningView({
                               autoFocus
                             />
                             <div className="flex gap-2">
-                              <Button size="sm" onClick={() => saveNotice(event.id)} disabled={saving}>
+                              <Button size="sm" className="min-h-11 sm:min-h-9" onClick={() => saveNotice(event.id)} disabled={saving}>
                                 {saving ? "Enregistrement…" : "Enregistrer"}
                               </Button>
-                              <Button variant="secondary" size="sm" onClick={cancelEdit} disabled={saving}>
+                              <Button variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={cancelEdit} disabled={saving}>
                                 Annuler
                               </Button>
                             </div>
@@ -347,7 +348,7 @@ export default function WeeklyPlanningView({
                         variant="ghost"
                         size="sm"
                         onClick={() => startEdit(event.id, "")}
-                        className="-ml-3 mt-2"
+                        className="-ml-3 mt-2 min-h-11 sm:min-h-9"
                       >
                         <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
                         Ajouter une notice
