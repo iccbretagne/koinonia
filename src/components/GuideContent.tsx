@@ -374,7 +374,7 @@ const FEATURES: Feature[] = [
   // ── Suivi pastoral ───────────────────────────────────────────────────────
   {
     name: "Demande de RDV pastoral",
-    description: "Déposez une demande de rendez-vous avec un pasteur ou responsable depuis une tuile « Rendez-vous pastoral » dans « Mes demandes » (ou le lien de menu autonome pour le STAR, sans accès à « Mes demandes »). Disponible pour toute personne ayant accès au planning de son église. Suivez ensuite l'état de la demande (et, si elle est refusée, le motif) dans la section « Rendez-vous pastoraux » de « Mes demandes ».",
+    description: "Déposez une demande de rendez-vous avec un pasteur ou responsable depuis « Demander un rendez-vous » dans « Mes demandes ». Ouvert à tout compte de l’église, quel que soit son rôle (au plus 5 demandes par heure). Suivez ensuite l'état de la demande (et, si elle est refusée, le motif) dans la section « Rendez-vous pastoraux » de « Mes demandes ».",
     category: "Suivi pastoral",
     screenshotTitle: "Demande de RDV pastoral",
     screenshotFile: "guide-care-demande.png",

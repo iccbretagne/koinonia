@@ -22,7 +22,7 @@ export const contract = defineContract({
   GET: {
     summary: "Compte rendu d'un événement",
     access: "reports:view",
-    accessNote: "ou `events:manage`, dans l'église de l'événement",
+    accessNote: "ou `events:manage`, ou profil pastoral (lecture seule, spec 092), dans l'église de l'événement",
     response: "Compte rendu avec sections et auteur, ou null s'il n'existe pas",
   },
   PUT: {

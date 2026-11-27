@@ -51,7 +51,7 @@ describe("requirePastoralActiveChurch", () => {
 
   it("aucun profil : redirige vers l'espace pastoral", async () => {
     prismaMock.pastoralProfile.findFirst.mockResolvedValue(null);
-    await expect(requirePastoralActiveChurch()).rejects.toThrow("REDIRECT:/pastoral");
+    await expect(requirePastoralActiveChurch()).rejects.toThrow("REDIRECT:/accueil");
   });
 
   it("sans église courante : église dont le profil est responsable, puis la sienne", async () => {

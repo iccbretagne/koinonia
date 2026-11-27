@@ -7,6 +7,7 @@ const mockGetCurrentChurchId = vi.fn();
 vi.mock("@/lib/auth", () => ({
   requireAuth: () => mockRequireAuth(),
   getCurrentChurchId: () => mockGetCurrentChurchId(),
+  hasPastoralRead: (s: { user: { pastoralChurchIds?: string[] } }, c: string) => (s.user.pastoralChurchIds ?? []).includes(c),
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 const mockCreateNotification = vi.fn();

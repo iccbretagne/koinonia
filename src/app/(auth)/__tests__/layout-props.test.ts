@@ -154,6 +154,13 @@ const scenarios: [string, () => Session, Parameters<typeof world>[0]?, string?][
   ],
 ];
 
+/** Doublons pastoraux retirés au lot 3 (spec 092) : ancienne adresse → écran commun. */
+const LOT3_PASTORAL_TWINS: Record<string, string> = {
+  "/pastoral/events": "/events",
+  "/pastoral/reports": "/admin/reports",
+  "/pastoral/accounting": "/accounting/requests",
+};
+
 describe("AuthLayout — props de navigation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -183,13 +190,25 @@ describe("AuthLayout — props de navigation", () => {
     const missing = before.filter((href) => {
       if (after.has(href)) return false;
       const movedToMyRequests = href === "/accounting/requests" && !props.hasAccountingManage && after.has("/requests");
-      return !movedToMyRequests;
+      // Lot 3 : le RDV pastoral passe par « Mes demandes » (ouverte à tous) ; les doublons
+      // pastoraux redirigent vers les écrans communs, présents dans la navigation.
+      const careViaMyRequests = href === "/care/request" && after.has("/requests");
+      const pastoralTwin = LOT3_PASTORAL_TWINS[href];
+      return !movedToMyRequests && !careViaMyRequests && !(pastoralTwin && after.has(pastoralTwin));
     });
     expect(missing).toEqual([]);
     // Aucune entrée nouvelle, hors : « Mes inscriptions », réglages de l'église du Super Admin, et
     // deux écrans déjà ouverts aux mêmes personnes (« Questionnaires » = `hasCampaigns`, absent de la
     // référence ; « Statistiques » = onglet de l'ancienne barre `AccountingNav`, même droit).
-    const known = ["/collectes", "/accounting/stats"];
+    // Lot 3 : « Mes demandes » pour tous (exception 1) ; lecture pastorale (exception 3).
+    const isPastoralReader = ((session().user.pastoralChurchIds ?? []) as string[]).includes("church-1");
+    const known = [
+      "/collectes",
+      "/accounting/stats",
+      "/requests",
+      // Vue pastorale = filtre de la navigation commune : Familles (site externe) en fait partie.
+      ...(isPastoralReader ? ["/admin/reports", "/accounting/requests", "/events", props.famillesUrl as string] : []),
+    ];
     const added = [...after].filter(
       (href) =>
         !before.includes(href) &&

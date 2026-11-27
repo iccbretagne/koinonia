@@ -164,38 +164,38 @@
 
 ### Sécurité / API
 
-- [ ] **T3.1** [J] — `hasPastoralRead(session, churchId)` ; test figé de `PASTORAL_READ_PERMISSIONS`
+- [x] **T3.1** [J] — `hasPastoralRead(session, churchId)` ; test figé de `PASTORAL_READ_PERMISSIONS`
       (inchangé). *(fichier : `src/lib/auth.ts`)*
-- [ ] **T3.2** [J] — `GET /api/events/[eventId]/report` : lecture pastorale de l'église de
+- [x] **T3.2** [J] — `GET /api/events/[eventId]/report` : lecture pastorale de l'église de
       l'événement ; `PUT` inchangé ; `contract.ts` ; tests 200 / autre église / `PUT` 403.
-- [ ] **T3.3** [J] — `GET /api/accounting/requests/[id]` : lecture pastorale (périmètre église),
+- [x] **T3.3** [J] — `GET /api/accounting/requests/[id]` : lecture pastorale (périmètre église),
       sans email du demandeur ni coordonnée bancaire ; `PATCH`, pièces, export inchangés ; tests.
-- [ ] **T3.4** [J] — `POST /api/care/requests` : `requireChurchAccess(data.churchId)` + débit ;
+- [x] **T3.4** [J] — `POST /api/care/requests` : `requireChurchAccess(data.churchId)` + débit ;
       `contract.ts` ; tests (Reporter 201, autre église 403, débit).
-- [ ] **T3.5** [M] — `npm run openapi` ; commiter `docs/openapi.json`.
+- [x] **T3.5** [M] — `npm run openapi` ; commiter `docs/openapi.json`.
 
 ### Pages
 
-- [ ] **T3.6** [J] — `/admin/reports` et `/admin/events/[id]/report` en lecture pastorale ;
+- [x] **T3.6** [J] — `/admin/reports` et `/admin/events/[id]/report` en lecture pastorale ;
       `EventReportClient` mode `readOnly` (aucun champ éditable, aucun bouton) ; tests deux modes.
-- [ ] **T3.7** [J] — `/accounting/requests/[id]` : périmètre pastoral = église ; aucune action
+- [x] **T3.7** [J] — `/accounting/requests/[id]` : périmètre pastoral = église ; aucune action
       rendue ; pièces non téléchargeables (défaut Q4).
-- [ ] **T3.8** [J] — `/requests` : garde `requireChurchAccess` ; sections (internes, rendez-vous,
+- [x] **T3.8** [J] — `/requests` : garde `requireChurchAccess` ; sections (internes, rendez-vous,
       questionnaires, inscriptions, comptables, Navette) ; « Nouvelle demande » seulement avec
       `members:view` ; `/requests/new` et APIs inchangées.
-- [ ] **T3.9** [J] — Layout : entrée universelle « Mes demandes » hors `hasAnyNavigation` ;
+- [x] **T3.9** [J] — Layout : entrée universelle « Mes demandes » hors `hasAnyNavigation` ;
       `/no-access` conservé (test CA10 spec 038).
-- [ ] **T3.10** [M] — `/care/request` : garde `requireChurchAccess`.
-- [ ] **T3.11** [J] — Vue pastorale = filtre de `buildSpaces` (défaut Q3) ; `buildPastoralSpaces`
+- [x] **T3.10** [M] — `/care/request` : garde `requireChurchAccess`.
+- [x] **T3.11** [J] — Vue pastorale = filtre de `buildSpaces` (défaut Q3) ; `buildPastoralSpaces`
       supprimé ; doublons pastoraux retirés de la navigation mais servis.
-- [ ] **T3.12** [M] — Tableau pastoral extrait en composant, rendu par `/accueil` en vue
+- [x] **T3.12** [M] — Tableau pastoral extrait en composant, rendu par `/accueil` en vue
       pastorale ; `landingHref` et `switchToPastoralMode` → `/accueil`.
 
 ### Tests et recette
 
-- [ ] **T3.13** [J] — Tests d'écriture refusée pour un pasteur sans rôle, route par route
+- [x] **T3.13** [J] — Tests d'écriture refusée pour un pasteur sans rôle, route par route
       (`PUT` compte rendu, `PATCH`/`POST` comptables, dépôt de pièce, export).
-- [ ] **T3.14** [M] — Tests Mes demandes (6 profils), vue pastorale (« Mes membres » unique, pasteur STAR garde Planning/Audio).
+- [x] **T3.14** [M] — Tests Mes demandes (6 profils), vue pastorale (« Mes membres » unique, pasteur STAR garde Planning/Audio).
 - [ ] **T3.15** [J] — Recette Playwright du lot 3 (7 scénarios), dont tentative d'écriture par la console.
 - [ ] **T3.16** — Vérifications CI + `build` ; PR.
 

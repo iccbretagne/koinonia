@@ -150,6 +150,33 @@ même église (berger également STAR, par exemple) : auparavant, la présence d
 écartait et la navigation proposait des pages refusées (FORBIDDEN). Elles restent bornées aux
 églises de `pastoralChurchIds`.
 
+**Exceptions de droits de la spec 092 (lot 3)** — sans changement de la matrice ni de
+`PASTORAL_READ_PERMISSIONS` :
+
+1. **« Mes demandes »** (`/requests`) est ouverte à tout compte de l'église courante
+   (`requireChurchAccess`) : consultation de **ses propres** demandes (internes, comptables,
+   navette, rendez-vous, questionnaires, inscriptions). Créer une demande interne exige toujours
+   `members:view` (bouton « Nouvelle demande », `POST /api/requests` inchangés).
+2. **Demande de RDV pastoral** (`/care/request`, `POST /api/care/requests`) : tout compte de
+   l'église (`requireChurchAccess(churchId)`), demandeur tiré de la session, débit limité à 5
+   demandes par heure et par compte en plus du limiteur de mutation.
+3. **Lecture pastorale** des comptes rendus et de la comptabilité : `hasPastoralRead(session,
+   churchId)` (`src/lib/auth.ts`, helper nommé, jamais une permission) ouvre, pour **l'église de
+   l'objet** et en lecture seule : `GET /api/events/[eventId]/report`, `/admin/reports`,
+   `/admin/events/[eventId]/report` (vue `EventReportReadOnly`), `GET
+   /api/accounting/requests/[id]` et `/accounting/requests/[id]` (toute l'église, email du
+   demandeur et clé de stockage des pièces retirés, pas de justificatif). Restent refusés à un
+   lecteur pastoral sans rôle : toute écriture (`PUT` du compte rendu, `PATCH`/`POST` comptables,
+   pièces, paiements), tout téléchargement de pièce (`?inline=1` compris) et tout export.
+
+La **vue pastorale** (cookie `koinonia-view-mode`) n'est plus une navigation à part : c'est un
+filtre de la navigation commune (`PASTORAL_VIEW_HREFS`, `src/lib/navigation.ts`), avec « Mes
+membres » à la place de `/admin/members` ; les espaces Pastoral, Administration et Plateforme
+sont conservés tels que les rôles les ouvrent. Le tableau pastoral est rendu par `/accueil` ;
+les anciens doublons `/pastoral`, `/pastoral/events`, `/pastoral/reports` et
+`/pastoral/accounting` redirigent vers les écrans communs. L'assistant et le serveur MCP ne sont
+pas élargis.
+
 Le partage de bibliothèque audio est le **deuxième** axe d'accès transverse inter-églises du
 projet. Il ne passe volontairement **pas** par `requireChurchPermission` ni par
 `PASTORAL_READ_PERMISSIONS` : élargir le garde générique qui protège tout le multi-tenant pour un

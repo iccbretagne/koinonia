@@ -1,9 +1,14 @@
-import { requireAuth } from "@/lib/auth";
+import { requireAuth, hasPastoralRead } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import EventReportClient from "./EventReportClient";
+import EventReportReadOnly from "./EventReportReadOnly";
 import { PageHeader } from "@/components/ui";
+
+function eventDescription(title: string, date: Date) {
+  return `${title} — ${new Date(date).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}`;
+}
 
 export default async function EventReportPage({
   params,
@@ -41,9 +46,21 @@ export default async function EventReportPage({
   // Allow access if user has events:manage OR reports:view for this church
   const churchRoles = session.user.churchRoles.filter((r) => r.churchId === event.churchId);
   const perms = new Set(churchRoles.flatMap((r) => rolePermissions[r.role] ?? []));
-  if (!perms.has("events:manage") && !perms.has("reports:view")) {
+  const canRead = perms.has("events:manage") || perms.has("reports:view");
+  // Lecture pastorale (spec 092, exception 3) : église de l'événement, jamais le contexte affiché.
+  const readOnly = !canRead && hasPastoralRead(session, event.churchId);
+  if (!canRead && !readOnly) {
     const { ApiError } = await import("@/lib/api-utils");
     throw new ApiError(403, "Forbidden");
+  }
+
+  if (readOnly) {
+    return (
+      <div className="flex flex-col gap-6">
+        <PageHeader title="Compte rendu" description={eventDescription(event.title, event.date)} />
+        <EventReportReadOnly statsEnabled={event.statsEnabled} report={event.report} />
+      </div>
+    );
   }
 
   // Départements liés à l'événement pour pré-remplir les sections
@@ -57,11 +74,7 @@ export default async function EventReportPage({
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Compte rendu"
-        description={`${event.title} — ${new Date(event.date).toLocaleDateString("fr-FR", {
-          day: "2-digit",
-          month: "long",
-          year: "numeric",
-        })}`}
+        description={eventDescription(event.title, event.date)}
       />
 
       <EventReportClient

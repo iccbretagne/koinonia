@@ -55,9 +55,15 @@ interface RequestItem {
 
 interface Props {
   readonly requests: RequestItem[];
+  /**
+   * Créer, modifier ou annuler une demande interne (`members:view`, mêmes gardes que
+   * `/requests/new` et `PATCH /api/requests/[id]`). Sans lui, la liste est en consultation seule
+   * (spec 092, exception 1).
+   */
+  readonly canCreate?: boolean;
 }
 
-function RequestCard({ req, onUpdated }: { readonly req: RequestItem; readonly onUpdated: (updated: Partial<RequestItem>) => void }) {
+function RequestCard({ req, onUpdated, canEdit }: { readonly req: RequestItem; readonly onUpdated: (updated: Partial<RequestItem>) => void; readonly canEdit: boolean }) {
   const toast = useToast();
   const [cancelling, setCancelling] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -163,7 +169,7 @@ function RequestCard({ req, onUpdated }: { readonly req: RequestItem; readonly o
           <Alert tone="danger" title="Erreur :">{req.executionError}</Alert>
         )}
 
-        {isPending && (
+        {isPending && canEdit && (
           <div className="flex flex-wrap gap-2">
             <Link href={paths.requests.edit(req.id)} className={buttonClasses("secondary", "sm")}>
               <Pencil aria-hidden="true" className="size-4" strokeWidth={1.75} />
@@ -192,7 +198,7 @@ function RequestCard({ req, onUpdated }: { readonly req: RequestItem; readonly o
   );
 }
 
-export default function RequestsList({ requests }: Props) {
+export default function RequestsList({ requests, canCreate = true }: Props) {
   const [items, setItems] = useState<RequestItem[]>(requests);
   const [category, setCategory] = useState<FilterCategory>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -237,6 +243,8 @@ export default function RequestsList({ requests }: Props) {
   }
 
   if (items.length === 0) {
+    // Consultation seule : sans demande ni droit de créer, la section n'a pas d'objet.
+    if (!canCreate) return null;
     return (
       <div className="rounded-card border border-line bg-surface">
         <EmptyState
@@ -328,7 +336,7 @@ export default function RequestsList({ requests }: Props) {
       ) : (
         <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
           {filtered.map((req) => (
-            <RequestCard key={req.id} req={req} onUpdated={(patch) => handleUpdated(req.id, patch)} />
+            <RequestCard key={req.id} req={req} canEdit={canCreate} onUpdated={(patch) => handleUpdated(req.id, patch)} />
           ))}
         </ul>
       )}

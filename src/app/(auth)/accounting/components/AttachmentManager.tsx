@@ -16,6 +16,8 @@ interface Props {
   readonly requestId?: string;     // undefined → pré-upload avant création
   readonly canUpload?: boolean;
   readonly canDelete?: boolean;
+  /** Voir / télécharger (défaut). Faux en lecture pastorale : la route refuse de toute façon (spec 092). */
+  readonly canOpen?: boolean;
   readonly onChange?: (attachments: AttachmentItem[]) => void; // called after upload/delete
   readonly className?: string;
 }
@@ -68,6 +70,7 @@ export default function AttachmentManager({
   requestId,
   canUpload = false,
   canDelete = false,
+  canOpen = true,
   onChange,
   className = "",
 }: Props) {
@@ -147,8 +150,8 @@ export default function AttachmentManager({
                 <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{a.filename}</p>
                 <p className="text-[13px] leading-[18px] text-ink-subtle">{fmtSize(a.size)}</p>
               </div>
-              <IconButton icon={Eye} aria-label={`Voir ${a.filename}`} title="Voir" onClick={() => handleView(a.id)} />
-              <IconButton icon={Download} aria-label={`Télécharger ${a.filename}`} title="Télécharger" onClick={() => handleDownload(a.id, a.filename)} />
+              {canOpen && <IconButton icon={Eye} aria-label={`Voir ${a.filename}`} title="Voir" onClick={() => handleView(a.id)} />}
+              {canOpen && <IconButton icon={Download} aria-label={`Télécharger ${a.filename}`} title="Télécharger" onClick={() => handleDownload(a.id, a.filename)} />}
               {canDelete && (
                 <IconButton
                   aria-label={`Supprimer ${a.filename}`}

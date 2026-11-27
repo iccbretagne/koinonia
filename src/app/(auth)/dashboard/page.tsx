@@ -158,7 +158,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
   const pastoralChurchIds = session.user.pastoralChurchIds ?? [];
   const isPastoralChurch = currentChurchId ? pastoralChurchIds.includes(currentChurchId) : false;
   const hasClassicRole = session.user.churchRoles.some((r) => r.churchId === currentChurchId);
-  if (isPastoralView({ isPastoral: isPastoralChurch, hasClassicRole, viewModeCookie: viewMode })) redirect(paths.pastoral());
+  if (isPastoralView({ isPastoral: isPastoralChurch, hasClassicRole, viewModeCookie: viewMode })) redirect(paths.accueil());
 
   if (!currentChurchId) {
     return (

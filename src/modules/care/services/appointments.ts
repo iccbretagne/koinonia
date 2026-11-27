@@ -31,12 +31,12 @@ import { paths } from "@/lib/paths";
 
 export const appointmentSubmitSchema = z.object({
   churchId: z.string().min(1, "L'église est requise"),
-  firstName: z.string().min(1, "Le prénom est requis"),
-  lastName: z.string().min(1, "Le nom est requis"),
-  email: z.string().email("Email invalide").nullable().optional(),
-  phone: z.string().nullable().optional(),
-  subject: z.string().min(1, "L'objet est requis"),
-  message: z.string().min(1, "Le message est requis"),
+  firstName: z.string().trim().min(1, "Le prénom est requis").max(100, "Prénom trop long"),
+  lastName: z.string().trim().min(1, "Le nom est requis").max(100, "Nom trop long"),
+  email: z.string().email("Email invalide").max(191, "Email trop long").nullable().optional(),
+  phone: z.string().max(40, "Téléphone trop long").nullable().optional(),
+  subject: z.string().trim().min(1, "L'objet est requis").max(191, "Objet trop long"),
+  message: z.string().trim().min(1, "Le message est requis").max(5000, "Message trop long"),
 });
 
 export type AppointmentSubmitInput = z.infer<typeof appointmentSubmitSchema>;

@@ -4,7 +4,9 @@ import { expect, test } from "./roles";
 /**
  * Navigation par rôle : espaces visibles (sidebar desktop, barre du bas + panneau « Plus »
  * mobile). Table de données volontairement petite, à mettre à jour avec src/lib/navigation.ts
- * (spec 092 : onze espaces au lot 1, barre du bas par rôle principal au lot 2). Constat du comportement, pas une prescription : en cas d'écart
+ * (spec 092 : onze espaces au lot 1, barre du bas par rôle principal au lot 2, « Mes demandes »
+ * pour tous au lot 3 ; vue pastorale : aucun compte de test n'a de profil pastoral lié,
+ * volontairement — `prisma/seed-dev.ts` —, son scénario est couvert par Vitest). Constat du comportement, pas une prescription : en cas d'écart
  * légitime, corriger la table.
  */
 
@@ -42,11 +44,11 @@ export const NAV_BY_ROLE: Record<string, RoleNav> = {
   ministre: { spaces: MINISTRE, bottom: ["Accueil", "Planning", "Événements", "Personnes"] },
   "resp-accueil": { spaces: DEPT_HEAD, bottom: ["Accueil", "Planning", "Événements", "Personnes"] },
   "resp-secretariat": { spaces: DEPT_HEAD, bottom: ["Accueil", "Planning", "Événements", "Personnes"] },
-  "faiseur-disciples": { spaces: ["Accueil", "Planning", "Personnes", "Médias", "Ressources"], bottom: ["Accueil", "Discipolat", "Planning"] },
-  reporter: { spaces: ["Accueil", "Événements", "Médias", "Ressources"], bottom: ["Accueil", "Comptes rendus", "Calendrier"] },
-  star: { spaces: DEPT_HEAD.filter((s) => s !== "Personnes"), bottom: ["Accueil", "Mon planning", "Calendrier"] },
-  comptable: { spaces: ["Accueil", "Finances", "Médias", "Ressources"], bottom: ["Accueil", "Demandes", "Trésorerie"] },
-  "referent-soins": { spaces: ["Accueil", "Pastoral", "Médias", "Ressources"], bottom: ["Accueil", "Suivi"] },
+  "faiseur-disciples": { spaces: ["Accueil", "Planning", "Personnes", "Demandes", "Médias", "Ressources"], bottom: ["Accueil", "Discipolat", "Mes demandes", "Planning"] },
+  reporter: { spaces: ["Accueil", "Événements", "Demandes", "Médias", "Ressources"], bottom: ["Accueil", "Comptes rendus", "Calendrier", "Mes demandes"] },
+  star: { spaces: DEPT_HEAD.filter((s) => s !== "Personnes"), bottom: ["Accueil", "Mon planning", "Calendrier", "Mes demandes"] },
+  comptable: { spaces: ["Accueil", "Demandes", "Finances", "Médias", "Ressources"], bottom: ["Accueil", "Demandes", "Trésorerie", "Mes demandes"] },
+  "referent-soins": { spaces: ["Accueil", "Pastoral", "Demandes", "Médias", "Ressources"], bottom: ["Accueil", "Suivi", "Mes demandes"] },
 };
 
 /** Lignes de navigation visibles sous forme de texte (le texte inclut pastilles et « (nouvel onglet) »). */
@@ -89,9 +91,11 @@ for (const [role, nav] of Object.entries(NAV_BY_ROLE)) {
 const KEY_PAGES: Record<string, string[]> = {
   admin: ["/admin/events", "/admin/members", "/events"],
   secretaire: ["/admin/events", "/admin/members"],
-  star: ["/planning", "/profile/notifications"],
-  comptable: ["/dons"],
-  reporter: ["/admin/reports"],
+  // Spec 092, lot 3 : « Mes demandes » et la demande de RDV pastoral ouvertes à tout compte.
+  star: ["/planning", "/profile/notifications", "/requests", "/care/request?new=1"],
+  comptable: ["/dons", "/requests", "/care/request?new=1"],
+  reporter: ["/admin/reports", "/requests", "/care/request?new=1"],
+  "referent-soins": ["/requests", "/care/request?new=1"],
 };
 
 for (const [role, urls] of Object.entries(KEY_PAGES)) {
