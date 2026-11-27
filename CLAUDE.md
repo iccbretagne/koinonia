@@ -151,6 +151,7 @@ koinonia/
 │   │       ├── DataTable.tsx / CheckboxGroup.tsx / BulkActionBar.tsx
 │   │       ├── IconButton.tsx / StatusChip.tsx / Alert.tsx / PageHeader.tsx
 │   │       ├── Skeleton.tsx / EmptyState.tsx / Toast.tsx (useToast) / Tabs.tsx
+│   │       ├── Menu.tsx / SegmentedControl.tsx / Switch.tsx / RadioGroup.tsx / FileInput.tsx
 │   ├── generated/
 │   │   └── prisma/              # Client Prisma genere (remplace @prisma/client)
 │   ├── lib/
@@ -266,7 +267,11 @@ const data = createSchema.parse(await request.json());
 Voir les composants existants dans `src/components/ui/` avant d'en créer de nouveaux : `Button`,
 `Field` (Input/Select/Textarea), `Checkbox`/`CheckboxGroup`, `Modal`/`ConfirmModal`, `BottomSheet`,
 `DataTable`, `BulkActionBar`, `Tabs`, ainsi que les ajouts de la refonte design system (spec 055) —
-`IconButton`, `StatusChip`, `Alert`, `PageHeader`, `Skeleton`, `EmptyState`, `Toast`/`useToast`.
+`IconButton`, `StatusChip`, `Alert`, `PageHeader`, `Skeleton`, `EmptyState`, `Toast`/`useToast`, et
+ceux de la mise en conformité — `Menu` (actions « ⋯ », feuille du bas sur mobile), `SegmentedControl`
+(changer la vue d'une page), `Switch` (réglage appliqué, `role="switch"`), `RadioGroup` (choix unique
+dans un formulaire, `choiceChipClasses` pour les pastilles), `FileInput` (sélecteur de fichier en
+bouton) et le mode état de `Tabs` (`value`/`onChange`/`idBase` + `TabPanel`, à côté du mode liens).
 Tous sont écrits sur les tokens sémantiques (voir « Design system » ci-dessous), jamais sur une
 couleur en dur.
 
