@@ -30,5 +30,5 @@
 
 ## Finition
 - [x] Documentation (`CLAUDE.md`, `docs/processus/collectes.md`, `docs/campagnes-f9-2026.md`, `docs/database.md`, fiches de l'assistant, CHANGELOG)
-- [ ] typecheck, lint, lint:boundaries, tests, openapi, build
-- [ ] Revue de code, PR vers `feat/campagnes-collecte`, déploiement en recette
+- [x] typecheck, lint, lint:boundaries, tests, openapi, build
+- [x] Revue de code, PR vers `feat/campagnes-collecte`, déploiement en recette
