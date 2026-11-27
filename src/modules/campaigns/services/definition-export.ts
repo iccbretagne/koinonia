@@ -167,11 +167,43 @@ type RawForm = { key?: unknown } & Record<string, unknown>;
 type RawRule = { key?: unknown } & Record<string, unknown>;
 
 /**
+ * Refus générique d'un document qui touche à un questionnaire confidentiel caché : ni code, ni clé,
+ * ni position. L'appel de l'assistant ne doit jamais servir d'oracle sur ce qu'il ne voit pas.
+ */
+export const HIDDEN_CONFIDENTIAL_REFUSAL = "Ce document touche à un questionnaire confidentiel : modifiez-le depuis l'écran.";
+
+/** Toutes les valeurs `code` d'un sous-arbre JSON (questions, champs de groupe), même mal formé. */
+function rawCodes(value: unknown, out: string[] = []): string[] {
+  if (Array.isArray(value)) for (const v of value) rawCodes(v, out);
+  else if (value && typeof value === "object") {
+    for (const [k, v] of Object.entries(value)) {
+      if (k === "code" && typeof v === "string") out.push(v);
+      else rawCodes(v, out);
+    }
+  }
+  return out;
+}
+
+/** Toutes les chaînes d'un sous-arbre JSON (une règle cite ses codes dans des chaînes). */
+function rawStrings(value: unknown, out: string[] = []): string[] {
+  if (typeof value === "string") out.push(value);
+  else if (Array.isArray(value)) for (const v of value) rawStrings(v, out);
+  else if (value && typeof value === "object") for (const v of Object.values(value)) rawStrings(v, out);
+  return out;
+}
+
+/**
  * Assistant IA seulement : réintègre au document reçu les questionnaires confidentiels existants
- * (qu'il ne voit pas), à leur position, et les règles qui lisent leurs codes. Ainsi un import par
- * l'assistant ne peut ni voir ni supprimer un questionnaire confidentiel. Un document qui porte
- * la clé d'un questionnaire confidentiel existant, ou celle d'une règle qui le lit, est refusé
- * (400). Un document illisible est rendu tel quel : l'import le refusera avec ses erreurs.
+ * (qu'il ne voit pas) et les règles qui lisent leurs codes, chacun **à son rang d'origine** : un
+ * document exporté pour l'assistant puis réimporté tel quel reste « inchangé ». Un import par
+ * l'assistant ne peut ainsi ni voir, ni modifier, ni supprimer un questionnaire confidentiel.
+ *
+ * Refus (400, message générique `HIDDEN_CONFIDENTIAL_REFUSAL`) d'un document qui reprend la clé
+ * d'un questionnaire caché ou d'une règle qui le lit, qui contient une question portant l'un de
+ * ses codes, ou dont une règle cite l'un de ces codes. Le document est d'abord validé **seul** :
+ * ses erreurs ne parlent que de ce qu'il contient ; une erreur qui ne surviendrait qu'une fois les
+ * éléments cachés réintégrés reçoit le message générique. Un document illisible est rendu tel
+ * quel : l'import le refusera avec ses erreurs.
  */
 export function mergeHiddenConfidentialRows(rows: CampaignDefinitionRows, definition: unknown): unknown {
   if (!definition || typeof definition !== "object" || !Array.isArray((definition as { forms?: unknown }).forms)) return definition;
@@ -181,20 +213,34 @@ export function mergeHiddenConfidentialRows(rows: CampaignDefinitionRows, defini
   if (hidden.length === 0) return definition;
 
   const hiddenKeys = new Set(hidden.map((h) => h.form.key));
-  if (doc.forms.some((f) => typeof f.key === "string" && hiddenKeys.has(f.key))) {
-    throw new ApiError(400, "Ce document reprend la clé d'un questionnaire confidentiel : l'assistant ne peut ni le lire ni le modifier. Retirez ce questionnaire du document.");
-  }
   const hiddenCodes = new Set(hidden.flatMap((h) => [...formCodes(h.form)]));
-  const hiddenRules = readRules(rows.rules).filter((r) => ruleCodes(r).some((c) => hiddenCodes.has(c)));
+  const allRules = readRules(rows.rules);
+  const hiddenRules = allRules.flatMap((rule, index) => (ruleCodes(rule).some((c) => hiddenCodes.has(c)) ? [{ index, rule }] : []));
+  const hiddenRuleKeys = new Set(hiddenRules.map((h) => h.rule.key));
   const docRules = Array.isArray(doc.rules) ? (doc.rules as RawRule[]) : [];
-  if (docRules.some((r) => typeof r.key === "string" && hiddenRules.some((h) => h.key === r.key))) {
-    throw new ApiError(400, "Ce document reprend la clé d'un contrôle qui lit un questionnaire confidentiel : l'assistant ne peut pas le modifier.");
-  }
+
+  const touchesHidden =
+    doc.forms.some((f) => typeof f.key === "string" && hiddenKeys.has(f.key)) ||
+    rawCodes(doc.forms).some((c) => hiddenCodes.has(c)) ||
+    docRules.some((r) => typeof r?.key === "string" && hiddenRuleKeys.has(r.key)) ||
+    rawStrings(docRules).some((v) => hiddenCodes.has(v));
+  if (touchesHidden) throw new ApiError(400, HIDDEN_CONFIDENTIAL_REFUSAL);
+
+  // Erreurs du document seul : elles ne citent que ce que l'assistant a lui-même envoyé.
+  if (doc.forms.length > 0) parseDefinition(doc);
 
   const forms: unknown[] = [...doc.forms];
   for (const h of hidden) forms.splice(Math.min(h.index, forms.length), 0, h.form);
-  const rules = [...docRules, ...hiddenRules];
-  return { ...doc, forms, ...(rules.length ? { rules } : {}) };
+  const rules: unknown[] = [...docRules];
+  for (const h of hiddenRules) rules.splice(Math.min(h.index, rules.length), 0, h.rule);
+  const merged = { ...doc, forms, ...(rules.length ? { rules } : {}) };
+  try {
+    parseDefinition(merged);
+  } catch (error) {
+    if (error instanceof ApiError) throw new ApiError(400, HIDDEN_CONFIDENTIAL_REFUSAL);
+    throw error;
+  }
+  return merged;
 }
 
 /** Questionnaires stockés complets (destinataires compris), avec leur rang. */

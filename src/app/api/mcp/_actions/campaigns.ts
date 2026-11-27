@@ -88,9 +88,12 @@ function importLines(p: ImportPreview, existingStatus: string | null): string[] 
     const diff = [f.itemsAdded.length && `+${f.itemsAdded.length}`, f.itemsChanged.length && `~${f.itemsChanged.length}`, f.itemsRemoved.length && `-${f.itemsRemoved.length}`].filter(Boolean).join(" ");
     return `- Questionnaire « ${f.title} » (${f.key}) : ${ACTION_LABEL[f.action]}, révision ${f.revision}${diff ? `, questions ${diff}` : ""}`;
   });
+  const fields =
+    p.campaign.action === "update" && p.campaign.fieldsChanged.length ? [`Champs de la campagne modifiés : ${p.campaign.fieldsChanged.join(", ")}`] : [];
   const counts = (["create", "update", "remove"] as const).map((a) => [a, p.assignments.filter((x) => x.action === a).length] as const).filter(([, n]) => n > 0);
   const lines = [
     head,
+    ...fields,
     ...forms,
     `Destinataires : ${p.assignments.length}${counts.length ? ` (${counts.map(([a, n]) => `${n} ${ACTION_LABEL[a]}(s)`).join(", ")})` : ""}`,
     `Répondants : ${p.respondents.resolved.length} compte(s) de l'église retrouvé(s)${p.respondents.unresolved.length ? `, ${p.respondents.unresolved.length} adresse(s) sans compte dans l'église, ignorée(s)` : ""} ; les répondants existants sont gardés`,
@@ -503,7 +506,7 @@ export async function previewReopenContribution(input: z.infer<typeof reopenCont
   const lines = [
     `Rouvrir la contribution « ${row.form.title} › ${row.label} » (campagne « ${row.campaign.title} ») : « Soumis » → « En cours ».`,
     "Les réponses et fichiers déjà saisis sont conservés ; une nouvelle soumission sera nécessaire.",
-    `Les répondants sont prévenus${reason ? " ; le motif s'affichera dans le questionnaire, pas dans la notification" : ""}.`,
+    `Les répondants sont prévenus${reason ? " ; le motif s'affichera dans le questionnaire, jamais dans la notification" : ""}.`,
   ];
   const stored: Stored<ReopenPayload> = { payload: { assignmentId: input.assignment, reason }, fp: fingerprint(reopenState(row)) };
   const { token, expiresAt } = await createConfirmation(ctx.grantId, "reopen_contribution", stored as unknown as Prisma.InputJsonValue);

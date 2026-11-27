@@ -54,7 +54,7 @@ vi.mock("@/modules/campaigns/auth", () => ({
 let assignmentAccess: unknown = null;
 
 const PREVIEW = (action: "create" | "update", extra: Record<string, unknown> = {}) => ({
-  campaign: { action, key: "bilan", title: "Bilan 2026" },
+  campaign: { action, key: "bilan", title: "Bilan 2026", fieldsChanged: action === "update" ? ["titre", "échéance"] : [] },
   forms: [{ key: "integration", title: "Intégration", action: "create", revision: 1, itemsAdded: ["N1", "N2"], itemsChanged: [], itemsRemoved: [] }],
   assignments: [{ formKey: "integration", key: "rennes", label: "Rennes", action: "create" }],
   respondents: { resolved: [{ email: "awa@example.org", name: "Awa" }], unresolved: ["inconnu@example.org"] },
@@ -140,7 +140,9 @@ describe("import d'une définition", () => {
     expect((await run("import_campaign_preview", { definition: DEF })).structured.reason).toMatch(/introuvable/);
     isManager = true;
     previewResult = PREVIEW("update");
-    expect((await run("import_campaign_preview", { definition: DEF })).structured.done).toBe(false);
+    const updated = await run("import_campaign_preview", { definition: DEF });
+    expect(updated.structured.done).toBe(false);
+    expect(updated.text).toContain("Champs de la campagne modifiés : titre, échéance");
     expect(svc.importCampaign).toHaveBeenCalledWith(expect.objectContaining({ dryRun: true, canCreate: false }));
   });
 

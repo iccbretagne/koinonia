@@ -35,7 +35,9 @@ vi.mock("@/lib/audit", () => ({ logAudit: (...a: unknown[]) => logAudit(...a) })
 vi.mock("../services/notify", () => ({ notifyRespondentAdded: vi.fn() }));
 
 const { importCampaign, parseDefinition, storedDefinition, formDefinitionHash, definitionCampaignFields } = await import("../services/import");
-const { buildCampaignDefinition, duplicateDefinition, keyFromTitle, mergeHiddenConfidentialRows, exportDueAt, duplicateCampaign } = await import("../services/definition-export");
+const { buildCampaignDefinition, duplicateDefinition, keyFromTitle, mergeHiddenConfidentialRows, exportDueAt, duplicateCampaign, HIDDEN_CONFIDENTIAL_REFUSAL } =
+  await import("../services/definition-export");
+const { Prisma } = await import("@/generated/prisma/client");
 const { hashJson, dueAtToDate } = await import("../services/values");
 type Def = ReturnType<typeof parseDefinition>;
 
@@ -185,8 +187,103 @@ describe("questionnaires confidentiels", () => {
   it("refus si l'assistant reprend la clé d'un confidentiel ou d'une règle qui le lit", () => {
     const rows = rowsFor(parseDefinition(WITH_MESSAGES));
     const { definition } = buildCampaignDefinition(rows, { omitConfidential: true });
-    expect(() => mergeHiddenConfidentialRows(rows, { ...definition, forms: [...definition.forms, { key: "secret" }] })).toThrow(/questionnaire confidentiel/);
-    expect(() => mergeHiddenConfidentialRows(rows, { ...definition, rules: [{ key: "r2" }] })).toThrow(/contrôle/);
+    expect(() => mergeHiddenConfidentialRows(rows, { ...definition, forms: [...definition.forms, { key: "secret" }] })).toThrow(HIDDEN_CONFIDENTIAL_REFUSAL);
+    expect(() => mergeHiddenConfidentialRows(rows, { ...definition, rules: [{ key: "r2" }] })).toThrow(HIDDEN_CONFIDENTIAL_REFUSAL);
+  });
+
+  /** Message reçu par l'assistant : jamais un code, une clé ni un titre caché. */
+  function refusalOf(fn: () => unknown): string {
+    try {
+      fn();
+    } catch (error) {
+      return (error as Error).message;
+    }
+    throw new Error("aucun refus");
+  }
+  const leaks = (message: string) => /P1|secret|Protection|r2/.test(message);
+
+  it("nouvelle règle citant un code caché : refus générique, sans oracle", () => {
+    const rows = rowsFor(parseDefinition(WITH_MESSAGES));
+    const { definition } = buildCampaignDefinition(rows, { omitConfidential: true });
+    const message = refusalOf(() =>
+      mergeHiddenConfidentialRows(rows, { ...definition, rules: [...(definition.rules ?? []), { key: "sonde", message: "x", check: { gte: ["P1", 0] } }] })
+    );
+    expect(message).toBe(HIDDEN_CONFIDENTIAL_REFUSAL);
+    // Règle illisible qui cite le code : même refus (pas d'erreur de schéma révélatrice).
+    expect(refusalOf(() => mergeHiddenConfidentialRows(rows, { ...definition, rules: [{ key: "x", check: { bizarre: ["P1"] } }] }))).toBe(
+      HIDDEN_CONFIDENTIAL_REFUSAL
+    );
+  });
+
+  it("question portant un code caché (champ de groupe compris) : refus générique", () => {
+    const rows = rowsFor(parseDefinition(WITH_MESSAGES));
+    const { definition } = buildCampaignDefinition(rows, { omitConfidential: true });
+    const withItem = (item: unknown) => ({
+      ...definition,
+      forms: [{ ...definition.forms[0], sections: [{ key: "sx", title: "X", items: [item] }] }],
+    });
+    expect(refusalOf(() => mergeHiddenConfidentialRows(rows, withItem({ code: "P1", type: "integer", label: "Sonde" })))).toBe(HIDDEN_CONFIDENTIAL_REFUSAL);
+    expect(
+      refusalOf(() => mergeHiddenConfidentialRows(rows, withItem({ code: "G", type: "group", label: "G", fields: [{ code: "P1", type: "integer", label: "x" }] })))
+    ).toBe(HIDDEN_CONFIDENTIAL_REFUSAL);
+  });
+
+  it("erreur de validation du document : ne parle que de ce qu'il contient", () => {
+    const rows = rowsFor(parseDefinition(WITH_MESSAGES));
+    const { definition } = buildCampaignDefinition(rows, { omitConfidential: true });
+    const message = refusalOf(() =>
+      mergeHiddenConfidentialRows(rows, { ...definition, rules: [...(definition.rules ?? []), { key: "r9", message: "x", check: { gte: ["ZZ", 0] } }] })
+    );
+    expect(message).toMatch(/ZZ/);
+    expect(leaks(message)).toBe(false);
+  });
+
+  it("règles cachées réinsérées à leur rang d'origine : réimport « inchangé »", async () => {
+    const reordered = { ...WITH_MESSAGES, rules: [...WITH_MESSAGES.rules].reverse() };
+    const rows = rowsFor(parseDefinition(reordered));
+    const { definition } = buildCampaignDefinition(rows, { omitConfidential: true });
+    expect(definition.rules?.map((r) => r.key)).toEqual(["r1"]);
+    const merged = mergeHiddenConfidentialRows(rows, definition) as Def;
+    expect(merged.rules?.map((r) => r.key)).toEqual(["r2", "r1"]);
+    const preview = await reimport(rows, merged);
+    expect(preview.campaign).toMatchObject({ action: "unchanged", fieldsChanged: [] });
+  });
+});
+
+describe("réimport des champs de campagne", () => {
+  it("document sans messages ⇒ modèles conservés : ni comparés, ni écrits", async () => {
+    const rows = rowsFor(parseDefinition(WITH_MESSAGES));
+    const { messages: _messages, ...campaign } = WITH_MESSAGES.campaign;
+    const withoutMessages = { ...WITH_MESSAGES, campaign };
+    expect((await reimport(rows, withoutMessages)).campaign).toMatchObject({ action: "unchanged", fieldsChanged: [] });
+
+    // Avec un autre changement, l'écriture ne touche pas aux modèles.
+    const retitled = { ...withoutMessages, campaign: { ...campaign, title: "Bilan 2026 (v2)" } };
+    expect((await reimport(rows, retitled)).campaign).toMatchObject({ action: "update", fieldsChanged: ["titre"] });
+    db.campaign.findUnique.mockResolvedValue(rows);
+    await importCampaign({ churchId: "ch1", definition: retitled, dryRun: false, actor: { userId: "u", name: "U" }, canCreate: true });
+    const data = db.campaign.update.mock.calls[0][0].data as Record<string, unknown>;
+    expect(data.title).toBe("Bilan 2026 (v2)");
+    expect(data).not.toHaveProperty("messageTemplates");
+  });
+
+  it("messages {} ⇒ textes par défaut rétablis", async () => {
+    const rows = rowsFor(parseDefinition(WITH_MESSAGES));
+    const reset = { ...WITH_MESSAGES, campaign: { ...WITH_MESSAGES.campaign, messages: {} } };
+    expect((await reimport(rows, reset)).campaign).toMatchObject({ action: "update", fieldsChanged: ["modèles de messages"] });
+    db.campaign.findUnique.mockResolvedValue(rows);
+    await importCampaign({ churchId: "ch1", definition: reset, dryRun: false, actor: { userId: "u", name: "U" }, canCreate: true });
+    expect(db.campaign.update.mock.calls[0][0].data).toMatchObject({ messageTemplates: Prisma.DbNull });
+  });
+
+  it("aperçu : champs modifiés en libellés français", async () => {
+    const rows = rowsFor(parseDefinition(WITH_MESSAGES));
+    const changed = {
+      ...WITH_MESSAGES,
+      campaign: { ...WITH_MESSAGES.campaign, description: "Autre", periodEnd: "2026-12-30", dueAt: "2026-12-05", fileRetentionDays: 60 },
+      rules: [WITH_MESSAGES.rules[0]],
+    };
+    expect((await reimport(rows, changed)).campaign.fieldsChanged).toEqual(["description", "période", "échéance", "conservation des fichiers", "contrôles"]);
   });
 });
 
