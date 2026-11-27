@@ -46,3 +46,8 @@ sonar-report/
 
 # Modèle de sens de l'assistant (spec 075), téléchargé au build : npm run assistant:model
 /models/
+
+# E2E Playwright (docs/e2e.md) : sessions de test, jamais versionnees
+e2e/.auth/
+test-results/
+playwright-report/

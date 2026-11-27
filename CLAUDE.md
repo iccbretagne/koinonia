@@ -1049,6 +1049,7 @@ Chaque église (`Church`) est un tenant isolé. Les données sont rattachées à
 | [Authentification](docs/auth.md) | NextAuth, OAuth, RBAC, permissions |
 | [Production](docs/production.md) | Déploiement Debian, Traefik, systemd |
 | [Environnement de dev](docs/dev-onboarding.md) | Setup conteneurisé, jeu de données fictif, connexion sans Google OAuth |
+| [Tests E2E](docs/e2e.md) | Harnais Playwright : navigation par rôle, accessibilité, comptes de dev |
 | [Roadmap](docs/roadmap.md) | Évolutions prévues |
 | [ADR](docs/adr/README.md) | Décisions architecturales structurantes (Architecture Decision Records) |
 
