@@ -9,8 +9,8 @@ import type { Role } from "../../src/generated/prisma/client";
  * rattachés à des départements distincts pour observer l'effet du périmètre
  * (scoping) sur les données visibles.
  *
- * Les rôles additionnels de modules hors périmètre de cette feature (agenda pastoral,
- * comptabilité — PASTORAL_CARE_REFERENT, ACCOUNTANT) n'ont pas de compte dédié ici.
+ * Deux rôles de module ont aussi un compte (harnais E2E, docs/e2e.md) : Comptable
+ * (ACCOUNTANT) et Référent soins pastoraux (PASTORAL_CARE_REFERENT).
  *
  * Consommé à la fois par `prisma/seed-dev.ts` (création des comptes) et par
  * `src/lib/auth.ts` (liste affichée par le provider de connexion développement) —
@@ -117,5 +117,21 @@ export const DEV_USERS: DevUserDef[] = [
     role: "STAR",
     churchKey: "kervignac",
     linkedMemberDepartmentKey: "accueil",
+  },
+  {
+    key: "comptable",
+    email: "comptable@dev.local",
+    name: "Camille Comptable",
+    displayName: "Comptable",
+    role: "ACCOUNTANT",
+    churchKey: "kervignac",
+  },
+  {
+    key: "referent-soins",
+    email: "referent.soins@dev.local",
+    name: "Pascal Référent",
+    displayName: "Référent soins pastoraux",
+    role: "PASTORAL_CARE_REFERENT",
+    churchKey: "kervignac",
   },
 ];
