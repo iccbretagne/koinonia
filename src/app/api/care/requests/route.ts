@@ -73,7 +73,12 @@ export async function POST(request: Request) {
     requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
     requireRateLimit(request, { prefix: `care-request:${session.user.id}`, ...CARE_REQUEST_RATE_LIMIT });
 
-    const created = await submitAppointmentRequest(data, session.user.id!);
+    // Depuis un compte, l'email de contact est celui du compte : ouverte à tous (spec 092), la
+    // demande ne doit pas pouvoir être déposée avec l'adresse d'un tiers (relecture de sécurité).
+    const created = await submitAppointmentRequest(
+      { ...data, email: session.user.email ?? data.email ?? null },
+      session.user.id!
+    );
 
     await logAudit({
       userId: session.user.id,

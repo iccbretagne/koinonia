@@ -72,6 +72,32 @@ describe("POST /api/care/requests — tout compte de l'église", () => {
     expect(prismaMock.appointmentRequest.create).not.toHaveBeenCalled();
   });
 
+  it("l'email de contact est celui du compte, jamais celui d'un tiers saisi dans le corps", async () => {
+    as({ email: "moi@example.org", churchRoles: [role("STAR")] });
+    const res = await POST(
+      new Request("http://localhost/api/care/requests", {
+        method: "POST",
+        body: JSON.stringify({ churchId: "church-1", firstName: "Jean", lastName: "Dupont", email: "tiers@example.org", subject: "RDV", message: "x" }),
+      })
+    );
+    expect(res.status).toBe(201);
+    expect(prismaMock.appointmentRequest.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ email: "moi@example.org" }) })
+    );
+  });
+
+  it("champ trop long : 400, rien n'est créé", async () => {
+    as({ churchRoles: [role("STAR")] });
+    const res = await POST(
+      new Request("http://localhost/api/care/requests", {
+        method: "POST",
+        body: JSON.stringify({ churchId: "church-1", firstName: "J".repeat(101), lastName: "D", subject: "RDV", message: "x" }),
+      })
+    );
+    expect(res.status).toBe(400);
+    expect(prismaMock.appointmentRequest.create).not.toHaveBeenCalled();
+  });
+
   it("débit : la 6e demande dans l'heure est refusée (429)", async () => {
     as({ churchRoles: [role("REPORTER")] });
     for (let i = 0; i < 5; i++) expect((await post()).status).toBe(201);
