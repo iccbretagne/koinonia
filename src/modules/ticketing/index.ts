@@ -25,6 +25,7 @@ export {
   createBooking,
   getBookingView,
   getTicket,
+  countMyBookings,
   listMyBookings,
   notifyContact,
   patchBooking,

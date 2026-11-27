@@ -35,6 +35,7 @@ export {
   findMemberResponse,
   manageTokenOf,
   listResponses,
+  countMemberResponses,
   listMemberResponses,
   remainingPlaces,
   publicView,

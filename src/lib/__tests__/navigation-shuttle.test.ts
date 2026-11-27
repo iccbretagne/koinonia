@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { buildSpaces, resolveActive, sidebarBlocks, type NavigationInput } from "../navigation";
+import { buildSpaces, resolveActive, type NavigationInput } from "../navigation";
 
-/** Entrée « Navette » rangée sous « Comptabilité » (spec 073). */
+/** Entrée « Navette » dans l'espace Finances (spec 073, lot 1 de la spec 092). */
 const base: NavigationInput = {
   departments: [],
   configLinks: [],
@@ -10,30 +10,28 @@ const base: NavigationInput = {
   homeHref: "/planning",
 };
 
-const requestPages = (input: NavigationInput) => buildSpaces(input).find((s) => s.key === "requests")?.pages ?? [];
+const financePages = (input: NavigationInput) => buildSpaces(input).find((s) => s.key === "finances")?.pages ?? [];
 
 describe("navigation — navette (spec 073)", () => {
-  it("sans navette, « Comptabilité » reste une entrée simple", () => {
-    const pages = requestPages({ ...base, hasAccounting: true });
-    expect(pages.map((p) => p.label)).toEqual(["Mes demandes", "Comptabilité"]);
-    expect(pages.find((p) => p.label === "Comptabilité")?.sidebarBlock).toBeUndefined();
+  it("sans navette, « Demandes comptables » reste une entrée simple de l'espace Finances", () => {
+    const pages = financePages({ ...base, hasAccounting: true, hasAccountingManage: true });
+    expect(pages.map((p) => p.label)).toEqual(["Demandes comptables"]);
   });
 
-  it("avec la navette, un bloc « Comptabilité » regroupe Demandes puis Navette", () => {
-    const pages = requestPages({ ...base, hasAccounting: true, hasShuttle: true });
-    const blocks = sidebarBlocks(pages);
-    const accounting = blocks.find((b) => b.label === "Comptabilité");
-    expect(accounting?.entries.map((e) => e.label)).toEqual(["Demandes", "Navette"]);
+  it("avec la navette, Finances regroupe Demandes comptables puis Navette", () => {
+    const pages = financePages({ ...base, hasAccounting: true, hasAccountingManage: true, hasShuttle: true });
+    expect(pages.map((p) => p.label)).toEqual(["Demandes comptables", "Navette"]);
   });
 
-  it("un STAR de l'équipe sans comptabilité ne voit que « Navette »", () => {
-    const pages = requestPages({ ...base, hasShuttle: true });
-    expect(pages.map((p) => p.href)).toEqual(["/requests", "/accounting/navette"]);
+  it("un STAR de l'équipe sans comptabilité ne voit que « Navette », hors de Demandes", () => {
+    const pages = financePages({ ...base, hasShuttle: true });
+    expect(pages.map((p) => p.href)).toEqual(["/accounting/navette"]);
+    expect(buildSpaces({ ...base, hasShuttle: true }).find((s) => s.key === "requests")?.pages.map((p) => p.href)).toEqual(["/requests"]);
   });
 
-  it("/accounting/navette allume « Navette », pas « Comptabilité »", () => {
-    const spaces = buildSpaces({ ...base, hasAccounting: true, hasShuttle: true });
-    expect(resolveActive(spaces, "/accounting/navette")).toEqual({ space: "requests", page: "/accounting/navette" });
-    expect(resolveActive(spaces, "/accounting/requests/abc")).toEqual({ space: "requests", page: "/accounting/requests" });
+  it("/accounting/navette allume « Navette », pas « Demandes comptables »", () => {
+    const spaces = buildSpaces({ ...base, hasAccounting: true, hasAccountingManage: true, hasShuttle: true });
+    expect(resolveActive(spaces, "/accounting/navette")).toEqual({ space: "finances", page: "/accounting/navette" });
+    expect(resolveActive(spaces, "/accounting/requests/abc")).toEqual({ space: "finances", page: "/accounting/requests" });
   });
 });

@@ -81,7 +81,7 @@ const ALLOWLIST: Record<string, string> = {
   "src/app/api/welcome-duty/suggestions/route.ts": EVENTS_MANAGE_LEGIT,
   "src/app/api/welcome-duty/available-families/route.ts": EVENTS_MANAGE_LEGIT,
 
-  "src/app/(auth)/layout.tsx": EVENTS_MANAGE_FRAGILE,
+  "src/lib/navigation-input.ts": EVENTS_MANAGE_FRAGILE,
   // Pages Secrétariat, Communication et Visuels › Demandes (spec 063) : contrôle factorisé ici.
   "src/modules/planning/services/request-queue/access.ts": EVENTS_MANAGE_FRAGILE,
   // Assistant (spec 075) : l'audience d'une fiche reprend la garde de son écran, rien de plus.

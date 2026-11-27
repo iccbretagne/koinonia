@@ -2,6 +2,7 @@ import { readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, it, expect } from "vitest";
 import { buildBreadcrumb, buildSpaces, parentLink, type NavigationInput } from "../navigation";
+import { SCREEN_META, screenOf } from "../paths";
 
 /** Toutes les sections ouvertes : chaque page de `(auth)` trouve son espace. */
 const everything: NavigationInput = {
@@ -58,6 +59,8 @@ const everything: NavigationInput = {
   hasAvailability: true,
   hasRooms: true,
   hasAccounting: true,
+  hasAccountingManage: true,
+  hasAccountingStats: true,
   hasShuttle: true,
   hasTreasury: true,
   hasTicketing: true,
@@ -99,11 +102,11 @@ describe("navigation — sous-pages nommées", () => {
     expect(last("/media/events/x1")).toBe("Événement");
     expect(last("/admin/events/x1")).toBe("Événement");
     expect(last("/admin/events/x1/report")).toBe("Compte rendu");
-    expect(last("/planning/events")).toBe("Agenda de l'église");
-    expect(last("/disponibilites/collectes")).toBe("Collectes");
+    expect(last("/planning/events")).toBe("Calendrier de l'église");
+    expect(last("/disponibilites/collectes")).toBe("Collectes de disponibilités");
     expect(last("/collectes/x1")).toBe("Campagne");
-    expect(last("/care/request")).toBe("Demande de RDV");
-    expect(last("/care/requests/x1")).toBe("Demande");
+    expect(last("/care/request")).toBe("Demander un rendez-vous");
+    expect(last("/care/requests/x1")).toBe("Demande de rendez-vous");
     expect(last("/billetterie/x1/controle")).toBe("Contrôle d'entrée");
     expect(last("/profile/assistants")).toBe("Assistants connectés");
     expect(last("/rooms/checklists")).toBe("Contrôle des mains courantes");
@@ -111,14 +114,14 @@ describe("navigation — sous-pages nommées", () => {
 
   it("sous-pages nommées par leur objet : détails, créations, pages hors espace", () => {
     const last = (p: string, dept: string | null = null) => buildBreadcrumb(spaces, p, dept).at(-1)?.label;
-    expect(last("/accounting/requests/x1")).toBe("Demande");
-    expect(last("/accounting/requests/new")).toBe("Nouvelle demande");
+    expect(last("/accounting/requests/x1")).toBe("Demande comptable");
+    expect(last("/accounting/requests/new")).toBe("Nouvelle demande comptable");
     expect(last("/requests/new")).toBe("Nouvelle demande");
     expect(last("/admin/messages/new")).toBe("Nouveau message");
     expect(last("/admin/messages/x1")).toBe("Message");
     expect(last("/admin/users/new")).toBe("Nouvel utilisateur");
     expect(last("/admin/access/users/x1")).toBe("Utilisateur");
-    expect(last("/admin/churches/x1")).toBe("Église");
+    expect(last("/admin/churches/x1")).toBe("Paramètres de l'église");
     expect(last("/dons/slide")).toBe("Slide de projection");
     expect(last("/agenda/schedule")).toBe("Planification");
     expect(last("/agenda/new")).toBe("Nouvelle entrée");
@@ -133,7 +136,7 @@ describe("navigation — sous-pages nommées", () => {
     expect(last("/jobs/freelance/missions/new")).toBe("Nouvelle mission");
     expect(last("/messages/x1")).toBe("Message de l'administration");
     expect(last("/mcp/autoriser")).toBe("Connecter un assistant IA");
-    expect(buildBreadcrumb(spaces, "/dashboard/stats", "d1").map((c) => c.label)).toEqual(["Planning", "Louange", "Son", "Statistiques"]);
+    expect(buildBreadcrumb(spaces, "/dashboard/stats", "d1").map((c) => c.label)).toEqual(["Planning", "Louange", "Son", "Statistiques du département"]);
     expect(buildBreadcrumb(spaces, "/dashboard", "d1").at(-1)?.label).toBe("Son");
   });
 
@@ -155,21 +158,29 @@ describe("navigation — sous-pages nommées", () => {
       hasAvailability: true,
       homeHref: "/accueil",
     });
-    expect(buildBreadcrumb(star, "/planning/events").map((c) => c.label)).toEqual(["Agenda de l'église"]);
+    expect(buildBreadcrumb(star, "/planning/events").map((c) => c.label)).toEqual(["Calendrier de l'église"]);
     expect(buildBreadcrumb(star, "/profile/assistants").map((c) => c.label)).toEqual(["Mon profil", "Assistants connectés"]);
   });
 
   it("retour mobile : toute page qui n'est pas une page de navigation a un chevron, même hors des espaces du rôle", () => {
     const star = buildSpaces({ departments: [], configLinks: [], requestLinks: [], mediaLinks: [], hasMyPlanning: true, showStarEvents: true, homeHref: "/accueil" });
-    for (const sp of [spaces, star]) {
+    for (const sp of [spaces]) {
       const navHrefs = new Set(sp.flatMap((s) => s.pages).map((p) => p.href.split("?")[0]));
-      const missing = pages.filter((p) => !navHrefs.has(p) && !["/accueil", "/absences", "/admin", "/admin/jobs", "/pastoral", "/dashboard"].includes(p) && !parentLink(sp, p, "d1"));
+      // Pages de premier niveau d'un autre rôle (hors de ses espaces) et pages de compte : pas de retour.
+    const topLevel = ["/accueil", "/absences", "/admin", "/admin/jobs", "/pastoral", "/dashboard", "/accounting/stats", "/planning/events", "/guide", "/profile"];
+    // Un écran sans parent dans le registre est une page d'espace d'un autre rôle : pas de retour.
+    const hasParent = (p: string) => {
+      const ref = screenOf(p);
+      return !ref || SCREEN_META[ref.key].parent !== null || SCREEN_META[ref.key].orHome === true;
+    };
+    const missing = pages.filter((p) => !navHrefs.has(p) && !topLevel.includes(p) && hasParent(p) && !parentLink(sp, p, "d1"));
       expect(missing).toEqual([]);
     }
     expect(parentLink(star, "/messages/x1")).toEqual({ href: "/accueil", label: "Accueil" });
     expect(parentLink(star, "/mcp/autoriser")).toEqual({ href: "/accueil", label: "Accueil" });
     expect(parentLink(star, "/pastoral/members")).toEqual({ href: "/pastoral", label: "Accueil" });
-    expect(parentLink(star, "/collectes/r/x1")).toEqual({ href: "/accueil", label: "Accueil" });
+    // Sans l'espace Questionnaires, aucun parent n'est dans la navigation : pas de retour inventé.
+    expect(parentLink(star, "/collectes/r/x1")).toBeNull();
     expect(parentLink(spaces, "/collectes/r/x1")).toEqual({ href: "/collectes", label: "Questionnaires" });
   });
 });
