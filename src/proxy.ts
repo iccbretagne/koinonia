@@ -135,8 +135,9 @@ function route(request: NextRequest, forwarded?: Headers): NextResponse {
   // les modules qui ne déclarent aucune permission (integration) : aucune de ces gardes
   // n'a besoin d'être modifiée, elles ne sont simplement jamais atteintes.
   //
-  // `resolveRouteOwner` ne connaît que les modules **actifs** (ENABLED_MODULES) — une
-  // adresse d'un module désactivé résout donc "orphan" au même titre qu'une adresse
+  // `resolveRouteOwner` cherche le propriétaire parmi tous les manifestes puis vérifie qu'il
+  // est actif (ENABLED_MODULES, amendement d'ADR-0012) — une adresse d'un module désactivé,
+  // même placée sous le préfixe d'un module actif ou du noyau, résout donc "orphan" au même titre qu'une adresse
   // jamais revendiquée par personne. Les deux cas reçoivent la même réponse
   // "introuvable" : c'est le comportement voulu, une adresse réellement orpheline (bug)
   // est interceptée en amont par le test d'exhaustivité (CI), jamais en production.

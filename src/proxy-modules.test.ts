@@ -58,6 +58,37 @@ describe("proxy — contrôle de module (spec 038)", () => {
     expect(rewriteTarget).toContain("/module-absent");
   });
 
+  // Amendement d'ADR-0012 (spec 092) : pas de repli sur un préfixe parent actif ou du noyau.
+  // Un module coupé emporte ceux qui en dépendent (boot refuse sinon) : "assistant,mcp".
+  const ALL_BUT = (off: string) =>
+    "core,planning,discipleship,storage,media,audio,agenda,rooms,integration,care,accounting,jobs,giving,messages,shuttle,ticketing,treasury,assistant,serving,mcp,forms,campaigns"
+      .split(",")
+      .filter((m) => !off.split(",").includes(m))
+      .join(",");
+
+  it.each([
+    ["messages", "/admin/messages"],
+    ["shuttle", "/accounting/navette"],
+    ["treasury", "/accounting/tresorerie"],
+    ["assistant,mcp", "/admin/assistant"],
+    ["mcp", "/admin/mcp"],
+    ["ticketing", "/admin/site-domains"],
+  ])("module(s) %s coupé(s) : la page %s est réécrite vers /module-absent (Super Admin compris)", async (off, path) => {
+    const { proxy } = await loadProxy(ALL_BUT(off));
+    const res = proxy(req(path, { withSession: true }));
+    expect(res.headers.get("x-middleware-rewrite")).toContain("/module-absent");
+  });
+
+  it("module shuttle coupé : /api/accounting/navette répond 404 JSON, /api/accounting reste servi", async () => {
+    const { proxy } = await loadProxy(ALL_BUT("shuttle"));
+    const res = proxy(req("/api/accounting/navette/entries", { withSession: true }));
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "Not found" });
+    const parent = proxy(req("/api/accounting/requests", { withSession: true }));
+    expect(parent.status).toBe(200);
+    expect(proxy(req("/accounting/requests", { withSession: true })).headers.get("x-middleware-rewrite")).toBeNull();
+  });
+
   it("un lien public par jeton d'un module désactivé répond 404 avant toute vérification de jeton", async () => {
     const { proxy } = await loadProxy("core,planning");
     // Pas de session : sur un module actif ce chemin passerait (routes.public), ici il

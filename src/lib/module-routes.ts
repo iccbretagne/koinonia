@@ -34,25 +34,29 @@ export const NOYAU_ROUTES: NoyauRoutes = {
  */
 const activeRegistry = boot({ modules: [...allManifests] });
 
-/** Table utilisée en production/dev — ne voit que les modules actifs. */
-export const activeRouteTable = new RouteTable(activeRegistry.list(), NOYAU_ROUTES);
-
 /**
- * Table de référence pour le test d'exhaustivité — voit **tous** les manifestes, actifs ou
- * non : une route doit être revendiquée indépendamment du réglage de déploiement.
+ * Table unique (amendement d'ADR-0012, spec 092) : construite sur **tous** les manifestes,
+ * avec la liste des modules actifs. `resolve`/`isPublic` tiennent compte de l'état des
+ * modules (propriétaire coupé ⇒ orphelin, sans repli sur un préfixe parent) ;
+ * `resolveDeclared` l'ignore (test d'exhaustivité, documentation OpenAPI, fiches de
+ * l'assistant).
  */
-export const fullRouteTable = new RouteTable([...allManifests], NOYAU_ROUTES);
+export const routeTable = new RouteTable(
+  [...allManifests],
+  NOYAU_ROUTES,
+  activeRegistry.list().map((m) => m.name)
+);
 
 export function resolveRouteOwner(pathname: string) {
-  return activeRouteTable.resolve(pathname);
+  return routeTable.resolve(pathname);
 }
 
 /** `true` si le module propriétaire de `pathname` est actif (ou si c'est une adresse du noyau). */
 export function isPathEnabled(pathname: string): boolean {
-  const owner = activeRouteTable.resolve(pathname);
+  const owner = routeTable.resolve(pathname);
   return owner.kind !== "orphan";
 }
 
 export function isPublicRoute(pathname: string, method: string): boolean {
-  return activeRouteTable.isPublic(pathname, method);
+  return routeTable.isPublic(pathname, method);
 }
