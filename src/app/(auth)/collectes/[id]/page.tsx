@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireCampaignManager } from "@/modules/campaigns/auth";
-import { getCampaignOverview, storedItems } from "@/modules/campaigns";
+import { hasCampaignsManage, requireCampaignManager } from "@/modules/campaigns/auth";
+import { campaignReadiness, campaignsAppUrl, getCampaignOverview, storedItems } from "@/modules/campaigns";
 import type { Jsonify } from "../_components/display";
 import CampaignView from "./CampaignView";
 import { CAMPAIGN_TABS, type CampaignOverviewData, type CampaignTab } from "./types";
@@ -35,5 +35,19 @@ export default async function CampaignPage({ params, searchParams }: Props) {
     tab === "controles" ? formTitlesByCode(id) : Promise.resolve({} as Record<string, string>),
   ]);
   const data = JSON.parse(JSON.stringify(overview)) as Jsonify<typeof overview> as CampaignOverviewData;
-  return <CampaignView tab={tab} overview={data} codeForms={codeForms} />;
+  // « Préparer l'ouverture » (spec 091) : en brouillon seulement, relu à chaque rafraîchissement.
+  const [readiness, canDuplicate] = await Promise.all([
+    overview.campaign.status === "DRAFT" ? campaignReadiness(id) : Promise.resolve(null),
+    hasCampaignsManage(managed.session, managed.campaign.churchId),
+  ]);
+  return (
+    <CampaignView
+      tab={tab}
+      overview={data}
+      codeForms={codeForms}
+      readiness={readiness}
+      appUrl={campaignsAppUrl()}
+      canDuplicate={canDuplicate}
+    />
+  );
 }

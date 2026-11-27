@@ -9,6 +9,7 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 ### Ajouté
 
 - Campagnes de collecte (module `campaigns`, désactivable) : questionnaires importés depuis une définition JSON (aperçu puis confirmation, bloqué si des réponses seraient perdues), remplis par des responsables avec sauvegarde automatique et qualificatifs (estimation, à rechercher, sans objet, NSP), pièces jointes vérifiées par contenu, règles de cohérence non bloquantes. Le gestionnaire suit l'avancement, relance, demande une correction, valide (case « validé par la Pasteure »), exporte en XLSX ou CSV et clôture. Répondants avec compte ou, par exception, par lien personnel `/collecte/<jeton>`. Relance automatique J-2 et purge des fichiers après la clôture. Définition du bilan F9 2026 fournie et mode d'emploi (`docs/campagnes-f9-2026.md`). (Spec 090, ADR-0032.)
+- Campagnes de collecte, évolutions : messages de communication à copier (demande, point d'avancement, relances, modèles par campagne ; rien n'est envoyé), rouvrir une contribution soumise ou annuler une validation, remplacer un répondant, échéance par contribution, préparation de l'ouverture, suivi « Exploitable » avec filtres, aperçu répondant, export de la définition, duplication et éditeur graphique des campagnes. L'assistant IA connecté lit le contrat d'import et la structure, exporte la définition et rouvre une contribution (aperçu puis confirmation). (Spec 091.)
 
 ## [v1.44.0] - 2026-11-25
 

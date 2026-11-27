@@ -27,7 +27,7 @@ vi.mock("@/lib/audit", () => ({ logAudit: (...a: unknown[]) => logAudit(...a) })
 const notifyRespondentAdded = vi.fn();
 vi.mock("../services/notify", () => ({ notifyRespondentAdded: (...a: unknown[]) => notifyRespondentAdded(...a) }));
 
-const { importCampaign, storedDefinition, formDefinitionHash, parseDefinition } = await import("../services/import");
+const { importCampaign, storedDefinition, formDefinitionHash, parseDefinition, definitionCampaignFields } = await import("../services/import");
 const { hashJson, dueAtToDate } = await import("../services/values");
 
 const actor = { userId: "u-admin", name: "Admin" };
@@ -66,6 +66,7 @@ function stored(def: ReturnType<typeof definition>, status = "DRAFT") {
     id: "c1",
     status,
     definitionHash: hashJson(parsed),
+    ...definitionCampaignFields(parsed),
     forms: [
       {
         id: "f1",
@@ -101,7 +102,7 @@ describe("importCampaign", () => {
 
     const preview = await importCampaign({ churchId: "ch1", definition: definition(), dryRun: false, actor, canCreate: true });
 
-    expect(preview.campaign).toEqual({ action: "create", key: "bilan", title: "Bilan 2026" });
+    expect(preview.campaign).toEqual({ action: "create", key: "bilan", title: "Bilan 2026", fieldsChanged: [] });
     expect(preview.forms[0]).toMatchObject({ key: "integration", action: "create", revision: 1, itemsAdded: ["V1", "V2"] });
     expect(preview.assignments).toEqual([{ formKey: "integration", key: "integration", label: "Intégration", action: "create" }]);
     expect(preview.respondents).toEqual({ resolved: [{ email: "resp@exemple.org", name: "Resp" }], unresolved: [] });

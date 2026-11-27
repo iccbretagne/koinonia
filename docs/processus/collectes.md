@@ -8,7 +8,7 @@ Exemple : le bilan annuel F9 (voir [docs/campagnes-f9-2026.md](../campagnes-f9-2
 
 ## Le déclencheur
 
-Un gestionnaire **importe** la définition de la campagne (fichier JSON), vérifie l'aperçu, puis **ouvre** la campagne. Chaque répondant reçoit une notification, ou un email avec son lien personnel s'il n'a pas de compte.
+Un gestionnaire crée la campagne (éditeur graphique, **import** d'un fichier JSON ou duplication d'une campagne existante), vérifie l'aperçu, puis **ouvre** la campagne. Chaque répondant reçoit une notification, ou un email avec son lien personnel s'il n'a pas de compte.
 
 ## Qui intervient
 
@@ -44,6 +44,15 @@ Un gestionnaire **importe** la définition de la campagne (fichier JSON), vérif
 | Suivre | Tableau d'avancement, estimations, « à rechercher », contrôles croisés entre questionnaires |
 | Relancer | **Relancer** un questionnaire ; une relance automatique part 2 jours avant l'échéance |
 | Ajouter un répondant | Onglet **Répondants** : un compte de l'église, ou nom et email pour une personne sans compte. **Régénérer le lien** révoque l'ancien |
+| Voir comme le répondant | **Aperçu** d'un questionnaire, dès le brouillon, en pleine largeur ou format téléphone ; rien n'est enregistré |
+| Préparer l'ouverture | Synthèse avant ouverture : échéances, répondants valides, contrôles, questionnaires confidentiels |
+| Communiquer | **Communication** : choisir un type de message (demande, point d'avancement, relances, nouvelle soumission), relire, modifier, **copier** (format WhatsApp). Rien n'est envoyé ; un message individuel par personne sans compte, avec son lien. Textes personnalisables par campagne |
+| Remplacer un répondant | Onglet **Répondants** : **Remplacer** ; le remplaçant reprend là où on en était, l'ancien perd l'accès. Le dernier répondant d'un destinataire ne se retire pas dans une campagne ouverte |
+| Changer une échéance | Modifier l'échéance d'une contribution, sans réimport |
+| Repérer le reste à faire | Suivi : filtres (à rechercher, estimations, manquants, contrôles, fichiers), questions concernées, **Exploitable** (soumis ou validé et sans manque) |
+| Rouvrir | **Rouvrir** une contribution soumise (motif facultatif) : elle repasse « En cours », réponses gardées. Une validée : **Annuler la validation** d'abord |
+| Réutiliser | **Exporter la définition** (réimportable sans perte, sans réponse ni répondant) ou **Dupliquer** (structure seule, en brouillon) |
+| Créer ou modifier sans JSON | **Éditeur graphique** (`/collectes/nouvelle`, *Modifier* sur une campagne) ; l'enregistrement passe par le même aperçu et les mêmes blocages que l'import |
 | Corriger | **Demander une correction** avec un motif |
 | Valider | **Valider** un questionnaire soumis ; cocher « validé par la Pasteure » si c'est le cas |
 | Exporter | **Exporter** en XLSX ou CSV, pour toute la campagne ou un questionnaire |

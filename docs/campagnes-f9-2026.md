@@ -13,12 +13,13 @@ Bilan annuel F9 d'ICC Rennes, collecté par le module `campaigns` (spec 090). D�
 ## Mise en place
 
 1. **Importer.** Se connecter en Admin (ou Super Admin), ouvrir `/collectes/import`, déposer `f9-2026.json`.
-2. **Lire l'aperçu.** Vérifier les 15 questionnaires, leurs destinataires et les règles de cohérence. Tout blocage est expliqué ; rien n'est écrit avant la confirmation. Confirmer.
+2. **Lire l'aperçu.** (Depuis la spec 091, la campagne peut aussi se modifier dans l'éditeur graphique, ou se réutiliser par export de la définition et duplication.)
+   **Lire l'aperçu** : Vérifier les 15 questionnaires, leurs destinataires et les règles de cohérence. Tout blocage est expliqué ; rien n'est écrit avant la confirmation. Confirmer.
 3. **Compléter les répondants.** Les listes `respondents` de la définition sont vides : y mettre les emails avant l'import, ou les ajouter depuis l'onglet **Répondants** de chaque affectation (compte de l'église, ou nom et email pour une personne sans compte, qui reçoit un lien personnel).
 4. **Nommer les gestionnaires** depuis la campagne.
 5. **Traiter la liste « À confirmer avant ouverture »** ci-dessous.
-6. **Ouvrir.** Les répondants sont prévenus. Relance automatique 2 jours avant l'échéance ; relance manuelle possible à tout moment.
-7. **Suivre, corriger, valider.** Les questionnaires Protection et Comptabilité sont confidentiels. Valider chacun, avec la case « validé par la Pasteure » quand elle l'a vu.
+6. **Ouvrir.** Vérifier la synthèse d'ouverture et prévisualiser les questionnaires (aperçu répondant). Les répondants sont prévenus ; la collecte se relance surtout par WhatsApp : onglet **Communication**, messages à copier (rien n'est envoyé). Relance automatique 2 jours avant l'échéance ; relance manuelle possible à tout moment.
+7. **Suivre, corriger, valider.** Filtrer ce qui reste à rechercher, repérer les contributions « Exploitables », rouvrir une contribution soumise ou remplacer un répondant si besoin. Les questionnaires Protection et Comptabilité sont confidentiels. Valider chacun, avec la case « validé par la Pasteure » quand elle l'a vu.
 8. **Exporter** en XLSX, puis **clôturer**. Les fichiers sont supprimés 30 jours après.
 
 ## À confirmer avant ouverture

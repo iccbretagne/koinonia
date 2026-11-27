@@ -774,6 +774,27 @@ seule (`ENABLED_MODULES`) :
   relance J-2
 - Notifications du domaine `campaigns` (ouverture, relance, correction demandée, soumission) :
   **jamais de valeur de réponse** dans le texte. Exports XLSX/CSV (`exports.ts`)
+- **Évolutions post-recette** (spec 091) : **Communication** (`messages.ts`) : messages à copier
+  (format WhatsApp), composés à partir de l'état réel (compteurs et taux **par contribution**) ;
+  **rien n'est envoyé** ni compté comme relance. Collectif : jamais de lien personnel, de valeur
+  ni d'email, confidentiels exclus par défaut ; individuel : un message par personne, avec son
+  lien direct (adresse Koinonia, ou lien personnel actif pour une personne sans compte). Textes
+  par défaut, modèles par campagne (`Campaign.messageTemplates`, `campaign.messages` du format v1).
+  **Cycle** : *Rouvrir* une contribution soumise (motif facultatif, réponses et fichiers gardés,
+  répondant prévenu) ; *Annuler la validation* (retour à « Soumis », mention de la Pasteure
+  retirée) avant de rouvrir une validée. **Répondants** : *Remplacer* en un geste (la
+  contribution suit, l'ancien perd tout accès, lien compris) ; retirer le dernier répondant
+  valide d'un destinataire d'une campagne ouverte est refusé ; échéance modifiable par
+  contribution. **Suivi** : préparation de l'ouverture (`/readiness`), filtres (à rechercher,
+  estimations, manquants, contrôles, fichiers), questions concernées, « Exploitable » distinct de
+  « Soumis ». **Aperçu répondant** (`/collectes/[id]/apercu/[formId]`, rien n'est enregistré).
+  **Définition** : export `koinonia.campaign` v1 sans réponse, fichier, répondant ni lien
+  (réimport « inchangé ») ; *Dupliquer* = structure seule, en brouillon. **Éditeur graphique**
+  (`/collectes/nouvelle`, `/collectes/[id]/editer`) : produit le même document et l'enregistre
+  **par l'import** (mêmes aperçu, blocages et révisions) ; règles complexes en JSON. MCP :
+  `campaign_import_contract`, `campaign_structure`, `export_campaign_definition`,
+  `reopen_contribution_*` (aperçu puis confirmation) ; les questionnaires confidentiels sont
+  **omis** de l'export et de la structure, et **conservés d'office** à l'import de l'assistant.
 - Entrée « Questionnaires » (`/collectes`) dans l'espace **Demandes**, vue pastorale comprise
   (`hasCampaignsSpace`) ; carte « Questionnaires à remplir » sur l'Accueil. MCP : lectures `campaigns_list`/`campaigns_progress` (prédicat
   `campaignManager`, `_viewer.ts`) et actions `import_campaign`/`set_campaign_status` (aperçu →

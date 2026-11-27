@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, CircleAlert, CircleCheck, Download, LoaderCircle, Plus, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, CircleAlert, CircleCheck, Download, Eye, LoaderCircle, Plus, Trash2, Upload } from "lucide-react";
 import {
   Alert,
   Button,
@@ -34,9 +34,10 @@ import {
   type FileRequestItem,
   type GroupItem,
   type Qualifier,
+  type Rule,
   type ScalarItem,
 } from "@/modules/campaigns/schemas";
-import { allowedQualifiers, completeness, flattenItems, validateAnswerValue } from "@/modules/campaigns/services/definition";
+import { allowedQualifiers, completeness, evaluateRules, flattenItems, ruleScope, validateAnswerValue } from "@/modules/campaigns/schemas";
 import type { AssignmentView } from "@/modules/campaigns";
 
 /**
@@ -45,6 +46,10 @@ import type { AssignmentView } from "@/modules/campaigns";
  * automatique (regroupé, ~800 ms après la dernière modification), validation locale par la même
  * règle que le serveur (`validateAnswerValue`), complétude recalculée à chaque frappe
  * (`completeness`). Les codes servent à enregistrer, jamais à l'affichage.
+ *
+ * Mode aperçu (`preview`, spec 091 EVOL-03) : même écran, sans aucun appel réseau. La saisie reste
+ * locale (validation, complétude, contrôles locaux évalués sur place), le dépôt de fichier et la
+ * soumission sont simulés, rien n'est conservé.
  */
 
 /** La vue telle qu'elle traverse la frontière serveur → client (dates en chaînes ISO). */
@@ -92,6 +97,16 @@ const sizeFr = (bytes: number) =>
 const isPast = (iso: string) => new Date(iso).getTime() < Date.now();
 
 const itemDomId = (code: string) => `q-${code}`;
+
+/**
+ * Contrôles d'un aperçu : règles dont tous les codes sont dans ce questionnaire (même portée que
+ * le serveur), évaluées sur la saisie locale.
+ */
+function previewAlerts(rules: readonly Rule[], items: readonly DefinitionItem[], drafts: Record<string, Draft>): Alerts {
+  const byCode = new Map(items.map((i) => [i.code, "_"]));
+  const local = rules.filter((r) => ruleScope(r, byCode) !== "cross");
+  return evaluateRules(local, new Map(Object.entries(drafts)));
+}
 
 function scrollToItem(code: string) {
   const el = document.getElementById(itemDomId(code));
@@ -504,6 +519,7 @@ function FileRequestField({
   apiBase,
   fileUrl,
   onFilesChange,
+  preview,
 }: {
   readonly id: string;
   readonly item: FileRequestItem;
@@ -515,6 +531,8 @@ function FileRequestField({
   readonly apiBase: string;
   readonly fileUrl: (fileId: string) => string;
   readonly onFilesChange: (update: (files: FileView[]) => FileView[]) => void;
+  /** Aperçu : dépôt et retrait simulés, rien n'est envoyé. */
+  readonly preview?: boolean;
 }) {
   const toast = useToast();
   const status = (value as { status?: string } | null)?.status;
@@ -539,6 +557,20 @@ function FileRequestField({
           toast.error(`« ${file.name} » dépasse 10 Mo.`);
           continue;
         }
+        if (preview) {
+          const simulated: FileView = {
+            id: `apercu-${item.code}-${count}-${file.name}`,
+            requestCode: item.code,
+            name: file.name,
+            mime: file.type,
+            size: file.size,
+            uploadedAt: new Date().toISOString(),
+            uploadedByName: null,
+          };
+          count++;
+          onFilesChange((all) => [...all, simulated]);
+          continue;
+        }
         const body = new FormData();
         body.append("requestCode", item.code);
         body.append("file", file);
@@ -559,6 +591,11 @@ function FileRequestField({
   }
 
   async function remove(file: FileView) {
+    if (preview) {
+      onFilesChange((all) => all.filter((f) => f.id !== file.id));
+      setToDelete(null);
+      return;
+    }
     setDeleting(true);
     try {
       const res = await fetch(fileUrl(file.id), { method: "DELETE" });
@@ -597,15 +634,17 @@ function FileRequestField({
                       {f.uploadedByName ? ` · ${f.uploadedByName}` : ""}
                     </p>
                   </div>
-                  <a
-                    href={fileUrl(f.id)}
-                    download
-                    aria-label={`Télécharger ${f.name}`}
-                    title="Télécharger"
-                    className="inline-grid size-11 shrink-0 place-items-center rounded-control text-ink-muted hover:bg-surface-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-                  >
-                    <Download aria-hidden="true" className="size-5" strokeWidth={1.75} />
-                  </a>
+                  {!preview && (
+                    <a
+                      href={fileUrl(f.id)}
+                      download
+                      aria-label={`Télécharger ${f.name}`}
+                      title="Télécharger"
+                      className="inline-grid size-11 shrink-0 place-items-center rounded-control text-ink-muted hover:bg-surface-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                    >
+                      <Download aria-hidden="true" className="size-5" strokeWidth={1.75} />
+                    </a>
+                  )}
                   {!disabled && <IconButton aria-label={`Retirer ${f.name}`} icon={Trash2} onClick={() => setToDelete(f)} />}
                 </li>
               ))}
@@ -630,6 +669,7 @@ function FileRequestField({
               />
             </label>
           )}
+          {preview && <p className="text-[13px] text-ink-muted">Aperçu : les fichiers ne sont pas envoyés.</p>}
           <p className="text-[13px] text-ink-muted">
             {accept.map((e) => e.toUpperCase()).join(", ")} · 10 Mo par fichier · {maxFiles} fichier{maxFiles > 1 ? "s" : ""} au plus
           </p>
@@ -674,7 +714,7 @@ function ItemBlock({
   readonly disabled: boolean;
   readonly onChange: (patch: Partial<Draft>) => void;
   readonly onLocalError: (code: string, fieldId: string, message: string | null) => void;
-  readonly fileProps: Pick<Parameters<typeof FileRequestField>[0], "files" | "apiBase" | "fileUrl" | "onFilesChange">;
+  readonly fileProps: Pick<Parameters<typeof FileRequestField>[0], "files" | "apiBase" | "fileUrl" | "onFilesChange" | "preview">;
 }) {
   const id = itemDomId(item.code);
   const qualifiers = allowedQualifiers(item);
@@ -760,7 +800,23 @@ function ItemBlock({
 
 // ── Formulaire ─────────────────────────────────────────────────────────────────────────────────
 
-function SaveIndicator({ state, onRetry }: { readonly state: SaveState; readonly onRetry: () => void }) {
+function SaveIndicator({
+  state,
+  onRetry,
+  preview,
+}: {
+  readonly state: SaveState;
+  readonly onRetry: () => void;
+  readonly preview?: boolean;
+}) {
+  if (preview) {
+    return (
+      <div className="flex min-h-11 items-center gap-2 text-[13px] text-ink-muted">
+        <Eye aria-hidden="true" className="size-4" strokeWidth={1.75} />
+        Aperçu : rien n&apos;est enregistré
+      </div>
+    );
+  }
   return (
     <div aria-live="polite" className="flex min-h-11 items-center gap-2 text-[13px] text-ink-muted">
       {state === "saving" && (
@@ -789,16 +845,24 @@ function SaveIndicator({ state, onRetry }: { readonly state: SaveState; readonly
   );
 }
 
+const NO_RULES: readonly Rule[] = [];
+
 export default function AssignmentForm({
   view,
   apiBase,
   backHref,
+  preview = false,
+  previewRules = NO_RULES,
 }: {
   readonly view: AssignmentViewData;
-  /** `/api/campaigns/assignments/<id>` (avec compte) ou `/api/campaigns/public/<jeton>` (lien). */
+  /** `/api/campaigns/assignments/<id>` (avec compte) ou `/api/campaigns/public/<jeton>` (lien). Ignoré en aperçu. */
   readonly apiBase: string;
   /** Lien retour du gestionnaire vers sa campagne. */
   readonly backHref?: string;
+  /** Aperçu (spec 091) : aucun appel réseau, rien n'est conservé. */
+  readonly preview?: boolean;
+  /** Aperçu : règles de la campagne ; celles locales à ce questionnaire sont évaluées sur place. */
+  readonly previewRules?: readonly Rule[];
 }) {
   const toast = useToast();
   const isPublic = apiBase.startsWith("/api/campaigns/public/");
@@ -862,6 +926,12 @@ export default function AssignmentForm({
     for (const code of codes) delete nextErrors[code];
     errorsRef.current = withLocalErrors({ ...nextErrors, ...found }, localErrors.current);
     setErrors(errorsRef.current);
+    if (preview) {
+      // Aperçu : rien ne part ; les contrôles locaux sont évalués sur la saisie.
+      setAlerts(previewAlerts(previewRules, items, draftsRef.current));
+      setSaveState("idle");
+      return;
+    }
     if (payload.length === 0) {
       // Rien d'envoyable : une valeur refusée localement n'est pas « enregistrée ».
       setSaveState((s) => (s !== "saving" ? s : Object.keys(found).length > 0 ? "idle" : "saved"));
@@ -911,7 +981,7 @@ export default function AssignmentForm({
       setSaveError("Connexion interrompue.");
       setSaveState("error");
     }
-  }, [apiBase, index]);
+  }, [apiBase, index, items, preview, previewRules]);
 
   const flush = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);
@@ -947,8 +1017,9 @@ export default function AssignmentForm({
     setErrors(errorsRef.current);
   }, []);
 
-  // Avertir avant de quitter avec un envoi en attente.
+  // Avertir avant de quitter avec un envoi en attente (jamais en aperçu : rien n'est à perdre).
   useEffect(() => {
+    if (preview) return;
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
       if (dirty.current.size > 0 || inFlight.current > 0) {
         e.preventDefault();
@@ -957,7 +1028,7 @@ export default function AssignmentForm({
     };
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, []);
+  }, [preview]);
 
   // ── Complétude locale (même règle que la soumission) ──
   const state = useMemo(() => {
@@ -1002,6 +1073,11 @@ export default function AssignmentForm({
   }
 
   async function submit() {
+    if (preview) {
+      setConfirmOpen(false);
+      toast.info("Aperçu : la soumission est simulée, rien n'a été envoyé.");
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch(`${apiBase}/submit`, { method: "POST" });
@@ -1094,9 +1170,22 @@ export default function AssignmentForm({
         )}
       </PageHeader>
 
+      {preview && (
+        <Alert tone="info" icon={Eye} title="Aperçu : rien n'est enregistré.">
+          Le questionnaire tel que le répondant le verra. Essayez la saisie, les fichiers et la soumission : rien n&apos;est conservé.
+        </Alert>
+      )}
+
       {status === "CHANGES_REQUESTED" && editable && (
         <Alert tone="warning" title="Correction demandée.">
           <span className="whitespace-pre-line">{view.assignment.reviewReason ?? "Reprenez vos réponses puis soumettez à nouveau."}</span>
+        </Alert>
+      )}
+      {status === "IN_PROGRESS" && view.assignment.reopened && editable && (
+        <Alert tone="warning" title="Questionnaire rouvert : à soumettre de nouveau.">
+          <span className="whitespace-pre-line">
+            {view.assignment.reviewReason ?? "Vos réponses sont conservées : reprenez-les si besoin puis soumettez à nouveau."}
+          </span>
         </Alert>
       )}
       {readOnlyNotice}
@@ -1163,7 +1252,7 @@ export default function AssignmentForm({
               disabled={!editable}
               onChange={(patch) => update(item.code, patch)}
               onLocalError={reportLocalError}
-              fileProps={{ files: files.filter((f) => f.requestCode === item.code), apiBase, fileUrl, onFilesChange: setFiles }}
+              fileProps={{ files: files.filter((f) => f.requestCode === item.code), apiBase, fileUrl, onFilesChange: setFiles, preview }}
             />
           ))}
         </section>
@@ -1177,7 +1266,7 @@ export default function AssignmentForm({
           }`}
         >
           <div className="flex min-w-0 flex-col">
-            <SaveIndicator state={saveState} onRetry={retry} />
+            <SaveIndicator state={saveState} onRetry={retry} preview={preview} />
             {saveState === "error" && saveError && <p className="pb-1 text-[13px] text-danger">{saveError}</p>}
             {violated.length > 0 && (
               <a href="#campaign-alerts" className="pb-1 text-[13px] font-semibold text-warning underline">

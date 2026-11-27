@@ -2315,7 +2315,8 @@ Spec 090, ADR-0032. Une campagne regroupe des questionnaires (définition JSON v
 
 - **`campaigns`** : `churchId`, `key` (clé stable de la définition ; unique par église, l'import est
   idempotent dessus), `title`, `description`, `periodStart` / `periodEnd` (dates), `dueAt`,
-  `status` (`DRAFT`, `OPEN`, `CLOSED`), `fileRetentionDays` (30, à compter de `closedAt`), `rules`
+  `status` (`DRAFT`, `OPEN`, `CLOSED`), `fileRetentionDays` (30, à compter de `closedAt`), `messageTemplates` (JSON nullable, spec 091 : modèles de messages
+  `{ initial?, progress?, collective?, individual?, overdue?, resubmission? }`, absent = textes par défaut), `rules`
   (JSON : règles de cohérence déclaratives, jamais bloquantes), `definitionHash`, `openedAt`,
   `closedAt`, `filesPurgedAt`, `createdById` (set null).
 - **`campaign_managers`** : clé `(campaignId, userId)`, `addedById`. Une donnée, pas une permission.

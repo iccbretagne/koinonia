@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MESSAGE_TEMPLATE_MAX_LENGTH } from "./services/messages";
 
 /**
  * Schémas purs du module campaigns (spec 090, ADR-0032) : format d'import d'une campagne
@@ -284,6 +285,23 @@ export const ruleSchema = z.strictObject({
 });
 export type Rule = z.infer<typeof ruleSchema>;
 
+// ── Modèles de messages (spec 091) ─────────────────────────────────────────────────────────────
+
+const messageText = z.string().trim().min(1).max(MESSAGE_TEMPLATE_MAX_LENGTH);
+
+/**
+ * Modèles de messages personnalisés d'une campagne (`campaign.messages` du format v1,
+ * `Campaign.messageTemplates`) : chaque clé est facultative, absente = texte par défaut.
+ */
+export const messageTemplatesSchema = z.strictObject({
+  initial: messageText.optional(),
+  progress: messageText.optional(),
+  collective: messageText.optional(),
+  individual: messageText.optional(),
+  overdue: messageText.optional(),
+  resubmission: messageText.optional(),
+});
+
 // ── Campagne ───────────────────────────────────────────────────────────────────────────────────
 
 export const assignmentDefinitionSchema = z.strictObject({
@@ -316,6 +334,8 @@ export const campaignDefinitionSchema = z.strictObject({
     periodEnd: day.optional(),
     dueAt: dueAt.optional(),
     fileRetentionDays: z.number().int().min(FILE_RETENTION_DAYS.min).max(FILE_RETENTION_DAYS.max).optional(),
+    /** Modèles de messages personnalisés (spec 091) ; absent = textes par défaut. */
+    messages: messageTemplatesSchema.optional(),
   }),
   forms: z.array(formDefinitionSchema).min(1).max(50),
   rules: z.array(ruleSchema).max(200).optional(),
@@ -350,6 +370,11 @@ export const campaignSettingsSchema = z
     periodEnd: day.nullable().optional(),
     dueAt: dueAt.nullable().optional(),
     fileRetentionDays: z.number().int().min(FILE_RETENTION_DAYS.min).max(FILE_RETENTION_DAYS.max).optional(),
+    /**
+     * Modèles de messages (spec 091) : l'objet remplace l'ensemble des modèles personnalisés (une
+     * clé absente revient au texte par défaut) ; `null` ou `{}` rétablit tous les textes par défaut.
+     */
+    messageTemplates: messageTemplatesSchema.nullable().optional(),
   })
   .refine((v) => !v.periodStart || !v.periodEnd || v.periodStart <= v.periodEnd, {
     message: "Le début de période doit précéder sa fin",
@@ -376,9 +401,13 @@ export const answersBodySchema = z.object({
     .refine((list) => new Set(list.map((a) => a.code)).size === list.length, "Code répété"),
 });
 
+/**
+ * Revue d'une contribution : `request_changes` (motif obligatoire), `validate`, `reopen` (soumis →
+ * en cours, motif facultatif, spec 091) et `unvalidate` (validé → soumis, motif facultatif).
+ */
 export const reviewSchema = z
   .object({
-    action: z.enum(["request_changes", "validate"]),
+    action: z.enum(["request_changes", "validate", "reopen", "unvalidate"]),
     reason: z.string().trim().max(2000).optional(),
     pastoralValidated: z.boolean().optional(),
   })
@@ -393,9 +422,72 @@ export const respondentAddSchema = z.union([
   z.strictObject({ name: z.string().trim().min(1).max(150), email: z.email().max(254) }),
 ]);
 
+/** Échéance d'une contribution (spec 091) : un jour (fin de journée à Paris), un instant, ou null (celle de la campagne). */
+export const assignmentPatchSchema = z.strictObject({ dueAt: dueAt.nullable() });
+
+/** Remplacement d'un répondant : le nouveau, comme à l'ajout. */
+export const respondentReplaceSchema = respondentAddSchema;
+
+/**
+ * Duplication d'une campagne (spec 091) : nouveau titre ; dates absentes = celles de la source,
+ * `null` = aucune. `keepAssignments` : garder les destinataires (sans leur échéance propre) ou un
+ * destinataire par questionnaire, nommé comme lui.
+ */
+export const duplicateCampaignSchema = z
+  .strictObject({
+    title: z.string().trim().min(1).max(150),
+    periodStart: day.nullable().optional(),
+    periodEnd: day.nullable().optional(),
+    dueAt: dueAt.nullable().optional(),
+    keepAssignments: z.boolean().default(true),
+  })
+  .refine((v) => !v.periodStart || !v.periodEnd || v.periodStart <= v.periodEnd, {
+    message: "Le début de période doit précéder sa fin",
+    path: ["periodEnd"],
+  });
+export type DuplicateCampaignInput = z.input<typeof duplicateCampaignSchema>;
+
+/** Définition d'une campagne : `download=1` la renvoie en pièce jointe `<clé>.json`. */
+export const definitionQuerySchema = z.object({ download: z.enum(["0", "1"]).optional() });
+
 export const exportQuerySchema = z.object({
   format: z.enum(["xlsx", "csv"]).default("xlsx"),
   form: key.optional(),
 });
 
 export const candidatesQuerySchema = z.object({ q: z.string().trim().max(100).optional() });
+
+// ── Fonctions pures partagées avec l'interface (spec 091) ──────────────────────────────────────
+
+export {
+  MESSAGE_KINDS,
+  MESSAGE_KIND_LABELS,
+  COLLECTIVE_MESSAGE_KINDS,
+  MESSAGE_PLACEHOLDERS,
+  MESSAGE_TEMPLATE_MAX_LENGTH,
+  DEFAULT_MESSAGE_TEMPLATES,
+  isCollectiveKind,
+  isDone,
+  isOverdue,
+  progressCounts,
+  formatMessageDate,
+  renderTemplate,
+  composeMessage,
+  type MessageKind,
+  type MessageTemplates,
+  type MessagePlaceholder,
+  type MessageContribution,
+  type MessageContext,
+  type ComposeOptions,
+  type ComposeResult,
+  type ComposedMessage,
+  type ProgressCounts,
+} from "./services/messages";
+export {
+  previewAssignmentView,
+  type PreviewCampaignInput,
+  type PreviewFormInput,
+  type PreviewAssignmentInput,
+} from "./services/preview";
+export { validateDefinition, flattenItems, completeness, allowedQualifiers, validateAnswerValue, type Completeness } from "./services/definition";
+export { evaluateRules, ruleScope } from "./services/rules";

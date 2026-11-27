@@ -25,8 +25,9 @@ const REMIND_INTERVAL_MS = 24 * 3600_000;
 const DUE_REMINDER_WINDOW_MS = 48 * 3600_000;
 const OPEN_STATUSES: CampaignAssignmentStatus[] = ["NOT_STARTED", "IN_PROGRESS", "CHANGES_REQUESTED"];
 
-function appUrl(): string {
-  return process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+/** Origine publique de l'application (liens des notifications et des messages), sans `/` final. */
+export function appUrl(): string {
+  return (process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000").replace(/\/+$/, "");
 }
 
 /** Lien personnel absolu d'un répondant sans compte, ou null s'il n'a pas (encore) de lien. */
@@ -36,7 +37,7 @@ export function respondentLink(respondent: { id: string; tokenSalt: string | nul
 }
 
 /** Lien d'un sans-compte, créé s'il n'existe pas encore (premier envoi). */
-async function ensureRespondentLink(respondent: { id: string; tokenSalt: string | null }): Promise<string> {
+export async function ensureRespondentLink(respondent: { id: string; tokenSalt: string | null }): Promise<string> {
   const existing = respondentLink(respondent);
   if (existing) return existing;
   const salt = newSalt();
@@ -191,6 +192,21 @@ export async function notifyChangesRequested(assignmentId: string, reason: strin
     title: `Correction demandée : ${a.campaign.title}`,
     message: `Une correction est demandée sur le questionnaire ${subject(a)} : le motif est indiqué dans le questionnaire, à nouveau modifiable.${dueSentence(a)}`,
     cta: "Voir la correction demandée",
+  });
+}
+
+/**
+ * Contribution rouverte (spec 091) : les répondants. Comme pour une correction, le motif n'est pas
+ * dans la notification (il peut citer des chiffres) ; il s'affiche dans le questionnaire.
+ */
+export async function notifyAssignmentReopened(assignmentId: string, reason?: string | null): Promise<void> {
+  const a = await loadAssignment(assignmentId);
+  if (!a) return;
+  await sendToRespondents(a, {
+    type: "CAMPAIGN_REOPENED",
+    title: `Questionnaire rouvert : ${a.campaign.title}`,
+    message: `Le questionnaire ${subject(a)} a été rouvert : les réponses et fichiers déjà saisis sont conservés, et il doit être soumis de nouveau.${reason?.trim() ? " Le motif est indiqué dans le questionnaire." : ""}${dueSentence(a)}`,
+    cta: "Reprendre le questionnaire",
   });
 }
 

@@ -45,7 +45,7 @@ comment les réponses sont stockées.
 - Deux moteurs de formulaires coexistent ; une convergence reste possible (ex. `forms` lisant une
   définition au même format) mais n'est pas engagée.
 - Ajouter un type de question = étendre le schéma Zod, la validation et le rendu.
-- Un éditeur graphique pourra produire le même document sans changer le stockage.
+- Un éditeur graphique pourra produire le même document sans changer le stockage. C'est fait (spec 091) : l'éditeur produit le même document `koinonia.campaign` et l'enregistre par l'import, donc avec les mêmes aperçu, blocages et révisions.
 
 ## Références
 

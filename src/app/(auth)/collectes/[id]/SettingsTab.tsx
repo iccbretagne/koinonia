@@ -4,7 +4,16 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { FileJson } from "lucide-react";
 import { Button, Input, Textarea, buttonClasses } from "@/components/ui";
-import { FILE_RETENTION_DAYS } from "@/modules/campaigns/schemas";
+import {
+  DEFAULT_MESSAGE_TEMPLATES,
+  FILE_RETENTION_DAYS,
+  MESSAGE_KINDS,
+  MESSAGE_KIND_LABELS,
+  MESSAGE_PLACEHOLDERS,
+  MESSAGE_TEMPLATE_MAX_LENGTH,
+  type MessageKind,
+} from "@/modules/campaigns/schemas";
+import { templatesPayload } from "./pilotage";
 import { parisDayKey, utcDayKey } from "../_components/display";
 import { useApi } from "../_components/use-api";
 import type { CampaignOverviewData } from "./types";
@@ -86,6 +95,8 @@ export default function SettingsTab({ campaign }: { readonly campaign: Campaign 
         </div>
       </form>
 
+      <MessageTemplatesForm campaign={campaign} />
+
       <section className="flex flex-col gap-3 rounded-card border border-line bg-surface px-4 py-4">
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Définition de la campagne</h2>
         <p className="text-[15px] leading-[22px] text-ink-muted">
@@ -98,5 +109,99 @@ export default function SettingsTab({ campaign }: { readonly campaign: Campaign 
         </Link>
       </section>
     </div>
+  );
+}
+
+function templateValues(c: Campaign): Record<MessageKind, string> {
+  const custom = c.messageTemplates ?? {};
+  return Object.fromEntries(MESSAGE_KINDS.map((k) => [k, custom[k] ?? DEFAULT_MESSAGE_TEMPLATES[k]])) as Record<MessageKind, string>;
+}
+
+/**
+ * Modèles de messages de la fenêtre « Communication » (spec 091) : un texte par type, variables
+ * `{{nom}}`. L'enregistrement remplace l'ensemble : seuls les textes différents du texte par défaut
+ * sont gardés.
+ */
+function MessageTemplatesForm({ campaign }: { readonly campaign: Campaign }) {
+  const { call, busy } = useApi();
+  const [saved, setSaved] = useState(() => templateValues(campaign));
+  const [values, setValues] = useState(saved);
+  const changed = MESSAGE_KINDS.some((k) => values[k] !== saved[k]);
+  const tooLong = MESSAGE_KINDS.filter((k) => values[k].trim().length > MESSAGE_TEMPLATE_MAX_LENGTH);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!changed || tooLong.length) return;
+    const done = await call(
+      `/api/campaigns/${campaign.id}`,
+      "PATCH",
+      { messageTemplates: templatesPayload(values, DEFAULT_MESSAGE_TEMPLATES) },
+      "Modèles de messages enregistrés"
+    );
+    if (done) {
+      // Un texte vidé revient au texte par défaut, comme côté serveur.
+      const next = Object.fromEntries(MESSAGE_KINDS.map((k) => [k, values[k].trim() || DEFAULT_MESSAGE_TEMPLATES[k]])) as Record<MessageKind, string>;
+      setSaved(next);
+      setValues(next);
+    }
+  }
+
+  return (
+    <form className="flex flex-col gap-4 rounded-card border border-line bg-surface px-4 py-4" onSubmit={submit} aria-labelledby="templates-title">
+      <div className="flex flex-col gap-1">
+        <h2 id="templates-title" className="font-display text-[17px] font-semibold leading-6 text-ink">
+          Modèles de messages
+        </h2>
+        <p className="text-[15px] leading-[22px] text-ink-muted">
+          Textes proposés par « Communication », au format WhatsApp (<code>*gras*</code>, <code>_italique_</code>). Les variables entre
+          accolades sont remplacées par l&apos;état réel de la campagne.
+        </p>
+      </div>
+
+      <details className="rounded-control border border-line px-3 py-2">
+        <summary className="min-h-11 cursor-pointer content-center text-[15px] font-semibold text-ink">Variables disponibles</summary>
+        <dl className="mt-2 flex flex-col gap-2 pb-1">
+          {MESSAGE_PLACEHOLDERS.map((p) => (
+            <div key={p.key} className="flex flex-col gap-0.5 sm:flex-row sm:gap-3">
+              <dt className="shrink-0 font-mono text-[13px] text-ink sm:w-36">{`{{${p.key}}}`}</dt>
+              <dd className="text-[13px] leading-[18px] text-ink-muted">{p.description}</dd>
+            </div>
+          ))}
+        </dl>
+      </details>
+
+      {MESSAGE_KINDS.map((k) => {
+        const vars = MESSAGE_PLACEHOLDERS.filter((p) => p.kinds.includes(k)).map((p) => `{{${p.key}}}`).join(" ");
+        const isDefault = values[k] === DEFAULT_MESSAGE_TEMPLATES[k];
+        return (
+          <div key={k} className="flex flex-col gap-2">
+            <Textarea
+              label={MESSAGE_KIND_LABELS[k]}
+              value={values[k]}
+              onChange={(e) => setValues((v) => ({ ...v, [k]: e.target.value }))}
+              rows={8}
+              hint={`Variables : ${vars}`}
+              error={tooLong.includes(k) ? `${MESSAGE_TEMPLATE_MAX_LENGTH} caractères au plus` : undefined}
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="self-start"
+              disabled={isDefault}
+              onClick={() => setValues((v) => ({ ...v, [k]: DEFAULT_MESSAGE_TEMPLATES[k] }))}
+            >
+              Rétablir le texte par défaut
+            </Button>
+          </div>
+        );
+      })}
+
+      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+        <Button type="submit" disabled={busy || !changed || tooLong.length > 0}>
+          {busy ? "Enregistrement…" : "Enregistrer les modèles"}
+        </Button>
+      </div>
+    </form>
   );
 }

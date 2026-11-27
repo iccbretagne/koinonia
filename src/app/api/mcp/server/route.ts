@@ -65,6 +65,7 @@ const ACTION_LABELS: Record<string, string> = {
   request_ticketing_site_domain: "demander, vérifier ou supprimer le domaine dédié du site d'un événement de billetterie",
   import_campaign: "créer ou mettre à jour une campagne de collecte depuis sa définition JSON",
   set_campaign_status: "ouvrir, clôturer ou rouvrir une campagne de collecte",
+  reopen_contribution: "rouvrir une contribution soumise d'une campagne de collecte",
 };
 
 const PLANNING_HINT =

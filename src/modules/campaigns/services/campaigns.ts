@@ -5,16 +5,20 @@ import { ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { logger } from "@/lib/logger";
 import type { CampaignAssignmentStatus, CampaignStatus } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import {
   ruleSchema,
   storedFormDefinitionSchema,
   type campaignSettingsSchema,
+  messageTemplatesSchema,
   type DefinitionItem,
+  type MessageTemplates,
   type Qualifier,
   type Rule,
 } from "../schemas";
 import { hasCampaignsManage } from "../auth";
-import { completeness, flattenItems, type Completeness, type StoredAnswer } from "./definition";
+import { completeness, flattenItems, validateDefinition, type Completeness, type StoredAnswer } from "./definition";
+import { exportCampaignDefinition } from "./definition-export";
 import { evaluateRules, ruleScope, type RuleEvaluation, type RuleValue } from "./rules";
 import { dayToDate, dueAtToDate } from "./values";
 import { notifyCampaignOpened } from "./notify";
@@ -281,7 +285,10 @@ export interface AssignmentOverview {
   key: string;
   label: string;
   status: CampaignAssignmentStatus;
+  /** Échéance applicable : celle de la contribution, à défaut celle de la campagne. */
   dueAt: Date | null;
+  /** Échéance propre de la contribution (null : celle de la campagne s'applique). */
+  assignmentDueAt: Date | null;
   submittedAt: Date | null;
   submittedByName: string | null;
   validatedAt: Date | null;
@@ -292,6 +299,41 @@ export interface AssignmentOverview {
   completeness: Completeness;
   requiredCount: number;
   files: { id: string; requestCode: string; name: string; mime: string; size: number; uploadedAt: Date; uploadedByName: string | null }[];
+  /** Questions concernées (spec 091, EVOL-06) : manquantes, à rechercher, estimées, fichiers attendus, contrôles non respectés. */
+  issues: AssignmentIssue[];
+  /** Soumise ou validée, sans manquante, « à rechercher », fichier attendu ni contrôle non respecté. */
+  exploitable: boolean;
+}
+
+export type AssignmentIssueKind = "missing" | "to_research" | "estimate" | "file_pending" | "check";
+
+export interface AssignmentIssue {
+  /** Code de la question, ou clé du contrôle pour `check`. */
+  code: string;
+  /** Libellé de la question, ou message du contrôle. */
+  label: string;
+  kind: AssignmentIssueKind;
+}
+
+/** Questions concernées d'une contribution et son caractère exploitable. Pur. */
+export function assignmentIssues(
+  items: readonly DefinitionItem[],
+  c: Completeness,
+  pendingFileCodes: readonly string[],
+  violatedChecks: readonly { key: string; message: string }[],
+  status: CampaignAssignmentStatus
+): { issues: AssignmentIssue[]; exploitable: boolean } {
+  const labels = new Map(items.map((i) => [i.code, i.label]));
+  const issue = (kind: AssignmentIssueKind) => (code: string) => ({ code, label: labels.get(code) ?? code, kind });
+  const issues: AssignmentIssue[] = [
+    ...c.missing.filter((code) => !pendingFileCodes.includes(code)).map(issue("missing")),
+    ...pendingFileCodes.map(issue("file_pending")),
+    ...c.toResearch.filter((code) => !pendingFileCodes.includes(code)).map(issue("to_research")),
+    ...c.estimates.map(issue("estimate")),
+    ...violatedChecks.map((r) => ({ code: r.key, label: r.message, kind: "check" as const })),
+  ];
+  const blocking = issues.some((i) => i.kind !== "estimate");
+  return { issues, exploitable: (status === "SUBMITTED" || status === "VALIDATED") && !blocking };
 }
 
 export async function getCampaignOverview(campaignId: string) {
@@ -309,7 +351,9 @@ export async function getCampaignOverview(campaignId: string) {
       status: true,
       fileRetentionDays: true,
       rules: true,
+      messageTemplates: true,
       definitionHash: true,
+      church: { select: { name: true } },
       openedAt: true,
       closedAt: true,
       filesPurgedAt: true,
@@ -360,6 +404,15 @@ export async function getCampaignOverview(campaignId: string) {
     select: { assignmentId: true, code: true, value: true, qualifier: true, note: true },
   })) as AnswerRow[];
 
+  const rules = storedRules(campaign.rules);
+  const formsForChecks = campaign.forms.map((f) => ({ key: f.key, items: storedItems(f.definition), assignments: f.assignments }));
+  const checks = campaignChecks(rules, formsForChecks, answers);
+  const violatedByAssignment = new Map<string, { key: string; message: string }[]>();
+  for (const ch of checks) {
+    if (ch.scope !== "local" || ch.result !== "violated" || !ch.assignmentId) continue;
+    violatedByAssignment.set(ch.assignmentId, [...(violatedByAssignment.get(ch.assignmentId) ?? []), { key: ch.key, message: ch.message }]);
+  }
+
   const forms = campaign.forms.map((f) => {
     const items = storedItems(f.definition);
     const assignments: AssignmentOverview[] = f.assignments.map((a) => {
@@ -368,12 +421,20 @@ export async function getCampaignOverview(campaignId: string) {
       );
       const fileCount = new Map<string, number>();
       for (const file of a.files) fileCount.set(file.requestCode, (fileCount.get(file.requestCode) ?? 0) + 1);
+      const c = completeness(items, answersByCode, fileCount);
+      // Demande de fichier non satisfaite (obligatoire sans état, « à rechercher », ou « fichier
+      // transmis » sans dépôt) : un fichier attendu, pas une réponse manquante ni « à rechercher ».
+      const pendingFiles = items
+        .filter((i) => i.type === "file_request" && (c.missing.includes(i.code) || c.toResearch.includes(i.code)))
+        .map((i) => i.code);
+      const { issues, exploitable } = assignmentIssues(items, c, pendingFiles, violatedByAssignment.get(a.id) ?? [], a.status);
       return {
         id: a.id,
         key: a.key,
         label: a.label,
         status: a.status,
         dueAt: a.dueAt ?? campaign.dueAt,
+        assignmentDueAt: a.dueAt,
         submittedAt: a.submittedAt,
         submittedByName: a.submittedByName,
         validatedAt: a.validatedAt,
@@ -387,9 +448,11 @@ export async function getCampaignOverview(campaignId: string) {
           kind: r.userId ? ("account" as const) : ("link" as const),
           hasLink: !!r.tokenHash,
         })),
-        completeness: completeness(items, answersByCode, fileCount),
+        completeness: c,
         requiredCount: items.filter((i) => i.required).length,
         files: a.files,
+        issues,
+        exploitable,
       };
     });
     return { id: f.id, key: f.key, title: f.title, confidential: f.confidential, revision: f.revision, itemCount: items.length, items, assignments };
@@ -397,7 +460,6 @@ export async function getCampaignOverview(campaignId: string) {
 
   const all = forms.flatMap((f) => f.assignments);
   const done = all.filter((a) => a.status === "SUBMITTED" || a.status === "VALIDATED").length;
-  const checks = campaignChecks(storedRules(campaign.rules), forms, answers);
 
   return {
     campaign: {
@@ -411,6 +473,8 @@ export async function getCampaignOverview(campaignId: string) {
       dueAt: campaign.dueAt,
       status: campaign.status,
       fileRetentionDays: campaign.fileRetentionDays,
+      messageTemplates: readMessageTemplates(campaign.messageTemplates),
+      churchName: campaign.church.name,
       definitionHash: campaign.definitionHash,
       openedAt: campaign.openedAt,
       closedAt: campaign.closedAt,
@@ -425,6 +489,7 @@ export async function getCampaignOverview(campaignId: string) {
         (["NOT_STARTED", "IN_PROGRESS", "SUBMITTED", "CHANGES_REQUESTED", "VALIDATED"] as const).map((s) => [s, all.filter((a) => a.status === s).length])
       ) as Record<CampaignAssignmentStatus, number>,
       rate: all.length ? done / all.length : 0,
+      exploitable: all.filter((a) => a.exploitable).length,
       estimates: all.reduce((n, a) => n + a.completeness.estimates.length, 0),
       toResearch: all.reduce((n, a) => n + a.completeness.toResearch.length, 0),
       missing: all.reduce((n, a) => n + a.completeness.missing.length, 0),
@@ -450,6 +515,10 @@ export async function updateCampaignSettings(campaignId: string, input: Campaign
   if (input.periodEnd !== undefined) data.periodEnd = input.periodEnd ? dayToDate(input.periodEnd) : null;
   if (input.dueAt !== undefined) data.dueAt = input.dueAt ? dueAtToDate(input.dueAt) : null;
   if (input.fileRetentionDays !== undefined) data.fileRetentionDays = input.fileRetentionDays;
+  if (input.messageTemplates !== undefined) {
+    const t = input.messageTemplates;
+    data.messageTemplates = t && Object.keys(t).length ? (t as Prisma.InputJsonValue) : Prisma.DbNull;
+  }
   const start = (data.periodStart as Date | null | undefined) === undefined ? campaign.periodStart : (data.periodStart as Date | null);
   const end = (data.periodEnd as Date | null | undefined) === undefined ? campaign.periodEnd : (data.periodEnd as Date | null);
   if (start && end && start > end) throw new ApiError(400, "Le début de période doit précéder sa fin");
@@ -457,10 +526,138 @@ export async function updateCampaignSettings(campaignId: string, input: Campaign
   const updated = await prisma.campaign.update({
     where: { id: campaignId },
     data,
-    select: { id: true, title: true, description: true, periodStart: true, periodEnd: true, dueAt: true, fileRetentionDays: true, status: true },
+    select: { id: true, title: true, description: true, periodStart: true, periodEnd: true, dueAt: true, fileRetentionDays: true, messageTemplates: true, status: true },
   });
   await logAudit({ userId: actor.userId, churchId: campaign.churchId, action: "UPDATE", entityType: "Campaign", entityId: campaignId, details: { fields: Object.keys(data) } });
-  return updated;
+  return { ...updated, messageTemplates: readMessageTemplates(updated.messageTemplates) };
+}
+
+/** Modèles personnalisés stockés, relus avec leur schéma (illisible ⇒ aucun). */
+export function readMessageTemplates(raw: unknown): MessageTemplates {
+  const parsed = messageTemplatesSchema.safeParse(raw);
+  return parsed.success ? parsed.data : {};
+}
+
+// ── Préparer l'ouverture ───────────────────────────────────────────────────────────────────────
+
+export interface ReadinessItem {
+  key: "forms" | "questions" | "definition" | "dueDates" | "assignments" | "respondents" | "rules" | "confidential";
+  label: string;
+  ok: boolean;
+  detail?: string;
+}
+
+export interface CampaignReadiness {
+  /** Tout est prêt : chaque point est `ok` (le point « confidentiel » est informatif). */
+  ready: boolean;
+  items: ReadinessItem[];
+}
+
+/**
+ * Synthèse « Préparer l'ouverture » (spec 091, EVOL-10), en lecture seule : questionnaires,
+ * questions, définition valide, échéances non dépassées, destinataires, répondants valides,
+ * contrôles valides, questionnaires confidentiels (informatif). Aucun nom de personne.
+ */
+export async function campaignReadiness(campaignId: string, now = new Date()): Promise<CampaignReadiness> {
+  const campaign = await prisma.campaign.findUnique({
+    where: { id: campaignId },
+    select: {
+      churchId: true,
+      dueAt: true,
+      rules: true,
+      forms: {
+        orderBy: { position: "asc" },
+        select: { title: true, confidential: true, definition: true, assignments: { select: { label: true, dueAt: true } } },
+      },
+    },
+  });
+  if (!campaign) throw new ApiError(404, "Campagne introuvable");
+
+  const forms = campaign.forms;
+  const assignments = forms.flatMap((f) => f.assignments.map((a) => ({ ...a, formTitle: f.title })));
+  const emptyForms = forms.filter((f) => storedItems(f.definition).length === 0).map((f) => f.title);
+  const items: ReadinessItem[] = [];
+
+  items.push({
+    key: "forms",
+    label: "Questionnaires",
+    ok: forms.length > 0,
+    detail: forms.length ? `${forms.length} questionnaire(s)` : "Aucun questionnaire",
+  });
+  items.push({
+    key: "questions",
+    label: "Questions",
+    ok: forms.length > 0 && emptyForms.length === 0,
+    detail: emptyForms.length ? `Sans question : ${emptyForms.join(" ; ")}` : `${forms.reduce((n, f) => n + storedItems(f.definition).length, 0)} question(s)`,
+  });
+
+  let definitionErrors: string[] = [];
+  try {
+    const { definition } = await exportCampaignDefinition(campaignId);
+    definitionErrors = forms.length ? validateDefinition(definition) : [];
+  } catch (error) {
+    definitionErrors = [error instanceof Error ? error.message : "Définition illisible"];
+  }
+  items.push({
+    key: "definition",
+    label: "Définition valide",
+    ok: definitionErrors.length === 0,
+    ...(definitionErrors.length ? { detail: definitionErrors.slice(0, 5).join(" ; ") } : {}),
+  });
+
+  const past = assignments.filter((a) => {
+    const due = a.dueAt ?? campaign.dueAt;
+    return due && due.getTime() < now.getTime();
+  });
+  items.push({
+    key: "dueDates",
+    label: "Échéances à venir",
+    ok: past.length === 0,
+    detail: past.length
+      ? `Échéance dépassée : ${past.slice(0, 10).map((a) => `${a.formTitle} › ${a.label}`).join(" ; ")}${past.length > 10 ? ` (et ${past.length - 10} autre(s))` : ""}`
+      : campaign.dueAt
+        ? "Aucune échéance dépassée"
+        : "Aucune échéance de campagne fixée",
+  });
+
+  items.push({
+    key: "assignments",
+    label: "Destinataires",
+    ok: assignments.length > 0,
+    detail: assignments.length ? `${assignments.length} destinataire(s)` : "Aucun destinataire",
+  });
+
+  const missing = await assignmentsWithoutRespondent(campaignId, campaign.churchId);
+  items.push({
+    key: "respondents",
+    label: "Répondants",
+    ok: assignments.length > 0 && missing.length === 0,
+    detail: missing.length
+      ? `Sans répondant valide : ${missing.slice(0, 10).join(" ; ")}${missing.length > 10 ? ` (et ${missing.length - 10} autre(s))` : ""}`
+      : "Chaque destinataire a un répondant",
+  });
+
+  const rawRules = Array.isArray(campaign.rules) ? campaign.rules : [];
+  const unreadable = rawRules.length - storedRules(campaign.rules).length;
+  const ruleErrors = definitionErrors.filter((e) => /contrôle|règle/i.test(e));
+  items.push({
+    key: "rules",
+    label: "Contrôles de cohérence",
+    ok: unreadable === 0 && ruleErrors.length === 0,
+    detail: unreadable ? `${unreadable} contrôle(s) illisible(s)` : ruleErrors.length ? ruleErrors.join(" ; ") : `${rawRules.length} contrôle(s)`,
+  });
+
+  const confidential = forms.filter((f) => f.confidential).length;
+  items.push({
+    key: "confidential",
+    label: "Questionnaires confidentiels",
+    ok: true,
+    detail: confidential
+      ? `${confidential} questionnaire(s) confidentiel(s) : lus seulement par les gestionnaires de la campagne et ses répondants`
+      : "Aucun questionnaire confidentiel",
+  });
+
+  return { ready: items.every((i) => i.ok), items };
 }
 
 export type CampaignStatusAction = "open" | "close" | "reopen";
