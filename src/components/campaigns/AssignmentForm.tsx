@@ -1196,11 +1196,11 @@ export default function AssignmentForm({
           <details className="group">
             <summary className="flex min-h-11 cursor-pointer items-center px-4 font-semibold text-ink">Sommaire ({sections.length} sections)</summary>
             <ol className="flex flex-col pb-2">
-              {sections.map((s) => {
+              {sections.map((s, index) => {
                 const left = s.items.filter((i) => missing.has(i.code)).length;
                 return (
                   <li key={s.key}>
-                    <a href={`#section-${s.key}`} className="flex min-h-11 items-center justify-between gap-3 px-4 text-[15px] text-ink hover:bg-surface-sunken">
+                    <a href={`#section-${index + 1}`} className="flex min-h-11 items-center justify-between gap-3 px-4 text-[15px] text-ink hover:bg-surface-sunken">
                       <span className="min-w-0">{s.title}</span>
                       {left > 0 ? <StatusChip tone="warning">{left} à compléter</StatusChip> : <StatusChip tone="success">Complet</StatusChip>}
                     </a>
@@ -1237,8 +1237,8 @@ export default function AssignmentForm({
         </Alert>
       )}
 
-      {sections.map((section) => (
-        <section key={section.key} id={`section-${section.key}`} className="scroll-mt-20 rounded-card border border-line bg-surface px-4 md:px-6">
+      {sections.map((section, index) => (
+        <section key={section.key} id={`section-${index + 1}`} className="scroll-mt-20 rounded-card border border-line bg-surface px-4 md:px-6">
           <header className="border-b border-line py-4">
             <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">{section.title}</h2>
             {section.intro && <p className="mt-1 whitespace-pre-line text-[15px] leading-[22px] text-ink-muted">{section.intro}</p>}

@@ -278,11 +278,13 @@ export function keyFromTitle(title: string, suffix = randomBytes(3).toString("he
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60)
-    .replace(/-+$/, "");
-  return `${slug || "campagne"}-${suffix}`;
+    .split(/[^a-z0-9]/)
+    .filter(Boolean)
+    .join("-")
+    .slice(0, 60);
+  // La coupe à 60 peut laisser un tiret final (sans expression régulière : CodeQL js/polynomial-redos).
+  const trimmed = slug.endsWith("-") ? slug.slice(0, -1) : slug;
+  return `${trimmed || "campagne"}-${suffix}`;
 }
 
 /**
