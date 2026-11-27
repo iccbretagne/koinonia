@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
-import { listDoneRequests, loadRequestQueue, DONE_PAGE_SIZE } from "../queue";
+import { countRequestQueueTodo, listDoneRequests, loadRequestQueue, DONE_PAGE_SIZE } from "../queue";
 
 const NOW = new Date("2026-10-10T10:00:00Z");
 const SINCE = new Date("2026-09-10T10:00:00Z");
@@ -177,5 +177,20 @@ describe("listDoneRequests", () => {
   it("ignore un curseur illisible", async () => {
     await listDoneRequests("church-1", "SECRETARIAT", { cursor: "n'importe quoi" }, undefined, NOW);
     expect(JSON.stringify(findManyArgs(0).where)).not.toContain("updatedAt");
+  });
+});
+
+describe("countRequestQueueTodo (spec 092, parité écran / Accueil)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prismaMock.request.findMany.mockResolvedValue([] as never);
+    prismaMock.request.count.mockResolvedValue(4);
+  });
+
+  it("demandes EN_ATTENTE du même périmètre que la file du Secrétariat, bornées à l'église", async () => {
+    await expect(countRequestQueueTodo("church-1", "SECRETARIAT", prismaMock as never)).resolves.toBe(4);
+    const where = (prismaMock.request.count.mock.calls[0][0] as { where: { AND: [Record<string, unknown>, unknown] } }).where;
+    expect(where.AND[1]).toEqual({ status: "EN_ATTENTE" });
+    expect(where.AND[0]).toMatchObject({ churchId: "church-1", parentRequestId: null });
   });
 });

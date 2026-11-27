@@ -4,11 +4,12 @@ import { hasCampaignsManage, requireCampaignManager } from "@/modules/campaigns/
 import { campaignReadiness, campaignsAppUrl, getCampaignOverview, storedItems } from "@/modules/campaigns";
 import type { Jsonify } from "../_components/display";
 import CampaignView from "./CampaignView";
+import { trackingStatusFromParam } from "@/lib/opening-params";
 import { CAMPAIGN_TABS, type CampaignOverviewData, type CampaignTab } from "./types";
 
 type Props = {
   readonly params: Promise<{ id: string }>;
-  readonly searchParams: Promise<{ onglet?: string }>;
+  readonly searchParams: Promise<{ onglet?: string; etat?: string }>;
 };
 
 /** Questionnaire de chaque code (contrôles croisés : questionnaires concernés). */
@@ -28,7 +29,7 @@ export default async function CampaignPage({ params, searchParams }: Props) {
   const { id } = await params;
   const managed = await requireCampaignManager(id).catch(() => null);
   if (!managed) notFound();
-  const { onglet } = await searchParams;
+  const { onglet, etat } = await searchParams;
   const tab: CampaignTab = CAMPAIGN_TABS.find((t) => t === onglet) ?? "suivi";
   const [overview, codeForms] = await Promise.all([
     getCampaignOverview(id),
@@ -48,6 +49,7 @@ export default async function CampaignPage({ params, searchParams }: Props) {
       readiness={readiness}
       appUrl={campaignsAppUrl()}
       canDuplicate={canDuplicate}
+      initialStatusFilter={tab === "suivi" ? trackingStatusFromParam(etat) : ""}
     />
   );
 }

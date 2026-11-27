@@ -69,13 +69,15 @@ export const TICKETING_QUESTIONS: DataQuestion[] = [
     async run({ session, churchId, viewer }) {
       if (!viewer.predicates.includes("ticketing")) return REFUSED;
       const m = await import("@/modules/ticketing");
-      const events = await m.listEvents(churchId, viewer.userId, await m.isTicketingManager(session, churchId));
+      // Même sélection d'événements que la carte « À traiter » de l'Accueil (spec 092).
+      const events = await prisma.ticketingEvent.findMany({
+        where: await m.paymentsEventsWhere(session, churchId),
+        select: { id: true, title: true },
+        orderBy: { startsAt: "desc" },
+      });
       const items: { label: string; detail: string; href: string }[] = [];
-      let treasurer = false;
-      for (const e of events.filter((x) => x.status !== "ARCHIVED")) {
-        const access = await m.getEventAccess(session, e.id).catch(() => null);
-        if (!access || !m.canDo(access, "payments")) continue;
-        treasurer = true;
+      const treasurer = events.length > 0;
+      for (const e of events) {
         const [payments, bookings] = await Promise.all([m.listPayments(e.id), m.listBookings(e.id, false)]);
         for (const p of payments.filter((x) => x.kind === "DECLARATION" && x.status === "PENDING")) {
           items.push({ label: `${e.title} · ${p.reference} · ${p.contactName}`, detail: `À confirmer : ${formatEuros(p.amount)} (${p.method}), déclaré le ${formatDay(new Date(p.createdAt))}`, href: paths.billetterie.event(e.id, { vue: "reglements" }) });
@@ -138,8 +140,10 @@ export const ACCOUNTING_QUESTIONS: DataQuestion[] = [
     params: paramsSchema,
     async run({ viewer, churchId }) {
       if (!can(viewer, "accounting:manage")) return REFUSED;
+      // Même règle que la carte « À traiter » de l'Accueil et le tableau de bord (spec 092).
+      const { toValidateWhere } = await import("@/modules/accounting");
       const requests = await prisma.financialRequest.findMany({
-        where: { churchId, status: { in: ["SUBMITTED", "PROCESSING"] } },
+        where: toValidateWhere(churchId),
         select: { label: true, amount: true, status: true, department: { select: { name: true } } },
         orderBy: { createdAt: "asc" },
       });

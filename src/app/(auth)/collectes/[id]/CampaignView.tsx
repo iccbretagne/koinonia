@@ -64,6 +64,7 @@ export default function CampaignView({
   readiness,
   appUrl,
   canDuplicate,
+  initialStatusFilter = "",
 }: {
   readonly tab: CampaignTab;
   readonly overview: CampaignOverviewData;
@@ -74,6 +75,8 @@ export default function CampaignView({
   readonly appUrl: string;
   /** `campaigns:manage` dans l'église de la campagne (duplication). */
   readonly canDuplicate: boolean;
+  /** Filtre d'état initial du suivi (`?etat=soumis`, liste fermée). */
+  readonly initialStatusFilter?: string;
 }) {
   const { call, busy } = useApi();
   const [pending, setPending] = useState<StatusAction | null>(null);
@@ -135,7 +138,7 @@ export default function CampaignView({
       </PageHeader>
 
       {tab === "suivi" && campaign.status === "DRAFT" && readiness && <ReadinessPanel readiness={readiness} />}
-      {tab === "suivi" && <TrackingTab overview={overview} onMessage={(preset) => setCommunication(preset)} />}
+      {tab === "suivi" && <TrackingTab overview={overview} initialStatusFilter={initialStatusFilter} onMessage={(preset) => setCommunication(preset)} />}
       {tab === "controles" && <ChecksTab checks={overview.checks} forms={overview.forms} codeForms={codeForms} />}
       {tab === "repondants" && <RespondentsTab campaignId={campaign.id} campaignStatus={campaign.status} forms={overview.forms} />}
       {tab === "gestionnaires" && <ManagersTab campaignId={campaign.id} managers={overview.managers} />}

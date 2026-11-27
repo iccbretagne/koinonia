@@ -178,6 +178,7 @@ export default function LedgerTab({
   purposes,
   filters,
   highlightId,
+  openEntry = false,
 }: {
   readonly ledger: LedgerResult;
   readonly accounts: AccountView[];
@@ -186,12 +187,14 @@ export default function LedgerTab({
   readonly purposes: PurposeView[];
   readonly filters: LedgerFilters;
   readonly highlightId?: string;
+  /** `?saisie=1` : ouvre le formulaire « Nouvelle ligne » à l'arrivée (un compte actif requis). */
+  readonly openEntry?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [detailId, setDetailId] = useState<string | null>(highlightId ?? null);
-  const [editing, setEditing] = useState<LedgerLine | "new" | null>(null);
+  const [editing, setEditing] = useState<LedgerLine | "new" | null>(openEntry && activeAccounts.length > 0 ? "new" : null);
   const [transfer, setTransfer] = useState<LedgerLine | "new" | null>(null);
   const detail = ledger.lines.find((l) => l.id === detailId) ?? null;
 

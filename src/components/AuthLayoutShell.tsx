@@ -20,6 +20,7 @@ import {
 import {
   bottomDestinations,
   buildSpaces,
+  paletteActions,
   resolveActive,
   searchablePages,
   type NavigationInput,
@@ -150,6 +151,11 @@ export default function AuthLayoutShell({
   const active = resolveActive(spaces, pathname, searchParams.get("dept"));
   const destinations = useMemo(() => bottomDestinations(spaces, { role: userRole, isPastoral }), [spaces, userRole, isPastoral]);
   const pages = useMemo(() => searchablePages(spaces), [spaces]);
+  const actions = useMemo(
+    () => paletteActions(navInput),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [navInputKey]
+  );
   const moreBadge = spaces
     .filter((s) => !destinations.some((d) => d.space === s.key))
     .reduce((sum, s) => sum + (s.badge ?? 0), 0);
@@ -241,6 +247,8 @@ export default function AuthLayoutShell({
           open={searchOpen}
           onClose={() => setSearchOpen(false)}
           pages={pages}
+          actions={actions}
+          destinations={destinations}
           churchId={currentChurchId}
           canSearchMembers={!!navInput.hasMembersAccess}
           canSearchEvents={!!navInput.hasEventsAccess}

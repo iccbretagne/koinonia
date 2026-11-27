@@ -30,7 +30,7 @@ vi.mock("@/lib/email", () => ({
 const logAudit = vi.fn();
 vi.mock("@/lib/audit", () => ({ logAudit: (...a: unknown[]) => logAudit(...a) }));
 
-const { submitApplication, getApplication, rejectApplication } = await import("../applications");
+const { submitApplication, getApplication, rejectApplication, countServingQueue } = await import("../applications");
 import type { ServingActor } from "../../auth";
 import type { ApplicationData } from "../../schemas";
 
@@ -231,5 +231,59 @@ describe("rejectApplication", () => {
 
   it("réservé au PVS et à l'administration", async () => {
     await expect(rejectApplication(actor(false), "app-1", undefined)).rejects.toThrow("FORBIDDEN");
+  });
+});
+
+describe("countServingQueue (spec 092, file de l'Accueil)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("PVS / Admin : compartiment « À traiter » de l'église (reçues, renvois non résolus)", async () => {
+    prismaMock.servingApplication.count.mockResolvedValue(3);
+    await expect(countServingQueue(actor(true))).resolves.toEqual({ view: "pvs", count: 3 });
+    expect(prismaMock.servingApplication.count).toHaveBeenCalledWith({
+      where: {
+        churchId: CHURCH,
+        OR: [
+          { status: "RECEIVED" },
+          { status: "VALIDATED", assignments: { some: { status: "SENT_BACK", resolvedAt: null } } },
+        ],
+      },
+    });
+  });
+
+  it("sans département dirigé : aucune file (null, pas 0)", async () => {
+    prismaMock.department.findMany.mockResolvedValue([{ id: "d1", ministryId: "m1" }]);
+    await expect(countServingQueue(actor(false))).resolves.toBeNull();
+    expect(prismaMock.servingAssignment.count).not.toHaveBeenCalled();
+  });
+
+  it("responsable : affectations en attente de ses départements, bornées à l'église", async () => {
+    const lead: ServingActor = {
+      ...actor(false),
+      user: {
+        isSuperAdmin: false,
+        churchRoles: [{ churchId: CHURCH, role: "DEPARTMENT_HEAD", ministryId: null, departments: [{ department: { id: "d1" } }] }],
+      } as ServingActor["user"],
+    };
+    prismaMock.department.findMany.mockResolvedValue([{ id: "d1", ministryId: "m1" }, { id: "d2", ministryId: "m1" }]);
+    prismaMock.servingAssignment.count.mockResolvedValueOnce(4);
+    prismaMock.servingApplication.count.mockResolvedValueOnce(2);
+    await expect(countServingQueue(lead)).resolves.toEqual({ view: "department", count: 2 });
+    expect(prismaMock.servingApplication.count).toHaveBeenLastCalledWith({
+      where: { churchId: CHURCH, assignments: { some: { status: "PENDING", departmentId: { in: ["d1"] } } } },
+    });
+  });
+
+  it("responsable sans aucune affectation dans ses départements : pas d'espace, pas de file", async () => {
+    const lead: ServingActor = {
+      ...actor(false),
+      user: {
+        isSuperAdmin: false,
+        churchRoles: [{ churchId: CHURCH, role: "DEPARTMENT_HEAD", ministryId: null, departments: [{ department: { id: "d1" } }] }],
+      } as ServingActor["user"],
+    };
+    prismaMock.department.findMany.mockResolvedValue([{ id: "d1", ministryId: "m1" }]);
+    prismaMock.servingAssignment.count.mockResolvedValue(0);
+    await expect(countServingQueue(lead)).resolves.toBeNull();
   });
 });

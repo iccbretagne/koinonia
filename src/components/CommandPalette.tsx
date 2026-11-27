@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft, CalendarDays, CornerDownLeft, ExternalLink, Search, UserRound, type LucideIcon } from "lucide-react";
 import IconButton from "@/components/ui/IconButton";
 import { useModalDialog } from "@/components/ui/use-modal-dialog";
-import { filterByQuery, normalizeText, type SearchablePage } from "@/lib/navigation";
+import { filterByQuery, normalizeText, type BottomDestination, type PaletteAction, type SearchablePage } from "@/lib/navigation";
 import { resetLoadingToIdle, type Remote } from "./command-palette-remote";
 import { paths } from "@/lib/paths";
 
@@ -22,6 +22,10 @@ interface CommandPaletteProps {
   readonly open: boolean;
   readonly onClose: () => void;
   readonly pages: readonly SearchablePage[];
+  /** Actions autorisées (`paletteActions`) : chacune ouvre un formulaire de son écran. */
+  readonly actions?: readonly PaletteAction[];
+  /** Destinations de la barre du bas, proposées d'abord sans saisie (spec 092). */
+  readonly destinations?: readonly BottomDestination[];
   readonly churchId: string | null;
   /** `GET /api/members` (members:view, périmètre de l'appelant) : catégorie STAR. */
   readonly canSearchMembers: boolean;
@@ -84,6 +88,14 @@ function pageResult(p: SearchablePage): Result {
   return { id: `page:${p.href}`, label: p.label, context: p.context, href: p.href, icon: p.icon, external: p.external };
 }
 
+function actionResult(a: PaletteAction): Result {
+  return { id: `action:${a.key}`, label: a.label, href: a.href, icon: a.icon };
+}
+
+function destinationResult(d: BottomDestination): Result {
+  return { id: `dest:${d.key}`, label: d.label, href: d.href, icon: d.icon };
+}
+
 /**
  * Palette de recherche (⌘K / Ctrl K, loupe en plein écran sur mobile —
  * docs/design-system/guidelines/10-navigation.md). Filtre instantanément les pages de la
@@ -91,7 +103,16 @@ function pageResult(p: SearchablePage): Result {
  * existantes (`GET /api/members`, `GET /api/events`), avec le périmètre qu'elles appliquent
  * déjà : une catégorie refusée (403) ou indisponible est simplement masquée.
  */
-export default function CommandPalette({ open, onClose, pages, churchId, canSearchMembers, canSearchEvents }: CommandPaletteProps) {
+export default function CommandPalette({
+  open,
+  onClose,
+  pages,
+  actions = [],
+  destinations = [],
+  churchId,
+  canSearchMembers,
+  canSearchEvents,
+}: CommandPaletteProps) {
   const dialogRef = useModalDialog(open, onClose);
   if (!open) return null;
   return (
@@ -105,6 +126,8 @@ export default function CommandPalette({ open, onClose, pages, churchId, canSear
       <PaletteBody
         onClose={onClose}
         pages={pages}
+        actions={actions}
+        destinations={destinations}
         churchId={churchId}
         canSearchMembers={canSearchMembers}
         canSearchEvents={canSearchEvents}
@@ -113,7 +136,15 @@ export default function CommandPalette({ open, onClose, pages, churchId, canSear
   );
 }
 
-function PaletteBody({ onClose, pages, churchId, canSearchMembers, canSearchEvents }: Omit<CommandPaletteProps, "open">) {
+function PaletteBody({
+  onClose,
+  pages,
+  actions = [],
+  destinations = [],
+  churchId,
+  canSearchMembers,
+  canSearchEvents,
+}: Omit<CommandPaletteProps, "open">) {
   const router = useRouter();
   const pathname = usePathname();
   const listId = useId();
@@ -166,15 +197,22 @@ function PaletteBody({ onClose, pages, churchId, canSearchMembers, canSearchEven
     const q = query.trim();
     if (!q) {
       const byHref = new Map(pages.map((p) => [p.href, p]));
-      const recentPages = recent.map((h) => byHref.get(h)).filter((p): p is SearchablePage => !!p);
-      const quick = pages.filter((p) => !recent.includes(p.href)).slice(0, 8);
+      const destHrefs = new Set(destinations.map((d) => d.href));
+      const recentPages = recent
+        .map((h) => byHref.get(h))
+        .filter((p): p is SearchablePage => !!p && !destHrefs.has(p.href));
+      const quick = pages.filter((p) => !recent.includes(p.href) && !destHrefs.has(p.href)).slice(0, destinations.length > 0 ? 4 : 8);
       return [
+        { key: "destinations", title: "Mes espaces", results: destinations.map(destinationResult) },
+        { key: "actions", title: "Actions", results: actions.map(actionResult) },
         { key: "recent", title: "Pages récentes", results: recentPages.map(pageResult) },
         { key: "quick", title: "Accès rapides", results: quick.map(pageResult) },
       ].filter((g) => g.results.length > 0);
     }
 
     const out: Group[] = [];
+    const actionHits = filterByQuery(actions, q, (a) => a.label, (a) => a.label);
+    if (actionHits.length > 0) out.push({ key: "actions", title: "Actions", results: actionHits.map(actionResult) });
     const pageHits = filterByQuery(pages, q, (p) => `${p.label} ${p.context}`, (p) => p.label).slice(0, 8);
     if (pageHits.length > 0) out.push({ key: "pages", title: "Pages", results: pageHits.map(pageResult) });
 
@@ -225,7 +263,7 @@ function PaletteBody({ onClose, pages, churchId, canSearchMembers, canSearchEven
       }
     }
     return out;
-  }, [query, debounced, pages, recent, members, events, now]);
+  }, [query, debounced, pages, actions, destinations, recent, members, events, now]);
 
   const flat = groups.flatMap((g) => g.results);
   const current = Math.min(activeIndex, Math.max(0, flat.length - 1));
@@ -309,7 +347,9 @@ function PaletteBody({ onClose, pages, churchId, canSearchMembers, canSearchEven
         </kbd>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2">
+      {/* Zone défilante focalisable (axe scrollable-region-focusable) : les options sont désignées par
+          aria-activedescendant, sans être elles-mêmes focalisables. */}
+      <div tabIndex={0} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">
         <ul ref={listRef} id={listId} role="listbox" aria-label="Résultats">
           {groups.map((g) => (
             <li key={g.key} role="none" className="mb-1">

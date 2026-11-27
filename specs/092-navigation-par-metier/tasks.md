@@ -116,45 +116,45 @@
 
 ### Compteurs (modules)
 
-- [ ] **T2.1** [P] [M] — `countRequestQueueTodo(churchId)` (planning), utilisé par
+- [x] **T2.1** [P] [M] — `countRequestQueueTodo(churchId)` (planning), utilisé par
       `secretariat/requests/page.tsx`. **Fait quand** : test de parité écran/fonction.
-- [ ] **T2.2** [P] [J] — `accountingQueueCounts(churchId)` (à valider, à payer) aligné sur les
+- [x] **T2.2** [P] [J] — `accountingQueueCounts(churchId)` (à valider, à payer) aligné sur les
       indicateurs de `accounting/requests/page.tsx`, qui l'appelle ; `accounting.toValidate` réaligné.
-- [ ] **T2.3** [P] [M] — Exposer `countOpenJustifications` par l'index `accounting` si besoin.
-- [ ] **T2.4** [P] [J] — `careQueueCounts(access, churchId)` (rendez-vous et suivis non confiés),
+- [x] **T2.3** [P] [M] — Exposer `countOpenJustifications` par l'index `accounting` si besoin. *Sans objet : la file reprend `toJustify` de l'écran (`?filtre=justifier`).*
+- [x] **T2.4** [P] [J] — `careQueueCounts(access, churchId)` (rendez-vous et suivis non confiés),
       appelé par `care/page.tsx`.
-- [ ] **T2.5** [P] [J] — `countServingQueue(actor)` : bucket `todo` (PVS/Admin) ou affectations
+- [x] **T2.5** [P] [J] — `countServingQueue(actor)` : bucket `todo` (PVS/Admin) ou affectations
       `PENDING` des départements dirigés ; `ApplicationsClient`/`page.tsx` lisent la même valeur.
-- [ ] **T2.6** [P] [J] — `countPendingDeclarations(session, churchId)` (ticketing) : déclarations
+- [x] **T2.6** [P] [J] — `countPendingDeclarations(session, churchId)` (ticketing) : déclarations
       `PENDING` sur événements non archivés avec l'action `payments`, une requête groupée, retourne
       aussi les identifiants d'événements concernés ; `ticketing.paymentsToHandle` réutilise la sélection.
-- [ ] **T2.7** [P] [J] — `listPendingWithdrawals(session, churchId)` (planning) : `PENDING`,
+- [x] **T2.7** [P] [J] — `listPendingWithdrawals(session, churchId)` (planning) : `PENDING`,
       événement à venir, périmètre `getUserDepartmentScope`, `planning:edit` ; `planning.toReplace`
       l'appelle ; aucune donnée nominative renvoyée à l'Accueil.
-- [ ] **T2.8** [P] [J] — `countSubmittedContributions(session, churchId)` (campaigns) :
+- [x] **T2.8** [P] [J] — `countSubmittedContributions(session, churchId)` (campaigns) :
       `SUBMITTED`, campagnes non archivées gérées par la personne, aucune valeur lue.
-- [ ] **T2.9** [J] — Tests par file : règles (statuts, périmètre vide, archivés), isolation
+- [x] **T2.9** [J] — Tests par file : règles (statuts, périmètre vide, archivés), isolation
       multi-église, parité écran/Accueil.
 
 ### Écrans cibles (paramètres d'ouverture, liste fermée)
 
-- [ ] **T2.10** [P] [M] — `?a-traiter=reglements` sur `/billetterie` ; `?a-valider=1` sur
+- [x] **T2.10** [P] [M] — `?a-traiter=reglements` sur `/billetterie` ; `?a-valider=1` sur
       `/collectes` ; `?etat=soumis` sur `/collectes/[id]` (filtre de `TrackingTab`).
-- [ ] **T2.11** [P] [M] — `?declarer=1` (`/disponibilites`), `?nouveau=1` (`/admin/events`),
+- [x] **T2.11** [P] [M] — `?declarer=1` (`/disponibilites`), `?nouveau=1` (`/admin/events`),
       `?saisie=1` (`/accounting/tresorerie`) ouvrent le formulaire existant ; valeurs inconnues ignorées (tests).
 
 ### UI
 
-- [ ] **T2.12** [J] — `bottomDestinations` : listes par rôle principal + repli, dédoublonnage,
+- [x] **T2.12** [J] — `bottomDestinations` : listes par rôle principal + repli, dédoublonnage,
       jamais de formulaire, activation par chaîne de parents. *(fichiers : `navigation.ts`, `BottomNav.tsx`)*
-- [ ] **T2.13** [P] [M] — `MoreSheet` groupé par `sidebarBlocks`.
-- [ ] **T2.14** [P] [J] — Actions de la palette (6, conditions du plan) et destinations du rôle sans saisie.
+- [x] **T2.13** [P] [M] — `MoreSheet` groupé par `sidebarBlocks`.
+- [x] **T2.14** [P] [J] — Actions de la palette (6, conditions du plan) et destinations du rôle sans saisie.
       *(fichiers : `navigation-input.ts`, `CommandPalette.tsx`)*
-- [ ] **T2.15** [J] — `TodoBlock` (serveur, `Suspense`, `Skeleton`, `catch` par file, liens un/plusieurs) dans `accueil/page.tsx`.
+- [x] **T2.15** [J] — `TodoBlock` (serveur, `Suspense`, `Skeleton`, `catch` par file, liens un/plusieurs) dans `accueil/page.tsx`.
 
 ### Tests et recette
 
-- [ ] **T2.16** [M] — `bottom-nav.test.ts`, `more-sheet.test.ts`, `palette-actions.test.ts`, `TodoBlock.test.tsx`.
+- [x] **T2.16** [M] — `bottom-nav.test.ts`, `more-sheet.test.ts`, `palette-actions.test.ts`, `TodoBlock.test.tsx`.
 - [ ] **T2.17** [J] — Recette Playwright du lot 2 (9 scénarios) ; temps de rendu de l'Accueil mesuré (aucune file > 100 ms).
 - [ ] **T2.18** — Vérifications CI + `build` ; PR.
 

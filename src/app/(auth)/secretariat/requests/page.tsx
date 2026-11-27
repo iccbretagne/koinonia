@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
-import { loadRequestQueue, resolveRequestQueueAccess } from "@/modules/planning";
+import { countRequestQueueTodo, loadRequestQueue, resolveRequestQueueAccess } from "@/modules/planning";
 import PageHeader from "@/components/ui/PageHeader";
 import Alert from "@/components/ui/Alert";
 import { buttonClasses } from "@/components/ui/button-classes";
@@ -29,8 +29,8 @@ export default async function SecretariatRequestsPage() {
   }
   if (!access.allowed) return notFound();
 
-  const queue = await loadRequestQueue(churchId, "SECRETARIAT");
-  const todo = queue.open.filter((r) => r.status === "EN_ATTENTE").length;
+  // Même compte que la carte « À traiter » de l'Accueil (spec 092).
+  const [queue, todo] = await Promise.all([loadRequestQueue(churchId, "SECRETARIAT"), countRequestQueueTodo(churchId, "SECRETARIAT")]);
 
   return (
     <div className="flex flex-col gap-6">

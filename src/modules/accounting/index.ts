@@ -35,6 +35,7 @@ export {
 export { FUND_BOXES, type FundBox, type FundTracking } from "./services/fund-tracking";
 
 export { accountingModule } from "./manifest";
+export { accountingQueueCounts, toValidateWhere, toPayWhere, toJustifyWhere, type AccountingQueueCounts } from "./services/queue";
 export { isJustificationClaimable } from "./services/justification-rules";
 export {
   isRequestArchived,

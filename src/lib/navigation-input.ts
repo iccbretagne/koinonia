@@ -531,6 +531,9 @@ export async function loadNavigationInput(
       hasAvailability,
       hasRooms,
       myRegistrations: registrations,
+      // Actions de la palette (spec 092) : mêmes conditions que les écrans cibles.
+      hasCareRequest: registry.has("care") && hasStarPlanning,
+      hasAccountingSubmit: registry.has("accounting") && userPermissions.has("accounting:submit"),
     },
     canAccessDashboard,
     hasStarPlanning,

@@ -19,6 +19,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/modules/shuttle/auth", () => ({ isShuttleVisible: async () => false }));
 vi.mock("@/modules/treasury/auth", () => ({ isTreasuryVisible: async () => false }));
 vi.mock("@/modules/accounting", () => ({
+  accountingQueueCounts: async () => ({ submitted: 0, processing: 0, toPay: 0, toJustify: 0 }),
   getJustificationSettings: async () => null,
   isJustificationClaimable: () => false,
   isRequestArchived: () => false,
@@ -42,14 +43,14 @@ beforeEach(() => {
 describe("/accounting/requests — bouton « Nouvelle demande »", () => {
   it("pasteur sans rôle : page lisible, sans bouton", async () => {
     session = createSession({ churchRoles: [], pastoralChurchIds: [C] } as never);
-    const html = renderToStaticMarkup(await Page());
+    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
     expect(html).toContain("data-dashboard");
     expect(html).not.toContain("/accounting/requests/new");
   });
 
   it("Responsable de département (accounting:submit) : bouton présent", async () => {
     session = createSession({ churchRoles: [role("DEPARTMENT_HEAD")] } as never);
-    const html = renderToStaticMarkup(await Page());
+    const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
     expect(html).toContain('href="/accounting/requests/new"');
   });
 });

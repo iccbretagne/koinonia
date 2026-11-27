@@ -40,6 +40,11 @@ vi.mock("@/modules/planning", () => ({
   listMemberAvailability: vi.fn(async () => ({ months: [{ month: new Date("2026-12-01T00:00:00Z"), open: true, closesAt: new Date("2026-11-25T00:00:00Z") }], events: [] })),
   listTeamEventsForMember: vi.fn(async () => []),
   loadRequestQueue: vi.fn(async () => ({ open: [{ type: "VISUEL", deadline: "2020-01-01" }] })),
+  // Règle partagée avec l'Accueil (spec 092) : périmètre de responsabilité, comme l'écran.
+  pendingWithdrawalsWhere: vi.fn(async (session: unknown, churchId: string) => {
+    const scope = deptScope(session, churchId) as { scoped: boolean; departmentIds?: string[] } | undefined;
+    return { churchId, status: "PENDING", ...(scope?.scoped ? { departmentId: { in: scope.departmentIds } } : {}) };
+  }),
   resolveRequestQueueAccess: vi.fn(async () => ({ allowed: true })),
 }));
 vi.mock("@/modules/ticketing", () => ({
@@ -48,6 +53,7 @@ vi.mock("@/modules/ticketing", () => ({
   listEvents: vi.fn(async () => [{ id: "tk-1", title: "Nuit de la traversée", startsAt: new Date("2026-12-31T19:00:00Z"), status: "OPEN", seatsTaken: 3, seatsOpen: 100 }]),
   getEventAccess: vi.fn(async () => ({ roles: new Set(["ORGANIZER"]) })),
   canDo: vi.fn(() => true),
+  paymentsEventsWhere: vi.fn(async (_s: unknown, churchId: string) => ({ churchId, status: { not: "ARCHIVED" } })),
   listPayments: vi.fn(async () => [{ kind: "DECLARATION", status: "PENDING", reference: "NDT-001", contactName: "Jean Dupont", amount: 15, method: "WERO", createdAt: "2026-11-20T10:00:00Z" }]),
   listBookings: vi.fn(async () => [{ reference: "NDT-002", contact: { name: "Marie Durand", email: null, phone: null }, balances: { refundDue: 8 } }]),
 }));
@@ -78,6 +84,7 @@ function stubDatabase() {
   prismaMock.absence.findMany.mockResolvedValue([{ kind: "PERIOD", startDate: future, endDate: future, targetEvents: [], member: { firstName: "Léa", lastName: "B" } }]);
   prismaMock.availabilityResponse.findMany.mockResolvedValue([]);
   prismaMock.campaignRespondent.findMany.mockResolvedValue([]);
+  prismaMock.ticketingEvent.findMany.mockResolvedValue([{ id: "tk-1", title: "Nuit de la traversée" }] as never);
   prismaMock.serviceWithdrawal.findMany.mockResolvedValue([
     { status: "REPLACED", event: { title: "Culte", date: future }, department: { name: "Accueil" }, replacementMember: { firstName: "Léa", lastName: "B" }, member: { firstName: "Paul", lastName: "M" } },
   ]);

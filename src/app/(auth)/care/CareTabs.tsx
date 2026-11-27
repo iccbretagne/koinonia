@@ -55,6 +55,8 @@ interface FollowUpItem {
 interface Props {
   readonly churchId: string;
   readonly canQualify: boolean;
+  /** À qualifier (`careQueueCounts`, `care:qualify` seulement) : rendez-vous en attente, suivis non confiés. */
+  readonly counts: { readonly requests: number; readonly followUps: number };
   readonly requests: AppointmentRequestItem[];
   readonly followUps: FollowUpItem[];
 }
@@ -331,13 +333,12 @@ function FollowupsTab({ followUps }: { readonly followUps: FollowUpItem[] }) {
   );
 }
 
-export default function CareTabs({ canQualify, requests, followUps, churchId }: Props) {
+export default function CareTabs({ canQualify, counts, requests, followUps, churchId }: Props) {
   const uid = useId();
   const [tab, setTab] = useState<"requests" | "followups">("requests");
-  const pendingCount = canQualify ? requests.filter((r) => r.status === "PENDING").length : 0;
   const tabs = [
-    { id: "requests" as const, label: "Rendez-vous", count: pendingCount },
-    { id: "followups" as const, label: "Nouveaux convertis", count: 0 },
+    { id: "requests" as const, label: "Rendez-vous", count: canQualify ? counts.requests : 0, pending: "demande en attente", pendings: "demandes en attente" },
+    { id: "followups" as const, label: "Nouveaux convertis", count: canQualify ? counts.followUps : 0, pending: "suivi à confier", pendings: "suivis à confier" },
   ];
 
   return (
@@ -361,7 +362,7 @@ export default function CareTabs({ canQualify, requests, followUps, churchId }: 
               <>
                 <Badge count={t.count} />
                 <span className="sr-only">
-                  {t.count > 1 ? `${t.count} demandes en attente` : "1 demande en attente"}
+                  {t.count > 1 ? `${t.count} ${t.pendings}` : `1 ${t.pending}`}
                 </span>
               </>
             )}
