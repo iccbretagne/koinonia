@@ -46,6 +46,7 @@
     "html2canvas-pro": "^2.6.4",
     "jspdf": "^4.2.1",
     "jsqr": "^1.4.0",
+    "jszip": "^3.10.1",
     "lucide-react": "^1.75.0",
     "mariadb": "^3.5.5",
     "next": "^16.4.6",

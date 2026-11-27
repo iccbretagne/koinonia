@@ -10,9 +10,9 @@ Regrouper les sections actuelles de la sidebar en espaces stables, dans cet ordr
 |---|---|
 | **Accueil** | Nouvelle page « Aujourd'hui » : prochains services, tâches à traiter, demandes en attente, raccourcis du rôle |
 | **Planning** | Mon planning, planning par département, absences, événements d'équipe |
-| **Agenda** | Événements d'église, calendrier, comptes rendus, agenda pastoral |
+| **Agenda** | Événements d'église, calendrier, comptes rendus, trame des annonces ; bloc « Inscriptions » (billetterie, formulaires) ; agenda pastoral |
 | **Personnes** | STAR, discipolat, intégration, suivi pastoral |
-| **Demandes** | Mes demandes, secrétariat, comptabilité |
+| **Demandes** | Mes demandes, secrétariat, questionnaires (collectes), comptabilité (navette, trésorerie) |
 | **Médias** | Communication & Production, Audio |
 | **Ressources** | Salles, Emploi, Guide |
 | **Administration** | Église, accès, ministères, départements, fonctions, journal |

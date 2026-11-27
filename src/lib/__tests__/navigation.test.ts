@@ -401,7 +401,7 @@ describe("sidebarBlocks (sidebar desktop)", () => {
 
   it("Agenda : bloc « Église » face à « Agenda pastoral »", () => {
     expect(outline(sidebarBlocks(spaceOf(admin, "agenda").pages)).map((b) => [b.label, b.pages])).toEqual([
-      ["Église", ["Agenda de l'église", "Trame des annonces", "Gérer les événements", "Service d'accueil", "Comptes rendus"]],
+      ["Église", ["Agenda de l'église", "Gérer les événements", "Service d'accueil", "Comptes rendus", "Trame des annonces"]],
       ["Agenda pastoral", ["Vue agenda", "Planification"]],
     ]);
   });
@@ -500,13 +500,6 @@ describe("panneau « Plus » mobile : données inchangées par la sidebar deskto
               false,
             ],
             [
-              "Trame des annonces",
-              null,
-              null,
-              null,
-              false,
-            ],
-            [
               "Gérer les événements",
               null,
               null,
@@ -522,6 +515,13 @@ describe("panneau « Plus » mobile : données inchangées par la sidebar deskto
             ],
             [
               "Comptes rendus",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Trame des annonces",
               null,
               null,
               null,

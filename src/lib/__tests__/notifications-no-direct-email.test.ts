@@ -35,6 +35,7 @@ const WHITELIST = new Set([
   "src/modules/ticketing/services/emails.ts", // contact de réservation sans compte ; avec compte → createNotification (spec 074)
   "src/modules/serving/services/notifications.ts", // adresse institutionnelle Department.contactEmail du PVS, lien seul (spec 077)
   "src/modules/forms/services/notify.ts", // répondant d'un formulaire public sans compte ; avec compte → createNotification (spec 079)
+  "src/modules/campaigns/services/notify.ts", // répondant de collecte sans compte (lien personnel) ; avec compte → notifyUsers (spec 090)
 ]);
 
 function walk(dir: string, acc: string[] = []): string[] {

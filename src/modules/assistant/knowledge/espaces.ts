@@ -1,4 +1,4 @@
-import type { KnowledgeEntry } from "./types";
+import { ALL, type KnowledgeEntry } from "./types";
 
 /** 8. Discipolat, 9. Suivi pastoral et intégration, 10. Autres espaces (KB-120 à KB-144). */
 export const ESPACES: readonly KnowledgeEntry[] = [
@@ -290,5 +290,32 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     otherwise: "Les entretiens des candidats sont organisés par l'équipe Vie des STAR.",
     screens: ["/candidatures/entretiens", "/candidatures"],
     module: "serving",
+  },
+  {
+    key: "KB-154",
+    kind: "howto",
+    title: "Collectes : remplir un questionnaire",
+    questions: ["Remplir un questionnaire de collecte", "répondre à la collecte", "envoyer mon questionnaire", "joindre un fichier à la collecte", "correction demandée sur mon questionnaire"],
+    answer:
+      "Ouvrez « Demandes › Questionnaires » (ou le lien reçu par notification ou par email) puis votre questionnaire. La saisie s'enregistre au fur et à mesure : vous pouvez y revenir jusqu'à l'échéance. Pour un chiffre incertain, choisissez « Estimation » ou « À rechercher » plutôt que de laisser vide ; joignez les fichiers demandés (Excel, CSV ou PDF). Quand tout est prêt, cliquez sur « Soumettre » : le questionnaire n'est plus modifiable, sauf si un gestionnaire demande une correction — vous êtes alors prévenu et la saisie rouvre.",
+    href: "/collectes",
+    hrefLabel: "Questionnaires",
+    audience: ALL,
+    screens: ["/collectes"],
+    module: "campaigns",
+  },
+  {
+    key: "KB-155",
+    kind: "howto",
+    title: "Collectes : piloter une campagne",
+    questions: ["Piloter une campagne de collecte", "importer une campagne de collecte", "ouvrir une campagne de collecte", "relancer un questionnaire en retard", "valider un questionnaire de collecte", "contrôles de cohérence de la collecte"],
+    answer:
+      "Dans « Demandes › Questionnaires », l'Admin importe la définition d'une campagne (créée en brouillon) ; un réimport met à jour les questionnaires sans jamais effacer de réponse. Depuis la campagne, l'onglet « Suivi » montre l'état de chaque questionnaire, les manques, estimations et fichiers reçus ; « Contrôles » signale les incohérences entre questionnaires. Une campagne se crée aussi dans l'éditeur graphique ou par duplication, et l'aperçu montre un questionnaire comme le répondant le verra. Ouvrez la campagne pour prévenir les répondants ; « Communication » prépare des messages à copier (rien n'est envoyé). Relancez, demandez une correction, rouvrez une contribution soumise (ou annulez une validation), remplacez un répondant ou changez une échéance, puis validez les questionnaires soumis et clôturez. Les gestionnaires se désignent dans l'onglet « Gestionnaires » de la campagne ; un assistant IA connecté peut aussi lister vos campagnes, en donner l'avancement, importer ou exporter une définition, ouvrir ou clôturer, et rouvrir une contribution, après votre accord.",
+    href: "/collectes",
+    hrefLabel: "Questionnaires",
+    audience: { predicates: ["campaignManager"], permissions: ["campaigns:manage"] },
+    otherwise: "Les campagnes de collecte sont pilotées par leurs gestionnaires et l'administration de l'église.",
+    screens: ["/collectes"],
+    module: "campaigns",
   },
 ];

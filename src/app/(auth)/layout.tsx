@@ -523,6 +523,13 @@ export default async function AuthLayout({
           ((await Promise.resolve(
             prisma.formsGrant.count({ where: { userId: session.user.id, churchId: currentChurchId } })
           ).catch(() => 0)) ?? 0) > 0)));
+  // Collectes (spec 090) : gestion, gestionnaire désigné ou répondant d'une campagne sortie du brouillon.
+  const hasCampaigns =
+    !!currentChurchId && registry.has("campaigns")
+      ? await import("@/modules/campaigns")
+          .then(({ hasCampaignsSpace }) => hasCampaignsSpace(session, currentChurchId))
+          .catch(() => false)
+      : false;
   const hasJobs = userPermissions.has("jobs:view");
   const hasEventsAccess = userPermissions.has("events:view");
   const hasEventsManage = userPermissions.has("events:manage");
@@ -585,7 +592,7 @@ export default async function AuthLayout({
     session.user.isSuperAdmin ||
     [visibleConfigLinks, requestLinks, mediaLinks, integrationNavLinks, servingNavLinks, agendaNavLinks].some((links) => links.length > 0) ||
     [
-      hasDiscipleship, hasAccounting, hasShuttle, hasTreasury, hasTicketing, hasForms, hasJobs, hasEventsAccess, hasPlanningAccess, hasMembersAccess,
+      hasDiscipleship, hasAccounting, hasShuttle, hasTreasury, hasTicketing, hasForms, hasCampaigns, hasJobs, hasEventsAccess, hasPlanningAccess, hasMembersAccess,
       hasReports, hasRooms, hasMyPlanning, showStarEvents, hasAbsences, hasAvailability,
     ].some(Boolean);
 
@@ -620,6 +627,7 @@ export default async function AuthLayout({
       hasTreasury={hasTreasury}
       hasTicketing={hasTicketing}
       hasForms={hasForms}
+      hasCampaigns={hasCampaigns}
       hasJobs={hasJobs}
       isPastoral={isInPastoralMode}
       hasEventsAccess={hasEventsAccess}

@@ -10,9 +10,9 @@ describe("navigation — billetterie (spec 074)", () => {
     expect(agenda({ ...base, hasEventsAccess: true }).map((p) => p.href)).not.toContain("/billetterie");
   });
 
-  it("présente dans l'Agenda, bloc « Église », même pour un STAR qui n'a qu'un rôle d'événement", () => {
+  it("présente dans l'Agenda, bloc « Inscriptions », même pour un STAR qui n'a qu'un rôle d'événement", () => {
     const pages = agenda({ ...base, hasTicketing: true });
-    expect(pages.find((p) => p.href === "/billetterie")).toMatchObject({ label: "Billetterie", sidebarBlock: "Église" });
+    expect(pages.find((p) => p.href === "/billetterie")).toMatchObject({ label: "Billetterie", sidebarBlock: "Inscriptions" });
   });
 
   it("le tableau de bord d'un événement allume « Billetterie »", () => {

@@ -43,6 +43,9 @@ export const MCP_TOOLS: Readonly<Record<string, { permissions?: string[] } | nul
   "serving.myInterviews": null,
   "serving.toPlan": null,
   "serving.freeSlots": null,
+  // Collectes (spec 090) : état et avancement seulement, jamais une valeur saisie ni un fichier.
+  "campaigns.list": null,
+  "campaigns.progress": null,
 };
 
 /** Nom d'outil MCP d'une clé de question : « planning.myNextService » → « planning_myNextService ». */
@@ -62,6 +65,18 @@ export const toolInput = z.object({
   offset: z.number().int().min(0).optional().describe("Lignes à sauter, pour la suite d'une liste (nextOffset du résultat précédent)"),
 });
 
+/** Paramètres propres à certains outils, en plus des paramètres communs. */
+const TOOL_EXTRA_INPUT: Readonly<Record<string, z.ZodRawShape>> = {
+  "campaigns.progress": {
+    campaign: z.string().trim().min(1).max(100).optional().describe("Identifiant ou clé de la campagne (voir campaigns_list) ; la plus récente ouverte par défaut"),
+  },
+};
+
+/** Schéma d'entrée d'un outil de données. */
+export const inputFor = (key: string) => (TOOL_EXTRA_INPUT[key] ? toolInput.extend(TOOL_EXTRA_INPUT[key]) : toolInput);
+
+export type ToolParams = z.infer<typeof toolInput> & { campaign?: string };
+
 export const guideInput = z.object({
   question: z.string().trim().min(3).max(300).describe("Question sur l'utilisation de Koinonia, en français"),
 });
@@ -70,6 +85,7 @@ export interface McpToolDef {
   name: string;
   key: string;
   description: string;
+  input: z.ZodObject<z.ZodRawShape>;
 }
 
 /** Un outil est visible si une fiche de l'assistant qui l'utilise est dans l'audience du compte. */
@@ -85,7 +101,7 @@ export function toolsFor(viewer: AssistantViewer, isActive?: (module: string) =>
   const catalog = dataCatalog(isActive);
   return Object.keys(MCP_TOOLS)
     .filter((key) => catalog.has(key) && visibleFor(key, viewer))
-    .map((key) => ({ name: toolName(key), key, description: catalog.get(key)!.description }));
+    .map((key) => ({ name: toolName(key), key, description: catalog.get(key)!.description, input: inputFor(key) }));
 }
 
 export const NO_DATA = "Aucune donnée disponible pour ce compte.";
@@ -133,14 +149,14 @@ export function renderResult(
 /** Exécute une question de la liste blanche pour ce compte ; `null` si l'outil n'existe pas pour lui. */
 export async function runTool(
   key: string,
-  params: z.infer<typeof toolInput>,
+  params: ToolParams,
   ctx: { session: Session; churchId: string; viewer: AssistantViewer }
 ): Promise<DataResult | null> {
   if (!(key in MCP_TOOLS) || !visibleFor(key, ctx.viewer)) return null;
   const question = dataCatalog().get(key);
   if (!question) return null;
-  const { day, month } = params;
-  return question.run({ ...ctx, params: question.params.parse({ day, month }) });
+  const { day, month, campaign } = params;
+  return question.run({ ...ctx, params: question.params.parse({ day, month, ...(campaign ? { campaign } : {}) }) });
 }
 
 /** Recherche dans le guide : fiches de l'assistant filtrées par audience, sans statistique. */

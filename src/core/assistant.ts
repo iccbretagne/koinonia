@@ -36,6 +36,11 @@ export interface AssistantDataParams {
   day?: string;
   /** Mois visé, AAAA-MM (« ce mois-ci », « octobre »). */
   month?: string;
+  /**
+   * Campagne de collecte visée (identifiant ou clé), passée par un assistant IA (MCP) ; absente
+   * dans la bulle, où la question retient la campagne la plus récente.
+   */
+  campaign?: string;
 }
 
 /** Nombre maximal de lignes d'une réponse de données ; au-delà, « Voir la suite ». */

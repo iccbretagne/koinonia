@@ -10,7 +10,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { canWrite, publicOrigin, recordMcpCall, verifyAccessToken, type McpCaller } from "@/modules/mcp";
 import { buildViewer } from "../../assistant/_viewer";
 import { DRAFT_REQUEST_TOOL, actionsFor, canDraftRequest, draftRequest } from "../_actions";
-import { GUIDE_TOOL, NO_DATA, guideInput, renderResult, runTool, searchGuide, toolInput, toolsFor } from "../_tools";
+import { GUIDE_TOOL, NO_DATA, guideInput, renderResult, runTool, searchGuide, toolsFor } from "../_tools";
 
 export const runtime = "nodejs";
 
@@ -63,6 +63,9 @@ const ACTION_LABELS: Record<string, string> = {
   import_ticketing_event: "importer un événement de billetterie en brouillon depuis un export JSON",
   publish_ticketing_site: "publier ou dépublier le site d'un événement de billetterie",
   request_ticketing_site_domain: "demander, vérifier ou supprimer le domaine dédié du site d'un événement de billetterie",
+  import_campaign: "créer ou mettre à jour une campagne de collecte depuis sa définition JSON",
+  set_campaign_status: "ouvrir, clôturer ou rouvrir une campagne de collecte",
+  reopen_contribution: "rouvrir une contribution soumise d'une campagne de collecte",
 };
 
 const PLANNING_HINT =
@@ -117,7 +120,7 @@ async function buildServer(caller: McpCaller) {
   for (const tool of toolsFor(viewer)) {
     server.registerTool(
       tool.name,
-      { description: tool.description, inputSchema: toolInput, annotations: { readOnlyHint: true, openWorldHint: false } },
+      { description: tool.description, inputSchema: tool.input, annotations: { readOnlyHint: true, openWorldHint: false } },
       async (args) => {
         try {
           const result = await runTool(tool.key, args, ctx);

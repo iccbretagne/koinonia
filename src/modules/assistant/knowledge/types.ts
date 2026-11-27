@@ -31,6 +31,8 @@ export const PREDICATES = [
   "pvsTeam",
   /** Outil de formulaires : `forms:manage` ou accès délégué, spec 085. */
   "forms",
+  /** Gère au moins une campagne de collecte de l'église, ou a `campaigns:manage`, spec 090. */
+  "campaignManager",
 ] as const;
 export type Predicate = (typeof PREDICATES)[number];
 

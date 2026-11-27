@@ -120,6 +120,12 @@ async function runFormPurge() {
   return run();
 }
 
+/** Campagnes de collecte (spec 090) : relance J-2 des questionnaires non soumis, purge des fichiers. */
+async function runCampaignTasks() {
+  const { runCampaignTasks: run } = await import("@/modules/campaigns");
+  return run();
+}
+
 function authorizeCron(request: Request) {
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
@@ -443,6 +449,8 @@ function cronTasks(appUrl: string): CronTask[] {
     // Formulaires (spec 079) : idempotente (compteur pris de façon atomique), précision au quart d'heure.
     { key: "forms", module: "forms", schedule: { kind: "interval", minutes: 15 }, run: runFormTasks },
     { key: "forms-purge", module: "forms", schedule: { kind: "daily", hour: 3 }, run: runFormPurge },
+    // Campagnes de collecte (spec 090) : idempotente (horodatages), une fois par jour avant la journée.
+    { key: "campaigns", module: "campaigns", schedule: { kind: "daily", hour: 7 }, run: runCampaignTasks },
   ];
   return tasks.filter((t) => !t.module || registry.has(t.module));
 }

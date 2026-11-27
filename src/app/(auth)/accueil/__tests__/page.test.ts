@@ -32,6 +32,7 @@ const mockLoadMyPlanning = vi.fn();
 vi.mock("../../planning/my-planning-data", () => ({ loadMyPlanning: (...a: unknown[]) => mockLoadMyPlanning(...a) }));
 const mockLoadMyRequests = vi.fn();
 vi.mock("../../requests/my-requests-data", () => ({ loadMyRequests: (...a: unknown[]) => mockLoadMyRequests(...a) }));
+vi.mock("@/modules/campaigns", () => ({ listMyOpenAssignments: async () => [] }));
 vi.mock("@/modules/planning", () => ({
   getStaffingGapViewer: async () => ({ viewer: true }),
   countUnstaffedDepartments: async () => new Map([["ev-1", 2]]),

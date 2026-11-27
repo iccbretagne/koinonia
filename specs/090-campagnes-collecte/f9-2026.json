@@ -1,0 +1,2058 @@
+{
+  "format": "koinonia.campaign",
+  "version": 1,
+  "campaign": {
+    "key": "f9-2026",
+    "title": "Bilan annuel F9 2026",
+    "description": "Réponses attendues au plus tard le 4 décembre 2026. Répondre pour ICC Rennes, du 1er janvier à la date commune du bilan, sauf mention contraire. Compter chaque personne une seule fois par question. 0 = aucun. NSP uniquement pour K2 si l’information est impossible à obtenir à temps. Pour toute autre donnée inconnue, fournir une estimation justifiée et la signaler à la Pasteure ; sans réponse exploitable, l’envoi du F9 reste bloqué.\nRépondre par un chiffre dès qu’il est disponible et fiable. Un export est demandé uniquement si un croisement entre services reste nécessaire. Transmettre alors le fichier existant sans ressaisie, via un canal sécurisé et habilité. Aucun nom ni montant financier dans le bilan statistique, aucun détail individuel en protection.",
+    "periodStart": "2026-01-01",
+    "periodEnd": "2026-11-30",
+    "dueAt": "2026-12-04",
+    "fileRetentionDays": 30
+  },
+  "forms": [
+    {
+      "key": "secretariat",
+      "title": "Secrétariat",
+      "confidential": false,
+      "assignments": [
+        {
+          "key": "secretariat",
+          "label": "Secrétariat",
+          "dueAt": "2026-12-04",
+          "respondents": []
+        }
+      ],
+      "sections": [
+        {
+          "key": "cultes",
+          "title": "Cultes du dimanche",
+          "intro": "Un seul culte principal par dimanche. Moyenne sur les dimanches réellement comptés.",
+          "items": [
+            {
+              "code": "A1",
+              "type": "decimal",
+              "label": "Quelle est la moyenne d’adultes présents au culte du dimanche ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0,
+              "decimals": 1
+            },
+            {
+              "code": "A2",
+              "type": "decimal",
+              "label": "Quelle est la moyenne d’enfants présents au culte du dimanche ?",
+              "help": "Enfants : siège propre ; exclure EJP et audience en ligne.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0,
+              "decimals": 1
+            }
+          ]
+        },
+        {
+          "key": "connexion",
+          "title": "Événements de connexion",
+          "intro": "Inclure présentiel et en ligne ; exclure cultes ordinaires et réunions privées. Un événement coorganisé compte une fois par catégorie.",
+          "items": [
+            {
+              "code": "C1",
+              "type": "integer",
+              "label": "Combien d’événements pour les hommes ont été organisés ?",
+              "examples": "ateliers, talk-shows, séminaires, sorties, veillées ouvertes au public concerné, rencontres professionnelles (finances, leadership)",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "C2",
+              "type": "integer",
+              "label": "Combien d’événements pour les femmes ont été organisés ?",
+              "examples": "ateliers, talk-shows, séminaires, sorties, veillées ouvertes au public concerné, rencontres professionnelles (finances, leadership)",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "C4",
+              "type": "integer",
+              "label": "Combien d’événements pour les jeunes adultes ont été organisés ?",
+              "examples": "ateliers, talk-shows, séminaires, sorties, veillées ouvertes au public concerné, rencontres professionnelles (finances, leadership)",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "C7",
+              "type": "integer",
+              "label": "Combien d’événements pour les célibataires ont été organisés ?",
+              "examples": "ateliers, talk-shows, séminaires, sorties, veillées ouvertes au public concerné, rencontres professionnelles (finances, leadership)",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "C8",
+              "type": "integer",
+              "label": "Combien d’événements de connexion professionnelle ont été organisés ?",
+              "examples": "ateliers, talk-shows, séminaires, sorties, veillées ouvertes au public concerné, rencontres professionnelles (finances, leadership)",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        },
+        {
+          "key": "formations",
+          "title": "Formations et évaluations",
+          "items": [
+            {
+              "code": "D6",
+              "type": "group",
+              "label": "Quelles autres formations bibliques ont été proposées ?",
+              "help": "Nom + inscrits par formation ; programme récurrent : moyenne par session ; sinon « Aucune ».",
+              "examples": "Parlons la Parole",
+              "required": true,
+              "noneLabel": "Aucune",
+              "minRows": 1,
+              "maxRows": 50,
+              "fields": [
+                {
+                  "code": "D6_NOM",
+                  "type": "text",
+                  "label": "Formation",
+                  "required": true
+                },
+                {
+                  "code": "D6_INSCRITS",
+                  "type": "decimal",
+                  "label": "Inscrits ou moyenne par session",
+                  "required": true,
+                  "min": 0,
+                  "decimals": 1
+                }
+              ]
+            },
+            {
+              "code": "D7",
+              "type": "integer",
+              "label": "Combien de formations pour les leaders ont été organisées ?",
+              "help": "Nombre + noms, avec Mission et Formation.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "D7_NOMS",
+              "type": "group",
+              "label": "Nom de chaque formation pour les leaders",
+              "required": false,
+              "internal": true,
+              "minRows": 0,
+              "maxRows": 50,
+              "fields": [
+                {
+                  "code": "D7_NOM",
+                  "type": "text",
+                  "label": "Formation",
+                  "required": true,
+                  "internal": true
+                }
+              ]
+            },
+            {
+              "code": "EV1",
+              "type": "integer",
+              "label": "Combien de formulaires d’évaluation ont été lancés ?",
+              "help": "EV1 = 0 : EV2 et EV3 = 0.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "EV2",
+              "type": "integer",
+              "label": "Combien de leaders ont réellement été évalués ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "EV3",
+              "type": "integer",
+              "label": "Parmi eux, combien ont été évalués comme satisfaisants ?",
+              "help": "Non applicable si satisfaction non mesurée.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH",
+                "NOT_APPLICABLE"
+              ],
+              "min": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "ejp",
+      "title": "EJP",
+      "confidential": false,
+      "assignments": [
+        {
+          "key": "ejp",
+          "label": "EJP",
+          "dueAt": "2026-12-04",
+          "respondents": []
+        }
+      ],
+      "sections": [
+        {
+          "key": "connexion",
+          "title": "Événements de connexion",
+          "items": [
+            {
+              "code": "C3",
+              "type": "integer",
+              "label": "Combien d’événements pour les jeunes avez-vous organisés ?",
+              "examples": "veillée ouverte aux jeunes, séminaire ou sortie ; pas de culte ordinaire ni réunion privée",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "impact-junior",
+      "title": "Impact Junior",
+      "confidential": false,
+      "assignments": [
+        {
+          "key": "impact-junior",
+          "label": "Impact Junior",
+          "dueAt": "2026-12-04",
+          "respondents": []
+        }
+      ],
+      "sections": [
+        {
+          "key": "connexion",
+          "title": "Événements de connexion",
+          "intro": "Distinguer les deux publics.",
+          "items": [
+            {
+              "code": "C5",
+              "type": "integer",
+              "label": "Combien d’événements pour les adolescents avez-vous organisés ?",
+              "examples": "atelier adolescents",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "C6",
+              "type": "integer",
+              "label": "Combien d’événements pour les enfants avez-vous organisés ?",
+              "examples": "sortie enfants, programme spécial",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "mdf",
+      "title": "Ministère de la Famille (MDF)",
+      "confidential": false,
+      "assignments": [
+        {
+          "key": "mdf",
+          "label": "Ministère de la Famille (MDF)",
+          "dueAt": "2026-12-04",
+          "respondents": []
+        }
+      ],
+      "sections": [
+        {
+          "key": "mariages",
+          "title": "Ministère pastoral",
+          "items": [
+            {
+              "code": "B2",
+              "type": "integer",
+              "label": "Combien de cérémonies de mariage ont été célébrées ?",
+              "help": "Une cérémonie = un couple.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "integration",
+      "title": "Intégration",
+      "confidential": false,
+      "assignments": [
+        {
+          "key": "integration",
+          "label": "Intégration",
+          "dueAt": "2026-12-04",
+          "respondents": []
+        }
+      ],
+      "sections": [
+        {
+          "key": "accueil",
+          "title": "Accueil des nouveaux",
+          "intro": "Un nouvel arrivant qui se convertit compte deux fois : V1 et V2 sont deux comptages indépendants.",
+          "items": [
+            {
+              "code": "V1",
+              "type": "integer",
+              "label": "Combien de personnes ont visité ICC Rennes pour la première fois en 2026 ?",
+              "help": "Première visite.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "V2",
+              "type": "integer",
+              "label": "Combien de personnes ont répondu publiquement à l’appel au salut en 2026 ?",
+              "help": "Réponse publique à l’appel au salut.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        },
+        {
+          "key": "fidelisation",
+          "title": "Fidélisation",
+          "intro": "G2–G5 : nouveaux arrivants OU convertis en 2026, sans doublon, y compris octobre/novembre. Rapprocher Formation, Mission et PVS.",
+          "items": [
+            {
+              "code": "G1",
+              "type": "integer",
+              "label": "Combien de rencontres d’intégration avez-vous organisées ?",
+              "examples": "petit-déjeuner des champions",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "N",
+              "type": "integer",
+              "label": "Combien de personnes distinctes sont nouveaux arrivants ou convertis en 2026 ?",
+              "help": "Population unique, sans doublon, utilisée pour G2 à G5",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0,
+              "internal": true
+            },
+            {
+              "code": "G2",
+              "type": "integer",
+              "label": "Parmi les nouveaux accueillis en 2026, combien ont été baptisés en 2026 ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "G3",
+              "type": "integer",
+              "label": "Parmi ces nouveaux, combien ont intégré une famille de disciples en 2026 ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "G4",
+              "type": "integer",
+              "label": "Parmi ces nouveaux, combien servent actuellement comme S.T.A.R ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "G5",
+              "type": "integer",
+              "label": "Parmi ces nouveaux, combien se sont inscrits au PCNC en 2026 ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        },
+        {
+          "key": "exports",
+          "title": "Exports",
+          "items": [
+            {
+              "code": "FX_INTEGRATION_NOUVEAUX",
+              "type": "file_request",
+              "label": "Nouveaux arrivants et convertis (Elvanto/Koinonia), identifiant et dates utiles pour G2–G5 et E5/E6. Préciser la couverture et la date de transition.",
+              "help": "Transmettez le fichier existant, sans ressaisie, seulement si le croisement est nécessaire. Sinon indiquez que le chiffre croisé est disponible.",
+              "required": true,
+              "accept": [
+                "xlsx",
+                "csv"
+              ],
+              "maxFiles": 5,
+              "internal": true
+            },
+            {
+              "code": "FX_INTEGRATION_RECONQUETE",
+              "type": "file_request",
+              "label": "Reconquête — contribution Intégration (R1–R4) : si nécessaire au croisement, transmettre le suivi des nouveaux devenus membres et éloignés, avec identifiant, dernière présence, contact, retour et activité après 3 mois.",
+              "help": "Transmettez le fichier existant, sans ressaisie, seulement si le croisement est nécessaire. Sinon indiquez que le chiffre croisé est disponible.",
+              "required": true,
+              "accept": [
+                "xlsx",
+                "csv"
+              ],
+              "maxFiles": 5,
+              "internal": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "evangelisation",
+      "title": "Évangélisation",
+      "confidential": false,
+      "assignments": [
+        {
+          "key": "evangelisation",
+          "label": "Évangélisation",
+          "dueAt": "2026-12-04",
+          "respondents": []
+        }
+      ],
+      "sections": [
+        {
+          "key": "evangelisation",
+          "title": "Évangélisation",
+          "items": [
+            {
+              "code": "E1",
+              "type": "integer",
+              "label": "Combien de sorties collectives d’évangélisation avez-vous organisées ?",
+              "help": "Sorties collectives programmées.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "E2",
+              "type": "integer",
+              "label": "Combien de personnes différentes ont participé à ces sorties ?",
+              "help": "Personnes uniques.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "E3",
+              "type": "integer",
+              "label": "Combien de personnes différentes avez-vous abordées ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "E4",
+              "type": "integer",
+              "label": "Combien de personnes abordées vous ont laissé leur numéro de téléphone ?",
+              "help": "Numéro de téléphone récupéré.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "E5",
+              "type": "integer",
+              "label": "Parmi ces contacts, combien ont participé à au moins un programme de l’église, en ligne ou en présentiel ?",
+              "help": "Venue effective à un programme (culte, famille d’impact, en ligne…).",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "E6",
+              "type": "integer",
+              "label": "Parmi ces personnes venues, combien sont désormais membres de l’église ?",
+              "help": "Devenu membre.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        },
+        {
+          "key": "exports",
+          "title": "Exports",
+          "items": [
+            {
+              "code": "FX_EVANGELISATION_CONTACTS",
+              "type": "file_request",
+              "label": "Contacts récupérés, identifiant, date et venue effective si connue, pour E5/E6.",
+              "help": "Transmettez le fichier existant, sans ressaisie, seulement si le croisement est nécessaire. Sinon indiquez que le chiffre croisé est disponible.",
+              "required": true,
+              "accept": [
+                "xlsx",
+                "csv"
+              ],
+              "maxFiles": 5,
+              "internal": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pvs",
+      "title": "Pôle Vie des S.T.A.R (PVS)",
+      "confidential": false,
+      "assignments": [
+        {
+          "key": "pvs",
+          "label": "Pôle Vie des S.T.A.R (PVS)",
+          "dueAt": "2026-12-04",
+          "respondents": []
+        }
+      ],
+      "sections": [
+        {
+          "key": "star",
+          "title": "S.T.A.R",
+          "items": [
+            {
+              "code": "S1",
+              "type": "integer",
+              "label": "Combien de S.T.A.R sont actuellement engagés ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "S2",
+              "type": "integer",
+              "label": "Parmi eux, combien ont servi dans un projet majeur inter-églises en 2026, même ponctuellement ?",
+              "help": "Projet majeur inter-églises ; même service ponctuel.",
+              "examples": "conférence Khayl, camp des hommes, camp des femmes",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        },
+        {
+          "key": "leadership",
+          "title": "Leadership",
+          "items": [
+            {
+              "code": "L2",
+              "type": "integer",
+              "label": "Combien de personnes sont responsables de ministère ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "L3",
+              "type": "integer",
+              "label": "Parmi ces responsables, combien ont moins de 40 ans ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        },
+        {
+          "key": "compassion",
+          "title": "Compassion",
+          "items": [
+            {
+              "code": "H1",
+              "type": "integer",
+              "label": "Combien de colis solidaires (repas, cadeaux, denrées) ont été distribués ?",
+              "help": "Colis (repas, cadeaux, denrées), pas personnes.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "H2",
+              "type": "integer",
+              "label": "Combien d’actions solidaires ont été organisées ?",
+              "examples": "maraude, visite à l’hôpital",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "H3",
+              "type": "integer",
+              "label": "Combien de bénéficiaires différents ont été accompagnés dans la durée ?",
+              "help": "Suivi dans la durée.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        },
+        {
+          "key": "vocation",
+          "title": "Vocation",
+          "items": [
+            {
+              "code": "K2",
+              "type": "integer",
+              "label": "Combien de membres sont inscrits à Impact École Biblique Internationale (IEBI) ?",
+              "help": "Sondage WhatsApp des S.T.A.R, complété par Mission/Formation pour couvrir les autres membres ; NSP si impossible à temps.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH",
+                "NSP"
+              ],
+              "min": 0
+            }
+          ]
+        },
+        {
+          "key": "exports",
+          "title": "Exports",
+          "items": [
+            {
+              "code": "FX_PVS_STAR",
+              "type": "file_request",
+              "label": "S.T.A.R aux deux dates (ou historique), pour M0/M1, G4 et DI2.",
+              "help": "Transmettez le fichier existant, sans ressaisie, seulement si le croisement est nécessaire. Sinon indiquez que le chiffre croisé est disponible.",
+              "required": true,
+              "accept": [
+                "xlsx",
+                "csv"
+              ],
+              "maxFiles": 5,
+              "internal": true
+            },
+            {
+              "code": "FX_PVS_RECONQUETE",
+              "type": "file_request",
+              "label": "Suivi des arrêts et reprises pour R1–R4.",
+              "help": "Transmettez le fichier existant, sans ressaisie, seulement si le croisement est nécessaire. Sinon indiquez que le chiffre croisé est disponible.",
+              "required": true,
+              "accept": [
+                "xlsx",
+                "csv"
+              ],
+              "maxFiles": 5,
+              "internal": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "msdp",
+      "title": "MSDP",
+      "confidential": false,
+      "assignments": [
+        {
+          "key": "msdp",
+          "label": "MSDP",
+          "dueAt": "2026-12-04",
+          "respondents": []
+        }
+      ],
+      "sections": [
+        {
+          "key": "reconquete",
+          "title": "Reconquête",
+          "items": [
+            {
+              "code": "FX_MSDP_RECONQUETE",
+              "type": "file_request",
+              "label": "Reconquête — contribution MSDP (R1–R4) : si nécessaire au croisement, transmettre le suivi des membres éloignés, avec identifiant, dernière présence, contact, retour et activité après 3 mois.",
+              "help": "Transmettez le fichier existant, sans ressaisie, seulement si le croisement est nécessaire. Sinon indiquez que le chiffre croisé est disponible.",
+              "required": true,
+              "accept": [
+                "xlsx",
+                "csv"
+              ],
+              "maxFiles": 5,
+              "internal": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "mission",
+      "title": "Mission — familles et expansion",
+      "confidential": false,
+      "assignments": [
+        {
+          "key": "mission",
+          "label": "Mission — familles et expansion",
+          "dueAt": "2026-12-04",
+          "respondents": []
+        }
+      ],
+      "sections": [
+        {
+          "key": "discipolat",
+          "title": "Discipolat",
+          "items": [
+            {
+              "code": "DI1",
+              "type": "integer",
+              "label": "Combien de membres sont actuellement engagés dans une famille de disciples ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "DI2",
+              "type": "integer",
+              "label": "Parmi eux, combien servent comme S.T.A.R ?",
+              "help": "Avec PVS.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "DI3",
+              "type": "integer",
+              "label": "Parmi eux, combien sont aussi engagés dans une famille d’impact ?",
+              "help": "Avec FI.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        },
+        {
+          "key": "familles-impact",
+          "title": "Familles d’impact",
+          "items": [
+            {
+              "code": "X1",
+              "type": "integer",
+              "label": "Combien de familles d’impact étaient actives au 1er janvier 2026 ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "X2",
+              "type": "integer",
+              "label": "Combien de familles d’impact ont été ouvertes en 2026 ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "X3",
+              "type": "integer",
+              "label": "Combien de familles d’impact étaient actives en novembre 2026 ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "X4",
+              "type": "decimal",
+              "label": "Quelle est la moyenne hebdomadaire de participants par famille d’impact ?",
+              "help": "Chaque semaine, présences ÷ familles réunies, puis moyenne des semaines.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0,
+              "decimals": 1
+            }
+          ]
+        },
+        {
+          "key": "vocation",
+          "title": "Vocation",
+          "items": [
+            {
+              "code": "K4",
+              "type": "integer",
+              "label": "Combien de missionnaires ont été envoyés en 2026 ?",
+              "examples": "mission humanitaire ou implantation",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        },
+        {
+          "key": "expansion",
+          "title": "Expansion",
+          "intro": "Ne pas compter une implantation dans les deux catégories.",
+          "items": [
+            {
+              "code": "EX1",
+              "type": "integer",
+              "label": "Combien de nouvelles églises ont été ouvertes ?",
+              "help": "Seuil 70 personnes en Occident, 100 en Afrique.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "EX2",
+              "type": "integer",
+              "label": "Combien de nouvelles familles connectées ont été ouvertes ?",
+              "help": "Préciser les villes.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "EX2_VILLES",
+              "type": "group",
+              "label": "Ville de chaque nouvelle famille connectée",
+              "required": false,
+              "internal": true,
+              "minRows": 0,
+              "maxRows": 50,
+              "fields": [
+                {
+                  "code": "EX2_VILLE",
+                  "type": "text",
+                  "label": "Ville",
+                  "required": true,
+                  "internal": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "exports",
+          "title": "Exports",
+          "items": [
+            {
+              "code": "FX_MISSION_FAMILLES",
+              "type": "file_request",
+              "label": "Membres des familles de disciples aux deux dates et entrées en 2026 ; membres engagés en famille d’impact, pour M0/M1, G3, DI2/DI3 et E5/E6 selon besoin.",
+              "help": "Transmettez le fichier existant, sans ressaisie, seulement si le croisement est nécessaire. Sinon indiquez que le chiffre croisé est disponible.",
+              "required": true,
+              "accept": [
+                "xlsx",
+                "csv"
+              ],
+              "maxFiles": 5,
+              "internal": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "formation",
+      "title": "Formation",
+      "confidential": false,
+      "assignments": [
+        {
+          "key": "formation",
+          "label": "Formation",
+          "dueAt": "2026-12-04",
+          "respondents": []
+        }
+      ],
+      "sections": [
+        {
+          "key": "formations",
+          "title": "Formation",
+          "intro": "Inclure les membres inscrits ailleurs ou en ligne ; une personne compte dans chaque formation suivie.",
+          "items": [
+            {
+              "code": "D1",
+              "type": "integer",
+              "label": "Combien de membres se sont inscrits à Au cœur de la Bible (ACB) ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "D2",
+              "type": "integer",
+              "label": "Combien de membres se sont inscrits à Bienvenue dans le Royaume (BDR) ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "D3",
+              "type": "integer",
+              "label": "Combien de membres se sont inscrits à la formation 101 ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "D4",
+              "type": "integer",
+              "label": "Combien de membres se sont inscrits à la formation 201 ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "D5",
+              "type": "integer",
+              "label": "Combien de membres se sont inscrits à RTT ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        },
+        {
+          "key": "pastoral",
+          "title": "Ministère pastoral",
+          "items": [
+            {
+              "code": "B1",
+              "type": "integer",
+              "label": "Combien de personnes ont été baptisées en 2026 ?",
+              "help": "Personnes baptisées, pas cérémonies.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        },
+        {
+          "key": "vocation",
+          "title": "Vocation",
+          "items": [
+            {
+              "code": "K1",
+              "type": "integer",
+              "label": "Combien de membres sont inscrits à l’Académie pastorale et missionnaire ?",
+              "help": "0 selon le guide : académie non lancée.",
+              "required": true,
+              "qualifiers": [
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        },
+        {
+          "key": "exports",
+          "title": "Exports",
+          "items": [
+            {
+              "code": "FX_FORMATION_BAPTEMES",
+              "type": "file_request",
+              "label": "Personnes baptisées et inscrites au PCNC en 2026 (identifiant et date), pour G2/G5.",
+              "help": "Transmettez le fichier existant, sans ressaisie, seulement si le croisement est nécessaire. Sinon indiquez que le chiffre croisé est disponible.",
+              "required": true,
+              "accept": [
+                "xlsx",
+                "csv"
+              ],
+              "maxFiles": 5,
+              "internal": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "communication",
+      "title": "Communication",
+      "confidential": false,
+      "assignments": [
+        {
+          "key": "communication",
+          "label": "Communication",
+          "dueAt": "2026-12-04",
+          "respondents": []
+        }
+      ],
+      "sections": [
+        {
+          "key": "abonnes",
+          "title": "Abonnés",
+          "intro": "Abonnés : deux chiffres par réseau ; aucun compte = 0 et 0. Arrêté fin 2026 à confirmer.",
+          "items": [
+            {
+              "code": "I1",
+              "type": "integer",
+              "label": "Combien d’abonnés Facebook au 1er janvier 2026 ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "I1_FIN",
+              "type": "integer",
+              "label": "Combien d’abonnés Facebook à la date du bilan ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0,
+              "internal": true,
+              "reportCode": "I1"
+            },
+            {
+              "code": "I2",
+              "type": "integer",
+              "label": "Combien d’abonnés Instagram au 1er janvier 2026 ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "I2_FIN",
+              "type": "integer",
+              "label": "Combien d’abonnés Instagram à la date du bilan ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0,
+              "internal": true,
+              "reportCode": "I2"
+            },
+            {
+              "code": "I3",
+              "type": "integer",
+              "label": "Combien d’abonnés TikTok au 1er janvier 2026 ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "I3_FIN",
+              "type": "integer",
+              "label": "Combien d’abonnés TikTok à la date du bilan ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0,
+              "internal": true,
+              "reportCode": "I3"
+            },
+            {
+              "code": "I4",
+              "type": "integer",
+              "label": "Combien d’abonnés YouTube au 1er janvier 2026 ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "I4_FIN",
+              "type": "integer",
+              "label": "Combien d’abonnés YouTube à la date du bilan ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0,
+              "internal": true,
+              "reportCode": "I4"
+            }
+          ]
+        },
+        {
+          "key": "audience",
+          "title": "Audience YouTube",
+          "intro": "Mêmes cultes principaux du dimanche.",
+          "items": [
+            {
+              "code": "I5",
+              "type": "decimal",
+              "label": "Quelle est la moyenne des vues YouTube par culte principal du dimanche (direct et rediffusion) ?",
+              "help": "Vues totales direct + rediffusion.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0,
+              "decimals": 1
+            },
+            {
+              "code": "I6",
+              "type": "decimal",
+              "label": "Quelle est la moyenne des pics de spectateurs simultanés en direct pour ces cultes ?",
+              "help": "Pic simultané en direct.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0,
+              "decimals": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "coordination",
+      "title": "Coordination générale",
+      "confidential": false,
+      "assignments": [
+        {
+          "key": "coordination",
+          "label": "Coordination générale",
+          "dueAt": "2026-12-07",
+          "respondents": []
+        }
+      ],
+      "sections": [
+        {
+          "key": "effectifs",
+          "title": "Effectifs",
+          "intro": "Membres actifs : union des S.T.A.R, disciples et contributeurs réguliers, aux deux dates.",
+          "items": [
+            {
+              "code": "M0",
+              "type": "integer",
+              "label": "Combien de membres actifs au 1er janvier 2026 ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "M1",
+              "type": "integer",
+              "label": "Combien de membres actifs à la date du bilan ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        },
+        {
+          "key": "leadership",
+          "title": "Leadership",
+          "items": [
+            {
+              "code": "L1",
+              "type": "integer",
+              "label": "Combien de ministères et départements autonomes compte l’église ?",
+              "help": "Ministères et départements autonomes, pas ceux rattachés.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        },
+        {
+          "key": "reconquete",
+          "title": "Reconquête",
+          "intro": "Consolider les contributions PVS, Intégration et MSDP. Les quatre chiffres ci-dessous sont des résultats consolidés, pas trois demandes identiques. PVS : S.T.A.R ; Intégration : nouveaux ; MSDP : membres de l’église. Vérifier qu’il s’agit de membres, même si issus du suivi des nouveaux. Ne pas additionner les totaux.",
+          "items": [
+            {
+              "code": "R1",
+              "type": "integer",
+              "label": "Combien de membres ont été absents depuis plus de 3 mois ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "R2",
+              "type": "integer",
+              "label": "Parmi eux, combien ont été recontactés ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "R3",
+              "type": "integer",
+              "label": "Parmi les personnes recontactées, combien sont revenues ?",
+              "help": "Inclut la reprise de service.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "R4",
+              "type": "integer",
+              "label": "Parmi les personnes revenues, combien étaient encore actives 3 mois après leur retour ?",
+              "help": "Retour trop récent exclu.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pasteure",
+      "title": "Pasteure",
+      "confidential": false,
+      "assignments": [
+        {
+          "key": "pasteure",
+          "label": "Pasteure",
+          "dueAt": "2026-12-04",
+          "respondents": []
+        }
+      ],
+      "sections": [
+        {
+          "key": "leadership",
+          "title": "Leadership",
+          "items": [
+            {
+              "code": "L4",
+              "type": "yesno",
+              "label": "Une assemblée générale a-t-elle été tenue ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ]
+            },
+            {
+              "code": "L5",
+              "type": "decimal",
+              "label": "Combien de personnes ont participé à l’assemblée générale ?",
+              "help": "Moyenne si plusieurs AG ; 0 si aucune.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0,
+              "decimals": 1
+            }
+          ]
+        },
+        {
+          "key": "vocation",
+          "title": "Vocation",
+          "items": [
+            {
+              "code": "K3",
+              "type": "integer",
+              "label": "Combien de membres sont inscrits au Hope Bible Institute (HBI) ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "protection",
+      "title": "Protection",
+      "confidential": true,
+      "assignments": [
+        {
+          "key": "protection",
+          "label": "Protection",
+          "dueAt": "2026-12-04",
+          "respondents": []
+        }
+      ],
+      "sections": [
+        {
+          "key": "protection",
+          "title": "Protection",
+          "items": [
+            {
+              "code": "P1",
+              "type": "multiple",
+              "label": "Quels dispositifs de prévention des abus sont en place ?",
+              "help": "Choix officiels ; « Aucun » exclusif.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "choices": [
+                {
+                  "key": "c1",
+                  "label": "[À CONFIRMER] Charte de protection signée par les responsables"
+                },
+                {
+                  "key": "c2",
+                  "label": "[À CONFIRMER] Vérification des antécédents des personnes en contact avec les mineurs"
+                },
+                {
+                  "key": "c3",
+                  "label": "[À CONFIRMER] Formation des responsables à la prévention"
+                },
+                {
+                  "key": "c4",
+                  "label": "[À CONFIRMER] Procédure de signalement connue de tous"
+                },
+                {
+                  "key": "c5",
+                  "label": "[À CONFIRMER] Référent désigné pour recueillir les signalements"
+                },
+                {
+                  "key": "none",
+                  "label": "Aucun",
+                  "exclusive": true
+                }
+              ]
+            },
+            {
+              "code": "P2",
+              "type": "integer",
+              "label": "Combien de signalements ont été reçus ?",
+              "help": "Un chiffre, jamais de nom. 0 si aucun signalement.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "P3",
+              "type": "integer",
+              "label": "Parmi eux, combien ont été résolus ?",
+              "help": "0 si aucun signalement.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0
+            },
+            {
+              "code": "P4",
+              "type": "decimal",
+              "label": "Quel est le délai moyen de prise en charge, en jours ?",
+              "help": "Total des jours de traitement ÷ nombre de cas ; convention des cas en cours à confirmer. 0 si aucun signalement.",
+              "examples": "2 + 5 + 8 = 15 jours ÷ 3 cas = 5 jours",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0,
+              "decimals": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "comptabilite",
+      "title": "Comptabilité",
+      "confidential": true,
+      "assignments": [
+        {
+          "key": "comptabilite",
+          "label": "Comptabilité",
+          "dueAt": "2026-12-04",
+          "respondents": []
+        }
+      ],
+      "sections": [
+        {
+          "key": "finances",
+          "title": "Finances",
+          "intro": "Utiliser les choix et bases exacts du F9.",
+          "items": [
+            {
+              "code": "F1",
+              "type": "single",
+              "label": "Quelle est la tranche d’équilibre budgétaire ?",
+              "help": "Recettes ÷ dépenses × 100.",
+              "examples": "95 000 de recettes pour 100 000 de dépenses = 95 % → « 90 à 99 % »",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "choices": [
+                {
+                  "key": "c1",
+                  "label": "[À CONFIRMER] Moins de 80 %"
+                },
+                {
+                  "key": "c2",
+                  "label": "[À CONFIRMER] 80 à 89 %"
+                },
+                {
+                  "key": "c3",
+                  "label": "[À CONFIRMER] 90 à 99 %"
+                },
+                {
+                  "key": "c4",
+                  "label": "[À CONFIRMER] 100 % et plus"
+                }
+              ]
+            },
+            {
+              "code": "F2",
+              "type": "single",
+              "label": "Quelle est la réserve de trésorerie ?",
+              "help": "Réserve ÷ dépenses mensuelles moyennes.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "choices": [
+                {
+                  "key": "c1",
+                  "label": "[À CONFIRMER] Moins de 1 mois"
+                },
+                {
+                  "key": "c2",
+                  "label": "[À CONFIRMER] 1 à 2 mois"
+                },
+                {
+                  "key": "c3",
+                  "label": "[À CONFIRMER] 3 à 5 mois"
+                },
+                {
+                  "key": "c4",
+                  "label": "[À CONFIRMER] 6 mois et plus"
+                }
+              ]
+            },
+            {
+              "code": "F3",
+              "type": "single",
+              "label": "Quelle est la tranche consacrée aux œuvres sociales ?",
+              "help": "Dons caritatifs et budget dédié, pas geste isolé.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "choices": [
+                {
+                  "key": "c1",
+                  "label": "[À CONFIRMER] 0 %"
+                },
+                {
+                  "key": "c2",
+                  "label": "[À CONFIRMER] Moins de 5 %"
+                },
+                {
+                  "key": "c3",
+                  "label": "[À CONFIRMER] 5 à 9 %"
+                },
+                {
+                  "key": "c4",
+                  "label": "[À CONFIRMER] 10 % et plus"
+                }
+              ]
+            },
+            {
+              "code": "F4",
+              "type": "single",
+              "label": "Quelle est la tranche consacrée aux investissements et grands projets ?",
+              "examples": "travaux, matériel, épargne projet",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "choices": [
+                {
+                  "key": "c1",
+                  "label": "[À CONFIRMER] 0 %"
+                },
+                {
+                  "key": "c2",
+                  "label": "[À CONFIRMER] Moins de 10 %"
+                },
+                {
+                  "key": "c3",
+                  "label": "[À CONFIRMER] 10 à 19 %"
+                },
+                {
+                  "key": "c4",
+                  "label": "[À CONFIRMER] 20 % et plus"
+                }
+              ]
+            },
+            {
+              "code": "F5",
+              "type": "single",
+              "label": "Quelle est la tranche consacrée à la rémunération des salariés ?",
+              "help": "Salaires, charges, indemnités régulières ; 0 % si aucun salarié.",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "choices": [
+                {
+                  "key": "c1",
+                  "label": "[À CONFIRMER] 0 % (aucun salarié)"
+                },
+                {
+                  "key": "c2",
+                  "label": "[À CONFIRMER] Moins de 20 %"
+                },
+                {
+                  "key": "c3",
+                  "label": "[À CONFIRMER] 20 à 39 %"
+                },
+                {
+                  "key": "c4",
+                  "label": "[À CONFIRMER] 40 à 59 %"
+                },
+                {
+                  "key": "c5",
+                  "label": "[À CONFIRMER] 60 % et plus"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "rapprochement",
+          "title": "Rapprochement M0/M1",
+          "intro": "Pour M0/M1 uniquement : rapprochement réservé aux personnes habilitées ; transmettre le nombre de contributeurs réguliers absents des listes S.T.A.R et disciples, sans export nominatif systématique. Si un croisement reste impossible : fournir une estimation justifiée, sa source et ses limites, à signaler à la Pasteure. Ne pas inventer un zéro.",
+          "items": [
+            {
+              "code": "M0_C",
+              "type": "integer",
+              "label": "Combien de contributeurs réguliers ne figurent ni parmi les S.T.A.R ni parmi les disciples au 1er janvier 2026 ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0,
+              "internal": true
+            },
+            {
+              "code": "M1_C",
+              "type": "integer",
+              "label": "Combien de contributeurs réguliers ne figurent ni parmi les S.T.A.R ni parmi les disciples à la date du bilan ?",
+              "required": true,
+              "qualifiers": [
+                "ESTIMATE",
+                "TO_RESEARCH"
+              ],
+              "min": 0,
+              "internal": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "key": "evangelisation-entonnoir",
+      "message": "E3 ≥ E4 ≥ E5 ≥ E6 : chaque étape doit être un sous-ensemble de la précédente.",
+      "check": {
+        "chain_gte": [
+          "E3",
+          "E4",
+          "E5",
+          "E6"
+        ]
+      }
+    },
+    {
+      "key": "reconquete-entonnoir",
+      "message": "R1 ≥ R2 ≥ R3 ≥ R4 : chaque étape doit être un sous-ensemble de la précédente.",
+      "check": {
+        "chain_gte": [
+          "R1",
+          "R2",
+          "R3",
+          "R4"
+        ]
+      }
+    },
+    {
+      "key": "s2-s1",
+      "message": "S2 ne peut pas dépasser S1.",
+      "check": {
+        "lte": [
+          "S2",
+          "S1"
+        ]
+      }
+    },
+    {
+      "key": "s1-m1",
+      "message": "S1 ne peut pas dépasser M1.",
+      "check": {
+        "lte": [
+          "S1",
+          "M1"
+        ]
+      }
+    },
+    {
+      "key": "di1-m1",
+      "message": "DI1 ne peut pas dépasser M1.",
+      "check": {
+        "lte": [
+          "DI1",
+          "M1"
+        ]
+      }
+    },
+    {
+      "key": "di2-di1",
+      "message": "DI2 ne peut pas dépasser DI1.",
+      "check": {
+        "lte": [
+          "DI2",
+          "DI1"
+        ]
+      }
+    },
+    {
+      "key": "di2-s1",
+      "message": "DI2 ne peut pas dépasser S1.",
+      "check": {
+        "lte": [
+          "DI2",
+          "S1"
+        ]
+      }
+    },
+    {
+      "key": "di3-di1",
+      "message": "DI3 ne peut pas dépasser DI1.",
+      "check": {
+        "lte": [
+          "DI3",
+          "DI1"
+        ]
+      }
+    },
+    {
+      "key": "l3-l2",
+      "message": "L3 ne peut pas dépasser L2.",
+      "check": {
+        "lte": [
+          "L3",
+          "L2"
+        ]
+      }
+    },
+    {
+      "key": "p3-p2",
+      "message": "P3 ne peut pas dépasser P2.",
+      "check": {
+        "lte": [
+          "P3",
+          "P2"
+        ]
+      }
+    },
+    {
+      "key": "ev3-ev2",
+      "message": "EV3 ne peut pas dépasser EV2.",
+      "check": {
+        "lte": [
+          "EV3",
+          "EV2"
+        ]
+      }
+    },
+    {
+      "key": "x3-x1-x2",
+      "message": "X3 ne peut pas dépasser X1 + X2.",
+      "check": {
+        "lte": [
+          "X3",
+          {
+            "sum": [
+              "X1",
+              "X2"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "i6-i5",
+      "message": "I6 ne peut pas dépasser I5.",
+      "check": {
+        "lte": [
+          "I6",
+          "I5"
+        ]
+      }
+    },
+    {
+      "key": "g2-n",
+      "message": "G2 ne peut pas dépasser le nombre de nouveaux (N).",
+      "check": {
+        "lte": [
+          "G2",
+          "N"
+        ]
+      }
+    },
+    {
+      "key": "g3-n",
+      "message": "G3 ne peut pas dépasser le nombre de nouveaux (N).",
+      "check": {
+        "lte": [
+          "G3",
+          "N"
+        ]
+      }
+    },
+    {
+      "key": "g4-n",
+      "message": "G4 ne peut pas dépasser le nombre de nouveaux (N).",
+      "check": {
+        "lte": [
+          "G4",
+          "N"
+        ]
+      }
+    },
+    {
+      "key": "g5-n",
+      "message": "G5 ne peut pas dépasser le nombre de nouveaux (N).",
+      "check": {
+        "lte": [
+          "G5",
+          "N"
+        ]
+      }
+    },
+    {
+      "key": "g2-b1",
+      "message": "G2 ne peut pas dépasser B1.",
+      "check": {
+        "lte": [
+          "G2",
+          "B1"
+        ]
+      }
+    },
+    {
+      "key": "g4-s1",
+      "message": "G4 ne peut pas dépasser S1.",
+      "check": {
+        "lte": [
+          "G4",
+          "S1"
+        ]
+      }
+    },
+    {
+      "key": "e6-m1",
+      "message": "E6 ne peut pas dépasser M1.",
+      "check": {
+        "lte": [
+          "E6",
+          "M1"
+        ]
+      }
+    },
+    {
+      "key": "l4-l5",
+      "message": "Sans assemblée générale (L4 = Non), L5 doit être 0.",
+      "check": {
+        "implies": [
+          {
+            "eq": [
+              "L4",
+              false
+            ]
+          },
+          {
+            "eq": [
+              "L5",
+              0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "ev1-zero",
+      "message": "Si EV1 = 0, EV2 et EV3 doivent être 0.",
+      "check": {
+        "implies": [
+          {
+            "eq": [
+              "EV1",
+              0
+            ]
+          },
+          {
+            "all": [
+              {
+                "eq": [
+                  "EV2",
+                  0
+                ]
+              },
+              {
+                "eq": [
+                  "EV3",
+                  0
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "p2-zero",
+      "message": "Si P2 = 0, P3 et P4 doivent être 0.",
+      "check": {
+        "implies": [
+          {
+            "eq": [
+              "P2",
+              0
+            ]
+          },
+          {
+            "all": [
+              {
+                "eq": [
+                  "P3",
+                  0
+                ]
+              },
+              {
+                "eq": [
+                  "P4",
+                  0
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "k1-zero",
+      "message": "K1 doit être 0 : l’académie n’est pas lancée.",
+      "check": {
+        "eq": [
+          "K1",
+          0
+        ]
+      }
+    }
+  ]
+}

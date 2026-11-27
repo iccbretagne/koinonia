@@ -65,6 +65,14 @@ export async function buildViewer(session: Session, churchId: string): Promise<A
     const { getFormsCapability } = await import("@/modules/forms/auth");
     if (await getFormsCapability(session, churchId).catch(() => null)) predicates.push("forms");
   }
+  if (registry.has("campaigns") && (session.user.isSuperAdmin || churchRoles.length > 0)) {
+    // Collectes (spec 090) : `campaigns:manage` ou gestionnaire désigné d'une campagne de l'église.
+    const { hasCampaignsManage } = await import("@/modules/campaigns/auth");
+    const manages =
+      (await hasCampaignsManage(session, churchId).catch(() => false)) ||
+      (await prisma.campaignManager.count({ where: { userId: session.user.id!, campaign: { churchId } } }).catch(() => 0)) > 0;
+    if (manages) predicates.push("campaignManager");
+  }
   if (registry.has("planning") && permissions.includes("planning:view")) {
     const { canReadAnnouncementSheet } = await import("@/modules/planning");
     if (await canReadAnnouncementSheet(session, churchId).catch(() => false)) predicates.push("announcementSheet");

@@ -73,6 +73,7 @@ koinonia/
 │   │   │       └── request-executor.ts  # Executor demandes approuvees + emissions bus
 │   │   ├── discipleship/manifest.ts # Manifeste : discipleship:view/manage/export
 │   │   ├── assistant/           # Assistant de prise en main (spec 075) : fiches (knowledge/), moteur, questions à traiter
+│   │   ├── campaigns/           # Campagnes de collecte (spec 090) : définition JSON, import, réponses, validation, exports
 │   │   └── audio/               # Publication (ADR-0007) + bibliotheque d'ecoute (spec 021)
 │   │       ├── manifest.ts      # Manifeste : audio:listen/view/upload/review/manage
 │   │       ├── services/        # Depot, sequences, publication, tokens, acces
@@ -427,6 +428,7 @@ Compt = Comptable.
 | `treasury:reopen` | x | x | | | | | | | | |
 | `ticketing:manage` | x | x | x | | | | | | | |
 | `forms:manage` | x | x | x | | | | | | | |
+| `campaigns:manage` | x | x | | | | | | | | |
 | `agenda:view` | x | x | x | | | | | | | |
 | `agenda:manage` | x | x | x | | | | | | | |
 | `care:qualify` | x | x | | | | | | | x | |
@@ -747,10 +749,62 @@ seule (`ENABLED_MODULES`) :
   `edit_ticketing_ticket_visual`, `unpublish_ticketing_ticket_visual` (aperçu/confirmation), sans
   dépendance au drapeau des sites. Email inchangé.
 
+**Spécificités du module campagnes de collecte** (spec 090, [ADR-0032](docs/adr/0032-campagnes-de-collecte.md))
+— désactivable (`ENABLED_MODULES`) :
+- `campaigns:manage` (Super Admin, Admin) crée une campagne **par import** et l'administre.
+  **Gestionnaires** = données (`campaign_managers`), pas une permission : seul l'Admin ou un
+  gestionnaire en ajoute ou en retire, jamais le dernier. Un gestionnaire lit tout, y compris les
+  questionnaires `confidential`. L'église qui fait foi est celle de la campagne (autre église ou
+  aucun droit : 404). `campaigns` n'importe aucun autre module
+- **Répondants** (`campaign_respondents`) : comptes de l'église ou, par exception, personne sans
+  compte munie d'un lien personnel `/collecte/<jeton>` (HMAC de `CAMPAIGNS_TOKEN_SECRET`, à
+  défaut `AUTH_SECRET` ; seule l'empreinte est stockée ; régénérer le lien révoque l'ancien)
+- **Définition** JSON `koinonia.campaign` v1 (`schemas.ts`), importée par **aperçu puis
+  confirmation** (idempotente par `(église, clé)`). L'import est **bloqué** s'il ferait perdre des
+  réponses ou des fichiers (question supprimée, type changé, choix utilisé retiré, destinataire ou
+  questionnaire supprimé)
+- **Réponses** par code d'item, avec qualificatif (`EXACT`, `ESTIMATE`, `TO_RESEARCH`,
+  `NOT_APPLICABLE`, `NSP`) et note ; sauvegarde partielle ; soumission permise avec des « à
+  rechercher ». Règles de cohérence **déclaratives** (`rules.ts`) : alertes, jamais bloquantes
+- **Cycle** : `NOT_STARTED` → `IN_PROGRESS` → `SUBMITTED` → `CHANGES_REQUESTED` (motif) ou
+  `VALIDATED` par le gestionnaire, avec la case « validé par la Pasteure » (`pastoralValidated`)
+- **Fichiers** : type vérifié **sur le contenu** (`sniff.ts` : PDF, XLSX sans macro, CSV ; 10 Mo),
+  servis en pièce jointe, droits revérifiés à chaque téléchargement. Purgés `fileRetentionDays`
+  (30) après la clôture par la tâche cron `campaigns` (`runCampaignTasks`), qui envoie aussi la
+  relance J-2
+- Notifications du domaine `campaigns` (ouverture, relance, correction demandée, soumission) :
+  **jamais de valeur de réponse** dans le texte. Exports XLSX/CSV (`exports.ts`)
+- **Évolutions post-recette** (spec 091) : **Communication** (`messages.ts`) : messages à copier
+  (format WhatsApp), composés à partir de l'état réel (compteurs et taux **par contribution**) ;
+  **rien n'est envoyé** ni compté comme relance. Collectif : jamais de lien personnel, de valeur
+  ni d'email, confidentiels exclus par défaut ; individuel : un message par personne, avec son
+  lien direct (adresse Koinonia, ou lien personnel actif pour une personne sans compte). Textes
+  par défaut, modèles par campagne (`Campaign.messageTemplates`, `campaign.messages` du format v1).
+  **Cycle** : *Rouvrir* une contribution soumise (motif facultatif, réponses et fichiers gardés,
+  répondant prévenu) ; *Annuler la validation* (retour à « Soumis », mention de la Pasteure
+  retirée) avant de rouvrir une validée. **Répondants** : *Remplacer* en un geste (la
+  contribution suit, l'ancien perd tout accès, lien compris) ; retirer le dernier répondant
+  valide d'un destinataire d'une campagne ouverte est refusé ; échéance modifiable par
+  contribution. **Suivi** : préparation de l'ouverture (`/readiness`), filtres (à rechercher,
+  estimations, manquants, contrôles, fichiers), questions concernées, « Exploitable » distinct de
+  « Soumis ». **Aperçu répondant** (`/collectes/[id]/apercu/[formId]`, rien n'est enregistré).
+  **Définition** : export `koinonia.campaign` v1 sans réponse, fichier, répondant ni lien
+  (réimport « inchangé ») ; *Dupliquer* = structure seule, en brouillon. **Éditeur graphique**
+  (`/collectes/nouvelle`, `/collectes/[id]/editer`) : produit le même document et l'enregistre
+  **par l'import** (mêmes aperçu, blocages et révisions) ; règles complexes en JSON. MCP :
+  `campaign_import_contract`, `campaign_structure`, `export_campaign_definition`,
+  `reopen_contribution_*` (aperçu puis confirmation) ; les questionnaires confidentiels sont
+  **omis** de l'export et de la structure, et **conservés d'office** à l'import de l'assistant.
+- Entrée « Questionnaires » (`/collectes`) dans l'espace **Demandes**, vue pastorale comprise
+  (`hasCampaignsSpace`) ; carte « Questionnaires à remplir » sur l'Accueil. MCP : lectures `campaigns_list`/`campaigns_progress` (prédicat
+  `campaignManager`, `_viewer.ts`) et actions `import_campaign`/`set_campaign_status` (aperçu →
+  confirmation) — **jamais de valeur, de fichier ni d'email** ; un questionnaire confidentiel ne
+  montre que son état, et les contrôles qui lisent ses codes sont masqués
+
 **Spécificités du module formulaires** (spec 079, [ADR-0030](docs/adr/0030-moteur-de-formulaires.md)) —
 désactivable (`ENABLED_MODULES`) :
-- `forms:manage` (Super Admin, Admin, Secrétaire) ouvre `/formulaires` (lien dans l'espace Agenda,
-  à côté de la Billetterie) : construire (13 types de questions, choix avec places, condition
+- `forms:manage` (Super Admin, Admin, Secrétaire) ouvre `/formulaires` (espace Agenda, bloc
+  « Inscriptions » avec la Billetterie) : construire (13 types de questions, choix avec places, condition
   d'affichage sur une question précédente), publier, clôturer, dupliquer, supprimer, voir et
   exporter les réponses. L'église qui fait foi est celle **du formulaire** (`requireFormManage`,
   `@/modules/forms/auth`). Dès qu'il y a des réponses, `assertSafeEdit` borne la modification

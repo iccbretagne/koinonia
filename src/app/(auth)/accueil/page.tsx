@@ -5,6 +5,7 @@ import {
   CalendarOff,
   ChevronRight,
   Church,
+  ClipboardList,
   Headphones,
   Inbox,
   LayoutGrid,
@@ -32,6 +33,7 @@ import { REQUEST_TYPE_LABEL, requestStatus, requestTypeIcon } from "../requests/
 import { pickFirstName } from "./first-name";
 import InstallCard from "./InstallCard";
 import { countUnstaffedDepartments, getStaffingGapViewer } from "@/modules/planning";
+import type { OpenAssignment } from "@/modules/campaigns";
 
 /**
  * Accueil « Aujourd'hui » (spec 055, lot 4) : assemble, pour le rôle connecté, des données que
@@ -44,6 +46,8 @@ import { countUnstaffedDepartments, getStaffingGapViewer } from "@/modules/plann
  * - Demandes en cours : `loadMyRequests` (même source que « Mes demandes », `/requests`), sous
  *   `members:view`.
  * - Raccourcis : uniquement vers les sections que les mêmes gardes ouvrent déjà.
+ * - Questionnaires à remplir : `listMyOpenAssignments`, affectations non soumises des campagnes
+ *   ouvertes de l'église courante dont le compte est répondant (comme `/collectes`) ; rien si aucune.
  *
  * Chaque garde passe par `requireChurchPermission`, exactement comme la page source.
  */
@@ -51,6 +55,7 @@ import { countUnstaffedDepartments, getStaffingGapViewer } from "@/modules/plann
 const MAX_SERVICES = 4;
 const MAX_EVENTS = 5;
 const MAX_REQUESTS = 4;
+const MAX_QUESTIONNAIRES = 4;
 const OPEN_REQUEST_STATUSES = new Set(["EN_ATTENTE", "EN_COURS", "APPROUVEE"]);
 
 async function can(permission: string, churchId: string): Promise<boolean> {
@@ -342,6 +347,56 @@ function RequestsSection({ openRequests }: { readonly openRequests: MyRequest[] 
   );
 }
 
+/** Questionnaires de collecte à remplir (spec 090) ; un échec de lecture n'empêche pas l'Accueil. */
+async function loadQuestionnairesToFill(session: Awaited<ReturnType<typeof requireAuth>>, churchId: string): Promise<OpenAssignment[]> {
+  if (!registry.has("campaigns")) return [];
+  return import("@/modules/campaigns")
+    .then(({ listMyOpenAssignments }) => listMyOpenAssignments(session, churchId))
+    .then((list) => (Array.isArray(list) ? list : []))
+    .catch(() => []);
+}
+
+function QuestionnairesSection({ questionnaires }: { readonly questionnaires: OpenAssignment[] }) {
+  return (
+    <section aria-labelledby="today-questionnaires" className="flex flex-col gap-3">
+      <div id="today-questionnaires">
+        <SectionTitle title="Questionnaires à remplir" href="/collectes" linkLabel="Collectes" />
+      </div>
+      <ul className="overflow-hidden rounded-card border border-line bg-surface">
+        {questionnaires.slice(0, MAX_QUESTIONNAIRES).map((q) => (
+          <li key={q.id} className="border-t border-line first:border-t-0">
+            <Link href={`/collectes/r/${q.id}`} className={rowLinkClasses}>
+              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-brand-soft text-brand-text">
+                <ClipboardList aria-hidden="true" className="size-5" strokeWidth={1.75} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{q.formTitle}</p>
+                <p className="truncate text-[13px] leading-[18px] text-ink-muted">
+                  {q.campaignTitle}
+                  {q.dueAt
+                    ? ` · avant le ${q.dueAt.toLocaleDateString("fr-FR", { day: "numeric", month: "short", timeZone: "Europe/Paris" })}`
+                    : ""}
+                </p>
+              </div>
+              {q.status === "CHANGES_REQUESTED" && (
+                <StatusChip tone="warning" className="shrink-0">
+                  Correction demandée
+                </StatusChip>
+              )}
+              <ChevronRight aria-hidden="true" className="hidden size-4 shrink-0 text-ink-subtle sm:block" strokeWidth={1.75} />
+            </Link>
+          </li>
+        ))}
+        {questionnaires.length > MAX_QUESTIONNAIRES && (
+          <li className="border-t border-line px-4 py-2.5 text-[13px] text-ink-muted">
+            Et {questionnaires.length - MAX_QUESTIONNAIRES} autre{questionnaires.length - MAX_QUESTIONNAIRES > 1 ? "s" : ""}.
+          </li>
+        )}
+      </ul>
+    </section>
+  );
+}
+
 function ShortcutsSection({ shortcuts }: { readonly shortcuts: Shortcut[] }) {
   return (
     <section aria-labelledby="today-shortcuts" className="flex flex-col gap-3">
@@ -413,10 +468,11 @@ export default async function TodayPage() {
     return null;
   };
 
-  const [myPlanning, churchEvents, myRequests] = await Promise.all([
+  const [myPlanning, churchEvents, myRequests, questionnaires] = await Promise.all([
     canPlanning ? loadMyPlanning(session.user.id, churchId) : null,
     loadChurchEvents(),
     canRequests ? loadMyRequests(session.user.id, churchId) : null,
+    loadQuestionnairesToFill(session, churchId),
   ]);
 
   // Le prénom de la fiche STAR liée fait foi (champ prénom dédié) ; il est lu même sans accès à
@@ -472,6 +528,8 @@ export default async function TodayPage() {
 
       <div className={`grid grid-cols-1 gap-6 ${hasAside ? "lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]" : ""}`}>
         <div className="flex min-w-0 flex-col gap-6">
+          {questionnaires.length > 0 && <QuestionnairesSection questionnaires={questionnaires} />}
+
           {myPlanning && <ServicesSection myPlanning={myPlanning} nextService={nextService} agendaRows={agendaRows} />}
 
           {churchEvents && <ChurchEventsSection canEvents={canEvents} upcomingEvents={upcomingEvents} unstaffed={unstaffed} />}
