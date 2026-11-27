@@ -359,7 +359,7 @@ const isUnder = (path: string, prefix: string) => path === prefix || path.starts
 
 function minimal(prefixes: readonly string[]): string[] {
   const unique = [...new Set(prefixes)];
-  return unique.filter((p) => !unique.some((q) => q !== p && isUnder(p, q))).sort();
+  return unique.filter((p) => !unique.some((q) => q !== p && isUnder(p, q))).sort((a, b) => a.localeCompare(b));
 }
 
 const CURRENT_SCREENS: readonly string[] = Object.values(SCREENS);
