@@ -849,7 +849,7 @@ export function bottomDestinations(
     const home = spaces.find((s) => s.key === "home");
     return [
       { key: "home", label: "Accueil", href: home?.href ?? "/pastoral", icon: House, space: "home" },
-      { key: "members", label: "Mes membres", href: "/admin/members", icon: Users, prefixes: ["/admin/members"] },
+      { key: "members", label: "Mes membres", href: "/pastoral/members", icon: Users, prefixes: ["/pastoral/members"] },
     ];
   }
 

@@ -304,12 +304,15 @@ describe("bottomDestinations", () => {
     expect(labels(accountant, "ACCOUNTANT")).toEqual(["Accueil", "Comptabilité"]);
   });
 
-  it("vue pastorale : destinations actuelles", () => {
+  it("vue pastorale : « Mes membres » mène à la page pastorale, comme la barre latérale (spec 092)", () => {
     const spaces = buildSpaces({ ...admin, isPastoral: true, homeHref: "/pastoral" });
-    expect(bottomDestinations(spaces, { role: "ADMIN", isPastoral: true }).map((d) => [d.label, d.href])).toEqual([
+    const destinations = bottomDestinations(spaces, { role: "ADMIN", isPastoral: true });
+    expect(destinations.map((d) => [d.label, d.href])).toEqual([
       ["Accueil", "/pastoral"],
-      ["Mes membres", "/admin/members"],
+      ["Mes membres", "/pastoral/members"],
     ]);
+    const sidebar = spaces.flatMap((s) => s.pages).find((p) => p.label === "Mes membres");
+    expect(sidebar?.href).toBe("/pastoral/members");
   });
 
   it("active la destination de l'espace courant", () => {
