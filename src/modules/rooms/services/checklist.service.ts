@@ -1,5 +1,6 @@
 import type { Prisma, RoomChecklist } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/api-utils";
+import { paths } from "@/lib/paths";
 
 type DbClient = Prisma.TransactionClient;
 
@@ -195,7 +196,7 @@ export async function validateChecklist(params: ValidateChecklistParams): Promis
         userId: reservation.createdById,
         title: "Écart constaté sur une salle",
         message: `Un écart a été constaté par l'équipe de contrôle sur la réservation « ${reservation.title} ».`,
-        link: "/rooms",
+        link: paths.rooms(),
       };
       await notifyIssue(tx, notice);
     }
@@ -251,7 +252,7 @@ export async function reportIssueWithoutDeclaration(
       userId: reservation.createdById,
       title: "Écart constaté sur une salle",
       message: `Un écart a été constaté par l'équipe de contrôle sur la réservation « ${reservation.title} », dont la main courante n'avait pas été déclarée.`,
-      link: "/rooms",
+      link: paths.rooms(),
     };
     await notifyIssue(tx, notice);
 

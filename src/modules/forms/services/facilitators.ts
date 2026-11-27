@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
 import { notifyUsers } from "@/lib/notifications";
+import { paths } from "@/lib/paths";
 
 /**
  * Intervenants d'une inscription à sessions (spec 079, lot 2) : des comptes de l'église qui voient
@@ -76,7 +77,7 @@ export async function setFacilitators(formId: string, churchId: string, input: F
       type: "FORM_FACILITATOR",
       title: form.title,
       message: "Vous êtes intervenant : liste des inscrits et feuille de présence.",
-      link: `/formulaires/${formId}`,
+      link: paths.formulaires.form(formId),
       entityType: "Form",
       entityId: formId,
     });

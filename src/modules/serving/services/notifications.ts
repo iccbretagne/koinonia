@@ -3,6 +3,7 @@ import { logger } from "@/lib/logger";
 import { notifyUsers } from "@/lib/notifications";
 import { buildGenericNotificationEmail, sendEmail } from "@/lib/email";
 import { getPvsDepartmentIds } from "../auth";
+import { paths } from "@/lib/paths";
 
 /**
  * Notifications des candidatures (spec 077), domaine `serving`. Elles ne portent jamais de donnée
@@ -14,7 +15,7 @@ const DOMAIN = "serving";
 export const SERVING_ENTITY = "ServingApplication";
 
 export function applicationLink(applicationId: string): string {
-  return `/candidatures/${applicationId}`;
+  return paths.candidatures.application(applicationId);
 }
 
 async function adminUserIds(churchId: string): Promise<string[]> {

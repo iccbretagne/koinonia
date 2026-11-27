@@ -5,6 +5,7 @@ import { createWalkIn } from "./booking";
 import { deliverItem, recordOnsiteSale } from "./catering";
 import { recordReceipt } from "./payments";
 import { computePresence, isAnomalous, type PassageLite } from "./presence";
+import { paths } from "@/lib/paths";
 
 /**
  * Synchronisation des écrans de terrain (spec 074, lot 2 et 3). Chaque opération porte un
@@ -222,7 +223,7 @@ export async function applyOperations(
       type: "TICKETING_ANOMALY",
       title: "Contrôle : passage incohérent",
       message: `${ctx.anomalies} passage${plural} incohérent${plural} (entrée déjà enregistrée, ou sortie sans entrée).`,
-      link: `/billetterie/${eventId}?vue=presences`,
+      link: paths.billetterie.event(eventId, { vue: "presences" }),
     });
   }
   return { results, counts, capacity: event.capacity, serverTime: now.toISOString() };

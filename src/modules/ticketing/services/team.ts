@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { ApiError } from "@/lib/errors";
 import { QR_PREFIX } from "../schemas";
 import { deriveToken, newSalt, tokenPair } from "./tokens";
+import { paths } from "@/lib/paths";
 
 /**
  * Équipe d'un événement (spec 074, lot 2) : postes, affectations (compte de l'église ou
@@ -107,7 +108,7 @@ export async function createAssignment(eventId: string, actorId: string, input: 
       type: "TICKETING_ASSIGNMENT",
       title: `${event.title} : vous êtes dans l'équipe`,
       message: assignment.post ? `Poste : ${assignment.post.name}.` : "Vous êtes affecté(e) à l'équipe de l'événement.",
-      link: "/planning",
+      link: paths.planning(),
     }).catch(() => undefined);
   }
   return assignment;
@@ -149,7 +150,7 @@ export async function updateAssignment(
       type: "TICKETING_ASSIGNMENT",
       title: `${event.title} : votre affectation a changé`,
       message: updated.post ? `Poste : ${updated.post.name}.` : "Vous n'avez plus de poste précis.",
-      link: "/planning",
+      link: paths.planning(),
     }).catch(() => undefined);
   }
   return updated;

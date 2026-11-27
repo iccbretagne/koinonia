@@ -2,6 +2,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import type { Session } from "next-auth";
 import { DEPT_FN } from "@/lib/department-functions";
 import { ApiError } from "@/lib/errors";
+import { paths } from "@/lib/paths";
 
 type DbClient = Prisma.TransactionClient;
 
@@ -164,7 +165,7 @@ export async function notifyReaders(
         type: "ANNOUNCEMENT_SHEET_DEPOSITED",
         title,
         message,
-        link: `/events/${eventId}/star-view`,
+        link: paths.events.starView(eventId),
       })
     )
   );

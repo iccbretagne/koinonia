@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { canManageJobs } from "./access";
+import { paths } from "@/lib/paths";
 
 /**
  * Chargement de l'espace Offres (spec 064) : les quatre sortes de publications ramenées à une
@@ -88,10 +89,10 @@ interface Row {
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 const HREF: Record<PublicationKind, (id: string) => string> = {
-  OFFER: (id) => `/jobs/${id}`,
-  MISSION: (id) => `/jobs/freelance/missions/${id}`,
-  SEEKER: (id) => `/jobs/seekers/${id}`,
-  FREELANCE: (id) => `/jobs/freelance/profiles/${id}`,
+  OFFER: (id) => paths.jobs.offer(id),
+  MISSION: (id) => paths.jobs.mission(id),
+  SEEKER: (id) => paths.jobs.seeker(id),
+  FREELANCE: (id) => paths.jobs.freelanceProfile(id),
 };
 
 function stateOf(kind: PublicationKind, row: Row, now: Date): PublicationState {

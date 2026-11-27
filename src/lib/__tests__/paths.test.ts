@@ -88,12 +88,12 @@ describe("registre des écrans (paths.ts)", () => {
 
   it("encode les segments dynamiques : aucune injection de segment, de requête ni d'origine", () => {
     expect(paths.accounting.request("a/b?c#d")).toBe("/accounting/requests/a%2Fb%3Fc%23d");
-    expect(() => paths.admin.event("..")).toThrow();
-    expect(() => paths.admin.event(".")).toThrow();
-    expect(paths.admin.event("a..b")).toBe("/admin/events/a..b");
     expect(paths.collectes.apercu("x y", "//evil.example")).toBe("/collectes/x%20y/apercu/%2F%2Fevil.example");
-    expect(() => paths.accounting.request("")).toThrow();
-    expect(() => (paths.accounting.request as (a: unknown) => string)(undefined)).toThrow();
+    // Jamais d'exception (lien de notification construit en transaction) : même adresse qu'avant.
+    expect((paths.accounting.request as (a: unknown) => string)(undefined)).toBe("/accounting/requests/undefined");
+    for (const key of Object.keys(SCREENS) as ScreenKey[]) {
+      expect(ctorOf(key)("//evil.example", "//evil.example")).toMatch(/^\/[a-z]/);
+    }
   });
 
   it("encode la requête et omet les valeurs absentes", () => {

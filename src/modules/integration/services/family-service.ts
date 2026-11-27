@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { DEPT_FN } from "@/lib/department-functions";
 import { getFunctionDepartmentIds } from "@/lib/function-departments";
 import { createNotification, notifyUsers } from "@/lib/notifications";
+import { paths } from "@/lib/paths";
 
 /** Rattachement des notifications à la demande, pour les effacer avec elle (spec 057, ADR-0019). */
 const REQUEST_ENTITY = "FamilyIntegrationRequest";
@@ -167,7 +168,7 @@ export async function notifyBergerAssigned(params: {
       type: "INTEGRATION_ASSIGNED",
       title: "Nouvelle demande d'intégration",
       message: `${firstName} ${lastName} vous a été affecté${familySuffix}.`,
-      link: `/integration/requests/${requestId}`,
+      link: paths.integration.request(requestId),
       entityType: REQUEST_ENTITY,
       entityId: requestId,
     },
@@ -245,7 +246,7 @@ export async function runInactivityNotifications(appUrl: string): Promise<{ noti
   const recentNotifs = await prisma.notification.findMany({
     where: {
       type: INACTIVITY_NOTIF_TYPE,
-      link: { in: requestIds.map((id) => `/integration/requests/${id}`) },
+      link: { in: requestIds.map((id) => paths.integration.request(id)) },
       createdAt: { gte: dedupeThreshold },
     },
     select: { link: true },
@@ -264,7 +265,7 @@ export async function runInactivityNotifications(appUrl: string): Promise<{ noti
   let skipped = 0;
 
   for (const req of staleRequests) {
-    const link = `/integration/requests/${req.id}`;
+    const link = paths.integration.request(req.id);
     if (alreadyNotifiedLinks.has(link)) { skipped++; continue; }
 
     const personName = `${req.firstName} ${req.lastName}`;
@@ -474,7 +475,7 @@ export async function runWaitingRelanceNotifications(
   let skipped = 0;
 
   for (const { req, dueAt } of due) {
-    const link = `/integration/requests/${req.id}`;
+    const link = paths.integration.request(req.id);
     const alreadyNotified = await prisma.notification.count({
       where: { type: RELANCE_NOTIF_TYPE, link, createdAt: { gte: dueAt } },
     });
@@ -523,7 +524,7 @@ export async function notifyIntegrationTeamNewRequest(params: {
       type: "INTEGRATION_NEW_REQUEST",
       title: "Nouvelle demande d'intégration",
       message: `${firstName} ${lastName} a déposé une demande d'intégration.`,
-      link: `/integration/requests/${requestId}`,
+      link: paths.integration.request(requestId),
       entityType: REQUEST_ENTITY,
       entityId: requestId,
     }
@@ -549,7 +550,7 @@ export async function notifyIntegrationTeamHandback(params: {
       type: "INTEGRATION_HANDBACK",
       title: "Demande renvoyée à l'intégration",
       message,
-      link: `/integration/requests/${requestId}`,
+      link: paths.integration.request(requestId),
       entityType: REQUEST_ENTITY,
       entityId: requestId,
     }

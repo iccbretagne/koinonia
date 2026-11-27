@@ -16,6 +16,7 @@ import {
   withdrawForAbsence,
 } from "./withdrawals/absence";
 import type { AbsenceServiceLine } from "./withdrawals/notify";
+import { paths } from "@/lib/paths";
 
 type DbClient = Prisma.TransactionClient;
 
@@ -619,7 +620,7 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
         type: "ABSENCE_DECLARED",
         title: "Absence déclarée",
         message: `${memberName} a déclaré une absence ${when}.`,
-        link: "/absences",
+        link: paths.absences(),
       },
       { tx }
     );
@@ -637,7 +638,7 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
           type: "ABSENCE_CONFLICT",
           title: "Conflit planning / absence",
           message: `L'absence de ${memberName} (${when}) chevauche ${plannedServicesLabel(plural)}.`,
-          link: "/absences",
+          link: paths.absences(),
         },
         { tx }
       );
@@ -656,7 +657,7 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
           type: "ABSENCE_BACKUP_ASSIGNED",
           title: "Désigné en backup",
           message: `Vous avez été désigné en backup de ${memberName} pour son absence ${when}.`,
-          link: "/absences",
+          link: paths.absences(),
         },
         { tx }
       );
@@ -778,7 +779,7 @@ export async function cancelAbsence(params: CancelAbsenceParams): Promise<Absenc
         type: "ABSENCE_CANCELLED",
         title: "Absence annulée",
         message: `L'absence de ${memberName} (${when}) a été annulée.`,
-        link: "/absences",
+        link: paths.absences(),
       },
       { tx }
     );
@@ -1070,7 +1071,7 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
         type: "ABSENCE_UPDATED",
         title: "Absence modifiée",
         message: `L'absence de ${memberName} a été modifiée (${when}).`,
-        link: "/absences",
+        link: paths.absences(),
       },
       { tx }
     );
@@ -1085,7 +1086,7 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
           type: "ABSENCE_CONFLICT",
           title: "Conflit planning / absence",
           message: `L'absence de ${memberName} (${when}) chevauche ${plannedServicesLabel(plural)}.`,
-          link: "/absences",
+          link: paths.absences(),
         },
         { tx }
       );

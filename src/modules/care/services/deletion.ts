@@ -3,6 +3,7 @@ import { ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { deleteItemNotifications } from "@/lib/notifications";
 import type { Prisma } from "@/generated/prisma/client";
+import { paths } from "@/lib/paths";
 
 /**
  * Suppression définitive d'une demande de rendez-vous pastoral ou d'un suivi (spec 057,
@@ -30,7 +31,7 @@ export async function deleteAppointmentRequest({ id, churchId, actorId }: Delete
 
     await tx.agendaEntry.deleteMany({ where: { requestId: id } });
     await tx.auditLog.deleteMany({ where: { entityType: "AppointmentRequest", entityId: id } });
-    await deleteItemNotifications(tx, "AppointmentRequest", id, [`/care/requests/${id}`]);
+    await deleteItemNotifications(tx, "AppointmentRequest", id, [paths.care.requestDetail(id)]);
     const { count } = await tx.appointmentRequest.deleteMany({ where: { id, churchId } });
     if (count === 0) throw new ApiError(404, "Demande introuvable");
   });
@@ -41,7 +42,7 @@ export async function deleteAppointmentRequest({ id, churchId, actorId }: Delete
 export async function deleteMsdpFollowUp({ id, churchId, actorId }: DeleteParams): Promise<void> {
   await prisma.$transaction(async (tx) => {
     await tx.auditLog.deleteMany({ where: { entityType: "MsdpFollowUp", entityId: id } });
-    await deleteItemNotifications(tx, "MsdpFollowUp", id, [`/care/followups/${id}`]);
+    await deleteItemNotifications(tx, "MsdpFollowUp", id, [paths.care.followup(id)]);
     const { count } = await tx.msdpFollowUp.deleteMany({ where: { id, churchId } });
     if (count === 0) throw new ApiError(404, "Suivi introuvable");
   });

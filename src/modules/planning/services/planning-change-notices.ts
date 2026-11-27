@@ -1,5 +1,6 @@
 import type { Prisma, ServiceStatus } from "@/generated/prisma/client";
 import { listAvailabilitySettingsByChurch, DEFAULT_AVAILABILITY_SETTINGS } from "./availability/settings";
+import { paths } from "@/lib/paths";
 
 /**
  * Notifications regroupées des changements de planning (spec 060, ADR-0021).
@@ -16,7 +17,7 @@ import { listAvailabilitySettingsByChurch, DEFAULT_AVAILABILITY_SETTINGS } from 
 type Db = Prisma.TransactionClient;
 
 export const PLANNING_DIGEST_TYPE = "PLANNING_DIGEST";
-const DIGEST_LINK = "/planning";
+const DIGEST_LINK = paths.planning();
 
 export interface PlanningChange {
   memberId: string;

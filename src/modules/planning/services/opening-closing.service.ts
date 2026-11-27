@@ -1,6 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { Session } from "next-auth";
 import { DEPT_FN } from "@/lib/department-functions";
+import { paths } from "@/lib/paths";
 
 type DbClient = Prisma.TransactionClient;
 
@@ -117,7 +118,7 @@ export async function notifyAssignment(
     type: "OPENING_CLOSING_ASSIGNED",
     title: `Désigné(e) pour ${slotLabel}`,
     message: `Vous avez été désigné(e) pour ${slotLabel.toLowerCase()} l'église lors de « ${eventTitle} ».`,
-    link: "/planning",
+    link: paths.planning(),
   });
 }
 
@@ -140,6 +141,6 @@ export async function notifyRemoval(
     type: "OPENING_CLOSING_REMOVED",
     title: `Retiré(e) de ${slotLabel}`,
     message: `Vous n'êtes plus désigné(e) pour ${slotLabel.toLowerCase()} l'église lors de « ${eventTitle} ».`,
-    link: "/planning",
+    link: paths.planning(),
   });
 }

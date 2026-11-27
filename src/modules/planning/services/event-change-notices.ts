@@ -1,4 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
+import { paths } from "@/lib/paths";
 
 /**
  * Prévenir les personnes planifiées d'un déplacement ou d'une annulation d'événement (spec 059).
@@ -212,7 +213,7 @@ function toNotice(userId: string, r: Recipient): PendingNotice {
     type,
     title: n === 1 ? `${singleLabel} : ${r.titles[0]}` : `${n} événements ${changedWord}`,
     message: `${r.lines.join(" ")}${tail}`,
-    link: r.lead ? "/dashboard" : "/planning",
+    link: r.lead ? paths.dashboard() : paths.planning(),
   };
 }
 

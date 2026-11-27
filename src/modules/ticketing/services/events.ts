@@ -11,6 +11,7 @@ import {
 } from "../schemas";
 import type { z } from "zod";
 import { computeUsage, remaining } from "./stock";
+import { paths } from "@/lib/paths";
 
 /**
  * Événements de billetterie (spec 074) : création, paramétrage, options, rôles, et lecture
@@ -339,7 +340,7 @@ export async function setRoles(eventId: string, userId: string, roles: { userId:
       type: "TICKETING_ROLE",
       title: `Billetterie : ${event.title}`,
       message: "Un rôle vous a été confié sur cet événement.",
-      link: `/billetterie/${eventId}`,
+      link: paths.billetterie.event(eventId),
     });
   }
   return unique;

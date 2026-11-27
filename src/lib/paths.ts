@@ -10,8 +10,9 @@
  * Module **pur** (aucun import) : lisible par le proxy, les composants client et les modules.
  *
  * Sécurité : un constructeur encode chaque segment dynamique (`encodeURIComponent`) et chaque
- * paramètre de requête (`URLSearchParams`) — un identifiant ne peut jamais injecter de segment,
- * de requête ni d'origine dans un lien.
+ * paramètre de requête (`URLSearchParams`) — un identifiant ne peut injecter ni segment, ni
+ * requête, ni origine dans un lien. Une adresse construite commence toujours par `/` suivi d'un
+ * segment statique : jamais `//`, donc jamais une autre origine.
  */
 
 /** Paramètres de requête ; `null`/`undefined`/`false` sont omis. */
@@ -167,7 +168,7 @@ export type ScreenKey = keyof typeof SCREENS;
 
 /**
  * Préfixes d'adresse qui ne sont pas eux-mêmes un écran (correspondance de navigation, écrans
- * d'aide de l'assistant) : seuls les premiers segments partagés par plusieurs écrans.
+ * d'aide de l'assistant) : segments partagés par plusieurs écrans, ou parent d'un écran détail.
  */
 export const PREFIXES = {
   accounting: "/accounting",
@@ -175,15 +176,18 @@ export const PREFIXES = {
   integration: "/integration",
   mcp: "/mcp",
   messages: "/messages",
+  planningRemplacements: "/planning/remplacements",
   secretariat: "/secretariat",
 } as const;
 
+/**
+ * Encode un segment dynamique. Ne lève jamais : un lien se construit souvent dans une
+ * notification ou une transaction, qu'un identifiant inattendu ne doit pas faire échouer (le
+ * lien mène alors à un 404, comme avant ce registre). `/`, `?` et `#` sont encodés : un
+ * identifiant ne sort jamais de son segment.
+ */
 function segment(value: string): string {
-  // `.` et `..` remonteraient l'arborescence une fois l'adresse résolue par le navigateur.
-  if (typeof value !== "string" || value.length === 0 || value === "." || value === "..") {
-    throw new TypeError("Segment d'adresse invalide");
-  }
-  return encodeURIComponent(value);
+  return encodeURIComponent(String(value));
 }
 
 function search(query: Query | undefined): string {

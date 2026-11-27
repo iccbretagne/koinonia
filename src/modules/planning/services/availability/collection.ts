@@ -13,6 +13,7 @@ import {
   listAvailabilitySettingsByChurch,
   type AvailabilitySettingsValues,
 } from "./settings";
+import { paths } from "@/lib/paths";
 
 /**
  * Cycle automatique de la collecte (spec 058), exécuté par l'orchestrateur horaire `/api/cron` :
@@ -196,7 +197,7 @@ async function notifyOpenings(db: DbClient, now: Date, onlyId?: string): Promise
         message: late
           ? `La collecte de ${monthLabel(c.month)} est ouverte : merci de répondre au plus vite.`
           : `Réponds avant le ${fmt.format(c.closesAt)} pour les événements de ${monthLabel(c.month)}.`,
-        link: `/disponibilites?month=${monthParam(c.month)}`,
+        link: paths.disponibilites({ month: monthParam(c.month) }),
         entityType: "AvailabilityCollection",
         entityId: c.id,
       });
@@ -231,7 +232,7 @@ async function sendPendingAsks(db: DbClient, now: Date): Promise<number> {
       type: "AVAILABILITY_ASKED",
       title: "Indique ta disponibilité",
       message: `Es-tu disponible pour ${describeEvents(list.map(([, e]) => e))} ?`,
-      link: list.length === 1 ? `/disponibilites?event=${list[0][0]}` : "/disponibilites",
+      link: list.length === 1 ? paths.disponibilites({ event: list[0][0] }) : paths.disponibilites(),
       entityType: "Event",
       entityId: list[0][0],
     });
@@ -299,7 +300,7 @@ async function sendRelances(
       type: "AVAILABILITY_RELANCE",
       title: "Rappel : indique tes disponibilités",
       message: `Il te reste à répondre pour ${describeEvents(eventIds.map((id) => eventInfo.get(id)!))}.`,
-      link: eventIds.length === 1 ? `/disponibilites?event=${eventIds[0]}` : "/disponibilites",
+      link: eventIds.length === 1 ? paths.disponibilites({ event: eventIds[0] }) : paths.disponibilites(),
       entityType: "Event",
       entityId: eventIds[0],
     });
