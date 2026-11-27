@@ -15,7 +15,7 @@ import { routeTable } from "@/lib/module-routes";
 /** Spec 092, lot 4 — table fixe ancienne → nouvelle adresse. */
 
 const screenRegex = (pattern: string) =>
-  new RegExp(`^${pattern.replace(/\[[A-Za-z]+\]/g, "[^/]+").replace(/[.]/g, "\\.")}$`);
+  new RegExp(`^${pattern.replace(/[\\^$.*+?(){}|]/g, "\\$&").replace(/\[[A-Za-z]+\]/g, "[^/]+")}$`);
 const SCREEN_PATTERNS = Object.values(SCREENS).map(screenRegex);
 const isScreen = (path: string) => SCREEN_PATTERNS.some((r) => r.test(path));
 /** Modèle → adresse d'exemple (`:id` → `x1`). */
