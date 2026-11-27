@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { buttonClasses } from "@/components/ui";
 import type { Publication } from "@/modules/jobs";
 import PublicationDetail from "./PublicationDetail";
 import { tabOf } from "./board";
@@ -24,11 +25,11 @@ export default function PublicationPage({
   const back = `/jobs?tab=${tabOf(publication.kind)}`;
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
-      <Link href={back} className="inline-flex min-h-11 items-center gap-2 self-start text-sm font-medium text-ink-muted hover:text-ink">
+      <Link href={back} className={`${buttonClasses("ghost", "sm")} min-h-11 self-start sm:min-h-9`}>
         <ArrowLeft aria-hidden="true" className="size-4" />
-        Offres
+        Retour aux offres
       </Link>
-      <article className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 sm:p-6">
+      <article className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-6">
         <h1 className="font-display text-[22px] font-bold leading-7 text-ink">{publication.title}</h1>
         <PublicationDetail
           publication={publication}

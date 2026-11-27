@@ -38,7 +38,7 @@ export default function FormsGrantsButton({ grants }: { readonly grants: GrantRo
   return (
     <>
       <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
-        <UserPlus className="size-4" aria-hidden="true" /> Accès
+        <UserPlus className="size-4" aria-hidden="true" /> Gérer les accès
       </Button>
       <Modal open={open} onClose={() => setOpen(false)} title="Accès aux formulaires">
         <div className="space-y-4">
@@ -81,7 +81,7 @@ export default function FormsGrantsButton({ grants }: { readonly grants: GrantRo
                         }
                       }}
                     >
-                      Accorder
+                      Accorder l&apos;accès
                     </Button>
                   </li>
                 ))}
@@ -93,7 +93,8 @@ export default function FormsGrantsButton({ grants }: { readonly grants: GrantRo
         open={revoking !== null}
         title="Retirer cet accès ?"
         message="Ses formulaires restent en ligne et ses réponses conservées ; il ne pourra plus les gérer. Ses partages reprennent si l'accès est rendu."
-        confirmLabel="Retirer"
+        confirmLabel="Retirer l'accès"
+        confirmingLabel="Retrait en cours…"
         confirming={busy}
         onCancel={() => setRevoking(null)}
         onConfirm={async () => {

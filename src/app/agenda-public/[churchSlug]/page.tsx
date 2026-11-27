@@ -24,7 +24,7 @@ export default async function PublicAgendaRequestPage({
   const siteKey = getTurnstileSiteKey();
 
   return (
-    <div className="min-h-screen bg-surface-sunken flex flex-col">
+    <div className="flex min-h-screen flex-col bg-bg">
       <header className="bg-brand px-4 py-5">
         <div className="max-w-xl mx-auto">
           <p className="text-xs font-semibold text-on-brand/60 uppercase tracking-widest mb-1">Koinonia</p>
@@ -39,7 +39,7 @@ export default async function PublicAgendaRequestPage({
           <PublicFormUnavailable churchName={church.name} />
         )}
       </main>
-      <footer className="text-center text-xs text-ink-subtle py-4">
+      <footer className="py-4 text-center text-xs text-ink-muted">
         Propulsé par <span className="font-medium text-ink-muted">Koinonia</span>
       </footer>
     </div>

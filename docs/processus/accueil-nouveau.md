@@ -82,7 +82,7 @@ C'est un tableau de relance : il ne sert pas à consulter un dossier, il sert à
 ## Les règles à connaître
 
 - **L'ancienneté est le vrai indicateur.** Une demande en attente depuis quarante-cinq jours n'est pas une demande en cours, c'est une personne qu'on a perdue.
-- **Les relances sont automatiques.** Une demande sans mise à jour depuis 7 jours alerte l'équipe si elle est encore « Reçue », son berger sinon. Une attente dépassée alerte l'équipe : 60 jours par défaut pour un recontact, 30 jours pour le département mission, réglables dans les paramètres. « **J'ai relancé** » trace qui a relancé, et quand.
+- **Les relances sont automatiques.** Une demande sans mise à jour depuis 7 jours alerte l'équipe si elle est encore « Reçue », son berger sinon. Une attente dépassée alerte l'équipe : 60 jours par défaut pour un recontact, 30 jours pour le département mission, réglables dans les paramètres. « **Consigner une relance** » trace qui a relancé, et quand.
 - **Assigner vite, même imparfaitement.** Un berger désigné peut renvoyer la demande ; une demande sans berger n'appartient à personne.
 - **Un berger qui ne peut pas suivre renvoie la demande** (« Renvoyer à l'intégration »), avec une raison obligatoire. Elle redevient « Reçue », sans famille ni berger, et l'équipe est prévenue.
 - **Les deux parcours ne se confondent pas.** L'intégration règle l'appartenance, le suivi du nouveau converti règle l'accompagnement spirituel. Clore l'un ne clôt pas l'autre.

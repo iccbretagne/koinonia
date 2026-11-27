@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import Button from "@/components/ui/Button";
+import { Alert, Button, ConfirmModal, Input, Select, Textarea, fieldLabelClasses } from "@/components/ui";
 import AssigneeSelect, { type AssigneeValue } from "../../AssigneeSelect";
 
 const REJECT_REASON_OPTIONS: [string, string][] = [
@@ -40,8 +40,8 @@ async function patch(requestId: string, body: unknown): Promise<string | null> {
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    const d = await res.json();
-    return d.error ?? "Erreur";
+    const d = await res.json().catch(() => ({}));
+    return d.error ?? "Erreur lors de l'enregistrement";
   }
   return null;
 }
@@ -70,6 +70,7 @@ export default function RequestActions({
   const [scheduledFor, setScheduledFor] = useState("");
   const [outcomeKind, setOutcomeKind] = useState("");
   const [handbackReason, setHandbackReason] = useState("");
+  const [confirmReject, setConfirmReject] = useState(false);
 
   async function run(body: unknown) {
     setProcessing(true);
@@ -87,8 +88,8 @@ export default function RequestActions({
   }
 
   async function reject() {
+    setConfirmReject(false);
     if (!reasonCode) { setError("Veuillez sélectionner un motif."); return; }
-    if (!confirm("Rejeter définitivement cette demande ?")) return;
     await run({ action: "reject", reasonCode, comment: comment || undefined });
   }
 
@@ -122,162 +123,172 @@ export default function RequestActions({
     return null;
   }
 
+  const actionClasses = "min-h-11 sm:min-h-9";
+  const cancel = (
+    <Button size="sm" variant="secondary" className={actionClasses} onClick={() => { setMode("none"); setError(null); }} disabled={processing}>
+      Annuler
+    </Button>
+  );
+  const footerClasses = "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end";
+  const sending = processing ? "Enregistrement en cours…" : null;
+
   return (
-    <div className="bg-surface rounded-xl border border-line p-5 space-y-4">
-      {error && <p className="text-sm text-danger">{error}</p>}
+    <section className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card md:p-5">
+      {error && <Alert tone="danger">{error}</Alert>}
 
       {mode === "none" && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           {canValidateOrReject && (
             <>
-              <Button size="sm" onClick={() => setMode("validate")}>✓ Confier</Button>
-              <Button size="sm" variant="danger" onClick={() => setMode("reject")}>Rejeter</Button>
+              <Button size="sm" className={actionClasses} onClick={() => setMode("validate")}>Confier la demande</Button>
+              <Button size="sm" variant="secondary" className={actionClasses} onClick={() => setMode("reject")}>Refuser la demande</Button>
             </>
           )}
-          {canReassign && <Button size="sm" variant="info" onClick={() => setMode("reassign")}>Réaffecter</Button>}
-          {canSetDate && <Button size="sm" variant="info" onClick={() => setMode("set_date")}>Fixer la date</Button>}
-          {canOutcome && <Button size="sm" variant="info" onClick={() => setMode("outcome")}>Compte rendu du rendez-vous</Button>}
-          {canHandback && <Button size="sm" variant="secondary" onClick={() => setMode("handback")}>Rendre la demande</Button>}
+          {canReassign && <Button size="sm" variant="secondary" className={actionClasses} onClick={() => setMode("reassign")}>Réaffecter la demande</Button>}
+          {canSetDate && <Button size="sm" variant="secondary" className={actionClasses} onClick={() => setMode("set_date")}>Fixer la date</Button>}
+          {canOutcome && <Button size="sm" variant="secondary" className={actionClasses} onClick={() => setMode("outcome")}>Renseigner le compte rendu</Button>}
+          {canHandback && <Button size="sm" variant="secondary" className={actionClasses} onClick={() => setMode("handback")}>Rendre la demande</Button>}
         </div>
       )}
 
       {mode === "validate" && (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           <div>
-            <label htmlFor={`${id}-f1`} className="block text-xs font-medium text-ink-muted mb-1">
-              Référent <span className="text-danger">*</span>
-            </label>
+            <label htmlFor={`${id}-f1`} className={`${fieldLabelClasses} mb-1.5 block`}>Référent</label>
             <AssigneeSelect id={`${id}-f1`} churchId={churchId} value={assignee} onChange={setAssignee} />
+            {!assignee && <p className="mt-1.5 text-[13px] text-ink-muted">Choisissez un référent pour confier la demande.</p>}
           </div>
-          <div>
-            <label htmlFor={`${id}-f2`} className="block text-xs font-medium text-ink-muted mb-1">
-              Note transmise au référent (optionnel)
-            </label>
-            <textarea id={`${id}-f2`}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              rows={2}
-              className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand resize-none"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={validate} disabled={processing}>Confirmer</Button>
-            <Button size="sm" variant="secondary" onClick={() => setMode("none")}>Annuler</Button>
+          <Textarea
+            id={`${id}-f2`}
+            label="Note transmise au référent (facultatif)"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={2}
+          />
+          <div className={footerClasses}>
+            {cancel}
+            <Button size="sm" className={actionClasses} onClick={validate} disabled={processing || !assignee}>
+              {sending ?? "Confier la demande"}
+            </Button>
           </div>
         </div>
       )}
 
       {mode === "reject" && (
-        <div className="space-y-3">
-          <div>
-            <label htmlFor={`${id}-f3`} className="block text-xs font-medium text-ink-muted mb-1">
-              Motif de refus <span className="text-danger">*</span>
-            </label>
-            <select id={`${id}-f3`}
-              value={reasonCode}
-              onChange={(e) => setReasonCode(e.target.value)}
-              className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
-            >
-              <option value="">— Sélectionner —</option>
-              {REJECT_REASON_OPTIONS.map(([code, label]) => (
-                <option key={code} value={code}>{label}</option>
-              ))}
-            </select>
+        <div className="flex flex-col gap-3">
+          <Select
+            id={`${id}-f3`}
+            label="Motif de refus"
+            required
+            value={reasonCode}
+            onChange={(e) => setReasonCode(e.target.value)}
+            placeholder="Choisir un motif…"
+            options={REJECT_REASON_OPTIONS.map(([value, label]) => ({ value, label }))}
+            hint={reasonCode ? undefined : "Choisissez un motif pour refuser la demande."}
+          />
+          <Textarea
+            id={`${id}-f4`}
+            label="Commentaire (facultatif)"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            rows={2}
+          />
+          <div className={footerClasses}>
+            {cancel}
+            <Button size="sm" className={actionClasses} onClick={() => setConfirmReject(true)} disabled={processing || !reasonCode}>
+              Refuser la demande
+            </Button>
           </div>
-          <div>
-            <label htmlFor={`${id}-f4`} className="block text-xs font-medium text-ink-muted mb-1">Commentaire (optionnel)</label>
-            <textarea id={`${id}-f4`}
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              rows={2}
-              className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand resize-none"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="danger" onClick={reject} disabled={processing}>Confirmer le refus</Button>
-            <Button size="sm" variant="secondary" onClick={() => setMode("none")}>Annuler</Button>
-          </div>
+          <ConfirmModal
+            open={confirmReject}
+            title="Refuser cette demande ?"
+            message="Le refus est définitif : la demande ne pourra plus être confiée."
+            confirmLabel="Refuser la demande"
+            confirmingLabel="Refus en cours…"
+            variant="primary"
+            confirming={processing}
+            onConfirm={reject}
+            onCancel={() => setConfirmReject(false)}
+          />
         </div>
       )}
 
       {mode === "reassign" && (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           <div>
-            <label htmlFor={`${id}-f5`} className="block text-xs font-medium text-ink-muted mb-1">
-              Nouveau référent <span className="text-danger">*</span>
-            </label>
+            <label htmlFor={`${id}-f5`} className={`${fieldLabelClasses} mb-1.5 block`}>Nouveau référent</label>
             <AssigneeSelect id={`${id}-f5`} churchId={churchId} value={assignee} onChange={setAssignee} />
+            {!assignee && <p className="mt-1.5 text-[13px] text-ink-muted">Choisissez le nouveau référent.</p>}
           </div>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={reassign} disabled={processing}>Confirmer</Button>
-            <Button size="sm" variant="secondary" onClick={() => setMode("none")}>Annuler</Button>
+          <div className={footerClasses}>
+            {cancel}
+            <Button size="sm" className={actionClasses} onClick={reassign} disabled={processing || !assignee}>
+              {sending ?? "Réaffecter la demande"}
+            </Button>
           </div>
         </div>
       )}
 
       {mode === "set_date" && (
-        <div className="space-y-3">
-          <div>
-            <label htmlFor={`${id}-f6`} className="block text-xs font-medium text-ink-muted mb-1">
-              Date et heure du rendez-vous <span className="text-danger">*</span>
-            </label>
-            <input id={`${id}-f6`}
-              type="datetime-local"
-              value={scheduledFor}
-              onChange={(e) => setScheduledFor(e.target.value)}
-              className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={setDate} disabled={processing}>Confirmer</Button>
-            <Button size="sm" variant="secondary" onClick={() => setMode("none")}>Annuler</Button>
+        <div className="flex flex-col gap-3">
+          <Input
+            id={`${id}-f6`}
+            label="Date et heure du rendez-vous"
+            type="datetime-local"
+            required
+            value={scheduledFor}
+            onChange={(e) => setScheduledFor(e.target.value)}
+            hint={scheduledFor ? undefined : "Indiquez la date et l'heure convenues."}
+          />
+          <div className={footerClasses}>
+            {cancel}
+            <Button size="sm" className={actionClasses} onClick={setDate} disabled={processing || !scheduledFor}>
+              {sending ?? "Fixer la date"}
+            </Button>
           </div>
         </div>
       )}
 
       {mode === "outcome" && (
-        <div className="space-y-3">
-          <div>
-            <label htmlFor={`${id}-f7`} className="block text-xs font-medium text-ink-muted mb-1">
-              Compte rendu du rendez-vous <span className="text-danger">*</span>
-            </label>
-            <select id={`${id}-f7`}
-              value={outcomeKind}
-              onChange={(e) => setOutcomeKind(e.target.value)}
-              className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
-            >
-              <option value="">— Sélectionner —</option>
-              {OUTCOME_OPTIONS.map(([code, label]) => (
-                <option key={code} value={code}>{label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={outcome} disabled={processing}>Confirmer</Button>
-            <Button size="sm" variant="secondary" onClick={() => setMode("none")}>Annuler</Button>
+        <div className="flex flex-col gap-3">
+          <Select
+            id={`${id}-f7`}
+            label="Compte rendu du rendez-vous"
+            required
+            value={outcomeKind}
+            onChange={(e) => setOutcomeKind(e.target.value)}
+            placeholder="Choisir un résultat…"
+            options={OUTCOME_OPTIONS.map(([value, label]) => ({ value, label }))}
+            hint={outcomeKind ? undefined : "Choisissez le résultat du rendez-vous."}
+          />
+          <div className={footerClasses}>
+            {cancel}
+            <Button size="sm" className={actionClasses} onClick={outcome} disabled={processing || !outcomeKind}>
+              {sending ?? "Enregistrer le compte rendu"}
+            </Button>
           </div>
         </div>
       )}
 
       {mode === "handback" && (
-        <div className="space-y-3">
-          <div>
-            <label htmlFor={`${id}-f8`} className="block text-xs font-medium text-ink-muted mb-1">
-              Motif du retour <span className="text-danger">*</span>
-            </label>
-            <textarea id={`${id}-f8`}
-              value={handbackReason}
-              onChange={(e) => setHandbackReason(e.target.value)}
-              rows={2}
-              className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand resize-none"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="danger" onClick={handback} disabled={processing}>Confirmer</Button>
-            <Button size="sm" variant="secondary" onClick={() => setMode("none")}>Annuler</Button>
+        <div className="flex flex-col gap-3">
+          <Textarea
+            id={`${id}-f8`}
+            label="Motif du retour"
+            required
+            value={handbackReason}
+            onChange={(e) => setHandbackReason(e.target.value)}
+            rows={2}
+            hint={handbackReason.trim() ? undefined : "Indiquez pourquoi vous rendez la demande."}
+          />
+          <div className={footerClasses}>
+            {cancel}
+            <Button size="sm" className={actionClasses} onClick={handback} disabled={processing || !handbackReason.trim()}>
+              {sending ?? "Rendre la demande"}
+            </Button>
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }

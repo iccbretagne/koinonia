@@ -42,7 +42,9 @@ export default function ApplicationActions({ applicationId, name }: { readonly a
         open={open}
         title={`Ne pas retenir la candidature de ${name} ?`}
         message="La fiche reste consultable par le PVS seul, puis est effacée au terme de la durée de conservation."
-        confirmLabel="Ne pas retenir"
+        confirmLabel="Ne pas retenir la candidature"
+        confirmingLabel="Enregistrement en cours…"
+        variant="primary"
         confirming={sending}
         onConfirm={reject}
         onCancel={() => setOpen(false)}

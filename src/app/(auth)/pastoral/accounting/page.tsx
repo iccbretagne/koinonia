@@ -1,7 +1,8 @@
 import { requirePastoralActiveChurch } from "../active-church";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { buttonClasses } from "@/components/ui/button-classes";
+import { ChevronRight } from "lucide-react";
+import { Alert, PageHeader, StatusChip, buttonClasses, type StatusTone } from "@/components/ui";
 function fmt(d: Date) {
   return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
 }
@@ -16,12 +17,12 @@ const STATUS_LABELS: Record<string, string> = {
   REJECTED:   "Rejetée",
   CANCELLED:  "Annulée",
 };
-const STATUS_COLORS: Record<string, string> = {
-  SUBMITTED:  "text-warning bg-warning-soft",
-  PROCESSING: "text-info bg-info-soft",
-  APPROVED:   "text-success bg-success-soft",
-  REJECTED:   "text-danger bg-danger-soft",
-  CANCELLED:  "text-ink-muted bg-surface-sunken",
+const STATUS_TONES: Record<string, StatusTone> = {
+  SUBMITTED:  "warning",
+  PROCESSING: "info",
+  APPROVED:   "success",
+  REJECTED:   "danger",
+  CANCELLED:  "neutral",
 };
 
 export default async function PastoralAccountingPage() {
@@ -66,65 +67,60 @@ export default async function PastoralAccountingPage() {
   const processingCount = requests.filter((r) => r.status === "PROCESSING").length;
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-2 mb-2">
-        <Link href="/pastoral" className="text-sm text-ink-subtle hover:text-brand-text transition-colors">
-          ← Accueil pastoral
-        </Link>
-      </div>
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
 
-      <div>
-        <h1 className="text-2xl font-bold text-ink">Comptabilité</h1>
-        <p className="text-sm text-ink-muted mt-0.5">{church?.name} · Année {now.getFullYear()}</p>
-      </div>
+      <PageHeader title="Comptabilité" description={`${church?.name ?? ""} · Année ${now.getFullYear()}`} />
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: "Budget total", value: fmtAmount(totalAmount), sub: `${active.length} demande${active.length > 1 ? "s" : ""}`, color: "text-brand-text" },
-          { label: "Validé", value: fmtAmount(approvedAmount), sub: `${requests.filter(r => r.status === "APPROVED").length} demandes`, color: "text-success" },
+          { label: "Validé", value: fmtAmount(approvedAmount), sub: (() => { const n = requests.filter(r => r.status === "APPROVED").length; return `${n} demande${n > 1 ? "s" : ""}`; })(), color: "text-success" },
           { label: "En attente", value: fmtAmount(pendingAmount), sub: `${submittedCount + processingCount} en cours`, color: "text-warning" },
           { label: "Retards paiement", value: overduePayments.length.toString(), sub: overduePayments.length > 0 ? "à régulariser" : "Aucun retard", color: overduePayments.length > 0 ? "text-danger" : "text-ink-muted" },
         ].map((kpi) => (
-          <div key={kpi.label} className="bg-surface border border-line rounded-xl p-4 space-y-1">
+          <div key={kpi.label} className="flex flex-col gap-1 rounded-card border border-line bg-surface p-4 shadow-card">
             <p className="text-xs text-ink-muted">{kpi.label}</p>
             <p className={`text-xl font-bold ${kpi.color}`}>{kpi.value}</p>
-            <p className="text-xs text-ink-subtle">{kpi.sub}</p>
+            <p className="text-xs text-ink-muted">{kpi.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Retards */}
       {overduePayments.length > 0 && (
-        <div className="bg-danger-soft border border-danger/30 rounded-xl p-4">
-          <p className="text-sm font-semibold text-danger mb-2">Paiements en retard</p>
-          <ul className="space-y-1.5">
+        <Alert tone="danger" title="Paiements en retard">
+          <ul className="mt-1 flex flex-col">
             {overduePayments.slice(0, 5).map((p) => (
-              <li key={p.id} className="flex items-center justify-between text-sm">
-                <Link href={`/accounting/requests/${p.request.id}`} className="text-danger hover:underline truncate max-w-xs">
-                  {p.request.label}
+              <li key={p.id}>
+                <Link
+                  href={`/accounting/requests/${p.request.id}`}
+                  className="flex min-h-11 items-center justify-between gap-3 rounded-control text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                >
+                  <span className="truncate">{p.request.label}</span>
+                  <span className="flex shrink-0 items-center gap-1 font-medium">
+                    {fmtAmount(Number(p.amount))}
+                    <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                  </span>
                 </Link>
-                <span className="text-danger font-medium shrink-0 ml-2">
-                  {fmtAmount(Number(p.amount))}
-                </span>
               </li>
             ))}
           </ul>
-        </div>
+        </Alert>
       )}
 
       {/* Dernières demandes */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold text-ink-muted">Demandes {now.getFullYear()}</h2>
-          <Link href="/accounting/requests" className={buttonClasses("ghost", "sm")}>
-            Voir tout →
+          <h2 className="font-display text-[17px] font-semibold text-ink">Demandes {now.getFullYear()}</h2>
+          <Link href="/accounting/requests" className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
+            Voir toutes les demandes
           </Link>
         </div>
         {requests.length === 0 ? (
-          <p className="text-sm text-ink-subtle italic">Aucune demande cette année.</p>
+          <p className="text-sm text-ink-muted">Aucune demande cette année.</p>
         ) : (
-          <div className="bg-surface border border-line rounded-xl overflow-hidden">
+          <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line bg-surface-sunken text-left">
@@ -137,22 +133,23 @@ export default async function PastoralAccountingPage() {
               </thead>
               <tbody className="divide-y divide-line">
                 {requests.slice(0, 15).map((r) => (
-                  <tr key={r.id} className="hover:bg-surface-sunken transition-colors">
+                  <tr key={r.id} className="transition-colors hover:bg-surface-sunken">
                     <td className="px-4 py-3">
-                      <Link href={`/accounting/requests/${r.id}`} className="font-medium text-ink hover:text-brand-text transition-colors">
+                      <Link href={`/accounting/requests/${r.id}`} className="inline-flex min-h-11 items-center gap-1 rounded-control font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:min-h-0">
                         {r.label}
+                        <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
                       </Link>
                       <p className="text-xs text-ink-subtle mt-0.5">{fmt(r.createdAt)}</p>
                     </td>
                     <td className="px-4 py-3 text-ink-muted hidden md:table-cell">
-                      {r.department?.name ?? <span className="italic text-ink-subtle">Personnel</span>}
+                      {r.department?.name ?? <span className="text-ink-muted">Personnel</span>}
                     </td>
                     <td className="px-4 py-3 text-ink-muted hidden md:table-cell">{r.submittedBy.name ?? "—"}</td>
                     <td className="px-4 py-3 text-right font-medium text-ink">{fmtAmount(Number(r.amount))}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] ?? "text-ink-muted bg-surface-sunken"}`}>
+                      <StatusChip tone={STATUS_TONES[r.status] ?? "neutral"}>
                         {STATUS_LABELS[r.status] ?? r.status}
-                      </span>
+                      </StatusChip>
                     </td>
                   </tr>
                 ))}

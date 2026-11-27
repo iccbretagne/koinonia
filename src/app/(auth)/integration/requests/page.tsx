@@ -3,6 +3,7 @@ import { requireIntegrationAccess, getIntegrationSettings, isRelanceDue } from "
 import { prisma } from "@/lib/prisma";
 import IntegrationDashboard from "./IntegrationDashboard";
 import PublicFormBanner from "@/components/PublicFormBanner";
+import { PageHeader } from "@/components/ui";
 
 export default async function IntegrationRequestsPage() {
   const session = await requireAuth();
@@ -34,14 +35,15 @@ export default async function IntegrationRequestsPage() {
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-ink">Demandes d&apos;intégration</h1>
-        {pending > 0 && (
-          <span className="bg-brand text-on-brand text-sm font-bold px-2.5 py-1 rounded-full">
-            {pending}
-          </span>
-        )}
-      </div>
+      <PageHeader
+        className="mb-6"
+        title="Demandes d'intégration"
+        description={
+          pending > 0
+            ? `${pending} ${pending > 1 ? "demandes reçues attendent" : "demande reçue attend"} une affectation.`
+            : undefined
+        }
+      />
       {church?.slug && !scope.scoped && (
         <div className="mb-6">
           <PublicFormBanner

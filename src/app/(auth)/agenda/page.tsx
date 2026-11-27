@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 import AgendaCalendar from "./AgendaCalendar";
 import PublicUrlBanner from "./PublicUrlBanner";
 import Link from "next/link";
-import Button from "@/components/ui/Button";
+import { CalendarClock, Plus } from "lucide-react";
+import { Alert, PageHeader, buttonClasses } from "@/components/ui";
 
 function toLocalISO(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -26,7 +27,7 @@ export default async function AgendaPage({
 }) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-sm text-ink-muted">Aucune église sélectionnée.</p>;
   await requireAgendaManage(churchId);
 
   const { week } = await searchParams;
@@ -51,24 +52,35 @@ export default async function AgendaPage({
   ]);
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-ink">Agenda pastoral</h1>
-        <div className="flex gap-2">
-          <Link href="/agenda/schedule">
-            <Button size="sm" variant="info">Planifier RDV</Button>
-          </Link>
-          <Link href="/agenda/new">
-            <Button size="sm">+ Ajouter à l&apos;agenda</Button>
-          </Link>
-        </div>
-      </div>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+      <PageHeader
+        title="Agenda pastoral"
+        actions={
+          <>
+            <Link href="/agenda/schedule" className={buttonClasses("secondary")}>
+              <CalendarClock aria-hidden="true" className="size-4" strokeWidth={1.75} />
+              Planifier les RDV
+            </Link>
+            <Link href="/agenda/new" className={buttonClasses("primary")}>
+              <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
+              Ajouter à l&apos;agenda
+            </Link>
+          </>
+        }
+      />
       {church?.slug && <PublicUrlBanner slug={church.slug} />}
       {profiles.length === 0 ? (
-        <div className="p-6 bg-warning-soft border border-warning/30 rounded-lg text-sm text-warning">
-          Aucun profil pastoral configuré.{" "}
-          <a href="/admin/pastoral-profiles" className="underline">Configurer maintenant →</a>
-        </div>
+        <Alert
+          tone="warning"
+          title="Aucun profil pastoral configuré"
+          action={
+            <Link href="/admin/pastoral-profiles" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+              Configurer les profils
+            </Link>
+          }
+        >
+          L&apos;agenda s&apos;affiche par profil pastoral.
+        </Alert>
       ) : (
         <AgendaCalendar profiles={profiles} entries={entries} weekStart={toLocalISO(from)} />
       )}

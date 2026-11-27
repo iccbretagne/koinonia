@@ -1,7 +1,8 @@
 "use client";
 
 import { useId, useState } from "react";
-import Button from "@/components/ui/Button";
+import { CalendarCheck } from "lucide-react";
+import { Alert, Button, EmptyState, Input, StatusChip, useToast } from "@/components/ui";
 
 interface PastoralProfile { id: string; name: string; role: string }
 interface Qualifier { id: string; name: string | null; displayName: string | null }
@@ -27,8 +28,10 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default function ScheduleDashboard({ requests: initial }: Props) {
   const id = useId();
+  const toast = useToast();
   const [requests, setRequests] = useState(initial);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [forms, setForms] = useState<Record<string, { startsAt: string; endsAt: string; location: string }>>({});
 
   function getForm(id: string) {
@@ -39,10 +42,20 @@ export default function ScheduleDashboard({ requests: initial }: Props) {
     setForms((prev) => ({ ...prev, [id]: { ...getForm(id), [field]: value } }));
   }
 
+  function setError(id: string, message: string | null) {
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (message) next[id] = message;
+      else delete next[id];
+      return next;
+    });
+  }
+
   async function schedule(id: string) {
     const f = getForm(id);
-    if (!f.startsAt) { alert("La date de début est requise."); return; }
+    if (!f.startsAt) { setError(id, "La date de début est requise."); return; }
     setProcessing(id);
+    setError(id, null);
     try {
       const res = await fetch(`/api/agenda/requests/${id}/schedule`, {
         method: "PATCH",
@@ -53,89 +66,93 @@ export default function ScheduleDashboard({ requests: initial }: Props) {
           location: f.location || null,
         }),
       });
-      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setError(id, d.error || "La planification a échoué. Veuillez réessayer.");
+        return;
+      }
       setRequests((prev) => prev.filter((r) => r.id !== id));
-    } catch { alert("Erreur réseau"); }
-    finally { setProcessing(null); }
+      toast.success("Rendez-vous planifié");
+    } catch {
+      setError(id, "Erreur réseau. Veuillez réessayer.");
+    } finally {
+      setProcessing(null);
+    }
   }
 
   if (requests.length === 0) {
-    return (
-      <div className="text-center py-12 text-ink-subtle">
-        <p className="text-lg">Aucune demande à planifier.</p>
-      </div>
-    );
+    return <EmptyState icon={CalendarCheck} title="Aucune demande à planifier" />;
   }
 
   return (
-    <div className="space-y-4">
+    <ul className="flex flex-col gap-4">
       {requests.map((req) => {
         const f = getForm(req.id);
         const profile = req.assignedTo;
+        const error = errors[req.id];
         return (
-          <div key={req.id} className="bg-surface rounded-lg shadow border border-line p-5">
-            <div className="mb-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="font-semibold text-ink">{req.firstName} {req.lastName}</p>
+          <li key={req.id} className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card md:p-5">
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+                <div className="min-w-0">
+                  <h2 className="font-display text-[15px] font-semibold text-ink">{req.firstName} {req.lastName}</h2>
                   {req.email && <p className="text-xs text-ink-muted">{req.email}</p>}
-                  <p className="text-sm font-medium text-ink-muted mt-1">{req.subject}</p>
+                  <p className="mt-1 text-sm font-medium text-ink-muted">{req.subject}</p>
                 </div>
                 {profile && (
-                  <span className="text-xs bg-brand-soft text-brand-text px-2 py-1 rounded-full shrink-0">
+                  <StatusChip tone="brand" className="shrink-0">
                     {profile.name} · {ROLE_LABELS[profile.role] ?? profile.role}
-                  </span>
+                  </StatusChip>
                 )}
               </div>
               {req.qualificationNote && (
-                <div className="mt-2 p-2 bg-info-soft rounded text-xs text-info">
-                  <span className="font-medium">Note Qualificateur :</span> {req.qualificationNote}
-                </div>
+                <Alert tone="info" title="Note du référent">{req.qualificationNote}</Alert>
               )}
             </div>
 
-            <div className="border-t border-line pt-4 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor={`${id}-${req.id}-f1`} className="block text-xs font-medium text-ink-muted mb-1">
-                    Date et heure de début <span className="text-danger">*</span>
-                  </label>
-                  <input id={`${id}-${req.id}-f1`}
-                    type="datetime-local"
-                    value={f.startsAt}
-                    onChange={(e) => setField(req.id, "startsAt", e.target.value)}
-                    className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
-                  />
-                </div>
-                <div>
-                  <label htmlFor={`${id}-${req.id}-f2`} className="block text-xs font-medium text-ink-muted mb-1">
-                    Heure de fin (optionnel)
-                  </label>
-                  <input id={`${id}-${req.id}-f2`}
-                    type="datetime-local"
-                    value={f.endsAt}
-                    onChange={(e) => setField(req.id, "endsAt", e.target.value)}
-                    className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
-                  />
-                </div>
-              </div>
-              <div>
-                <label htmlFor={`${id}-${req.id}-f3`} className="block text-xs font-medium text-ink-muted mb-1">Lieu (optionnel)</label>
-                <input id={`${id}-${req.id}-f3`}
-                  type="text"
-                  value={f.location}
-                  onChange={(e) => setField(req.id, "location", e.target.value)}
-                  placeholder="Salle, adresse..."
-                  className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
+            <div className="flex flex-col gap-3 border-t border-line pt-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Input
+                  id={`${id}-${req.id}-f1`}
+                  label="Date et heure de début"
+                  type="datetime-local"
+                  required
+                  value={f.startsAt}
+                  onChange={(e) => setField(req.id, "startsAt", e.target.value)}
+                />
+                <Input
+                  id={`${id}-${req.id}-f2`}
+                  label="Heure de fin (facultatif)"
+                  type="datetime-local"
+                  value={f.endsAt}
+                  onChange={(e) => setField(req.id, "endsAt", e.target.value)}
                 />
               </div>
-              <Button size="sm" onClick={() => schedule(req.id)} disabled={processing === req.id}>
-                ✓ Planifier
-              </Button>
+              <Input
+                id={`${id}-${req.id}-f3`}
+                label="Lieu (facultatif)"
+                type="text"
+                value={f.location}
+                onChange={(e) => setField(req.id, "location", e.target.value)}
+                placeholder="Salle, adresse…"
+              />
+              {error && <Alert tone="danger">{error}</Alert>}
+              <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+                {!f.startsAt && (
+                  <p className="text-xs text-ink-muted">Indiquez la date de début pour planifier.</p>
+                )}
+                <Button
+                  variant="secondary"
+                  onClick={() => schedule(req.id)}
+                  disabled={processing === req.id || !f.startsAt}
+                >
+                  {processing === req.id ? "Planification en cours…" : "Planifier le rendez-vous"}
+                </Button>
+              </div>
             </div>
-          </div>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }

@@ -2,8 +2,9 @@
 
 import { SubmitEvent, useId, useState } from "react";
 import Link from "next/link";
-import Button from "@/components/ui/Button";
-import { buttonClasses } from "@/components/ui/button-classes";
+import { ArrowLeft, CircleCheck } from "lucide-react";
+import { Alert, Button, Input, Textarea, buttonClasses, fieldLabelClasses } from "@/components/ui";
+
 interface Props {
   readonly churchId: string;
   readonly churchName: string;
@@ -23,7 +24,20 @@ const AGE_RANGES = ["18-20 ans", "21-30 ans", "31-40 ans", "41-50 ans", "+50 ans
 const DURATIONS = ["Moins de 1 an", "1 à 2 ans", "2 à 3 ans", "3 à 5 ans", "+ 5 ans"];
 const MOTIFS = ["Renseignements", "Démarches administratives", "Vie familiale", "Croissance spirituelle", "Oppressions", "Maladie", "Service", "Études"];
 
-const inputCls = "w-full border border-control-line rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-brand";
+const cardClasses = "flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-6";
+const sectionTitleClasses = "font-display text-[17px] font-semibold text-ink";
+
+/** Pastille de choix (radio ou case masquée) : 44 px, focus visible porté par l'étiquette. */
+function choiceClasses(on: boolean): string {
+  return `inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${
+    on ? "border-brand bg-brand-soft text-brand-text" : "border-control-line bg-surface text-ink-muted hover:bg-surface-sunken"
+  }`;
+}
+
+function FieldError({ message }: { readonly message?: string }) {
+  if (!message) return null;
+  return <p className="mt-1.5 text-[13px] text-danger">{message}</p>;
+}
 
 function RadioGroup({ name, options, value, onChange }: {
   readonly name: string; readonly options: string[]; readonly value: string; readonly onChange: (v: string) => void;
@@ -31,9 +45,7 @@ function RadioGroup({ name, options, value, onChange }: {
   return (
     <div className="flex flex-wrap gap-2">
       {options.map((opt) => (
-        <label key={opt} className={`flex items-center gap-2 px-3 py-2.5 md:py-1.5 min-h-[44px] md:min-h-0 rounded-full border text-sm cursor-pointer transition-colors ${
-          value === opt ? "bg-brand text-on-brand border-brand" : "border-line text-ink-muted hover:border-brand"
-        }`}>
+        <label key={opt} className={choiceClasses(value === opt)}>
           <input type="radio" name={name} value={opt} checked={value === opt}
             onChange={() => onChange(opt)} className="sr-only" />
           {opt}
@@ -138,15 +150,18 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
 
   if (submitted) {
     return (
-      <div className="bg-surface rounded-xl border border-success/30 p-6 sm:p-8 text-center space-y-3">
-        <div className="w-12 h-12 rounded-full bg-success-soft flex items-center justify-center mx-auto text-2xl">✓</div>
-        <h2 className="text-lg font-semibold text-ink">Demande envoyée !</h2>
+      <div className="flex flex-col items-center gap-3 rounded-card border border-line bg-surface p-6 text-center shadow-card sm:p-8">
+        <span className="grid size-12 place-items-center rounded-full bg-success-soft text-success">
+          <CircleCheck aria-hidden="true" className="size-6" strokeWidth={1.75} />
+        </span>
+        <h2 className="font-display text-[17px] font-semibold text-ink">Demande envoyée</h2>
         <p className="text-sm text-ink-muted">
           Votre demande a bien été reçue. Elle sera étudiée prochainement puis confiée à un référent qui vous accompagnera.
         </p>
         {redirectTo && (
           <Link href={redirectTo} className={buttonClasses("secondary")}>
-            ← {redirectLabel}
+            <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
+            Retour à « {redirectLabel} »
           </Link>
         )}
       </div>
@@ -154,131 +169,102 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
   }
 
   return (
-    <form onSubmit={submit} className="space-y-5">
+    <form onSubmit={submit} className="flex flex-col gap-5">
 
       {/* Coordonnées */}
-      <div className="bg-surface rounded-xl border border-line p-4 sm:p-6 space-y-4">
-        <h2 className="text-base font-semibold text-ink">Vos coordonnées</h2>
+      <section className={cardClasses}>
+        <h2 className={sectionTitleClasses}>Vos coordonnées</h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label htmlFor={`${id}-f1`} className="block text-sm font-medium text-ink-muted mb-1">Nom *</label>
-            <input id={`${id}-f1`} type="text" required value={form.lastName} onChange={(e) => set("lastName", e.target.value)} className={inputCls} />
-          </div>
-          <div>
-            <label htmlFor={`${id}-f2`} className="block text-sm font-medium text-ink-muted mb-1">Prénom *</label>
-            <input id={`${id}-f2`} type="text" required value={form.firstName} onChange={(e) => set("firstName", e.target.value)} className={inputCls} />
-          </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Input id={`${id}-f1`} label="Nom" type="text" required autoComplete="family-name" value={form.lastName} onChange={(e) => set("lastName", e.target.value)} />
+          <Input id={`${id}-f2`} label="Prénom" type="text" required autoComplete="given-name" value={form.firstName} onChange={(e) => set("firstName", e.target.value)} />
         </div>
 
         <fieldset className="min-w-0">
-          <legend className="block text-sm font-medium text-ink-muted mb-2">Sexe *</legend>
+          <legend className={`${fieldLabelClasses} mb-2`}>Sexe</legend>
           <RadioGroup name="gender" options={["Homme", "Femme"]} value={form.gender} onChange={(v) => set("gender", v)} />
-          {fieldErrors.gender && <p className="text-xs text-danger mt-1">{fieldErrors.gender}</p>}
+          <FieldError message={fieldErrors.gender} />
         </fieldset>
 
-        <div>
-          <label htmlFor={`${id}-f3`} className="block text-sm font-medium text-ink-muted mb-1">Téléphone *</label>
-          <input id={`${id}-f3`} type="tel" required value={form.phone} onChange={(e) => set("phone", e.target.value)} className={inputCls} />
-        </div>
-
-        <div>
-          <label htmlFor={`${id}-f4`} className="block text-sm font-medium text-ink-muted mb-1">Adresse mail</label>
-          <input id={`${id}-f4`} type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className={inputCls} />
-        </div>
-      </div>
+        <Input id={`${id}-f3`} label="Téléphone" type="tel" required autoComplete="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
+        <Input id={`${id}-f4`} label="Adresse mail (facultatif)" type="email" autoComplete="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
+      </section>
 
       {/* Profil */}
-      <div className="bg-surface rounded-xl border border-line p-4 sm:p-6 space-y-4">
-        <h2 className="text-base font-semibold text-ink">Votre profil</h2>
+      <section className={cardClasses}>
+        <h2 className={sectionTitleClasses}>Votre profil</h2>
 
         <fieldset className="min-w-0">
-          <legend className="block text-sm font-medium text-ink-muted mb-2">Tranche d&apos;âge *</legend>
+          <legend className={`${fieldLabelClasses} mb-2`}>Tranche d&apos;âge</legend>
           <RadioGroup name="ageRange" options={AGE_RANGES} value={form.ageRange} onChange={(v) => set("ageRange", v)} />
-          {fieldErrors.ageRange && <p className="text-xs text-danger mt-1">{fieldErrors.ageRange}</p>}
+          <FieldError message={fieldErrors.ageRange} />
         </fieldset>
 
         <fieldset className="min-w-0">
-          <legend className="block text-sm font-medium text-ink-muted mb-2">
-            Depuis quand êtes-vous à {churchName} ? *
-          </legend>
+          <legend className={`${fieldLabelClasses} mb-2`}>Depuis quand êtes-vous à {churchName} ?</legend>
           <RadioGroup name="membershipDuration" options={DURATIONS} value={form.membershipDuration} onChange={(v) => set("membershipDuration", v)} />
-          {fieldErrors.membershipDuration && <p className="text-xs text-danger mt-1">{fieldErrors.membershipDuration}</p>}
+          <FieldError message={fieldErrors.membershipDuration} />
         </fieldset>
 
         {isStarKnown ? (
-          <div className="bg-surface-sunken rounded-lg px-3 py-2.5 text-sm text-ink-muted">
+          <Alert tone="info">
             Vous êtes STAR{defaultDepartment ? ` — département : ${defaultDepartment}` : ""}.
-          </div>
+          </Alert>
         ) : (
           <>
             <fieldset className="min-w-0">
-              <legend className="block text-sm font-medium text-ink-muted mb-2">Êtes-vous STAR ? *</legend>
+              <legend className={`${fieldLabelClasses} mb-2`}>Êtes-vous STAR ?</legend>
               <RadioGroup name="isStar" options={["Oui", "Non"]} value={form.isStar} onChange={(v) => set("isStar", v)} />
-              {fieldErrors.isStar && <p className="text-xs text-danger mt-1">{fieldErrors.isStar}</p>}
+              <FieldError message={fieldErrors.isStar} />
             </fieldset>
 
             {form.isStar === "Oui" && (
-              <div>
-                <label htmlFor={`${id}-f5`} className="block text-sm font-medium text-ink-muted mb-1">Dans quel département servez-vous ?</label>
-                <input id={`${id}-f5`} type="text" value={form.department} onChange={(e) => set("department", e.target.value)}
-                  placeholder="Ex : Choristes, Accueil, Son…" className={inputCls} />
-              </div>
+              <Input id={`${id}-f5`} label="Dans quel département servez-vous ? (facultatif)" type="text" value={form.department} onChange={(e) => set("department", e.target.value)}
+                placeholder="Ex : Choristes, Accueil, Son…" />
             )}
           </>
         )}
-      </div>
+      </section>
 
       {/* Demande */}
-      <div className="bg-surface rounded-xl border border-line p-4 sm:p-6 space-y-4">
-        <h2 className="text-base font-semibold text-ink">Votre demande</h2>
+      <section className={cardClasses}>
+        <h2 className={sectionTitleClasses}>Votre demande</h2>
 
         <fieldset className="min-w-0">
-          <legend className="block text-sm font-medium text-ink-muted mb-2">
-            Pour quel motif sollicitez-vous un entretien ? *{" "}
-            <span className="font-normal text-ink-subtle">(plusieurs choix possibles)</span>
+          <legend className={`${fieldLabelClasses} mb-2`}>
+            Pour quel motif sollicitez-vous un entretien ?{" "}
+            <span className="font-normal text-ink-muted">(plusieurs choix possibles)</span>
           </legend>
           <div className="flex flex-wrap gap-2">
             {MOTIFS.map((motif) => (
-              <label key={motif} className={`flex items-center gap-2 px-3 py-2.5 md:py-1.5 min-h-[44px] md:min-h-0 rounded-full border text-sm cursor-pointer transition-colors ${
-                form.motifs.includes(motif) ? "bg-brand text-on-brand border-brand" : "border-line text-ink-muted hover:border-brand"
-              }`}>
+              <label key={motif} className={choiceClasses(form.motifs.includes(motif))}>
                 <input type="checkbox" checked={form.motifs.includes(motif)}
                   onChange={() => toggleMotif(motif)} className="sr-only" />
                 {motif}
               </label>
             ))}
           </div>
-          {fieldErrors.motifs && <p className="text-xs text-danger mt-1">{fieldErrors.motifs}</p>}
+          <FieldError message={fieldErrors.motifs} />
         </fieldset>
 
-        <div>
-          <label htmlFor={`${id}-f6`} className="block text-sm font-medium text-ink-muted mb-1">
-            Votre message <span className="font-normal text-ink-subtle">(facultatif)</span>
-          </label>
-          <textarea id={`${id}-f6`}
-            value={form.details}
-            onChange={(e) => set("details", e.target.value)}
-            rows={4}
-            maxLength={2000}
-            placeholder="Décrivez votre situation ou ce que vous souhaitez aborder…"
-            className={`${inputCls} resize-none`}
-          />
-          <p className="text-xs text-ink-subtle mt-1">
-            Ce message n&apos;est lu que par l&apos;équipe qui confie votre demande et par le référent qui vous accompagnera.
-          </p>
-        </div>
-      </div>
+        <Textarea
+          id={`${id}-f6`}
+          label="Votre message (facultatif)"
+          value={form.details}
+          onChange={(e) => set("details", e.target.value)}
+          rows={4}
+          maxLength={2000}
+          placeholder="Décrivez votre situation ou ce que vous souhaitez aborder…"
+          hint="Ce message n'est lu que par l'équipe qui confie votre demande et par le référent qui vous accompagnera."
+        />
+      </section>
 
-      {globalError && (
-        <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-4 py-3">{globalError}</p>
-      )}
+      {globalError && <Alert tone="danger">{globalError}</Alert>}
 
-      <Button type="submit" disabled={submitting} className="w-full py-3">
+      <Button type="submit" disabled={submitting} className="w-full">
         {submitting ? "Envoi en cours…" : "Envoyer ma demande"}
       </Button>
 
-      <p className="text-xs text-ink-subtle text-center">* Champs obligatoires.</p>
     </form>
   );
 }

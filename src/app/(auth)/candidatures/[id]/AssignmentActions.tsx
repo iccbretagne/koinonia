@@ -59,7 +59,7 @@ export default function AssignmentActions({ assignmentId, status, name, departme
     confirm: {
       title: `Confirmer ${name} dans ${departmentName} ?`,
       message: "La période d'observation se termine : la personne reste STAR du département. Le PVS est notifié.",
-      label: "Confirmer",
+      label: "Confirmer le STAR",
     },
     "send-back": {
       title: `Renvoyer ${name} au PVS ?`,
@@ -74,15 +74,15 @@ export default function AssignmentActions({ assignmentId, status, name, departme
   return (
     <div className="flex flex-wrap gap-2">
       {status === "PENDING" ? (
-        <Button size="sm" onClick={() => setPending("accept")}>
+        <Button size="sm" className="min-h-11 sm:min-h-9" onClick={() => setPending("accept")}>
           Accueillir
         </Button>
       ) : (
-        <Button size="sm" onClick={() => setPending("confirm")}>
-          Confirmer
+        <Button size="sm" className="min-h-11 sm:min-h-9" onClick={() => setPending("confirm")}>
+          Confirmer le STAR
         </Button>
       )}
-      <Button size="sm" variant="secondary" onClick={() => setPending("send-back")}>
+      <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => setPending("send-back")}>
         Renvoyer au PVS
       </Button>
       {pending && (
@@ -91,13 +91,14 @@ export default function AssignmentActions({ assignmentId, status, name, departme
           title={copy[pending].title}
           message={copy[pending].message}
           confirmLabel={copy[pending].label}
-          variant={pending === "send-back" ? "danger" : "primary"}
+          confirmingLabel="Enregistrement en cours…"
+          variant="primary"
           confirming={sending}
           onConfirm={decide}
           onCancel={() => setPending(null)}
         >
           {pending === "send-back" && (
-            <Textarea label="Motif (obligatoire)" required value={reason} maxLength={2000} onChange={(e) => setReason(e.target.value)} />
+            <Textarea label="Motif du renvoi" required value={reason} maxLength={2000} onChange={(e) => setReason(e.target.value)} />
           )}
         </ConfirmModal>
       )}

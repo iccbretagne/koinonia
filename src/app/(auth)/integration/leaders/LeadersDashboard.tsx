@@ -3,6 +3,7 @@
 import { Loader2, Plus, Trash2, Users, X } from "lucide-react";
 import { SubmitEvent, useEffect, useId, useState } from "react";
 import Image from "next/image";
+import { Alert, Button, EmptyState, IconButton, Select, StatusChip, fieldLabelClasses, type StatusTone } from "@/components/ui";
 
 interface UserRef {
   id: string;
@@ -36,21 +37,21 @@ const ROLE_LABELS: Record<"BERGER" | "CO_BERGER", string> = {
   CO_BERGER: "Co-berger",
 };
 
-const ROLE_COLORS: Record<"BERGER" | "CO_BERGER", string> = {
-  BERGER: "bg-brand-soft text-brand-text border-brand/20",
-  CO_BERGER: "bg-info-soft text-info border-info/30",
+const ROLE_TONES: Record<"BERGER" | "CO_BERGER", StatusTone> = {
+  BERGER: "brand",
+  CO_BERGER: "info",
 };
 
-function Avatar({ user, size = 8 }: { readonly user: UserRef; readonly size?: number }) {
+function Avatar({ user }: { readonly user: UserRef }) {
   const initials = (user.name ?? user.email ?? "?")
     .split(" ")
     .map((w) => w[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
-  const cls = `w-${size} h-${size} rounded-full flex items-center justify-center text-xs font-bold shrink-0`;
+  const cls = "size-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0";
   if (user.image) {
-    return <Image src={user.image} alt={user.name ?? ""} width={size * 4} height={size * 4} className={`${cls} object-cover`} />;
+    return <Image src={user.image} alt={user.name ?? ""} width={32} height={32} className={`${cls} object-cover`} />;
   }
   return <div className={`${cls} bg-brand-soft text-brand-text`}>{initials}</div>;
 }
@@ -126,86 +127,61 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
     }
   }
 
-  const inputCls = "w-full border border-control-line rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-brand";
-
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       {/* Header action */}
-      <div className="flex justify-end">
-        <button
-          onClick={() => { setShowForm(true); setError(null); }}
-          className="flex items-center gap-2 bg-brand text-on-brand px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-        >
-          <Plus className="w-4 h-4" aria-hidden="true" />
-          Affecter un berger
-        </button>
-      </div>
+      {!showForm && (
+        <div className="flex justify-end">
+          <Button type="button" onClick={() => { setShowForm(true); setError(null); }}>
+            <Plus className="size-4" aria-hidden="true" strokeWidth={1.75} />
+            Affecter un berger
+          </Button>
+        </div>
+      )}
 
       {/* Formulaire d'ajout */}
       {showForm && (
-        <div className="bg-surface border border-brand/20 rounded-xl p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-ink">Nouvelle affectation</h2>
-            <button onClick={() => setShowForm(false)} className="text-ink-subtle hover:text-ink-muted">
-              <X className="w-5 h-5" aria-hidden="true" />
-            </button>
+        <section className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5 shadow-card">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-display text-[17px] font-semibold text-ink">Nouvelle affectation</h2>
+            <IconButton icon={X} aria-label="Fermer le formulaire" onClick={() => setShowForm(false)} />
           </div>
 
-          <form onSubmit={handleAdd} className="space-y-3">
-            <div>
-              <label htmlFor={`${uid}-user`} className="block text-sm font-medium text-ink-muted mb-1">
-                Utilisateur <span className="text-danger">*</span>
-              </label>
-              <select
-                id={`${uid}-user`}
-                required
-                value={form.userId}
-                onChange={(e) => setForm((f) => ({ ...f, userId: e.target.value }))}
-                className={inputCls}
-              >
-                <option value="">Choisir un utilisateur…</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name ?? u.email}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <form onSubmit={handleAdd} className="flex flex-col gap-4">
+            <Select
+              id={`${uid}-user`}
+              label="Utilisateur"
+              required
+              value={form.userId}
+              onChange={(e) => setForm((f) => ({ ...f, userId: e.target.value }))}
+              placeholder="Choisir un utilisateur…"
+              options={users.map((u) => ({ value: u.id, label: u.name ?? u.email ?? u.id }))}
+            />
 
-            <div>
-              <label htmlFor={`${uid}-family`} className="block text-sm font-medium text-ink-muted mb-1">
-                Famille <span className="text-danger">*</span>
-              </label>
-              {familiesLoading ? (
-                <p className="text-sm text-ink-subtle">Chargement…</p>
-              ) : (
-                <select
-                  id={`${uid}-family`}
-                  required
-                  value={form.familyId}
-                  onChange={(e) => setForm((f) => ({ ...f, familyId: e.target.value }))}
-                  className={inputCls}
-                >
-                  <option value="">Choisir une famille…</option>
-                  {families.map((fam) => (
-                    <option key={fam.id} value={fam.id}>
-                      {fam.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
+            {familiesLoading ? (
+              <p className="text-sm text-ink-muted">Chargement des familles en cours…</p>
+            ) : (
+              <Select
+                id={`${uid}-family`}
+                label="Famille"
+                required
+                value={form.familyId}
+                onChange={(e) => setForm((f) => ({ ...f, familyId: e.target.value }))}
+                placeholder="Choisir une famille…"
+                options={families.map((fam) => ({ value: String(fam.id), label: fam.name }))}
+              />
+            )}
 
             <fieldset className="min-w-0">
-              <legend className="block text-sm font-medium text-ink-muted mb-1">Rôle</legend>
-              <div className="flex gap-2">
+              <legend className={`${fieldLabelClasses} mb-2`}>Rôle</legend>
+              <div className="flex flex-wrap gap-2">
                 {(["BERGER", "CO_BERGER"] as const).map((r) => (
                   <label
                     key={r}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-full border text-sm cursor-pointer transition-colors ${
+                    className={`inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${
                       form.role === r
-                        ? "bg-brand text-on-brand border-brand"
-                        : "border-line text-ink-muted hover:border-brand"
+                        ? "border-brand bg-brand-soft text-brand-text"
+                        : "border-control-line bg-surface text-ink-muted hover:bg-surface-sunken"
                     }`}
                   >
                     <input
@@ -222,70 +198,60 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
               </div>
             </fieldset>
 
-            {error && <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-3 py-2">{error}</p>}
+            {error && <Alert tone="danger">{error}</Alert>}
 
-            <div className="flex gap-2 justify-end pt-1">
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="px-4 py-2 rounded-lg text-sm border border-line text-ink-muted hover:bg-surface-sunken"
-              >
+            <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end sm:gap-3">
+              <Button type="button" variant="secondary" onClick={() => setShowForm(false)}>
                 Annuler
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="px-4 py-2 rounded-lg text-sm bg-brand text-on-brand font-medium hover:opacity-90 disabled:opacity-50"
-              >
-                {saving ? "Enregistrement…" : "Affecter"}
-              </button>
+              </Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? "Enregistrement en cours…" : "Affecter le berger"}
+              </Button>
             </div>
           </form>
-        </div>
+        </section>
       )}
 
       {/* Liste par famille */}
       {familyGroups.length === 0 ? (
-        <div className="bg-surface rounded-xl border border-line p-8 text-center text-sm text-ink-subtle">
-          Aucune affectation configurée. Commencez par affecter un berger à une famille.
+        <div className="rounded-card border border-line bg-surface">
+          <EmptyState
+            size="sm"
+            icon={Users}
+            title="Aucune affectation configurée"
+            description="Commencez par affecter un berger à une famille."
+          />
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           {familyGroups.map(([familyId, group]) => (
-            <div key={familyId} className="bg-surface rounded-xl border border-line overflow-hidden">
-              <div className="flex items-center gap-3 px-5 py-3 border-b border-line bg-surface-sunken/50">
-                <Users className="w-4 h-4 text-brand-text shrink-0" aria-hidden="true" />
-                <span className="font-semibold text-ink text-sm">{group.name}</span>
-                <span className="text-xs text-ink-subtle ml-auto">{group.items.length} responsable{group.items.length > 1 ? "s" : ""}</span>
+            <section key={familyId} className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+              <div className="flex items-center gap-3 border-b border-line px-5 py-3">
+                <Users className="size-4 shrink-0 text-brand-text" aria-hidden="true" strokeWidth={1.75} />
+                <h2 className="text-sm font-semibold text-ink">{group.name}</h2>
+                <span className="ml-auto text-xs text-ink-muted">{group.items.length} responsable{group.items.length > 1 ? "s" : ""}</span>
               </div>
 
               <ul className="divide-y divide-line">
                 {group.items.map((a) => (
                   <li key={a.id} className="flex items-center gap-3 px-5 py-3">
-                    <Avatar user={a.user} size={8} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-ink truncate">{a.user.name ?? a.user.email}</p>
-                      <p className="text-xs text-ink-subtle truncate">{a.user.email}</p>
+                    <Avatar user={a.user} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-ink">{a.user.name ?? a.user.email}</p>
+                      <p className="truncate text-xs text-ink-muted">{a.user.email}</p>
                     </div>
-                    <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full border font-medium ${ROLE_COLORS[a.role]}`}>
-                      {ROLE_LABELS[a.role]}
-                    </span>
-                    <button
+                    <StatusChip tone={ROLE_TONES[a.role]} className="shrink-0">{ROLE_LABELS[a.role]}</StatusChip>
+                    <IconButton
+                      icon={deletingId === a.id ? Loader2 : Trash2}
+                      aria-label={deletingId === a.id ? "Retrait en cours…" : `Retirer ${a.user.name ?? a.user.email ?? "ce responsable"} de ${group.name}`}
                       onClick={() => handleDelete(a.id)}
                       disabled={deletingId === a.id}
-                      className="shrink-0 p-1.5 rounded-lg text-ink-subtle hover:text-danger hover:bg-danger-soft transition-colors disabled:opacity-40"
-                      title="Retirer"
-                    >
-                      {deletingId === a.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-                      ) : (
-                        <Trash2 className="w-4 h-4" aria-hidden="true" />
-                      )}
-                    </button>
+                      className={deletingId === a.id ? "[&_svg]:animate-spin" : ""}
+                    />
                   </li>
                 ))}
               </ul>
-            </div>
+            </section>
           ))}
         </div>
       )}

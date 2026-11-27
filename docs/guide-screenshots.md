@@ -38,7 +38,7 @@ Les captures se font sur l'environnement de développement local
    - une annonce avec visuel et diffusion réseaux sociaux (files Secrétariat, Visuels, Réseaux
      sociaux) ;
    - un département de fonction `MSDP` (accompagnants du suivi pastoral) ;
-   - une offre d'emploi en attente de confirmation (bandeau « Toujours d'actualité »).
+   - une offre d'emploi en attente de confirmation (bandeau « Confirmer l'offre »).
 
 Les comptes sont ceux de la connexion de développement (`devUserKey`) : `super-admin`, `admin`,
 `secretaire`, `ministre`, `resp-accueil`, `resp-secretariat`, `faiseur-disciples`, `reporter`,

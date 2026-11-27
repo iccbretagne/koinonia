@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { ArrowLeft, ShieldOff } from "lucide-react";
 import { getCurrentChurchId, requireAuth } from "@/lib/auth";
-import { EmptyState, PageHeader } from "@/components/ui";
+import { EmptyState, PageHeader, buttonClasses } from "@/components/ui";
 import { getServingSettings } from "@/modules/serving";
 import { requireServingActor } from "@/modules/serving/auth";
 import ServingSettingsForm from "./ServingSettingsForm";
@@ -12,14 +13,14 @@ export default async function CandidaturesParametresPage() {
   if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
   const actor = await requireServingActor(churchId);
   if (!actor.canEditSettings) {
-    return <EmptyState title="Accès refusé" description="Ces réglages sont réservés à l'administration et à l'équipe Vie des STAR (PVS)." />;
+    return <EmptyState icon={ShieldOff} title="Accès refusé" description="Ces réglages sont réservés à l'administration et à l'équipe Vie des STAR (PVS)." />;
   }
   const settings = await getServingSettings(churchId, actor.pvsDeptIds);
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
-      <Link href="/candidatures" className="text-sm text-ink-subtle hover:text-brand-text">
-        ← Candidatures
+    <div className="mx-auto flex max-w-2xl flex-col gap-4">
+      <Link href="/candidatures" className={`${buttonClasses("ghost", "sm")} min-h-11 self-start sm:min-h-9`}>
+        <ArrowLeft className="size-4" aria-hidden="true" /> Retour aux candidatures
       </Link>
       <PageHeader title="Paramètres des candidatures" />
       <ServingSettingsForm churchId={churchId} initial={settings} />

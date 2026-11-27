@@ -1,12 +1,13 @@
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { requireAgendaManage } from "@/modules/agenda/auth";
 import { prisma } from "@/lib/prisma";
+import { PageHeader } from "@/components/ui";
 import ScheduleDashboard from "./ScheduleDashboard";
 
 export default async function AgendaSchedulePage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-sm text-ink-muted">Aucune église sélectionnée.</p>;
   await requireAgendaManage(churchId);
 
   const requests = await prisma.appointmentRequest.findMany({
@@ -19,9 +20,8 @@ export default async function AgendaSchedulePage() {
   });
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-ink mb-2">Planification des RDV</h1>
-      <p className="text-sm text-ink-muted mb-6">Demandes validées à planifier</p>
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+      <PageHeader eyebrow="Agenda pastoral" title="Planification des RDV" description="Demandes confiées, à planifier." />
       <ScheduleDashboard requests={requests} />
     </div>
   );

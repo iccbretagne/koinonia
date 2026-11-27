@@ -1,6 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { CalendarDays, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import { EmptyState, StatusChip, buttonClasses } from "@/components/ui";
 
 interface EntryRequest { id: string; firstName: string; lastName: string; qualificationNote: string | null }
 interface Creator { id: string; name: string | null; displayName: string | null }
@@ -31,8 +33,25 @@ function fmtDate(d: Date) {
   return new Date(d).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 }
 
+/** Navigation d'une semaine à l'autre : liens (et non boutons), libellés courts sous 640 px. */
+function WeekNav({ prevHref, nextHref, label }: { readonly prevHref: string; readonly nextHref: string; readonly label: string }) {
+  const navLinkClasses = `${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`;
+  return (
+    <nav aria-label="Changer de semaine" className="mb-6 flex items-center justify-between gap-2">
+      <Link href={prevHref} className={navLinkClasses} aria-label="Semaine précédente">
+        <ChevronLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
+        <span aria-hidden="true" className="hidden sm:inline">Semaine précédente</span>
+      </Link>
+      <span className="text-center text-sm font-medium text-ink-muted">{label}</span>
+      <Link href={nextHref} className={navLinkClasses} aria-label="Semaine suivante">
+        <span aria-hidden="true" className="hidden sm:inline">Semaine suivante</span>
+        <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
+      </Link>
+    </nav>
+  );
+}
+
 export default function ProfileAgenda({ profile, entries, weekStart }: Props) {
-  const router = useRouter();
   const from = new Date(weekStart);
 
   const days = Array.from({ length: 7 }, (_, i) => {
@@ -60,27 +79,14 @@ export default function ProfileAgenda({ profile, entries, weekStart }: Props) {
 
   return (
     <div>
-      {/* Navigation */}
-      <div className="flex items-center justify-between mb-6">
-        <button
-          onClick={() => router.push(`/agenda/${profile.id}?week=${toLocalISO(prevWeek)}`)}
-          className="px-3 py-1 text-sm border border-line rounded-lg hover:bg-surface-sunken"
-        >
-          ← Semaine précédente
-        </button>
-        <span className="text-sm font-medium text-ink-muted">{fromLabel} — {toLabel}</span>
-        <button
-          onClick={() => router.push(`/agenda/${profile.id}?week=${toLocalISO(nextWeek)}`)}
-          className="px-3 py-1 text-sm border border-line rounded-lg hover:bg-surface-sunken"
-        >
-          Semaine suivante →
-        </button>
-      </div>
+      <WeekNav
+        prevHref={`/agenda/${profile.id}?week=${toLocalISO(prevWeek)}`}
+        nextHref={`/agenda/${profile.id}?week=${toLocalISO(nextWeek)}`}
+        label={`${fromLabel} — ${toLabel}`}
+      />
 
       {!hasEntries ? (
-        <div className="text-center py-12 text-ink-subtle">
-          <p>Aucune entrée cette semaine.</p>
-        </div>
+        <EmptyState icon={CalendarDays} title="Aucune entrée cette semaine" />
       ) : (
         <div className="space-y-3">
           {days.map((day) => {
@@ -88,11 +94,11 @@ export default function ProfileAgenda({ profile, entries, weekStart }: Props) {
             if (dayEntries.length === 0) return null;
             const isToday = day.toDateString() === new Date().toDateString();
             return (
-              <div key={day.toISOString()} className="bg-surface rounded-lg shadow border border-line overflow-hidden">
-                <div className={`px-4 py-2 border-b border-line ${isToday ? "bg-brand-soft" : "bg-surface-sunken"}`}>
-                  <p className={`text-sm font-semibold capitalize ${isToday ? "text-brand-text" : "text-ink-muted"}`}>
+              <section key={day.toISOString()} className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+                <div className={`border-b border-line px-4 py-2 ${isToday ? "bg-brand-soft" : ""}`}>
+                  <h2 className={`text-sm font-semibold capitalize ${isToday ? "text-brand-text" : "text-ink-muted"}`}>
                     {fmtDate(day)}
-                  </p>
+                  </h2>
                 </div>
                 <div className="divide-y divide-line">
                   {dayEntries.map((entry) => (
@@ -100,22 +106,21 @@ export default function ProfileAgenda({ profile, entries, weekStart }: Props) {
                       <div className="flex-shrink-0 text-right min-w-[48px]">
                         <p className="text-xs font-medium text-ink-muted">{fmtTime(entry.startsAt)}</p>
                         {entry.endsAt && (
-                          <p className="text-xs text-ink-subtle">{fmtTime(entry.endsAt)}</p>
+                          <p className="text-xs text-ink-muted">{fmtTime(entry.endsAt)}</p>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                            entry.type === "APPOINTMENT"
-                              ? "bg-info-soft text-info"
-                              : "bg-surface-sunken text-ink-muted"
-                          }`}>
+                          <StatusChip tone={entry.type === "APPOINTMENT" ? "info" : "neutral"} className="shrink-0">
                             {entry.type === "APPOINTMENT" ? "RDV" : "Activité"}
-                          </span>
+                          </StatusChip>
                           <p className="font-medium text-ink text-sm truncate">{entry.title}</p>
                         </div>
                         {entry.location && (
-                          <p className="text-xs text-ink-muted mt-0.5">📍 {entry.location}</p>
+                          <p className="mt-0.5 flex items-center gap-1 text-xs text-ink-muted">
+                            <MapPin aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={1.75} />
+                            <span className="sr-only">Lieu : </span>{entry.location}
+                          </p>
                         )}
                         {entry.request && (
                           <p className="text-xs text-ink-muted mt-0.5">
@@ -130,7 +135,7 @@ export default function ProfileAgenda({ profile, entries, weekStart }: Props) {
                     </div>
                   ))}
                 </div>
-              </div>
+              </section>
             );
           })}
         </div>

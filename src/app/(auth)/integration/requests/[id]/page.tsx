@@ -9,7 +9,6 @@ import {
 import { registry } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import RequestDetail from "./RequestDetail";
 import DeleteItemButton from "@/components/DeleteItemButton";
 
@@ -71,13 +70,6 @@ export default async function IntegrationRequestDetailPage({
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-6">
-        <Link href="/integration/requests" className="text-sm text-ink-subtle hover:text-brand-text transition-colors">
-          ← Demandes
-        </Link>
-        <span className="text-ink-subtle">/</span>
-        <span className="text-sm text-ink-muted font-medium">{req.firstName} {req.lastName}</span>
-      </div>
       <RequestDetail
         request={req}
         appointmentRequest={appointmentRequest}

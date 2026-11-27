@@ -70,19 +70,19 @@ export default function JobFormClient({ initial }: { readonly initial?: {
   }
 
   let submitLabel = "Publier l'offre";
-  if (saving) submitLabel = "Publication…";
-  else if (isEdit) submitLabel = "Enregistrer";
+  if (saving) submitLabel = isEdit ? "Enregistrement en cours…" : "Publication en cours…";
+  else if (isEdit) submitLabel = "Enregistrer les modifications";
 
   return (
-    <form onSubmit={handleSubmit} className="bg-surface rounded-lg border border-line p-6 space-y-5">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 rounded-card border border-line bg-surface p-4 shadow-card sm:p-6">
       {error && (
         <Alert tone="danger">{error}</Alert>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="sm:col-span-2">
           <Input
-            label="Intitulé du poste *"
+            label="Intitulé du poste"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -93,7 +93,7 @@ export default function JobFormClient({ initial }: { readonly initial?: {
         </div>
 
         <Select
-          label="Type *"
+          label="Type"
           value={type}
           onChange={(e) => setType(e.target.value as JobType)}
           options={[
@@ -104,7 +104,7 @@ export default function JobFormClient({ initial }: { readonly initial?: {
         />
 
         <Input
-          label="Entreprise / Organisme *"
+          label="Entreprise / Organisme"
           type="text"
           value={company}
           onChange={(e) => setCompany(e.target.value)}
@@ -114,7 +114,7 @@ export default function JobFormClient({ initial }: { readonly initial?: {
         />
 
         <Input
-          label="Lieu"
+          label="Lieu (facultatif)"
           type="text"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
@@ -123,7 +123,7 @@ export default function JobFormClient({ initial }: { readonly initial?: {
         />
 
         <Input
-          label="Durée / Rythme"
+          label="Durée / Rythme (facultatif)"
           type="text"
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
@@ -131,9 +131,9 @@ export default function JobFormClient({ initial }: { readonly initial?: {
           placeholder="Ex: 6 mois, CDI, 2 ans..."
         />
 
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Textarea
-            label="Description *"
+            label="Description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
@@ -143,14 +143,14 @@ export default function JobFormClient({ initial }: { readonly initial?: {
         </div>
 
         <Input
-          label="Date limite de candidature"
+          label="Date limite de candidature (facultatif)"
           type="date"
           value={deadline}
           onChange={(e) => setDeadline(e.target.value)}
           hint="L'offre sera automatiquement archivée après cette date."
         />
 
-        <div />
+        <div className="hidden sm:block" />
 
         <JobContactFields
           email={contactEmail}

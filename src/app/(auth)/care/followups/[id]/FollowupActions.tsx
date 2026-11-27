@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import Button from "@/components/ui/Button";
+import { Alert, Button, ConfirmModal, Textarea, fieldLabelClasses } from "@/components/ui";
 import AssigneeSelect, { type AssigneeValue } from "../../AssigneeSelect";
 
 const NEXT_ACTION: Record<string, { action: string; label: string } | null> = {
@@ -39,6 +39,7 @@ export default function FollowupActions({
   const [mode, setMode] = useState<"none" | "assign" | "reassign" | "handback">("none");
   const [assignee, setAssignee] = useState<AssigneeValue | null>(null);
   const [handbackReason, setHandbackReason] = useState("");
+  const [confirmAbandon, setConfirmAbandon] = useState(false);
 
   async function patch(body: Record<string, unknown>) {
     setLoading(true);
@@ -49,7 +50,7 @@ export default function FollowupActions({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) { const d = await res.json(); setError(d.error ?? "Erreur"); return; }
+      if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Erreur lors de l'enregistrement"); return; }
       setMode("none");
       router.refresh();
     } catch { setError("Erreur réseau"); }
@@ -75,85 +76,122 @@ export default function FollowupActions({
   const canHandback = isCurrentAssignee && (status === "ASSIGNED" || status === "CONTACTED" || status === "IN_FORMATION");
   const canNote = isCurrentAssignee || isReferent;
 
-  return (
-    <div className="space-y-4">
-      {error && <p className="text-sm text-danger">{error}</p>}
+  // Une seule action principale à l'écran : l'étape suivante, sinon l'affectation, sinon la réouverture.
+  const primary = canWorkflow ? "workflow" : canAssign || canReassign ? "assign" : canReopen ? "reopen" : null;
+  const act = "min-h-11 sm:min-h-9";
+  const card = "flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card md:p-5";
+  const footer = "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end";
+  const cancel = (
+    <Button size="sm" variant="secondary" className={act} onClick={() => setMode("none")} disabled={loading}>
+      Annuler
+    </Button>
+  );
 
-      {(canAssign || canReassign) && (
-        <div className="bg-surface rounded-xl border border-line p-5">
-          {mode === "assign" || mode === "reassign" ? (
-            <div className="space-y-3">
-              <AssigneeSelect churchId={churchId} value={assignee} onChange={setAssignee} />
-              <div className="flex gap-2">
-                <Button size="sm" disabled={loading} onClick={() => assignOrReassign(mode)}>Confirmer</Button>
-                <Button size="sm" variant="secondary" onClick={() => setMode("none")}>Annuler</Button>
-              </div>
-            </div>
-          ) : (
-            <Button size="sm" onClick={() => setMode(canAssign ? "assign" : "reassign")}>
-              {canAssign ? "Assigner un référent" : "Réaffecter"}
+  return (
+    <div className="flex flex-col gap-4">
+      {error && <Alert tone="danger">{error}</Alert>}
+
+      {(canAssign || canReassign) && mode !== "none" && mode !== "handback" && (
+        <section className={card}>
+          <div>
+            <label htmlFor={`${uid}-assignee`} className={`${fieldLabelClasses} mb-1.5 block`}>
+              {canAssign ? "Référent" : "Nouveau référent"}
+            </label>
+            <AssigneeSelect id={`${uid}-assignee`} churchId={churchId} value={assignee} onChange={setAssignee} />
+            {!assignee && <p className="mt-1.5 text-[13px] text-ink-muted">Choisissez un référent.</p>}
+          </div>
+          <div className={footer}>
+            {cancel}
+            <Button size="sm" className={act} disabled={loading || !assignee} onClick={() => assignOrReassign(mode)}>
+              {loading ? "Enregistrement en cours…" : canAssign ? "Assigner le référent" : "Réaffecter le suivi"}
+            </Button>
+          </div>
+        </section>
+      )}
+
+      {mode === "handback" && (
+        <section className={card}>
+          <Textarea
+            id={`${uid}-handback`}
+            label="Motif du retour au référent"
+            required
+            value={handbackReason}
+            onChange={(e) => setHandbackReason(e.target.value)}
+            rows={2}
+            hint={handbackReason.trim() ? undefined : "Indiquez pourquoi vous rendez le suivi."}
+          />
+          <div className={footer}>
+            {cancel}
+            <Button size="sm" className={act} disabled={loading || !handbackReason.trim()} onClick={handback}>
+              {loading ? "Enregistrement en cours…" : "Rendre au référent"}
+            </Button>
+          </div>
+        </section>
+      )}
+
+      {mode === "none" && (canAssign || canReassign || canWorkflow || canHandback || canAbandon || canReopen) && (
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          {canWorkflow && nextAction && (
+            <Button size="sm" className={act} disabled={loading} onClick={() => patch({ action: nextAction.action })}>
+              {nextAction.label}
+            </Button>
+          )}
+          {(canAssign || canReassign) && (
+            <Button
+              size="sm"
+              variant={primary === "assign" ? "primary" : "secondary"}
+              className={act}
+              disabled={loading}
+              onClick={() => setMode(canAssign ? "assign" : "reassign")}
+            >
+              {canAssign ? "Assigner un référent" : "Réaffecter le suivi"}
+            </Button>
+          )}
+          {canHandback && (
+            <Button size="sm" variant="secondary" className={act} disabled={loading} onClick={() => setMode("handback")}>
+              Rendre au référent
+            </Button>
+          )}
+          {canReopen && (
+            <Button size="sm" variant={primary === "reopen" ? "primary" : "secondary"} className={act} disabled={loading} onClick={() => patch({ action: "reopen" })}>
+              Rouvrir le suivi
+            </Button>
+          )}
+          {canAbandon && (
+            <Button size="sm" variant="secondary" className={act} disabled={loading} onClick={() => setConfirmAbandon(true)}>
+              Abandonner le suivi
             </Button>
           )}
         </div>
       )}
 
-      {canWorkflow && nextAction && (
-        <Button size="sm" disabled={loading} onClick={() => patch({ action: nextAction.action })}>
-          {nextAction.label}
-        </Button>
-      )}
-
-      {canHandback && mode !== "handback" && (
-        <Button size="sm" variant="secondary" disabled={loading} onClick={() => setMode("handback")}>
-          Rendre au référent
-        </Button>
-      )}
-      {mode === "handback" && (
-        <div className="bg-surface rounded-xl border border-line p-5 space-y-3">
-          <label htmlFor={`${uid}-handback`} className="block text-xs font-medium text-ink-muted mb-1">
-            Motif du retour au référent <span className="text-danger">*</span>
-          </label>
-          <textarea
-            id={`${uid}-handback`}
-            value={handbackReason}
-            onChange={(e) => setHandbackReason(e.target.value)}
-            rows={2}
-            className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand resize-none"
-          />
-          <div className="flex gap-2">
-            <Button size="sm" variant="danger" disabled={loading} onClick={handback}>Confirmer</Button>
-            <Button size="sm" variant="secondary" onClick={() => setMode("none")}>Annuler</Button>
-          </div>
-        </div>
-      )}
-
-      {canAbandon && (
-        <Button size="sm" variant="danger" disabled={loading}
-          onClick={() => { if (confirm("Abandonner ce suivi ?")) void patch({ action: "abandon" }); }}>
-          Abandonner
-        </Button>
-      )}
-
-      {canReopen && (
-        <Button size="sm" disabled={loading} onClick={() => patch({ action: "reopen" })}>
-          Rouvrir
-        </Button>
-      )}
+      <ConfirmModal
+        open={confirmAbandon}
+        title="Abandonner ce suivi ?"
+        message="Le suivi passera à l'état « Abandonné ». Un référent pourra le rouvrir."
+        confirmLabel="Abandonner le suivi"
+        confirmingLabel="Abandon en cours…"
+        variant="primary"
+        confirming={loading}
+        onConfirm={() => { setConfirmAbandon(false); void patch({ action: "abandon" }); }}
+        onCancel={() => setConfirmAbandon(false)}
+      />
 
       {canNote && (
-        <div className="bg-surface rounded-xl border border-line p-5">
-          <label htmlFor={`${uid}-notes`} className="block text-xs font-medium text-ink-muted mb-1">Notes</label>
-          <textarea
+        <section className={card}>
+          <Textarea
             id={`${uid}-notes`}
+            label="Notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand resize-none"
           />
-          <Button size="sm" className="mt-2" disabled={loading} onClick={() => patch({ action: "note", notes })}>
-            Enregistrer
-          </Button>
-        </div>
+          <div className="flex justify-end">
+            <Button size="sm" variant="secondary" className={act} disabled={loading} onClick={() => patch({ action: "note", notes })}>
+              {loading ? "Enregistrement en cours…" : "Enregistrer les notes"}
+            </Button>
+          </div>
+        </section>
       )}
     </div>
   );

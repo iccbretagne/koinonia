@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { getTurnstileSiteKey } from "@/lib/turnstile";
 import PublicFormUnavailable from "@/components/PublicFormUnavailable";
 import PublicShell from "@/components/ticketing/PublicShell";
-import { Alert } from "@/components/ui";
+import { Alert, buttonClasses } from "@/components/ui";
 import { isChurchMember } from "@/modules/forms/auth";
 import { answersRecord, findMemberResponse, hasAnonymousReceipt, loadAnswerableForm, publicView } from "@/modules/forms";
 import AnswerForm from "./AnswerForm";
@@ -38,11 +38,16 @@ export default async function FormPage({ params }: Params) {
     if (!session?.user) {
       return (
         <PublicShell eyebrow={form.church.name} title={form.title}>
-          <Alert tone="info" title="Connexion requise">
-            Ce formulaire est réservé aux membres de {form.church.name}.{" "}
-            <Link href={`/?next=${encodeURIComponent(path)}`} className="font-semibold underline">
-              Se connecter
-            </Link>
+          <Alert
+            tone="info"
+            title="Connexion requise"
+            action={
+              <Link href={`/?next=${encodeURIComponent(path)}`} className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+                Se connecter
+              </Link>
+            }
+          >
+            Ce formulaire est réservé aux membres de {form.church.name}.
           </Alert>
         </PublicShell>
       );

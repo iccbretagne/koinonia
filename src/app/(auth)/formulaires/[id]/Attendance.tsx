@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Select } from "@/components/ui";
+import { Alert, Checkbox, Select } from "@/components/ui";
 import { sessionDates } from "@/components/forms/FormFiller";
 import type { EditorSession } from "./SessionsEditor";
 
@@ -71,7 +71,7 @@ export default function Attendance({ formId, sessions }: { readonly formId: stri
       {error && <Alert tone="danger">{error}</Alert>}
       {sheet?.rows.length === 0 && <p className="text-ink-muted">Aucun inscrit confirmé dans votre périmètre.</p>}
       {sheet && sheet.rows.length > 0 && (
-        <div className="overflow-x-auto rounded-card border border-line bg-surface">
+        <div className="overflow-x-auto rounded-card border border-line bg-surface shadow-card">
           <table className="w-full text-left text-[14px]">
             <thead className="bg-surface-sunken text-ink-muted">
               <tr>
@@ -96,15 +96,15 @@ export default function Attendance({ formId, sessions }: { readonly formId: stri
                     HALVES.map((h) => {
                       const key = `${d}-${h.half}`;
                       return (
-                        <td key={key} className="px-3 py-1 text-center">
-                          <input
-                            type="checkbox"
-                            className="size-6 accent-brand"
+                        <td key={key} className="px-1 py-0 text-center">
+                          <label className="inline-flex size-11 cursor-pointer items-center justify-center">
+                          <Checkbox
                             aria-label={`${r.name} — ${days.length > 1 ? `jour ${d}, ` : ""}${h.label.toLowerCase()}`}
                             checked={r.cells[key] === true}
                             disabled={saving === `${r.responseId}-${key}`}
                             onChange={(e) => void toggle(r.responseId, d, h.half, e.target.checked)}
                           />
+                          </label>
                         </td>
                       );
                     })

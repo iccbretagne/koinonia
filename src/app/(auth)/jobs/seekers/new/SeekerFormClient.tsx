@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
 import Alert from "@/components/ui/Alert";
+import Checkbox from "@/components/ui/Checkbox";
+import { fieldLabelClasses } from "@/components/ui";
 import JobFormActions from "../../JobFormActions";
 import JobContactFields from "../../JobContactFields";
 
@@ -32,7 +34,7 @@ export default function SeekerFormClient({
 }) {
   const router = useRouter();
   const isEdit = !!initial;
-  const submitLabel = isEdit ? "Enregistrer" : "Publier mon profil";
+  const submitLabel = isEdit ? "Enregistrer les modifications" : "Publier mon profil";
 
   const [title,          setTitle]          = useState(initial?.title          ?? "");
   const [wantEmploi,     setWantEmploi]     = useState(initial?.wantEmploi     ?? false);
@@ -92,15 +94,15 @@ export default function SeekerFormClient({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-surface rounded-lg border border-line p-6 space-y-5">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 rounded-card border border-line bg-surface p-4 shadow-card sm:p-6">
       {error && (
         <Alert tone="danger">{error}</Alert>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="sm:col-span-2">
           <Input
-            label="Titre de la recherche *"
+            label="Titre de la recherche"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -110,34 +112,29 @@ export default function SeekerFormClient({
           />
         </div>
 
-        <fieldset className="col-span-2 min-w-0">
-          <legend className="block text-sm font-semibold text-ink-muted mb-2">
-            Type(s) de contrat recherché(s) *
+        <fieldset className="sm:col-span-2 min-w-0">
+          <legend className={`${fieldLabelClasses} mb-2`}>
+            Type(s) de contrat recherché(s)
           </legend>
-          <div className="flex gap-4 flex-wrap">
+          <div className="flex flex-wrap gap-x-4">
             {[
               { label: "Emploi (CDI/CDD)", key: "wantEmploi",     value: wantEmploi,     set: setWantEmploi },
               { label: "Stage",            key: "wantStage",      value: wantStage,      set: setWantStage },
               { label: "Alternance",       key: "wantAlternance", value: wantAlternance, set: setWantAlternance },
             ].map(({ label, key, value, set }) => (
-              <label key={key} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={value}
-                  onChange={(e) => set(e.target.checked)}
-                  className="w-4 h-4 rounded border border-control-line accent-brand"
-                />
-                <span className="text-sm text-ink-muted">{label}</span>
+              <label key={key} className="flex min-h-11 cursor-pointer items-center gap-2">
+                <Checkbox checked={value} onChange={(e) => set(e.target.checked)} />
+                <span className="text-[15px] text-ink">{label}</span>
               </label>
             ))}
           </div>
           {noContractSelected && (
-            <p className="text-xs text-danger mt-1">Sélectionnez au moins un type de contrat.</p>
+            <p className="mt-1 text-[13px] text-danger">Sélectionnez au moins un type de contrat.</p>
           )}
         </fieldset>
 
         <Input
-          label="Secteur / Domaine"
+          label="Secteur / Domaine (facultatif)"
           type="text"
           value={sector}
           onChange={(e) => setSector(e.target.value)}
@@ -146,7 +143,7 @@ export default function SeekerFormClient({
         />
 
         <Input
-          label="Localisation souhaitée"
+          label="Localisation souhaitée (facultatif)"
           type="text"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
@@ -154,29 +151,21 @@ export default function SeekerFormClient({
           placeholder="Ville, région..."
         />
 
-        <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            id="remote"
-            checked={remote}
-            onChange={(e) => setRemote(e.target.checked)}
-            className="w-4 h-4 rounded border border-control-line accent-brand"
-          />
-          <label htmlFor="remote" className="text-sm font-semibold text-ink-muted cursor-pointer">
-            Ouvert au télétravail
-          </label>
-        </div>
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 self-end">
+          <Checkbox checked={remote} onChange={(e) => setRemote(e.target.checked)} />
+          <span className="text-[15px] text-ink">Ouvert au télétravail</span>
+        </label>
 
         <Input
-          label="Disponible à partir du"
+          label="Disponible à partir du (facultatif)"
           type="date"
           value={availableFrom}
           onChange={(e) => setAvailableFrom(e.target.value)}
         />
 
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Textarea
-            label="Présentation *"
+            label="Présentation"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
@@ -195,7 +184,7 @@ export default function SeekerFormClient({
         />
       </div>
 
-      <JobFormActions saving={saving} label={saving ? "Publication…" : submitLabel} />
+      <JobFormActions saving={saving} label={saving ? (isEdit ? "Enregistrement en cours…" : "Publication en cours…") : submitLabel} />
     </form>
   );
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ClipboardList } from "lucide-react";
 import { getCurrentChurchId, requireAuth } from "@/lib/auth";
-import { EmptyState, PageHeader, StatusChip } from "@/components/ui";
+import { EmptyState, PageHeader, StatusChip, buttonClasses } from "@/components/ui";
 import { getFormsCapability } from "@/modules/forms/auth";
 import { listFacilitatedForms, listForms, listFormsGrants } from "@/modules/forms";
 import { FORM_KIND_LABELS } from "@/modules/forms/schemas";
@@ -27,15 +27,15 @@ export default async function FormsPage() {
   if (!churchId || !capability) {
     const facilitated = churchId ? await listFacilitatedForms(session.user.id, [churchId]) : [];
     return (
-      <div className="space-y-6">
+      <div className="flex flex-col gap-6">
         <PageHeader eyebrow="Agenda" title="Formulaires" />
         {facilitated.length > 0 ? (
           <section className="space-y-3">
-            <h2 className="font-semibold text-ink">Où j&apos;interviens</h2>
+            <h2 className="font-display text-[17px] font-semibold text-ink">Où j&apos;interviens</h2>
             <ul className="grid gap-3 md:grid-cols-2">
               {facilitated.map((f) => (
                 <li key={f.id}>
-                  <Link href={`/formulaires/${f.id}?onglet=reponses`} className="block rounded-card border border-line bg-surface p-4 hover:border-brand">
+                  <Link href={`/formulaires/${f.id}?onglet=reponses`} className="block rounded-card border border-line bg-surface p-4 shadow-card transition-colors hover:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
                     <div className="flex items-start justify-between gap-3">
                       <p className="font-semibold text-ink">{f.title}</p>
                       <StatusChip tone={STATUS[f.status].tone}>{STATUS[f.status].label}</StatusChip>
@@ -49,8 +49,8 @@ export default async function FormsPage() {
         ) : (
           <EmptyState icon={ClipboardList} title="Accès réservé" description="Les formulaires sont gérés par le secrétariat et l'administration de l'église." />
         )}
-        <Link href="/formulaires/mes-reponses" className="text-[15px] font-semibold text-brand-text underline">
-          Mes réponses
+        <Link href="/formulaires/mes-reponses" className={`${buttonClasses("secondary")} self-start`}>
+          Voir mes réponses
         </Link>
       </div>
     );
@@ -80,7 +80,7 @@ export default async function FormsPage() {
         <ul className="grid gap-3 md:grid-cols-2">
           {forms.map((f) => (
             <li key={f.id}>
-              <Link href={`/formulaires/${f.id}`} className="block rounded-card border border-line bg-surface p-4 hover:border-brand">
+              <Link href={`/formulaires/${f.id}`} className="block rounded-card border border-line bg-surface p-4 shadow-card transition-colors hover:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
                 <div className="flex items-start justify-between gap-3">
                   <p className="font-semibold text-ink">{f.title}</p>
                   <StatusChip tone={STATUS[f.status].tone}>{STATUS[f.status].label}</StatusChip>

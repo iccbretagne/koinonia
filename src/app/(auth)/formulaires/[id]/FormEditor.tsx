@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, Copy, Download, Link2, Plus, Trash2 } from "lucide-react";
-import { Alert, Button, Checkbox, ConfirmModal, IconButton, Input, PageHeader, Select, StatusChip, Tabs, Textarea, useToast } from "@/components/ui";
+import { Alert, Button, Checkbox, ConfirmModal, IconButton, Input, PageHeader, Select, StatusChip, Tabs, Textarea, buttonClasses, useToast } from "@/components/ui";
 import FormFiller from "@/components/forms/FormFiller";
 import type { Answers, FillerForm } from "@/components/forms/types";
 import {
@@ -237,7 +237,7 @@ function QuestionCard({
 }) {
   const isChoice = CHOICE_TYPES.includes(draft.type);
   return (
-    <li className="space-y-3 rounded-card border border-line bg-surface p-4">
+    <li className="space-y-3 rounded-card border border-line bg-surface p-4 shadow-card">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[13px] font-semibold text-ink-muted">
           Question {index + 1}
@@ -246,9 +246,9 @@ function QuestionCard({
           {answered && <span className="ml-2 font-normal">· a des réponses</span>}
         </p>
         <div className="flex gap-1">
-          <IconButton icon={ArrowUp} aria-label="Monter" disabled={index === 0} onClick={() => onMove(-1)} />
-          <IconButton icon={ArrowDown} aria-label="Descendre" disabled={index === count - 1} onClick={() => onMove(1)} />
-          <IconButton icon={Trash2} aria-label="Supprimer la question" disabled={answered || contact || registration} onClick={onRemove} />
+          <IconButton icon={ArrowUp} aria-label={`Monter la question ${index + 1}`} disabled={index === 0} onClick={() => onMove(-1)} />
+          <IconButton icon={ArrowDown} aria-label={`Descendre la question ${index + 1}`} disabled={index === count - 1} onClick={() => onMove(1)} />
+          <IconButton icon={Trash2} aria-label={`Supprimer la question ${index + 1}`} disabled={answered || contact || registration} onClick={onRemove} />
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-[1fr_220px]">
@@ -267,8 +267,8 @@ function QuestionCard({
       <Input label="Aide (facultatif)" value={draft.help} maxLength={500} onChange={(e) => onChange({ ...draft, help: e.target.value })} />
       {draft.type === "NUMBER" && (
         <div className="grid gap-3 sm:grid-cols-2">
-          <Input label="Minimum" type="number" value={draft.min} onChange={(e) => onChange({ ...draft, min: e.target.value })} />
-          <Input label="Maximum" type="number" value={draft.max} onChange={(e) => onChange({ ...draft, max: e.target.value })} />
+          <Input label="Minimum (facultatif)" type="number" value={draft.min} onChange={(e) => onChange({ ...draft, min: e.target.value })} />
+          <Input label="Maximum (facultatif)" type="number" value={draft.max} onChange={(e) => onChange({ ...draft, max: e.target.value })} />
         </div>
       )}
       {isChoice && (
@@ -305,6 +305,7 @@ function QuestionCard({
             type="button"
             variant="ghost"
             size="sm"
+            className="min-h-11 sm:min-h-9"
             onClick={() => onChange({ ...draft, choices: [...draft.choices, { key: tempKey(), label: "", capacity: "" }] })}
           >
             <Plus className="size-4" aria-hidden="true" /> Ajouter un choix
@@ -394,7 +395,7 @@ function Construction({ form, usage }: { readonly form: Form; readonly usage: Us
             Ajoutez « Je viens » (oui / non) et « Nombre d&apos;accompagnants » : l&apos;onglet Résultats affichera le total des
             participants, accompagnants compris. Vous pouvez aussi cocher ce réglage sur une question oui / non ou nombre existante.
           </p>
-          <Button type="button" size="sm" className="mt-3" disabled={busy || form.purgedAt !== null} onClick={addParticipationQuestions}>
+          <Button type="button" variant="secondary" size="sm" className="mt-3 min-h-11 sm:min-h-9" disabled={busy || form.purgedAt !== null} onClick={addParticipationQuestions}>
             <Plus className="size-4" aria-hidden="true" /> Ajouter « Je viens » et « Nombre d&apos;accompagnants »
           </Button>
         </Alert>
@@ -441,14 +442,14 @@ function Construction({ form, usage }: { readonly form: Form; readonly usage: Us
         ))}
       </ol>
       <div className="flex flex-wrap items-end gap-3">
-        <div className="w-60">
+        <div className="w-full sm:w-60">
           <Select label="Nouvelle question" value={newType} options={AVAILABLE_TYPES.map((t) => ({ value: t, label: QUESTION_TYPE_LABELS[t] }))} onChange={(e) => setNewType(e.target.value as QuestionType)} />
         </div>
         <Button type="button" variant="secondary" onClick={add}>
-          <Plus className="size-4" aria-hidden="true" /> Ajouter
+          <Plus className="size-4" aria-hidden="true" /> Ajouter la question
         </Button>
         <Button type="button" disabled={busy || form.purgedAt !== null} onClick={() => void call(`/api/forms/${form.id}`, "PATCH", { questions: drafts.map(toInput) }, "Questions enregistrées")}>
-          {busy ? "Enregistrement…" : "Enregistrer les questions"}
+          {busy ? "Enregistrement en cours…" : "Enregistrer les questions"}
         </Button>
       </div>
     </div>
@@ -535,12 +536,12 @@ function Settings({
         </label>
       )}
       <div className="grid gap-3 sm:grid-cols-2">
-        <Input label="Ouverture des réponses" hint="Vide : dès la publication." type="datetime-local" value={s.opensAt} onChange={(e) => setS({ ...s, opensAt: e.target.value })} />
-        <Input label="Fin des réponses" hint="Le formulaire est alors clôturé." type="datetime-local" value={s.closesAt} onChange={(e) => setS({ ...s, closesAt: e.target.value })} />
+        <Input label="Ouverture des réponses (facultatif)" hint="Vide : dès la publication." type="datetime-local" value={s.opensAt} onChange={(e) => setS({ ...s, opensAt: e.target.value })} />
+        <Input label="Fin des réponses (facultatif)" hint="Le formulaire est alors clôturé." type="datetime-local" value={s.closesAt} onChange={(e) => setS({ ...s, closesAt: e.target.value })} />
       </div>
       {form.kind === "PARTICIPATION" && (
         <Select
-          label="Événement rattaché"
+          label="Événement rattaché (facultatif)"
           hint="Le formulaire apparaît sur la page de l'événement."
           value={s.link}
           placeholder="Aucun"
@@ -551,7 +552,7 @@ function Settings({
           onChange={(e) => setS({ ...s, link: e.target.value })}
         />
       )}
-      <Input label="Nombre maximal de réponses" hint="Vide : sans limite." type="number" min={1} value={s.maxResponses} onChange={(e) => setS({ ...s, maxResponses: e.target.value })} />
+      <Input label="Nombre maximal de réponses (facultatif)" hint="Vide : sans limite." type="number" min={1} value={s.maxResponses} onChange={(e) => setS({ ...s, maxResponses: e.target.value })} />
       {!s.anonymous && (
         <>
           <label className="flex min-h-11 items-center gap-3">
@@ -578,8 +579,9 @@ function Settings({
         hint="Ensuite, les réponses nominatives sont effacées ; les totaux restent."
         onChange={(e) => setS({ ...s, retentionMonths: e.target.value })}
       />
+      {!s.title.trim() && <p className="text-[13px] text-ink-muted">Indiquez un titre pour enregistrer les réglages.</p>}
       <Button type="button" disabled={busy || !s.title.trim()} onClick={() => void save()}>
-        {busy ? "Enregistrement…" : "Enregistrer les réglages"}
+        {busy ? "Enregistrement en cours…" : "Enregistrer les réglages"}
       </Button>
       <div className="border-t border-line pt-4">
         <ManagersEditor key={JSON.stringify(sharing.managers)} formId={form.id} editable={sharing.owner} managers={sharing.managers} candidates={sharing.candidates} />
@@ -616,7 +618,7 @@ function Preview({ form, usage }: { readonly form: Form; readonly usage: Usage }
     [form, usage]
   );
   return (
-    <div className="max-w-xl space-y-4 rounded-card border border-dashed border-line bg-surface-sunken p-4">
+    <div className="max-w-xl space-y-4 rounded-card border border-dashed border-line bg-bg p-4">
       <p className="text-[13px] text-ink-muted">Aperçu des questions enregistrées : rien n&apos;est envoyé.</p>
       <FormFiller form={filler} answers={answers} onChange={setAnswers} />
     </div>
@@ -651,8 +653,8 @@ function Responses({ form, responses: all, manage }: { readonly form: Form; read
           {active} réponse{active > 1 ? "s" : ""} active{active > 1 ? "s" : ""} sur {responses.length}
         </p>
         {manage && (
-          <a href={`/api/forms/${form.id}/export`} className="inline-flex items-center gap-2 text-[15px] font-semibold text-brand-text underline">
-            <Download className="size-4" aria-hidden="true" /> Exporter (.xlsx)
+          <a href={`/api/forms/${form.id}/export`} className={buttonClasses("secondary")}>
+            <Download className="size-4" aria-hidden="true" /> Exporter les réponses (.xlsx)
           </a>
         )}
       </div>
@@ -691,9 +693,9 @@ function Responses({ form, responses: all, manage }: { readonly form: Form; read
         </div>
       )}
       {responses.length === 0 ? (
-        <p className="text-ink-muted">Aucune réponse pour le moment.</p>
+        <p className="text-[15px] text-ink-muted">Aucune réponse pour le moment.</p>
       ) : (
-        <div className="overflow-x-auto rounded-card border border-line bg-surface">
+        <div className="overflow-x-auto rounded-card border border-line bg-surface shadow-card">
           <table className="w-full text-left text-[14px]">
             <thead className="bg-surface-sunken text-ink-muted">
               <tr>
@@ -738,8 +740,8 @@ function Responses({ form, responses: all, manage }: { readonly form: Form; read
                     ))}
                     <td className="px-3 py-2 text-right">
                       {open && manage && (
-                        <Button type="button" size="sm" variant="ghost" onClick={() => setCancelling(r.id)}>
-                          Annuler
+                        <Button type="button" size="sm" variant="ghost" className="min-h-11 whitespace-nowrap sm:min-h-9" onClick={() => setCancelling(r.id)}>
+                          Annuler la réponse
                         </Button>
                       )}
                     </td>
@@ -756,7 +758,8 @@ function Responses({ form, responses: all, manage }: { readonly form: Form; read
         title="Annuler cette réponse ?"
         message="La réponse passe à « Annulée » et libère sa place."
         confirmLabel="Annuler la réponse"
-        variant="danger"
+        confirmingLabel="Annulation en cours…"
+        variant="primary"
         confirming={busy}
         onCancel={() => setCancelling(null)}
         onConfirm={async () => {
@@ -837,17 +840,17 @@ export default function FormEditor({
       <div className="flex flex-wrap gap-2">
         {form.status === "DRAFT" && (
           <Button type="button" disabled={busy} onClick={() => void call(`/api/forms/${form.id}/status`, "POST", { action: "publish" }, "Formulaire publié")}>
-            Publier
+            Publier le formulaire
           </Button>
         )}
         {form.status === "PUBLISHED" && (
           <Button type="button" variant="secondary" disabled={busy} onClick={() => void call(`/api/forms/${form.id}/status`, "POST", { action: "close" }, "Formulaire clôturé")}>
-            Clôturer
+            Clôturer le formulaire
           </Button>
         )}
         {form.status === "CLOSED" && !form.purgedAt && (
           <Button type="button" variant="secondary" disabled={busy} onClick={() => void call(`/api/forms/${form.id}/status`, "POST", { action: "reopen" }, "Formulaire rouvert")}>
-            Rouvrir
+            Rouvrir le formulaire
           </Button>
         )}
         {form.status !== "DRAFT" && (
@@ -871,11 +874,11 @@ export default function FormEditor({
             if (copy) router.push(`/formulaires/${copy.id}`);
           }}
         >
-          <Copy className="size-4" aria-hidden="true" /> Dupliquer
+          <Copy className="size-4" aria-hidden="true" /> Dupliquer le formulaire
         </Button>
         {sharing.owner && (
-          <Button type="button" variant="danger" disabled={busy} onClick={() => setConfirmDelete(true)}>
-            <Trash2 className="size-4" aria-hidden="true" /> Supprimer
+          <Button type="button" variant="ghost" disabled={busy} onClick={() => setConfirmDelete(true)}>
+            <Trash2 className="size-4" aria-hidden="true" /> Supprimer le formulaire
           </Button>
         )}
       </div>
@@ -901,7 +904,8 @@ export default function FormEditor({
         open={confirmDelete}
         title="Supprimer ce formulaire ?"
         message="Ses réponses sont effacées tout de suite, sans retour possible. Le lien affichera « formulaire non disponible »."
-        confirmLabel="Supprimer"
+        confirmLabel="Supprimer le formulaire"
+        confirmingLabel="Suppression en cours…"
         variant="danger"
         confirming={busy}
         onCancel={() => setConfirmDelete(false)}

@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/ui";
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { requireIntegrationAccess } from "@/modules/integration";
 import { prisma } from "@/lib/prisma";
@@ -117,10 +118,11 @@ export default async function IntegrationStatsPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-ink">Statistiques d&apos;intégration</h1>
-        <p className="text-sm text-ink-muted mt-1">Vue d&apos;ensemble des demandes et de leur progression.</p>
-      </div>
+      <PageHeader
+        className="mb-6"
+        title="Statistiques d'intégration"
+        description="Vue d'ensemble des demandes et de leur progression."
+      />
       <StatsView
         total={total}
         pending={pending}

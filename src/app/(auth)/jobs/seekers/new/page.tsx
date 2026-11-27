@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { PageHeader, buttonClasses } from "@/components/ui";
 import SeekerFormClient from "./SeekerFormClient";
 
 export default async function NewSeekerPage() {
@@ -8,14 +10,11 @@ export default async function NewSeekerPage() {
   if (!session?.user) redirect("/");
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="flex items-center gap-2 mb-4">
-        <Link href="/jobs?tab=profils" className="text-sm text-ink-subtle hover:text-ink-muted">
-          ← Retour
-        </Link>
-      </div>
-      <h1 className="text-2xl font-bold text-ink mb-1">Publier mon profil de recherche</h1>
-      <p className="text-sm text-ink-muted mb-6">Faites-vous connaître de la communauté pour trouver votre prochain emploi.</p>
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <Link href="/jobs?tab=profils" className={`${buttonClasses("ghost", "sm")} min-h-11 self-start sm:min-h-9`}>
+        <ArrowLeft className="size-4" aria-hidden="true" /> Retour aux profils
+      </Link>
+      <PageHeader title="Publier mon profil de recherche" description="Faites-vous connaître de la communauté pour trouver votre prochain emploi." />
       <SeekerFormClient defaultEmail={session.user.email ?? null} />
     </div>
   );

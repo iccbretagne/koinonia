@@ -1,7 +1,8 @@
 import { requirePastoralActiveChurch } from "../active-church";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { buttonClasses } from "@/components/ui/button-classes";
+import { Check, ChevronRight } from "lucide-react";
+import { PageHeader, StatusChip, buttonClasses } from "@/components/ui";
 function fmt(d: Date) {
   return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
 }
@@ -51,53 +52,45 @@ export default async function PastoralReportsPage() {
   const notEnabled = events.filter((e) => !e.reportEnabled);
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-2 mb-2">
-        <Link href="/pastoral" className="text-sm text-ink-subtle hover:text-brand-text transition-colors">
-          ← Accueil pastoral
-        </Link>
-      </div>
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
 
-      <div>
-        <h1 className="text-2xl font-bold text-ink">Comptes rendus</h1>
-        <p className="text-sm text-ink-muted mt-0.5">{church?.name} · 3 derniers mois</p>
-      </div>
+      <PageHeader title="Comptes rendus" description={`${church?.name ?? ""} · 3 derniers mois`} />
 
       {/* Résumé */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-surface border border-line rounded-xl p-4 text-center">
+        <div className="rounded-card border border-line bg-surface p-4 shadow-card text-center">
           <p className="text-2xl font-bold text-success">{withReport.length}</p>
-          <p className="text-xs text-ink-muted mt-1">CR rédigés</p>
+          <p className="text-xs text-ink-muted mt-1">{withReport.length > 1 ? "CR rédigés" : "CR rédigé"}</p>
         </div>
-        <div className="bg-surface border border-line rounded-xl p-4 text-center">
-          <p className={`text-2xl font-bold ${withoutReport.length > 0 ? "text-warning" : "text-ink-subtle"}`}>{withoutReport.length}</p>
+        <div className="rounded-card border border-line bg-surface p-4 shadow-card text-center">
+          <p className={`text-2xl font-bold ${withoutReport.length > 0 ? "text-warning" : "text-ink-muted"}`}>{withoutReport.length}</p>
           <p className="text-xs text-ink-muted mt-1">En attente</p>
         </div>
-        <div className="bg-surface border border-line rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-ink-subtle">{events.length}</p>
-          <p className="text-xs text-ink-muted mt-1">Événements total</p>
+        <div className="rounded-card border border-line bg-surface p-4 shadow-card text-center">
+          <p className="text-2xl font-bold text-ink">{events.length}</p>
+          <p className="text-xs text-ink-muted mt-1">{events.length > 1 ? "Événements au total" : "Événement au total"}</p>
         </div>
       </div>
 
       {/* CR manquants */}
       {withoutReport.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-warning mb-2 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-warning inline-block" />
-            <span>Comptes rendus manquants</span>
+          <h2 className="mb-2 flex items-center gap-2 font-display text-[17px] font-semibold text-ink">
+            Comptes rendus manquants
+            <StatusChip tone="warning">{withoutReport.length}</StatusChip>
           </h2>
-          <div className="space-y-1.5">
+          <div className="flex flex-col gap-2">
             {withoutReport.map((e) => (
-              <div key={e.id} className="flex items-center justify-between bg-warning-soft border border-warning/30 rounded-lg px-4 py-2.5">
-                <div>
+              <div key={e.id} className="flex items-center justify-between gap-3 rounded-card border border-line bg-surface px-4 py-2.5 shadow-card">
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-ink">{e.title}</p>
                   <p className="text-xs text-ink-muted">{fmt(e.date)} · {EVENT_TYPE_LABELS[e.type] ?? e.type}</p>
                 </div>
                 <Link
                   href={`/admin/events/${e.id}/report`}
-                  className={`${buttonClasses("ghost", "sm")} shrink-0 ml-2`}
+                  className={`${buttonClasses("secondary", "sm")} min-h-11 shrink-0 sm:min-h-9`}
                 >
-                  Rédiger →
+                  Rédiger le CR
                 </Link>
               </div>
             ))}
@@ -108,11 +101,8 @@ export default async function PastoralReportsPage() {
       {/* CR rédigés */}
       {withReport.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-ink-muted mb-2 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-success inline-block" />
-            <span>Comptes rendus rédigés</span>
-          </h2>
-          <div className="bg-surface border border-line rounded-xl overflow-hidden">
+          <h2 className="mb-2 font-display text-[17px] font-semibold text-ink">Comptes rendus rédigés</h2>
+          <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line bg-surface-sunken text-left">
@@ -124,10 +114,11 @@ export default async function PastoralReportsPage() {
               </thead>
               <tbody className="divide-y divide-line">
                 {withReport.map((e) => (
-                  <tr key={e.id} className="hover:bg-surface-sunken transition-colors">
+                  <tr key={e.id} className="transition-colors hover:bg-surface-sunken">
                     <td className="px-4 py-3">
-                      <Link href={`/admin/events/${e.id}/report`} className="font-medium text-ink hover:text-brand-text transition-colors">
+                      <Link href={`/admin/events/${e.id}/report`} className="inline-flex min-h-11 items-center gap-1 rounded-control font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:min-h-0">
                         {e.title}
+                        <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
                       </Link>
                       <p className="text-xs text-ink-subtle mt-0.5">{fmt(e.date)}</p>
                     </td>
@@ -138,12 +129,9 @@ export default async function PastoralReportsPage() {
                       {e.report?.messageTitle ?? <span className="text-ink-subtle">—</span>}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1 text-xs text-success bg-success-soft px-2 py-0.5 rounded-full">
-                        <svg aria-hidden="true" className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
+                      <StatusChip tone="success" icon={Check}>
                         {e.report?.sections.length ?? 0} section{(e.report?.sections.length ?? 0) > 1 ? "s" : ""}
-                      </span>
+                      </StatusChip>
                     </td>
                   </tr>
                 ))}
@@ -155,13 +143,13 @@ export default async function PastoralReportsPage() {
 
       {/* Événements sans CR activé */}
       {notEnabled.length > 0 && (
-        <p className="text-xs text-ink-subtle italic">
+        <p className="text-xs text-ink-muted">
           {notEnabled.length} événement{notEnabled.length > 1 ? "s" : ""} sans compte rendu activé sur la période.
         </p>
       )}
 
       {events.length === 0 && (
-        <p className="text-sm text-ink-subtle italic">Aucun événement passé sur les 3 derniers mois.</p>
+        <p className="text-sm text-ink-muted">Aucun événement passé sur les 3 derniers mois.</p>
       )}
     </div>
   );
