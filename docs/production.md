@@ -1251,15 +1251,25 @@ redirection). Choisir une fenêtre sans événement de billetterie ouvert ce jou
    de l'assistant qui citent une ancienne adresse (à relire à la main) :
    ```bash
    cd /opt/koinonia/current
-   sudo -u koinonia npx tsx scripts/092-rewrite-stored-paths.ts --origin "$APP_URL"
+   sudo -u koinonia node --env-file=/opt/koinonia/shared/.env dist/092-rewrite-stored-paths.mjs \
+     --origin "$APP_URL" --backup-dir /opt/koinonia/shared/backups-092
    ```
+   Le paquet déployé ne contient ni `scripts/` ni `tsx` : le script est compilé par
+   `npm run build:scripts` (enchaîné par `npm run build`, comme le worker) en un fichier unique
+   `dist/092-rewrite-stored-paths.mjs`. La sauvegarde va dans `shared/`, qui survit au
+   changement de release (retour arrière compris).
 5. **Script, pour de bon** (sauvegarde JSON des valeurs d'avant dans `backups-092/`, lots de 500,
-   chaque lot dans une transaction ; un second passage ne trouve plus rien) :
+   chaque lot dans une transaction, écriture seulement si la valeur n'a pas changé depuis la
+   lecture ; un second passage ne trouve plus rien) :
    ```bash
-   sudo -u koinonia npx tsx scripts/092-rewrite-stored-paths.ts --origin "$APP_URL" --apply
+   sudo -u koinonia node --env-file=/opt/koinonia/shared/.env dist/092-rewrite-stored-paths.mjs \
+     --origin "$APP_URL" --backup-dir /opt/koinonia/shared/backups-092 --apply
    ```
    Le script n'est **jamais** lancé par la CI, `prisma migrate deploy` ni le déploiement.
 6. **Vérifier** : un second essai à blanc annonce 0 partout ; ouvrir une notification ancienne.
+7. **Réponses de l'assistant signalées** : la liste des réponses qui citent une ancienne adresse
+   (le script ne les modifie jamais) est transmise à l'Admin de l'église et au Super Admin, qui
+   les relisent ; le Super Admin les corrige dans `/admin/assistant` (base d'instance).
 
 **Retour arrière** :
 
@@ -1269,7 +1279,9 @@ redirection). Choisir une fenêtre sans événement de billetterie ouvert ce jou
 - Données, si le script a été appliqué : restaurer **avant** de repointer le code, depuis la
   sauvegarde qu'il a écrite (valeurs exactes d'avant) :
   ```bash
-  sudo -u koinonia npx tsx scripts/092-rewrite-stored-paths.ts --restore backups-092/<fichier>.json --apply
+  cd /opt/koinonia/current   # la release qui a appliqué le script, avant de repointer
+  sudo -u koinonia node --env-file=/opt/koinonia/shared/.env dist/092-rewrite-stored-paths.mjs \
+    --restore /opt/koinonia/shared/backups-092/<fichier>.json --apply
   ```
   À défaut de sauvegarde, `--reverse --apply` recalcule les anciennes adresses depuis la table
   (les préfixes d'aide élargis de l'assistant ne retrouvent pas toujours leur forme d'origine).
