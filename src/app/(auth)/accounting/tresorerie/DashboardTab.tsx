@@ -24,7 +24,7 @@ function Delta({ now, before, label }: { readonly now: number; readonly before: 
   const diff = now - before;
   if (before === 0 && now === 0) return null;
   return (
-    <span className="text-xs text-ink-subtle">
+    <span className="text-[13px] leading-[18px] text-ink-muted">
       {diff >= 0 ? "+" : "−"} {euro(Math.abs(diff))} {label}
     </span>
   );
@@ -38,8 +38,8 @@ function Figure({ label, value, previous, lastYear, tone }: {
   readonly tone?: string;
 }) {
   return (
-    <div className="flex flex-col gap-1 p-4">
-      <span className="text-sm text-ink-muted">{label}</span>
+    <div className="flex flex-col gap-1 md:px-4 md:first:pl-0">
+      <span className="text-[13px] leading-[18px] text-ink-muted">{label}</span>
       <span className={`text-lg font-semibold tabular-nums ${tone ?? "text-ink"}`}>{euro(value)}</span>
       {previous !== undefined && <Delta now={value} before={previous} label="vs mois précédent" />}
       {lastYear !== undefined && <Delta now={value} before={lastYear} label="vs l'an dernier" />}
@@ -69,39 +69,37 @@ export default function DashboardTab({ dashboard: d }: { readonly dashboard: Das
     <div className="space-y-6">
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-card bg-brand p-5 text-on-brand">
-          <p className="text-sm opacity-90">Total de la trésorerie</p>
+          <p className="text-[15px] leading-[22px]">Total de la trésorerie</p>
           <p className="mt-2 text-2xl font-bold tabular-nums">{euro(d.total)}</p>
         </div>
         {d.accounts.map((a) => (
-          <Link key={a.id} href={`/accounting/tresorerie?onglet=registre&compte=${a.id}`} className="rounded-card border border-line bg-surface p-5 shadow-card hover:bg-surface-sunken">
-            <p className="text-sm text-ink-muted">{a.name}</p>
+          <Link key={a.id} href={`/accounting/tresorerie?onglet=registre&compte=${a.id}`} className="rounded-card border border-line bg-surface p-5 shadow-card transition-colors duration-120 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+            <p className="text-[15px] leading-[22px] text-ink-muted">{a.name}</p>
             <p className={`mt-2 text-xl font-semibold tabular-nums ${a.balance < 0 ? "text-danger" : "text-ink"}`}>{euro(a.balance)}</p>
           </Link>
         ))}
       </section>
 
       <div className="flex flex-wrap items-start gap-6">
-        <section className="min-w-0 flex-[999_1_560px] overflow-hidden rounded-card border border-line bg-surface">
-          <div className="flex items-center gap-3 px-5 py-4">
-            <h2 className="text-lg font-semibold text-ink">{monthTitle(d.month)}, tous comptes</h2>
-          </div>
-          <div className="grid grid-cols-2 border-t border-line md:grid-cols-4 md:divide-x md:divide-line">
+        <section className="flex min-w-0 flex-[999_1_560px] flex-col gap-4">
+          <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">{monthTitle(d.month)}, tous comptes</h2>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-0 md:divide-x md:divide-line">
             <Figure label="Ouverture" value={d.period.opening} />
             <Figure label="Entrées" value={d.period.inflows} previous={d.previous.inflows} lastYear={d.lastYear.inflows} tone="text-success" />
             <Figure label="Sorties" value={d.period.outflows} previous={d.previous.outflows} lastYear={d.lastYear.outflows} tone="text-danger" />
             <Figure label="Clôture" value={d.period.closing} />
           </div>
-          <div className="flex items-center border-t border-line px-5 py-3">
-            <h3 className="font-semibold text-ink">Derniers mouvements</h3>
-            <Link href="/accounting/tresorerie?onglet=registre" className="ml-auto text-sm font-semibold text-brand-text">Voir le registre</Link>
+          <div className="flex items-center border-t border-line pt-3">
+            <h3 className="font-display text-[15px] font-semibold leading-[22px] text-ink">Derniers mouvements</h3>
+            <Link href="/accounting/tresorerie?onglet=registre" className={`${buttonClasses("ghost", "sm")} ml-auto`}>Voir le registre</Link>
           </div>
           {d.recent.length === 0 ? (
             <EmptyState size="sm" title="Aucun mouvement ce mois-ci" />
           ) : (
-            <ul className="divide-y divide-line border-t border-line">
+            <ul className="-mt-1 divide-y divide-line">
               {d.recent.map((l) => (
-                <li key={l.id} className="flex items-center gap-3 px-5 py-3 text-sm">
-                  <span className="w-12 shrink-0 text-ink-subtle">{frDate(l.date).slice(0, 5)}</span>
+                <li key={l.id} className="flex items-center gap-3 py-3 text-[15px] leading-[22px]">
+                  <span className="w-12 shrink-0 tabular-nums text-ink-muted">{frDate(l.date).slice(0, 5)}</span>
                   <span className="min-w-0 flex-1 truncate text-ink">{l.label}</span>
                   {l.source !== "treasury" && <StatusChip tone="info">Repris</StatusChip>}
                   <span className={`shrink-0 font-semibold tabular-nums ${l.direction === "IN" ? "text-success" : "text-danger"}`}>
@@ -114,17 +112,17 @@ export default function DashboardTab({ dashboard: d }: { readonly dashboard: Das
         </section>
 
         <aside className="flex flex-[1_1_300px] flex-col gap-3">
-          <h2 className="text-lg font-semibold text-ink">À surveiller</h2>
+          <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">À surveiller</h2>
           {watch.length === 0 ? (
-            <p className="text-sm text-ink-muted">Rien à signaler.</p>
+            <p className="text-[15px] leading-[22px] text-ink-muted">Rien à signaler.</p>
           ) : (
             watch.map((w) => (
-              <Link key={w.key} href={w.href} className="rounded-card border border-line bg-surface p-4 hover:bg-surface-sunken">
+              <Link key={w.key} href={w.href} className="rounded-card border border-line bg-surface p-4 shadow-card transition-colors duration-120 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
                 <span className="flex items-center gap-2 font-semibold text-ink">
-                  <AlertTriangle aria-hidden className="h-4 w-4 text-warning" />
+                  <AlertTriangle aria-hidden="true" className="size-4 text-warning" strokeWidth={1.75} />
                   {w.title}
                 </span>
-                <span className="mt-1 block text-sm text-ink-muted">{w.text}</span>
+                <span className="mt-1 block text-[15px] leading-[22px] text-ink-muted">{w.text}</span>
               </Link>
             ))
           )}

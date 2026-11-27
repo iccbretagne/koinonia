@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Check } from "lucide-react";
+import FilterChip from "@/components/ui/FilterChip";
 import { SkeletonList } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 
@@ -132,22 +133,16 @@ export default function TaskPanel({
                   {eligibleMembers.map((m) => {
                     const assigned = assignedIds.has(m.id);
                     return (
-                      <button
+                      <FilterChip
                         key={m.id}
-                        type="button"
-                        aria-pressed={assigned}
+                        pressed={assigned}
                         disabled={readOnly || isSaving}
                         onClick={() => handleToggleMember(task.id, m.id)}
-                        className={`inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold leading-[18px] transition-colors duration-120
-                          focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed ${
-                            assigned
-                              ? "border-brand bg-brand-soft text-brand-text"
-                              : "border-control-line bg-surface text-ink-muted hover:border-brand hover:text-ink"
-                          } ${isSaving ? "opacity-60" : ""} ${readOnly && !assigned ? "opacity-60" : ""}`}
+                        className={`disabled:cursor-not-allowed sm:min-h-9 sm:px-3 ${isSaving || (readOnly && !assigned) ? "opacity-60" : ""}`}
                       >
-                        {assigned && <Check aria-hidden="true" className="size-3.5" strokeWidth={2.5} />}
+                        {assigned && <Check aria-hidden="true" className="size-4" strokeWidth={2} />}
                         {m.firstName} {m.lastName}
-                      </button>
+                      </FilterChip>
                     );
                   })}
                 </fieldset>

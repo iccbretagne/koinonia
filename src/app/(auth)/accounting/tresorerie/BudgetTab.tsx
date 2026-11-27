@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Alert, Button, ConfirmModal, Input, StatusChip, useToast } from "@/components/ui";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Alert, Button, ConfirmModal, Input, StatusChip, buttonClasses, useToast } from "@/components/ui";
 import type { BudgetComparison, BudgetRow, CategoryView } from "@/modules/treasury";
 import { api, errorText, euro, toNumber } from "./format";
 
@@ -11,7 +12,7 @@ const pct = (r: number | null) => (r === null ? "—" : `${Math.round(r * 100)} 
 
 function Bar({ ratio, tone }: { readonly ratio: number | null; readonly tone: string }) {
   return (
-    <div className="h-2 min-w-28 rounded-full bg-surface-sunken" aria-hidden>
+    <div className="h-2 min-w-28 rounded-full bg-line" aria-hidden="true">
       <div className={`h-2 rounded-full ${tone}`} style={{ width: `${Math.min(100, Math.round((ratio ?? 0) * 100))}%` }} />
     </div>
   );
@@ -88,10 +89,10 @@ export default function BudgetTab({
   const table = (direction: "IN" | "OUT") => {
     const items = comparison.filter((c) => c.direction === direction);
     return (
-      <section className="overflow-hidden rounded-card border border-line bg-surface">
-        <h2 className="px-5 py-4 text-lg font-semibold text-ink">{direction === "IN" ? "Entrées" : "Sorties"}</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] border-collapse text-sm">
+      <section className="flex flex-col gap-3">
+        <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">{direction === "IN" ? "Entrées" : "Sorties"}</h2>
+        <div className="overflow-x-auto rounded-card border border-line bg-surface">
+          <table className="w-full min-w-[720px] border-collapse text-[15px] leading-[22px]">
             <thead>
               <tr className="bg-surface-sunken text-left text-ink-muted">
                 <th className="px-4 py-2 font-semibold">Catégorie</th>
@@ -139,10 +140,10 @@ export default function BudgetTab({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
-        <nav aria-label="Année" className="flex items-center gap-2 text-sm">
-          <Link className="font-semibold text-brand-text" href={`/accounting/tresorerie?onglet=budget&annee=${year - 1}`}>← {year - 1}</Link>
+        <nav aria-label="Année" className="flex items-center gap-2 text-[15px] leading-[22px]">
+          <Link className={buttonClasses("ghost", "sm")} aria-label={`Budget ${year - 1}`} href={`/accounting/tresorerie?onglet=budget&annee=${year - 1}`}><ChevronLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />{year - 1}</Link>
           <span className="text-lg font-semibold text-ink">{year}</span>
-          <Link className="font-semibold text-brand-text" href={`/accounting/tresorerie?onglet=budget&annee=${year + 1}`}>{year + 1} →</Link>
+          <Link className={buttonClasses("ghost", "sm")} aria-label={`Budget ${year + 1}`} href={`/accounting/tresorerie?onglet=budget&annee=${year + 1}`}>{year + 1}<ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} /></Link>
         </nav>
         {over > 0 && <StatusChip tone="danger">{over} dépassement{over > 1 ? "s" : ""}</StatusChip>}
         {warn > 0 && <StatusChip tone="warning">{warn} à surveiller</StatusChip>}
@@ -156,7 +157,7 @@ export default function BudgetTab({
           )}
         </div>
       </div>
-      <p className="text-sm text-ink-muted">Montants annuels, répartis également sur les 12 mois. Le réalisé vient du registre, sans les transferts entre comptes.</p>
+      <p className="text-[15px] leading-[22px] text-ink-muted">Montants annuels, répartis également sur les 12 mois. Le réalisé vient du registre, sans les transferts entre comptes.</p>
       {error && <Alert tone="danger">{error}</Alert>}
       {table("IN")}
       {table("OUT")}

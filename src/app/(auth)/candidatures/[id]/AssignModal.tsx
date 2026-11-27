@@ -91,7 +91,7 @@ export default function AssignModal({ applicationId, name, departments, excluded
       <Modal open={open} onClose={() => setOpen(false)} title={`Orienter ${name}`} size="lg">
         <div className="space-y-4">
           <section className="space-y-2">
-            <h3 className="text-sm font-semibold text-ink">Fiche STAR</h3>
+            <h3 className="font-display text-[15px] font-semibold text-ink">Fiche STAR</h3>
             {member ? (
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-line p-3">
                 <span className="text-sm text-ink">
@@ -99,7 +99,7 @@ export default function AssignModal({ applicationId, name, departments, excluded
                 </span>
                 {!memberLocked && (
                   <Button variant="ghost" size="sm" disabled={sending} onClick={() => link(null)}>
-                    Retirer
+                    Retirer le rattachement
                   </Button>
                 )}
               </div>
@@ -108,7 +108,7 @@ export default function AssignModal({ applicationId, name, departments, excluded
                 Sans rattachement, une fiche STAR sera créée à partir de la candidature au premier accueil.
               </p>
             )}
-            {!memberLocked && matches === null && <p className="text-sm text-ink-subtle">Recherche de fiches existantes…</p>}
+            {!memberLocked && matches === null && <p className="text-sm text-ink-muted">Recherche de fiches existantes en cours…</p>}
             {!memberLocked && suggestions.length > 0 && (
               <Alert tone="warning" title="Fiche STAR existante ?">
                 <ul className="mt-2 space-y-2">
@@ -119,7 +119,7 @@ export default function AssignModal({ applicationId, name, departments, excluded
                         {m.departmentNames.length > 0 && ` · ${m.departmentNames.join(", ")}`}
                       </span>
                       <Button variant="secondary" size="sm" disabled={sending} onClick={() => link(m.id)}>
-                        Rattacher
+                        Rattacher à cette fiche
                       </Button>
                     </li>
                   ))}
@@ -133,12 +133,13 @@ export default function AssignModal({ applicationId, name, departments, excluded
             Les responsables et le Ministre de chaque département sont notifiés et pourront consulter la fiche.
           </p>
 
+          {selected.length === 0 && <p className="text-[13px] text-ink-muted">Cochez au moins un département pour orienter la personne.</p>}
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button variant="secondary" onClick={() => setOpen(false)}>
               Annuler
             </Button>
             <Button disabled={sending || selected.length === 0} onClick={assign}>
-              {sending ? "Envoi…" : "Orienter"}
+              {sending ? "Orientation en cours…" : "Orienter la personne"}
             </Button>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { registry } from "@/lib/registry";
 import { getTurnstileSiteKey } from "@/lib/turnstile";
 import PublicFormUnavailable from "@/components/PublicFormUnavailable";
+import { buttonClasses } from "@/components/ui/button-classes";
 import JoinForm from "./JoinForm";
 
 export default async function RejoindrePublicPage({
@@ -25,13 +26,13 @@ export default async function RejoindrePublicPage({
   const turnstileSiteKey = getTurnstileSiteKey();
 
   return (
-    <div className="min-h-screen bg-surface-sunken flex flex-col">
+    <div className="flex min-h-screen flex-col bg-bg">
       <header className="bg-brand px-4 py-6">
         <div className="max-w-xl mx-auto">
           <p className="text-xs font-semibold text-on-brand/60 uppercase tracking-widest mb-1">
             {church.name}
           </p>
-          <h1 className="text-xl font-bold text-on-brand">Rejoindre une famille</h1>
+          <h1 className="font-display text-[22px] font-bold leading-7 text-on-brand">Rejoindre une famille</h1>
           <p className="text-sm text-on-brand/70 mt-1">
             Remplis ce formulaire pour rejoindre une famille près de chez toi.
           </p>
@@ -58,9 +59,9 @@ export default async function RejoindrePublicPage({
             href={`${process.env.NEXT_PUBLIC_FAMILIES_URL ?? "https://familles.iccrennes.fr"}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-brand-text underline"
+            className={buttonClasses("ghost", "sm")}
           >
-            Trouve ta famille →
+            Trouver ta famille
           </a>
         </p>
         <p className="mt-2 text-ink-subtle">Propulsé par <span className="font-medium text-ink-muted">Koinonia</span></p>

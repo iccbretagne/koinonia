@@ -2,6 +2,9 @@
 
 import { useId, useState, useMemo } from "react";
 import Link from "next/link";
+import { FileDown } from "lucide-react";
+import { Button, EmptyState, Input, SearchInput, Select, StatusChip, buttonClasses, controlClasses, useToast } from "@/components/ui";
+import Tabs, { TabPanel } from "@/components/ui/Tabs";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -38,11 +41,6 @@ function reportStatus(report: EventReport | null): "none" | "done" | "empty" {
   return report.hasContent ? "done" : "empty";
 }
 
-const STATUS_DOT_CLASS = {
-  done: "bg-success",
-  empty: "bg-warning",
-  none: "bg-surface-sunken",
-} as const;
 
 function norm(s: string) {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -123,6 +121,7 @@ export default function ReportsClient({ events, churchId }: Props) {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const toast = useToast();
 
   // Mois disponibles (YYYY-MM)
   const availableMonths = useMemo(() => {
@@ -228,43 +227,36 @@ export default function ReportsClient({ events, churchId }: Props) {
   return (
     <div>
       {/* Onglets */}
-      <div className="flex gap-1 mb-6 border-b border-line">
-        {(["list", "stats"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-4 py-3 sm:py-2 text-sm font-medium border-b-2 transition-colors ${
-              tab === t
-                ? "border-brand text-brand-text"
-                : "border-transparent text-ink-muted hover:text-ink-muted"
-            }`}
-          >
-            {t === "list" ? "Liste des CRs" : "Statistiques"}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        ariaLabel="Comptes rendus"
+        idBase="reports"
+        value={tab}
+        onChange={setTab}
+        className="mb-6"
+        tabs={[
+          { value: "list", label: "Liste des comptes rendus" },
+          { value: "stats", label: "Statistiques" },
+        ]}
+      />
 
+      <TabPanel idBase="reports" value={tab}>
       {/* ── Onglet Liste ──────────────────────────────────────────────────── */}
       {tab === "list" && (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           {/* Filtres */}
           <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[200px] max-w-xs">
-              <svg aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Rechercher un événement..."
-                className="w-full pl-9 pr-3 py-1.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-              />
-            </div>
+            <SearchInput
+              aria-label="Rechercher un événement"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Rechercher un événement…"
+              className="min-w-[200px] max-w-xs flex-1"
+            />
             <select
+              aria-label="Mois"
               value={listMonthFilter}
               onChange={(e) => setListMonthFilter(e.target.value)}
-              className="border border-line rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
+              className={`${controlClasses()} w-full sm:w-auto`}
             >
               <option value="all">Tous les mois</option>
               {availableMonths.map((m) => (
@@ -274,9 +266,10 @@ export default function ReportsClient({ events, churchId }: Props) {
               ))}
             </select>
             <select
+              aria-label="Type d'événement"
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="border border-line rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
+              className={`${controlClasses()} w-full sm:w-auto`}
             >
               <option value="all">Tous les types</option>
               {availableTypes.map((t) => (
@@ -284,73 +277,70 @@ export default function ReportsClient({ events, churchId }: Props) {
               ))}
             </select>
             <select
+              aria-label="Statut du compte rendu"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-line rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
+              className={`${controlClasses()} w-full sm:w-auto`}
             >
               <option value="all">Tous les statuts</option>
               <option value="done">Complété</option>
               <option value="empty">Vide</option>
-              <option value="none">Aucun CR</option>
+              <option value="none">Aucun compte rendu</option>
             </select>
-            <span className="text-xs text-ink-subtle ml-auto">
+            <span className="ml-auto text-[13px] leading-[18px] text-ink-muted">
               {filteredListEvents.length}/{events.length} événement{events.length > 1 ? "s" : ""}
             </span>
           </div>
 
           {/* Liste */}
-          <div className="space-y-3">
+          <div className="flex flex-col gap-3">
             {filteredListEvents.map((event) => {
               const status = reportStatus(event.report);
 
               const accueil = event.report ? getAccueilStats(event.report.sections) : null;
 
               return (
-                <div key={event.id} className="bg-surface rounded-lg border border-line shadow-card px-5 py-4 flex items-center gap-4 flex-wrap">
-                  {/* Statut */}
-                  <span className={`shrink-0 w-2 h-2 rounded-full ${STATUS_DOT_CLASS[status]}`} />
-
+                <div key={event.id} className="flex flex-wrap items-center gap-4 rounded-card border border-line bg-surface px-5 py-4 shadow-card">
                   {/* Infos événement */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-ink truncate">{event.title}</p>
-                    <p className="text-xs text-ink-subtle">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{event.title}</p>
+                    <p className="text-[13px] leading-[18px] text-ink-muted">
                       {fmtDate(event.date)} · {event.type}
                       {event.report && (
-                        <span className="ml-2 text-ink-subtle">· Modifié {fmtDateTime(event.report.updatedAt)}</span>
+                        <span className="ml-2">· Modifié {fmtDateTime(event.report.updatedAt)}</span>
                       )}
                     </p>
                   </div>
 
                   {/* Mini stats Accueil si disponibles */}
                   {accueil && (
-                    <div className="flex gap-3 text-xs text-ink-muted shrink-0">
-                      <span className="text-info font-medium">{accueil.hommes}H</span>
-                      <span className="text-danger font-medium">{accueil.femmes}F</span>
-                      <span className="font-semibold text-ink-muted">{accueil.total} total</span>
+                    <div className="flex shrink-0 gap-3 text-[13px] text-ink-muted">
+                      <span>{accueil.hommes} H</span>
+                      <span>{accueil.femmes} F</span>
+                      <span className="font-semibold text-ink">{accueil.total} au total</span>
                     </div>
                   )}
 
                   {/* Badge + action */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    {status === "done" && <span className="text-xs bg-success-soft text-success border border-success/30 px-2 py-0.5 rounded-full font-medium">Complété</span>}
-                    {status === "empty" && <span className="text-xs bg-warning-soft text-warning border border-warning/30 px-2 py-0.5 rounded-full font-medium">Vide</span>}
-                    {status === "none" && <span className="text-xs bg-surface-sunken text-ink-muted border border-line px-2 py-0.5 rounded-full font-medium">Aucun CR</span>}
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    {status === "done" && <StatusChip tone="success">Complété</StatusChip>}
+                    {status === "empty" && <StatusChip tone="warning">Vide</StatusChip>}
+                    {status === "none" && <StatusChip>Aucun compte rendu</StatusChip>}
                     <Link
                       href={`/admin/events/${event.id}/report`}
-                      className="text-xs font-medium text-brand-text hover:underline"
+                      className={buttonClasses("secondary", "sm")}
                     >
-                      {status === "none" ? "Saisir →" : "Voir / Modifier →"}
+                      {status === "none" ? "Saisir le compte rendu" : "Ouvrir le compte rendu"}
                     </Link>
                   </div>
                 </div>
               );
             })}
             {filteredListEvents.length === 0 && (
-              <p className="text-center text-ink-subtle py-12">
-                {events.length === 0
-                  ? "Aucun événement avec compte rendu activé."
-                  : "Aucun événement ne correspond aux filtres sélectionnés."}
-              </p>
+              <EmptyState
+                title={events.length === 0 ? "Aucun événement avec compte rendu activé" : "Aucun événement ne correspond aux filtres"}
+                description={events.length === 0 ? "Activez le compte rendu dans la configuration d'un événement." : "Modifiez la recherche ou les filtres."}
+              />
             )}
           </div>
         </div>
@@ -358,53 +348,36 @@ export default function ReportsClient({ events, churchId }: Props) {
 
       {/* ── Onglet Statistiques ───────────────────────────────────────────── */}
       {tab === "stats" && (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6">
           {/* Filtre période */}
-          <div className="flex items-center gap-3">
-            <label htmlFor={`${uid}-period`} className="text-sm font-medium text-ink-muted">Période :</label>
-            <select
+          <div className="flex flex-wrap items-end gap-3">
+            <Select
               id={`${uid}-period`}
+              label="Période"
               value={monthFilter}
               onChange={(e) => setMonthFilter(e.target.value)}
-              className="border border-line rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
-            >
-              <option value="all">Toute la période</option>
-              {availableMonths.map((m) => (
-                <option key={m} value={m}>
-                  {new Date(m + "-01").toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
-                </option>
-              ))}
-            </select>
-            <span className="text-xs text-ink-subtle">
-              {withReport}/{totalEvents} événements avec CR · {pending} en attente
+              options={[
+                { value: "all", label: "Toute la période" },
+                ...availableMonths.map((m) => ({
+                  value: m,
+                  label: new Date(m + "-01").toLocaleDateString("fr-FR", { month: "long", year: "numeric" }),
+                })),
+              ]}
+            />
+            <span className="pb-3 text-[13px] leading-[18px] text-ink-muted">
+              {withReport}/{totalEvents} événement{totalEvents > 1 ? "s" : ""} avec compte rendu · {pending} en attente
             </span>
           </div>
 
           {/* Export Excel */}
-          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3 bg-surface rounded-lg border border-line shadow-card px-5 py-4">
-            <div className="flex gap-3 flex-1">
-              <div className="flex-1">
-                <label htmlFor={`${uid}-export-from`} className="block text-xs font-medium text-ink-muted mb-1">Du</label>
-                <input
-                  id={`${uid}-export-from`}
-                  type="date"
-                  value={exportFrom}
-                  onChange={(e) => setExportFrom(e.target.value)}
-                  className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
-                />
-              </div>
-              <div className="flex-1">
-                <label htmlFor={`${uid}-export-to`} className="block text-xs font-medium text-ink-muted mb-1">Au</label>
-                <input
-                  id={`${uid}-export-to`}
-                  type="date"
-                  value={exportTo}
-                  onChange={(e) => setExportTo(e.target.value)}
-                  className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
-                />
-              </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+            <div className="flex flex-1 gap-3">
+              <Input id={`${uid}-export-from`} label="Du" type="date" value={exportFrom} onChange={(e) => setExportFrom(e.target.value)} className="flex-1" />
+              <Input id={`${uid}-export-to`} label="Au" type="date" value={exportTo} onChange={(e) => setExportTo(e.target.value)} className="flex-1" />
             </div>
-            <button
+            <Button
+              variant="secondary"
+              className="w-full sm:w-auto"
               disabled={exporting}
               onClick={async () => {
                 setExporting(true);
@@ -420,132 +393,129 @@ export default function ReportsClient({ events, churchId }: Props) {
                   a.click();
                   URL.revokeObjectURL(url);
                 } catch {
-                  alert("Erreur lors de l'export Excel.");
+                  toast.error("Erreur lors de l'export Excel");
                 } finally {
                   setExporting(false);
                 }
               }}
-              className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-brand text-on-brand px-4 py-2.5 sm:py-2 rounded-lg text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
             >
-              <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              {exporting ? "Export en cours..." : "Exporter en Excel"}
-            </button>
+              <FileDown aria-hidden="true" className="size-4" strokeWidth={1.75} />
+              {exporting ? "Export…" : "Exporter en Excel"}
+            </Button>
           </div>
 
           {/* Bloc Présence (Accueil) */}
           {accueilAgg ? (
-            <div className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
-              <div className="px-5 py-3 bg-info-soft border-b border-info/30">
-                <h3 className="text-sm font-semibold text-info">Présence au culte (Accueil)</h3>
-                <p className="text-xs text-info mt-0.5">{accueilAgg.count} culte{accueilAgg.count > 1 ? "s" : ""} avec statistiques</p>
+            <div className="flex flex-col gap-3">
+              <div>
+                <h3 className="font-display text-[17px] font-semibold leading-6 text-ink">Présence au culte (Accueil)</h3>
+                <p className="mt-0.5 text-[13px] leading-[18px] text-ink-muted">{accueilAgg.count} culte{accueilAgg.count > 1 ? "s" : ""} avec statistiques</p>
               </div>
-              <div className="p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                  { label: "Hommes (total)",   value: accueilAgg.hommes,    sub: `moy. ${Math.round(accueilAgg.hommes / accueilAgg.count)}/culte`,   color: "text-info" },
-                  { label: "Femmes (total)",    value: accueilAgg.femmes,    sub: `moy. ${Math.round(accueilAgg.femmes / accueilAgg.count)}/culte`,   color: "text-danger" },
-                  { label: "Adultes (total)",   value: accueilAgg.adultes,   sub: `moy. ${accueilAgg.avgAdultes}/culte`,   color: "text-brand-text" },
-                  { label: "Général (total)",   value: accueilAgg.total,     sub: `moy. ${accueilAgg.avgTotal}/culte`,     color: "text-ink-muted" },
+                  { label: "Hommes (total)",   value: accueilAgg.hommes,    sub: `moy. ${Math.round(accueilAgg.hommes / accueilAgg.count)}/culte` },
+                  { label: "Femmes (total)",    value: accueilAgg.femmes,    sub: `moy. ${Math.round(accueilAgg.femmes / accueilAgg.count)}/culte` },
+                  { label: "Adultes (total)",   value: accueilAgg.adultes,   sub: `moy. ${accueilAgg.avgAdultes}/culte` },
+                  { label: "Général (total)",   value: accueilAgg.total,     sub: `moy. ${accueilAgg.avgTotal}/culte` },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
-                    <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
-                    <div className="text-xs text-ink-muted mt-1">{s.label}</div>
-                    <div className="text-xs text-ink-subtle">{s.sub}</div>
+                    <div className="font-display text-3xl font-bold text-ink">{s.value}</div>
+                    <div className="mt-1 text-[13px] leading-[18px] text-ink-muted">{s.label}</div>
+                    <div className="text-[13px] leading-[18px] text-ink-muted">{s.sub}</div>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <p className="text-sm text-ink-subtle italic">Aucune donnée Accueil sur cette période.</p>
+            <EmptyState size="sm" title="Aucune donnée Accueil sur cette période." />
           )}
 
           {/* Bloc Intégration */}
           {integrationAgg ? (
-            <div className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
-              <div className="px-5 py-3 bg-success-soft border-b border-success/30">
-                <h3 className="text-sm font-semibold text-success">Intégration</h3>
+            <div className="flex flex-col gap-3">
+              <div>
+                <h3 className="font-display text-[17px] font-semibold leading-6 text-ink">Intégration</h3>
               </div>
-              <div className="p-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                 {[
-                  { label: "Nouveaux (H)", value: integrationAgg.hommes,    color: "text-info" },
-                  { label: "Nouveaux (F)", value: integrationAgg.femmes,    color: "text-danger" },
-                  { label: "De passage",   value: integrationAgg.passage,   color: "text-ink-muted" },
-                  { label: "Convertis",    value: integrationAgg.convertis, color: "text-success" },
-                  { label: "Renouvellement vœux", value: integrationAgg.voeux, color: "text-brand-text" },
+                  { label: "Nouveaux (H)", value: integrationAgg.hommes },
+                  { label: "Nouveaux (F)", value: integrationAgg.femmes },
+                  { label: "De passage",   value: integrationAgg.passage },
+                  { label: "Convertis",    value: integrationAgg.convertis },
+                  { label: "Renouvellement vœux", value: integrationAgg.voeux },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
-                    <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
-                    <div className="text-xs text-ink-muted mt-1">{s.label}</div>
+                    <div className="font-display text-3xl font-bold text-ink">{s.value}</div>
+                    <div className="mt-1 text-[13px] leading-[18px] text-ink-muted">{s.label}</div>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <p className="text-sm text-ink-subtle italic">Aucune donnée Intégration sur cette période.</p>
+            <EmptyState size="sm" title="Aucune donnée Intégration sur cette période." />
           )}
 
           {/* Bloc Sainte Cène */}
           {sainteCeneAgg ? (
-            <div className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
-              <div className="px-5 py-3 bg-warning-soft border-b border-warning/30">
-                <h3 className="text-sm font-semibold text-warning">Sainte Cène</h3>
+            <div className="flex flex-col gap-3">
+              <div>
+                <h3 className="font-display text-[17px] font-semibold leading-6 text-ink">Sainte Cène</h3>
               </div>
-              <div className="p-5 grid grid-cols-2 gap-4 max-w-xs">
+              <div className="grid grid-cols-2 gap-4 max-w-xs">
                 {[
-                  { label: "Supports utilisés", value: sainteCeneAgg.supportsUtilises, color: "text-warning" },
-                  { label: "Supports restants",  value: sainteCeneAgg.supportsRestants, color: "text-ink-muted" },
+                  { label: "Supports utilisés", value: sainteCeneAgg.supportsUtilises },
+                  { label: "Supports restants",  value: sainteCeneAgg.supportsRestants },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
-                    <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
-                    <div className="text-xs text-ink-muted mt-1">{s.label}</div>
+                    <div className="font-display text-3xl font-bold text-ink">{s.value}</div>
+                    <div className="mt-1 text-[13px] leading-[18px] text-ink-muted">{s.label}</div>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <p className="text-sm text-ink-subtle italic">Aucune donnée Sainte Cène sur cette période.</p>
+            <EmptyState size="sm" title="Aucune donnée Sainte Cène sur cette période." />
           )}
 
           {/* Bloc Navette */}
           {navetteAgg ? (
-            <div className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
-              <div className="px-5 py-3 bg-info-soft border-b border-info/30">
-                <h3 className="text-sm font-semibold text-info">Navette</h3>
-                <p className="text-xs text-info mt-0.5">{navetteAgg.count} culte{navetteAgg.count > 1 ? "s" : ""} avec statistiques</p>
+            <div className="flex flex-col gap-3">
+              <div>
+                <h3 className="font-display text-[17px] font-semibold leading-6 text-ink">Navette</h3>
+                <p className="mt-0.5 text-[13px] leading-[18px] text-ink-muted">{navetteAgg.count} culte{navetteAgg.count > 1 ? "s" : ""} avec statistiques</p>
               </div>
-              <div className="p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                  { label: "Hommes (total)",  value: navetteAgg.hommes,    sub: `moy. ${Math.round(navetteAgg.hommes / navetteAgg.count)}/culte`,  color: "text-info" },
-                  { label: "Femmes (total)",  value: navetteAgg.femmes,    sub: `moy. ${Math.round(navetteAgg.femmes / navetteAgg.count)}/culte`,  color: "text-danger" },
-                  { label: "Enfants (total)", value: navetteAgg.enfants,   sub: `moy. ${Math.round(navetteAgg.enfants / navetteAgg.count)}/culte`, color: "text-warning" },
-                  { label: "Total général",   value: navetteAgg.total,     sub: `moy. ${navetteAgg.avgTotal}/culte`,                               color: "text-info" },
+                  { label: "Hommes (total)",  value: navetteAgg.hommes,    sub: `moy. ${Math.round(navetteAgg.hommes / navetteAgg.count)}/culte` },
+                  { label: "Femmes (total)",  value: navetteAgg.femmes,    sub: `moy. ${Math.round(navetteAgg.femmes / navetteAgg.count)}/culte` },
+                  { label: "Enfants (total)", value: navetteAgg.enfants,   sub: `moy. ${Math.round(navetteAgg.enfants / navetteAgg.count)}/culte` },
+                  { label: "Total général",   value: navetteAgg.total,     sub: `moy. ${navetteAgg.avgTotal}/culte` },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
-                    <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
-                    <div className="text-xs text-ink-muted mt-1">{s.label}</div>
-                    <div className="text-xs text-ink-subtle">{s.sub}</div>
+                    <div className="font-display text-3xl font-bold text-ink">{s.value}</div>
+                    <div className="mt-1 text-[13px] leading-[18px] text-ink-muted">{s.label}</div>
+                    <div className="text-[13px] leading-[18px] text-ink-muted">{s.sub}</div>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <p className="text-sm text-ink-subtle italic">Aucune donnée Navette sur cette période.</p>
+            <EmptyState size="sm" title="Aucune donnée Navette sur cette période." />
           )}
 
           {/* Détail par événement */}
           {withReport > 0 && (
-            <div className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
-              <div className="px-5 py-3 border-b border-line">
-                <h3 className="text-sm font-semibold text-ink-muted">Détail par événement</h3>
+            <div className="flex flex-col gap-3">
+              <div>
+                <h3 className="font-display text-[17px] font-semibold leading-6 text-ink">Détail par événement</h3>
               </div>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto rounded-card border border-line bg-surface">
                 <table className="w-full min-w-[600px] text-sm">
                   <thead>
-                    <tr className="bg-surface-sunken text-xs text-ink-muted uppercase">
+                    <tr className="bg-surface-sunken text-[13px] text-ink-muted">
                       <th className="px-4 py-2 text-left font-medium">Événement</th>
-                      <th className="px-4 py-2 text-center font-medium">H</th>
-                      <th className="px-4 py-2 text-center font-medium">F</th>
+                      <th className="px-4 py-2 text-center font-medium"><abbr title="Hommes">H</abbr></th>
+                      <th className="px-4 py-2 text-center font-medium"><abbr title="Femmes">F</abbr></th>
                       <th className="px-4 py-2 text-center font-medium">Enfants</th>
                       <th className="px-4 py-2 text-center font-medium">Total adultes</th>
                       <th className="px-4 py-2 text-center font-medium">Total général</th>
@@ -557,16 +527,19 @@ export default function ReportsClient({ events, churchId }: Props) {
                       return (
                         <tr key={e.id} className="hover:bg-surface-sunken">
                           <td className="px-4 py-2">
-                            <Link href={`/admin/events/${e.id}/report`} className="text-brand-text hover:underline font-medium">
+                            <Link
+                              href={`/admin/events/${e.id}/report`}
+                              className="rounded-control font-semibold text-brand-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                            >
                               {e.title}
                             </Link>
-                            <span className="text-ink-subtle ml-2">{fmtDate(e.date)}</span>
+                            <span className="ml-2 text-ink-muted">{fmtDate(e.date)}</span>
                           </td>
-                          <td className="px-4 py-2 text-center text-info font-medium">{acc?.hommes ?? "—"}</td>
-                          <td className="px-4 py-2 text-center text-danger font-medium">{acc?.femmes ?? "—"}</td>
+                          <td className="px-4 py-2 text-center">{acc?.hommes ?? "—"}</td>
+                          <td className="px-4 py-2 text-center">{acc?.femmes ?? "—"}</td>
                           <td className="px-4 py-2 text-center">{acc?.enfants ?? "—"}</td>
                           <td className="px-4 py-2 text-center font-semibold">{acc?.adultes ?? "—"}</td>
-                          <td className="px-4 py-2 text-center font-semibold text-ink-muted">{acc?.total ?? "—"}</td>
+                          <td className="px-4 py-2 text-center font-semibold text-ink">{acc?.total ?? "—"}</td>
                         </tr>
                       );
                     })}
@@ -577,6 +550,7 @@ export default function ReportsClient({ events, churchId }: Props) {
           )}
         </div>
       )}
+      </TabPanel>
     </div>
   );
 }

@@ -222,6 +222,7 @@ export default function SecretariatDetail({
         <ReasonForm
           label="Motif de l'annulation"
           confirmLabel="Annuler l'annonce"
+          cancelLabel="Garder l'annonce"
           warning={cascadeWarning(item)}
           busy={ctx.busy}
           onCancel={() => setMode(null)}

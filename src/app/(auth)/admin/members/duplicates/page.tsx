@@ -2,10 +2,9 @@ import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/
 import { resolveMemberDepartmentScope } from "@/lib/member-scope";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
 import DuplicatesView from "./DuplicatesView";
-import { buttonClasses } from "@/components/ui/button-classes";
 import { duplicateGroups } from "@/lib/member-duplicates";
+import { PageHeader } from "@/components/ui";
 
 export default async function DuplicatesPage() {
   const session = await requireAuth();
@@ -72,13 +71,8 @@ export default async function DuplicatesPage() {
   const allMembers = members.map(serializeMember);
 
   return (
-    <div>
-      <div className="flex items-center gap-4 mb-6">
-        <Link href="/admin/members" className={buttonClasses("secondary", "sm")}>
-          ← Retour
-        </Link>
-        <h1 className="text-2xl font-bold text-ink">Doublons potentiels</h1>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader eyebrow="STAR" title="Doublons potentiels" />
       <DuplicatesView
         groups={serialized}
         allMembers={allMembers}

@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, CircleAlert, CircleCheck, Download, Eye, LoaderCircle, Plus, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, CircleAlert, CircleCheck, Download, Eye, LoaderCircle, Plus, Trash2 } from "lucide-react";
 import {
   Alert,
   Button,
@@ -15,7 +15,9 @@ import {
   StatusChip,
   Textarea,
   buttonClasses,
+  iconButtonClasses,
   fieldLabelClasses,
+  radioInputClasses,
   useToast,
   type StatusTone,
 } from "@/components/ui";
@@ -39,6 +41,7 @@ import {
 } from "@/modules/campaigns/schemas";
 import { allowedQualifiers, completeness, evaluateRules, flattenItems, ruleScope, validateAnswerValue } from "@/modules/campaigns/schemas";
 import type { AssignmentView } from "@/modules/campaigns";
+import FileInput from "@/components/ui/FileInput";
 
 /**
  * Saisie d'un questionnaire de collecte (spec 090), avec compte (`/collectes/r/<id>`) ou par lien
@@ -220,8 +223,8 @@ function NumberInput({
 function Option({ children, input, disabled }: { readonly children: ReactNode; readonly input: ReactNode; readonly disabled: boolean }) {
   return (
     <label
-      className={`flex min-h-11 items-center gap-3 rounded-control border border-line bg-surface px-3 py-2 text-[15px] leading-[22px] text-ink ${
-        disabled ? "opacity-70" : "cursor-pointer hover:border-control-line"
+      className={`flex min-h-11 items-center gap-3 rounded-control border border-control-line bg-surface px-3 py-2 text-[15px] leading-[22px] text-ink has-[:checked]:border-brand has-[:checked]:bg-brand-soft ${
+        disabled ? "opacity-70" : "cursor-pointer hover:bg-surface-sunken"
       }`}
     >
       {input}
@@ -241,7 +244,7 @@ function Radio({
   readonly disabled: boolean;
   readonly onChange: () => void;
 }) {
-  return <input type="radio" name={name} className="size-5 shrink-0 accent-brand" checked={checked} disabled={disabled} onChange={onChange} />;
+  return <input type="radio" name={name} className={radioInputClasses} checked={checked} disabled={disabled} onChange={onChange} />;
 }
 
 function FieldTitle({
@@ -469,7 +472,7 @@ function GroupField({
       {!none && (
         <>
           {rows.map((row, i) => (
-            <div key={i} className="flex flex-col gap-3 rounded-control border border-line bg-surface-sunken p-3">
+            <div key={i} className="flex flex-col gap-3 rounded-control border border-line p-3">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-[13px] font-semibold text-ink-muted">Ligne {i + 1}</p>
                 {!disabled && (
@@ -622,11 +625,11 @@ function FileRequestField({
         ))}
       </div>
       {showFiles && (
-        <div className="flex flex-col gap-2 rounded-control border border-line bg-surface-sunken p-3">
+        <div className="flex flex-col gap-2 rounded-control border border-line p-3">
           {files.length > 0 ? (
             <ul className="flex flex-col gap-2">
               {files.map((f) => (
-                <li key={f.id} className="flex items-center gap-2 rounded-control bg-surface px-3 py-2">
+                <li key={f.id} className="flex items-center gap-2 rounded-control border border-line px-3 py-2">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[15px] text-ink">{f.name}</p>
                     <p className="text-[13px] text-ink-muted">
@@ -640,7 +643,7 @@ function FileRequestField({
                       download
                       aria-label={`Télécharger ${f.name}`}
                       title="Télécharger"
-                      className="inline-grid size-11 shrink-0 place-items-center rounded-control text-ink-muted hover:bg-surface-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                      className={iconButtonClasses()}
                     >
                       <Download aria-hidden="true" className="size-5" strokeWidth={1.75} />
                     </a>
@@ -653,21 +656,17 @@ function FileRequestField({
             <p className="text-[13px] text-ink-muted">Aucun fichier déposé.</p>
           )}
           {!disabled && files.length < maxFiles && (
-            <label className={`${buttonClasses("secondary", "md")} self-start ${uploading ? "pointer-events-none opacity-45" : "cursor-pointer"}`}>
-              <Upload aria-hidden="true" className="size-4" strokeWidth={1.75} />
-              {uploading ? "Envoi…" : "Déposer des fichiers"}
-              <input
-                type="file"
-                multiple
-                className="sr-only"
-                disabled={uploading}
-                accept={accept.map((e) => `.${e}`).join(",")}
-                onChange={(e) => {
-                  const list = e.target.files;
-                  void upload(list).then(() => (e.target.value = ""));
-                }}
-              />
-            </label>
+            <FileInput
+              multiple
+              disabled={uploading}
+              buttonLabel={uploading ? "Envoi en cours…" : "Déposer des fichiers"}
+              accept={accept.map((e) => `.${e}`).join(",")}
+              fileNames={[]}
+              onChange={(e) => {
+                const input = e.target;
+                void upload(input.files).then(() => (input.value = ""));
+              }}
+            />
           )}
           {preview && <p className="text-[13px] text-ink-muted">Aperçu : les fichiers ne sont pas envoyés.</p>}
           <p className="text-[13px] text-ink-muted">
@@ -764,8 +763,8 @@ function ItemBlock({
           <div className="flex flex-wrap items-center gap-2">
             <div className="w-full sm:w-56">
               <Select
-                label=""
-                aria-label={`Nature de la réponse : ${item.label}`}
+                label={`Nature de la réponse : ${item.label}`}
+                hideLabel
                 value={draft.qualifier}
                 disabled={disabled}
                 options={qualifiers.map((q) => ({ value: q, label: QUALIFIER_LABELS[q] }))}
@@ -1172,19 +1171,19 @@ export default function AssignmentForm({
 
       {preview && (
         <Alert tone="info" icon={Eye} title="Aperçu : rien n'est enregistré.">
-          Le questionnaire tel que le répondant le verra. Essayez la saisie, les fichiers et la soumission : rien n&apos;est conservé.
+          Le questionnaire tel que le répondant le verra. Essayez la saisie, les fichiers et l&apos;envoi : rien n&apos;est conservé.
         </Alert>
       )}
 
       {status === "CHANGES_REQUESTED" && editable && (
         <Alert tone="warning" title="Correction demandée.">
-          <span className="whitespace-pre-line">{view.assignment.reviewReason ?? "Reprenez vos réponses puis soumettez à nouveau."}</span>
+          <span className="whitespace-pre-line">{view.assignment.reviewReason ?? "Reprenez vos réponses puis envoyez de nouveau le questionnaire."}</span>
         </Alert>
       )}
       {status === "IN_PROGRESS" && view.assignment.reopened && editable && (
-        <Alert tone="warning" title="Questionnaire rouvert : à soumettre de nouveau.">
+        <Alert tone="warning" title="Questionnaire rouvert : à envoyer de nouveau.">
           <span className="whitespace-pre-line">
-            {view.assignment.reviewReason ?? "Vos réponses sont conservées : reprenez-les si besoin puis soumettez à nouveau."}
+            {view.assignment.reviewReason ?? "Vos réponses sont conservées : reprenez-les si besoin puis envoyez de nouveau le questionnaire."}
           </span>
         </Alert>
       )}
@@ -1194,13 +1193,16 @@ export default function AssignmentForm({
       {sections.length > 1 && (
         <nav aria-label="Sommaire" className="rounded-card border border-line bg-surface">
           <details className="group">
-            <summary className="flex min-h-11 cursor-pointer items-center px-4 font-semibold text-ink">Sommaire ({sections.length} sections)</summary>
+            <summary className="flex min-h-11 cursor-pointer items-center px-4 font-semibold text-ink rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">Sommaire ({sections.length} sections)</summary>
             <ol className="flex flex-col pb-2">
               {sections.map((s, index) => {
                 const left = s.items.filter((i) => missing.has(i.code)).length;
                 return (
                   <li key={s.key}>
-                    <a href={`#section-${index + 1}`} className="flex min-h-11 items-center justify-between gap-3 px-4 text-[15px] text-ink hover:bg-surface-sunken">
+                    <a
+                      href={`#section-${index + 1}`}
+                      className="flex min-h-11 items-center justify-between gap-3 px-4 text-[15px] text-ink transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
+                    >
                       <span className="min-w-0">{s.title}</span>
                       {left > 0 ? <StatusChip tone="warning">{left} à compléter</StatusChip> : <StatusChip tone="success">Complet</StatusChip>}
                     </a>
@@ -1228,9 +1230,9 @@ export default function AssignmentForm({
           <ul className="mt-1 flex flex-col gap-1">
             {state.missing.map((code) => (
               <li key={code}>
-                <button type="button" className="min-h-11 text-left font-semibold underline sm:min-h-0" onClick={() => scrollToItem(code)}>
+                <Button type="button" variant="ghost" size="sm" className="justify-start text-left" onClick={() => scrollToItem(code)}>
                   {labelOf(code)}
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
@@ -1261,7 +1263,7 @@ export default function AssignmentForm({
       {editable && (
         <div
           data-k-bottom-bar
-          className={`sticky z-10 flex flex-wrap items-center justify-between gap-2 rounded-card border border-line bg-surface px-3 py-2 shadow-sm ${
+          className={`sticky z-10 flex flex-wrap items-center justify-between gap-2 rounded-card border border-line bg-surface px-3 py-2 shadow-float ${
             isPublic ? "bottom-4" : "bottom-20 md:bottom-4"
           }`}
         >
@@ -1269,23 +1271,23 @@ export default function AssignmentForm({
             <SaveIndicator state={saveState} onRetry={retry} preview={preview} />
             {saveState === "error" && saveError && <p className="pb-1 text-[13px] text-danger">{saveError}</p>}
             {violated.length > 0 && (
-              <a href="#campaign-alerts" className="pb-1 text-[13px] font-semibold text-warning underline">
+              <a href="#campaign-alerts" className={`${buttonClasses("ghost", "sm")} self-start`}>
                 {violated.length} alerte{violated.length > 1 ? "s" : ""} de cohérence
               </a>
             )}
           </div>
           <Button type="button" onClick={() => void startSubmit()} disabled={submitting}>
-            {submitting ? "Soumission…" : "Soumettre"}
+            {submitting ? "Envoi du questionnaire…" : "Envoyer le questionnaire"}
           </Button>
         </div>
       )}
 
       <ConfirmModal
         open={confirmOpen}
-        title="Soumettre ce questionnaire ?"
-        message="Une fois soumis, il passe en lecture seule et les gestionnaires de la campagne sont prévenus."
-        confirmLabel="Soumettre"
-        confirmingLabel="Soumission…"
+        title="Envoyer ce questionnaire ?"
+        message="Une fois envoyé, il passe en lecture seule et les gestionnaires de la campagne sont prévenus."
+        confirmLabel="Envoyer le questionnaire"
+        confirmingLabel="Envoi du questionnaire…"
         variant="primary"
         confirming={submitting}
         onConfirm={() => void submit()}

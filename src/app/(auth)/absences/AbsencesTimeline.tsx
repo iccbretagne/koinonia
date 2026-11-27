@@ -78,7 +78,7 @@ export default function AbsencesTimeline({ absences, responses = [], onSelect }:
   const rows = Array.from(byMember.values()).sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <div className="border border-line rounded-xl overflow-hidden">
+    <div className="overflow-hidden rounded-card border border-line bg-surface">
       <div className="overflow-x-auto">
         <div className="min-w-[560px]">
           <div className="flex justify-between px-3 py-1.5 text-xs text-ink-subtle border-b border-line">
@@ -103,6 +103,7 @@ export default function AbsencesTimeline({ absences, responses = [], onSelect }:
                           type="button"
                           onClick={() => onSelect?.(a.id)}
                           title={title}
+                          aria-label={`${row.name} : ${title}`}
                           className={`absolute top-0.5 h-5 rounded ${color} hover:opacity-80 transition-opacity`}
                           style={{ left: `${left}%`, width: `${width}%` }}
                         />
@@ -121,6 +122,7 @@ export default function AbsencesTimeline({ absences, responses = [], onSelect }:
                                 type="button"
                                 onClick={() => onSelect?.(a.id)}
                                 title={fmt.format(new Date(e.date))}
+                                aria-label={`${row.name} : ${fmt.format(new Date(e.date))}`}
                                 className={`absolute top-0.5 h-5 w-2 rounded-full ${color} hover:opacity-80 transition-opacity`}
                                 style={{ left: `${pos}%` }}
                               />

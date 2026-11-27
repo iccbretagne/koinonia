@@ -89,9 +89,9 @@ export default function SessionsEditor({
     );
 
   return (
-    <section className="space-y-3 rounded-card border border-line bg-surface p-4">
+    <section className="space-y-3">
       <div>
-        <h2 className="font-semibold text-ink">Sessions et niveaux</h2>
+        <h2 className="font-display text-[17px] font-semibold text-ink">Sessions et niveaux</h2>
         <p className="text-[14px] text-ink-muted">
           Chaque personne choisit une session et un niveau ; les places d&apos;un niveau ne sont jamais dépassées. La question
           « Session et niveau » est ajoutée d&apos;office au formulaire.
@@ -121,11 +121,11 @@ export default function SessionsEditor({
           <p className="text-[13px] font-semibold text-ink-muted">Niveaux</p>
           {s.levels.map((l, li) => (
             <div key={l.key} className="grid grid-cols-[90px_1fr_100px_44px] items-end gap-2">
-              <Input label="" aria-label={`Code du niveau ${li + 1}`} placeholder="001" value={l.code} maxLength={20} onChange={(e) => setLevel(s, l.key, { code: e.target.value })} />
-              <Input label="" aria-label={`Intitulé du niveau ${li + 1}`} placeholder="Intitulé (facultatif)" value={l.label} maxLength={150} onChange={(e) => setLevel(s, l.key, { label: e.target.value })} />
+              <Input label={`Code du niveau ${li + 1}`} hideLabel placeholder="001" value={l.code} maxLength={20} onChange={(e) => setLevel(s, l.key, { code: e.target.value })} />
+              <Input label={`Intitulé du niveau ${li + 1}`} hideLabel placeholder="Intitulé (facultatif)" value={l.label} maxLength={150} onChange={(e) => setLevel(s, l.key, { label: e.target.value })} />
               <Input
-                label=""
-                aria-label={`Places du niveau ${li + 1}`}
+                label={`Places du niveau ${li + 1}`}
+                hideLabel
                 type="number"
                 min={1}
                 placeholder="Places"
@@ -139,7 +139,7 @@ export default function SessionsEditor({
                 disabled={s.levels.length <= 1 || used.has(l.key)}
                 onClick={() => setSession(s.key, { levels: s.levels.filter((x) => x.key !== l.key) })}
               />
-              <label className="col-span-4 -mt-1 flex min-h-9 items-center gap-2">
+              <label className="col-span-4 -mt-1 flex min-h-11 items-center gap-2">
                 <Checkbox checked={l.isEntry} onChange={(e) => setLevel(s, l.key, { isEntry: e.target.checked })} />
                 <span className="text-[13px] text-ink">Niveau d&apos;entrée (« niveau précédent suivi » n&apos;est pas demandé)</span>
               </label>
@@ -163,8 +163,8 @@ export default function SessionsEditor({
         >
           <Plus className="size-4" aria-hidden="true" /> Ajouter une session
         </Button>
-        <Button type="button" disabled={busy || disabled} onClick={() => void save()}>
-          {busy ? "Enregistrement…" : "Enregistrer les sessions"}
+        <Button type="button" variant="secondary" disabled={busy || disabled} onClick={() => void save()}>
+          {busy ? "Enregistrement en cours…" : "Enregistrer les sessions"}
         </Button>
       </div>
       {responses > 0 && <p className="text-[13px] text-ink-muted">Un niveau qui a des inscrits ne peut être ni supprimé, ni ramené sous ses inscrits.</p>}

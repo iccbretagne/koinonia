@@ -57,8 +57,8 @@ export default function ServingSettingsForm({ churchId, initial }: Props) {
 
   return (
     <form onSubmit={save} className="space-y-4">
-      <section className="bg-surface rounded-xl border border-line p-4 sm:p-5 space-y-4">
-        <h2 className="text-base font-semibold text-ink">Durées</h2>
+      <section className="space-y-4">
+        <h2 className="font-display text-[17px] font-semibold text-ink">Durées</h2>
         <Input
           label="Durée d'observation (mois)"
           type="number"
@@ -94,8 +94,8 @@ export default function ServingSettingsForm({ churchId, initial }: Props) {
         />
       </section>
 
-      <section className="bg-surface rounded-xl border border-line p-4 sm:p-5 space-y-4">
-        <h2 className="text-base font-semibold text-ink">Adresse email du PVS</h2>
+      <section className="space-y-4">
+        <h2 className="font-display text-[17px] font-semibold text-ink">Adresse email du PVS</h2>
         <p className="text-sm text-ink-muted">
           Reçoit une copie des notifications de nouvelle candidature et de renvoi, avec un lien vers Koinonia seulement.
         </p>
@@ -108,7 +108,7 @@ export default function ServingSettingsForm({ churchId, initial }: Props) {
           initial.pvsDepartments.map((d) => (
             <Input
               key={d.id}
-              label={d.name}
+              label={`${d.name} (facultatif)`}
               type="email"
               placeholder="pvs@exemple.fr"
               value={emails[d.id] ?? ""}
@@ -120,7 +120,7 @@ export default function ServingSettingsForm({ churchId, initial }: Props) {
       </section>
 
       <Button type="submit" disabled={saving}>
-        {saving ? "Enregistrement…" : "Enregistrer"}
+        {saving ? "Enregistrement en cours…" : "Enregistrer les paramètres"}
       </Button>
     </form>
   );

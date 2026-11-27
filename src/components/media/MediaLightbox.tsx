@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import IconButton from "@/components/ui/IconButton";
 
 export interface LightboxItem {
   id: string;
@@ -71,7 +73,7 @@ export default function MediaLightbox<T extends LightboxItem>({
   return (
     <div
       // eslint-disable-next-line no-restricted-syntax -- visionneuse plein écran toujours sombre
-      className="fixed inset-0 z-[60] bg-black/95 flex flex-col"
+      className="fixed inset-0 z-modal bg-black/95 flex flex-col"
       role="none"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
@@ -80,12 +82,7 @@ export default function MediaLightbox<T extends LightboxItem>({
         <div className="flex items-center gap-4 shrink-0 ml-4">
           {/* eslint-disable-next-line no-restricted-syntax -- visionneuse plein écran toujours sombre */}
           <span className="text-sm text-white/50">{safeIndex + 1} / {items.length}</span>
-          {/* eslint-disable-next-line no-restricted-syntax -- visionneuse plein écran toujours sombre */}
-          <button ref={closeRef} onClick={onClose} aria-label="Fermer" className="text-white/50 hover:text-white transition-colors">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <IconButton variant="on-dark" icon={X} ref={closeRef} onClick={onClose} aria-label="Fermer" className="-mr-2" />
         </div>
       </div>
 
@@ -105,32 +102,18 @@ export default function MediaLightbox<T extends LightboxItem>({
         }}
       >
         {hasPrev && (
-          <button
-            onClick={() => go(-1)}
-            aria-label="Précédent"
-            // eslint-disable-next-line no-restricted-syntax -- visionneuse plein écran toujours sombre
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-scrim hover:bg-black/70 flex items-center justify-center text-white text-xl font-light transition-colors z-10 backdrop-blur-sm"
-          >
-            ‹
-          </button>
+          <IconButton variant="on-dark" icon={ChevronLeft} onClick={() => go(-1)} aria-label="Précédent" className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-scrim backdrop-blur-sm" />
         )}
         {item.src ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img key={item.id} src={item.src} alt={item.alt} className="max-w-full max-h-full object-contain rounded-xl shadow-overlay select-none" draggable={false} />
+          <img key={item.id} src={item.src} alt={item.alt} className="max-w-full max-h-full object-contain rounded-card shadow-overlay select-none" draggable={false} />
         ) : (
-          <div className="w-64 h-64 bg-control-line rounded-xl flex items-center justify-center text-ink-muted text-sm">
+          <div className="w-64 h-64 bg-control-line rounded-card flex items-center justify-center text-ink-muted text-sm">
             Aperçu indisponible
           </div>
         )}
         {hasNext && (
-          <button
-            onClick={() => go(1)}
-            aria-label="Suivant"
-            // eslint-disable-next-line no-restricted-syntax -- visionneuse plein écran toujours sombre
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-scrim hover:bg-black/70 flex items-center justify-center text-white text-xl font-light transition-colors z-10 backdrop-blur-sm"
-          >
-            ›
-          </button>
+          <IconButton variant="on-dark" icon={ChevronRight} onClick={() => go(1)} aria-label="Suivant" className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-scrim backdrop-blur-sm" />
         )}
       </div>
 

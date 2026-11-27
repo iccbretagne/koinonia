@@ -58,7 +58,7 @@ export default function PublishModal({
     }
   }
 
-  const confirmLabel = action === "publish" ? "Publier" : "Dépublier";
+  const confirmLabel = action === "publish" ? "Publier le culte" : "Dépublier le culte";
 
   return (
     <Modal open={open} onClose={onClose} title={action === "publish" ? "Publier ce culte" : "Dépublier ce culte"}>
@@ -69,14 +69,14 @@ export default function PublishModal({
             normalisé à −16 LUFS) est calculé après publication pour toute séquence nouvelle ou modifiée — une
             republication sans nouveau dépôt ne relance aucun rendu.
           </p>
-          <ul className="divide-y divide-line border border-line rounded-lg">
+          <ul className="divide-y divide-line border border-line rounded-control">
             {segments.map((seg) => (
               <li key={seg.id} className="flex items-center justify-between px-3 py-2 text-sm">
                 <span className="text-ink">{seg.title}</span>
                 {seg.hasRendition ? (
                   <span className={isFlagged(seg) ? "text-danger font-medium" : "text-ink-muted"}>
                     {seg.lufs?.toFixed(1)} LUFS · crête {seg.truePeakDb?.toFixed(1)} dB
-                    {isFlagged(seg) && " ⚠"}
+                    {isFlagged(seg) && " · à vérifier"}
                   </span>
                 ) : (
                   <span className="text-ink-subtle">rendu à calculer</span>
@@ -98,8 +98,8 @@ export default function PublishModal({
         <Button variant="secondary" onClick={onClose} disabled={submitting}>
           Annuler
         </Button>
-        <Button variant={action === "unpublish" ? "danger" : "primary"} onClick={confirm} disabled={submitting}>
-          {submitting ? "…" : confirmLabel}
+        <Button onClick={confirm} disabled={submitting}>
+          {submitting ? (action === "publish" ? "Publication en cours…" : "Dépublication en cours…") : confirmLabel}
         </Button>
       </div>
     </Modal>

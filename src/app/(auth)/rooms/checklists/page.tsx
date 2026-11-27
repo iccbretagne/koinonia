@@ -6,10 +6,12 @@ import { isControlTeamMember } from "@/modules/rooms";
 import { prisma } from "@/lib/prisma";
 import RoomChecklistsClient from "./RoomChecklistsClient";
 import { buttonClasses } from "@/components/ui/button-classes";
+import PageHeader from "@/components/ui/PageHeader";
+
 export default async function RoomChecklistsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="text-ink-muted">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-[15px] leading-[22px] text-ink-muted">Aucune église sélectionnée.</p>;
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
   const permissions = new Set(roles.flatMap((r) => rolePermissions[r] ?? []));
@@ -43,13 +45,15 @@ export default async function RoomChecklistsPage() {
   });
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
-        <h1 className="text-2xl font-bold text-ink">Contrôle des mains courantes</h1>
-        <Link href="/rooms" className={buttonClasses("secondary", "sm")}>
-          ← Réservation des salles
-        </Link>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Contrôle des mains courantes"
+        actions={
+          <Link href="/rooms" className={buttonClasses("secondary")}>
+            Voir les réservations
+          </Link>
+        }
+      />
       <RoomChecklistsClient
         initialReservations={reservations.map((r) => ({
           id: r.id,

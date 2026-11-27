@@ -62,11 +62,11 @@ export default function CollectionsPanel({
 
   return (
     <>
-      <ul className="bg-surface rounded-xl border border-line divide-y divide-line">
+      <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
         {months.map((m) => (
           <li key={m.month} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
             <div className="min-w-0">
-              <p className="font-semibold text-ink">{monthLabel(m.month)}</p>
+              <p className="text-[15px] font-semibold leading-[22px] text-ink">{monthLabel(m.month)}</p>
               <p className="text-sm text-ink-muted">
                 {eventCountLabel(m.eventCount)}
               </p>

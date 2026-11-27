@@ -1,9 +1,10 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, FileText, Image as ImageIcon, Upload, X } from "lucide-react";
-import { Button, Checkbox, Input, Modal, Select, Textarea, useToast } from "@/components/ui";
+import { Camera, FileText, Image as ImageIcon, X } from "lucide-react";
+import { Alert, Button, Checkbox, FilterChip, IconButton, Input, Modal, Select, Textarea, fieldLabelClasses, useToast } from "@/components/ui";
+import FileInput from "@/components/ui/FileInput";
 import type { LedgerLine } from "@/modules/shuttle";
 import {
   AUTHOR_EDIT_WINDOW_HOURS,
@@ -125,8 +126,6 @@ function ReceiptField({
   readonly onPick: (f: File | undefined) => void;
   readonly onClear: () => void;
 }) {
-  const photoRef = useRef<HTMLInputElement>(null);
-  const docRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const hint =
     existingReceipt && !file
@@ -146,7 +145,7 @@ function ReceiptField({
       }}
       className={`rounded-card border border-dashed p-3 ${dragging ? "border-brand bg-brand-soft" : "border-control-line"}`}
     >
-      <legend className="px-1 text-sm font-medium text-ink-muted">
+      <legend className={`${fieldLabelClasses} px-1`}>
         Justificatif{required ? " (obligatoire)" : " (facultatif)"}
       </legend>
       {file ? (
@@ -157,54 +156,20 @@ function ReceiptField({
             <FileText aria-hidden="true" className="size-10 shrink-0 text-ink-muted" />
           )}
           <span className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-sm text-ink">{file.name}</span>
-            <span className="text-[13px] text-ink-muted">{(file.size / 1024 / 1024).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} Mo</span>
+            <span className="truncate text-[15px] leading-[22px] text-ink">{file.name}</span>
+            <span className="text-[13px] leading-[18px] text-ink-muted">{(file.size / 1024 / 1024).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} Mo</span>
           </span>
-          <button
-            type="button"
-            aria-label="Retirer le justificatif"
-            onClick={() => onClear()}
-            className="grid size-11 place-items-center rounded-control text-ink-muted hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-focus"
-          >
-            <X aria-hidden="true" className="size-5" />
-          </button>
+          <IconButton icon={X} aria-label="Retirer le justificatif" title="Retirer" onClick={() => onClear()} />
         </div>
       ) : (
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button type="button" variant="secondary" onClick={() => photoRef.current?.click()}>
-            <Camera aria-hidden="true" className="size-4" /> Prendre une photo
-          </Button>
-          <Button type="button" variant="secondary" onClick={() => docRef.current?.click()}>
-            <Upload aria-hidden="true" className="size-4" /> Choisir un document
-          </Button>
+          <FileInput accept="image/*" capture="environment" icon={Camera} buttonLabel="Prendre une photo" aria-label="Photo du justificatif" resetAfterSelect onFiles={(files) => onPick(files[0])} />
+          <FileInput accept="image/jpeg,image/png,image/webp,application/pdf" buttonLabel="Choisir un document" aria-label="Document justificatif" resetAfterSelect onFiles={(files) => onPick(files[0])} />
         </div>
       )}
       <p className="mt-2 text-[13px] leading-[18px] text-ink-muted">
         {hint}
       </p>
-      <input
-        ref={photoRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        aria-label="Photo du justificatif"
-        onChange={(e) => {
-          onPick(e.target.files?.[0]);
-          e.target.value = "";
-        }}
-      />
-      <input
-        ref={docRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,application/pdf"
-        className="hidden"
-        aria-label="Document justificatif"
-        onChange={(e) => {
-          onPick(e.target.files?.[0]);
-          e.target.value = "";
-        }}
-      />
     </fieldset>
   );
 }
@@ -299,24 +264,15 @@ export default function EntryForm({
 
   return (
     <Modal open={open} onClose={onClose} title={title} mobileLayout="sheet">
-      <form onSubmit={submit} className="space-y-4">
+      <form onSubmit={submit} className="flex flex-col gap-4">
         {!editing && !seed.returnOf && (
           <fieldset>
-            <legend className="mb-2 text-sm font-medium text-ink-muted">Nature</legend>
-            <div className="flex flex-wrap gap-2" role="radiogroup">
+            <legend className={`${fieldLabelClasses} mb-2`}>Nature</legend>
+            <div className="flex flex-wrap gap-2">
               {kinds.map((k) => (
-                <button
-                  key={k}
-                  type="button"
-                  role="radio"
-                  aria-checked={form.kind === k}
-                  onClick={() => set("kind", k)}
-                  className={`min-h-11 rounded-full border px-4 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
-                    form.kind === k ? "border-brand bg-brand-soft text-brand-text" : "border-control-line bg-surface text-ink-muted hover:bg-surface-sunken"
-                  }`}
-                >
+                <FilterChip key={k} pressed={form.kind === k} onClick={() => set("kind", k)}>
                   {ENTRY_KIND_LABEL[k]}
-                </button>
+                </FilterChip>
               ))}
             </div>
           </fieldset>
@@ -344,7 +300,7 @@ export default function EntryForm({
         </div>
 
         {form.kind === "OPENING_BALANCE" && (
-          <label className="flex min-h-11 items-center gap-3 text-sm text-ink">
+          <label className="flex min-h-11 items-center gap-3 text-[15px] leading-[22px] text-ink">
             <Checkbox checked={form.negative} onChange={(e) => set("negative", e.target.checked)} />
             Solde négatif (la navette a avancé de l&apos;argent)
           </label>
@@ -434,7 +390,7 @@ export default function EntryForm({
         />
 
         {form.kind === "EXPENSE" && (
-          <label className="flex min-h-11 items-center gap-3 text-sm text-ink">
+          <label className="flex min-h-11 items-center gap-3 text-[15px] leading-[22px] text-ink">
             <Checkbox checked={form.personalAdvance} onChange={(e) => set("personalAdvance", e.target.checked)} />
             Payé avec mon argent personnel (avance à rembourser)
           </label>
@@ -455,16 +411,16 @@ export default function EntryForm({
           </p>
         )}
         {error && (
-          <p role="alert" className="text-sm text-danger">
+          <Alert tone="danger" role="alert">
             {error}
-          </p>
+          </Alert>
         )}
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button type="button" variant="secondary" onClick={onClose}>
             Annuler
           </Button>
           <Button type="submit" disabled={busy}>
-            {busy ? "Enregistrement…" : "Enregistrer"}
+            {busy ? "Enregistrement…" : editing ? "Enregistrer la correction" : "Enregistrer la ligne"}
           </Button>
         </div>
       </form>

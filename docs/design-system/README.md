@@ -113,3 +113,14 @@ Les composants reprennent l'inventaire de `src/components/ui/` et de la coquille
 Deux maquettes (groupe **Maquettes**) assemblent ces composants en écrans réels : le planning d'un culte vu par un responsable de département sur desktop, et trois écrans mobiles (accueil d'un STAR, planning d'un responsable, menu « Plus »).
 
 Ajouts volontaires, parce qu'un besoin existe sans composant commun : `IconButton` (les « × » et icônes cliquables sont refaits à chaque écran), `StatusChip` (couleurs de statut définies au cas par cas), `Alert` (bandeaux d'avertissement ad hoc), `PageHeader` (chaque page compose son titre et ses actions), `Toast` (aucun retour après action), `Skeleton` (aucun état de chargement), `EmptyState` (« Aucune donnée. » sans suite). Extraits ensuite d'un écran pour servir à plusieurs : `FilterChip` et `SearchInput` (barre d'outils des listes filtrables, spec 064).
+
+Ajoutés pendant la mise en conformité, pour remplacer les contrôles refaits à la main dans les écrans :
+
+- [`Menu`](components/Menu.md) : menu d'actions « ⋯ », liste ancrée sur desktop, feuille du bas sur mobile ;
+- [`SegmentedControl`](components/SegmentedControl.md) : deux à cinq options exclusives qui changent la vue d'une page ;
+- [`Switch`](components/Switch.md) : interrupteur `role="switch"` pour un réglage appliqué ;
+- [`RadioGroup`](components/RadioGroup.md) : choix unique dans un formulaire (liste, pastilles ou cartes, en grille au besoin ; `choiceChipClasses`, `choiceCardClasses`, `radioInputClasses`) ;
+- [`FileInput`](components/FileInput.md) : sélecteur de fichier sous forme de bouton du design system ;
+- [`Tabs`](components/Tabs.md) en mode état (`value`/`onChange`/`idBase`, `TabPanel`) en plus du mode liens.
+
+Inventaire complet, une fiche par composant dans [`components/`](components/) : `Alert`, `BottomNav`, `BottomSheet`, `BulkActionBar`, `Button`, `Checkbox`, `CountBadge`, `DataTable`, `Dialog`, `EmptyState`, `Field`, `FileInput`, `FilterChip`, `IconButton`, `Menu`, `PageHeader`, `PlanningGrid`, `RadioGroup`, `SearchInput`, `SegmentedControl`, `Sidebar`, `Skeleton`, `SpaceCard`, `StagingBanner`, `StatusChip`, `Switch`, `Tabs`, `Toast`, `TopBar`.

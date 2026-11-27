@@ -126,7 +126,7 @@ export function ToastProvider({ children }: { readonly children: ReactNode }) {
         // `[popover]` impose par défaut `inset: 0` (donc `top: 0`) et `width/height: fit-content` :
         // sans les neutraliser explicitement (`top-auto`, `w-auto`/`md:w-fit`), le conteneur
         // remonterait collé en haut de l'écran au lieu de suivre `bottom-…` ci-dessous.
-        className="pointer-events-none fixed inset-x-4 top-auto bottom-[calc(64px+env(safe-area-inset-bottom)+12px)] z-[70] m-0 w-auto flex justify-center
+        className="pointer-events-none fixed inset-x-4 top-auto bottom-[calc(64px+env(safe-area-inset-bottom)+12px)] z-toast m-0 w-auto flex justify-center
           border-0 bg-transparent p-0 md:inset-x-auto md:bottom-6 md:left-[calc(var(--k-sidebar-width,16rem)+1.5rem)] md:w-fit md:justify-start print:hidden"
       >
         {toast && <ToastView toast={toast} store={store} />}
@@ -177,7 +177,7 @@ function ToastView({ toast, store }: { readonly toast: ToastItem; readonly store
               toast.action?.onClick();
               store.dismiss(toast.id);
             }}
-            className="inline-flex min-h-9 shrink-0 items-center rounded-control px-3 font-display text-sm font-semibold text-bg underline underline-offset-[3px]
+            className="inline-flex min-h-11 shrink-0 items-center rounded-control px-3 font-display text-sm font-semibold text-bg sm:min-h-9
               hover:bg-bg/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bg"
           >
             {toast.action.label}
@@ -188,7 +188,7 @@ function ToastView({ toast, store }: { readonly toast: ToastItem; readonly store
           aria-label="Fermer le message"
           title="Fermer"
           onClick={() => store.dismiss(toast.id)}
-          className="grid size-9 shrink-0 place-items-center rounded-control text-bg/70 hover:bg-bg/15 hover:text-bg
+          className="grid size-11 shrink-0 place-items-center rounded-control text-bg/70 sm:size-9 hover:bg-bg/15 hover:text-bg
             focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bg"
         >
           <X aria-hidden="true" className="size-4" strokeWidth={1.75} />

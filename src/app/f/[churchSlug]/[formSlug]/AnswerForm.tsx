@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import FormFiller, { visibleAnswers } from "@/components/forms/FormFiller";
 import type { Answers, FillerForm } from "@/components/forms/types";
 import OfferPanel from "@/components/forms/OfferPanel";
-import { Alert, Button, Input, Modal } from "@/components/ui";
+import { Alert, Button, ConfirmModal, Input, Modal, buttonClasses } from "@/components/ui";
 
 type Existing = { status: string; answers: Answers; offerExpiresAt: string | null } | null;
 
@@ -35,8 +36,11 @@ function RecoverModal({ url, siteKey, onClose }: { readonly url: string; readonl
           <Input label="Email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           <TurnstileWidget siteKey={siteKey} onToken={setToken} />
           {state === "error" && <Alert tone="danger">La demande n&apos;a pas abouti. Réessayez dans un instant.</Alert>}
+          {(!email || !token) && (
+            <p className="text-[13px] text-ink-muted">Indiquez votre email et terminez la vérification anti-robots pour recevoir le lien.</p>
+          )}
           <Button type="button" disabled={!email || !token || state === "sending"} onClick={() => void submit()}>
-            {state === "sending" ? "Envoi…" : "Recevoir le lien"}
+            {state === "sending" ? "Envoi en cours…" : "Recevoir le lien"}
           </Button>
         </div>
       )}
@@ -73,6 +77,8 @@ export default function AnswerForm({
   const [recovering, setRecovering] = useState(false);
   const [offer, setOffer] = useState(existing?.status === "OFFERED" ? existing.offerExpiresAt : undefined);
   const [offerResult, setOfferResult] = useState<string | null>(null);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   async function send() {
     setState("sending");
@@ -95,8 +101,10 @@ export default function AnswerForm({
   }
 
   async function cancel() {
-    if (!confirm("Annuler votre réponse ?")) return;
+    setCancelling(true);
     const res = await fetch(`/api/forms/mine/${form.id}`, { method: "DELETE" });
+    setCancelling(false);
+    setConfirmCancel(false);
     if (res.ok) setState("cancelled");
     else setError((await res.json().catch(() => ({}))).error ?? "L'annulation n'a pas abouti.");
   }
@@ -111,9 +119,9 @@ export default function AnswerForm({
           {!form.anonymous && signedIn && "Vous pourrez la retrouver et la modifier depuis cette page tant que le formulaire est ouvert."}
         </Alert>
         {result.manageToken && (
-          <a href={`/f/reponse/${result.manageToken}`} className="inline-block text-[15px] font-semibold text-brand-text underline">
+          <Link href={`/f/reponse/${result.manageToken}`} className={buttonClasses("secondary")}>
             Gérer ma réponse
-          </a>
+          </Link>
         )}
       </div>
     );
@@ -142,12 +150,12 @@ export default function AnswerForm({
       )}
       {offerResult && <Alert tone="success">{offerResult}</Alert>}
       {recoverable && turnstileSiteKey && (
-        <p className="text-[14px] text-ink-muted">
-          Vous avez déjà répondu ?{" "}
-          <button type="button" className="font-semibold text-brand-text underline" onClick={() => setRecovering(true)}>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-[14px] text-ink-muted">Vous avez déjà répondu ?</p>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setRecovering(true)}>
             Retrouver ma réponse
-          </button>
-        </p>
+          </Button>
+        </div>
       )}
       {recovering && turnstileSiteKey && (
         <RecoverModal url={`/api/forms/public/${churchSlug}/${formSlug}/recover`} siteKey={turnstileSiteKey} onClose={() => setRecovering(false)} />
@@ -155,16 +163,31 @@ export default function AnswerForm({
       <FormFiller form={form} answers={answers} onChange={setAnswers} disabled={state === "sending"} />
       {turnstileSiteKey && !editing && <TurnstileWidget siteKey={turnstileSiteKey} onToken={setToken} resetSignal={reset} />}
       {error && <Alert tone="danger">{error}</Alert>}
+      {!!turnstileSiteKey && !editing && !token && (
+        <p className="text-[13px] text-ink-muted">Vérification anti-robots requise pour envoyer la réponse.</p>
+      )}
       <div className="flex flex-wrap gap-3">
         <Button type="submit" disabled={state === "sending" || (!!turnstileSiteKey && !editing && !token)}>
-          {state === "sending" ? "Envoi…" : editing ? "Enregistrer les modifications" : "Envoyer"}
+          {state === "sending" ? "Envoi en cours…" : editing ? "Enregistrer les modifications" : "Envoyer ma réponse"}
         </Button>
         {editing && (
-          <Button type="button" variant="secondary" onClick={() => void cancel()}>
+          <Button type="button" variant="secondary" onClick={() => setConfirmCancel(true)}>
             Annuler ma réponse
           </Button>
         )}
       </div>
+      <ConfirmModal
+        open={confirmCancel}
+        title="Annuler votre réponse ?"
+        message="Votre réponse passe à « Annulée » et votre place éventuelle est libérée."
+        confirmLabel="Annuler ma réponse"
+        cancelLabel="Garder ma réponse"
+        confirmingLabel="Annulation en cours…"
+        variant="primary"
+        confirming={cancelling}
+        onCancel={() => setConfirmCancel(false)}
+        onConfirm={() => void cancel()}
+      />
     </form>
   );
 }

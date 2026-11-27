@@ -1,6 +1,7 @@
 import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import CreateUserClient from "./CreateUserClient";
+import { PageHeader } from "@/components/ui";
 
 export default async function CreateUserPage() {
   const session = await requireAuth();
@@ -26,8 +27,8 @@ export default async function CreateUserPage() {
   });
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-ink mb-6">Créer un utilisateur</h1>
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Créer un utilisateur" />
       <CreateUserClient
         churchId={churchId}
         availableMembers={availableMembers}

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import { Button, EmptyState, IconButton, SkeletonList, StatusChip, useToast } from "@/components/ui";
 
 interface EventItem {
   id: string;
@@ -57,6 +59,7 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
   const [loadingSugg, setLoadingSugg] = useState(false);
   const [assigning, setAssigning]     = useState<string | null>(null);
   const [removing, setRemoving]       = useState<string | null>(null);
+  const toast = useToast();
 
   const fetchMonth = useCallback(async () => {
     setLoading(true);
@@ -121,7 +124,7 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ eventId, welcomeDutyFamilyId: familyId }),
       });
-      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
+      if (!res.ok) { const d = await res.json(); toast.error(d.error || "Erreur"); return; }
       const created: Assignment = await res.json();
       setAssignments((prev) => [...prev, created]);
       setSuggestions((prev) => prev.filter((s) => s.id !== familyId));
@@ -134,7 +137,7 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
     setRemoving(assignmentId);
     try {
       const res = await fetch(`/api/welcome-duty/assignments/${assignmentId}`, { method: "DELETE" });
-      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
+      if (!res.ok) { const d = await res.json(); toast.error(d.error || "Erreur"); return; }
       const removed = assignments.find((a) => a.id === assignmentId);
       setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
       if (openEventId === removed?.eventId) {
@@ -154,17 +157,17 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
 
   let eventsContent: ReactNode;
   if (loading) {
-    eventsContent = <p className="text-sm text-ink-subtle">Chargement…</p>;
+    eventsContent = <SkeletonList rows={4} />;
   } else if (events.length === 0) {
     eventsContent = (
-      <div className="text-center py-12 bg-surface rounded-lg border border-dashed border-line">
-        <p className="text-ink-subtle text-sm">Aucun événement avec service d&apos;accueil ce mois-ci.</p>
-        <p className="text-ink-subtle text-xs mt-1">Activez le flag &laquo;&nbsp;Familles de service attendues&nbsp;&raquo; sur les événements concernés.</p>
-      </div>
+      <EmptyState
+        title="Aucun événement avec service d'accueil ce mois-ci"
+        description="Activez le réglage « Familles de service attendues » sur les événements concernés."
+      />
     );
   } else {
     eventsContent = (
-      <div className="space-y-2">
+      <div className="flex flex-col gap-2">
         {events.map((event) => {
           const eventAssignments = assignmentsFor(event.id);
           const isOpen = openEventId === event.id;
@@ -172,27 +175,27 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
           let suggestionsContent: ReactNode = null;
           if (isOpen) {
             if (loadingSugg) {
-              suggestionsContent = <p className="text-xs text-ink-subtle">Chargement…</p>;
+              suggestionsContent = <p className="text-[13px] text-ink-muted">Chargement…</p>;
             } else if (suggestions.length === 0) {
-              suggestionsContent = <p className="text-xs text-ink-subtle">Toutes les familles du pool sont déjà affectées.</p>;
+              suggestionsContent = <p className="text-[13px] text-ink-muted">Toutes les familles du pool sont déjà affectées.</p>;
             } else {
               suggestionsContent = (
                 <div className="flex flex-wrap gap-2">
                   {suggestions.map((s) => (
-                    <button
+                    <Button
                       key={s.id}
+                      variant="secondary"
+                      size="sm"
                       onClick={() => assign(event.id, s.id)}
                       disabled={assigning === s.id}
-                      className="inline-flex items-center gap-2 px-3 py-2 bg-surface border border-line rounded-full text-sm text-ink-muted hover:border-brand hover:text-brand-text disabled:opacity-50 transition-colors"
+                      aria-label={`Affecter ${s.familyName} (dernier service : ${formatLastServed(s.lastServedAt)})`}
                     >
-                      <span className="font-medium">{s.familyName}</span>
-                      <span className="text-ink-subtle text-xs">{formatLastServed(s.lastServedAt)}</span>
-                      {assigning === s.id ? (
-                        <span className="text-ink-subtle text-xs">…</span>
-                      ) : (
-                        <span className="text-brand-text">+</span>
-                      )}
-                    </button>
+                      <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                      <span className="font-semibold">{s.familyName}</span>
+                      <span className="text-[13px] font-normal text-ink-muted">
+                        {assigning === s.id ? "Affectation…" : formatLastServed(s.lastServedAt)}
+                      </span>
+                    </Button>
                   ))}
                 </div>
               );
@@ -200,61 +203,59 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
           }
 
           return (
-            <div key={event.id} className="bg-surface rounded-lg shadow-card border border-line">
+            <div key={event.id} className="rounded-card border border-line bg-surface shadow-card">
               {/* Event row — stacked on mobile, inline on desktop */}
-              <div className="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2">
+              <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center">
                 {/* Date + title */}
-                <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <span className="text-xs text-ink-subtle shrink-0 capitalize pt-0.5 w-24">
+                <div className="flex min-w-0 flex-1 items-start gap-3">
+                  <span className="w-24 shrink-0 pt-0.5 text-[13px] capitalize text-ink-muted">
                     {formatDate(event.date)}
                   </span>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium text-ink truncate block">{event.title}</span>
-                    <span className="text-xs text-ink-subtle">{event.type}</span>
+                  <div className="min-w-0 flex-1">
+                    <span className="block truncate text-[15px] font-semibold text-ink">{event.title}</span>
+                    <span className="text-[13px] text-ink-muted">{event.type}</span>
                   </div>
                 </div>
 
                 {/* Families + assign button */}
-                <div className="flex items-center gap-2 justify-between sm:justify-end">
-                  <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-end">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     {eventAssignments.length === 0 ? (
-                      <span className="text-xs text-ink-subtle italic">Non affecté</span>
+                      <StatusChip tone="warning">Non affecté</StatusChip>
                     ) : (
                       eventAssignments.map((a) => (
                         <span
                           key={a.id}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-brand-soft text-brand-text text-xs rounded-full font-medium"
+                          className="inline-flex items-center gap-0.5 rounded-control border border-line py-0.5 pl-2.5 pr-0.5 text-sm font-semibold text-ink"
                         >
                           {a.welcomeDutyFamily.familyName}
-                          <button
+                          <IconButton
+                            icon={X}
+                            size="sm"
+                            aria-label={`Retirer ${a.welcomeDutyFamily.familyName}`}
                             onClick={() => remove(a.id)}
                             disabled={removing === a.id}
-                            className="text-brand-text hover:text-brand-text disabled:opacity-40 leading-none ml-0.5"
-                            aria-label="Retirer"
-                          >
-                            ✕
-                          </button>
+                          />
                         </span>
                       ))
                     )}
                   </div>
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="shrink-0"
+                    aria-expanded={isOpen}
                     onClick={() => openSuggestions(event.id)}
-                    className={`shrink-0 text-sm px-3 py-2 rounded-lg border transition-colors ${
-                      isOpen
-                        ? "border-brand bg-brand text-on-brand"
-                        : "border-line text-ink-muted hover:border-brand hover:text-brand-text"
-                    }`}
                   >
-                    {isOpen ? "Fermer" : "+ Affecter"}
-                  </button>
+                    {isOpen ? "Fermer les suggestions" : "Affecter une famille"}
+                  </Button>
                 </div>
               </div>
 
               {/* Suggestion panel */}
               {isOpen && (
-                <div className="border-t border-line px-4 py-3 bg-surface-sunken rounded-b-lg">
-                  <p className="text-xs font-semibold text-ink-muted uppercase mb-2">
+                <div className="rounded-b-card border-t border-line px-4 py-3">
+                  <p className="mb-2 font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-subtle">
                     Rotation suggérée
                   </p>
                   {suggestionsContent}
@@ -270,24 +271,12 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
   return (
     <div>
       {/* Month navigation */}
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={prevMonth}
-          className="p-2 rounded-lg hover:bg-surface-sunken text-ink-muted transition-colors"
-          aria-label="Mois précédent"
-        >
-          ‹
-        </button>
-        <span className="text-base font-semibold text-ink min-w-[160px] text-center">
+      <div className="mb-6 flex items-center gap-3">
+        <IconButton icon={ChevronLeft} aria-label="Mois précédent" onClick={prevMonth} />
+        <span className="min-w-[160px] text-center font-display text-[17px] font-semibold leading-6 text-ink">
           {MONTH_NAMES[month]} {year}
         </span>
-        <button
-          onClick={nextMonth}
-          className="p-2 rounded-lg hover:bg-surface-sunken text-ink-muted transition-colors"
-          aria-label="Mois suivant"
-        >
-          ›
-        </button>
+        <IconButton icon={ChevronRight} aria-label="Mois suivant" onClick={nextMonth} />
       </div>
 
       {eventsContent}

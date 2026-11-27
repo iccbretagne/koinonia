@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
-import { Button, Select } from "@/components/ui";
+import { Button, IconButton, Select } from "@/components/ui";
 import { ROLES, ROLE_LABEL } from "@/modules/ticketing/schemas";
 import type { TicketingRole } from "@/generated/prisma/enums";
 import { useApi } from "../../use-api";
@@ -48,9 +48,7 @@ export default function TeamTab({
             <span className="text-[15px] text-ink">
               {names.get(r.userId) ?? r.userId} — <strong>{ROLE_LABEL[r.role]}</strong>
             </span>
-            <Button type="button" size="sm" variant="ghost" aria-label="Retirer ce rôle" onClick={() => setList((l) => l.filter((_, j) => j !== i))}>
-              <Trash2 className="size-4" aria-hidden="true" />
-            </Button>
+            <IconButton icon={Trash2} aria-label={`Retirer le rôle ${ROLE_LABEL[r.role]} de ${names.get(r.userId) ?? r.userId}`} onClick={() => setList((l) => l.filter((_, j) => j !== i))} />
           </li>
         ))}
         {list.length === 0 && <li className="px-4 py-3 text-[15px] text-ink-muted">Aucun rôle attribué.</li>}
@@ -72,11 +70,11 @@ export default function TeamTab({
           disabled={!userId || list.some((r) => r.userId === userId && r.role === role)}
           onClick={() => setList((l) => [...l, { userId, role }])}
         >
-          Ajouter
+          Ajouter le rôle
         </Button>
       </div>
       <Button type="button" disabled={busy || !dirty} onClick={() => call(`/api/ticketing/events/${eventId}/roles`, "PUT", { roles: list }, "Rôles enregistrés")}>
-        {busy ? "Enregistrement…" : "Enregistrer les rôles"}
+        {busy ? "Enregistrement en cours…" : "Enregistrer les rôles"}
       </Button>
     </div>
   );

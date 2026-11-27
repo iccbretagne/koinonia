@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useId } from "react";
 import { ROLE_LABELS as ROLE_LABELS_BASE } from "@/lib/roles";
+import { buttonClasses } from "@/components/ui/button-classes";
+import { controlClasses, fieldLabelClasses, textareaClasses } from "@/components/ui/field-classes";
 
 type Church = { id: string; name: string };
 
@@ -286,7 +288,7 @@ export default function NoAccessClient({
           {candidates.map((c) => (
             <div
               key={`${c.memberId}-${c.churchId}`}
-              className="rounded-lg border border-line px-4 py-3"
+              className="rounded-control border border-line px-4 py-3"
             >
               <p className="text-sm font-semibold text-ink">
                 {c.firstName} {c.lastName}
@@ -297,9 +299,9 @@ export default function NoAccessClient({
               <button
                 onClick={() => confirmCandidate(c)}
                 disabled={linking}
-                className="mt-3 w-full rounded-lg bg-brand px-4 py-2 text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
+                className={`${buttonClasses("primary")} mt-3 w-full`}
               >
-                {linking ? "Liaison en cours..." : "Confirmer, c'est moi"}
+                {linking ? "Liaison en cours…" : "Confirmer, c'est moi"}
               </button>
             </div>
           ))}
@@ -310,9 +312,9 @@ export default function NoAccessClient({
         <button
           onClick={skipReconcile}
           disabled={linking}
-          className="text-sm text-ink-subtle transition-colors hover:text-ink-muted disabled:opacity-50"
+          className={`${buttonClasses("ghost", "sm")} self-start`}
         >
-          Aucune de ces fiches ne me correspond →
+          Aucune de ces fiches ne me correspond
         </button>
       </div>
     );
@@ -326,7 +328,7 @@ export default function NoAccessClient({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h2 className="text-lg font-bold text-ink mb-2">Demande envoyée</h2>
+        <h2 className="mb-2 font-display text-[17px] font-semibold leading-6 text-ink">Demande envoyée</h2>
         <p className="text-ink-muted text-sm">
           Un administrateur va examiner votre demande. Vous recevrez une confirmation dès qu&apos;elle sera traitée.
         </p>
@@ -342,11 +344,11 @@ export default function NoAccessClient({
       {/* Sélecteur d'église (si plusieurs) */}
       {churches.length > 1 && (
         <div>
-          <label htmlFor={`${id}-f1`} className="block text-xs font-medium text-ink-muted mb-1">Église</label>
+          <label htmlFor={`${id}-f1`} className={`${fieldLabelClasses} mb-1.5 block`}>Église</label>
           <select id={`${id}-f1`}
             value={churchId}
             onChange={(e) => { setChurchId(e.target.value); setSelectedMember(null); setResults([]); }}
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+            className={controlClasses()}
           >
             {churches.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
@@ -363,23 +365,23 @@ export default function NoAccessClient({
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor={`${id}-f2`} className="block text-xs font-medium text-ink-muted mb-1">Prénom</label>
+              <label htmlFor={`${id}-f2`} className={`${fieldLabelClasses} mb-1.5 block`}>Prénom</label>
               <input id={`${id}-f2`}
                 type="text"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="Jean"
-                className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+                className={controlClasses()}
               />
             </div>
             <div>
-              <label htmlFor={`${id}-f3`} className="block text-xs font-medium text-ink-muted mb-1">Nom</label>
+              <label htmlFor={`${id}-f3`} className={`${fieldLabelClasses} mb-1.5 block`}>Nom</label>
               <input id={`${id}-f3`}
                 type="text"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Dupont"
-                className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+                className={controlClasses()}
               />
             </div>
           </div>
@@ -387,9 +389,9 @@ export default function NoAccessClient({
           <button
             onClick={goToMatch}
             disabled={!firstName.trim() || !lastName.trim()}
-            className="w-full px-4 py-2.5 text-sm font-medium text-on-brand bg-brand rounded-lg hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className={`${buttonClasses("primary")} w-full`}
           >
-            Continuer →
+            Continuer
           </button>
         </div>
       )}
@@ -411,7 +413,7 @@ export default function NoAccessClient({
                   <button
                     key={m.id}
                     onClick={() => selectExisting(m)}
-                    className="w-full text-left px-4 py-3 rounded-lg border border-line hover:border-brand hover:bg-brand-soft transition-colors"
+                    className="w-full text-left px-4 py-3 rounded-control border border-line hover:border-brand hover:bg-brand-soft transition-colors"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-sm font-semibold text-ink">{m.firstName} {m.lastName}</p>
@@ -437,14 +439,14 @@ export default function NoAccessClient({
               {noMatchStage === "hidden" && (
                 <button
                   onClick={() => setNoMatchStage("confirming")}
-                  className="text-xs text-ink-subtle underline decoration-dotted underline-offset-2 hover:text-ink-muted transition-colors"
+                  className={`${buttonClasses("ghost", "sm")} self-start`}
                 >
                   Aucune de ces fiches n&apos;est la mienne
                 </button>
               )}
 
               {noMatchStage === "confirming" && (
-                <div className="rounded-lg border border-accent bg-accent-soft p-4 space-y-3">
+                <div className="rounded-control border border-accent bg-accent-soft p-4 space-y-3">
                   <p className="text-xs text-ink-muted">
                     <span aria-hidden="true">⚠ </span>
                     Avez-vous bien vérifié les {results.length} fiche{results.length > 1 ? "s" : ""} ci-dessus ? Si l&apos;une d&apos;elles est la vôtre, en créer une nouvelle créerait un doublon.
@@ -452,13 +454,13 @@ export default function NoAccessClient({
                   <div className="flex gap-2">
                     <button
                       onClick={() => setNoMatchStage("hidden")}
-                      className="flex-1 px-3 py-2 text-xs font-medium text-ink-muted border border-line rounded-lg hover:bg-surface-sunken transition-colors"
+                      className={`${buttonClasses("secondary")} flex-1`}
                     >
                       Revoir les fiches
                     </button>
                     <button
                       onClick={() => setNoMatchStage("options")}
-                      className="flex-1 px-3 py-2 text-xs font-medium text-on-brand bg-brand rounded-lg hover:bg-brand-hover transition-colors"
+                      className={`${buttonClasses("primary")} flex-1`}
                     >
                       Oui, aucune n&apos;est la mienne
                     </button>
@@ -470,13 +472,13 @@ export default function NoAccessClient({
                 <div className="border-t border-line pt-3 flex gap-2">
                   <button
                     onClick={selectNewStar}
-                    className="flex-1 px-3 py-2 text-xs font-medium text-ink-muted border border-line rounded-lg hover:border-brand hover:bg-brand-soft transition-colors"
+                    className={`${buttonClasses("secondary")} h-auto flex-1 py-2 whitespace-normal`}
                   >
                     Je suis un STAR non enregistré
                   </button>
                   <button
                     onClick={selectNoStar}
-                    className="flex-1 px-3 py-2 text-xs font-medium text-ink-muted border border-line rounded-lg hover:border-control-line hover:bg-surface-sunken transition-colors"
+                    className={`${buttonClasses("secondary")} h-auto flex-1 py-2 whitespace-normal`}
                   >
                     Je souhaite accéder à l&apos;application dans un autre rôle
                   </button>
@@ -491,14 +493,14 @@ export default function NoAccessClient({
               <div className="space-y-2">
                 <button
                   onClick={selectNewStar}
-                  className="w-full px-4 py-3 text-sm font-medium text-left rounded-lg border border-line hover:border-brand hover:bg-brand-soft transition-colors"
+                  className="w-full px-4 py-3 text-sm font-medium text-left rounded-control border border-line hover:border-brand hover:bg-brand-soft transition-colors"
                 >
                   <span className="font-semibold text-brand-text">Je suis un STAR</span>
                   <p className="text-xs text-ink-muted mt-0.5">Je sers dans l&apos;église mais ma fiche n&apos;est pas encore créée</p>
                 </button>
                 <button
                   onClick={selectNoStar}
-                  className="w-full px-4 py-3 text-sm font-medium text-left rounded-lg border border-line hover:border-control-line hover:bg-surface-sunken transition-colors"
+                  className="w-full px-4 py-3 text-sm font-medium text-left rounded-control border border-line hover:border-control-line hover:bg-surface-sunken transition-colors"
                 >
                   <span className="font-semibold text-ink-muted">Je souhaite accéder à l&apos;application dans un autre rôle</span>
                   <p className="text-xs text-ink-muted mt-0.5">Faiseur de disciples, Reporter...</p>
@@ -507,8 +509,8 @@ export default function NoAccessClient({
             </>
           )}
 
-          <button onClick={() => { setNoMatchStage("hidden"); setStep("identity"); }} className="text-sm text-ink-subtle hover:text-ink-muted transition-colors">
-            ← Modifier mon nom
+          <button type="button" onClick={() => { setNoMatchStage("hidden"); setStep("identity"); }} className={`${buttonClasses("ghost", "sm")} self-start`}>
+            Modifier mon nom
           </button>
         </div>
       )}
@@ -520,41 +522,41 @@ export default function NoAccessClient({
           {isNewStar && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor={`${id}-f4`} className="block text-xs font-medium text-ink-muted mb-1">Prénom</label>
+                <label htmlFor={`${id}-f4`} className={`${fieldLabelClasses} mb-1.5 block`}>Prénom</label>
                 <input id={`${id}-f4`}
                   type="text"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+                  className={controlClasses()}
                 />
               </div>
               <div>
-                <label htmlFor={`${id}-f5`} className="block text-xs font-medium text-ink-muted mb-1">Nom</label>
+                <label htmlFor={`${id}-f5`} className={`${fieldLabelClasses} mb-1.5 block`}>Nom</label>
                 <input id={`${id}-f5`}
                   type="text"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+                  className={controlClasses()}
                 />
               </div>
               <div className="col-span-2">
-                <label htmlFor={`${id}-f6`} className="block text-xs font-medium text-ink-muted mb-1">Téléphone (optionnel)</label>
+                <label htmlFor={`${id}-f6`} className={`${fieldLabelClasses} mb-1.5 block`}>Téléphone (optionnel)</label>
                 <input id={`${id}-f6`}
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+                  className={controlClasses()}
                 />
               </div>
             </div>
           )}
 
           <div>
-            <label htmlFor={`${id}-f7`} className="block text-xs font-medium text-ink-muted mb-1">Ministère</label>
+            <label htmlFor={`${id}-f7`} className={`${fieldLabelClasses} mb-1.5 block`}>Ministère</label>
             <select id={`${id}-f7`}
               value={selectedMinistryId}
               onChange={(e) => { setSelectedMinistryId(e.target.value); setSelectedDeptId(""); }}
-              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+              className={controlClasses()}
             >
               <option value="">-- Choisir un ministère --</option>
               {churchMinistries.map((m) => (
@@ -565,11 +567,11 @@ export default function NoAccessClient({
 
           {selectedMinistry && (
             <div>
-              <label htmlFor={`${id}-f8`} className="block text-xs font-medium text-ink-muted mb-1">Département</label>
+              <label htmlFor={`${id}-f8`} className={`${fieldLabelClasses} mb-1.5 block`}>Département</label>
               <select id={`${id}-f8`}
                 value={selectedDeptId}
                 onChange={(e) => setSelectedDeptId(e.target.value)}
-                className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+                className={controlClasses()}
               >
                 <option value="">-- Choisir un département --</option>
                 {selectedMinistry.departments.map((d) => (
@@ -580,15 +582,15 @@ export default function NoAccessClient({
           )}
 
           <div className="flex gap-3">
-            <button onClick={() => setStep("match")} className="px-4 py-2 text-sm text-ink-muted border border-line rounded-lg hover:bg-surface-sunken transition-colors">
-              ← Retour
+            <button onClick={() => setStep("match")} className={buttonClasses("secondary")}>
+              Revenir
             </button>
             <button
               onClick={goToRole}
               disabled={!selectedDeptId}
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-on-brand bg-brand rounded-lg hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className={`${buttonClasses("primary")} flex-1`}
             >
-              Continuer →
+              Continuer
             </button>
           </div>
         </div>
@@ -603,7 +605,7 @@ export default function NoAccessClient({
           {(selectedMember || isNewStar) && (
             <button
               onClick={() => { setRequestedRole(null); goToConfirm(); }}
-              className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-colors ${
+              className={`w-full text-left px-4 py-3 rounded-control border-2 transition-colors ${
                 requestedRole === null
                   ? "border-brand bg-brand-soft"
                   : "border-line hover:border-brand hover:bg-brand-soft"
@@ -628,7 +630,7 @@ export default function NoAccessClient({
                       goToConfirm();
                     }
                   }}
-                  className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-colors ${
+                  className={`w-full text-left px-4 py-3 rounded-control border-2 transition-colors ${
                     requestedRole === role
                       ? "border-brand bg-brand-soft"
                       : "border-line hover:border-brand hover:bg-brand-soft"
@@ -646,7 +648,7 @@ export default function NoAccessClient({
             <button
               key={role}
               onClick={() => { setRequestedRole(role); goToConfirm(); }}
-              className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-colors ${
+              className={`w-full text-left px-4 py-3 rounded-control border-2 transition-colors ${
                 requestedRole === role
                   ? "border-brand bg-brand-soft"
                   : "border-line hover:border-brand hover:bg-brand-soft"
@@ -664,9 +666,9 @@ export default function NoAccessClient({
 
           <button
             onClick={() => setStep(isNewStar ? "department" : "match")}
-            className="text-sm text-ink-subtle hover:text-ink-muted transition-colors"
+            className={`${buttonClasses("ghost", "sm")} self-start`}
           >
-            ← Retour
+            Revenir
           </button>
         </div>
       )}
@@ -676,7 +678,7 @@ export default function NoAccessClient({
         <div className="space-y-4">
           <p className="text-sm text-ink-muted font-medium">Récapitulatif de votre demande</p>
 
-          <div className="bg-surface-sunken rounded-lg p-4 space-y-2 text-sm">
+          <div className="bg-surface-sunken rounded-control p-4 space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-ink-muted">Nom</span>
               <span className="font-medium text-ink">
@@ -714,7 +716,7 @@ export default function NoAccessClient({
           </div>
 
           <div>
-            <label htmlFor={`${id}-f9`} className="block text-xs font-medium text-ink-muted mb-1">
+            <label htmlFor={`${id}-f9`} className={`${fieldLabelClasses} mb-1.5 block`}>
               Remarques pour l&apos;administrateur <span className="text-ink-subtle">(optionnel)</span>
             </label>
             <textarea id={`${id}-f9`}
@@ -722,8 +724,8 @@ export default function NoAccessClient({
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               maxLength={1000}
-              placeholder="Ex : je sers aussi dans le département Son, je remplace Marie Dupont..."
-              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent resize-none"
+              placeholder="Ex : je sers aussi dans le département Son, je remplace Marie Dupont…"
+              className={`${textareaClasses()} resize-none`}
             />
           </div>
 
@@ -732,16 +734,16 @@ export default function NoAccessClient({
           <div className="flex gap-3">
             <button
               onClick={() => setStep("role")}
-              className="px-4 py-2 text-sm text-ink-muted border border-line rounded-lg hover:bg-surface-sunken transition-colors"
+              className={buttonClasses("secondary")}
             >
-              ← Retour
+              Revenir
             </button>
             <button
               onClick={submit}
               disabled={submitting}
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-on-brand bg-brand rounded-lg hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className={`${buttonClasses("primary")} flex-1`}
             >
-              {submitting ? "Envoi..." : "Envoyer la demande"}
+              {submitting ? "Envoi en cours…" : "Envoyer la demande"}
             </button>
           </div>
         </div>

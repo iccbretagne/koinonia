@@ -4,6 +4,7 @@ import { useEffect, useId, useState } from "react";
 import Modal from "@/components/ui/Modal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import Button from "@/components/ui/Button";
+import { Input, SearchInput, fieldLabelClasses } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
 
 interface Grant {
@@ -115,8 +116,6 @@ export default function GalleryGrantsDialog({ open, onClose }: { readonly open: 
     await reload();
   }
 
-  const input = "w-full border border-control-line rounded-lg px-3 py-2 text-base bg-surface text-ink focus:outline-none focus:border-brand";
-
   return (
     <>
       <Modal open={open} onClose={onClose} title="Accès à la galerie" size="lg">
@@ -126,22 +125,22 @@ export default function GalleryGrantsDialog({ open, onClose }: { readonly open: 
             Les équipes Photos, Production Média et Communication y ont déjà accès.
           </p>
 
-          <div className="rounded-xl border border-line p-4 space-y-3">
-            <h3 className="text-sm font-semibold text-ink">Donner un accès</h3>
+          <div className="rounded-card border border-line p-4 space-y-3">
+            <h3 className="font-display text-[15px] font-semibold text-ink">Donner un accès</h3>
             {picked ? (
-              <div className="flex items-center justify-between gap-2 rounded-lg bg-brand-soft px-3 py-2">
+              <div className="flex items-center justify-between gap-2 rounded-control bg-brand-soft py-1 pl-3 pr-1">
                 <span className="text-sm text-ink truncate">{picked.name ?? picked.email}</span>
-                <button type="button" onClick={() => setPicked(null)} className="text-xs text-ink-muted underline shrink-0">Changer</button>
+                <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={() => setPicked(null)}>Changer de personne</Button>
               </div>
             ) : (
               <div>
-                <label htmlFor={`${uid}-q`} className="block text-xs text-ink-muted mb-1">Personne (compte de l&apos;église)</label>
-                <input id={`${uid}-q`} type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nom ou email" className={input} />
+                <label htmlFor={`${uid}-q`} className={`${fieldLabelClasses} mb-1.5 block`}>Personne (compte de l&apos;église)</label>
+                <SearchInput id={`${uid}-q`} aria-label="Personne (compte de l'église)" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nom ou email" />
                 {candidates.length > 0 && (
-                  <ul className="mt-1 border border-line rounded-lg divide-y divide-line bg-surface">
+                  <ul className="mt-1 border border-line rounded-control divide-y divide-line bg-surface overflow-hidden">
                     {candidates.map((c) => (
                       <li key={c.id}>
-                        <button type="button" onClick={() => setPicked(c)} className="w-full text-left px-3 py-2 text-sm hover:bg-surface-sunken">
+                        <button type="button" onClick={() => setPicked(c)} className="w-full min-h-11 text-left px-3 py-2 text-sm hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus">
                           <span className="text-ink">{c.name ?? c.email}</span>
                           {c.name !== null && c.email !== null && <span className="block text-xs text-ink-subtle">{c.email}</span>}
                         </button>
@@ -153,23 +152,22 @@ export default function GalleryGrantsDialog({ open, onClose }: { readonly open: 
             )}
             <div className="flex flex-wrap items-end gap-3">
               <div>
-                <label htmlFor={`${uid}-until`} className="block text-xs text-ink-muted mb-1">Jusqu&apos;au (facultatif)</label>
-                <input id={`${uid}-until`} type="date" min={tomorrow()} value={until} onChange={(e) => setUntil(e.target.value)} className={input} />
+                <Input label="Jusqu'au (facultatif)" type="date" min={tomorrow()} value={until} onChange={(e) => setUntil(e.target.value)} />
               </div>
               <Button variant="primary" onClick={add} disabled={!picked || busy}>
-                {busy ? "Enregistrement…" : "Donner l'accès"}
+                {busy ? "Enregistrement en cours…" : "Donner l'accès"}
               </Button>
             </div>
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-ink mb-2">Accès donnés</h3>
+            <h3 className="font-display text-[15px] font-semibold text-ink mb-2">Accès donnés</h3>
             {grants === null ? (
               <p className="text-sm text-ink-subtle">Chargement…</p>
             ) : grants.length === 0 ? (
               <p className="text-sm text-ink-subtle">Aucun accès nominatif.</p>
             ) : (
-              <ul className="border border-line rounded-lg divide-y divide-line">
+              <ul className="border border-line rounded-card divide-y divide-line">
                 {grants.map((g) => (
                   <li key={g.id} className="px-3 py-3 flex flex-wrap items-center gap-3">
                     <div className="min-w-0 flex-1">
@@ -183,21 +181,21 @@ export default function GalleryGrantsDialog({ open, onClose }: { readonly open: 
                         {g.grantedBy ? ` · donné par ${g.grantedBy}` : ""}
                       </p>
                     </div>
-                    <label htmlFor={`${uid}-end-${g.id}`} className="sr-only">Date de fin pour {g.name ?? g.email}</label>
-                    <input
-                      id={`${uid}-end-${g.id}`}
-                      type="date"
-                      min={tomorrow()}
-                      defaultValue={g.expired ? "" : toDayInput(g.expiresAt)}
-                      onChange={(e) => {
-                        if (e.target.value) void changeEnd(g, e.target.value);
-                      }}
-                      className="border border-control-line rounded-lg px-2 py-1.5 text-sm bg-surface text-ink"
-                    />
+                    <div className="w-44">
+                      <Input
+                        aria-label={`Date de fin pour ${g.name ?? g.email}`}
+                        type="date"
+                        min={tomorrow()}
+                        defaultValue={g.expired ? "" : toDayInput(g.expiresAt)}
+                        onChange={(e) => {
+                          if (e.target.value) void changeEnd(g, e.target.value);
+                        }}
+                      />
+                    </div>
                     {g.expiresAt !== null && !g.expired && (
-                      <Button variant="ghost" size="sm" onClick={() => changeEnd(g, "")} disabled={busy}>Sans fin</Button>
+                      <Button variant="ghost" size="sm" onClick={() => changeEnd(g, "")} disabled={busy}>Retirer la date de fin</Button>
                     )}
-                    <Button variant="danger" size="sm" onClick={() => setRemoving(g)} disabled={busy}>Retirer</Button>
+                    <Button variant="secondary" size="sm" onClick={() => setRemoving(g)} disabled={busy}>Retirer l&apos;accès</Button>
                   </li>
                 ))}
               </ul>
@@ -207,10 +205,10 @@ export default function GalleryGrantsDialog({ open, onClose }: { readonly open: 
       </Modal>
       <ConfirmModal
         open={removing !== null}
-        title="Retirer l'accès"
+        title="Retirer l'accès ?"
         message={`${removing?.name ?? removing?.email ?? "Cette personne"} ne verra plus la galerie, immédiatement.`}
-        confirmLabel="Retirer"
-        confirmingLabel="Retrait…"
+        confirmLabel="Retirer l'accès"
+        confirmingLabel="Retrait en cours…"
         variant="danger"
         confirming={busy}
         onConfirm={remove}

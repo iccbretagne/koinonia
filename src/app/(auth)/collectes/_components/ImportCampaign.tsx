@@ -3,9 +3,10 @@
 import { useState, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { FileJson } from "lucide-react";
-import { Button, Textarea, buttonClasses, useToast } from "@/components/ui";
+import { Button, Textarea, useToast } from "@/components/ui";
 import type { ImportPreview } from "@/modules/campaigns";
 import ImportPreviewView, { ImportErrorAlert, importErrorFrom, isPreviewBlocked, type ImportError } from "./ImportPreviewView";
+import FileInput from "@/components/ui/FileInput";
 
 /**
  * Import d'une définition de campagne (spec 090) : coller ou déposer un JSON, vérifier (aperçu
@@ -94,15 +95,11 @@ export default function ImportCampaign({
           onChange={(e) => change(e.target.value)}
           rows={10}
           spellCheck={false}
-          className="font-mono text-[13px]"
+          className="font-mono"
           placeholder='{ "format": "koinonia.campaign", "version": 1, … }'
         />
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <label className={`${buttonClasses("secondary")} focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus`}>
-            <FileJson aria-hidden="true" className="size-4" strokeWidth={1.75} />
-            Choisir un fichier JSON
-            <input type="file" accept=".json,application/json" className="sr-only" onChange={onFile} />
-          </label>
+          <FileInput accept=".json,application/json" icon={FileJson} buttonLabel="Choisir un fichier JSON" fileNames={[]} onChange={onFile} />
           <Button type="button" variant={preview ? "secondary" : "primary"} disabled={!text.trim() || busy !== null} onClick={() => send(true)}>
             {busy === "check" ? "Vérification…" : "Vérifier"}
           </Button>

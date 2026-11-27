@@ -11,9 +11,9 @@ export function KpiCard({
   readonly accent?: boolean;
 }) {
   return (
-    <div className={`bg-surface rounded-xl border p-4 sm:p-5 ${accent ? "border-brand/30 bg-brand-soft" : "border-line"}`}>
+    <div>
       <p className="text-xs text-ink-muted font-medium mb-1">{label}</p>
-      <p className={`text-3xl font-bold ${accent ? "text-brand-text" : "text-ink"}`}>{value}</p>
+      <p className={`font-display text-3xl font-bold tabular-nums ${accent ? "text-brand-text" : "text-ink"}`}>{value}</p>
       {sub && <p className="text-xs text-ink-subtle mt-1">{sub}</p>}
     </div>
   );

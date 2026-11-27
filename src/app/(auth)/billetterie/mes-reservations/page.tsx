@@ -17,7 +17,7 @@ export default async function MyBookingsPage() {
         <ul className="space-y-3">
           {bookings.map((b) => (
             <li key={b.id}>
-              <a href={b.manageUrl} className="block rounded-card border border-line bg-surface p-4 hover:border-brand">
+              <a href={b.manageUrl} className="block rounded-card border border-line bg-surface p-4 shadow-card hover:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
                 <div className="flex items-start justify-between gap-3">
                   <p className="font-semibold text-ink">{b.event.title}</p>
                   <StatusChip tone={b.status === "ACTIVE" ? "success" : "neutral"}>{b.status === "ACTIVE" ? "Active" : "Annulée"}</StatusChip>

@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import Button from "@/components/ui/Button";
+import { ChevronRight } from "lucide-react";
+import { Alert, Button, EmptyState, FilterChip, SearchInput, StatusChip, buttonClasses, type StatusTone } from "@/components/ui";
 
 const STATUS_LABELS: Record<string, string> = {
   SUBMITTED:      "Reçue",
@@ -15,15 +16,15 @@ const STATUS_LABELS: Record<string, string> = {
   ABANDONED:      "Abandonné",
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  SUBMITTED:      "bg-warning-soft text-warning",
-  WAITING_RECONTACT: "bg-warning-soft text-warning",
-  WAITING_MISSION:   "bg-warning-soft text-warning",
-  ASSIGNED:       "bg-info-soft text-info",
-  CONTACTED:      "bg-info-soft text-info",
-  WHATSAPP_ADDED: "bg-success-soft text-success",
-  INTEGRATED:     "bg-success-soft text-success",
-  ABANDONED:      "bg-surface-sunken text-ink-muted",
+const STATUS_TONES: Record<string, StatusTone> = {
+  SUBMITTED:      "warning",
+  WAITING_RECONTACT: "warning",
+  WAITING_MISSION:   "warning",
+  ASSIGNED:       "info",
+  CONTACTED:      "info",
+  WHATSAPP_ADDED: "success",
+  INTEGRATED:     "success",
+  ABANDONED:      "neutral",
 };
 
 const STATUS_FILTERS = [
@@ -172,156 +173,150 @@ export default function IntegrationDashboard({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-5">
       {/* Bandeau "À traiter" */}
       {actionable.length > 0 && (
-        <div className="bg-brand-soft border border-brand/20 rounded-xl p-4 space-y-3">
-          <h2 className="text-sm font-semibold text-brand-text flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
-            <span>À traiter</span>
-            <span className="text-brand-text/60 font-normal">({actionable.length})</span>
+        <section aria-labelledby="integration-todo" className="flex flex-col gap-3">
+          <h2 id="integration-todo" className="flex items-center gap-2 font-display text-[15px] font-semibold text-ink">
+            <span aria-hidden="true" className="size-2 rounded-full bg-brand" />
+            À traiter
+            <span className="font-sans font-normal text-ink-muted">({actionable.length})</span>
           </h2>
-          <div className="space-y-1.5">
+          <ul className="flex flex-col gap-1.5">
             {actionable.slice(0, 6).map((r) => {
               const action = getNextAction(r, isIntegration, currentUserId)!;
               const days = daysSince(r.submittedAt);
               return (
-                <Link
-                  key={r.id}
-                  href={`/integration/requests/${r.id}`}
-                  className="flex items-center justify-between gap-3 bg-surface rounded-lg px-3 py-2.5 border border-line hover:border-brand/40 hover:shadow-card transition-all group"
-                >
-                  <div className="min-w-0">
-                    <p className="font-medium text-ink text-sm">
-                      {r.firstName} {r.lastName}
-                    </p>
-                    <p className="text-xs text-ink-subtle mt-0.5">
-                      {STATUS_LABELS[r.status]}
-                      {r.assignedFamilyName ? ` · ${r.assignedFamilyName}` : ""}
-                      {" · "}
-                      <span className={days >= 7 ? "text-warning font-medium" : ""}>
-                        {days}j
-                      </span>
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-xs font-medium text-brand-text bg-brand-soft px-2.5 py-1 rounded-full group-hover:bg-brand group-hover:text-on-brand transition-colors whitespace-nowrap">
-                    {action} →
-                  </span>
-                </Link>
+                <li key={r.id}>
+                  <Link href={`/integration/requests/${r.id}`} className={rowLinkClasses}>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-ink">
+                        {r.firstName} {r.lastName}
+                      </p>
+                      <p className="mt-0.5 text-xs text-ink-muted">
+                        {STATUS_LABELS[r.status]}
+                        {r.assignedFamilyName ? ` · ${r.assignedFamilyName}` : ""}
+                        {" · "}
+                        <span className={days >= 7 ? "font-semibold text-warning" : ""}>{daysLabel(days)}</span>
+                      </p>
+                    </div>
+                    <span className="flex shrink-0 items-center gap-1">
+                      <StatusChip tone="brand">{action}</StatusChip>
+                      <ChevronRight aria-hidden="true" className="size-4 text-ink-subtle" strokeWidth={1.75} />
+                    </span>
+                  </Link>
+                </li>
               );
             })}
-            {actionable.length > 6 && (
-              <p className="text-xs text-ink-subtle text-center pt-0.5">
-                + {actionable.length - 6} autres demandes à traiter
-              </p>
-            )}
-          </div>
-        </div>
+          </ul>
+          {actionable.length > 6 && (
+            <p className="text-center text-xs text-ink-muted">
+              {actionable.length - 6 > 1
+                ? `+ ${actionable.length - 6} autres demandes à traiter`
+                : "+ 1 autre demande à traiter"}
+            </p>
+          )}
+        </section>
       )}
 
       {/* Bandeau "À relancer" : visible tant que la relance n'est pas consignée (spec 051) */}
       {toRelance.length > 0 && (
-        <div className="bg-warning-soft border border-warning/30 rounded-xl p-4 space-y-3">
-          <h2 className="text-sm font-semibold text-warning flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-warning" />
-            <span>À relancer</span>
-            <span className="text-warning/60 font-normal">({toRelance.length})</span>
+        <section aria-labelledby="integration-relance" className="flex flex-col gap-3 rounded-card bg-warning-soft p-4">
+          <h2 id="integration-relance" className="flex items-center gap-2 font-display text-[15px] font-semibold text-ink">
+            <span aria-hidden="true" className="size-2 rounded-full bg-warning" />
+            À relancer
+            <span className="font-sans font-normal text-ink-muted">({toRelance.length})</span>
           </h2>
-          <div className="space-y-1.5">
+          <ul className="flex flex-col gap-1.5">
             {toRelance.map((r) => (
-              <Link
-                key={r.id}
-                href={`/integration/requests/${r.id}`}
-                className="flex items-center justify-between gap-3 bg-surface rounded-lg px-3 py-2.5 border border-line hover:border-warning/30 hover:shadow-card transition-all"
-              >
-                <div className="min-w-0">
-                  <p className="font-medium text-ink text-sm">
-                    {r.firstName} {r.lastName}
-                  </p>
-                  <p className="text-xs text-ink-subtle mt-0.5">{STATUS_LABELS[r.status]}</p>
-                </div>
-                <span className="shrink-0 text-xs font-medium text-warning bg-warning-soft px-2.5 py-1 rounded-full whitespace-nowrap">
-                  {relanceTarget(r.status)} →
-                </span>
-              </Link>
+              <li key={r.id}>
+                <Link href={`/integration/requests/${r.id}`} className={rowLinkClasses}>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-ink">
+                      {r.firstName} {r.lastName}
+                    </p>
+                    <p className="mt-0.5 text-xs text-ink-muted">{STATUS_LABELS[r.status]}</p>
+                  </div>
+                  <span className="flex shrink-0 items-center gap-1">
+                    <StatusChip tone="warning">{relanceTarget(r.status)}</StatusChip>
+                    <ChevronRight aria-hidden="true" className="size-4 text-ink-subtle" strokeWidth={1.75} />
+                  </span>
+                </Link>
+              </li>
             ))}
-          </div>
-        </div>
+          </ul>
+        </section>
       )}
 
       {/* Filtres statut */}
-      <div className="flex flex-wrap gap-2">
+      <div role="group" aria-label="Filtrer par statut" className="flex flex-wrap gap-2">
         {STATUS_FILTERS.map((f) => {
           const count = f.value ? (counts[f.value] ?? 0) : requests.length;
-          const active = statusFilter === f.value;
           return (
-            <button
-              key={f.value}
-              onClick={() => setStatusFilter(f.value)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                active
-                  ? "bg-brand text-on-brand border-brand"
-                  : "border-line text-ink-muted hover:border-brand hover:text-brand-text"
-              }`}
-            >
+            <FilterChip key={f.value} pressed={statusFilter === f.value} onClick={() => setStatusFilter(f.value)}>
               {f.label}
-              <span
-                className={`text-xs px-1.5 py-0.5 rounded-full ${
-                  active ? "bg-surface/20" : "bg-surface-sunken text-ink-muted"
-                }`}
-              >
-                {count}
-              </span>
-            </button>
+              <span className="font-normal tabular-nums">{count}</span>
+            </FilterChip>
           );
         })}
       </div>
 
       {/* Recherche + scope notice */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <input
-          type="search"
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+        <SearchInput
+          aria-label="Rechercher une demande"
           placeholder="Rechercher par nom, téléphone, famille…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full sm:w-80 border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand"
+          className="w-full sm:w-80"
         />
         {isScoped && (
-          <p className="text-sm text-ink-muted bg-info-soft border border-info/30 rounded-lg px-3 py-2 self-start">
-            Affichage limité aux demandes de votre famille.
-          </p>
+          <Alert tone="info" className="sm:self-start">Affichage limité aux demandes de votre famille.</Alert>
         )}
         {canExport && (
-          <div className="sm:ml-auto flex flex-col sm:items-end gap-1">
+          <div className="flex flex-col gap-1 sm:ml-auto sm:items-end">
             <Button
               variant="secondary"
               onClick={handleExport}
               disabled={exporting || filtered.length === 0}
             >
-              {exporting ? "Export…" : `Exporter (${filtered.length})`}
+              {exporting ? "Export en cours…" : `Exporter (${filtered.length})`}
             </Button>
-            {exportError && <p className="text-xs text-danger">{exportError}</p>}
+            {filtered.length === 0 && <p className="text-[13px] text-ink-muted">Aucune demande à exporter.</p>}
+            {exportError && <p className="text-[13px] text-danger">{exportError}</p>}
           </div>
         )}
       </div>
 
       {/* Liste */}
       {filtered.length === 0 ? (
-        <div className="bg-surface rounded-xl border border-line p-8 text-center text-ink-subtle text-sm">
-          Aucune demande{statusFilter ? " avec ce statut" : ""}.
+        <div className="rounded-card border border-line bg-surface">
+          {statusFilter || search.trim() ? (
+            <EmptyState
+              size="sm"
+              title="Aucune demande pour ces filtres"
+              action={
+                <Button type="button" variant="secondary" onClick={() => { setStatusFilter(""); setSearch(""); }}>
+                  Effacer les filtres
+                </Button>
+              }
+            />
+          ) : (
+            <EmptyState size="sm" title="Aucune demande" description="Les demandes reçues par le formulaire d'accueil apparaîtront ici." />
+          )}
         </div>
       ) : (
-        <div className="bg-surface rounded-xl border border-line overflow-hidden">
+        <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
           {/* Desktop table */}
-          <div className="hidden md:block overflow-x-auto">
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-line bg-surface-sunken text-left text-xs text-ink-muted uppercase tracking-wide">
-                  <th className="px-4 py-3 font-medium">Personne</th>
-                  <th className="px-4 py-3 font-medium">Statut</th>
-                  <th className="px-4 py-3 font-medium">Famille · Berger</th>
-                  <th className="px-4 py-3 font-medium">Depuis</th>
-                  <th className="px-4 py-3"></th>
+                <tr className="border-b border-line bg-surface-sunken text-left text-xs uppercase tracking-wide text-ink-muted">
+                  <th className="px-4 py-3 font-semibold">Personne</th>
+                  <th className="px-4 py-3 font-semibold">Statut</th>
+                  <th className="px-4 py-3 font-semibold">Famille · Berger</th>
+                  <th className="px-4 py-3 font-semibold">Depuis</th>
+                  <th className="px-4 py-3"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
@@ -330,93 +325,49 @@ export default function IntegrationDashboard({
                   const isYours = r.assignedBerger?.id === currentUserId;
                   const nextAction = getNextAction(r, isIntegration, currentUserId);
                   return (
-                    <tr
-                      key={r.id}
-                      className={`hover:bg-surface-sunken transition-colors ${isYours ? "bg-brand/[0.02]" : ""}`}
-                    >
+                    <tr key={r.id} className="transition-colors hover:bg-surface-sunken">
                       <td className="px-4 py-3">
-                        <p className="font-medium text-ink">
+                        <p className="font-semibold text-ink">
                           {r.firstName} {r.lastName}
                         </p>
-                        <div className="flex flex-wrap gap-1 mt-0.5">
-                          {isYours && (
-                            <span className="text-xs text-brand-text bg-brand-soft px-1.5 py-0.5 rounded font-medium">
-                              Vous
-                            </span>
-                          )}
-                          {r.pastoralCareRequested && (
-                            <span className="text-xs text-warning bg-warning-soft px-1.5 py-0.5 rounded">
-                              Soin pastoral
-                            </span>
-                          )}
-                          {r.salvationCall && (
-                            <span className="text-xs text-brand-text bg-brand-soft px-1.5 py-0.5 rounded">
-                              Appel au salut
-                            </span>
-                          )}
-                          {r.relanceDue && (
-                            <span className="text-xs text-warning bg-warning-soft px-1.5 py-0.5 rounded font-medium">
-                              À relancer
-                            </span>
-                          )}
-                          {isIntegration && isUnmatchedAddress(r) && (
-                            <span className="text-xs text-ink-muted bg-surface-sunken px-1.5 py-0.5 rounded">
-                              Adresse non rattachée
-                            </span>
-                          )}
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {isYours && <StatusChip tone="brand">Vous</StatusChip>}
+                          {r.pastoralCareRequested && <StatusChip tone="warning">Soin pastoral</StatusChip>}
+                          {r.salvationCall && <StatusChip tone="brand">Appel au salut</StatusChip>}
+                          {r.relanceDue && <StatusChip tone="warning">À relancer</StatusChip>}
+                          {isIntegration && isUnmatchedAddress(r) && <StatusChip>Adresse non rattachée</StatusChip>}
                           {r.status === "ABANDONED" && r.abandonReasonCode && (
-                            <span className="text-xs text-ink-muted bg-surface-sunken px-1.5 py-0.5 rounded">
-                              {ABANDON_REASON_LABELS[r.abandonReasonCode] ?? r.abandonReasonCode}
-                            </span>
+                            <StatusChip>{ABANDON_REASON_LABELS[r.abandonReasonCode] ?? r.abandonReasonCode}</StatusChip>
                           )}
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                            STATUS_COLORS[r.status] ?? "bg-surface-sunken text-ink-muted"
-                          }`}
-                        >
-                          {STATUS_LABELS[r.status] ?? r.status}
-                        </span>
+                        <StatusChip tone={STATUS_TONES[r.status] ?? "neutral"}>{STATUS_LABELS[r.status] ?? r.status}</StatusChip>
                       </td>
                       <td className="px-4 py-3 text-xs text-ink-muted">
                         {r.assignedFamilyName ? (
                           <div>
-                            <p className="font-medium text-ink-muted">{r.assignedFamilyName}</p>
-                            {r.assignedBerger?.name && (
-                              <p className="text-ink-subtle">{r.assignedBerger.name}</p>
-                            )}
+                            <p className="font-semibold text-ink">{r.assignedFamilyName}</p>
+                            {r.assignedBerger?.name && <p>{r.assignedBerger.name}</p>}
                           </div>
                         ) : (
-                          <span className="text-ink-subtle">—</span>
+                          <span>—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span
-                          className={`text-xs ${
-                            days >= 7 ? "text-warning font-semibold" : "text-ink-subtle"
-                          }`}
-                        >
-                          {days}j
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <span className={`text-xs tabular-nums ${days >= 7 ? "font-semibold text-warning" : "text-ink-muted"}`}>
+                          {daysLabel(days)}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        {nextAction ? (
-                          <Link
-                            href={`/integration/requests/${r.id}`}
-                            className="text-xs font-medium text-brand-text bg-brand-soft px-2.5 py-1 rounded-full hover:bg-brand hover:text-on-brand transition-colors whitespace-nowrap"
-                          >
-                            {nextAction} →
-                          </Link>
-                        ) : (
-                          <Link
-                            href={`/integration/requests/${r.id}`}
-                            className="text-xs font-medium text-brand-text border border-brand/40 px-2.5 py-1 rounded-full hover:bg-brand hover:text-on-brand transition-colors whitespace-nowrap"
-                          >
-                            Voir →
-                          </Link>
-                        )}
+                        <Link
+                          href={`/integration/requests/${r.id}`}
+                          aria-label={`${nextAction ?? "Voir la demande"} — ${r.firstName} ${r.lastName}`}
+                          className={`${buttonClasses("ghost", "sm")} whitespace-nowrap`}
+                        >
+                          {nextAction ?? "Voir"}
+                          <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                        </Link>
                       </td>
                     </tr>
                   );
@@ -425,76 +376,59 @@ export default function IntegrationDashboard({
             </table>
           </div>
 
-          {/* Mobile cards */}
-          <div className="md:hidden divide-y divide-line">
+          {/* Mobile : lignes entièrement cliquables */}
+          <ul className="divide-y divide-line md:hidden">
             {filtered.map((r) => {
               const days = daysSince(r.submittedAt);
               const isYours = r.assignedBerger?.id === currentUserId;
               const nextAction = getNextAction(r, isIntegration, currentUserId);
               return (
-                <Link
-                  key={r.id}
-                  href={`/integration/requests/${r.id}`}
-                  className="block px-4 py-3 hover:bg-surface-sunken transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="font-medium text-ink">
-                          {r.firstName} {r.lastName}
-                        </p>
-                        {isYours && (
-                          <span className="text-xs text-brand-text bg-brand-soft px-1.5 py-0.5 rounded font-medium">
-                            Vous
-                          </span>
-                        )}
+                <li key={r.id}>
+                  <Link
+                    href={`/integration/requests/${r.id}`}
+                    className="block px-4 py-3 transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <p className="font-semibold text-ink">
+                            {r.firstName} {r.lastName}
+                          </p>
+                          {isYours && <StatusChip tone="brand">Vous</StatusChip>}
+                        </div>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          <StatusChip tone={STATUS_TONES[r.status] ?? "neutral"}>{STATUS_LABELS[r.status] ?? r.status}</StatusChip>
+                          {nextAction && <StatusChip tone="brand">{nextAction}</StatusChip>}
+                          {r.relanceDue && <StatusChip tone="warning">À relancer</StatusChip>}
+                          {isIntegration && isUnmatchedAddress(r) && <StatusChip>Adresse non rattachée</StatusChip>}
+                        </div>
+                        {r.assignedFamilyName && <p className="mt-1 text-xs text-ink-muted">{r.assignedFamilyName}</p>}
                       </div>
-                      <div className="flex flex-wrap gap-1.5 mt-1.5">
-                        <span
-                          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                            STATUS_COLORS[r.status] ?? "bg-surface-sunken text-ink-muted"
-                          }`}
-                        >
-                          {STATUS_LABELS[r.status] ?? r.status}
-                        </span>
-                        {nextAction && (
-                          <span className="text-xs font-medium text-brand-text bg-brand-soft px-2 py-0.5 rounded-full">
-                            {nextAction} →
-                          </span>
-                        )}
-                        {r.relanceDue && (
-                          <span className="text-xs font-medium text-warning bg-warning-soft px-2 py-0.5 rounded-full">
-                            À relancer
-                          </span>
-                        )}
-                        {isIntegration && isUnmatchedAddress(r) && (
-                          <span className="text-xs text-ink-muted bg-surface-sunken px-2 py-0.5 rounded-full">
-                            Adresse non rattachée
-                          </span>
-                        )}
-                      </div>
-                      {r.assignedFamilyName && (
-                        <p className="text-xs text-ink-muted mt-1">{r.assignedFamilyName}</p>
-                      )}
+                      <span className={`mt-0.5 shrink-0 text-xs tabular-nums ${days >= 7 ? "font-semibold text-warning" : "text-ink-muted"}`}>
+                        {daysLabel(days)}
+                      </span>
                     </div>
-                    <span
-                      className={`text-xs shrink-0 mt-0.5 ${
-                        days >= 7 ? "text-warning font-semibold" : "text-ink-subtle"
-                      }`}
-                    >
-                      {days}j
-                    </span>
-                  </div>
-                </Link>
+                  </Link>
+                </li>
               );
             })}
-          </div>
+          </ul>
         </div>
       )}
 
-      <p className="text-xs text-ink-subtle text-right">
-        {filtered.length} demande{filtered.length !== 1 ? "s" : ""}
+      <p className="text-right text-xs text-ink-muted">
+        {filtered.length} demande{filtered.length > 1 ? "s" : ""}
       </p>
     </div>
   );
+}
+
+/** Ligne de bandeau entièrement cliquable (motif ligne de liste). */
+const rowLinkClasses =
+  "flex min-h-11 items-center justify-between gap-3 rounded-control border border-line bg-surface px-3 py-2.5 transition-colors " +
+  "hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
+
+/** Ancienneté en jours, lisible (« 3 j »). */
+function daysLabel(days: number): string {
+  return `${days} j`;
 }

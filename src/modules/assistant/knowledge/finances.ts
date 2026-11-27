@@ -95,7 +95,7 @@ export const FINANCES: readonly KnowledgeEntry[] = [
       "relancer pour le justificatif de la navette",
     ],
     answer:
-      "Sur la demande, cliquez sur « Demander une pièce » et ajoutez un message si besoin : le demandeur est prévenu et peut déposer une ou plusieurs pièces, même si la demande est déjà en traitement ou validée. Vous êtes prévenu au dépôt. Sans réponse, le même bouton devient « Relancer » (dates et nombre de relances affichés) ; « Annuler la demande » retire la mention. Le filtre « Pièce demandée » de la liste regroupe les demandes en attente. Pour la navette, ouvrez la ligne et cliquez sur « Demander le justificatif ».",
+      "Sur la demande, cliquez sur « Demander une pièce » et ajoutez un message si besoin : le demandeur est prévenu et peut déposer une ou plusieurs pièces, même si la demande est déjà en traitement ou validée. Vous êtes prévenu au dépôt. Sans réponse, le même bouton devient « Relancer le demandeur » (dates et nombre de relances affichés) ; « Annuler la demande de pièce » retire la mention. Le filtre « Pièce demandée » de la liste regroupe les demandes en attente. Pour la navette, ouvrez la ligne et cliquez sur « Demander le justificatif ».",
     href: "/accounting/requests",
     hrefLabel: "Comptabilité",
     audience: { permissions: ["accounting:manage"] },

@@ -1,10 +1,11 @@
 "use client";
 
-import { ChevronLeft, FileDown, X } from "lucide-react";
+import { ArrowLeft, Check, FileDown, Loader2, Plus, X } from "lucide-react";
 import { useState, useRef, useCallback, useEffect, useId } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import WhatsAppShare from "@/components/WhatsAppShare";
+import { Button, IconButton, Input, Textarea, buttonClasses } from "@/components/ui";
 import { formatReportWhatsApp, generateReportPDF, type ReportExportData } from "@/lib/report-export";
 import { reportSectionType, reportStatFields } from "@/lib/report-stats";
 
@@ -50,15 +51,6 @@ interface Props {
 
 // ─── Configuration des champs par type de département ───────────────────────
 
-/** Couleur du champ d'une statistique (les champs eux-mêmes viennent de `@/lib/report-stats`). */
-const STAT_COLOR: Record<string, string> = {
-  hommes: "border-info/30 focus:border-info",
-  femmes: "border-danger/30 focus:border-danger",
-  enfants: "border-warning/30 focus:border-warning",
-  convertis: "border-success/30 focus:border-success",
-  voeux: "border-brand/40 focus:border-brand",
-};
-const statColor = (key: string) => STAT_COLOR[key] ?? "border-line focus:border-control-line";
 
 let sectionKeySeq = 0;
 function newSectionKey() {
@@ -87,20 +79,16 @@ function SaveIndicator({ status, error }: { readonly status: SaveStatus; readonl
   if (status === "idle") return null;
   const configs: Record<SaveStatus, { cls: string; text: string }> = {
     idle:    { cls: "", text: "" },
-    pending: { cls: "text-warning", text: "Modifications non sauvegardées…" },
-    saving:  { cls: "text-ink-subtle",  text: "Sauvegarde en cours…" },
-    saved:   { cls: "text-success", text: "Sauvegardé automatiquement ✓" },
+    pending: { cls: "text-ink-muted", text: "Modifications non sauvegardées" },
+    saving:  { cls: "text-ink-muted",  text: "Sauvegarde…" },
+    saved:   { cls: "text-success", text: "Sauvegardé automatiquement" },
     error:   { cls: "text-danger", text: error ?? "Erreur de sauvegarde" },
   };
   const { cls, text } = configs[status];
   return (
-    <span className={`text-xs font-medium flex items-center gap-1.5 ${cls}`}>
-      {status === "saving" && (
-        <svg aria-hidden="true" className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-        </svg>
-      )}
+    <span role="status" className={`flex items-center gap-1.5 text-[13px] font-semibold leading-[18px] ${cls}`}>
+      {status === "saving" && <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />}
+      {status === "saved" && <Check aria-hidden="true" className="size-3.5" />}
       {text}
     </span>
   );
@@ -264,124 +252,109 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
   const showGlobalRecap = statsEnabled && accueilSection && totalGeneral !== null && totalGeneral > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       {/* Récap présence globale */}
       {showGlobalRecap && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: "Hommes",        value: statVal(accueilSection!.stats, "hommes"), color: "text-info bg-info-soft" },
-            { label: "Femmes",        value: statVal(accueilSection!.stats, "femmes"), color: "text-danger bg-danger-soft" },
-            { label: "Total adultes", value: totalAdultes,                             color: "text-brand-text bg-brand-soft" },
-            { label: "Total général", value: totalGeneral,                             color: "text-ink-muted bg-surface-sunken" },
+            { label: "Hommes",        value: statVal(accueilSection!.stats, "hommes") },
+            { label: "Femmes",        value: statVal(accueilSection!.stats, "femmes") },
+            { label: "Total adultes", value: totalAdultes },
+            { label: "Total général", value: totalGeneral },
           ].map((stat) => (
-            <div key={stat.label} className={`rounded-lg border border-line p-4 text-center ${stat.color}`}>
-              <div className="text-2xl font-bold">{stat.value ?? 0}</div>
-              <div className="text-xs font-medium mt-1 opacity-70">{stat.label}</div>
+            <div key={stat.label} className="text-center">
+              <div className="font-display text-2xl font-bold text-ink">{stat.value ?? 0}</div>
+              <div className="mt-1 text-[13px] leading-[18px] text-ink-muted">{stat.label}</div>
             </div>
           ))}
         </div>
       )}
 
       {/* Navigation + export */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Link href="/admin/reports" className="mr-auto">
-          <button type="button" className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-brand-text bg-brand-soft border border-brand/20 rounded-lg hover:bg-brand-soft transition-colors">
-            <ChevronLeft className="w-4 h-4" aria-hidden="true" />
-            Retour
-          </button>
-        </Link>
-        <button
-          type="button"
-          onClick={handleExportPDF}
-          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-info bg-info/5 border border-info/20 rounded-lg hover:bg-info/10 transition-colors"
-        >
-          <FileDown className="w-4 h-4" aria-hidden="true" />
-          PDF
-        </button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="button" variant="secondary" size="sm" onClick={handleExportPDF}>
+          <FileDown className="size-4" aria-hidden="true" strokeWidth={1.75} />
+          Exporter en PDF
+        </Button>
         <WhatsAppShare getText={() => formatReportWhatsApp(buildExportData())} copiedMessage="Compte rendu copié" size="sm" />
       </div>
 
       {/* Orateur et titre du message */}
-      <div className="bg-surface rounded-lg border border-line p-4 space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label htmlFor={`${uid}-speaker`} className="block text-sm font-medium text-ink-muted mb-1">Orateur</label>
-            <input
-              id={`${uid}-speaker`}
-              type="text"
-              value={speaker}
-              onChange={(e) => { setSpeaker(e.target.value); scheduleSave(); }}
-              placeholder="Nom de l'orateur"
-              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-            />
-          </div>
-          <div>
-            <label htmlFor={`${uid}-message-title`} className="block text-sm font-medium text-ink-muted mb-1">Titre du message</label>
-            <input
-              id={`${uid}-message-title`}
-              type="text"
-              value={messageTitle}
-              onChange={(e) => { setMessageTitle(e.target.value); scheduleSave(); }}
-              placeholder="Titre du message"
-              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-            />
-          </div>
+      <div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Input
+            id={`${uid}-speaker`}
+            label="Orateur"
+            type="text"
+            value={speaker}
+            onChange={(e) => { setSpeaker(e.target.value); scheduleSave(); }}
+            placeholder="Nom de l'orateur"
+          />
+          <Input
+            id={`${uid}-message-title`}
+            label="Titre du message"
+            type="text"
+            value={messageTitle}
+            onChange={(e) => { setMessageTitle(e.target.value); scheduleSave(); }}
+            placeholder="Titre du message"
+          />
         </div>
       </div>
 
       {/* Sections */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-ink">Sections</h2>
-          <button type="button" onClick={addSection} className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-brand-text bg-brand-soft border border-brand/20 rounded-lg hover:bg-brand-soft transition-colors">+ Section libre</button>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Sections</h2>
+          <Button type="button" variant="secondary" size="sm" onClick={addSection}>
+            <Plus className="size-4" aria-hidden="true" strokeWidth={1.75} />
+            Ajouter une section libre
+          </Button>
         </div>
 
         {sections.map((section, i) => {
           const deptType = reportSectionType(section.label);
           const fields = reportStatFields(section.label);
           return (
-            <div key={section.clientKey} className="bg-surface rounded-lg border border-line p-4">
-              <div className="flex items-center gap-3 mb-3">
+            <div key={section.clientKey} className="rounded-card border border-line bg-surface p-4">
+              <div className="mb-3 flex items-center gap-3">
                 <input
                   type="text"
+                  aria-label="Nom de la section"
                   value={section.label}
                   onChange={(e) => updateSectionField(i, "label", e.target.value)}
-                  className="flex-1 text-sm font-semibold text-ink border-0 border-b-2 border-line focus:border-brand focus:outline-none bg-transparent pb-1"
+                  className="min-h-11 min-w-0 flex-1 border-0 border-b-2 border-line bg-transparent pb-1 text-base font-semibold text-ink focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                 />
                 {section.department && (
-                  <span className="text-xs text-ink-subtle">{section.department.ministry.name}</span>
+                  <span className="text-[13px] leading-[18px] text-ink-muted">{section.department.ministry.name}</span>
                 )}
-                <button type="button" onClick={() => removeSection(i)}
-                  className="text-ink-subtle hover:text-danger transition-colors" title="Supprimer">
-                  <X className="w-4 h-4" aria-hidden="true" />
-                </button>
+                <IconButton icon={X} size="sm" aria-label={`Retirer la section ${section.label}`} title="Retirer la section" onClick={() => removeSection(i)} />
               </div>
 
               {statsEnabled && fields && (
                 <div className={`grid gap-3 mb-3 ${statsGridClass(fields.length)}`}>
                   {fields.map(({ key, label }) => (
-                    <div key={key}>
-                      <label className="block text-xs text-ink-muted mb-1">{label}</label>
-                      <input
-                        type="number" min={0}
-                        value={statVal(section.stats, key) ?? ""}
-                        onChange={(e) => updateStat(i, key, e.target.value === "" ? null : Number.parseInt(e.target.value, 10))}
-                        placeholder="—"
-                        className={`w-full border ${statColor(key)} rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-offset-0`}
-                      />
-                    </div>
+                    <Input
+                      key={key}
+                      label={label}
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      value={statVal(section.stats, key) ?? ""}
+                      onChange={(e) => updateStat(i, key, e.target.value === "" ? null : Number.parseInt(e.target.value, 10))}
+                      placeholder="—"
+                    />
                   ))}
                   {(deptType === "accueil" || deptType === "navette") && (
                     <>
                       <div>
-                        <p className="block text-xs text-ink-muted mb-1">Total adultes</p>
-                        <div className="w-full border border-dashed border-line rounded-lg px-3 py-1.5 text-sm text-ink-muted bg-surface-sunken">
+                        <p className="mb-1 text-sm font-semibold text-ink">Total adultes</p>
+                        <div className="flex min-h-11 items-center rounded-control border border-dashed border-line px-3 text-base text-ink-muted">
                           {(statVal(section.stats, "hommes") ?? 0) + (statVal(section.stats, "femmes") ?? 0)}
                         </div>
                       </div>
                       <div>
-                        <p className="block text-xs text-ink-muted mb-1">Total adultes + enfants</p>
-                        <div className="w-full border border-dashed border-line rounded-lg px-3 py-1.5 text-sm text-ink-muted bg-surface-sunken">
+                        <p className="mb-1 text-sm font-semibold text-ink">Total adultes + enfants</p>
+                        <div className="flex min-h-11 items-center rounded-control border border-dashed border-line px-3 text-base text-ink-muted">
                           {(statVal(section.stats, "hommes") ?? 0) + (statVal(section.stats, "femmes") ?? 0) + (statVal(section.stats, "enfants") ?? 0)}
                         </div>
                       </div>
@@ -390,66 +363,50 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
                 </div>
               )}
 
-              <div>
-                <label htmlFor={`${uid}-section-notes-${i}`} className="block text-xs text-ink-muted mb-1">Observations</label>
-                <textarea
-                  id={`${uid}-section-notes-${i}`}
-                  value={section.notes ?? ""}
-                  onChange={(e) => updateSectionField(i, "notes", e.target.value || null)}
-                  rows={2}
-                  placeholder="Remarques, points de vigilance..."
-                  className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent resize-none"
-                />
-              </div>
+              <Textarea
+                id={`${uid}-section-notes-${i}`}
+                label="Observations"
+                value={section.notes ?? ""}
+                onChange={(e) => updateSectionField(i, "notes", e.target.value || null)}
+                rows={2}
+                placeholder="Remarques, points de vigilance…"
+              />
             </div>
           );
         })}
       </div>
 
       {/* Champs globaux */}
-      <div className="bg-surface rounded-lg border border-line p-4 space-y-4">
-        <div>
-          <label htmlFor={`${uid}-notes`} className="block text-sm font-medium text-ink-muted mb-1">Observations générales</label>
-          <textarea
-            id={`${uid}-notes`}
-            value={notes}
-            onChange={(e) => { setNotes(e.target.value); scheduleSave(); }}
-            rows={3}
-            placeholder="Bilan global de l'événement..."
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent resize-none"
-          />
-        </div>
-        <div>
-          <label htmlFor={`${uid}-decisions`} className="block text-sm font-medium text-ink-muted mb-1">Décisions / Actions</label>
-          <textarea
-            id={`${uid}-decisions`}
-            value={decisions}
-            onChange={(e) => { setDecisions(e.target.value); scheduleSave(); }}
-            rows={3}
-            placeholder="Décisions prises, actions à mener..."
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent resize-none"
-          />
-        </div>
+      <div className="flex flex-col gap-4">
+        <Textarea
+          id={`${uid}-notes`}
+          label="Observations générales"
+          value={notes}
+          onChange={(e) => { setNotes(e.target.value); scheduleSave(); }}
+          rows={3}
+          placeholder="Bilan global de l'événement…"
+        />
+        <Textarea
+          id={`${uid}-decisions`}
+          label="Décisions / Actions"
+          value={decisions}
+          onChange={(e) => { setDecisions(e.target.value); scheduleSave(); }}
+          rows={3}
+          placeholder="Décisions prises, actions à mener…"
+        />
       </div>
 
       {/* Barre de bas de page : statut + sauvegarde manuelle + retour */}
-      <div className="flex items-center gap-4 py-2">
+      <div className="flex flex-wrap items-center gap-4 py-2">
         <SaveIndicator status={saveStatus} error={saveError} />
-        <button
-          type="button"
-          onClick={performSave}
-          disabled={saveStatus === "saving"}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-info bg-info/5 border border-info/20 rounded-lg hover:bg-info/10 transition-colors disabled:opacity-50 ml-auto"
-        >
-          {saveStatus === "saving" ? "Sauvegarde…" : "Enregistrer maintenant"}
-        </button>
-        <Link href="/admin/reports">
-          <button type="button" className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-brand-text bg-brand-soft border border-brand/20 rounded-lg hover:bg-brand-soft transition-colors">
-            <ChevronLeft className="w-4 h-4" aria-hidden="true" />
-            Retour
-          </button>
-        </Link>
+        <Button type="button" className="ml-auto" onClick={performSave} disabled={saveStatus === "saving"}>
+          {saveStatus === "saving" ? "Enregistrement…" : "Enregistrer maintenant"}
+        </Button>
       </div>
+        <Link href="/admin/reports" className={`${buttonClasses("ghost")} self-start`}>
+          <ArrowLeft className="size-4" aria-hidden="true" strokeWidth={1.75} />
+          Revenir aux comptes rendus
+        </Link>
     </div>
   );
 }

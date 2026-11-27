@@ -3,14 +3,15 @@
 import { useId, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Modal from "@/components/ui/Modal";
-import { Button, Select, StatusChip, useToast } from "@/components/ui";
-import { Archive } from "lucide-react";
+import { Alert, Button, FilterChip, IconButton, Input, Modal, Select, StatusChip, Textarea, buttonClasses, fieldLabelClasses, useToast, type StatusTone } from "@/components/ui";
+import { Archive, Check, PencilLine, Plus, Repeat, X, Zap } from "lucide-react";
 import AttachmentManager from "@/app/(auth)/accounting/components/AttachmentManager";
 import PieceRequestPanel from "./PieceRequestPanel";
 import JustificationPanel, { type Justification } from "./JustificationPanel";
 
 type DateLike = string | Date;
+
+const SECTION_TITLE = "font-display text-[17px] font-semibold leading-6 text-ink";
 
 const TYPE_LABELS: Record<string, string> = {
   EXPENSE_REPORT: "Note de frais",
@@ -23,14 +24,19 @@ const STATUS_LABELS: Record<string, string> = {
   REJECTED:   "Rejetée",
   CANCELLED:  "Annulée",
 };
-const STATUS_COLORS: Record<string, string> = {
-  SUBMITTED:  "bg-warning-soft text-warning",
-  PROCESSING: "bg-info-soft text-info",
-  APPROVED:   "bg-success-soft text-success",
-  REJECTED:   "bg-danger-soft text-danger",
-  CANCELLED:  "bg-surface-sunken text-ink-muted",
+const STATUS_TONES: Record<string, StatusTone> = {
+  SUBMITTED:  "warning",
+  PROCESSING: "info",
+  APPROVED:   "success",
+  REJECTED:   "danger",
+  CANCELLED:  "neutral",
 };
-const RECURRENCE_LABELS: Record<string, string> = { WEEK: "semaine(s)", MONTH: "mois" };
+const RECURRENCE_LABELS: Record<string, [string, string]> = { WEEK: ["semaine", "semaines"], MONTH: ["mois", "mois"] };
+
+function recurrenceLabel(every: number, unit: string): string {
+  const [one, many] = RECURRENCE_LABELS[unit] ?? [unit, unit];
+  return every > 1 ? `${every} ${many}` : one;
+}
 
 interface Payment {
   id: string;
@@ -99,44 +105,39 @@ function fmtAmount(n: number | string) {
 const STEPS = ["SUBMITTED", "PROCESSING", "APPROVED"];
 function stepCircleClass(isRejected: boolean, current: boolean, done: boolean): string {
   if (isRejected) return "bg-surface-sunken text-ink-subtle";
-  if (current) return "bg-brand text-on-brand ring-2 ring-focus/20";
+  if (current) return "bg-brand text-on-brand";
   if (done) return "bg-brand-soft text-brand-text";
   return "bg-surface-sunken text-ink-subtle";
-}
-function priorityClass(selected: boolean, p: "NORMAL" | "URGENT"): string {
-  if (!selected) return "border-line text-ink-muted";
-  return p === "URGENT" ? "border-danger bg-danger-soft text-danger" : "border-brand bg-brand-soft text-brand-text";
 }
 function WorkflowBar({ status }: { readonly status: string }) {
   const isRejected = status === "REJECTED" || status === "CANCELLED";
   return (
-    <div className="flex items-center gap-0">
+    <ol className="flex items-center" aria-label="Étapes de la demande">
       {STEPS.map((s, i) => {
         const done = !isRejected && (STEPS.indexOf(status) >= i || status === s);
         const current = status === s;
         return (
-          <div key={s} className="flex items-center flex-1 last:flex-none">
-            <div className={`flex flex-col items-center`} style={{ minWidth: 60 }}>
-              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${stepCircleClass(isRejected, current, done)}`}>
-                {done && !current ? "✓" : i + 1}
+          <li key={s} className="flex flex-1 items-center last:flex-none" aria-current={current ? "step" : undefined}>
+            <div className="flex min-w-[72px] flex-col items-center">
+              <div className={`flex size-6 items-center justify-center rounded-full text-[13px] font-semibold ${stepCircleClass(isRejected, current, done)}`}>
+                {done && !current ? <Check aria-hidden="true" className="size-4" strokeWidth={2} /> : i + 1}
               </div>
-              <p className={`text-[10px] mt-1 text-center leading-tight max-w-[60px] ${done ? "text-ink-muted font-medium" : "text-ink-subtle"}`}>
+              <p className={`mt-1 max-w-[80px] text-center text-[13px] leading-[18px] ${done ? "font-semibold text-ink-muted" : "text-ink-subtle"}`}>
                 {STATUS_LABELS[s]}
               </p>
             </div>
             {i < STEPS.length - 1 && (
-              <div className={`flex-1 h-0.5 -mt-4 mx-1 ${done && !current ? "bg-brand" : "bg-surface-sunken"}`} />
+              <div aria-hidden="true" className={`mx-1 -mt-5 h-0.5 flex-1 ${done && !current ? "bg-brand" : "bg-line"}`} />
             )}
-          </div>
+          </li>
         );
       })}
       {isRejected && (
-        <div className="ml-3 flex items-center gap-1.5 text-danger text-xs font-medium">
-          <span className="w-5 h-5 rounded-full bg-danger-soft flex items-center justify-center text-xs font-bold">✕</span>
-          {STATUS_LABELS[status]}
-        </div>
+        <li className="ml-3">
+          <StatusChip tone={STATUS_TONES[status]} icon={X}>{STATUS_LABELS[status]}</StatusChip>
+        </li>
       )}
-    </div>
+    </ol>
   );
 }
 
@@ -235,35 +236,31 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
     .reduce((s, p) => s + Number(p.releasedAmount ?? p.amount), 0);
 
   return (
-    <div className="space-y-4 max-w-3xl">
+    <div className="flex max-w-3xl flex-col gap-6">
 
       {/* Header */}
-      <div className="bg-surface rounded-xl border border-line p-4 md:p-5 space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-ink-subtle bg-surface-sunken px-2 py-0.5 rounded">{TYPE_LABELS[req.type]}</span>
-              {req.priority === "URGENT" && (
-                <span className="text-xs font-medium text-danger bg-danger-soft px-2 py-0.5 rounded border border-danger/30">Urgent</span>
-              )}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+          <div className="flex flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusChip tone="neutral">{TYPE_LABELS[req.type]}</StatusChip>
+              {req.priority === "URGENT" && <StatusChip tone="danger" icon={Zap}>Urgent</StatusChip>}
               {req.series && (
-                <span className="text-xs text-brand-text bg-brand-soft px-2 py-0.5 rounded border border-brand/30">
-                  Récurrente · tous les {req.series.recurrenceEvery} {RECURRENCE_LABELS[req.series.recurrenceUnit]}
-                </span>
+                <StatusChip tone="brand" icon={Repeat}>
+                  Récurrente · tous les {recurrenceLabel(req.series.recurrenceEvery, req.series.recurrenceUnit)}
+                </StatusChip>
               )}
             </div>
-            <h1 className="text-xl font-bold text-ink">{req.label}</h1>
+            <h1 className="font-display text-[22px] font-bold leading-7 text-ink [text-wrap:balance] md:text-[28px] md:leading-9">{req.label}</h1>
             {req.department
-              ? <p className="text-sm text-ink-subtle">{req.department.ministry.name} — {req.department.name}</p>
-              : <p className="text-sm text-ink-subtle italic">Personnel / sans département</p>
+              ? <p className="text-[15px] leading-[22px] text-ink-muted">{req.department.ministry.name} — {req.department.name}</p>
+              : <p className="text-[15px] leading-[22px] text-ink-muted">Personnel / sans département</p>
             }
-            <p className="text-sm text-ink-subtle">Par {req.submittedBy.name ?? req.submittedBy.email} · {fmt(req.createdAt)}</p>
+            <p className="text-[13px] leading-[18px] text-ink-subtle">Par {req.submittedBy.name ?? req.submittedBy.email} · {fmt(req.createdAt)}</p>
           </div>
-          <div className="flex items-center gap-2 self-start flex-wrap">
-            <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${STATUS_COLORS[req.status] ?? "bg-surface-sunken text-ink-muted"}`}>
-              {STATUS_LABELS[req.status] ?? req.status}
-            </span>
-            <span className="text-lg font-bold text-ink">{fmtAmount(req.amount)}</span>
+          <div className="flex flex-wrap items-center gap-2 self-start">
+            <StatusChip tone={STATUS_TONES[req.status] ?? "neutral"}>{STATUS_LABELS[req.status] ?? req.status}</StatusChip>
+            <span className="text-lg font-bold tabular-nums text-ink">{fmtAmount(req.amount)}</span>
           </div>
         </div>
 
@@ -272,28 +269,31 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
         )}
 
         {/* Progression workflow */}
-        <div className="pt-2 border-t border-line">
+        <div className="border-t border-line pt-3">
           <WorkflowBar status={req.status} />
         </div>
 
         {req.correctionOf && (
-          <p className="text-xs text-ink-subtle bg-warning-soft border border-warning/30 rounded-lg px-3 py-2">
-            Correction de la demande{" "}
-            <Link href={`/accounting/requests/${req.correctionOf.id}`} className="text-brand-text hover:underline font-medium">
-              &ldquo;{req.correctionOf.label}&rdquo;
-            </Link>
-          </p>
+          <Alert
+            tone="info"
+            title={`Correction de la demande « ${req.correctionOf.label} ».`}
+            action={
+              <Link href={`/accounting/requests/${req.correctionOf.id}`} className={buttonClasses("ghost", "sm")}>
+                Voir la demande d&apos;origine
+              </Link>
+            }
+          />
         )}
       </div>
 
-      {error && <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-4 py-3">{error}</p>}
+      {error && <Alert tone="danger" role="alert">{error}</Alert>}
 
       {/* Détails */}
       {req.description && (
-        <div className="bg-surface rounded-xl border border-line p-4 md:p-5 space-y-2">
-          <h2 className="text-sm font-semibold text-ink-muted">Description</h2>
-          <p className="text-sm text-ink-muted whitespace-pre-line">{req.description}</p>
-        </div>
+        <section className="flex flex-col gap-2">
+          <h2 className={SECTION_TITLE}>Description</h2>
+          <p className="whitespace-pre-line text-[15px] leading-[22px] text-ink">{req.description}</p>
+        </section>
       )}
 
       <PieceRequestPanel
@@ -310,10 +310,10 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
 
       {/* Pièces jointes */}
       {(req.attachments.length > 0 || (isOwn && req.status === "SUBMITTED")) && (
-        <div className="bg-surface rounded-xl border border-line p-4 md:p-5 space-y-3">
-          <h2 className="text-sm font-semibold text-ink-muted">
+        <section className="flex flex-col gap-3">
+          <h2 className={SECTION_TITLE}>
             Pièces jointes
-            {req.attachments.length > 0 && <span className="text-ink-subtle font-normal ml-1">({req.attachments.length})</span>}
+            {req.attachments.length > 0 && <span className="ml-1 font-normal text-ink-subtle">({req.attachments.length})</span>}
           </h2>
           <AttachmentManager
             attachments={req.attachments}
@@ -322,88 +322,93 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
             canDelete={isOwn && req.status === "SUBMITTED"}
             onChange={(updated) => setReq((r) => ({ ...r, attachments: updated }))}
           />
-        </div>
+        </section>
       )}
 
       {/* Priorité + note compta */}
       {req.status === "PROCESSING" && (req.priority || req.priorityNote) && (
-        <div className={`rounded-xl border p-4 space-y-1 ${req.priority === "URGENT" ? "bg-danger-soft border-danger/30" : "bg-info-soft border-info/30"}`}>
-          <p className={`text-sm font-semibold ${req.priority === "URGENT" ? "text-danger" : "text-info"}`}>
-            {req.priority === "URGENT" ? "⚡ Traitement urgent" : "En cours de traitement"}
-          </p>
-          {req.priorityNote && <p className="text-sm text-ink-muted">{req.priorityNote}</p>}
-        </div>
+        <Alert tone={req.priority === "URGENT" ? "danger" : "info"} title={req.priority === "URGENT" ? "Traitement urgent." : "En cours de traitement."}>
+          {req.priorityNote}
+        </Alert>
       )}
 
       {/* Motif de rejet */}
       {req.status === "REJECTED" && req.rejectionReason && (
-        <div className="bg-danger-soft border border-danger/30 rounded-xl p-4 space-y-1">
-          <p className="text-sm font-semibold text-danger">Demande rejetée</p>
-          <p className="text-sm text-ink-muted">{req.rejectionReason}</p>
-          {isOwn && (
-            <a
-              href={`/accounting/requests/new?correctionOf=${req.id}`}
-              className="inline-block mt-2 text-xs font-medium text-brand-text border border-brand/40 px-3 py-1.5 rounded-lg hover:bg-brand-hover hover:text-on-brand transition-colors"
-            >
-              Corriger et resoumettre →
-            </a>
-          )}
-        </div>
+        <Alert
+          tone="danger"
+          title="Demande rejetée."
+          action={
+            isOwn ? (
+              <Link
+                href={`/accounting/requests/new?correctionOf=${req.id}`}
+                className={buttonClasses("secondary", "sm")}
+              >
+                <PencilLine aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                Corriger la demande
+              </Link>
+            ) : undefined
+          }
+        >
+          {req.rejectionReason}
+        </Alert>
       )}
 
       {/* Plan de paiement */}
       {req.status === "APPROVED" && req.payments.length > 0 && (
-        <div className="bg-surface rounded-xl border border-line p-4 md:p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-ink-muted">Plan de paiement</h2>
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className={SECTION_TITLE}>Plan de paiement</h2>
             <div className="text-right">
-              <p className="text-xs text-ink-subtle">Remis : <span className="font-semibold text-success">{fmtAmount(releasedPayments)}</span></p>
-              <p className="text-xs text-ink-subtle">Total : <span className="font-medium text-ink-muted">{fmtAmount(totalPayments)}</span></p>
+              <p className="text-[13px] leading-[18px] text-ink-muted">Remis : <span className="font-semibold tabular-nums text-success">{fmtAmount(releasedPayments)}</span></p>
+              <p className="text-[13px] leading-[18px] text-ink-muted">Total : <span className="font-semibold tabular-nums text-ink">{fmtAmount(totalPayments)}</span></p>
             </div>
           </div>
-          <div className="space-y-2">
+          <ul className="flex flex-col gap-2">
             {req.payments.map((p, i) => {
               const isPartial = p.releasedAt && p.releasedAmount != null && Number(p.releasedAmount) < Number(p.amount);
               let paymentStatus: ReactNode;
               if (p.releasedAt) {
                 paymentStatus = (
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${isPartial ? "text-warning bg-warning-soft" : "text-success bg-success-soft"}`}>
-                    {isPartial ? "Partiel ✓" : "Remis ✓"}
-                  </span>
+                  <StatusChip tone={isPartial ? "warning" : "success"} icon={Check} className="shrink-0 self-start sm:self-center">
+                    {isPartial ? "Partiel" : "Remis"}
+                  </StatusChip>
                 );
               } else if (canManage) {
                 paymentStatus = (
-                  <button
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="shrink-0"
                     onClick={() => {
                       setReleasingPaymentId(p.id);
                       setReleaseDate(new Date().toISOString().slice(0, 10));
                       setReleaseAmount(String(Number(p.amount)));
                       setReleaseAccount("");
                     }}
-                    className="shrink-0 text-xs font-medium text-brand-text border border-brand/40 px-2.5 py-1 rounded-full hover:bg-brand-hover hover:text-on-brand transition-colors"
                   >
-                    Confirmer remise
-                  </button>
+                    Confirmer la remise
+                  </Button>
                 );
               } else {
-                paymentStatus = <span className="text-xs text-ink-subtle shrink-0">En attente</span>;
+                paymentStatus = <StatusChip tone="neutral" className="shrink-0 self-start sm:self-center">En attente</StatusChip>;
               }
               return (
-              <div key={p.id} className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 border ${p.releasedAt ? "bg-success-soft border-success/30" : "bg-surface-sunken border-line"}`}>
+              <li key={p.id} className={`flex flex-col gap-3 rounded-control border px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between ${p.releasedAt ? "border-success/30 bg-success-soft" : "border-line"}`}>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-ink">
-                    Tranche {i + 1} — {fmtAmount(p.amount)}
+                  <p className="text-[15px] font-semibold leading-[22px] text-ink">
+                    Tranche {i + 1} — <span className="tabular-nums">{fmtAmount(p.amount)}</span>
                     {isPartial && (
-                      <span className="ml-1.5 text-xs font-normal text-warning">
+                      <span className="ml-1.5 text-[13px] font-normal text-warning">
                         (versé : {fmtAmount(p.releasedAmount!)})
                       </span>
                     )}
                   </p>
-                  <p className="text-xs text-ink-subtle">
+                  <p className="text-[13px] leading-[18px] text-ink-muted">
                     Prévu : {fmt(p.scheduledDate)}
                     {p.releasedAt ? ` · Remis le ${fmt(p.releasedAt)} par ${p.releasedBy?.name ?? "—"}` : ""}
                   </p>
-                  {p.note && <p className="text-xs text-ink-muted mt-0.5">{p.note}</p>}
+                  {p.note && <p className="mt-0.5 text-[13px] leading-[18px] text-ink-muted">{p.note}</p>}
                   {p.releasedAt && canManage && treasuryAccounts.length > 0 && (
                     <PaymentAccount
                       paymentId={p.id}
@@ -417,78 +422,77 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
                   )}
                 </div>
                 {paymentStatus}
-              </div>
+              </li>
             );
             })}
-          </div>
-        </div>
+          </ul>
+        </section>
       )}
 
       {!justification && claimable && (
-        <div className="bg-surface rounded-xl border border-line p-4 md:p-5 space-y-3">
-          <h2 className="text-sm font-semibold text-ink-muted">Justificatifs</h2>
-          <p className="text-sm text-ink-muted">
+        <section className="flex flex-col gap-3">
+          <h2 className={SECTION_TITLE}>Justificatifs</h2>
+          <p className="text-[15px] leading-[22px] text-ink-muted">
             Versée avant la mise en service du suivi : aucun justificatif n&apos;a été demandé. En les réclamant, le
             demandeur est prévenu et relancé comme après une remise.
           </p>
-          <button onClick={claim} disabled={loading}
-            className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
+          <Button type="button" className="self-start" onClick={claim} disabled={loading}>
             {loading ? "Envoi…" : "Réclamer les justificatifs"}
-          </button>
-        </div>
+          </Button>
+        </section>
       )}
 
       {justification && <JustificationPanel key={`${justification.id}-${justification.status}-${justification.releasedAmount}`} justification={justification} requestId={req.id} treasuryAccounts={treasuryAccounts} />}
 
       {/* Corrections liées */}
       {req.corrections.length > 0 && (
-        <div className="bg-surface rounded-xl border border-line p-4 space-y-2">
-          <h2 className="text-sm font-semibold text-ink-muted">Corrections soumises</h2>
-          {req.corrections.map((c) => (
-            <a key={c.id} href={`/accounting/requests/${c.id}`} className="flex items-center justify-between text-sm text-brand-text hover:underline">
-              <span>{c.label}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[c.status] ?? "bg-surface-sunken text-ink-muted"}`}>{STATUS_LABELS[c.status]}</span>
-            </a>
-          ))}
-        </div>
+        <section className="flex flex-col gap-2">
+          <h2 className={SECTION_TITLE}>Corrections soumises</h2>
+          <ul className="-mx-2 flex flex-col">
+            {req.corrections.map((c) => (
+              <li key={c.id}>
+                <Link
+                  href={`/accounting/requests/${c.id}`}
+                  className="flex min-h-11 items-center justify-between gap-3 rounded-control px-2 text-[15px] text-ink hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                >
+                  <span className="min-w-0 truncate">{c.label}</span>
+                  <StatusChip tone={STATUS_TONES[c.status] ?? "neutral"} className="shrink-0">{STATUS_LABELS[c.status]}</StatusChip>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {/* Actions comptable — only when an action is possible */}
       {canManage && (req.status === "SUBMITTED" || req.status === "PROCESSING") && (
-        <div className="bg-surface rounded-xl border border-line p-4 space-y-3">
-          <h2 className="text-sm font-semibold text-ink-muted">Actions</h2>
-          <div className="flex flex-wrap gap-2">
+        <section className="flex flex-col gap-3">
+          <h2 className={SECTION_TITLE}>Actions</h2>
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             {req.status === "SUBMITTED" && (
-              <button onClick={() => setProcessOpen(true)} disabled={loading}
-                className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
+              <Button type="button" onClick={() => setProcessOpen(true)} disabled={loading}>
                 Prendre en charge
-              </button>
+              </Button>
             )}
             {req.status === "PROCESSING" && (
-              <button onClick={() => setApproveOpen(true)} disabled={loading}
-                className="px-4 py-2 bg-success text-surface text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
-                Valider ✓
-              </button>
+              <Button type="button" onClick={() => setApproveOpen(true)} disabled={loading}>
+                <Check aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                Valider la demande
+              </Button>
             )}
-            {(req.status === "SUBMITTED" || req.status === "PROCESSING") && (
-              <button onClick={() => setRejectOpen(true)} disabled={loading}
-                className="px-4 py-2 bg-surface text-danger border border-danger/30 text-sm font-medium rounded-lg hover:bg-danger-soft disabled:opacity-50 transition-colors">
-                Rejeter
-              </button>
-            )}
+            <Button type="button" variant="secondary" onClick={() => setRejectOpen(true)} disabled={loading}>
+              Rejeter la demande
+            </Button>
           </div>
-        </div>
+        </section>
       )}
 
       {/* Annulation (demandeur) */}
       {isOwn && req.status === "SUBMITTED" && (
         <div className="flex justify-end">
-          <button
-            onClick={() => setConfirmCancel(true)}
-            className="text-xs text-ink-subtle hover:text-danger transition-colors"
-          >
-            Annuler cette demande
-          </button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmCancel(true)}>
+            Annuler la demande
+          </Button>
         </div>
       )}
 
@@ -496,121 +500,137 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
 
       {/* Prendre en charge */}
       <Modal open={processOpen} onClose={() => setProcessOpen(false)} title="Prendre en charge la demande">
-        <div className="space-y-4">
-          <fieldset className="space-y-2 min-w-0">
-            <legend className="block text-sm font-medium text-ink-muted">Priorité</legend>
+        <div className="flex flex-col gap-4">
+          <fieldset className="flex min-w-0 flex-col gap-2">
+            <legend className={`${fieldLabelClasses} mb-1`}>Priorité</legend>
             <div className="flex gap-2">
               {(["NORMAL", "URGENT"] as const).map((p) => (
-                <button key={p} type="button" onClick={() => setPriority(p)}
-                  className={`flex-1 px-3 py-2 rounded-lg border-2 text-sm font-medium transition-colors ${priorityClass(priority === p, p)}`}>
-                  {p === "URGENT" ? "⚡ Urgent" : "Normal"}
-                </button>
+                <FilterChip key={p} pressed={priority === p} className="flex-1 justify-center" onClick={() => setPriority(p)}>
+                  {p === "URGENT" && <Zap aria-hidden="true" className="size-4" strokeWidth={1.75} />}
+                  {p === "URGENT" ? "Urgent" : "Normal"}
+                </FilterChip>
               ))}
             </div>
             {priority === "URGENT" && (
-              <input type="text" value={priorityNote} onChange={(e) => setPriorityNote(e.target.value)}
-                placeholder="Délai engagé (ex : sous 48h)…"
-                className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-danger" />
+              <Input
+                label="Délai engagé"
+                value={priorityNote}
+                onChange={(e) => setPriorityNote(e.target.value)}
+                placeholder="Ex. : sous 48 h"
+              />
             )}
           </fieldset>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setProcessOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
-            <button onClick={async () => {
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="secondary" onClick={() => setProcessOpen(false)}>Annuler</Button>
+            <Button type="button" onClick={async () => {
               const ok = await patch({ action: "process", priority, priorityNote: priorityNote || undefined });
               if (ok) setProcessOpen(false);
-            }} disabled={loading}
-              className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
-              {loading ? "Enregistrement…" : "Confirmer"}
-            </button>
+            }} disabled={loading}>
+              {loading ? "Enregistrement…" : "Prendre en charge"}
+            </Button>
           </div>
         </div>
       </Modal>
 
       {/* Valider */}
       <Modal open={approveOpen} onClose={() => setApproveOpen(false)} title="Valider la demande">
-        <div className="space-y-4">
-          <p className="text-sm text-ink-muted">Définissez le ou les paiements pour <strong>{fmtAmount(req.amount)}</strong> au total.</p>
-          <div className="space-y-2">
+        <div className="flex flex-col gap-4">
+          <p className="text-[15px] leading-[22px] text-ink-muted">Définissez le ou les paiements pour <strong className="text-ink">{fmtAmount(req.amount)}</strong> au total.</p>
+          <div className="flex flex-col gap-3">
             {paymentLines.map((line, i) => (
-              <div key={line.id} className="grid grid-cols-2 gap-2">
-                <div>
-                  <label htmlFor={`${uid}-amount-${i}`} className="block text-xs text-ink-muted mb-1">Montant (€)</label>
-                  <input id={`${uid}-amount-${i}`} type="number" min={0.01} step={0.01} value={line.amount}
+              <div key={line.id} className="flex items-end gap-2">
+                <div className="grid min-w-0 flex-1 grid-cols-2 gap-2">
+                  <Input
+                    id={`${uid}-amount-${i}`}
+                    label="Montant (€)"
+                    type="number"
+                    inputMode="decimal"
+                    min={0.01}
+                    step={0.01}
+                    value={line.amount}
                     onChange={(e) => setPaymentLines((ls) => ls.map((l, j) => j === i ? { ...l, amount: e.target.value } : l))}
-                    className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-success" />
+                  />
+                  <Input
+                    id={`${uid}-date-${i}`}
+                    label="Date prévue"
+                    type="date"
+                    value={line.scheduledDate}
+                    onChange={(e) => setPaymentLines((ls) => ls.map((l, j) => j === i ? { ...l, scheduledDate: e.target.value } : l))}
+                  />
                 </div>
-                <div>
-                  <label htmlFor={`${uid}-date-${i}`} className="block text-xs text-ink-muted mb-1">Date prévue</label>
-                  <div className="flex gap-1">
-                    <input id={`${uid}-date-${i}`} type="date" value={line.scheduledDate}
-                      onChange={(e) => setPaymentLines((ls) => ls.map((l, j) => j === i ? { ...l, scheduledDate: e.target.value } : l))}
-                      className="flex-1 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-success" />
-                    {paymentLines.length > 1 && (
-                      <button type="button" onClick={() => setPaymentLines((ls) => ls.filter((_, j) => j !== i))}
-                        className="px-2 text-danger hover:text-danger">✕</button>
-                    )}
-                  </div>
-                </div>
+                {paymentLines.length > 1 && (
+                  <IconButton
+                    icon={X}
+                    aria-label={`Retirer la tranche ${i + 1}`}
+                    onClick={() => setPaymentLines((ls) => ls.filter((_, j) => j !== i))}
+                  />
+                )}
               </div>
             ))}
-            <button type="button" onClick={() => setPaymentLines((ls) => [...ls, { id: crypto.randomUUID(), amount: "", scheduledDate: "", note: "" }])}
-              className="text-xs text-brand-text hover:underline">
-              + Ajouter une tranche
-            </button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="self-start"
+              onClick={() => setPaymentLines((ls) => [...ls, { id: crypto.randomUUID(), amount: "", scheduledDate: "", note: "" }])}
+            >
+              <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
+              Ajouter une tranche
+            </Button>
           </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setApproveOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
-            <button onClick={async () => {
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="secondary" onClick={() => setApproveOpen(false)}>Annuler</Button>
+            <Button type="button" onClick={async () => {
               const payments = paymentLines.map((l) => ({
                 amount: Number.parseFloat(l.amount),
                 scheduledDate: new Date(l.scheduledDate).toISOString(),
               }));
               const ok = await patch({ action: "approve", payments });
               if (ok) setApproveOpen(false);
-            }} disabled={loading}
-              className="px-4 py-2 bg-success text-surface text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
+            }} disabled={loading}>
               {loading ? "Enregistrement…" : "Valider la demande"}
-            </button>
+            </Button>
           </div>
         </div>
       </Modal>
 
       {/* Rejeter */}
       <Modal open={rejectOpen} onClose={() => setRejectOpen(false)} title="Rejeter la demande">
-        <div className="space-y-4">
-          <div>
-            <label htmlFor={`${uid}-reject`} className="block text-sm font-medium text-ink-muted mb-1">Motif de rejet</label>
-            <textarea id={`${uid}-reject`} value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)}
-              rows={3} placeholder="Précisez la raison du rejet pour le demandeur…"
-              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-danger resize-none" />
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setRejectOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
-            <button onClick={async () => {
+        <div className="flex flex-col gap-4">
+          <Textarea
+            id={`${uid}-reject`}
+            label="Motif de rejet"
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            rows={3}
+            placeholder="Précisez la raison du rejet pour le demandeur…"
+            hint="Obligatoire : le motif est transmis au demandeur."
+          />
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="secondary" onClick={() => setRejectOpen(false)}>Annuler</Button>
+            <Button type="button" onClick={async () => {
               if (!rejectionReason.trim()) return;
               const ok = await patch({ action: "reject", rejectionReason });
               if (ok) setRejectOpen(false);
-            }} disabled={loading || !rejectionReason.trim()}
-              className="px-4 py-2 bg-danger text-on-danger text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
-              {loading ? "Enregistrement…" : "Rejeter"}
-            </button>
+            }} disabled={loading || !rejectionReason.trim()}>
+              {loading ? "Enregistrement…" : "Rejeter la demande"}
+            </Button>
           </div>
         </div>
       </Modal>
 
       {/* Confirmer annulation */}
-      <Modal open={confirmCancel} onClose={() => setConfirmCancel(false)} title="Annuler la demande">
-        <div className="space-y-4">
-          <p className="text-sm text-ink-muted">Confirmer l&apos;annulation de &quot;{req.label}&quot; ? Cette action est irréversible.</p>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setConfirmCancel(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Retour</button>
-            <button onClick={async () => {
+      <Modal open={confirmCancel} onClose={() => setConfirmCancel(false)} title={`Annuler la demande « ${req.label} » ?`} mobileLayout="sheet">
+        <div className="flex flex-col gap-4">
+          <p className="text-[15px] leading-[22px] text-ink-muted">La comptabilité ne la traitera pas. Cette action est irréversible.</p>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="secondary" onClick={() => setConfirmCancel(false)}>Garder la demande</Button>
+            <Button type="button" onClick={async () => {
               const ok = await patch({ action: "cancel" });
               if (ok) setConfirmCancel(false);
-            }} disabled={loading}
-              className="px-4 py-2 bg-danger text-on-danger text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
-              {loading ? "Annulation…" : "Confirmer l'annulation"}
-            </button>
+            }} disabled={loading}>
+              {loading ? "Annulation…" : "Annuler la demande"}
+            </Button>
           </div>
         </div>
       </Modal>
@@ -624,49 +644,55 @@ export default function RequestDetail({ request: initial, canManage, isOwn, trea
         const isPartial = entered > 0 && entered < planned;
         let confirmLabel = "Confirmer la remise";
         if (loading) confirmLabel = "Enregistrement…";
-        else if (isPartial) confirmLabel = "Confirmer (partiel)";
+        else if (isPartial) confirmLabel = "Confirmer la remise partielle";
         return (
           <Modal open={releasingPaymentId !== null} onClose={() => setReleasingPaymentId(null)} title="Confirmer la remise des fonds">
-            <div className="space-y-4">
+            <div className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor={`${uid}-release-amount`} className="block text-sm font-medium text-ink-muted mb-1">Montant remis (€)</label>
-                  <input id={`${uid}-release-amount`} type="number" min={0.01} max={planned} step={0.01} value={releaseAmount}
-                    onChange={(e) => setReleaseAmount(e.target.value)}
-                    className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-success" />
-                  <p className="text-xs text-ink-subtle mt-1">Prévu : {fmtAmount(planned)}</p>
-                </div>
-                <div>
-                  <label htmlFor={`${uid}-release-date`} className="block text-sm font-medium text-ink-muted mb-1">Date de remise</label>
-                  <input id={`${uid}-release-date`} type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)}
-                    className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-success" />
-                </div>
+                <Input
+                  id={`${uid}-release-amount`}
+                  label="Montant remis (€)"
+                  type="number"
+                  inputMode="decimal"
+                  min={0.01}
+                  max={planned}
+                  step={0.01}
+                  value={releaseAmount}
+                  onChange={(e) => setReleaseAmount(e.target.value)}
+                  hint={`Prévu : ${fmtAmount(planned)}`}
+                />
+                <Input
+                  id={`${uid}-release-date`}
+                  label="Date de remise"
+                  type="date"
+                  value={releaseDate}
+                  onChange={(e) => setReleaseDate(e.target.value)}
+                />
               </div>
               {treasuryAccounts.length > 0 && (
-                <div>
-                  <label htmlFor={`${uid}-release-account`} className="block text-sm font-medium text-ink-muted mb-1">Payé depuis</label>
-                  <select id={`${uid}-release-account`} value={releaseAccount} onChange={(e) => setReleaseAccount(e.target.value)}
-                    className="w-full border border-control-line rounded-lg px-3 py-2 text-base bg-surface focus:outline-none focus:border-success">
-                    <option value="">Compte commun (virement)</option>
-                    {treasuryAccounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-                  </select>
-                  <p className="text-xs text-ink-subtle mt-1">Payé depuis une caisse : la sortie apparaît dans la trésorerie, sans ressaisie.</p>
-                </div>
+                <Select
+                  id={`${uid}-release-account`}
+                  label="Payé depuis"
+                  value={releaseAccount}
+                  onChange={(e) => setReleaseAccount(e.target.value)}
+                  options={[{ value: "", label: "Compte commun (virement)" }, ...treasuryAccounts.map((a) => ({ value: a.id, label: a.name }))]}
+                  hint="Payé depuis une caisse : la sortie apparaît dans la trésorerie, sans ressaisie."
+                />
               )}
               {isPartial && (
-                <div className="bg-warning-soft border border-warning/30 rounded-lg px-3 py-2 text-xs text-warning">
+                <Alert tone="warning">
                   Remise partielle — une tranche résiduelle de <strong>{fmtAmount(remainder)}</strong> sera créée automatiquement.
-                </div>
+                </Alert>
               )}
-              <div className="flex gap-2 justify-end">
-                <button onClick={() => setReleasingPaymentId(null)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
-                <button
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button type="button" variant="secondary" onClick={() => setReleasingPaymentId(null)}>Annuler</Button>
+                <Button
+                  type="button"
                   onClick={() => releasingPaymentId && releasePayment(releasingPaymentId)}
                   disabled={loading || !releaseDate || entered <= 0 || entered > planned}
-                  className="px-4 py-2 bg-success text-surface text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
                   {confirmLabel}
-                </button>
+                </Button>
               </div>
             </div>
           </Modal>
@@ -695,7 +721,7 @@ function ArchiveBar({ archived, manual, disabled, onChange }: {
     <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-line">
       <div className="flex flex-wrap items-center gap-2">
         {(archived || manual) && <StatusChip tone="neutral" icon={Archive}>Archivée</StatusChip>}
-        <p className="text-sm text-ink-muted">{hint}</p>
+        <p className="text-[15px] leading-[22px] text-ink-muted">{hint}</p>
       </div>
       {manual ? (
         <Button variant="secondary" size="sm" disabled={disabled} onClick={() => onChange(false)}>

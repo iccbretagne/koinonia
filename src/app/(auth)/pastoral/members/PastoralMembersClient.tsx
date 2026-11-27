@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { Mail, Phone, Users } from "lucide-react";
+import { EmptyState, PageHeader, SearchInput, iconButtonClasses } from "@/components/ui";
 
 interface Member {
   id: string;
@@ -38,77 +40,73 @@ export default function PastoralMembersClient({
   }, [members, query]);
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4">
-      <div>
-        <h1 className="text-xl font-bold text-ink">Membres</h1>
-        {churchName && (
-          <p className="text-sm text-ink-muted mt-0.5">{churchName}</p>
-        )}
-      </div>
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
+      <PageHeader title="Membres" description={churchName || undefined} />
 
-      <input
-        type="search"
+      <SearchInput
+        aria-label="Rechercher un membre"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Rechercher par nom, email, département…"
-        className="w-full px-4 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
       />
 
       {filtered.length === 0 ? (
-        <p className="text-ink-subtle italic text-sm py-6 text-center">
-          {query ? "Aucun résultat." : "Aucun membre trouvé."}
-        </p>
+        <EmptyState
+          icon={Users}
+          size="sm"
+          title={query ? "Aucun résultat" : "Aucun membre trouvé"}
+          description={query ? "Essayez un autre nom, email ou département." : undefined}
+        />
       ) : (
-        <div className="bg-surface border border-line rounded-lg divide-y divide-line">
+        <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-card">
           {filtered.map((member) => {
             const dept = member.departments[0]?.department;
+            const fullName = `${member.firstName} ${member.lastName}`;
             return (
-              <div key={member.id} className="flex items-center gap-3 px-4 py-3">
-                <div className="w-8 h-8 rounded-full bg-brand-soft text-brand-text flex items-center justify-center text-sm font-semibold shrink-0">
+              <li key={member.id} className="flex items-center gap-3 px-4 py-2">
+                <div aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-sm font-semibold text-brand-text">
                   {member.firstName[0]}{member.lastName[0]}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-ink">
-                    {member.firstName} {member.lastName}
-                  </p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-ink">{fullName}</p>
                   {dept && (
-                    <p className="text-xs text-ink-subtle truncate">
+                    <p className="truncate text-xs text-ink-muted">
                       {dept.ministry.name} · {dept.name}
                     </p>
                   )}
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex shrink-0 items-center gap-1">
                   {member.email && (
                     <a
                       href={`mailto:${member.email}`}
-                      className="text-ink-subtle hover:text-brand-text transition-colors"
+                      className={iconButtonClasses()}
+                      aria-label={`Écrire à ${fullName} (${member.email})`}
                       title={member.email}
                     >
-                      <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
+                      <Mail aria-hidden="true" className="size-5" strokeWidth={1.75} />
                     </a>
                   )}
                   {member.phone && (
                     <a
                       href={`tel:${member.phone}`}
-                      className="text-ink-subtle hover:text-brand-text transition-colors"
+                      className={iconButtonClasses()}
+                      aria-label={`Appeler ${fullName} (${member.phone})`}
                       title={member.phone}
                     >
-                      <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.948V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                      </svg>
+                      <Phone aria-hidden="true" className="size-5" strokeWidth={1.75} />
                     </a>
                   )}
                 </div>
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
 
-      <p className="text-xs text-ink-subtle">
-        {filtered.length}{filtered.length !== members.length ? ` / ${members.length}` : ""} membre{members.length !== 1 ? "s" : ""}
+      <p className="text-xs text-ink-muted">
+        {filtered.length !== members.length
+          ? `${filtered.length} / ${members.length} membre${members.length > 1 ? "s" : ""}`
+          : `${members.length} membre${members.length > 1 ? "s" : ""}`}
       </p>
     </div>
   );

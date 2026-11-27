@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, type ReactNode } from "react";
-import { Checkbox, Input, Select, Textarea, fieldLabelClasses } from "@/components/ui";
+import { Checkbox, Input, RadioGroup, Select, Textarea, fieldLabelClasses } from "@/components/ui";
 import { visibleQuestionIds } from "@/modules/forms/schemas";
 import type { Answers, FillerChoice, FillerQuestion, FillerForm, FillerSession } from "./types";
 
@@ -57,54 +57,48 @@ function SessionLevel({
       <legend className={fieldLabelClasses}>{`${q.label}${required(q)}`}</legend>
       {q.help && <p className="text-[13px] text-ink-muted">{q.help}</p>}
       {sessions.map((s) => (
-        <div key={s.id} className="rounded-control border border-line p-3">
-          <p className="font-semibold text-ink">{s.label}</p>
-          <p className="text-[13px] text-ink-muted first-letter:uppercase">{sessionDates(s)}</p>
-          <div className="mt-2 flex flex-col">
-            {s.levels.map((l) => {
+        <div key={s.id} className="rounded-control border border-line px-3 pt-3 pb-1">
+          <RadioGroup
+            legend={s.label}
+            description={<span className="inline-block first-letter:uppercase">{sessionDates(s)}</span>}
+            name={id}
+            value={current.levelId ?? ""}
+            disabled={disabled}
+            onChange={(levelId) => {
+              const l = s.levels.find((x) => x.id === levelId)!;
+              onChange({ levelId: l.id, previousLevelDone: l.isEntry ? null : (current.previousLevelDone ?? undefined) });
+            }}
+            options={s.levels.map((l) => {
               const full = l.remaining === 0;
-              const blocked = full && !waitlist && current.levelId !== l.id;
               const places = full ? `complet${waitlist ? " — liste d'attente" : ""}` : `${l.remaining} place${l.remaining > 1 ? "s" : ""}`;
-              return (
-                <label key={l.id} className={`flex min-h-11 items-center gap-3 ${blocked ? "opacity-50" : "cursor-pointer"}`}>
-                  <input
-                    type="radio"
-                    name={id}
-                    className="size-5 accent-brand"
-                    checked={current.levelId === l.id}
-                    disabled={disabled || blocked}
-                    onChange={() => onChange({ levelId: l.id, previousLevelDone: l.isEntry ? null : (current.previousLevelDone ?? undefined) })}
-                  />
-                  <span className="text-[15px] text-ink">
+              return {
+                value: l.id,
+                label: (
+                  <>
                     Niveau {l.code}
                     {l.label ? ` — ${l.label}` : ""} <span className="text-ink-muted">({places})</span>
-                  </span>
-                </label>
-              );
+                  </>
+                ),
+                disabled: full && !waitlist && current.levelId !== l.id,
+              };
             })}
-          </div>
+          />
         </div>
       ))}
       {level && !level.isEntry && (
-        <div className="flex flex-col gap-1.5">
-          <p className={fieldLabelClasses}>Avez-vous suivi le niveau précédent ? *</p>
-          <div className="flex gap-6">
-            {[true, false].map((v) => (
-              <label key={String(v)} className="flex min-h-11 cursor-pointer items-center gap-3">
-                <input
-                  type="radio"
-                  name={`${id}-prev`}
-                  className="size-5 accent-brand"
-                  checked={current.previousLevelDone === v}
-                  disabled={disabled}
-                  onChange={() => onChange({ levelId: level.id, previousLevelDone: v })}
-                />
-                <span className="text-[15px] text-ink">{v ? "Oui" : "Non"}</span>
-              </label>
-            ))}
-          </div>
-          <p className="text-[13px] text-ink-muted">À titre indicatif : votre inscription n&apos;en dépend pas.</p>
-        </div>
+        <RadioGroup
+          legend="Avez-vous suivi le niveau précédent ? *"
+          name={`${id}-prev`}
+          variant="chips"
+          value={current.previousLevelDone === true ? "yes" : current.previousLevelDone === false ? "no" : ""}
+          disabled={disabled}
+          onChange={(v) => onChange({ levelId: level.id, previousLevelDone: v === "yes" })}
+          options={[
+            { value: "yes", label: "Oui" },
+            { value: "no", label: "Non" },
+          ]}
+          hint="À titre indicatif : votre inscription n'en dépend pas."
+        />
       )}
     </fieldset>
   );
@@ -207,25 +201,36 @@ function Question({
           : q.type === "RATING"
             ? [1, 2, 3, 4, 5].map((n) => ({ key: String(n), value: n, label: String(n), full: false }))
             : q.choices.map((c) => ({ key: c.id, value: c.id, label: choiceLabel(c, waitlist), full: isFull(c) }));
-      const selected = (v: unknown) => (multiple ? Array.isArray(value) && value.includes(v) : value === v);
+      const selected = (v: unknown) => Array.isArray(value) && value.includes(v);
+      if (!multiple) {
+        const picked = options.find((o) => o.value === value)?.key ?? "";
+        return (
+          <RadioGroup
+            legend={label}
+            description={hint}
+            name={id}
+            variant={q.type === "RATING" ? "chips" : "list"}
+            value={picked}
+            disabled={disabled}
+            onChange={(key) => onChange(options.find((o) => o.key === key)?.value)}
+            options={options.map((o) => ({ value: o.key, label: o.label, disabled: o.full && picked !== o.key }))}
+          />
+        );
+      }
       return (
         <fieldset className="flex flex-col gap-1.5">
           <legend className={fieldLabelClasses}>{label}</legend>
           {hint && <p className="text-[13px] text-ink-muted">{hint}</p>}
-          <div className={q.type === "RATING" ? "flex gap-2" : "flex flex-col"}>
+          <div className="flex flex-col">
             {options.map((o) => (
-              <label
-                key={o.key}
-                className={`flex min-h-11 items-center gap-3 ${q.type === "RATING" ? "justify-center rounded-control border border-line px-4" : ""} ${o.full && !selected(o.value) ? "opacity-50" : "cursor-pointer"}`}
-              >
+              <label key={o.key} className={`flex min-h-11 items-center gap-3 ${o.full && !selected(o.value) ? "opacity-50" : "cursor-pointer"}`}>
                 <input
-                  type={multiple ? "checkbox" : "radio"}
+                  type="checkbox"
                   name={id}
                   className="size-5 accent-brand"
                   checked={selected(o.value)}
                   disabled={disabled || (o.full && !selected(o.value))}
                   onChange={(e) => {
-                    if (!multiple) return onChange(o.value);
                     const current = Array.isArray(value) ? (value as unknown[]) : [];
                     onChange(e.target.checked ? [...current, o.value] : current.filter((v) => v !== o.value));
                   }}

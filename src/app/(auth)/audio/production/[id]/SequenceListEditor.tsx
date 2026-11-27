@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Select from "@/components/ui/Select";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import { Checkbox, ConfirmModal, IconButton } from "@/components/ui";
+import { GripVertical, Trash2 } from "lucide-react";
 
 export interface SourceSummary {
   id: string;
@@ -91,6 +93,7 @@ export default function SequenceListEditor({
 
   const [rows, setRows] = useState<Row[]>(() => buildRows(sources, segments));
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Row | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // `rows` n'est initialisé qu'au montage — un nouveau dépôt (ou une suppression) après coup
@@ -128,7 +131,6 @@ export default function SequenceListEditor({
   }
 
   async function removeRow(sourceId: string) {
-    if (!confirm("Supprimer cette séquence déposée ? Cette action est irréversible.")) return;
     setDeletingId(sourceId);
     setDeleteError(null);
     try {
@@ -138,6 +140,7 @@ export default function SequenceListEditor({
         throw new Error(body.error ?? "Échec de la suppression");
       }
       setRows((prev) => prev.filter((r) => r.sourceId !== sourceId));
+      setConfirmDelete(null);
       router.refresh();
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : "Erreur inconnue");
@@ -203,15 +206,15 @@ export default function SequenceListEditor({
               if (dragIndex !== null && dragIndex !== index) move(dragIndex, index);
               setDragIndex(null);
             }}
-            className={`flex flex-wrap items-center gap-2 p-3 border rounded-lg bg-surface ${
+            className={`flex flex-wrap items-center gap-2 p-3 border rounded-card bg-surface ${
               row.discarded ? "opacity-60 border-line" : "border-control-line"
             }`}
           >
             <span className="cursor-grab text-ink-subtle select-none" title="Glisser pour réordonner">
-              ⠿
+              <GripVertical aria-hidden="true" className="size-4" strokeWidth={1.75} />
             </span>
             <span className="w-8 text-center text-sm font-semibold text-ink-muted">{index + 1}</span>
-            <div className="flex-1 min-w-[220px] space-y-1">
+            <div className="flex-1 min-w-0 basis-56 space-y-1">
               <p className="text-xs text-ink-muted truncate" title={row.filename}>
                 {row.filename}
                 {row.sizeBytes != null && <span> · {formatSize(row.sizeBytes)}</span>}
@@ -223,7 +226,7 @@ export default function SequenceListEditor({
                 )}
               </p>
               <div className="flex flex-wrap gap-2">
-                <div className="flex-1 min-w-[160px]">
+                <div className="flex-1 min-w-0 basis-40">
                   <Select
                     label="Nom"
                     value={templateNames.includes(row.title) ? row.title : ""}
@@ -234,7 +237,7 @@ export default function SequenceListEditor({
                     options={templateNames.map((n) => ({ value: n, label: n }))}
                   />
                 </div>
-                <div className="flex-1 min-w-[160px]">
+                <div className="flex-1 min-w-0 basis-40">
                   <Input
                     label="Ou saisie libre"
                     value={row.title}
@@ -245,28 +248,34 @@ export default function SequenceListEditor({
               </div>
             </div>
             <span className="text-sm text-ink-muted w-14 text-right">{formatDuration(row.durationMs)}</span>
-            <label className="flex items-center gap-1.5 text-xs text-ink-muted">
-              <input
-                type="checkbox"
+            <label className="flex min-h-11 items-center gap-2 text-sm text-ink-muted">
+              <Checkbox
                 checked={row.discarded}
                 onChange={(e) => updateRow(index, { discarded: e.target.checked })}
               />
               <span>Non diffusé</span>
             </label>
-            <button
-              type="button"
-              onClick={() => removeRow(row.sourceId)}
+            <IconButton
+              icon={Trash2}
+              aria-label={`Supprimer la séquence ${row.title || row.filename}`}
+              onClick={() => setConfirmDelete(row)}
               disabled={deletingId === row.sourceId}
-              title="Supprimer cette séquence"
-              className="text-danger hover:opacity-70 disabled:opacity-40 text-sm px-1"
-            >
-              ✕
-            </button>
+            />
           </li>
         ))}
       </ul>
-      <Button onClick={save} disabled={saving}>
-        {saving ? "Enregistrement..." : "Enregistrer l'ordre et les noms"}
+      <ConfirmModal
+        open={confirmDelete !== null}
+        title="Supprimer cette séquence déposée ?"
+        message="Le fichier déposé sera supprimé. Cette action est irréversible."
+        confirmLabel="Supprimer la séquence"
+        confirmingLabel="Suppression en cours…"
+        confirming={deletingId !== null}
+        onConfirm={() => { if (confirmDelete) void removeRow(confirmDelete.sourceId); }}
+        onCancel={() => setConfirmDelete(null)}
+      />
+      <Button variant="secondary" onClick={save} disabled={saving}>
+        {saving ? "Enregistrement en cours…" : "Enregistrer l'ordre et les noms"}
       </Button>
     </div>
   );

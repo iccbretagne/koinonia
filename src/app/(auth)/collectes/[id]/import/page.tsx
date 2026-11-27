@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireCampaignManager } from "@/modules/campaigns/auth";
 import { prisma } from "@/lib/prisma";
@@ -17,7 +16,7 @@ export default async function ReimportCampaignPage({ params }: Props) {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow={<Link href={`/collectes/${id}?onglet=parametres`} className="hover:underline">{campaign.title}</Link>}
+        eyebrow={campaign.title}
         title="Mettre à jour la définition"
         description="Les questionnaires, destinataires et répondants sont rapprochés par leur clé : rien n'est dupliqué. Une modification qui ferait perdre des réponses est refusée. L'état de la campagne ne change pas."
       />

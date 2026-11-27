@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Camera, CameraOff, Minus, Plus, UserPlus } from "lucide-react";
-import { Alert, Button, Checkbox, Input, Modal, SearchInput, Select } from "@/components/ui";
+import { ArrowLeft, Camera, CameraOff, Minus, Plus, UserPlus } from "lucide-react";
+import { Alert, Button, Checkbox, Input, Modal, SearchInput, Select, buttonClasses } from "@/components/ui";
 import { sha256Hex, newOpId } from "@/lib/offline/hash";
 import { startScanner } from "@/lib/offline/scanner";
 import type { ReceptionSnapshot } from "@/modules/ticketing";
@@ -184,10 +184,11 @@ export default function ControlClient({ eventId }: { readonly eventId: string })
   return (
     <div className="mx-auto max-w-xl space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <Link href={`/billetterie/${eventId}`} className="text-[13px] text-brand-text underline">
-          ← {snapshot.event.title}
+        <Link href={`/billetterie/${eventId}`} className={`${buttonClasses("ghost", "sm")} min-w-0`}>
+          <ArrowLeft aria-hidden="true" className="size-4 shrink-0" strokeWidth={1.75} />
+          <span className="truncate">Retour à {snapshot.event.title}</span>
         </Link>
-        <span className="text-[13px] text-ink-muted">Contrôle</span>
+        <span className="shrink-0 text-[13px] text-ink-muted">Contrôle des entrées</span>
       </div>
       <NetworkBar status={status} />
 
@@ -313,8 +314,8 @@ export default function ControlClient({ eventId }: { readonly eventId: string })
                 const due = people.reduce((n, p) => n + p.entryDue, 0);
                 setResult(
                   due > 0 && direction === "IN"
-                    ? { tone: "warn", title: `${people.length} ${direction === "IN" ? "entrée(s)" : "sortie(s)"} — à régler ${formatEuros(due)}`, detail: group.reference }
-                    : { tone: "ok", title: `${people.length} ${direction === "IN" ? "entrée(s)" : "sortie(s)"}`, detail: group.reference }
+                    ? { tone: "warn", title: `${people.length} ${direction === "IN" ? (people.length > 1 ? "entrées" : "entrée") : people.length > 1 ? "sorties" : "sortie"} — à régler ${formatEuros(due)}`, detail: group.reference }
+                    : { tone: "ok", title: `${people.length} ${direction === "IN" ? (people.length > 1 ? "entrées" : "entrée") : people.length > 1 ? "sorties" : "sortie"}`, detail: group.reference }
                 );
                 setGroup(null);
               }}
@@ -363,7 +364,7 @@ export default function ControlClient({ eventId }: { readonly eventId: string })
             );
             await enqueue({ type: "walkin", id, participants: people, method, enter: true, scannedAt: new Date() });
             setWalkIn(false);
-            setResult({ tone: "ok", title: `${people.length} ajout(s) sur place`, detail: method ? "Entrée encaissée" : undefined });
+            setResult({ tone: "ok", title: people.length > 1 ? `${people.length} ajouts sur place` : "1 ajout sur place", detail: method ? "Entrée encaissée" : undefined });
           }}
         />
       )}
@@ -403,7 +404,7 @@ function WalkInModal({
         ))}
         {people.length < 10 && (
           <Button type="button" variant="ghost" size="sm" onClick={() => setPeople((l) => [...l, blank()])}>
-            <Plus className="size-4" aria-hidden="true" /> Une personne de plus
+            <Plus className="size-4" aria-hidden="true" /> Ajouter une personne
           </Button>
         )}
         {total > 0 && (

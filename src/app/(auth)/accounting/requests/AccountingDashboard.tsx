@@ -3,6 +3,21 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ChevronRight, Paperclip } from "lucide-react";
+import {
+  Alert,
+  Button,
+  CountBadge,
+  DataTable,
+  EmptyState,
+  FilterChip,
+  SearchInput,
+  StatusChip,
+  buttonClasses,
+  type StatusTone,
+} from "@/components/ui";
+
+const TILE = "rounded-card border border-line bg-surface px-4 py-3 shadow-card";
 
 const TYPE_LABELS: Record<string, string> = {
   EXPENSE_REPORT: "Note de frais",
@@ -17,12 +32,12 @@ const STATUS_LABELS: Record<string, string> = {
   CANCELLED:  "Annulée",
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  SUBMITTED:  "bg-warning-soft text-warning",
-  PROCESSING: "bg-info-soft text-info",
-  APPROVED:   "bg-success-soft text-success",
-  REJECTED:   "bg-danger-soft text-danger",
-  CANCELLED:  "bg-surface-sunken text-ink-muted",
+const STATUS_TONES: Record<string, StatusTone> = {
+  SUBMITTED:  "warning",
+  PROCESSING: "info",
+  APPROVED:   "success",
+  REJECTED:   "danger",
+  CANCELLED:  "neutral",
 };
 
 interface Request {
@@ -67,14 +82,14 @@ interface Props {
 /** Pastille des justificatifs (spec 078). */
 function JustificationPill({ j, claimable }: { readonly j: Request["justification"]; readonly claimable?: boolean }) {
   if (!j) {
-    return claimable ? <span className="inline-flex text-xs font-medium px-1.5 py-0.5 rounded bg-surface-sunken text-ink-muted">Justificatifs non demandés</span> : null;
+    return claimable ? <StatusChip tone="neutral">Justificatifs non demandés</StatusChip> : null;
   }
   let label = "Justificatifs attendus";
-  let cls = "bg-warning-soft text-warning";
-  if (j.late) { label = "Justificatifs en retard"; cls = "bg-danger-soft text-danger"; }
-  else if (j.status === "SUBMITTED") { label = "Justificatifs à vérifier"; cls = "bg-info-soft text-info"; }
+  let tone: StatusTone = "warning";
+  if (j.late) { label = "Justificatifs en retard"; tone = "danger"; }
+  else if (j.status === "SUBMITTED") { label = "Justificatifs à vérifier"; tone = "info"; }
   else if (j.status === "RETURN_DUE") label = "Reliquat à rendre";
-  return <span className={`inline-flex text-xs font-medium px-1.5 py-0.5 rounded ${cls}`}>{label}</span>;
+  return <StatusChip tone={tone}>{label}</StatusChip>;
 }
 
 /** Ordre du filtre « À justifier » : retards, à vérifier, reliquats, puis le reste. */
@@ -128,7 +143,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
       if (res?.ok) done++;
       else failed++;
     }
-    setClaiming(failed ? `${done} réclamée(s), ${failed} en échec` : null);
+    setClaiming(failed ? `${done} ${done > 1 ? "réclamées" : "réclamée"}, ${failed} en échec` : null);
     setStatusFilter("JUSTIFY");
     router.refresh();
   }
@@ -159,11 +174,18 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
     return statusFilter === "JUSTIFY" ? list.sort((a, b) => justifyRank(a.justification) - justifyRank(b.justification)) : list;
   }, [requests, statusFilter, typeFilter, search]);
 
+  const statusFilters = [
+    ...STATUS_FILTERS,
+    ...(awaitingPiece > 0 ? [{ value: "PIECE", label: `Pièce demandée (${awaitingPiece})` }] : []),
+    ...(arrears.length > 0 ? [{ value: "ARREARS", label: `Arriéré (${arrears.length})` }] : []),
+  ];
+  const filtering = statusFilter !== "" || typeFilter !== "" || search.trim() !== "";
+
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-5">
 
       {/* Statistiques */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         {[
           { label: "En attente",     value: stats.submitted,       color: "text-warning" },
           { label: "En traitement",  value: stats.processing,      color: "text-info" },
@@ -172,219 +194,180 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
           { label: "Paiements dus",  value: stats.pendingPayments, color: "text-brand-text" },
           { label: "À justifier",    value: stats.toJustify,       color: "text-warning", filter: "JUSTIFY" },
         ].map((s) => s.filter ? (
-          <button key={s.label} type="button" onClick={() => setStatusFilter(s.filter)}
-            className="text-left bg-surface rounded-xl border border-line px-4 py-3 hover:border-brand/40 transition-colors">
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-ink-muted mt-0.5">{s.label}</p>
+          <button key={s.label} type="button" onClick={() => setStatusFilter(s.filter)} aria-pressed={statusFilter === s.filter}
+            className={`${TILE} text-left transition-colors duration-120 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}>
+            <p className={`text-2xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
+            <p className="mt-0.5 text-[13px] leading-[18px] text-ink-muted">{s.label}</p>
           </button>
         ) : (
-          <div key={s.label} className="bg-surface rounded-xl border border-line px-4 py-3">
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-ink-muted mt-0.5">{s.label}</p>
+          <div key={s.label} className={TILE}>
+            <p className={`text-2xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
+            <p className="mt-0.5 text-[13px] leading-[18px] text-ink-muted">{s.label}</p>
           </div>
         ))}
       </div>
 
       {/* Bandeau "À traiter" */}
       {actionable.length > 0 && (
-        <div className="bg-brand-soft border border-brand/20 rounded-xl p-4 space-y-3">
-          <h2 className="text-sm font-semibold text-brand-text flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
-            <span>À traiter</span>
-            <span className="text-brand-text/60 font-normal">({actionable.length})</span>
+        <section className="flex flex-col gap-3 rounded-card border border-brand/20 bg-brand-soft p-4" aria-labelledby="a-traiter">
+          <h2 id="a-traiter" className="flex items-center gap-2 font-display text-[17px] font-semibold leading-6 text-ink">
+            À traiter
+            <CountBadge count={actionable.length} />
           </h2>
-          <div className="space-y-1.5">
+          <ul className="flex flex-col gap-1.5">
             {actionable.slice(0, 5).map((r) => {
               const days = daysSince(r.createdAt);
               return (
-                <Link
-                  key={r.id}
-                  href={`/accounting/requests/${r.id}`}
-                  className="flex items-center justify-between gap-3 bg-surface rounded-lg px-3 py-2.5 border border-line hover:border-brand/40 hover:shadow-card transition-all group"
-                >
-                  <div className="min-w-0">
-                    <p className="font-medium text-ink text-sm truncate">{r.label}</p>
-                    <p className="text-xs text-ink-subtle mt-0.5">
-                      {r.department?.name ?? "Personnel"} · {fmtAmount(r.amount)} ·{" "}
-                      <span className={days >= 7 ? "text-warning font-medium" : ""}>{days}j</span>
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-xs font-medium text-brand-text bg-brand-soft px-2.5 py-1 rounded-full group-hover:bg-brand-hover group-hover:text-on-brand transition-colors whitespace-nowrap">
-                    {r.status === "SUBMITTED" ? "Prendre en charge →" : "Valider →"}
-                  </span>
-                </Link>
+                <li key={r.id}>
+                  <Link
+                    href={`/accounting/requests/${r.id}`}
+                    className="flex min-h-11 items-center justify-between gap-3 rounded-control border border-line bg-surface px-3 py-2.5 transition-colors duration-120 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{r.label}</p>
+                      <p className="mt-0.5 text-[13px] leading-[18px] text-ink-muted">
+                        {r.department?.name ?? "Personnel"} · {fmtAmount(r.amount)} ·{" "}
+                        <span className={days >= 7 ? "font-semibold text-warning" : ""}>{days} j</span>
+                      </p>
+                    </div>
+                    <span className="flex shrink-0 items-center gap-1 whitespace-nowrap font-display text-[13px] font-semibold text-brand-text">
+                      {r.status === "SUBMITTED" ? "Prendre en charge" : "Valider"}
+                      <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                    </span>
+                  </Link>
+                </li>
               );
             })}
-            {actionable.length > 5 && (
-              <p className="text-xs text-ink-subtle text-center pt-0.5">+ {actionable.length - 5} autres</p>
-            )}
-          </div>
-        </div>
+          </ul>
+          {actionable.length > 5 && (
+            <p className="text-center text-[13px] leading-[18px] text-ink-muted">
+              Et {actionable.length - 5} {actionable.length - 5 > 1 ? "autres" : "autre"}
+            </p>
+          )}
+        </section>
       )}
 
       {/* Filtres */}
-      <div className="flex items-center gap-4">
-        <div className="flex flex-col gap-2 flex-1">
-          <div className="flex flex-wrap gap-2">
-            {[...STATUS_FILTERS, ...(awaitingPiece > 0 ? [{ value: "PIECE", label: `Pièce demandée (${awaitingPiece})` }] : []), ...(arrears.length > 0 ? [{ value: "ARREARS", label: `Arriéré (${arrears.length})` }] : [])].map((f) => (
-              <button
-                key={f.value}
-                onClick={() => setStatusFilter(f.value)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  statusFilter === f.value
-                    ? "bg-brand text-on-brand border-brand"
-                    : "border-line text-ink-muted hover:border-brand hover:text-brand-text"
-                }`}
-              >
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-4">
+        <div className="flex flex-1 flex-col gap-2">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrer par état">
+            {statusFilters.map((f) => (
+              <FilterChip key={f.value} pressed={statusFilter === f.value} onClick={() => setStatusFilter(f.value)}>
                 {f.label}
-              </button>
+              </FilterChip>
             ))}
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrer par type">
             {["", "EXPENSE_REPORT", "BUDGET_ADVANCE"].map((t) => (
-              <button
-                key={t}
-                onClick={() => setTypeFilter(t)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  typeFilter === t
-                    ? "bg-brand text-on-brand border-brand"
-                    : "border-line text-ink-muted hover:border-brand"
-                }`}
-              >
+              <FilterChip key={t} pressed={typeFilter === t} onClick={() => setTypeFilter(t)}>
                 {t === "" ? "Tous types" : TYPE_LABELS[t]}
-              </button>
+              </FilterChip>
             ))}
           </div>
         </div>
-        <input
-          type="search"
+        <SearchInput
+          aria-label="Rechercher une demande"
           placeholder="Rechercher…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-56 shrink-0 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand"
+          className="w-full shrink-0 md:w-56"
         />
       </div>
 
       {statusFilter === "ARREARS" && arrears.length > 0 && (
-        <div className="bg-warning-soft border border-warning/30 rounded-xl p-4 space-y-2">
-          <p className="text-sm text-ink-muted">
-            Ces demandes ont été versées avant la mise en service du suivi : aucun justificatif n&apos;a été demandé.
-            En les réclamant, chaque demandeur est prévenu, puis relancé chaque semaine.
-          </p>
-          <button
-            type="button"
-            onClick={claimAll}
-            disabled={claiming?.includes("/") ?? false}
-            className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-          >
-            {claiming?.includes("/") ? `Envoi ${claiming}…` : `Réclamer les justificatifs (${arrears.length})`}
-          </button>
-          {claiming && !claiming.includes("/") && <p className="text-xs text-danger">{claiming}</p>}
-        </div>
+        <Alert
+          tone="warning"
+          action={
+            <Button type="button" variant="secondary" onClick={claimAll} disabled={claiming?.includes("/") ?? false}>
+              {claiming?.includes("/") ? `Envoi ${claiming}…` : `Réclamer les justificatifs (${arrears.length})`}
+            </Button>
+          }
+        >
+          Ces demandes ont été versées avant la mise en service du suivi : aucun justificatif n&apos;a été demandé.
+          En les réclamant, chaque demandeur est prévenu, puis relancé chaque semaine.
+          {claiming && !claiming.includes("/") && <span className="mt-1 block font-semibold text-danger">{claiming}</span>}
+        </Alert>
       )}
 
       {/* Liste */}
-      {filtered.length === 0 ? (
-        <div className="bg-surface rounded-xl border border-line p-8 text-center text-ink-subtle text-sm">
-          Aucune demande.
-        </div>
-      ) : (
-        <div className="bg-surface rounded-xl border border-line overflow-hidden">
-          {/* Desktop */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-line bg-surface-sunken text-left text-xs text-ink-muted uppercase tracking-wide">
-                  <th className="px-4 py-3 font-medium">Demande</th>
-                  <th className="px-4 py-3 font-medium">Département</th>
-                  <th className="px-4 py-3 font-medium">Montant</th>
-                  <th className="px-4 py-3 font-medium">Statut</th>
-                  <th className="px-4 py-3 font-medium">Depuis</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {filtered.map((r) => {
-                  const days = daysSince(r.createdAt);
-                  const isOwn = r.submittedBy.id === currentUserId;
-                  const pendingPmts = r.payments.filter((p) => !p.releasedAt).length;
-                  return (
-                    <tr key={r.id} className={`hover:bg-surface-sunken transition-colors ${isOwn ? "bg-brand/[0.02]" : ""}`}>
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-ink truncate max-w-xs">{r.label}</p>
-                        <div className="flex gap-1.5 mt-0.5 flex-wrap">
-                          <span className="text-xs text-ink-subtle">{TYPE_LABELS[r.type]}</span>
-                          {r.priority === "URGENT" && (
-                            <span className="text-xs text-danger bg-danger-soft px-1.5 py-0.5 rounded font-medium">Urgent</span>
-                          )}
-                          {isOwn && (
-                            <span className="text-xs text-brand-text bg-brand-soft px-1.5 py-0.5 rounded font-medium">Vous</span>
-                          )}
-                          <JustificationPill j={r.justification} claimable={r.claimable} />
-                          {r._count.attachments > 0 && (
-                            <span className="text-xs text-ink-subtle">📎 {r._count.attachments}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-ink-muted">{r.department?.name ?? "Personnel"}</td>
-                      <td className="px-4 py-3 font-medium text-ink whitespace-nowrap">{fmtAmount(r.amount)}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] ?? "bg-surface-sunken text-ink-muted"}`}>
-                          {STATUS_LABELS[r.status] ?? r.status}
-                        </span>
-                        {pendingPmts > 0 && (
-                          <p className="text-xs text-warning mt-0.5">{pendingPmts} paiement{pendingPmts > 1 ? "s" : ""} à confirmer</p>
-                        )}
-                        {r.pieceRequestedAt && <p className="text-xs text-warning mt-0.5">Pièce demandée</p>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`text-xs ${days >= 7 ? "text-warning font-semibold" : "text-ink-subtle"}`}>{days}j</span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Link
-                          href={`/accounting/requests/${r.id}`}
-                          className="text-xs font-medium text-brand-text border border-brand/40 px-2.5 py-1 rounded-full hover:bg-brand-hover hover:text-on-brand transition-colors whitespace-nowrap"
-                        >
-                          Voir →
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile */}
-          <div className="md:hidden divide-y divide-line">
-            {filtered.map((r) => {
-              const days = daysSince(r.createdAt);
+      <DataTable
+        data={filtered}
+        emptyState={
+          filtering ? (
+            <EmptyState
+              size="sm"
+              title="Aucune demande pour ces filtres"
+              action={
+                <Button type="button" variant="secondary" onClick={() => { setStatusFilter(""); setTypeFilter(""); setSearch(""); }}>
+                  Effacer les filtres
+                </Button>
+              }
+            />
+          ) : (
+            <EmptyState size="sm" title="Aucune demande en cours" />
+          )
+        }
+        columns={[
+          {
+            header: "Demande",
+            primary: true,
+            accessor: (r) => {
+              const isOwn = r.submittedBy.id === currentUserId;
               return (
-                <Link key={r.id} href={`/accounting/requests/${r.id}`} className="block px-4 py-3 hover:bg-surface-sunken transition-colors">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-ink text-sm truncate">{r.label}</p>
-                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] ?? "bg-surface-sunken text-ink-muted"}`}>
-                          {STATUS_LABELS[r.status]}
-                        </span>
-                        <span className="text-xs text-ink-muted">{fmtAmount(r.amount)}</span>
-                        <span className="text-xs text-ink-subtle">{r.department?.name ?? "Personnel"}</span>
-                        <JustificationPill j={r.justification} claimable={r.claimable} />
-                        {r.pieceRequestedAt && <span className="text-xs font-medium text-warning">Pièce demandée</span>}
-                      </div>
-                    </div>
-                    <span className={`text-xs shrink-0 mt-0.5 ${days >= 7 ? "text-warning font-semibold" : "text-ink-subtle"}`}>{days}j</span>
-                  </div>
-                </Link>
+                <div className="flex min-w-0 flex-col gap-1">
+                  <span className="max-w-xs truncate font-semibold text-ink">{r.label}</span>
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[13px] font-normal leading-[18px] text-ink-muted">{TYPE_LABELS[r.type]}</span>
+                    {r.priority === "URGENT" && <StatusChip tone="danger">Urgent</StatusChip>}
+                    {isOwn && <StatusChip tone="brand">Vous</StatusChip>}
+                    <JustificationPill j={r.justification} claimable={r.claimable} />
+                    {r._count.attachments > 0 && (
+                      <span className="inline-flex items-center gap-1 text-[13px] font-normal leading-[18px] text-ink-muted">
+                        <Paperclip aria-hidden="true" className="size-3.5" strokeWidth={1.75} />
+                        <span className="sr-only">Pièces jointes :</span>
+                        {r._count.attachments}
+                      </span>
+                    )}
+                  </span>
+                </div>
               );
-            })}
-          </div>
-        </div>
-      )}
+            },
+          },
+          { header: "Département", accessor: (r) => <span className="text-ink-muted">{r.department?.name ?? "Personnel"}</span> },
+          { header: "Montant", align: "right", accessor: (r) => <span className="whitespace-nowrap font-semibold tabular-nums text-ink">{fmtAmount(r.amount)}</span> },
+          {
+            header: "Statut",
+            accessor: (r) => {
+              const pendingPmts = r.payments.filter((p) => !p.releasedAt).length;
+              return (
+                <div className="flex flex-col items-start gap-0.5">
+                  <StatusChip tone={STATUS_TONES[r.status] ?? "neutral"}>{STATUS_LABELS[r.status] ?? r.status}</StatusChip>
+                  {pendingPmts > 0 && (
+                    <span className="text-[13px] leading-[18px] text-warning">{pendingPmts} paiement{pendingPmts > 1 ? "s" : ""} à confirmer</span>
+                  )}
+                  {r.pieceRequestedAt && <span className="text-[13px] font-semibold leading-[18px] text-warning">Pièce demandée</span>}
+                </div>
+              );
+            },
+          },
+          {
+            header: "Depuis",
+            accessor: (r) => {
+              const days = daysSince(r.createdAt);
+              return <span className={`text-[13px] tabular-nums ${days >= 7 ? "font-semibold text-warning" : "text-ink-muted"}`}>{days} j</span>;
+            },
+          },
+        ]}
+        actions={(r) => (
+          <Link href={`/accounting/requests/${r.id}`} className={`${buttonClasses("ghost", "sm")} whitespace-nowrap`}>
+            Ouvrir
+            <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
+          </Link>
+        )}
+      />
 
-      <p className="text-xs text-ink-subtle text-right">
-        {filtered.length} demande{filtered.length !== 1 ? "s" : ""} · Total engagé : {fmtAmount(stats.totalAmount)}
+      <p className="text-right text-[13px] leading-[18px] text-ink-muted">
+        {filtered.length} demande{filtered.length > 1 ? "s" : ""} · Total engagé : {fmtAmount(stats.totalAmount)}
       </p>
     </div>
   );

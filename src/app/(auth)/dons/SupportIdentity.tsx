@@ -2,7 +2,8 @@
 
 import type { ReactNode } from "react";
 import type { GivingNameSize } from "@/generated/prisma/enums";
-import Switch from "./Switch";
+import RadioGroup from "@/components/ui/RadioGroup";
+import Switch from "@/components/ui/Switch";
 
 const SIZES: readonly { value: GivingNameSize; label: string }[] = [
   { value: "SMALL", label: "Petit" },
@@ -21,7 +22,7 @@ function Row({ label, hint, children }: { readonly label: string; readonly hint?
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-ink">{label}</p>
+        <p className="text-[15px] font-semibold leading-[22px] text-ink">{label}</p>
         {hint && <p className="text-[13px] leading-[18px] text-ink-muted">{hint}</p>}
       </div>
       {children}
@@ -30,42 +31,29 @@ function Row({ label, hint, children }: { readonly label: string; readonly hint?
 }
 
 function SizeChoice({
-  label,
+  support,
   value,
   disabled,
   onChange,
 }: {
-  readonly label: string;
+  readonly support: string;
   readonly value: GivingNameSize;
   readonly disabled: boolean;
   readonly onChange: (next: GivingNameSize) => void;
 }) {
   return (
-    <div
-      role="radiogroup"
-      aria-label={label}
-      aria-disabled={disabled}
-      className={`grid grid-cols-3 gap-1 rounded-control bg-surface-sunken p-1 ${disabled ? "opacity-50" : ""}`}
-    >
-      {SIZES.map((size) => {
-        const active = value === size.value;
-        return (
-          <button
-            key={size.value}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            disabled={disabled}
-            onClick={() => onChange(size.value)}
-            className={`min-h-[40px] rounded-[8px] font-display text-sm font-semibold transition-colors disabled:cursor-not-allowed ${
-              active ? "bg-surface text-brand-text shadow-card" : "text-ink-muted hover:text-ink"
-            }`}
-          >
-            {size.label}
-          </button>
-        );
-      })}
-    </div>
+    <RadioGroup
+      legend={
+        <>
+          <span className="sr-only">{support} : </span>Taille du nom
+        </>
+      }
+      variant="chips"
+      value={value}
+      disabled={disabled}
+      onChange={onChange}
+      options={SIZES}
+    />
   );
 }
 
@@ -92,14 +80,14 @@ export default function SupportIdentity({
           checked={hasLogo && value.logoShown}
           disabled={!hasLogo}
           onChange={(v) => onChange({ logoShown: v })}
-          label={`${support} : afficher le logo`}
+          label={`${support} : afficher le logo`} hideLabel
         />
       </Row>
       <Row label="Afficher le nom de l'église">
-        <Switch checked={value.nameShown} onChange={(v) => onChange({ nameShown: v })} label={`${support} : afficher le nom`} />
+        <Switch checked={value.nameShown} onChange={(v) => onChange({ nameShown: v })} label={`${support} : afficher le nom`} hideLabel />
       </Row>
       <SizeChoice
-        label={`${support} : taille du nom`}
+        support={support}
         value={value.nameSize}
         disabled={!value.nameShown}
         onChange={(v) => onChange({ nameSize: v })}

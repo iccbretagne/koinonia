@@ -2,11 +2,13 @@
 
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Input, Modal, Select, useToast } from "@/components/ui";
+import { Alert, Button, Input, Modal, Select, fieldLabelClasses, useToast } from "@/components/ui";
+import { Camera } from "lucide-react";
 import type { AccountView, CategoryView, LedgerLine, PurposeView } from "@/modules/treasury";
 import { AUTOMATIC_SYSTEMS, METHODS, METHOD_LABEL, RECEIPT_MAX_BYTES } from "@/modules/treasury/schemas";
 import type { TreasuryDirection, TreasuryMethod } from "@/generated/prisma/enums";
 import { errorText, isoToday, toNumber } from "./format";
+import FileInput from "@/components/ui/FileInput";
 
 /**
  * Saisie ou correction d'une entrée ou d'une sortie (spec 076). Justificatif par photo ou par
@@ -123,7 +125,7 @@ export default function EntryForm({
         <fieldset className="flex gap-2">
           <legend className="sr-only">Sens</legend>
           {(["IN", "OUT"] as const).map((d) => (
-            <label key={d} className={`flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-control border text-sm font-semibold ${form.direction === d ? "border-brand bg-brand-soft text-brand-text" : "border-control-line text-ink-muted"}`}>
+            <label key={d} className={`flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-control border font-display text-sm font-semibold has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${form.direction === d ? "border-brand bg-brand-soft text-brand-text" : "border-control-line text-ink-muted"}`}>
               <input type="radio" className="sr-only" name={`${ids}-dir`} checked={form.direction === d} onChange={() => setForm((f) => ({ ...f, direction: d, categoryId: "" }))} />
               {d === "IN" ? "Entrée" : "Sortie"}
             </label>
@@ -157,24 +159,18 @@ export default function EntryForm({
         <Input label="Tiers (facultatif)" hint="Fournisseur, organisme…" maxLength={120} value={form.thirdParty} onChange={(e) => set("thirdParty", e.target.value)} />
 
         <div className="space-y-2">
-          <p className="text-sm font-semibold text-ink-muted">Justificatif (facultatif)</p>
+          <p className={fieldLabelClasses}>Justificatif (facultatif)</p>
           <div className="flex flex-wrap gap-2">
-            <label className="inline-flex min-h-11 cursor-pointer items-center rounded-control border border-control-line px-3 text-sm font-semibold text-ink">
-              Prendre une photo
-              <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
-            </label>
-            <label className="inline-flex min-h-11 cursor-pointer items-center rounded-control border border-control-line px-3 text-sm font-semibold text-ink">
-              Choisir un document
-              <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
-            </label>
+            <FileInput accept="image/*" capture="environment" icon={Camera} buttonLabel="Prendre une photo" fileNames={[]} onFiles={(files) => pick(files[0])} />
+            <FileInput accept="image/jpeg,image/png,image/webp,application/pdf" buttonLabel="Choisir un document" fileNames={[]} onFiles={(files) => pick(files[0])} />
           </div>
           {file && (
-            <p className="flex items-center gap-2 text-sm text-ink-muted">
+            <p className="flex flex-wrap items-center gap-2 text-[15px] leading-[22px] text-ink-muted">
               {file.name} · {(file.size / 1024 / 1024).toFixed(1)} Mo
-              <button type="button" className="font-semibold text-brand-text" onClick={() => setFile(null)}>Retirer</button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setFile(null)}>Retirer le fichier</Button>
             </p>
           )}
-          {!file && line?.hasReceipt && <p className="text-sm text-ink-muted">Un justificatif est déjà enregistré.</p>}
+          {!file && line?.hasReceipt && <p className="text-[15px] leading-[22px] text-ink-muted">Un justificatif est déjà enregistré.</p>}
         </div>
 
         {error && <Alert tone={duplicate ? "warning" : "danger"}>{error}</Alert>}

@@ -63,7 +63,7 @@ function StagingBanner() {
 
   return (
     <output
-      className={`fixed top-0 inset-x-0 z-[100] ${STAGING_BANNER_HEIGHT_CLASS} flex items-center justify-center gap-2 px-3 bg-accent text-on-accent shadow-float`}
+      className={`fixed top-0 inset-x-0 z-banner ${STAGING_BANNER_HEIGHT_CLASS} flex items-center justify-center gap-2 px-3 bg-accent text-on-accent shadow-float`}
       style={{
         backgroundImage:
           "repeating-linear-gradient(135deg, rgba(0,0,0,0.12) 0 14px, transparent 14px 28px)",

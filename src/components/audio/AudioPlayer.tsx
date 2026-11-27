@@ -1,15 +1,19 @@
 "use client";
 
-import { Share2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft, Share2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import H5AudioPlayer from "react-h5-audio-player";
 import "react-h5-audio-player/lib/styles.css";
 import "./audio-player-theme.css";
 import Button from "@/components/ui/Button";
+import Select from "@/components/ui/Select";
+import StatusChip from "@/components/ui/StatusChip";
+import { buttonClasses } from "@/components/ui/button-classes";
 import { getResumePosition, saveProgress, clearProgress } from "@/lib/audio-progress";
 
 const PLAYBACK_RATES = [0.75, 1, 1.25, 1.5, 2];
+const SPEED_OPTIONS = PLAYBACK_RATES.map((rate) => ({ value: String(rate), label: `${rate}×` }));
 const LISTEN_INTERVAL_MS = 5000; // throttle de l'écriture de la reprise (plan.md)
 
 export interface AudioPlayerSegment {
@@ -39,6 +43,11 @@ interface Props {
   readonly onShare?: (segmentId: string | null) => void;
   readonly backHref?: string | null;
   readonly backLabel?: string;
+  /**
+   * Barre du bas mobile présente (espace connecté) : le lecteur fixe se pose 64 px au-dessus.
+   * `false` sur la page publique d'écoute, qui n'en a pas : le lecteur touche le bas de l'écran.
+   */
+  readonly withBottomNav?: boolean;
 }
 
 function formatDuration(ms: number): string {
@@ -48,7 +57,7 @@ function formatDuration(ms: number): string {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backHref, backLabel }: Props) {
+export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backHref, backLabel, withBottomNav = true }: Props) {
   const segments = service.segments;
   const [currentId, setCurrentId] = useState<string | null>(segments[0]?.id ?? null);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -150,24 +159,13 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
     playerRef.current?.audio.current?.load();
   }
 
-  const speedOptions = useMemo(
-    () =>
-      PLAYBACK_RATES.map((rate) => (
-        <option key={rate} value={rate}>
-          {rate}×
-        </option>
-      )),
-    []
-  );
-
   return (
-    <div className="pb-[184px] md:pb-0">
+    <div className={`${withBottomNav ? "pb-[calc(192px+env(safe-area-inset-bottom))]" : "pb-[calc(128px+env(safe-area-inset-bottom))]"} md:pb-0`}>
       {backHref && (
         <div className="mb-4">
-          <Link href={backHref}>
-            <Button variant="secondary" size="sm">
-              ← {backLabel ?? "Retour"}
-            </Button>
+          <Link href={backHref} className={`${buttonClasses("ghost", "sm")} -ml-3`}>
+            <ChevronLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
+            {backLabel ?? "Retour"}
           </Link>
         </div>
       )}
@@ -184,13 +182,14 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
             {service.speaker && ` · ${service.speaker}`}
           </p>
           {service.churchName && (
-            <span className="inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full bg-brand-soft text-brand-text">
+            <StatusChip tone="brand" className="mt-1">
               {service.churchName}
-            </span>
+            </StatusChip>
           )}
         </div>
         {onShare && (
-          <Button variant="secondary" size="sm" onClick={() => onShare(null)}>
+          <Button variant="secondary" size="sm" onClick={() => onShare(null)} className="shrink-0">
+            <Share2 aria-hidden="true" className="size-4" strokeWidth={1.75} />
             Partager
           </Button>
         )}
@@ -200,9 +199,10 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
         {segments.map((seg) => (
           <li key={seg.id} className="flex items-center">
             <button
+              type="button"
               onClick={() => setCurrentId(seg.id)}
               aria-current={seg.id === currentId ? "true" : undefined}
-              className={`flex-1 flex items-center justify-between px-4 py-3 text-left text-sm hover:bg-surface-sunken min-h-[44px] ${
+              className={`flex min-h-11 flex-1 items-center justify-between px-4 py-3 text-left text-sm hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${
                 seg.id === currentId ? "bg-brand-soft font-medium text-brand-text" : "text-ink-muted"
               }`}
             >
@@ -217,7 +217,7 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
                 onClick={() => onShare(seg.id)}
                 aria-label={`Partager la séquence ${seg.title}`}
                 title="Partager cette séquence"
-                className="grid min-h-11 w-11 place-items-center text-ink-subtle hover:text-brand-text focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
+                className="grid min-h-11 w-11 place-items-center text-ink-muted hover:bg-surface-sunken hover:text-ink focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
               >
                 <Share2 aria-hidden="true" className="size-4" strokeWidth={1.75} />
               </button>
@@ -227,28 +227,29 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
       </ul>
 
       {current && (
-        <div data-k-bottom-bar className="fixed bottom-14 md:bottom-auto inset-x-0 md:static bg-surface border-t md:border border-line md:rounded-card shadow-float md:shadow-card p-3 md:p-4 z-20">
+        <div data-k-bottom-bar className={`fixed ${withBottomNav ? "bottom-[calc(64px+env(safe-area-inset-bottom))]" : "bottom-0 pb-[calc(12px+env(safe-area-inset-bottom))]"} md:bottom-auto inset-x-0 md:static bg-surface border-t md:border border-line md:rounded-card shadow-float md:shadow-card p-3 md:p-4 z-sticky`}>
           <div className="flex items-center justify-between mb-1">
             <p className="font-medium text-ink text-sm truncate pr-2">{current.title}</p>
-            <select
-              aria-label="Vitesse de lecture"
-              value={playbackRate}
-              onChange={(e) => setPlaybackRate(Number.parseFloat(e.target.value))}
-              className="min-h-9 shrink-0 cursor-pointer rounded-control border border-control-line bg-surface px-2 text-sm text-ink"
-            >
-              {speedOptions}
-            </select>
+            <div className="w-24 shrink-0">
+              <Select
+                label="Vitesse de lecture"
+                hideLabel
+                value={String(playbackRate)}
+                onChange={(e) => setPlaybackRate(Number.parseFloat(e.target.value))}
+                options={SPEED_OPTIONS}
+              />
+            </div>
           </div>
 
           {resumeOffer !== null && (
-            <div className="flex items-center gap-2 mb-2 text-xs bg-brand-soft text-brand-text rounded-control px-3 py-2">
+            <div className="mb-2 flex flex-wrap items-center gap-x-2 rounded-control bg-brand-soft py-1 pl-3 pr-1 text-[13px] text-ink">
               <span className="flex-1">Reprendre à {formatDuration(resumeOffer * 1000)} ?</span>
-              <button onClick={acceptResume} className="font-semibold underline">
+              <Button type="button" variant="ghost" size="sm" onClick={acceptResume}>
                 Reprendre
-              </button>
-              <button onClick={declineResume} className="underline">
-                Depuis le début
-              </button>
+              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={declineResume}>
+                Reprendre du début
+              </Button>
             </div>
           )}
 

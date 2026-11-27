@@ -1,9 +1,25 @@
 "use client";
 
-import { Fragment, useId, useState } from "react";
+import { Fragment, useId, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Modal from "@/components/ui/Modal";
+import { Check, ChevronRight, ExternalLink, Info, Mail, Pencil, Phone, Plus, X } from "lucide-react";
+import {
+  Alert,
+  Button,
+  ConfirmModal,
+  Input,
+  Modal,
+  PageHeader,
+  Select,
+  StatusChip,
+  Textarea,
+  buttonClasses,
+  fieldLabelClasses,
+  type StatusTone,
+} from "@/components/ui";
 import HistoryTimeline from "@/components/HistoryTimeline";
+import RadioGroup, { choiceChipClasses } from "@/components/ui/RadioGroup";
 
 type DateLike = Date | string;
 
@@ -25,15 +41,15 @@ const STATUS_LABELS: Record<string, string> = {
   ABANDONED:      "Abandonné",
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  SUBMITTED:      "bg-warning-soft text-warning",
-  WAITING_RECONTACT: "bg-warning-soft text-warning",
-  WAITING_MISSION:   "bg-warning-soft text-warning",
-  ASSIGNED:       "bg-info-soft text-info",
-  CONTACTED:      "bg-info-soft text-info",
-  WHATSAPP_ADDED: "bg-success-soft text-success",
-  INTEGRATED:     "bg-success-soft text-success",
-  ABANDONED:      "bg-danger-soft text-danger",
+const STATUS_TONES: Record<string, StatusTone> = {
+  SUBMITTED:      "warning",
+  WAITING_RECONTACT: "warning",
+  WAITING_MISSION:   "warning",
+  ASSIGNED:       "info",
+  CONTACTED:      "info",
+  WHATSAPP_ADDED: "success",
+  INTEGRATED:     "success",
+  ABANDONED:      "danger",
 };
 
 // Motifs d'abandon (spec 051) — miroir client de ABANDON_REASON_LABELS du module intégration.
@@ -71,13 +87,13 @@ const MSDP_STATUS_LABELS: Record<string, string> = {
   ABANDONED:    "Abandonné",
 };
 
-const MSDP_STATUS_COLORS: Record<string, string> = {
-  SUBMITTED:    "bg-warning-soft text-warning",
-  ASSIGNED:     "bg-info-soft text-info",
-  CONTACTED:    "bg-info-soft text-info",
-  IN_FORMATION: "bg-brand-soft text-brand-text",
-  COMPLETED:    "bg-success-soft text-success",
-  ABANDONED:    "bg-danger-soft text-danger",
+const MSDP_STATUS_TONES: Record<string, StatusTone> = {
+  SUBMITTED:    "warning",
+  ASSIGNED:     "info",
+  CONTACTED:    "info",
+  IN_FORMATION: "brand",
+  COMPLETED:    "success",
+  ABANDONED:    "danger",
 };
 
 
@@ -200,26 +216,28 @@ interface StepData {
   ts: DateLike | null;
 }
 
+// Piste d'avancement : étape à venir en `line`/`control-line` (surface-sunken est réservé aux
+// en-têtes de tableau, champs de recherche et squelettes).
 const TRACK_THEME = {
   violet: {
-    circleCurrent: "bg-brand text-on-brand ring-2 ring-focus/20",
-    circleDone:    "bg-brand/15 text-brand-text",
-    circlePending: "bg-surface-sunken text-ink-subtle",
+    circleCurrent: "bg-brand text-on-brand ring-2 ring-brand/20",
+    circleDone:    "bg-brand-soft text-brand-text",
+    circlePending: "bg-surface text-ink-muted ring-1 ring-control-line",
     lineActive:    "bg-brand",
-    linePending:   "bg-surface-sunken",
+    linePending:   "bg-line",
     dotActive:     "bg-brand",
     dotDone:       "bg-brand/35",
-    dotPending:    "bg-surface-sunken",
+    dotPending:    "bg-control-line",
   },
   purple: {
-    circleCurrent: "bg-brand text-on-brand ring-2 ring-focus",
+    circleCurrent: "bg-brand text-on-brand ring-2 ring-brand/40",
     circleDone:    "bg-brand-soft text-brand-text",
-    circlePending: "bg-surface-sunken text-ink-subtle",
+    circlePending: "bg-surface text-ink-muted ring-1 ring-control-line",
     lineActive:    "bg-brand",
-    linePending:   "bg-surface-sunken",
+    linePending:   "bg-line",
     dotActive:     "bg-brand",
     dotDone:       "bg-brand/35",
-    dotPending:    "bg-surface-sunken",
+    dotPending:    "bg-control-line",
   },
 } as const;
 
@@ -236,9 +254,9 @@ function resumeHint(waitingFrom: string | null): string {
 }
 
 function milestoneInteractiveClass(canToggle: boolean, done: boolean): string {
-  if (canToggle && !done) return "hover:border-brand hover:text-brand-text cursor-pointer";
+  if (canToggle && !done) return "hover:bg-surface-sunken cursor-pointer";
   if (canToggle && done) return "hover:bg-success/20 cursor-pointer";
-  return "cursor-default";
+  return "cursor-default disabled:opacity-100";
 }
 
 function TrackTimeline({ steps, theme = "violet" }: { readonly steps: StepData[]; readonly theme?: keyof typeof TRACK_THEME }) {
@@ -262,7 +280,7 @@ function TrackTimeline({ steps, theme = "violet" }: { readonly steps: StepData[]
                   stepTone(step, t.circleCurrent, t.circleDone, t.circlePending)
                 }`}
               >
-                {step.done && !step.current ? "✓" : i + 1}
+                {step.done && !step.current ? <Check aria-hidden="true" className="size-3" strokeWidth={3} /> : i + 1}
               </div>
               <p
                 className={`text-[11px] text-center mt-1 leading-snug max-w-[52px] ${
@@ -294,7 +312,7 @@ function TrackTimeline({ steps, theme = "violet" }: { readonly steps: StepData[]
         <span className="text-xs text-ink-muted">
           {steps.find((s) => s.current)?.label ??
             (steps.every((s) => s.done)
-              ? "Terminé ✓"
+              ? "Terminé"
               : steps.findLast((s) => s.done)?.label ?? "—")}
         </span>
       </div>
@@ -319,7 +337,7 @@ function MilestoneChips({
         {MILESTONES.map((m) => (
           <span
             key={m.key}
-            className="px-3 py-1.5 rounded-full border border-dashed border-line text-xs text-ink-subtle"
+            className="inline-flex min-h-9 items-center rounded-full border border-dashed border-control-line px-3 text-xs text-ink-muted"
           >
             {m.label}
           </span>
@@ -335,7 +353,7 @@ function MilestoneChips({
         const ts = journey[m.tsKey];
         const base = done
           ? "bg-success-soft text-success border-success/30"
-          : "bg-surface-sunken text-ink-subtle border-line";
+          : "bg-surface text-ink-muted border-control-line";
         const interactive = milestoneInteractiveClass(canToggle, done);
 
         return (
@@ -343,17 +361,14 @@ function MilestoneChips({
             key={m.key}
             type="button"
             disabled={!canToggle}
+            aria-pressed={done}
             onClick={canToggle ? () => onToggle(m.key, done) : undefined}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${base} ${interactive}`}
+            className={`flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${base} ${interactive}`}
           >
             {done ? (
-              <svg aria-hidden="true" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-              </svg>
+              <Check aria-hidden="true" className="size-4" strokeWidth={1.75} />
             ) : (
-              <svg aria-hidden="true" className="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
+              <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
             )}
             {m.label}
             {done && ts && (
@@ -390,7 +405,9 @@ function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, 
       <div className="space-y-3">
         <p className="text-sm text-ink-muted">Aucun suivi MSDP démarré.</p>
         {canAct && (
-          <button
+          <Button
+            type="button"
+            variant="secondary"
             onClick={async () => {
               setLoading(true);
               try {
@@ -406,10 +423,9 @@ function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, 
               finally { setLoading(false); }
             }}
             disabled={loading}
-            className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
-            {loading ? "Création…" : "Démarrer le suivi MSDP"}
-          </button>
+            {loading ? "Création en cours…" : "Démarrer le suivi MSDP"}
+          </Button>
         )}
         {error && <p className="text-sm text-danger">{error}</p>}
       </div>
@@ -423,9 +439,9 @@ function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, 
     <div className="space-y-3">
       {!hideStatus && (
         <div className="flex flex-wrap items-center gap-3">
-          <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${MSDP_STATUS_COLORS[followUp.status] ?? "bg-surface-sunken text-ink-muted"}`}>
+          <StatusChip tone={MSDP_STATUS_TONES[followUp.status] ?? "neutral"}>
             {MSDP_STATUS_LABELS[followUp.status] ?? followUp.status}
-          </span>
+          </StatusChip>
           {assigneeName && (
             <span className="text-sm text-ink-muted">Référent : <strong>{assigneeName}</strong></span>
           )}
@@ -439,12 +455,13 @@ function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, 
       {followUp.notes && (
         <p className="text-sm text-ink-muted whitespace-pre-line">{followUp.notes}</p>
       )}
-      <a
+      <Link
         href={`/care/followups/${followUp.id}`}
-        className="inline-block text-sm font-medium text-brand-text hover:underline"
+        className={buttonClasses("ghost", "sm")}
       >
-        Voir et gérer le suivi →
-      </a>
+        Voir et gérer le suivi
+        <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
+      </Link>
     </div>
   );
 }
@@ -526,45 +543,32 @@ function RequestHeader({
   readonly onEdit: () => void;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 bg-surface rounded-xl border border-line p-4 md:p-5">
-      <div className="space-y-1">
-        <h1 className="text-xl font-bold text-ink">{req.firstName} {req.lastName}</h1>
-        <p className="text-sm text-ink-subtle">{fmt(req.submittedAt)}</p>
-        <div className="flex flex-wrap gap-1.5 mt-1">
-          {req.salvationCall && (
-            <span className="text-xs text-brand-text bg-brand-soft px-2 py-0.5 rounded-full border border-brand/30">
-              Appel au salut
-            </span>
-          )}
-          {req.pastoralCareRequested && (
-            <span className="text-xs text-warning bg-warning-soft px-2 py-0.5 rounded-full border border-warning/30">
-              Soin pastoral
-            </span>
+    <PageHeader
+      eyebrow="Demande d'intégration"
+      title={`${req.firstName} ${req.lastName}`}
+      description={`Reçue le ${fmt(req.submittedAt)}`}
+      actions={
+        canEdit ? (
+          <Button type="button" variant="secondary" onClick={onEdit}>
+            <Pencil aria-hidden="true" className="size-4" strokeWidth={1.75} />
+            Modifier la demande
+          </Button>
+        ) : undefined
+      }
+    >
+      {(req.salvationCall || req.pastoralCareRequested || hasJourney) && (
+        <div className="flex flex-wrap items-center gap-2">
+          {req.salvationCall && <StatusChip tone="brand">Appel au salut</StatusChip>}
+          {req.pastoralCareRequested && <StatusChip tone="warning">Soin pastoral</StatusChip>}
+          {hasJourney && (
+            <Link href="/integration/parcours" className={buttonClasses("ghost", "sm")}>
+              Voir le dossier parcours
+              <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
+            </Link>
           )}
         </div>
-        {hasJourney && (
-          <a href="/integration/parcours" className="inline-flex items-center gap-1 text-xs text-brand-text hover:underline mt-1">
-            <svg aria-hidden="true" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-            Voir le dossier parcours
-          </a>
-        )}
-      </div>
-      <div className="flex items-center gap-2 self-start">
-        {canEdit && (
-          <button
-            onClick={onEdit}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-line rounded-lg text-ink-muted hover:bg-surface-sunken transition-colors"
-          >
-            <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            Modifier
-          </button>
-        )}
-      </div>
-    </div>
+      )}
+    </PageHeader>
   );
 }
 
@@ -587,7 +591,9 @@ function IntegrationProgress({
       {isAbandoned ? (
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-sm text-danger">
-            <span className="w-5 h-5 rounded-full bg-danger-soft flex items-center justify-center text-xs font-bold">✕</span>
+            <span className="grid size-5 place-items-center rounded-full bg-danger-soft">
+              <X aria-hidden="true" className="size-3" strokeWidth={3} />
+            </span>
             Abandonné{req.abandonedAt ? ` le ${fmt(req.abandonedAt)}` : ""}
           </div>
           {req.abandonReasonCode && (
@@ -596,7 +602,7 @@ function IntegrationProgress({
             </p>
           )}
           {req.abandonReason && (
-            <p className="text-xs text-ink-subtle pl-7">{req.abandonReason}</p>
+            <p className="text-xs text-ink-muted pl-7">{req.abandonReason}</p>
           )}
         </div>
       ) : (
@@ -604,22 +610,17 @@ function IntegrationProgress({
       )}
 
       {isWaiting && (
-        <div className="text-xs bg-warning-soft border border-warning/30 rounded-lg px-3 py-2 space-y-0.5">
-          <p className="text-warning font-medium">
-            {req.status === "WAITING_MISSION"
-              ? "En attente de la décision du département mission"
-              : "En attente de recontact"}
-            {req.waitingSince ? ` depuis le ${fmt(req.waitingSince)}` : ""}
-          </p>
-          {req.lastRelanceAt && (
-            <p className="text-warning">Dernière relance consignée le {fmt(req.lastRelanceAt)}</p>
-          )}
+        <Alert
+          tone="warning"
+          title={`${req.status === "WAITING_MISSION" ? "En attente de la décision du département mission" : "En attente de recontact"}${req.waitingSince ? ` depuis le ${fmt(req.waitingSince)}` : ""}.`}
+        >
+          {req.lastRelanceAt && <span className="block">Dernière relance consignée le {fmt(req.lastRelanceAt)}.</span>}
           {relanceDue && (
-            <p className="text-warning font-semibold">
-              À relancer : {req.status === "WAITING_MISSION" ? "le département mission" : "la personne"}
-            </p>
+            <span className="block font-semibold">
+              À relancer : {req.status === "WAITING_MISSION" ? "le département mission" : "la personne"}.
+            </span>
           )}
-        </div>
+        </Alert>
       )}
 
       {(req.assignedFamilyName || req.assignedBerger?.name) && (
@@ -646,14 +647,14 @@ const NEXT_TRANSITION: Record<string, { action: string; label: string; button: s
   },
   CONTACTED: {
     action: "whatsapp",
-    label: "Ajouté dans le groupe WhatsApp",
-    button: "Ajouté dans le groupe WhatsApp",
+    label: "Marquer ajouté·e au groupe WhatsApp",
+    button: "Marquer ajouté au groupe WhatsApp",
     description: (req) => `Confirmer que ${req.firstName} ${req.lastName} a été ajouté·e dans le groupe WhatsApp famille ?`,
   },
   WHATSAPP_ADDED: {
     action: "integrate",
     label: "Marquer intégré·e",
-    button: "Marquer intégré ✓",
+    button: "Marquer intégré",
     description: (req) => `Confirmer l'intégration de ${req.firstName} ${req.lastName} dans la famille ? Cette étape est définitive.`,
   },
 };
@@ -701,126 +702,116 @@ function IntegrationActions({
   readonly onAbandon: () => void;
 }) {
   const transition = canActAsBerger ? NEXT_TRANSITION[req.status] : undefined;
+  // Un seul bouton principal : l'étape suivante du parcours quand il y en a une.
+  const assignVariant = transition ? "secondary" : "primary";
   return (
-    <div className="space-y-2 pt-1">
+    <div className="flex flex-col gap-3 pt-1">
       {showBergerNotice && (
-        <div className="flex items-center gap-2 text-xs text-brand-text bg-brand-soft border border-brand/20 rounded-lg px-3 py-2">
-          <svg aria-hidden="true" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Vous êtes le berger assigné à cette demande.
-        </div>
+        <Alert tone="info" icon={Info}>Vous êtes le berger assigné à cette demande.</Alert>
       )}
       <div className="flex flex-wrap gap-2">
-        {canAssign && (
-          <button onClick={onAssign} disabled={loading}
-            className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
-            {req.status === "ASSIGNED" ? "Réaffecter" : "Assigner"}
-          </button>
-        )}
-        {canReopen && (
-          <button
-            onClick={onReopen}
-            disabled={loading}
-            className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-          >
-            Rouvrir
-          </button>
-        )}
         {transition && (
-          <button
+          <Button
+            type="button"
             onClick={() => onTransition({
               action: transition.action,
               label: transition.label,
               description: transition.description(req),
             })}
             disabled={loading}
-            className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
             {transition.button}
-          </button>
+          </Button>
+        )}
+        {canAssign && (
+          <Button type="button" variant={assignVariant} onClick={onAssign} disabled={loading}>
+            {req.status === "ASSIGNED" ? "Réaffecter" : "Assigner"}
+          </Button>
+        )}
+        {canReopen && (
+          <Button type="button" onClick={onReopen} disabled={loading}>
+            Rouvrir la demande
+          </Button>
         )}
         {canLiftWait && (
           <>
-            <button
-              onClick={onRelance}
-              disabled={loading}
-              className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-            >
-              J&apos;ai relancé
-            </button>
-            <button
+            <Button
+              type="button"
               onClick={() => onTransition({
                 action: "resume",
                 label: "Reprendre le suivi",
                 description: `Reprendre le suivi de ${req.firstName} ${req.lastName} ? ${resumeHint(req.waitingFrom)}`,
               })}
               disabled={loading}
-              className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
               Reprendre le suivi
-            </button>
+            </Button>
+            <Button type="button" variant="secondary" onClick={onRelance} disabled={loading}>
+              Consigner une relance
+            </Button>
           </>
         )}
         {canWaitRecontact && (
-          <button onClick={() => onWait("RECONTACT")} disabled={loading}
-            className="px-4 py-2 bg-surface text-warning border border-warning/30 text-sm font-medium rounded-lg hover:bg-warning-soft disabled:opacity-50 transition-colors">
+          <Button type="button" variant="secondary" onClick={() => onWait("RECONTACT")} disabled={loading}>
             À recontacter plus tard
-          </button>
+          </Button>
         )}
         {canSendToMission && (
-          <button onClick={() => onWait("MISSION")} disabled={loading}
-            className="px-4 py-2 bg-surface text-warning border border-warning/30 text-sm font-medium rounded-lg hover:bg-warning-soft disabled:opacity-50 transition-colors">
+          <Button type="button" variant="secondary" onClick={() => onWait("MISSION")} disabled={loading}>
             Transmettre au département mission
-          </button>
+          </Button>
         )}
         {canHandback && (
-          <button onClick={onHandback} disabled={loading}
-            className="px-4 py-2 bg-surface text-ink-muted border border-control-line text-sm font-medium rounded-lg hover:bg-surface-sunken disabled:opacity-50 transition-colors">
+          <Button type="button" variant="secondary" onClick={onHandback} disabled={loading}>
             Renvoyer à l&apos;intégration
-          </button>
+          </Button>
         )}
         {canAbandon && (
-          <button onClick={onAbandon} disabled={loading}
-            className="px-4 py-2 bg-surface text-danger border border-danger/30 text-sm font-medium rounded-lg hover:bg-danger-soft disabled:opacity-50 transition-colors">
-            Abandonner
-          </button>
+          <Button type="button" variant="secondary" onClick={onAbandon} disabled={loading}>
+            Abandonner la demande
+          </Button>
         )}
       </div>
     </div>
   );
 }
 
+/** Ligne libellé / valeur des onglets de la fiche. */
+function InfoRow({ label, children }: { readonly label: string; readonly children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-3">
+      <span className="shrink-0 text-[13px] text-ink-muted sm:w-32">{label}</span>
+      <span className="text-sm text-ink">{children}</span>
+    </div>
+  );
+}
+
+const inlineLinkClasses = `${buttonClasses("ghost", "sm")} -ml-3 self-start`;
+
 /** Onglet « Contact » de la fiche. */
 function ContactTab({ req }: { readonly req: Request }) {
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       {req.phone ? (
-        <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-          <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Téléphone</span>
-          <a href={`tel:${req.phone}`} className="text-sm text-brand-text hover:underline">{req.phone}</a>
-        </div>
+        <InfoRow label="Téléphone">
+          <a href={`tel:${req.phone}`} className={inlineLinkClasses}>
+            <Phone aria-hidden="true" className="size-4" strokeWidth={1.75} />
+            {req.phone}
+          </a>
+        </InfoRow>
       ) : null}
       {req.email ? (
-        <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-          <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Email</span>
-          <a href={`mailto:${req.email}`} className="text-sm text-brand-text hover:underline">{req.email}</a>
-        </div>
+        <InfoRow label="Email">
+          <a href={`mailto:${req.email}`} className={`${inlineLinkClasses} max-w-full break-all`}>
+            <Mail aria-hidden="true" className="size-4 shrink-0" strokeWidth={1.75} />
+            {req.email}
+          </a>
+        </InfoRow>
       ) : null}
-      {req.address && (
-        <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-          <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Adresse</span>
-          <span className="text-sm text-ink">{req.address}</span>
-        </div>
-      )}
-      {req.member && (
-        <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-          <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Membre Koinonia</span>
-          <span className="text-sm text-ink">{req.member.firstName} {req.member.lastName}</span>
-        </div>
-      )}
+      {req.address && <InfoRow label="Adresse">{req.address}</InfoRow>}
+      {req.member && <InfoRow label="Membre Koinonia">{req.member.firstName} {req.member.lastName}</InfoRow>}
       {!req.phone && !req.email && !req.address && !req.member && (
-        <p className="text-sm text-ink-subtle italic">Aucune information de contact renseignée.</p>
+        <p className="text-sm text-ink-muted">Aucune information de contact renseignée.</p>
       )}
     </div>
   );
@@ -829,39 +820,20 @@ function ContactTab({ req }: { readonly req: Request }) {
 /** Onglet « Profil » de la fiche. */
 function ProfileTab({ req, appointmentRequest }: { readonly req: Request; readonly appointmentRequest: Props["appointmentRequest"] }) {
   return (
-    <div className="space-y-3">
-      <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-        <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Tranche d&apos;âge</span>
-        <span className="text-sm text-ink">{AGE_LABELS[req.ageRange] ?? req.ageRange}</span>
-      </div>
-      <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-        <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Situation</span>
-        <span className="text-sm text-ink">{CHURCH_STATUS_LABELS[req.churchStatus] ?? req.churchStatus}</span>
-      </div>
-      <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-        <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Appel au salut</span>
-        <span className="text-sm text-ink">
-          {req.salvationCall ? (
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-brand shrink-0" />Oui
-            </span>
-          ) : "Non"}
-        </span>
-      </div>
-      <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-        <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Soin pastoral</span>
-        <span className="text-sm text-ink">
-          {req.pastoralCareRequested ? (
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-warning shrink-0" />
-              Demandé
-              {appointmentRequest && (
-                <span className="text-xs text-ink-subtle ml-1">({appointmentRequest.status})</span>
-              )}
-            </span>
-          ) : "Non"}
-        </span>
-      </div>
+    <div className="flex flex-col gap-3">
+      <InfoRow label="Tranche d'âge">{AGE_LABELS[req.ageRange] ?? req.ageRange}</InfoRow>
+      <InfoRow label="Situation">{CHURCH_STATUS_LABELS[req.churchStatus] ?? req.churchStatus}</InfoRow>
+      <InfoRow label="Appel au salut">
+        {req.salvationCall ? <StatusChip tone="brand">Oui</StatusChip> : "Non"}
+      </InfoRow>
+      <InfoRow label="Soin pastoral">
+        {req.pastoralCareRequested ? (
+          <span className="inline-flex flex-wrap items-center gap-1.5">
+            <StatusChip tone="warning">Demandé</StatusChip>
+            {appointmentRequest && <span className="text-[13px] text-ink-muted">({appointmentRequest.status})</span>}
+          </span>
+        ) : "Non"}
+      </InfoRow>
     </div>
   );
 }
@@ -869,38 +841,26 @@ function ProfileTab({ req, appointmentRequest }: { readonly req: Request; readon
 /** Onglet « Famille » de la fiche. */
 function FamilyTab({ req }: { readonly req: Request }) {
   return (
-    <div className="space-y-3">
-      {req.suggestedFamilyName && (
-        <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-          <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Suggestion géo</span>
-          <span className="text-sm text-ink-muted italic">{req.suggestedFamilyName}</span>
-        </div>
-      )}
+    <div className="flex flex-col gap-3">
+      {req.suggestedFamilyName && <InfoRow label="Suggestion géo">{req.suggestedFamilyName}</InfoRow>}
       {req.lat && req.lng && (
-        <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-          <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Carte familles</span>
+        <InfoRow label="Carte familles">
           <a
             href={`https://familles.iccrennes.fr/carte?lat=${req.lat}&lng=${req.lng}&label=${encodeURIComponent(req.address ?? [req.lat, req.lng].join(", "))}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-brand-text hover:underline"
+            className={inlineLinkClasses}
           >
-            Voir sur la carte familles ↗
+            Voir sur la carte familles
+            <ExternalLink aria-hidden="true" className="size-4" strokeWidth={1.75} />
+            <span className="sr-only">(nouvel onglet)</span>
           </a>
-        </div>
+        </InfoRow>
       )}
-      <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-        <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Famille assignée</span>
-        <span className="text-sm font-medium text-brand-text">
-          {req.assignedFamilyName ?? <span className="text-ink-subtle font-normal">—</span>}
-        </span>
-      </div>
-      <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-        <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Berger</span>
-        <span className="text-sm text-ink">
-          {req.assignedBerger?.name ?? <span className="text-ink-subtle">—</span>}
-        </span>
-      </div>
+      <InfoRow label="Famille assignée">
+        {req.assignedFamilyName ? <span className="font-semibold">{req.assignedFamilyName}</span> : <span className="text-ink-muted">—</span>}
+      </InfoRow>
+      <InfoRow label="Berger">{req.assignedBerger?.name ?? <span className="text-ink-muted">—</span>}</InfoRow>
     </div>
   );
 }
@@ -922,25 +882,25 @@ function NotesTab({
   readonly onSave: () => void;
 }) {
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       {canEdit ? (
         <>
-          <textarea
+          <Textarea
+            aria-label="Notes"
             value={notes}
             onChange={(e) => onNotesChange(e.target.value)}
             rows={5}
             placeholder="Notes visibles uniquement par l'équipe intégration…"
-            className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand resize-none"
+            hint="Visibles uniquement par l'équipe intégration et le berger."
           />
           <div className="flex justify-end">
-            <button onClick={onSave} disabled={saving}
-              className="px-4 py-1.5 bg-surface-sunken hover:bg-surface-sunken text-ink-muted text-sm font-medium rounded-lg disabled:opacity-50 transition-colors">
-              {saving ? "Sauvegarde…" : "Enregistrer les notes"}
-            </button>
+            <Button type="button" variant="secondary" onClick={onSave} disabled={saving}>
+              {saving ? "Enregistrement en cours…" : "Enregistrer les notes"}
+            </Button>
           </div>
         </>
       ) : (
-        <p className="text-sm text-ink-muted">{savedNotes || <span className="italic text-ink-subtle">Aucune note</span>}</p>
+        <p className="text-sm text-ink-muted whitespace-pre-line">{savedNotes || "Aucune note."}</p>
       )}
     </div>
   );
@@ -960,36 +920,19 @@ function MilestoneConfirmModal({
   readonly onClose: () => void;
   readonly onConfirm: () => void;
 }) {
+  const verb = milestone?.currentValue ? "Désactiver" : "Activer";
   return (
-    <Modal
+    <ConfirmModal
       open={milestone !== null}
-      onClose={onClose}
-      title={milestone?.currentValue ? "Désactiver le jalon" : "Activer le jalon"}
-    >
-      <div className="space-y-4">
-        <p className="text-sm text-ink-muted">
-          {milestone?.currentValue
-            ? `Désactiver le jalon "${milestone.label}" pour ${personName} ?`
-            : `Activer le jalon "${milestone?.label}" pour ${personName} ?`}
-        </p>
-        <div className="flex gap-2 justify-end">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">
-            Annuler
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={loading}
-            className={`px-4 py-2 text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity ${
-              milestone?.currentValue
-                ? "border border-control-line text-ink hover:bg-surface-sunken"
-                : "bg-brand text-on-brand"
-            }`}
-          >
-            {loading ? "Enregistrement…" : "Confirmer"}
-          </button>
-        </div>
-      </div>
-    </Modal>
+      title={`${verb} le jalon « ${milestone?.label ?? ""} » ?`}
+      message={`Le parcours de ${personName} sera mis à jour.`}
+      confirmLabel={`${verb} le jalon`}
+      confirmingLabel="Enregistrement en cours…"
+      variant="primary"
+      confirming={loading}
+      onConfirm={onConfirm}
+      onCancel={onClose}
+    />
   );
 }
 
@@ -1006,32 +949,17 @@ function TransitionConfirmModal({
   readonly onConfirm: () => void;
 }) {
   return (
-    <Modal
+    <ConfirmModal
       open={transition !== null}
-      onClose={onClose}
       title={transition?.label ?? ""}
-    >
-      <div className="space-y-4">
-        <p className="text-sm text-ink-muted">{transition?.description}</p>
-        <div className="flex gap-2 justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-ink-muted hover:text-ink"
-          >
-            Annuler
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={loading}
-            className={`px-4 py-2 text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity ${
-              transition?.variant === "danger" ? "bg-danger text-on-danger" : "bg-brand text-on-brand"
-            }`}
-          >
-            {loading ? "Enregistrement…" : "Confirmer"}
-          </button>
-        </div>
-      </div>
-    </Modal>
+      message={transition?.description ?? ""}
+      confirmLabel={transition?.label ?? "Confirmer"}
+      confirmingLabel="Enregistrement en cours…"
+      variant={transition?.variant === "danger" ? "danger" : "primary"}
+      confirming={loading}
+      onConfirm={onConfirm}
+      onCancel={onClose}
+    />
   );
 }
 
@@ -1040,7 +968,9 @@ function MsdpProgress({ steps, followUp }: { readonly steps: StepData[]; readonl
   return (
     followUp?.status === "ABANDONED" ? (
       <div className="flex items-center gap-2 text-sm text-danger">
-        <span className="w-5 h-5 rounded-full bg-danger-soft flex items-center justify-center text-xs font-bold">✕</span>
+        <span className="grid size-5 place-items-center rounded-full bg-danger-soft">
+          <X aria-hidden="true" className="size-3" strokeWidth={3} />
+        </span>
         Abandonné{followUp.abandonedAt ? ` le ${fmt(followUp.abandonedAt)}` : ""}
       </div>
     ) : (
@@ -1048,6 +978,9 @@ function MsdpProgress({ steps, followUp }: { readonly steps: StepData[]; readonl
     )
   );
 }
+
+const cardClasses = "flex flex-col gap-4";
+const sectionTitleClasses = "font-display text-[15px] font-semibold leading-[22px] text-ink";
 
 /** Étapes clés du parcours : jalons (modifiables par l'équipe) ou création du dossier. */
 function JourneyCard({
@@ -1066,13 +999,14 @@ function JourneyCard({
   readonly onToggleMilestone: (key: MilestoneKey, currentValue: boolean) => void;
 }) {
   return (
-    <div className="bg-surface rounded-xl border border-line p-4 md:p-5 space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-ink-muted">Étapes clés du parcours</h2>
+    <section className={cardClasses}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className={sectionTitleClasses}>Étapes clés du parcours</h2>
         {journey && (
-          <a href="/integration/parcours" className="text-xs text-brand-text hover:underline">
-            Dossier complet →
-          </a>
+          <Link href="/integration/parcours" className={buttonClasses("ghost", "sm")}>
+            Voir le dossier complet
+            <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
+          </Link>
         )}
       </div>
       <MilestoneChips
@@ -1081,18 +1015,15 @@ function JourneyCard({
         onToggle={onToggleMilestone}
       />
       {!journey && isIntegrationMember && (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onCreate}
-            disabled={creating}
-            className="text-xs text-brand-text hover:underline disabled:opacity-50"
-          >
-            {creating ? "Création…" : "+ Créer le dossier parcours"}
-          </button>
-          {error && <span className="text-xs text-danger">{error}</span>}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="secondary" size="sm" onClick={onCreate} disabled={creating}>
+            <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
+            {creating ? "Création en cours…" : "Créer le dossier parcours"}
+          </Button>
+          {error && <span className="text-[13px] text-danger">{error}</span>}
         </div>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -1369,9 +1300,8 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
     : leaders;
 
   // ── Render ───────────────────────────────────────────────────────────────────
-
   return (
-    <div className="space-y-4 max-w-3xl">
+    <div className="flex max-w-3xl flex-col gap-4">
 
       {/* ── Header ── */}
       <RequestHeader
@@ -1388,17 +1318,15 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
         }}
       />
 
-      {error && (
-        <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-4 py-3">{error}</p>
-      )}
+      {error && <Alert tone="danger">{error}</Alert>}
 
       {/* ── Card 1 : Intégration famille ── */}
-      <div className="bg-surface rounded-xl border border-line p-4 md:p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-ink-muted">Intégration famille</h2>
-          <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[req.status] ?? "bg-surface-sunken text-ink-muted"}`}>
+      <section className={cardClasses}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className={sectionTitleClasses}>Intégration famille</h2>
+          <StatusChip tone={STATUS_TONES[req.status] ?? "neutral"}>
             {STATUS_LABELS[req.status] ?? req.status}
-          </span>
+          </StatusChip>
         </div>
 
         <IntegrationProgress req={req} steps={integrationSteps} isAbandoned={isAbandoned} isWaiting={isWaiting} relanceDue={relanceDue} />
@@ -1425,7 +1353,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
             onAbandon={() => setAbandonOpen(true)}
           />
         )}
-      </div>
+      </section>
 
       <HistoryTimeline
         fetchUrl={`/api/integration/requests/${req.id}/history`}
@@ -1436,16 +1364,13 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
       />
 
       {/* ── Card 2 : Suivi MSDP — démarrable même sans appel au salut (#550) ── */}
-      <div className="bg-surface rounded-xl border border-brand/30 p-4 md:p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-brand shrink-0" />
-            <h2 className="text-sm font-semibold text-ink-muted">{req.salvationCall ? "Appel au salut — MSDP" : "Suivi MSDP"}</h2>
-          </div>
+      <section className={cardClasses}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className={sectionTitleClasses}>{req.salvationCall ? "Appel au salut — MSDP" : "Suivi MSDP"}</h2>
           {msdpFollowUp && (
-            <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${MSDP_STATUS_COLORS[msdpFollowUp.status] ?? "bg-surface-sunken text-ink-muted"}`}>
+            <StatusChip tone={MSDP_STATUS_TONES[msdpFollowUp.status] ?? "neutral"}>
               {MSDP_STATUS_LABELS[msdpFollowUp.status] ?? msdpFollowUp.status}
-            </span>
+            </StatusChip>
           )}
         </div>
 
@@ -1459,7 +1384,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
           canAct={isIntegrationMember || msdpFollowUp?.assignedConseillerMsdpId === currentUserId}
           hideStatus
         />
-      </div>
+      </section>
 
       {/* ── Card 3 : Étapes clés du parcours ── */}
       <JourneyCard
@@ -1474,15 +1399,19 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
         }}
       />
 
-      {/* ── Onglets ── */}
-      <div className="bg-surface rounded-xl border border-line overflow-hidden">
-        {/* Tab bar */}
-        <div className="flex border-b border-line overflow-x-auto">
+      {/* ── Onglets (contenu de la fiche, sans URL propre) ── */}
+      <section className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+        <div role="tablist" aria-label="Fiche de la demande" className="flex overflow-x-auto border-b border-line">
           {tabs.map((tab) => (
             <button
               key={tab.id}
+              type="button"
+              role="tab"
+              id={`${uid}-tab-${tab.id}`}
+              aria-selected={activeTab === tab.id}
+              aria-controls={`${uid}-panel`}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
+              className={`-mb-px min-h-11 whitespace-nowrap border-b-2 px-4 font-display text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${
                 activeTab === tab.id
                   ? "border-brand text-brand-text"
                   : "border-transparent text-ink-muted hover:text-ink"
@@ -1493,19 +1422,10 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
           ))}
         </div>
 
-        {/* Tab content */}
-        <div className="p-4 md:p-5">
-
-          {/* Contact */}
+        <div role="tabpanel" id={`${uid}-panel`} aria-labelledby={`${uid}-tab-${activeTab}`} className="p-4 md:p-5">
           {activeTab === "contact" && <ContactTab req={req} />}
-
-          {/* Profil */}
           {activeTab === "profil" && <ProfileTab req={req} appointmentRequest={appointmentRequest} />}
-
-          {/* Famille */}
           {activeTab === "famille" && <FamilyTab req={req} />}
-
-          {/* Notes */}
           {activeTab === "notes" && (
             <NotesTab
               canEdit={canActAsBerger}
@@ -1516,9 +1436,8 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
               onSave={saveNotes}
             />
           )}
-
         </div>
-      </div>
+      </section>
 
       {/* ── Modals ── */}
 
@@ -1548,56 +1467,52 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
       {/* Assigner famille/berger */}
       <Modal open={assignOpen} onClose={() => setAssignOpen(false)} title="Assigner la demande">
         {modalLoading ? (
-          <p className="text-sm text-ink-subtle text-center py-6">Chargement…</p>
+          <p className="py-6 text-center text-sm text-ink-muted">Chargement en cours…</p>
         ) : (
-          <div className="space-y-4">
-            <div>
-              <label htmlFor={`${uid}-assign-family`} className="block text-sm font-medium text-ink-muted mb-1">Famille</label>
-              <select
-                id={`${uid}-assign-family`}
-                value={assignFamilyId}
-                onChange={(e) => { setAssignFamilyId(e.target.value); setAssignBergerId(""); }}
-                className="w-full border border-control-line rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand"
+          <div className="flex flex-col gap-4">
+            <Select
+              id={`${uid}-assign-family`}
+              label="Famille"
+              value={assignFamilyId}
+              onChange={(e) => { setAssignFamilyId(e.target.value); setAssignBergerId(""); }}
+              placeholder="Choisir une famille…"
+              options={families.map((f) => ({ value: String(f.id), label: f.name }))}
+              hint={req.suggestedFamilyName ? `Suggestion géo : ${req.suggestedFamilyName}` : undefined}
+            />
+            <Select
+              id={`${uid}-assign-berger`}
+              label="Berger / co-berger"
+              value={assignBergerId}
+              onChange={(e) => setAssignBergerId(e.target.value)}
+              disabled={!assignFamilyId}
+              placeholder="Choisir un berger…"
+              options={filteredLeaders.map((l) => ({
+                value: l.user.id,
+                label: `${l.user.name ?? l.user.email} (${l.role === "BERGER" ? "Berger" : "Co-berger"})`,
+              }))}
+              hint={assignFamilyId ? undefined : "Choisissez d'abord une famille."}
+            />
+            {assignFamilyId && filteredLeaders.length === 0 && (
+              <Alert
+                tone="warning"
+                action={
+                  <Link href="/integration/leaders" className={buttonClasses("ghost", "sm")}>
+                    Configurer les bergers
+                  </Link>
+                }
               >
-                <option value="">Choisir une famille…</option>
-                {families.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-              </select>
-              {req.suggestedFamilyName && (
-                <p className="text-xs text-ink-subtle mt-1">Suggestion géo : {req.suggestedFamilyName}</p>
-              )}
-            </div>
-            <div>
-              <label htmlFor={`${uid}-assign-berger`} className="block text-sm font-medium text-ink-muted mb-1">Berger / co-berger</label>
-              <select
-                id={`${uid}-assign-berger`}
-                value={assignBergerId}
-                onChange={(e) => setAssignBergerId(e.target.value)}
-                className="w-full border border-control-line rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand"
-                disabled={!assignFamilyId}
-              >
-                <option value="">Choisir un berger…</option>
-                {filteredLeaders.map((l) => (
-                  <option key={l.id} value={l.user.id}>
-                    {l.user.name ?? l.user.email} ({l.role === "BERGER" ? "Berger" : "Co-berger"})
-                  </option>
-                ))}
-              </select>
-              {assignFamilyId && filteredLeaders.length === 0 && (
-                <p className="text-xs text-warning mt-1">
-                  Aucun berger configuré pour cette famille.{" "}
-                  <a href="/integration/leaders" className="underline">Configurer →</a>
-                </p>
-              )}
-            </div>
-            <div className="flex gap-2 justify-end pt-2">
-              <button onClick={() => setAssignOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
-              <button
+                Aucun berger configuré pour cette famille.
+              </Alert>
+            )}
+            <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end sm:gap-3">
+              <Button type="button" variant="secondary" onClick={() => setAssignOpen(false)}>Annuler</Button>
+              <Button
+                type="button"
                 onClick={submitAssign}
                 disabled={assignLoading || !assignFamilyId || !assignBergerId}
-                className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
               >
-                {assignLoading ? "Enregistrement…" : "Assigner"}
-              </button>
+                {assignLoading ? "Enregistrement en cours…" : "Assigner la demande"}
+              </Button>
             </div>
           </div>
         )}
@@ -1605,44 +1520,24 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
 
       {/* Modifier */}
       <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Modifier la demande">
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label htmlFor={`${uid}-edit-first`} className="block text-xs font-medium text-ink-muted mb-1">Prénom</label>
-              <input id={`${uid}-edit-first`} type="text" value={editForm.firstName}
-                onChange={(e) => setEditForm((f) => ({ ...f, firstName: e.target.value }))}
-                className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand" />
-            </div>
-            <div>
-              <label htmlFor={`${uid}-edit-last`} className="block text-xs font-medium text-ink-muted mb-1">Nom</label>
-              <input id={`${uid}-edit-last`} type="text" value={editForm.lastName}
-                onChange={(e) => setEditForm((f) => ({ ...f, lastName: e.target.value }))}
-                className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand" />
-            </div>
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input id={`${uid}-edit-first`} label="Prénom" type="text" autoComplete="off" value={editForm.firstName}
+              onChange={(e) => setEditForm((f) => ({ ...f, firstName: e.target.value }))} />
+            <Input id={`${uid}-edit-last`} label="Nom" type="text" autoComplete="off" value={editForm.lastName}
+              onChange={(e) => setEditForm((f) => ({ ...f, lastName: e.target.value }))} />
           </div>
-          <div>
-            <label htmlFor={`${uid}-edit-phone`} className="block text-xs font-medium text-ink-muted mb-1">Téléphone</label>
-            <input id={`${uid}-edit-phone`} type="tel" value={editForm.phone}
-              onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
-              className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand" />
-          </div>
-          <div>
-            <label htmlFor={`${uid}-edit-email`} className="block text-xs font-medium text-ink-muted mb-1">Email</label>
-            <input id={`${uid}-edit-email`} type="email" value={editForm.email}
-              onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
-              className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand" />
-          </div>
-          <div>
-            <label htmlFor={`${uid}-edit-address`} className="block text-xs font-medium text-ink-muted mb-1">Adresse</label>
-            <input id={`${uid}-edit-address`} type="text" value={editForm.address}
-              onChange={(e) => setEditForm((f) => ({ ...f, address: e.target.value }))}
-              className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand" />
-          </div>
+          <Input id={`${uid}-edit-phone`} label="Téléphone" type="tel" inputMode="tel" value={editForm.phone}
+            onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))} />
+          <Input id={`${uid}-edit-email`} label="Email" type="email" value={editForm.email}
+            onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))} />
+          <Input id={`${uid}-edit-address`} label="Adresse" type="text" value={editForm.address}
+            onChange={(e) => setEditForm((f) => ({ ...f, address: e.target.value }))} />
           <fieldset className="min-w-0">
-            <legend className="block text-xs font-medium text-ink-muted mb-2">Tranche d&apos;âge</legend>
+            <legend className={`${fieldLabelClasses} mb-2`}>Tranche d&apos;âge</legend>
             <div className="flex flex-wrap gap-2">
               {(["YOUTH", "YOUNG_ADULT", "ADULT", "SENIOR"] as const).map((v) => (
-                <label key={v} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs cursor-pointer transition-colors ${editForm.ageRange === v ? "bg-brand text-on-brand border-brand" : "border-line text-ink-muted hover:border-brand"}`}>
+                <label key={v} className={choiceChipClasses(editForm.ageRange === v)}>
                   <input type="radio" name="editAgeRange" value={v} checked={editForm.ageRange === v} onChange={() => setEditForm((f) => ({ ...f, ageRange: v }))} className="sr-only" />
                   {AGE_LABELS[v]}
                 </label>
@@ -1650,68 +1545,53 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
             </div>
           </fieldset>
           <fieldset className="min-w-0">
-            <legend className="block text-xs font-medium text-ink-muted mb-2">Situation à l&apos;église</legend>
+            <legend className={`${fieldLabelClasses} mb-2`}>Situation à l&apos;église</legend>
             <div className="flex flex-wrap gap-2">
               {(["VISITOR", "REGULAR", "ENGAGED"] as const).map((v) => (
-                <label key={v} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs cursor-pointer transition-colors ${editForm.churchStatus === v ? "bg-brand text-on-brand border-brand" : "border-line text-ink-muted hover:border-brand"}`}>
+                <label key={v} className={choiceChipClasses(editForm.churchStatus === v)}>
                   <input type="radio" name="editChurchStatus" value={v} checked={editForm.churchStatus === v} onChange={() => setEditForm((f) => ({ ...f, churchStatus: v }))} className="sr-only" />
                   {CHURCH_STATUS_LABELS[v]}
                 </label>
               ))}
             </div>
           </fieldset>
-          <div className="flex gap-2 justify-end pt-1">
-            <button onClick={() => setEditOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
-            <button onClick={submitEdit} disabled={editLoading || !editForm.firstName || !editForm.lastName}
-              className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
-              {editLoading ? "Enregistrement…" : "Enregistrer"}
-            </button>
+          <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end sm:gap-3">
+            <Button type="button" variant="secondary" onClick={() => setEditOpen(false)}>Annuler</Button>
+            <Button type="button" onClick={submitEdit} disabled={editLoading || !editForm.firstName || !editForm.lastName}>
+              {editLoading ? "Enregistrement en cours…" : "Enregistrer les modifications"}
+            </Button>
           </div>
         </div>
       </Modal>
 
       {/* Abandonner */}
       <Modal open={abandonOpen} onClose={() => setAbandonOpen(false)} title="Abandonner la demande">
-        <div className="space-y-4">
-          <p className="text-sm text-ink-muted">
+        <div className="flex flex-col gap-4">
+          <p className="text-[15px] leading-[22px] text-ink-muted">
             Cette demande sera marquée comme abandonnée. Elle pourra être rouverte si nécessaire.
           </p>
-          <fieldset className="space-y-1.5">
-            <legend className="block text-sm font-medium text-ink-muted mb-1">
-              Motif <span className="text-danger">*</span>
-            </legend>
-            {ABANDON_REASON_OPTIONS.map(([value, label]) => (
-              <label key={value} className="flex items-center gap-2 text-sm text-ink-muted cursor-pointer">
-                <input
-                  type="radio"
-                  name="abandonReasonCode"
-                  value={value}
-                  checked={abandonReasonCode === value}
-                  onChange={() => setAbandonReasonCode(value)}
-                  className="accent-brand"
-                />
-                {label}
-              </label>
-            ))}
-          </fieldset>
-          <div>
-            <label htmlFor={`${uid}-abandon-reason`} className="block text-sm font-medium text-ink-muted mb-1">Commentaire (facultatif)</label>
-            <textarea
-              id={`${uid}-abandon-reason`}
-              value={abandonReason}
-              onChange={(e) => setAbandonReason(e.target.value)}
-              rows={3}
-              placeholder="Ex : sans nouvelles après 3 relances…"
-              className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand resize-none"
-            />
+          <RadioGroup
+            legend="Motif"
+            name="abandonReasonCode"
+            value={abandonReasonCode}
+            onChange={setAbandonReasonCode}
+            options={ABANDON_REASON_OPTIONS.map(([value, label]) => ({ value, label }))}
+          />
+          <Textarea
+            id={`${uid}-abandon-reason`}
+            label="Commentaire (facultatif)"
+            value={abandonReason}
+            onChange={(e) => setAbandonReason(e.target.value)}
+            rows={3}
+            placeholder="Ex : sans nouvelles après 3 relances…"
+          />
+          <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end sm:gap-3">
+            <Button type="button" variant="secondary" onClick={() => setAbandonOpen(false)}>Annuler</Button>
+            <Button type="button" onClick={submitAbandon} disabled={abandonLoading || !abandonReasonCode}>
+              {abandonLoading ? "Enregistrement en cours…" : "Abandonner la demande"}
+            </Button>
           </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setAbandonOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
-            <button onClick={submitAbandon} disabled={abandonLoading || !abandonReasonCode}
-              className="px-4 py-2 bg-danger text-on-danger text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
-              {abandonLoading ? "Abandon…" : "Confirmer l'abandon"}
-            </button>
-          </div>
+          {!abandonReasonCode && <p className="text-[13px] text-ink-muted sm:text-right">Choisissez un motif pour abandonner la demande.</p>}
         </div>
       </Modal>
 
@@ -1721,124 +1601,113 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
         onClose={() => setWaitOpen(false)}
         title={waitKind === "MISSION" ? "Transmettre au département mission" : "À recontacter plus tard"}
       >
-        <div className="space-y-4">
-          <p className="text-sm text-ink-muted">
+        <div className="flex flex-col gap-4">
+          <p className="text-[15px] leading-[22px] text-ink-muted">
             {waitKind === "MISSION"
               ? "L'adresse ne correspond à aucune famille d'impact : la décision revient au département mission."
               : `${req.firstName} ${req.lastName} souhaite être recontacté·e plus tard, ou n'a pas pu être joint·e pour l'instant.`}{" "}
             La demande sort de la file à traiter ; une alerte de relance sera émise à l&apos;équipe
             intégration une fois le délai écoulé.
           </p>
-          <div>
-            <label htmlFor={`${uid}-wait-note`} className="block text-sm font-medium text-ink-muted mb-1">Commentaire (facultatif)</label>
-            <textarea
-              id={`${uid}-wait-note`}
-              value={waitNote}
-              onChange={(e) => setWaitNote(e.target.value)}
-              rows={2}
-              maxLength={1000}
-              className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand resize-none"
-            />
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setWaitOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
-            <button onClick={submitWait} disabled={dialogLoading}
-              className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
-              {dialogLoading ? "Enregistrement…" : "Confirmer"}
-            </button>
+          <Textarea
+            id={`${uid}-wait-note`}
+            label="Commentaire (facultatif)"
+            value={waitNote}
+            onChange={(e) => setWaitNote(e.target.value)}
+            rows={2}
+            maxLength={1000}
+          />
+          <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end sm:gap-3">
+            <Button type="button" variant="secondary" onClick={() => setWaitOpen(false)}>Annuler</Button>
+            <Button type="button" onClick={submitWait} disabled={dialogLoading}>
+              {dialogLoading ? "Enregistrement en cours…" : waitKind === "MISSION" ? "Transmettre au département mission" : "Mettre en attente"}
+            </Button>
           </div>
         </div>
       </Modal>
 
       {/* Renvoyer à l'intégration (spec 051, amendement de recette) */}
       <Modal open={handbackOpen} onClose={() => setHandbackOpen(false)} title="Renvoyer à l'équipe intégration">
-        <div className="space-y-4">
-          <p className="text-sm text-ink-muted">
+        <div className="flex flex-col gap-4">
+          <p className="text-[15px] leading-[22px] text-ink-muted">
             Vous ne pouvez pas suivre {req.firstName} {req.lastName} ? La demande vous sera retirée,
             ainsi qu&apos;à votre famille, et redeviendra une demande reçue à traiter par l&apos;équipe
             intégration, qui sera prévenue.
           </p>
-          <div>
-            <label htmlFor={`${uid}-handback-reason`} className="block text-sm font-medium text-ink-muted mb-1">
-              Raison <span className="text-danger">*</span>
-            </label>
-            <textarea
-              id={`${uid}-handback-reason`}
-              value={handbackReason}
-              onChange={(e) => setHandbackReason(e.target.value)}
-              rows={3}
-              maxLength={500}
-              placeholder="Ex : habite hors de notre secteur, plus proche d'une autre famille…"
-              className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand resize-none"
-            />
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setHandbackOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
-            <button onClick={submitHandback} disabled={dialogLoading || !handbackReason.trim()}
-              className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
-              {dialogLoading ? "Envoi…" : "Renvoyer à l'intégration"}
-            </button>
+          <Textarea
+            id={`${uid}-handback-reason`}
+            label="Raison"
+            value={handbackReason}
+            onChange={(e) => setHandbackReason(e.target.value)}
+            rows={3}
+            maxLength={500}
+            placeholder="Ex : habite hors de notre secteur, plus proche d'une autre famille…"
+            hint="Obligatoire : elle est transmise à l'équipe intégration."
+          />
+          <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end sm:gap-3">
+            <Button type="button" variant="secondary" onClick={() => setHandbackOpen(false)}>Annuler</Button>
+            <Button type="button" onClick={submitHandback} disabled={dialogLoading || !handbackReason.trim()}>
+              {dialogLoading ? "Envoi en cours…" : "Renvoyer à l'intégration"}
+            </Button>
           </div>
         </div>
       </Modal>
 
-      {/* J'ai relancé (spec 051) */}
-      <Modal open={relanceOpen} onClose={() => setRelanceOpen(false)} title="J'ai relancé">
-        <div className="space-y-4">
-          <p className="text-sm text-ink-muted">
+      {/* Consigner une relance (spec 051) */}
+      <Modal open={relanceOpen} onClose={() => setRelanceOpen(false)} title="Consigner une relance">
+        <div className="flex flex-col gap-4">
+          <p className="text-[15px] leading-[22px] text-ink-muted">
             {req.status === "WAITING_MISSION"
               ? "Vous avez relancé le département mission."
               : `Vous avez recontacté ${req.firstName} ${req.lastName}.`}{" "}
             La demande reste en attente et le délai avant la prochaine alerte repart de zéro.
           </p>
-          <div>
-            <label htmlFor={`${uid}-relance-note`} className="block text-sm font-medium text-ink-muted mb-1">Commentaire (facultatif)</label>
-            <textarea
-              id={`${uid}-relance-note`}
-              value={relanceNote}
-              onChange={(e) => setRelanceNote(e.target.value)}
-              rows={3}
-              maxLength={1000}
-              placeholder="Ex : message laissé sur répondeur…"
-              className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand resize-none"
-            />
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setRelanceOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
-            <button onClick={submitRelance} disabled={dialogLoading}
-              className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
-              {dialogLoading ? "Enregistrement…" : "Consigner la relance"}
-            </button>
+          <Textarea
+            id={`${uid}-relance-note`}
+            label="Commentaire (facultatif)"
+            value={relanceNote}
+            onChange={(e) => setRelanceNote(e.target.value)}
+            rows={3}
+            maxLength={1000}
+            placeholder="Ex : message laissé sur répondeur…"
+          />
+          <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end sm:gap-3">
+            <Button type="button" variant="secondary" onClick={() => setRelanceOpen(false)}>Annuler</Button>
+            <Button type="button" onClick={submitRelance} disabled={dialogLoading}>
+              {dialogLoading ? "Enregistrement en cours…" : "Consigner la relance"}
+            </Button>
           </div>
         </div>
       </Modal>
 
       {/* Rouvrir (spec 051) */}
       <Modal open={reopenOpen} onClose={() => setReopenOpen(false)} title="Rouvrir la demande">
-        <div className="space-y-4">
-          <p className="text-sm text-ink-muted">Comment reprendre la demande de {req.firstName} {req.lastName} ?</p>
-          <div className="space-y-2">
+        <div className="flex flex-col gap-4">
+          <p className="text-[15px] leading-[22px] text-ink-muted">Comment reprendre la demande de {req.firstName} {req.lastName} ?</p>
+          <div className="flex flex-col gap-2">
             <button
+              type="button"
               onClick={() => submitReopen("resume")}
               disabled={dialogLoading}
-              className="w-full text-left border border-line hover:border-brand rounded-lg px-3 py-2 disabled:opacity-50 transition-colors"
+              className={choiceCardClasses}
             >
-              <span className="block text-sm font-medium text-ink">Reprendre où elle en était</span>
-              <span className="block text-xs text-ink-muted">La demande retrouve l&apos;état qui précédait son abandon.</span>
+              <span className="block text-[15px] font-semibold text-ink">Reprendre où elle en était</span>
+              <span className="block text-[13px] text-ink-muted">La demande retrouve l&apos;état qui précédait son abandon.</span>
             </button>
             <button
+              type="button"
               onClick={() => submitReopen("restart")}
               disabled={dialogLoading}
-              className="w-full text-left border border-line hover:border-brand rounded-lg px-3 py-2 disabled:opacity-50 transition-colors"
+              className={choiceCardClasses}
             >
-              <span className="block text-sm font-medium text-ink">Reprendre de zéro</span>
-              <span className="block text-xs text-ink-muted">
+              <span className="block text-[15px] font-semibold text-ink">Reprendre de zéro</span>
+              <span className="block text-[13px] text-ink-muted">
                 La famille et le berger affectés sont retirés{req.assignedBerger?.name ? ` (${req.assignedBerger.name} en sera informé)` : ""}.
               </span>
             </button>
           </div>
           <div className="flex justify-end">
-            <button onClick={() => setReopenOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
+            <Button type="button" variant="secondary" onClick={() => setReopenOpen(false)}>Annuler</Button>
           </div>
         </div>
       </Modal>
@@ -1846,3 +1715,9 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
     </div>
   );
 }
+
+/** Option à choisir dans un dialogue (titre + explication), au doigt. */
+const choiceCardClasses =
+  "w-full min-h-11 rounded-control border border-control-line bg-surface px-3 py-2 text-left transition-colors " +
+  "hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus " +
+  "disabled:cursor-not-allowed disabled:opacity-45";

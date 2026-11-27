@@ -97,7 +97,7 @@ export default function SettingsTab({ campaign }: { readonly campaign: Campaign 
 
       <MessageTemplatesForm campaign={campaign} />
 
-      <section className="flex flex-col gap-3 rounded-card border border-line bg-surface px-4 py-4">
+      <section className="flex flex-col gap-3">
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Définition de la campagne</h2>
         <p className="text-[15px] leading-[22px] text-ink-muted">
           Questionnaires, questions, destinataires et répondants se mettent à jour en réimportant la définition JSON. Aucune réponse
@@ -147,19 +147,19 @@ function MessageTemplatesForm({ campaign }: { readonly campaign: Campaign }) {
   }
 
   return (
-    <form className="flex flex-col gap-4 rounded-card border border-line bg-surface px-4 py-4" onSubmit={submit} aria-labelledby="templates-title">
+    <form className="flex flex-col gap-4" onSubmit={submit} aria-labelledby="templates-title">
       <div className="flex flex-col gap-1">
         <h2 id="templates-title" className="font-display text-[17px] font-semibold leading-6 text-ink">
           Modèles de messages
         </h2>
         <p className="text-[15px] leading-[22px] text-ink-muted">
-          Textes proposés par « Communication », au format WhatsApp (<code>*gras*</code>, <code>_italique_</code>). Les variables entre
+          Textes proposés par « Préparer un message », au format WhatsApp (<code>*gras*</code>, <code>_italique_</code>). Les variables entre
           accolades sont remplacées par l&apos;état réel de la campagne.
         </p>
       </div>
 
       <details className="rounded-control border border-line px-3 py-2">
-        <summary className="min-h-11 cursor-pointer content-center text-[15px] font-semibold text-ink">Variables disponibles</summary>
+        <summary className="min-h-11 cursor-pointer content-center text-[15px] font-semibold text-ink rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">Variables disponibles</summary>
         <dl className="mt-2 flex flex-col gap-2 pb-1">
           {MESSAGE_PLACEHOLDERS.map((p) => (
             <div key={p.key} className="flex flex-col gap-0.5 sm:flex-row sm:gap-3">
@@ -198,7 +198,7 @@ function MessageTemplatesForm({ campaign }: { readonly campaign: Campaign }) {
       })}
 
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-        <Button type="submit" disabled={busy || !changed || tooLong.length > 0}>
+        <Button type="submit" variant="secondary" disabled={busy || !changed || tooLong.length > 0}>
           {busy ? "Enregistrement…" : "Enregistrer les modèles"}
         </Button>
       </div>

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
+import { Alert, Button, Input, useToast } from "@/components/ui";
 
 interface Settings {
   unassignedDelayDays: number;
@@ -19,12 +18,11 @@ export default function CareSettingsClient({
   const [unassigned, setUnassigned] = useState(String(settings.unassignedDelayDays));
   const [unscheduled, setUnscheduled] = useState(String(settings.unscheduledDelayDays));
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const toast = useToast();
   const [error, setError] = useState<string | null>(null);
 
   async function handleSave() {
     setSaving(true);
-    setMessage(null);
     setError(null);
     try {
       const res = await fetch("/api/care/settings", {
@@ -38,7 +36,7 @@ export default function CareSettingsClient({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error ?? "Erreur lors de l'enregistrement");
-      setMessage("Paramètres enregistrés.");
+      toast.success("Paramètres enregistrés");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur lors de l'enregistrement");
     } finally {
@@ -47,7 +45,7 @@ export default function CareSettingsClient({
   }
 
   return (
-    <div className="bg-surface rounded-xl border border-line p-4 md:p-5 space-y-4">
+    <div className="flex flex-col gap-4">
       <Input
         label="Demande non confiée (jours)"
         type="number"
@@ -64,11 +62,10 @@ export default function CareSettingsClient({
         value={unscheduled}
         onChange={(e) => setUnscheduled(e.target.value)}
       />
-      {message && <p className="text-sm text-success">{message}</p>}
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && <Alert tone="danger">{error}</Alert>}
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={saving}>
-          {saving ? "Enregistrement…" : "Enregistrer"}
+          {saving ? "Enregistrement en cours…" : "Enregistrer les délais"}
         </Button>
       </div>
     </div>

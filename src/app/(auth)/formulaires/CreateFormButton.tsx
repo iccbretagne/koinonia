@@ -51,9 +51,15 @@ export default function CreateFormButton() {
               <span className="text-[15px] text-ink">Sondage anonyme (aucune identité enregistrée, non modifiable ensuite)</span>
             </label>
           )}
-          <Button type="button" disabled={busy || !title.trim()} onClick={submit}>
-            {busy ? "Création…" : "Créer le brouillon"}
-          </Button>
+          {!title.trim() && <p className="text-[13px] text-ink-muted">Indiquez un titre pour créer le brouillon.</p>}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
+              Annuler
+            </Button>
+            <Button type="button" disabled={busy || !title.trim()} onClick={submit}>
+              {busy ? "Création en cours…" : "Créer le brouillon"}
+            </Button>
+          </div>
         </div>
       </Modal>
     </>

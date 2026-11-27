@@ -3,7 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ArrowRight, Trash2 } from "lucide-react";
 import Button from "@/components/ui/Button";
+import { buttonClasses } from "@/components/ui/button-classes";
+import { ghostDangerClasses } from "@/components/ghost-danger";
 import Modal from "@/components/ui/Modal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { useToast } from "@/components/ui/Toast";
@@ -46,9 +49,10 @@ export default function DeleteItemButton({ endpoint, redirectTo, extraMessage, b
 
   return (
     <>
-      <Button size="sm" variant="danger" onClick={() => setOpen(true)}>
-        Supprimer
-      </Button>
+      <button type="button" onClick={() => setOpen(true)} className={ghostDangerClasses}>
+        <Trash2 aria-hidden="true" className="size-4" strokeWidth={1.75} />
+        Supprimer la demande
+      </button>
 
       {blocked ? (
         <Modal open={open} onClose={() => setOpen(false)} title="Suppression impossible" mobileLayout="sheet">
@@ -56,11 +60,12 @@ export default function DeleteItemButton({ endpoint, redirectTo, extraMessage, b
             <p className="text-[15px] leading-[22px] text-ink-muted">
               Cette demande a des éléments liés. Supprimez-les d&apos;abord, puis revenez ici.
             </p>
-            <ul className="space-y-1.5">
+            <ul className="flex flex-col gap-1">
               {blockedBy.map((b) => (
                 <li key={b.href}>
-                  <Link href={b.href} className="text-sm text-brand-text hover:underline">
-                    {b.label} →
+                  <Link href={b.href} className={`${buttonClasses("ghost", "sm")} -ml-3`}>
+                    {b.label}
+                    <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
                   </Link>
                 </li>
               ))}
@@ -77,7 +82,7 @@ export default function DeleteItemButton({ endpoint, redirectTo, extraMessage, b
           open={open}
           title="Supprimer définitivement cette demande ?"
           message={`Les coordonnées, le message, l'historique et les notifications de la demande seront effacés. Cette action est irréversible.${extraSuffix}`}
-          confirmLabel="Supprimer"
+          confirmLabel="Supprimer la demande"
           confirmingLabel="Suppression…"
           confirming={deleting}
           onConfirm={confirmDelete}

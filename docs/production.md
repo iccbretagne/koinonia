@@ -331,7 +331,7 @@ est servi dans la minute, un domaine suspendu ou supprimé cesse de l'être dans
 premier chargement, un hôte étranger reçoit 404.
 
 Cycle d'un domaine : demande par l'organisateur (jeton de preuve) → enregistrements DNS
-`TXT _koinonia.<domaine>` (jeton) et `CNAME <domaine> → SITE_TARGET_HOST` → « Vérifier » →
+`TXT _koinonia.<domaine>` (jeton) et `CNAME <domaine> → SITE_TARGET_HOST` → « Vérifier le DNS » →
 approbation du Super Admin (`/admin/site-domains`). La tâche cron `ticketing-site-domains`
 (quotidienne) refait le contrôle : un échec suspend le domaine et prévient l'organisateur.
 Cinq domaines non suspendus au plus par église.

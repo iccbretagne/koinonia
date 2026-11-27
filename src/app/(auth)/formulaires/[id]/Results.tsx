@@ -1,6 +1,8 @@
 "use client";
 
 import { Bar, BarChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Download } from "lucide-react";
+import { buttonClasses } from "@/components/ui";
 import type { FormResults, QuestionResult } from "@/modules/forms";
 
 const pct = (n: number, d: number) => (d ? Math.round((n / d) * 100) : 0);
@@ -34,7 +36,7 @@ function Question({ q }: { readonly q: QuestionResult }) {
     </div>
   );
   return (
-    <li className="space-y-3 rounded-card border border-line bg-surface p-4">
+    <li className="space-y-3 rounded-card border border-line bg-surface p-4 shadow-card">
       {head}
       {q.answered === 0 ? (
         <p className="text-[14px] text-ink-muted">Pas encore de réponse.</p>
@@ -64,7 +66,7 @@ function Question({ q }: { readonly q: QuestionResult }) {
       ) : q.kind === "texts" ? (
         <ul className="max-h-80 space-y-2 overflow-y-auto">
           {q.texts.map((t, i) => (
-            <li key={i} className="rounded-control bg-surface-sunken px-3 py-2 text-[14px] whitespace-pre-line text-ink">
+            <li key={i} className="rounded-control border border-line px-3 py-2 text-[14px] whitespace-pre-line text-ink">
               {t}
             </li>
           ))}
@@ -87,8 +89,8 @@ export default function Results({ results, anonymous, manage, formId }: { readon
           {anonymous ? " · sondage anonyme : aucune identité" : ""}
         </p>
         {manage && (
-          <a href={`/api/forms/${formId}/export`} className="text-[15px] font-semibold text-brand-text underline">
-            Exporter (.xlsx, avec les résultats)
+          <a href={`/api/forms/${formId}/export`} className={buttonClasses("secondary")}>
+            <Download className="size-4" aria-hidden="true" /> Exporter les réponses (.xlsx, avec les résultats)
           </a>
         )}
       </div>
@@ -100,7 +102,7 @@ export default function Results({ results, anonymous, manage, formId }: { readon
             ["Accompagnants", p.companions],
             ["Ne viennent pas", p.notAttending],
           ].map(([label, value]) => (
-            <div key={label} className="rounded-card border border-line bg-surface p-3">
+            <div key={label}>
               <dt className="text-[13px] text-ink-muted">{label}</dt>
               <dd className="text-2xl font-semibold text-ink">{value}</dd>
             </div>

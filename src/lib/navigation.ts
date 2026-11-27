@@ -587,7 +587,11 @@ export const ACCOUNT_PAGES: readonly { href: string; label: string; icon: Lucide
  */
 export const INSTALL_PAGE = { href: "/installer", label: "Installer l'application", icon: Download } as const;
 
-/** Libellé du dernier segment d'une sous-page que la navigation ne nomme pas. */
+/**
+ * Libellé d'une sous-page que la navigation ne nomme pas, par son dernier segment — ou par ses deux
+ * derniers (`parent/segment`) quand le même segment désigne des pages différentes selon l'espace.
+ * `navigation-subpages.test.ts` vérifie qu'aucune page de `(auth)` ne retombe sur « Détail ».
+ */
 const SUBPAGE_LABELS: Record<string, string> = {
   "star-view": "Planning des STAR",
   calendar: "Calendrier",
@@ -600,17 +604,86 @@ const SUBPAGE_LABELS: Record<string, string> = {
   settings: "Paramètres",
   ecouter: "(re)Écouter",
   production: "Production",
-  events: "Photos",
   projects: "Projets",
   galerie: "Galerie",
   requests: "Demandes",
   notifications: "Notifications",
   functions: "Fonctions",
+  nouvelle: "Nouvelle campagne",
+  import: "Import",
+  editer: "Modification",
+  onboard: "Nouvelle église",
+  badges: "Badges",
+  controle: "Contrôle d'entrée",
+  etiquettes: "Étiquettes",
+  images: "Images du site",
+  restauration: "Restauration",
+  collections: "Partages",
+  assistants: "Assistants connectés",
+  checklists: "Contrôle des mains courantes",
+  entretiens: "Entretiens",
+  "ma-fiche": "Ma fiche",
+  "mes-reservations": "Mes réservations",
+  "mes-reponses": "Mes réponses",
+  slide: "Slide de projection",
+  "media/events": "Photos",
+  "planning/events": "Agenda de l'église",
+  "disponibilites/collectes": "Collectes",
+  "care/request": "Demande de RDV",
+  "requests/new": "Nouvelle demande",
+  "messages/new": "Nouveau message",
+  "users/new": "Nouvel utilisateur",
+  "agenda/new": "Nouvelle entrée",
+  "jobs/new": "Nouvelle offre",
+  "missions/new": "Nouvelle mission",
+  "profiles/new": "Nouveau profil freelance",
+  "seekers/new": "Nouvelle recherche d'emploi",
+  "projects/new": "Nouveau projet",
+  "events/new": "Nouvel événement",
+};
+
+/**
+ * Pages connectées hors des espaces et du menu du compte, ouvertes depuis un lien (bandeau,
+ * notification, assistant IA) : un seul segment de fil d'Ariane, nommé par leur préfixe.
+ */
+const STANDALONE_LABELS: readonly { readonly prefix: string; readonly label: string }[] = [
+  { prefix: "/messages", label: "Message de l'administration" },
+  { prefix: "/mcp/autoriser", label: "Connecter un assistant IA" },
+];
+
+/**
+ * Sous-pages nommées par leur avant-dernier segment : l'objet ouvert depuis une liste
+ * (`…/events/<id>` → « Événement »), ou `…/apercu/<id>`.
+ */
+const ITEM_LABELS: Record<string, string> = {
+  apercu: "Aperçu",
+  agenda: "Profil pastoral",
+  billetterie: "Événement",
+  candidatures: "Candidature",
+  churches: "Église",
+  collectes: "Campagne",
+  ecouter: "Culte",
+  events: "Événement",
+  followups: "Suivi",
+  formulaires: "Formulaire",
+  jobs: "Offre",
+  messages: "Message",
+  missions: "Mission",
+  production: "Culte",
+  profiles: "Profil freelance",
+  projects: "Projet",
+  r: "Contribution",
+  requests: "Demande",
+  roles: "Rôle",
+  seekers: "Recherche d'emploi",
+  users: "Utilisateur",
 };
 
 function subpageLabel(pathname: string): string {
-  const last = pathname.split("/").findLast(Boolean) ?? "";
-  return SUBPAGE_LABELS[last] ?? "Détail";
+  const segments = pathname.split("/").filter(Boolean);
+  const last = segments.at(-1) ?? "";
+  const parent = segments.at(-2) ?? "";
+  return SUBPAGE_LABELS[`${parent}/${last}`] ?? SUBPAGE_LABELS[last] ?? ITEM_LABELS[parent] ?? "Détail";
 }
 
 function findPage(spaces: readonly NavSpace[], active: ActiveNav): { space: NavSpace; page: NavPage | null } | null {
@@ -621,7 +694,8 @@ function findPage(spaces: readonly NavSpace[], active: ActiveNav): { space: NavS
 
 /** Le chemin courant descend-il sous la page de navigation (page de détail) ? */
 function isDeeper(pathname: string, page: NavPage): boolean {
-  if (page.deptId) return false;
+  // Page de département : seule la grille `/dashboard` lui correspond, ses statistiques sont plus bas.
+  if (page.deptId) return pathOf(pathname) !== "/dashboard";
   return !pagePrefixes(page).includes(pathname) && pathname !== pathOf(page.href);
 }
 
@@ -634,7 +708,10 @@ export function buildBreadcrumb(spaces: readonly NavSpace[], pathname: string, d
 
   if (!found) {
     const account = ACCOUNT_PAGES.find((p) => matchesPath(pathname, p.href));
-    if (!account) return [];
+    if (!account) {
+      const standalone = STANDALONE_LABELS.find((p) => matchesPath(pathname, p.prefix));
+      return standalone ? [{ label: standalone.label }] : [];
+    }
     if (pathname === account.href) return [{ label: account.label }];
     return [{ label: account.label, href: account.href }, { label: subpageLabel(pathname) }];
   }
@@ -666,7 +743,7 @@ export function parentLink(spaces: readonly NavSpace[], pathname: string, dept: 
   const found = findPage(spaces, active);
   if (!found) {
     const account = ACCOUNT_PAGES.find((p) => matchesPath(pathname, p.href) && pathname !== p.href);
-    return account ? { href: account.href, label: account.label } : null;
+    return account ? { href: account.href, label: account.label } : fallbackParent(spaces, pathname);
   }
   const { page } = found;
   if (found.space.key === "planning" && matchesPath(pathname, REPLACEMENT_PATH)) {
@@ -674,6 +751,27 @@ export function parentLink(spaces: readonly NavSpace[], pathname: string, dept: 
   }
   if (!page || !isDeeper(pathname, page)) return null;
   return { href: page.href, label: page.label };
+}
+
+/**
+ * Repli du retour mobile pour une page hors des espaces du rôle (lien reçu par notification,
+ * message de l'administration, vue pastorale…) : sans lui, ni fil d'Ariane ni chevron. Remonte au
+ * plus proche ancêtre qui est une page de navigation, sinon à l'accueil. `null` sur une page de
+ * premier niveau connue (accueil, page d'espace).
+ */
+function fallbackParent(spaces: readonly NavSpace[], pathname: string): { href: string; label: string } | null {
+  const path = pathOf(pathname);
+  const navPages = spaces.flatMap((s) => s.pages).filter((p) => !p.external);
+  const home = TODAY_HREF ?? "/accueil";
+  if (path === "/" || path === home || navPages.some((p) => pathOf(p.href) === path)) return null;
+  if (path.startsWith("/pastoral")) return path === "/pastoral" ? null : { href: "/pastoral", label: "Accueil" };
+  const segments = path.split("/").filter(Boolean);
+  for (let i = segments.length - 1; i > 0; i--) {
+    const ancestor = `/${segments.slice(0, i).join("/")}`;
+    const page = navPages.find((p) => pathOf(p.href) === ancestor) ?? ACCOUNT_PAGES.find((p) => p.href === ancestor);
+    if (page) return { href: page.href, label: page.label };
+  }
+  return { href: home, label: "Accueil" };
 }
 
 /* ── Barre du bas ─────────────────────────────────────────────────────────── */

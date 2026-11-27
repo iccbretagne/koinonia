@@ -3,6 +3,7 @@
 import { useState } from "react";
 import WelcomeDutyPoolClient from "./WelcomeDutyPoolClient";
 import WelcomeDutyPlanningClient from "./WelcomeDutyPlanningClient";
+import Tabs, { TabPanel } from "@/components/ui/Tabs";
 
 type Tab = "pool" | "planning";
 
@@ -15,28 +16,21 @@ export default function WelcomeDutyShell({ churchId }: Props) {
 
   return (
     <div>
-      {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-line">
-        {(["planning", "pool"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              tab === t
-                ? "border-brand text-brand-text"
-                : "border-transparent text-ink-muted hover:text-ink-muted"
-            }`}
-          >
-            {t === "planning" ? "Planning" : "Pool de familles"}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        ariaLabel="Service d'accueil"
+        idBase="welcome-duty"
+        value={tab}
+        onChange={setTab}
+        className="mb-6"
+        tabs={[
+          { value: "planning", label: "Planning" },
+          { value: "pool", label: "Pool de familles" },
+        ]}
+      />
 
-      {tab === "planning" ? (
-        <WelcomeDutyPlanningClient churchId={churchId} />
-      ) : (
-        <WelcomeDutyPoolClient />
-      )}
+      <TabPanel idBase="welcome-duty" value={tab}>
+        {tab === "planning" ? <WelcomeDutyPlanningClient churchId={churchId} /> : <WelcomeDutyPoolClient />}
+      </TabPanel>
     </div>
   );
 }

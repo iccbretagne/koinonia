@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Checkbox, CheckboxGroup, Input, Textarea, useToast } from "@/components/ui";
+import { Alert, Button, Checkbox, CheckboxGroup, Input, RadioGroup, Textarea, useToast } from "@/components/ui";
 import SystemMessageBanner from "@/components/SystemMessageBanner";
 import { ROLE_LABELS } from "@/lib/roles";
 import type { AudienceOptions, MessageStatus, SystemMessageView } from "@/modules/messages";
@@ -173,7 +173,7 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
         </Alert>
       )}
 
-      <section className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+      <section className="flex flex-col gap-4">
         <Input label="Titre" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} required />
         <Textarea
           label="Texte"
@@ -197,61 +197,44 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
             placeholder="En savoir plus"
             maxLength={60}
             disabled={!linkUrl}
+            hint={linkUrl ? undefined : "Renseignez d'abord le lien."}
           />
         </div>
       </section>
 
-      <section className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+      <section className="flex flex-col gap-3">
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Sévérité</h2>
-        <div role="radiogroup" aria-label="Sévérité" className="grid gap-2 sm:grid-cols-3">
-          {SEVERITIES.map((s) => (
-            <label
-              key={s}
-              className={`flex cursor-pointer flex-col gap-1 rounded-control border p-3 ${
-                severity === s ? "border-brand bg-brand-soft" : "border-line"
-              } ${locked ? "cursor-not-allowed opacity-60" : ""}`}
-            >
-              <span className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name={`${id}-severity`}
-                  checked={severity === s}
-                  disabled={locked}
-                  onChange={() => setSeverity(s)}
-                />
-                <span className="text-[15px] font-semibold text-ink">{SEVERITY_LABEL[s]}</span>
-              </span>
-              <span className="text-[13px] leading-[18px] text-ink-muted">{SEVERITY_HINT[s]}</span>
-            </label>
-          ))}
-        </div>
+        <RadioGroup
+          legend="Sévérité"
+          hideLegend
+          name={`${id}-severity`}
+          value={severity}
+          disabled={locked}
+          onChange={setSeverity}
+          options={SEVERITIES.map((s) => ({ value: s, label: SEVERITY_LABEL[s], description: SEVERITY_HINT[s] }))}
+        />
       </section>
 
-      <section className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+      <section className="flex flex-col gap-4">
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Public</h2>
         {isSuperAdmin && !editing && (
-          <label className="flex items-center gap-2 text-[15px] text-ink">
+          <label className="flex min-h-11 items-center gap-2 text-[15px] text-ink">
             <Checkbox checked={instance} onChange={(e) => setInstance(e.target.checked)} />
             Toute l&apos;instance (toutes les églises)
           </label>
         )}
-        <div role="radiogroup" aria-label="Public" className="flex flex-wrap gap-4">
-          {[
-            { value: false, label: instance ? "Tout le monde" : "Toute l'église" },
-            { value: true, label: "Choisir" },
-          ].map((o) => (
-            <label key={String(o.value)} className="flex items-center gap-2 text-[15px] text-ink">
-              <input
-                type="radio"
-                name={`${id}-audience`}
-                checked={choose === o.value}
-                disabled={locked}
-                onChange={() => setChoose(o.value)}
-              />
-              {o.label}
-            </label>
-          ))}
-        </div>
+        <RadioGroup
+          legend="Public"
+          hideLegend
+          name={`${id}-audience`}
+          value={choose ? "choose" : "all"}
+          disabled={locked}
+          onChange={(v) => setChoose(v === "choose")}
+          options={[
+            { value: "all", label: instance ? "Tout le monde" : "Toute l'église" },
+            { value: "choose", label: "Choisir" },
+          ]}
+        />
 
         {choose && (
           <div className="flex flex-col gap-4">
@@ -307,18 +290,21 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
         )}
       </section>
 
-      <section className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+      <section className="flex flex-col gap-4">
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Période</h2>
         {!locked && (
           <div className="flex flex-col gap-2">
-            <label className="flex items-center gap-2 text-[15px] text-ink">
-              <input type="radio" name={`${id}-start`} checked={startNow} onChange={() => setStartNow(true)} />
-              <span>Publier maintenant</span>
-            </label>
-            <label className="flex items-center gap-2 text-[15px] text-ink">
-              <input type="radio" name={`${id}-start`} checked={!startNow} onChange={() => setStartNow(false)} />
-              <span>Programmer</span>
-            </label>
+            <RadioGroup
+              legend="Début"
+              hideLegend
+              name={`${id}-start`}
+              value={startNow ? "now" : "later"}
+              onChange={(v) => setStartNow(v === "now")}
+              options={[
+                { value: "now", label: "Publier maintenant" },
+                { value: "later", label: "Programmer" },
+              ]}
+            />
             {!startNow && (
               <Input
                 label="Début"
@@ -334,7 +320,7 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
 
       {title && (
         <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium text-ink">Aperçu du bandeau</h2>
+          <h2 className="font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-subtle">Aperçu du bandeau</h2>
           <SystemMessageBanner preview messages={[{ id: "preview", title, body: body || "…", severity }]} />
         </section>
       )}
@@ -342,7 +328,11 @@ export default function MessageForm({ churchId, isSuperAdmin, options, message }
       {error && <Alert tone="danger">{error}</Alert>}
 
       <div className="flex flex-wrap gap-2">
-        <Button onClick={submit} disabled={busy || !title.trim() || !body.trim()}>
+        <Button
+          onClick={submit}
+          disabled={busy || !title.trim() || !body.trim()}
+          title={!title.trim() || !body.trim() ? "Renseignez le titre et le texte" : undefined}
+        >
           {busy ? "Enregistrement…" : submitLabel(editing, startNow).button}
         </Button>
         <Button variant="ghost" onClick={() => router.push("/admin/messages")} disabled={busy}>

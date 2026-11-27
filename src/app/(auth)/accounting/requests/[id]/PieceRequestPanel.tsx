@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Modal, Textarea, useToast } from "@/components/ui";
+import FileInput from "@/components/ui/FileInput";
 
 type DateLike = string | Date;
 
@@ -78,7 +79,7 @@ export default function PieceRequestPanel({
   const relances = count - 1;
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       {requested && requestedAt && (
         <Alert
           tone="warning"
@@ -89,20 +90,17 @@ export default function PieceRequestPanel({
       )}
 
       {requested && isOwn && (
-        <div className="space-y-2 rounded-xl border border-line bg-surface p-4">
-          <label className="block text-sm font-medium text-ink" htmlFor="piece-files">
-            Déposer les pièces demandées (JPEG, PNG ou PDF, 5 Mo chacune)
-          </label>
-          <input
+        <div className="flex flex-col gap-2">
+          <FileInput
             id="piece-files"
-            type="file"
+            label="Déposer les pièces demandées (JPEG, PNG ou PDF, 5 Mo chacune)"
             multiple
             accept="image/jpeg,image/png,application/pdf"
-            onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-            className="block w-full text-sm text-ink"
+            onFiles={setFiles}
           />
-          <Button size="sm" disabled={busy || files.length === 0} onClick={send}>
-            {busy ? "Envoi…" : "Envoyer"}
+          {files.length === 0 && <p className="text-[13px] leading-[18px] text-ink-muted">Choisissez au moins un fichier pour l&apos;envoyer.</p>}
+          <Button size="sm" className="self-start" disabled={busy || files.length === 0} onClick={send}>
+            {busy ? "Envoi…" : "Envoyer les pièces"}
           </Button>
         </div>
       )}
@@ -111,10 +109,10 @@ export default function PieceRequestPanel({
         <div className="flex flex-wrap items-center gap-2">
           {submitterActive ? (
             <Button size="sm" variant="secondary" disabled={busy} onClick={() => setOpen(true)}>
-              {requested ? "Relancer" : "Demander une pièce"}
+              {requested ? "Relancer le demandeur" : "Demander une pièce"}
             </Button>
           ) : (
-            <p className="text-sm text-ink-muted">Le demandeur n&apos;a plus de compte dans l&apos;église : impossible de lui demander une pièce.</p>
+            <p className="text-[15px] leading-[22px] text-ink-muted">Le demandeur n&apos;a plus de compte dans l&apos;église : impossible de lui demander une pièce.</p>
           )}
           {requested && (
             <Button
@@ -123,14 +121,14 @@ export default function PieceRequestPanel({
               disabled={busy}
               onClick={() => run(() => patch({ action: "cancelPieceRequest" }), "Demande de pièce annulée")}
             >
-              Annuler la demande
+              Annuler la demande de pièce
             </Button>
           )}
         </div>
       )}
 
       <Modal open={open} onClose={() => setOpen(false)} title={requested ? "Relancer la demande de pièce" : "Demander une pièce"}>
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           <Textarea
             label="Message (facultatif)"
             rows={3}
@@ -139,8 +137,8 @@ export default function PieceRequestPanel({
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Merci de joindre la facture du magasin"
           />
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setOpen(false)}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="secondary" onClick={() => setOpen(false)}>
               Annuler
             </Button>
             <Button
@@ -156,7 +154,7 @@ export default function PieceRequestPanel({
                 }
               }}
             >
-              Envoyer
+              {busy ? "Envoi…" : requested ? "Envoyer la relance" : "Demander la pièce"}
             </Button>
           </div>
         </div>

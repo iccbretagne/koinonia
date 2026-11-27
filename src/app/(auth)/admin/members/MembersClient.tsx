@@ -2,11 +2,8 @@
 
 import { SubmitEvent, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
-import Select from "@/components/ui/Select";
-import Modal from "@/components/ui/Modal";
-import BulkActionBar from "@/components/ui/BulkActionBar";
+import { Alert, BulkActionBar, Button, Checkbox, ConfirmModal, EmptyState, Input, Modal, SearchInput, Select, StatusChip, useToast } from "@/components/ui";
+import { useConfirm } from "../use-confirm";
 
 type UserResult = { id: string; name: string | null; email: string; displayName: string | null; image: string | null };
 
@@ -90,6 +87,11 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
   const [bulkDepartmentId, setBulkDepartmentId] = useState("");
   const [bulkError, setBulkError] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
+  /** Suppression à confirmer : une fiche ou la sélection. */
+  const [pendingDelete, setPendingDelete] = useState<Member | "selection" | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDialog, ask] = useConfirm();
+  const toast = useToast();
 
   // Link user modal
   const [linkModal, setLinkModal] = useState<Member | null>(null);
@@ -436,7 +438,15 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
   }
 
   async function handleUnlink(m: Member) {
-    if (!confirm(`Délier le compte de ${m.firstName} ${m.lastName} ?`)) return;
+    if (
+      !(await ask({
+        title: `Délier le compte de ${m.firstName} ${m.lastName} ?`,
+        message: "Le compte n'est plus rattaché à cette fiche STAR ; la fiche est conservée.",
+        confirmLabel: "Délier le compte",
+      }))
+    ) {
+      return;
+    }
     try {
       const res = await fetch("/api/member-user-links", {
         method: "DELETE",
@@ -445,32 +455,37 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
       });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Erreur lors de la déliaison");
+        toast.error(data.error || "Erreur lors de la déliaison");
         return;
       }
       setMembers((prev) => prev.map((x) => x.id === m.id ? { ...x, userLink: null } : x));
+      toast.success("Compte délié");
     } catch {
-      alert("Erreur lors de la déliaison");
+      toast.error("Erreur lors de la déliaison");
     }
   }
 
   async function handleDelete(m: Member) {
-    if (!confirm(`Supprimer ${m.firstName} ${m.lastName} ?`)) return;
+    setDeleting(true);
     try {
       const res = await fetch(`/api/members/${m.id}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Erreur lors de la suppression");
+        toast.error(data.error || "Erreur lors de la suppression");
         return;
       }
       setMembers((prev) => prev.filter((x) => x.id !== m.id));
+      setPendingDelete(null);
+      toast.success("Fiche STAR supprimée");
     } catch {
-      alert("Erreur lors de la suppression");
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setDeleting(false);
     }
   }
 
   async function handleBulkDelete() {
-    if (!confirm(`Supprimer ${selectedIds.size} STAR ?`)) return;
+    setDeleting(true);
     try {
       const res = await fetch("/api/members", {
         method: "PATCH",
@@ -479,13 +494,17 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
       });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Erreur lors de la suppression");
+        toast.error(data.error || "Erreur lors de la suppression");
         return;
       }
       setMembers((prev) => prev.filter((m) => !selectedIds.has(m.id)));
+      toast.success(selectedIds.size > 1 ? "Fiches STAR supprimées" : "Fiche STAR supprimée");
       setSelectedIds(new Set());
+      setPendingDelete(null);
     } catch {
-      alert("Erreur lors de la suppression");
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -591,24 +610,24 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
     <>
       {/* Toolbar */}
       <div className="mb-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-        {!readOnly && <Button onClick={openCreate}>Nouveau STAR</Button>}
+        {!readOnly && <Button onClick={openCreate}>Créer un STAR</Button>}
         {!readOnly && scoped && (
           <Button variant="secondary" onClick={openAddExisting}>
             Ajouter un STAR existant
           </Button>
         )}
         <div className="flex-1 min-w-0">
-          <input
-            type="search"
+          <SearchInput
+            aria-label="Rechercher un STAR"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher un STAR..."
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-brand"
+            placeholder="Rechercher un STAR…"
           />
         </div>
         <div className="w-full sm:w-64">
           <Select
-            label=""
+            label="Filtrer par département"
+            hideLabel
             value={filterDept}
             onChange={(e) => setFilterDept(e.target.value)}
             placeholder="Tous les départements"
@@ -619,12 +638,9 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
           />
         </div>
         {(search || filterDept) && (
-          <button
-            onClick={() => { setSearch(""); setFilterDept(""); }}
-            className="text-sm text-ink-subtle hover:text-ink-muted whitespace-nowrap"
-          >
-            Réinitialiser
-          </button>
+          <Button type="button" variant="ghost" onClick={() => { setSearch(""); setFilterDept(""); }}>
+            Réinitialiser les filtres
+          </Button>
         )}
       </div>
 
@@ -635,20 +651,18 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
           {(search || filterDept) && ` sur ${members.length}`}
         </p>
         {!readOnly && filtered.length > 0 && (
-          <button
-            onClick={toggleSelectAll}
-            className="text-sm text-brand-text hover:underline"
-          >
+          <Button type="button" variant="ghost" size="sm" onClick={toggleSelectAll}>
             {selectedIds.size === filtered.length ? "Tout désélectionner" : "Tout sélectionner"}
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Cards grid */}
       {filtered.length === 0 ? (
-        <div className="p-8 text-center text-ink-subtle border border-line border-dashed rounded-lg">
-          Aucun STAR.
-        </div>
+        <EmptyState
+          title={search || filterDept ? "Aucun STAR ne correspond" : "Aucun STAR"}
+          description={search || filterDept ? "Modifiez la recherche ou le filtre." : undefined}
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((m) => {
@@ -657,18 +671,18 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             return (
               <div
                 key={m.id}
-                className={`bg-surface rounded-xl border-2 p-4 flex flex-col gap-3 transition-colors ${
+                className={`flex flex-col gap-3 rounded-card border-2 bg-surface p-4 transition-colors ${
                   isSelected ? "border-brand bg-brand-soft" : "border-line hover:border-control-line"
                 }`}
               >
                 {/* Header: checkbox + name */}
                 <div className="flex items-start gap-3">
                   {!readOnly && (
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={isSelected}
                       onChange={() => toggleSelect(m.id)}
-                      className="mt-0.5 rounded border-control-line text-brand-text focus:ring-focus shrink-0"
+                      aria-label={`Sélectionner ${m.firstName} ${m.lastName}`}
+                      className="mt-0.5"
                     />
                   )}
                   <div className="flex-1 min-w-0">
@@ -676,11 +690,11 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                       {m.lastName} {m.firstName}
                     </p>
                     {m.userLink ? (
-                      <p className="text-xs text-success truncate mt-0.5">
-                        {m.userLink.userName ?? m.userLink.userEmail}
+                      <p className="mt-0.5 truncate text-[13px] leading-[18px] text-ink-muted">
+                        Compte lié : {m.userLink.userName ?? m.userLink.userEmail}
                       </p>
                     ) : (
-                      <p className="text-xs text-ink-subtle mt-0.5">Non lié</p>
+                      <p className="mt-0.5 text-[13px] leading-[18px] text-ink-muted">Aucun compte lié</p>
                     )}
                   </div>
                 </div>
@@ -688,24 +702,21 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                 {/* Departments */}
                 <div className="flex flex-wrap gap-1.5">
                   {(m.observationDeptIds ?? []).length > 0 && (
-                    <span className="text-xs bg-warning-soft text-warning px-2 py-0.5 rounded-full font-medium">
+                    <StatusChip tone="warning">
                       En observation
                       {(() => {
                         const names = m.allDepartments.filter((d) => m.observationDeptIds!.includes(d.id)).map((d) => d.name);
                         return names.length > 0 ? ` · ${names.join(", ")}` : "";
                       })()}
-                    </span>
+                    </StatusChip>
                   )}
                   {m.primaryDepartment && (
-                    <span className="text-xs bg-brand-soft text-brand-text px-2 py-0.5 rounded-full font-medium">
-                      {m.primaryDepartment.name}
-                      <span className="text-brand-text ml-1">{m.primaryDepartment.ministry.name}</span>
-                    </span>
+                    <StatusChip tone="brand">
+                      {m.primaryDepartment.name} · {m.primaryDepartment.ministry.name}
+                    </StatusChip>
                   )}
                   {secondaryDepts.map((d) => (
-                    <span key={d.id} className="text-xs bg-surface-sunken text-ink-muted px-2 py-0.5 rounded-full">
-                      {d.name}
-                    </span>
+                    <StatusChip key={d.id}>{d.name}</StatusChip>
                   ))}
                 </div>
 
@@ -714,8 +725,8 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                   <div className="flex gap-2 flex-wrap pt-1 border-t border-line">
                     {canLink && (
                       m.userLink ? (
-                        <Button variant="secondary" size="sm" onClick={() => handleUnlink(m)}>
-                          Délier
+                        <Button variant="ghost" size="sm" onClick={() => handleUnlink(m)}>
+                          Délier le compte
                         </Button>
                       ) : (
                         <Button
@@ -723,7 +734,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                           size="sm"
                           onClick={() => { setLinkModal(m); setUserQuery(""); setSelectedUser(null); setUserResults([]); setLinkError(null); }}
                         >
-                          Lier
+                          Lier un compte
                         </Button>
                       )
                     )}
@@ -735,14 +746,14 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                         {m.allDepartments.length > 1 &&
                           m.allDepartments.some((d) => manageableIds.has(d.id)) && (
                             <Button
-                              variant="secondary"
+                              variant="ghost"
                               size="sm"
                               onClick={() => { setRemoveError(null); setRemoveModal(m); }}
                             >
-                              Retirer
+                              Retirer d&apos;un département
                             </Button>
                           )}
-                        <Button variant="danger" size="sm" onClick={() => handleDelete(m)}>
+                        <Button variant="ghost" size="sm" onClick={() => setPendingDelete(m)}>
                           Supprimer
                         </Button>
                       </>
@@ -758,7 +769,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
       <BulkActionBar
         count={selectedIds.size}
         onEdit={openBulkEdit}
-        onDelete={handleBulkDelete}
+        onDelete={() => setPendingDelete("selection")}
         onClear={() => setSelectedIds(new Set())}
       />
 
@@ -766,7 +777,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editing ? "Modifier le STAR" : "Nouveau STAR"}
+        title={editing ? "Modifier le STAR" : "Créer un STAR"}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
@@ -786,7 +797,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Fortement recommandé — fiabilise le rattachement du compte"
+            hint="Fortement recommandé : fiabilise le rattachement du compte."
           />
           <Select
             label="Département principal"
@@ -801,41 +812,37 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
               label: `${d.name} (${d.ministryName})`,
             }))}
           />
-          <div>
-            <p className="text-sm font-medium text-ink-muted mb-2">Départements supplémentaires</p>
-            <div className="space-y-1 max-h-40 overflow-y-auto border border-line rounded-lg p-2">
+          <fieldset className="min-w-0">
+            <legend className="mb-2 text-sm font-semibold text-ink">Départements supplémentaires</legend>
+            <div className="max-h-48 overflow-y-auto rounded-control border border-line p-1">
               {departments
                 .filter((d) => d.id !== departmentId)
                 .map((d) => (
-                  <label key={d.id} className="flex items-center gap-2 cursor-pointer hover:bg-surface-sunken rounded px-1 py-0.5">
-                    <input
-                      type="checkbox"
+                  <label key={d.id} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-control px-2 hover:bg-surface-sunken">
+                    <Checkbox
                       checked={additionalDeptIds.includes(d.id)}
                       onChange={() => toggleAdditionalDept(d.id)}
-                      className="rounded border-control-line text-brand-text focus:ring-focus"
                     />
-                    <span className="text-sm text-ink-muted">
-                      {d.name} <span className="text-ink-subtle text-xs">({d.ministryName})</span>
+                    <span className="text-[15px] leading-[22px] text-ink">
+                      {d.name} <span className="text-[13px] text-ink-muted">({d.ministryName})</span>
                     </span>
                   </label>
                 ))}
             </div>
-          </div>
+          </fieldset>
           {duplicateCandidates && duplicateCandidates.length > 0 && (
-            <div className="rounded-lg border border-accent bg-accent-soft p-3 space-y-2">
-              <p className="text-sm font-medium text-ink">
-                Ces fiches existent déjà dans l&apos;église — rattacher ou créer quand même ?
-              </p>
-              <ul className="space-y-1">
+            <Alert tone="warning" title="Ces fiches existent déjà dans l'église — rattacher ou créer quand même ?">
+              <ul className="mt-1 flex flex-col gap-1">
                 {duplicateCandidates.map((d) => (
                   <li key={d.id} className="text-sm text-ink-muted flex items-center justify-between gap-2">
                     <span>
                       {d.lastName} {d.firstName}
-                      {d.email && <span className="text-ink-subtle ml-1 text-xs">{d.email}</span>}
+                      {d.email && <span className="ml-1 text-[13px] text-ink-muted">{d.email}</span>}
                     </span>
-                    <button
+                    <Button
                       type="button"
-                      className="text-xs text-brand-text hover:underline whitespace-nowrap"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => {
                         setModalOpen(false);
                         setDuplicateCandidates(null);
@@ -843,7 +850,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                       }}
                     >
                       Voir la fiche
-                    </button>
+                    </Button>
                   </li>
                 ))}
               </ul>
@@ -856,15 +863,15 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
               >
                 Créer quand même
               </Button>
-            </div>
+            </Alert>
           )}
-          {error && <p className="text-sm text-danger">{error}</p>}
+          {error && <Alert tone="danger">{error}</Alert>}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" type="button" onClick={() => setModalOpen(false)}>
               Annuler
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Enregistrement..." : "Enregistrer"}
+              {loading ? "Enregistrement…" : "Enregistrer"}
             </Button>
           </div>
         </form>
@@ -885,20 +892,20 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
               label="Rechercher un utilisateur"
               value={userQuery}
               onChange={(e) => { setUserQuery(e.target.value); setSelectedUser(null); }}
-              placeholder="Nom ou email..."
+              placeholder="Nom ou email…"
             />
-            {userSearching && <p className="text-xs text-ink-subtle mt-1">Recherche...</p>}
+            {userSearching && <p className="mt-1 text-[13px] text-ink-muted">Recherche…</p>}
             {userResults.length > 0 && !selectedUser && (
-              <ul className="mt-1 border border-line rounded-lg overflow-hidden">
+              <ul className="mt-1 overflow-hidden rounded-control border border-line">
                 {userResults.map((u) => (
                   <li key={u.id}>
                     <button
                       type="button"
                       onClick={() => { setSelectedUser(u); setUserQuery(u.displayName ?? u.name ?? u.email); setUserResults([]); }}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-brand-soft transition-colors"
+                      className="min-h-11 w-full px-3 py-2 text-left text-[15px] text-ink transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
                     >
-                      <span className="font-medium">{u.displayName ?? u.name ?? u.email}</span>
-                      {(u.displayName ?? u.name) && <span className="text-ink-subtle ml-1 text-xs">{u.email}</span>}
+                      <span className="font-semibold">{u.displayName ?? u.name ?? u.email}</span>
+                      {(u.displayName ?? u.name) && <span className="ml-1 text-[13px] text-ink-muted">{u.email}</span>}
                     </button>
                   </li>
                 ))}
@@ -906,20 +913,24 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             )}
             {userQuery.length >= 2 && !userSearching && userResults.length === 0 && !selectedUser && (
               canLinkByEmail ? (
-                <p className="text-xs text-ink-muted mt-1">
+                <p className="mt-1 text-[13px] text-ink-muted">
                   Aucun compte n&apos;existe avec cette adresse. Un compte sera créé et rattaché à
                   ce STAR dès sa première connexion.
                 </p>
               ) : (
-                <p className="text-xs text-ink-subtle mt-1">Aucun utilisateur trouvé (déjà liés exclus)</p>
+                <p className="mt-1 text-[13px] text-ink-muted">Aucun utilisateur trouvé (comptes déjà liés exclus).</p>
               )
             )}
           </div>
-          {linkError && <p className="text-sm text-danger">{linkError}</p>}
+          {linkError && <Alert tone="danger">{linkError}</Alert>}
           <div className="flex gap-3 justify-end">
             <Button variant="secondary" onClick={() => setLinkModal(null)}>Annuler</Button>
-            <Button onClick={handleLink} disabled={(!selectedUser && !canLinkByEmail) || linkLoading}>
-              {linkLoading ? "En cours..." : "Lier"}
+            <Button
+              onClick={handleLink}
+              disabled={(!selectedUser && !canLinkByEmail) || linkLoading}
+              title={!selectedUser && !canLinkByEmail ? "Choisissez d'abord un compte dans la liste" : undefined}
+            >
+              {linkLoading ? "Liaison…" : "Lier le compte"}
             </Button>
           </div>
         </div>
@@ -940,13 +951,13 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             {(removeModal?.allDepartments ?? [])
               .filter((d) => manageableIds.has(d.id))
               .map((d) => (
-                <li key={d.id} className="flex items-center justify-between gap-3 border border-line rounded-lg px-3 py-2">
-                  <span className="text-sm text-ink-muted">
+                <li key={d.id} className="flex items-center justify-between gap-3 rounded-control border border-line px-3 py-2">
+                  <span className="inline-flex flex-wrap items-center gap-2 text-[15px] text-ink">
                     {d.name}
-                    {d.isPrimary && <span className="text-xs text-brand-text ml-1">principal</span>}
+                    {d.isPrimary && <StatusChip tone="brand">Principal</StatusChip>}
                   </span>
                   <Button
-                    variant="danger"
+                    variant="secondary"
                     size="sm"
                     disabled={removeLoading !== null}
                     onClick={() => removeModal && handleRemoveDept(removeModal, d.id)}
@@ -956,7 +967,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                 </li>
               ))}
           </ul>
-          {removeError && <p className="text-sm text-danger">{removeError}</p>}
+          {removeError && <Alert tone="danger">{removeError}</Alert>}
           <div className="flex justify-end">
             <Button variant="secondary" onClick={() => setRemoveModal(null)}>Fermer</Button>
           </div>
@@ -975,21 +986,21 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
               label="Rechercher un STAR"
               value={lookupQuery}
               onChange={(e) => { setLookupQuery(e.target.value); setLookupSelected(null); }}
-              placeholder="Nom ou prénom..."
+              placeholder="Nom ou prénom…"
             />
-            {lookupSearching && <p className="text-xs text-ink-subtle mt-1">Recherche...</p>}
+            {lookupSearching && <p className="mt-1 text-[13px] text-ink-muted">Recherche…</p>}
             {lookupResults.length > 0 && !lookupSelected && (
-              <ul className="mt-1 border border-line rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+              <ul className="mt-1 max-h-48 overflow-hidden overflow-y-auto rounded-control border border-line">
                 {lookupResults.map((r) => (
                   <li key={r.id}>
                     <button
                       type="button"
                       onClick={() => { setLookupSelected(r); setLookupResults([]); }}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-brand-soft transition-colors"
+                      className="min-h-11 w-full px-3 py-2 text-left text-[15px] text-ink transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
                     >
-                      <span className="font-medium">{r.lastName} {r.firstName}</span>
+                      <span className="font-semibold">{r.lastName} {r.firstName}</span>
                       {r.departmentNames.length > 0 && (
-                        <span className="text-ink-subtle ml-1 text-xs">{r.departmentNames.join(", ")}</span>
+                        <span className="ml-1 text-[13px] text-ink-muted">{r.departmentNames.join(", ")}</span>
                       )}
                     </button>
                   </li>
@@ -997,11 +1008,11 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
               </ul>
             )}
             {lookupQuery.trim().length >= 2 && !lookupSearching && lookupResults.length === 0 && !lookupSelected && (
-              <p className="text-xs text-ink-subtle mt-1">Aucun STAR trouvé.</p>
+              <p className="mt-1 text-[13px] text-ink-muted">Aucun STAR trouvé.</p>
             )}
             {lookupSelected && (
               <p className="text-sm text-ink-muted mt-2">
-                Sélectionné : <span className="font-medium">{lookupSelected.lastName} {lookupSelected.firstName}</span>
+                Sélectionné : <span className="font-semibold text-ink">{lookupSelected.lastName} {lookupSelected.firstName}</span>
               </p>
             )}
           </div>
@@ -1012,18 +1023,16 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             options={departments.map((d) => ({ value: d.id, label: `${d.name} (${d.ministryName})` }))}
           />
           {lookupSelected?.departmentIds.includes(addDeptId) && (
-            <p className="text-sm text-warning bg-warning-soft border border-warning/30 rounded-lg px-3 py-2">
-              Ce STAR appartient déjà à ce département.
-            </p>
+            <Alert tone="warning">Ce STAR appartient déjà à ce département.</Alert>
           )}
-          {addError && <p className="text-sm text-danger">{addError}</p>}
+          {addError && <Alert tone="danger">{addError}</Alert>}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setAddOpen(false)}>Annuler</Button>
             <Button
               onClick={handleAddExisting}
               disabled={!lookupSelected || !addDeptId || addLoading || lookupSelected.departmentIds.includes(addDeptId)}
             >
-              {addLoading ? "Rattachement…" : "Rattacher"}
+              {addLoading ? "Rattachement…" : "Rattacher le STAR"}
             </Button>
           </div>
         </div>
@@ -1033,7 +1042,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
       <Modal
         open={bulkModalOpen}
         onClose={() => setBulkModalOpen(false)}
-        title={`Modifier ${selectedIds.size} STAR`}
+        title={selectedIds.size > 1 ? `Modifier ${selectedIds.size} STAR` : "Modifier 1 STAR"}
       >
         <p className="text-sm text-ink-muted mb-4">
           Seuls les champs remplis seront modifiés.
@@ -1061,17 +1070,38 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
               label: `${d.name} (${d.ministryName})`,
             }))}
           />
-          {bulkError && <p className="text-sm text-danger">{bulkError}</p>}
+          {bulkError && <Alert tone="danger">{bulkError}</Alert>}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" type="button" onClick={() => setBulkModalOpen(false)}>
               Annuler
             </Button>
             <Button type="submit" disabled={bulkLoading}>
-              {bulkLoading ? "Enregistrement..." : "Appliquer"}
+              {bulkLoading ? "Enregistrement…" : "Appliquer"}
             </Button>
           </div>
         </form>
       </Modal>
+
+      <ConfirmModal
+        open={pendingDelete !== null}
+        title={
+          pendingDelete === "selection"
+            ? selectedIds.size > 1
+              ? `Supprimer ${selectedIds.size} fiches STAR ?`
+              : "Supprimer 1 fiche STAR ?"
+            : `Supprimer la fiche de ${pendingDelete?.firstName ?? ""} ${pendingDelete?.lastName ?? ""} ?`
+        }
+        message="La fiche et ses affectations sont supprimées définitivement."
+        confirmLabel={pendingDelete === "selection" && selectedIds.size > 1 ? "Supprimer les fiches" : "Supprimer la fiche"}
+        confirmingLabel="Suppression…"
+        confirming={deleting}
+        onConfirm={() => {
+          if (pendingDelete === "selection") void handleBulkDelete();
+          else if (pendingDelete) void handleDelete(pendingDelete);
+        }}
+        onCancel={() => setPendingDelete(null)}
+      />
+      {confirmDialog}
     </>
   );
 }

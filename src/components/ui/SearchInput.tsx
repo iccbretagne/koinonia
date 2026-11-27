@@ -13,7 +13,7 @@ export default function SearchInput({ className = "", ...props }: Readonly<Searc
       <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-subtle" />
       <input
         type="search"
-        className="block min-h-11 w-full rounded-control border border-control-line bg-surface py-2 pl-9 pr-3 text-[15px] text-ink placeholder:text-ink-subtle focus:border-brand focus:outline-none"
+        className="block min-h-11 w-full rounded-control border border-control-line bg-surface py-2 pl-9 pr-3 text-base leading-6 text-ink placeholder:text-ink-subtle focus:border-focus focus:outline-none focus:ring-1 focus:ring-focus"
         {...props}
       />
     </div>

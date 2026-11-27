@@ -2,9 +2,7 @@
 
 import { SubmitEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
-import Select from "@/components/ui/Select";
+import { Alert, Button, FilterChip, Input, Select } from "@/components/ui";
 
 interface Member {
   id: string;
@@ -84,7 +82,7 @@ export default function CreateUserClient({ churchId, availableMembers, departmen
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-lg space-y-6 bg-surface rounded-lg shadow-card p-5">
+    <form onSubmit={handleSubmit} className="flex max-w-lg flex-col gap-6">
       <Input
         label="Adresse e-mail Google attendue"
         type="email"
@@ -94,23 +92,13 @@ export default function CreateUserClient({ churchId, availableMembers, departmen
         required
       />
 
-      <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          variant={mode === "existing" ? "primary" : "secondary"}
-          size="sm"
-          onClick={() => setMode("existing")}
-        >
+      <div role="group" aria-label="Fiche STAR du compte" className="flex flex-wrap gap-2">
+        <FilterChip pressed={mode === "existing"} onClick={() => setMode("existing")}>
           Lier une fiche STAR existante
-        </Button>
-        <Button
-          type="button"
-          variant={mode === "new" ? "primary" : "secondary"}
-          size="sm"
-          onClick={() => setMode("new")}
-        >
+        </FilterChip>
+        <FilterChip pressed={mode === "new"} onClick={() => setMode("new")}>
           Créer une nouvelle fiche STAR
-        </Button>
+        </FilterChip>
       </div>
 
       {mode === "existing" ? (
@@ -118,15 +106,15 @@ export default function CreateUserClient({ churchId, availableMembers, departmen
           label="Fiche STAR"
           value={memberId}
           onChange={(e) => setMemberId(e.target.value)}
-          placeholder="— Choisir —"
+          placeholder="Choisir une fiche"
           options={availableMembers.map((m) => ({
             value: m.id,
             label: `${m.firstName} ${m.lastName}`,
           }))}
         />
       ) : (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input
               label="Prénom"
               value={firstName}
@@ -141,7 +129,7 @@ export default function CreateUserClient({ churchId, availableMembers, departmen
             />
           </div>
           <Input
-            label="Téléphone (optionnel)"
+            label="Téléphone (facultatif)"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           />
@@ -149,7 +137,7 @@ export default function CreateUserClient({ churchId, availableMembers, departmen
             label="Département"
             value={departmentId}
             onChange={(e) => setDepartmentId(e.target.value)}
-            placeholder="— Choisir —"
+            placeholder="Choisir un département"
             options={departments.map((d) => ({
               value: d.id,
               label: `${d.name} (${d.ministryName})`,
@@ -159,16 +147,20 @@ export default function CreateUserClient({ churchId, availableMembers, departmen
       )}
 
       {availableMembers.length === 0 && mode === "existing" && (
-        <p className="text-xs text-ink-subtle">
+        <p className="text-[13px] leading-[18px] text-ink-muted">
           Aucune fiche STAR sans compte dans cette église — créez-en une nouvelle ci-dessus.
         </p>
       )}
 
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && <Alert tone="danger">{error}</Alert>}
 
-      <div className="flex gap-3">
-        <Button type="submit" disabled={!canSubmit || loading}>
-          {loading ? "Création..." : "Créer l'utilisateur"}
+      <div className="flex flex-wrap gap-3">
+        <Button
+          type="submit"
+          disabled={!canSubmit || loading}
+          title={!canSubmit ? "Renseignez l'adresse e-mail et la fiche STAR" : undefined}
+        >
+          {loading ? "Création…" : "Créer l'utilisateur"}
         </Button>
         <Button type="button" variant="secondary" onClick={() => router.push("/admin/users")}>
           Annuler

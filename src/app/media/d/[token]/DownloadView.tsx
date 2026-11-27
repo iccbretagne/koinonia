@@ -3,6 +3,8 @@
 import { Check, ChevronLeft, ChevronRight, Download, X, ZoomIn } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import DownloadAllButton from "../../_components/DownloadAllButton";
+import { Button, Checkbox, StatusChip } from "@/components/ui";
+import IconButton from "@/components/ui/IconButton";
 
 type Photo = {
   id: string;
@@ -102,18 +104,10 @@ function Lightbox({
         className="flex items-center justify-between px-4 py-3 shrink-0"
       >
         <div className="flex items-center gap-3 min-w-0">
-          <button
-            onClick={onClose}
-            className="text-on-brand/70 hover:text-on-brand transition-colors shrink-0"
-            aria-label="Fermer"
-          >
-            <X className="w-6 h-6" aria-hidden="true" />
-          </button>
+          <IconButton variant="on-dark" icon={X} onClick={onClose} aria-label="Fermer la visionneuse" className="shrink-0" />
           <span className="text-on-brand/80 text-sm truncate">{photo.filename}</span>
           {isMediaAll && photo.status !== "APPROVED" && (
-            <span className="shrink-0 text-xs text-warning bg-warning/60 border border-warning/50 rounded-full px-2 py-0.5">
-              Non validée
-            </span>
+            <StatusChip tone="warning" className="shrink-0">Non validée</StatusChip>
           )}
         </div>
         <span className="text-on-brand/50 text-sm tabular-nums shrink-0">{index + 1}/{total}</span>
@@ -124,31 +118,17 @@ function Lightbox({
         className="flex-1 flex items-center justify-center relative px-14 overflow-hidden"
       >
         {/* Prev */}
-        <button
-          onClick={onPrev}
-          disabled={index === 0}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-full p-2.5 transition-all disabled:opacity-20 z-10"
-          aria-label="Photo précédente"
-        >
-          <ChevronLeft className="w-5 h-5" aria-hidden="true" />
-        </button>
+        <IconButton variant="on-dark" icon={ChevronLeft} onClick={onPrev} disabled={index === 0} aria-label="Photo précédente" className="absolute left-3 top-1/2 -translate-y-1/2 bg-scrim rounded-full z-10" />
 
         {/* Next */}
-        <button
-          onClick={onNext}
-          disabled={index === total - 1}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-full p-2.5 transition-all disabled:opacity-20 z-10"
-          aria-label="Photo suivante"
-        >
-          <ChevronRight className="w-5 h-5" aria-hidden="true" />
-        </button>
+        <IconButton variant="on-dark" icon={ChevronRight} onClick={onNext} disabled={index === total - 1} aria-label="Photo suivante" className="absolute right-3 top-1/2 -translate-y-1/2 bg-scrim rounded-full z-10" />
 
         <div className="relative flex items-center justify-center max-w-full max-h-full">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={hdUrl ?? photo.thumbnailUrl}
             alt={photo.filename}
-            className="max-w-full max-h-[75vh] object-contain rounded shadow-overlay"
+            className="max-w-full max-h-[75vh] object-contain rounded-control shadow-overlay"
             style={{ filter: hdLoading && !hdUrl ? "blur(2px)" : "none", transition: "filter 200ms" }}
           />
           {hdLoading && !hdUrl && (
@@ -170,11 +150,12 @@ function Lightbox({
           )}
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {/* Select toggle */}
           <button
             onClick={onToggleSelect}
-            className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border transition-colors font-medium ${
+            aria-pressed={isSelected}
+            className={`flex min-h-11 items-center gap-1.5 font-display text-sm px-4 rounded-control border transition-colors font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
               isSelected
                 ? "bg-brand text-on-brand border-brand"
                 : "bg-on-brand/10 text-on-brand/80 border-on-brand/20 hover:bg-on-brand/20"
@@ -185,22 +166,18 @@ function Lightbox({
                 <Check className="w-4 h-4" aria-hidden="true" />
                 Sélectionnée
               </>
-            ) : "Sélectionner"}
+            ) : "Sélectionner la photo"}
           </button>
 
           {/* Download */}
-          <button
-            onClick={onDownload}
-            disabled={downloading}
-            className="flex items-center gap-1.5 text-sm bg-brand text-on-brand px-3 py-1.5 rounded-lg hover:bg-brand-hover disabled:opacity-50 transition-colors font-medium"
-          >
+          <Button type="button" onClick={onDownload} disabled={downloading}>
             {downloading ? (
               <span className="w-4 h-4 border-2 border-on-brand/30 border-t-on-brand rounded-full animate-spin" />
             ) : (
               <Download className="w-4 h-4" aria-hidden="true" />
             )}
-            Télécharger
-          </button>
+            {downloading ? "Téléchargement en cours…" : "Télécharger la photo"}
+          </Button>
         </div>
       </div>
     </div>
@@ -289,7 +266,7 @@ export default function DownloadView({ token, data }: { readonly token: string; 
         />
       )}
 
-      <div className="min-h-screen bg-surface-sunken">
+      <div className="min-h-screen bg-bg">
         <header className="bg-surface border-b border-line px-4 py-5">
           <div className="max-w-4xl mx-auto">
             <h1 className="text-xl font-bold text-ink">{event?.name ?? "Téléchargement"}</h1>
@@ -297,11 +274,11 @@ export default function DownloadView({ token, data }: { readonly token: string; 
             {data.token.label && <p className="text-xs text-ink-subtle mt-0.5">{data.token.label}</p>}
             <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
               <p className="text-sm text-ink-muted">
-                {photos.length} photo{photos.length !== 1 ? "s" : ""}
+                {photos.length} photo{photos.length > 1 ? "s" : ""}
                 {isMediaAll && photos.some((p) => p.status !== "APPROVED") && (
-                  <span className="ml-1.5 text-xs text-warning bg-warning-soft border border-warning/30 rounded-full px-2 py-0.5">
+                  <StatusChip tone="warning" className="ml-1.5">
                     dont {photos.filter((p) => p.status !== "APPROVED").length} non validée{photos.filter((p) => p.status !== "APPROVED").length > 1 ? "s" : ""}
-                  </span>
+                  </StatusChip>
                 )}
                 {" · "}{formatSize(totalSize)}
               </p>
@@ -315,27 +292,23 @@ export default function DownloadView({ token, data }: { readonly token: string; 
         <main className="max-w-4xl mx-auto p-4 space-y-4">
           {/* Select all / bulk actions */}
           {photos.length > 0 && (
-            <div className="flex items-center gap-3 p-3 bg-surface rounded-lg border border-line">
-              <input
-                type="checkbox"
-                checked={selected.size === photos.length && photos.length > 0}
-                onChange={() => {
-                  if (selected.size === photos.length) setSelected(new Set());
-                  else setSelected(new Set(photos.map((p) => p.id)));
-                }}
-                className="w-4 h-4 rounded border-control-line"
-              />
-              <span className="text-sm text-ink-muted flex-1">
-                {selectionLabel(selected.size, selectedSize)}
-              </span>
+            <div className="flex flex-wrap items-center gap-3 p-3 bg-surface rounded-card border border-line shadow-card">
+              <label className="flex min-h-11 flex-1 items-center gap-3 cursor-pointer">
+                <Checkbox
+                  checked={selected.size === photos.length && photos.length > 0}
+                  onChange={() => {
+                    if (selected.size === photos.length) setSelected(new Set());
+                    else setSelected(new Set(photos.map((p) => p.id)));
+                  }}
+                />
+                <span className="text-sm text-ink-muted">
+                  {selectionLabel(selected.size, selectedSize)}
+                </span>
+              </label>
               {selected.size > 0 && (
-                <button
-                  onClick={() => downloadZip(Array.from(selected))}
-                  disabled={zipping}
-                  className="flex items-center gap-1.5 text-sm bg-brand text-on-brand px-3 py-1.5 rounded-lg hover:bg-brand-hover disabled:opacity-50 transition-colors font-medium"
-                >
-                  {zipping ? "Préparation…" : `Télécharger (${selected.size})`}
-                </button>
+                <Button type="button" variant="secondary" onClick={() => downloadZip(Array.from(selected))} disabled={zipping}>
+                  {zipping ? "Préparation en cours…" : `Télécharger la sélection (${selected.size})`}
+                </Button>
               )}
             </div>
           )}
@@ -347,14 +320,15 @@ export default function DownloadView({ token, data }: { readonly token: string; 
               {photos.map((photo, idx) => (
                 <div
                   key={photo.id}
-                  className={`group rounded-lg overflow-hidden border-2 bg-surface transition-colors ${
+                  className={`group rounded-control overflow-hidden border-2 bg-surface transition-colors ${
                     selected.has(photo.id) ? "border-brand" : "border-line"
                   }`}
                 >
                   {/* Thumbnail — click opens lightbox */}
                   <div
-                    className="aspect-square bg-surface-sunken relative cursor-pointer overflow-hidden focus-visible:ring-2 focus-visible:ring-focus outline-none"
+                    className="aspect-square bg-surface-sunken relative cursor-pointer overflow-hidden focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
                     role="button"
+                    aria-label={`Agrandir ${photo.filename}`}
                     tabIndex={0}
                     onKeyDown={(e) => {
                       if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
@@ -375,31 +349,31 @@ export default function DownloadView({ token, data }: { readonly token: string; 
                       <ZoomIn className="w-7 h-7 text-on-brand opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" aria-hidden="true" />
                     </div>
                     {/* Checkbox overlay */}
-                    <input
-                      type="checkbox"
+                    <Checkbox
+                      aria-label={`Sélectionner ${photo.filename}`}
                       checked={selected.has(photo.id)}
                       onChange={() => toggleSelect(photo.id)}
                       onClick={(e) => e.stopPropagation()}
-                      className="absolute top-2 left-2 w-4 h-4 rounded border-control-line accent-brand opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                      style={selected.has(photo.id) ? { opacity: 1 } : {}}
+                      className={`absolute top-2 left-2 z-10 transition-opacity focus-visible:opacity-100 ${selected.has(photo.id) ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
                     />
                   </div>
 
                   <div className="p-1.5">
                     {isMediaAll && photo.status !== "APPROVED" && (
-                      <span className="inline-block text-xs text-warning bg-warning-soft border border-warning/30 rounded-full px-1.5 py-0.5 mb-0.5">
-                        Non validée
-                      </span>
+                      <StatusChip tone="warning" className="mb-0.5">Non validée</StatusChip>
                     )}
                     <p className="text-xs text-ink-muted truncate">{photo.filename}</p>
                     <p className="text-xs text-ink-subtle">{formatSize(photo.size)}</p>
-                    <button
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="mt-1 w-full"
                       onClick={() => downloadPhoto(photo.id, photo.filename)}
                       disabled={downloading[photo.id]}
-                      className="mt-1 w-full text-xs bg-brand text-on-brand py-1 rounded hover:bg-brand-hover disabled:opacity-50 transition-colors"
                     >
-                      {downloading[photo.id] ? "…" : "Télécharger"}
-                    </button>
+                      {downloading[photo.id] ? "Téléchargement en cours…" : "Télécharger"}
+                    </Button>
                   </div>
                 </div>
               ))}

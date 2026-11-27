@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowLeft, Download, FileText } from "lucide-react";
 import { redirect } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
 import { EmptyState, PageHeader, StatusChip, buttonClasses } from "@/components/ui";
@@ -22,26 +23,26 @@ export default async function MyApplicationPage({
 
   if (!app) {
     return (
-      <div className="max-w-4xl mx-auto space-y-4">
-        <Link href="/profile" className="text-sm text-ink-subtle hover:text-brand-text">
-          ← Mon profil
+      <div className="mx-auto flex max-w-4xl flex-col gap-4">
+        <Link href="/profile" className={`${buttonClasses("ghost", "sm")} self-start`}>
+          <ArrowLeft className="size-4" aria-hidden="true" /> Retour à « Mon profil »
         </Link>
-        <EmptyState title="Aucune fiche de candidature" description="Aucune fiche de candidature n'est liée à ton compte." />
+        <EmptyState icon={FileText} title="Aucune fiche de candidature" description="Aucune fiche de candidature n'est liée à ton compte." />
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
-      <Link href="/profile" className="text-sm text-ink-subtle hover:text-brand-text">
-        ← Mon profil
+    <div className="mx-auto flex max-w-4xl flex-col gap-4">
+      <Link href="/profile" className={`${buttonClasses("ghost", "sm")} self-start`}>
+        <ArrowLeft className="size-4" aria-hidden="true" /> Retour à « Mon profil »
       </Link>
       <PageHeader
         title="Ma fiche de candidature"
         description={`Envoyée le ${formatDay(app.createdAt)}`}
         actions={
           <a href={`/api/serving/applications/${app.id}/pdf`} className={buttonClasses("secondary")}>
-            Télécharger le PDF
+            <Download className="size-4" aria-hidden="true" /> Télécharger le PDF
           </a>
         }
       >

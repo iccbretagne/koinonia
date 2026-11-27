@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type ChangeEvent, type SubmitEvent, type ReactNode } from "react";
+import Link from "next/link";
+import { CalendarClock, CircleCheck } from "lucide-react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import InterviewManager from "@/components/serving/InterviewManager";
-import { Alert, Button, Input, Textarea, fieldLabelClasses } from "@/components/ui";
+import { Alert, Button, Input, Textarea, buttonClasses, fieldLabelClasses } from "@/components/ui";
 import Checkbox from "@/components/ui/Checkbox";
 import { MARITAL_STATUSES, MARITAL_STATUS_LABEL, PCNC_TRAININGS, PHOTO_MAX_BYTES } from "@/modules/serving/schemas";
+import { choiceChipClasses } from "@/components/ui/RadioGroup";
+import FileInput from "@/components/ui/FileInput";
 
 /**
  * Fiche de candidature au service (spec 077), reprise du formulaire proposé par Jenny
@@ -21,16 +25,10 @@ const YES_NO = [
 
 const MARITAL_OPTIONS = MARITAL_STATUSES.map((value) => ({ value, label: MARITAL_STATUS_LABEL[value] }));
 
-function pillClasses(selected: boolean) {
-  return `flex items-center gap-2 px-3 py-2.5 md:py-1.5 min-h-[44px] md:min-h-0 rounded-full border text-sm cursor-pointer transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-focus ${
-    selected ? "bg-brand text-on-brand border-brand" : "border-line text-ink-muted hover:border-brand"
-  }`;
-}
-
 function Card({ title, children }: { readonly title: string; readonly children: ReactNode }) {
   return (
-    <section className="bg-surface rounded-xl border border-line p-4 sm:p-6 space-y-4">
-      <h2 className="text-base font-semibold text-ink">{title}</h2>
+    <section className="flex flex-col gap-4">
+      <h2 className="font-display text-[17px] font-semibold text-ink">{title}</h2>
       {children}
     </section>
   );
@@ -54,7 +52,7 @@ function Pills({
       <legend className={`${fieldLabelClasses} mb-2`}>{legend}</legend>
       <div className="flex flex-wrap gap-2">
         {options.map((opt) => (
-          <label key={opt.value} className={pillClasses(value === opt.value)}>
+          <label key={opt.value} className={choiceChipClasses(value === opt.value)}>
             <input
               type="radio"
               name={name}
@@ -177,23 +175,27 @@ export default function ServingForm({ churchSlug, churchName, retentionMonths, t
 
   if (success) {
     return (
-      <div className="bg-surface rounded-xl border border-success/30 p-6 sm:p-8 text-center space-y-4">
-        <div className="w-14 h-14 rounded-full bg-success-soft text-success flex items-center justify-center mx-auto text-3xl">
-          ✓
-        </div>
-        <h2 className="text-lg font-semibold text-ink">Fiche envoyée !</h2>
+      <div className="flex flex-col gap-4 rounded-card border border-line bg-surface p-6 text-center shadow-card sm:p-8">
+        <span className="mx-auto grid size-14 place-items-center rounded-full bg-success-soft text-success">
+          <CircleCheck aria-hidden="true" className="size-7" strokeWidth={1.75} />
+        </span>
+        <h2 className="font-display text-[17px] font-semibold text-ink">Fiche envoyée</h2>
         <p className="text-sm text-ink-muted">
           Ta fiche a bien été reçue. L&apos;équipe Vie des STAR de {churchName} prendra contact avec toi.
         </p>
         {manageToken && (
-          <div className="space-y-4 border-t border-line pt-4 text-left">
+          <div className="flex flex-col gap-4 border-t border-line pt-4 text-left">
             <InterviewManager token={manageToken} afterSubmit />
-            <p className="text-[13px] text-ink-muted">
-              Garde ce lien pour retrouver ou changer ton rendez-vous :{" "}
-              <a href={`/entretien/${manageToken}`} className="break-all font-semibold text-brand-text underline">
+            <div className="flex flex-col gap-2">
+              <p className="text-[13px] text-ink-muted">Garde ce lien pour retrouver ou changer ton rendez-vous :</p>
+              <p className="select-all break-all text-[13px] font-semibold text-ink">
                 {typeof window === "undefined" ? `/entretien/${manageToken}` : `${window.location.origin}/entretien/${manageToken}`}
-              </a>
-            </p>
+              </p>
+              <Link href={`/entretien/${manageToken}`} className={`${buttonClasses("secondary")} self-start`}>
+                <CalendarClock aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                Gérer mon rendez-vous
+              </Link>
+            </div>
           </div>
         )}
       </div>
@@ -203,28 +205,21 @@ export default function ServingForm({ churchSlug, churchName, retentionMonths, t
   const retention = retentionMonths % 12 === 0 ? `${retentionMonths / 12} an${retentionMonths > 12 ? "s" : ""}` : `${retentionMonths} mois`;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {globalError && <Alert tone="danger">{globalError}</Alert>}
 
       <Card title="Qui es-tu ?">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${uid}-photo`} className={fieldLabelClasses}>
-            Photo d&apos;identité <span className="text-danger">*</span>
-          </label>
-          <input
-            id={`${uid}-photo`}
-            type="file"
-            name="photo"
-            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-            required
-            onChange={onPhotoChange}
-            aria-describedby={`${uid}-photo-hint`}
-            className="w-full text-sm text-ink-muted file:mr-3 file:rounded-lg file:border-0 file:bg-brand file:px-3 file:py-2 file:text-sm file:text-on-brand"
-          />
-          <p id={`${uid}-photo-hint`} className={errors.photo ? "text-xs text-danger" : "text-xs text-ink-subtle"}>
-            {errors.photo ?? "Visage bien visible, fond neutre. JPEG, PNG, WebP ou HEIC, 8 Mo au plus."}
-          </p>
-        </div>
+        <FileInput
+          id={`${uid}-photo`}
+          label="Photo d'identité"
+          name="photo"
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+          required
+          buttonLabel="Choisir une photo"
+          onChange={onPhotoChange}
+          error={errors.photo}
+          hint="Visage bien visible, fond neutre. JPEG, PNG, WebP ou HEIC, 8 Mo au plus."
+        />
         {preview && (
           <canvas
             ref={previewRef}
@@ -232,28 +227,28 @@ export default function ServingForm({ churchSlug, churchName, retentionMonths, t
             height={320}
             role="img"
             aria-label="Aperçu de la photo"
-            className="h-40 w-32 rounded-lg border border-line"
+            className="h-40 w-32 rounded-control border border-line"
           />
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Input label="Prénom *" name="firstName" required maxLength={100} autoComplete="given-name" error={errors.firstName} onChange={() => clearError("firstName")} />
-          <Input label="Nom *" name="lastName" required maxLength={100} autoComplete="family-name" error={errors.lastName} onChange={() => clearError("lastName")} />
+          <Input label="Prénom" name="firstName" required maxLength={100} autoComplete="given-name" error={errors.firstName} onChange={() => clearError("firstName")} />
+          <Input label="Nom" name="lastName" required maxLength={100} autoComplete="family-name" error={errors.lastName} onChange={() => clearError("lastName")} />
         </div>
-        <Input label="Date de naissance *" type="date" name="birthDate" required autoComplete="bday" error={errors.birthDate} onChange={() => clearError("birthDate")} />
-        <Input label="Métier / profession" name="profession" maxLength={150} error={errors.profession} />
-        <Pills legend="Statut familial" name="maritalStatus" options={MARITAL_OPTIONS} value={maritalStatus} onChange={setMaritalStatus} />
-        <Input label="Nombre d'enfants" type="number" name="childrenCount" min={0} max={30} inputMode="numeric" error={errors.childrenCount} />
+        <Input label="Date de naissance" type="date" name="birthDate" required autoComplete="bday" error={errors.birthDate} onChange={() => clearError("birthDate")} />
+        <Input label="Métier / profession (facultatif)" name="profession" maxLength={150} error={errors.profession} />
+        <Pills legend="Statut familial (facultatif)" name="maritalStatus" options={MARITAL_OPTIONS} value={maritalStatus} onChange={setMaritalStatus} />
+        <Input label="Nombre d'enfants (facultatif)" type="number" name="childrenCount" min={0} max={30} inputMode="numeric" error={errors.childrenCount} />
       </Card>
 
       <Card title="Adresse et contact">
-        <Input label="Rue" name="street" maxLength={200} autoComplete="street-address" error={errors.street} />
+        <Input label="Rue (facultatif)" name="street" maxLength={200} autoComplete="street-address" error={errors.street} />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Input label="Ville" name="city" maxLength={100} autoComplete="address-level2" error={errors.city} />
-          <Input label="Code postal" name="postalCode" maxLength={20} inputMode="numeric" autoComplete="postal-code" error={errors.postalCode} />
+          <Input label="Ville (facultatif)" name="city" maxLength={100} autoComplete="address-level2" error={errors.city} />
+          <Input label="Code postal (facultatif)" name="postalCode" maxLength={20} inputMode="numeric" autoComplete="postal-code" error={errors.postalCode} />
         </div>
-        <Input label="Pays" name="country" maxLength={100} autoComplete="country-name" error={errors.country} />
-        <Input label="Téléphone" type="tel" name="phone" maxLength={30} autoComplete="tel" placeholder="Ex : 06 12 34 56 78" error={errors.phone} />
-        <Input label="Adresse e-mail" type="email" name="email" maxLength={200} autoComplete="email" placeholder="prenom@exemple.fr" error={errors.email} onChange={() => clearError("email")} />
+        <Input label="Pays (facultatif)" name="country" maxLength={100} autoComplete="country-name" error={errors.country} />
+        <Input label="Téléphone (facultatif)" type="tel" name="phone" maxLength={30} autoComplete="tel" placeholder="Ex : 06 12 34 56 78" error={errors.phone} />
+        <Input label="Adresse e-mail (facultatif)" type="email" name="email" maxLength={200} autoComplete="email" placeholder="prenom@exemple.fr" error={errors.email} onChange={() => clearError("email")} />
       </Card>
 
       <Card title="Parcours spirituel">
@@ -273,13 +268,13 @@ export default function ServingForm({ churchSlug, churchName, retentionMonths, t
         )}
         <fieldset className="min-w-0">
           <legend className={`${fieldLabelClasses} mb-2`}>
-            Formations PCNC suivies <span className="text-ink-subtle text-xs">(églises ICC)</span>
+            Formations PCNC suivies <span className="font-normal text-ink-muted">(églises ICC, facultatif)</span>
           </legend>
           <div className="flex flex-wrap gap-2">
             {PCNC_TRAININGS.map((t) => {
               const checked = trainings.includes(t);
               return (
-                <label key={t} className={pillClasses(checked)}>
+                <label key={t} className={choiceChipClasses(checked)}>
                   <input type="checkbox" name="pcncTrainings" value={t} checked={checked} onChange={() => toggleTraining(t)} className="sr-only" />
                   {t}
                 </label>
@@ -319,7 +314,7 @@ export default function ServingForm({ churchSlug, churchName, retentionMonths, t
           leurs responsables et leur Ministre pourront aussi la consulter. Si ta candidature n&apos;est
           pas retenue ou n&apos;est pas traitée, elle est effacée, photo comprise, au bout de {retention}.
         </p>
-        <label className="flex items-start gap-3 min-h-[44px] cursor-pointer text-sm text-ink">
+        <label className="flex min-h-11 cursor-pointer items-start gap-3 text-sm text-ink">
           <Checkbox
             name="consent"
             value="true"
@@ -331,9 +326,9 @@ export default function ServingForm({ churchSlug, churchName, retentionMonths, t
             required
             className="mt-0.5"
           />
-          <span>J&apos;accepte que ces informations soient utilisées pour étudier ma candidature au service. *</span>
+          <span>J&apos;accepte que ces informations soient utilisées pour étudier ma candidature au service.</span>
         </label>
-        {errors.consent && <p className="text-xs text-danger">{errors.consent}</p>}
+        {errors.consent && <p className="text-[13px] text-danger">{errors.consent}</p>}
       </Card>
 
       {/* Champ piège anti-robot : invisible pour les humains */}
@@ -341,14 +336,15 @@ export default function ServingForm({ churchSlug, churchName, retentionMonths, t
 
       <div>
         <TurnstileWidget siteKey={turnstileSiteKey} onToken={setTurnstileToken} resetSignal={turnstileReset} />
-        {!turnstileToken && <p className="text-xs text-ink-subtle mt-1">Vérification anti-robots requise.</p>}
+        {!turnstileToken && <p className="mt-1 text-xs text-ink-muted">Vérification anti-robots requise pour envoyer la fiche.</p>}
       </div>
 
-      <Button type="submit" className="w-full py-3" disabled={submitting || !turnstileToken || !consent}>
+      {!consent && (
+        <p className="text-center text-xs text-ink-muted">Coche l&apos;accord ci-dessus pour envoyer ta fiche.</p>
+      )}
+      <Button type="submit" className="w-full" disabled={submitting || !turnstileToken || !consent}>
         {submitting ? "Envoi en cours…" : "Envoyer ma fiche"}
       </Button>
-
-      <p className="text-xs text-ink-subtle text-center">* Champs obligatoires.</p>
     </form>
   );
 }

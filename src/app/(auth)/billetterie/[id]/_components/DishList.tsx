@@ -67,7 +67,7 @@ function DishRow({ eventId, dish, showPrepared }: { readonly eventId: string; re
     if (ok) setDraft(null);
   }
   return (
-    <li className="space-y-3 bg-surface-sunken px-3 py-3">
+    <li className="space-y-3 bg-bg px-3 py-3">
       <div className="grid gap-3 sm:grid-cols-2">
         <Input label="Plat" value={draft.label} maxLength={120} onChange={(e) => set({ label: e.target.value })} />
         <Input label="Allergènes" value={draft.allergens ?? ""} maxLength={200} onChange={(e) => set({ allergens: e.target.value || null })} />
@@ -90,14 +90,14 @@ function DishRow({ eventId, dish, showPrepared }: { readonly eventId: string; re
       </label>
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" size="sm" disabled={busy || !draft.label.trim()} onClick={save}>
-          {busy ? "Enregistrement…" : "Enregistrer"}
+          {busy ? "Enregistrement en cours…" : "Enregistrer le plat"}
         </Button>
         <Button type="button" size="sm" variant="secondary" onClick={() => setDraft(null)}>
           Annuler
         </Button>
         {dish.used === 0 ? (
           <Button type="button" size="sm" variant="ghost" className="ml-auto" disabled={busy} onClick={() => call(url, "DELETE", undefined, "Plat supprimé")}>
-            <Trash2 className="size-4" aria-hidden="true" /> Supprimer
+            <Trash2 className="size-4" aria-hidden="true" /> Supprimer le plat
           </Button>
         ) : (
           <span className="ml-auto text-[13px] text-ink-muted">Déjà réservé : fermez-le plutôt que de le supprimer.</span>
@@ -146,7 +146,7 @@ export default function DishList({
           <Input label="Nouveau plat" placeholder="Poulet yassa, végétarien…" maxLength={120} value={label} onChange={(e) => setLabel(e.target.value)} />
         </div>
         <Button type="submit" variant="secondary" disabled={busy || !label.trim()}>
-          <Plus className="size-4" aria-hidden="true" /> Ajouter
+          <Plus className="size-4" aria-hidden="true" /> Ajouter le plat
         </Button>
       </form>
     </div>

@@ -8,8 +8,8 @@ describe("classes du nom de l'église (spec 066)", () => {
     for (const classes of values) expect(classes).toContain("break-words");
   });
 
-  it("Petit reproduit le rendu d'origine", () => {
-    expect(CHURCH_NAME_CLASSES.SMALL).toContain("text-xs");
+  it("Petit reste le plus discret, à la taille minimale de l'échelle", () => {
+    expect(CHURCH_NAME_CLASSES.SMALL).toContain("text-[13px]");
     expect(CHURCH_NAME_CLASSES.SMALL).toContain("tracking-widest");
   });
 });

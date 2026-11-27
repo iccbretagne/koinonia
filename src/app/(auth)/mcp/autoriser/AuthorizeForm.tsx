@@ -43,10 +43,10 @@ export default function AuthorizeForm({
   return (
     <form
       onSubmit={(e) => void decide(e, "allow")}
-      className="bg-surface rounded-xl border border-line p-5 space-y-5"
+      className="flex flex-col gap-5"
     >
       {children}
-      {error !== null && <p className="text-sm text-danger">{error}</p>}
+      {error !== null && <p role="alert" className="text-sm text-danger">{error}</p>}
       <div className="flex flex-wrap justify-end gap-2">
         <Button
           type="button"
@@ -57,10 +57,10 @@ export default function AuthorizeForm({
             if (form) void decide({ preventDefault() {}, currentTarget: form } as SubmitEvent<HTMLFormElement>, "deny");
           }}
         >
-          {busy === "deny" ? "Refus…" : "Refuser"}
+          {busy === "deny" ? "Refus en cours…" : "Refuser"}
         </Button>
         <Button type="submit" variant="primary" disabled={busy !== null}>
-          {busy === "allow" ? "Autorisation…" : "Autoriser"}
+          {busy === "allow" ? "Autorisation en cours…" : "Autoriser"}
         </Button>
       </div>
     </form>

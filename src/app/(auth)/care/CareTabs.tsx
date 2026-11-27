@@ -2,7 +2,19 @@
 
 import { useId, useState } from "react";
 import Link from "next/link";
-import Button from "@/components/ui/Button";
+import { ChevronRight } from "lucide-react";
+import {
+  Alert,
+  Badge,
+  Button,
+  ConfirmModal,
+  EmptyState,
+  Select,
+  StatusChip,
+  Textarea,
+  fieldLabelClasses,
+  type StatusTone,
+} from "@/components/ui";
 import AssigneeSelect, { type AssigneeValue } from "./AssigneeSelect";
 
 const REJECT_REASON_OPTIONS: [string, string][] = [
@@ -54,12 +66,12 @@ const REQUEST_STATUS_LABELS: Record<string, string> = {
   REJECTED: "Refusée",
 };
 
-const REQUEST_STATUS_COLORS: Record<string, string> = {
-  PENDING: "bg-warning-soft text-warning",
-  VALIDATED: "bg-info-soft text-info",
-  SCHEDULED: "bg-success-soft text-success",
-  CLOSED: "bg-surface-sunken text-ink-muted",
-  REJECTED: "bg-danger-soft text-danger",
+const REQUEST_STATUS_TONES: Record<string, StatusTone> = {
+  PENDING: "warning",
+  VALIDATED: "info",
+  SCHEDULED: "success",
+  CLOSED: "neutral",
+  REJECTED: "danger",
 };
 
 const MSDP_STATUS_LABELS: Record<string, string> = {
@@ -71,19 +83,20 @@ const MSDP_STATUS_LABELS: Record<string, string> = {
   ABANDONED: "Abandonné",
 };
 
-const MSDP_STATUS_COLORS: Record<string, string> = {
-  SUBMITTED: "bg-warning-soft text-warning",
-  ASSIGNED: "bg-info-soft text-info",
-  CONTACTED: "bg-info-soft text-info",
-  IN_FORMATION: "bg-brand-soft text-brand-text",
-  COMPLETED: "bg-success-soft text-success",
-  ABANDONED: "bg-danger-soft text-danger",
+const MSDP_STATUS_TONES: Record<string, StatusTone> = {
+  SUBMITTED: "warning",
+  ASSIGNED: "info",
+  CONTACTED: "info",
+  IN_FORMATION: "brand",
+  COMPLETED: "success",
+  ABANDONED: "danger",
 };
 
-function QualifyForm({ req, churchId, onDone }: {
+function QualifyForm({ req, churchId, onDone, onCancel }: {
   readonly req: AppointmentRequestItem;
   readonly churchId: string;
   readonly onDone: (id: string) => void;
+  readonly onCancel: () => void;
 }) {
   const uid = useId();
   const [assignee, setAssignee] = useState<AssigneeValue | null>(null);
@@ -92,105 +105,117 @@ function QualifyForm({ req, churchId, onDone }: {
   const [reasonCode, setReasonCode] = useState("");
   const [comment, setComment] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [confirmReject, setConfirmReject] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async function validate() {
-    if (!assignee) {
-      alert("Veuillez sélectionner un référent.");
-      return;
-    }
+  async function send(body: Record<string, unknown>) {
     setProcessing(true);
+    setError(null);
     try {
       const res = await fetch(`/api/care/requests/${req.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "validate", assignee, note: note || undefined }),
+        body: JSON.stringify(body),
       });
-      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setError(d.error || "Erreur lors de l'enregistrement");
+        return;
+      }
       onDone(req.id);
-    } catch { alert("Erreur réseau"); }
-    finally { setProcessing(false); }
+    } catch {
+      setError("Erreur réseau");
+    } finally {
+      setProcessing(false);
+    }
   }
 
-  async function reject() {
-    if (!reasonCode) { alert("Veuillez sélectionner un motif."); return; }
-    if (!confirm("Rejeter définitivement cette demande ?")) return;
-    setProcessing(true);
-    try {
-      const res = await fetch(`/api/care/requests/${req.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "reject", reasonCode, comment: comment || undefined }),
-      });
-      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
-      onDone(req.id);
-    } catch { alert("Erreur réseau"); }
-    finally { setProcessing(false); }
+  function validate() {
+    if (!assignee) return;
+    void send({ action: "validate", assignee, note: note || undefined });
+  }
+
+  function reject() {
+    setConfirmReject(false);
+    void send({ action: "reject", reasonCode, comment: comment || undefined });
   }
 
   if (rejectMode) {
     return (
-      <div className="space-y-3">
-        <div>
-          <label htmlFor={`${uid}-reason`} className="block text-xs font-medium text-ink-muted mb-1">
-            Motif de refus <span className="text-danger">*</span>
-          </label>
-          <select
-            id={`${uid}-reason`}
-            value={reasonCode}
-            onChange={(e) => setReasonCode(e.target.value)}
-            className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
-          >
-            <option value="">— Sélectionner —</option>
-            {REJECT_REASON_OPTIONS.map(([code, label]) => (
-              <option key={code} value={code}>{label}</option>
-            ))}
-          </select>
+      <div className="flex flex-col gap-3">
+        <Select
+          label="Motif de refus"
+          required
+          value={reasonCode}
+          onChange={(e) => setReasonCode(e.target.value)}
+          placeholder="Choisir un motif…"
+          options={REJECT_REASON_OPTIONS.map(([value, label]) => ({ value, label }))}
+          hint={reasonCode ? undefined : "Choisissez un motif pour refuser la demande."}
+        />
+        <Textarea
+          label="Commentaire (facultatif)"
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          rows={2}
+        />
+        {error && <Alert tone="danger">{error}</Alert>}
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button size="sm" variant="secondary" onClick={() => setRejectMode(false)} disabled={processing}>
+            Annuler
+          </Button>
+          <Button size="sm" onClick={() => setConfirmReject(true)} disabled={processing || !reasonCode}>
+            {processing ? "Refus en cours…" : "Refuser la demande"}
+          </Button>
         </div>
-        <div>
-          <label htmlFor={`${uid}-comment`} className="block text-xs font-medium text-ink-muted mb-1">Commentaire (optionnel)</label>
-          <textarea
-            id={`${uid}-comment`}
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            rows={2}
-            className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand resize-none"
-          />
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="danger" onClick={reject} disabled={processing}>Confirmer le refus</Button>
-          <Button size="sm" variant="secondary" onClick={() => setRejectMode(false)}>Annuler</Button>
-        </div>
+        <ConfirmModal
+          open={confirmReject}
+          title="Refuser cette demande ?"
+          message="Le refus est définitif : la demande ne pourra plus être confiée."
+          confirmLabel="Refuser la demande"
+          confirmingLabel="Refus en cours…"
+          variant="primary"
+          confirming={processing}
+          onConfirm={reject}
+          onCancel={() => setConfirmReject(false)}
+        />
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       <div>
-        <label htmlFor={`${uid}-assignee`} className="block text-xs font-medium text-ink-muted mb-1">
-          Référent <span className="text-danger">*</span>
+        <label htmlFor={`${uid}-assignee`} className={`${fieldLabelClasses} mb-1.5 block`}>
+          Référent
         </label>
         <AssigneeSelect id={`${uid}-assignee`} churchId={churchId} value={assignee} onChange={setAssignee} />
+        {!assignee && <p className="mt-1.5 text-[13px] text-ink-muted">Choisissez un référent pour confier la demande.</p>}
       </div>
-      <div>
-        <label htmlFor={`${uid}-note`} className="block text-xs font-medium text-ink-muted mb-1">
-          Note transmise au référent (optionnel)
-        </label>
-        <textarea
-          id={`${uid}-note`}
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          rows={2}
-          className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand resize-none"
-        />
-      </div>
-      <div className="flex gap-2">
-        <Button size="sm" onClick={validate} disabled={processing}>✓ Confier</Button>
-        <Button size="sm" variant="danger" onClick={() => setRejectMode(true)} disabled={processing}>Rejeter</Button>
+      <Textarea
+        label="Note transmise au référent (facultatif)"
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        rows={2}
+      />
+      {error && <Alert tone="danger">{error}</Alert>}
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+        <Button size="sm" variant="ghost" onClick={onCancel} disabled={processing}>
+          Annuler
+        </Button>
+        <Button size="sm" variant="secondary" onClick={() => setRejectMode(true)} disabled={processing}>
+          Refuser la demande
+        </Button>
+        <Button size="sm" onClick={validate} disabled={processing || !assignee}>
+          {processing ? "Envoi en cours…" : "Confier la demande"}
+        </Button>
       </div>
     </div>
   );
 }
+
+const rowLinkClasses =
+  "flex min-h-11 items-center justify-between gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-card transition-colors " +
+  "hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
 function RequestsTab({ requests: initial, churchId }: { readonly requests: AppointmentRequestItem[]; readonly churchId: string }) {
   const [requests, setRequests] = useState(initial);
@@ -200,61 +225,67 @@ function RequestsTab({ requests: initial, churchId }: { readonly requests: Appoi
   const others = requests.filter((r) => r.status !== "PENDING");
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       {pending.length === 0 ? (
-        <p className="text-sm text-ink-subtle">Aucune demande en attente de qualification.</p>
+        <div className="rounded-card border border-line bg-surface">
+          <EmptyState size="sm" title="Aucune demande en attente de qualification" />
+        </div>
       ) : (
-        <div className="space-y-4">
+        <ul className="flex flex-col gap-4">
           {pending.map((req) => (
-            <div key={req.id} className="bg-surface rounded-lg shadow border border-line p-5">
+            <li key={req.id} className="rounded-card border border-line bg-surface p-4 shadow-card md:p-5">
               <div className="flex items-start justify-between gap-4">
-                <div>
+                <div className="min-w-0">
                   <p className="font-semibold text-ink">{req.firstName} {req.lastName}</p>
-                  <p className="text-xs text-ink-muted mt-0.5">{req.email} {req.phone && `· ${req.phone}`}</p>
-                  {!req.masked && <p className="text-sm font-medium text-ink-muted mt-1">{req.subject}</p>}
-                  {!req.masked && <p className="text-sm text-ink-muted mt-1 whitespace-pre-line">{req.message}</p>}
+                  <p className="mt-0.5 break-words text-xs text-ink-muted">{req.email} {req.phone && `· ${req.phone}`}</p>
+                  {!req.masked && <p className="mt-1 text-sm font-semibold text-ink">{req.subject}</p>}
+                  {!req.masked && <p className="mt-1 whitespace-pre-line text-sm text-ink-muted">{req.message}</p>}
                 </div>
-                <span className="text-xs text-ink-subtle shrink-0">
+                <span className="shrink-0 text-xs text-ink-muted">
                   {new Date(req.createdAt).toLocaleDateString("fr-FR")}
                 </span>
               </div>
-              <div className="border-t border-line pt-3 mt-3">
+              <div className="mt-3 border-t border-line pt-3">
                 {expanded === req.id ? (
                   <QualifyForm
                     req={req}
                     churchId={churchId}
+                    onCancel={() => setExpanded(null)}
                     onDone={(id) => { setRequests((prev) => prev.filter((r) => r.id !== id)); setExpanded(null); }}
                   />
                 ) : (
-                  <Button size="sm" variant="info" onClick={() => setExpanded(req.id)}>Traiter</Button>
+                  <Button size="sm" variant="secondary" onClick={() => setExpanded(req.id)}>
+                    Traiter la demande
+                  </Button>
                 )}
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
       {others.length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold text-ink-muted mb-2">Autres demandes</h3>
-          <div className="space-y-2">
+        <section>
+          <h3 className="mb-2 text-sm font-semibold text-ink">Autres demandes</h3>
+          <ul className="flex flex-col gap-2">
             {others.map((req) => (
-              <Link
-                key={req.id}
-                href={`/care/requests/${req.id}`}
-                className="flex items-center justify-between gap-3 bg-surface rounded-lg border border-line px-4 py-3 hover:border-brand transition-colors"
-              >
-                <div>
-                  <p className="font-medium text-ink">{req.firstName} {req.lastName}</p>
-                  <p className="text-xs text-ink-subtle">{new Date(req.createdAt).toLocaleDateString("fr-FR")}</p>
-                </div>
-                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${REQUEST_STATUS_COLORS[req.status] ?? "bg-surface-sunken text-ink-muted"}`}>
-                  {REQUEST_STATUS_LABELS[req.status] ?? req.status}
-                </span>
-              </Link>
+              <li key={req.id}>
+                <Link href={`/care/requests/${req.id}`} className={rowLinkClasses}>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-ink">{req.firstName} {req.lastName}</p>
+                    <p className="text-xs text-ink-muted">{new Date(req.createdAt).toLocaleDateString("fr-FR")}</p>
+                  </div>
+                  <span className="flex shrink-0 items-center gap-1">
+                    <StatusChip tone={REQUEST_STATUS_TONES[req.status] ?? "neutral"}>
+                      {REQUEST_STATUS_LABELS[req.status] ?? req.status}
+                    </StatusChip>
+                    <ChevronRight aria-hidden="true" className="size-4 text-ink-subtle" strokeWidth={1.75} />
+                  </span>
+                </Link>
+              </li>
             ))}
-          </div>
-        </div>
+          </ul>
+        </section>
       )}
     </div>
   );
@@ -262,10 +293,14 @@ function RequestsTab({ requests: initial, churchId }: { readonly requests: Appoi
 
 function FollowupsTab({ followUps }: { readonly followUps: FollowUpItem[] }) {
   if (followUps.length === 0) {
-    return <p className="text-sm text-ink-subtle">Aucun suivi de nouveau converti.</p>;
+    return (
+      <div className="rounded-card border border-line bg-surface">
+        <EmptyState size="sm" title="Aucun suivi de nouveau converti" />
+      </div>
+    );
   }
   return (
-    <div className="space-y-2">
+    <ul className="flex flex-col gap-2">
       {followUps.map((f) => {
         const name = f.firstName && f.lastName ? `${f.firstName} ${f.lastName}` : `${f.request?.firstName ?? ""} ${f.request?.lastName ?? ""}`.trim();
         // Référent : membre du MSDP ou profil pastoral, l'un ou l'autre, jamais les deux.
@@ -273,59 +308,72 @@ function FollowupsTab({ followUps }: { readonly followUps: FollowUpItem[] }) {
           ? f.assignedConseillerMsdp.name ?? f.assignedConseillerMsdp.email
           : f.assignedProfile?.name ?? null;
         return (
-          <Link
-            key={f.id}
-            href={`/care/followups/${f.id}`}
-            className="flex items-center justify-between gap-3 bg-surface rounded-lg border border-line px-4 py-3 hover:border-brand transition-colors"
-          >
-            <div>
-              <p className="font-medium text-ink">{name || "—"}</p>
-              <p className="text-xs text-ink-subtle">
-                {referent ? `Référent : ${referent}` : "Sans référent"}
-              </p>
-            </div>
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${MSDP_STATUS_COLORS[f.status] ?? "bg-surface-sunken text-ink-muted"}`}>
-              {MSDP_STATUS_LABELS[f.status] ?? f.status}
-            </span>
-          </Link>
+          <li key={f.id}>
+            <Link href={`/care/followups/${f.id}`} className={rowLinkClasses}>
+              <div className="min-w-0">
+                <p className="font-semibold text-ink">{name || "—"}</p>
+                <p className="text-xs text-ink-muted">
+                  {referent ? `Référent : ${referent}` : "Sans référent"}
+                </p>
+              </div>
+              <span className="flex shrink-0 items-center gap-1">
+                <StatusChip tone={MSDP_STATUS_TONES[f.status] ?? "neutral"}>
+                  {MSDP_STATUS_LABELS[f.status] ?? f.status}
+                </StatusChip>
+                <ChevronRight aria-hidden="true" className="size-4 text-ink-subtle" strokeWidth={1.75} />
+              </span>
+            </Link>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }
 
 export default function CareTabs({ canQualify, requests, followUps, churchId }: Props) {
+  const uid = useId();
   const [tab, setTab] = useState<"requests" | "followups">("requests");
+  const pendingCount = canQualify ? requests.filter((r) => r.status === "PENDING").length : 0;
+  const tabs = [
+    { id: "requests" as const, label: "Rendez-vous", count: pendingCount },
+    { id: "followups" as const, label: "Nouveaux convertis", count: 0 },
+  ];
 
   return (
     <div>
-      <div className="flex gap-2 border-b border-line mb-5">
-        <button
-          onClick={() => setTab("requests")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-            tab === "requests" ? "border-brand text-brand-text" : "border-transparent text-ink-muted hover:text-ink-muted"
-          }`}
-        >
-          Rendez-vous {requests.some((r) => r.status === "PENDING") && canQualify && (
-            <span className="ml-1 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold rounded-full bg-brand text-on-brand">
-              {requests.filter((r) => r.status === "PENDING").length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setTab("followups")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-            tab === "followups" ? "border-brand text-brand-text" : "border-transparent text-ink-muted hover:text-ink-muted"
-          }`}
-        >
-          Nouveaux convertis
-        </button>
+      <div role="tablist" aria-label="Suivi pastoral" className="mb-5 flex gap-1 overflow-x-auto border-b border-line">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            id={`${uid}-tab-${t.id}`}
+            aria-selected={tab === t.id}
+            aria-controls={`${uid}-panel`}
+            onClick={() => setTab(t.id)}
+            className={`-mb-px inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-3 font-display text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${
+              tab === t.id ? "border-brand text-brand-text" : "border-transparent text-ink-muted hover:text-ink"
+            }`}
+          >
+            {t.label}
+            {t.count > 0 && (
+              <>
+                <Badge count={t.count} />
+                <span className="sr-only">
+                  {t.count > 1 ? `${t.count} demandes en attente` : "1 demande en attente"}
+                </span>
+              </>
+            )}
+          </button>
+        ))}
       </div>
-      {tab === "requests" ? (
-        <RequestsTab requests={requests} churchId={churchId} />
-      ) : (
-        <FollowupsTab followUps={followUps} />
-      )}
+      <div role="tabpanel" id={`${uid}-panel`} aria-labelledby={`${uid}-tab-${tab}`}>
+        {tab === "requests" ? (
+          <RequestsTab requests={requests} churchId={churchId} />
+        ) : (
+          <FollowupsTab followUps={followUps} />
+        )}
+      </div>
     </div>
   );
 }

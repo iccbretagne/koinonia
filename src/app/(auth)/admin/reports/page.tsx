@@ -1,6 +1,7 @@
 import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ReportsClient from "./ReportsClient";
+import { PageHeader } from "@/components/ui";
 
 export default async function ReportsPage() {
   const session = await requireAuth();
@@ -33,13 +34,11 @@ export default async function ReportsPage() {
   });
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-ink">Comptes rendus</h1>
-        <p className="text-sm text-ink-muted mt-1">
-          Suivi des comptes rendus d&apos;événements et statistiques agrégées.
-        </p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Comptes rendus"
+        description="Suivi des comptes rendus d'événements et statistiques agrégées."
+      />
 
       <ReportsClient
         churchId={churchId}

@@ -5,6 +5,7 @@ import { ExternalLink } from "lucide-react";
 import StatusChip from "@/components/ui/StatusChip";
 import Alert from "@/components/ui/Alert";
 import Textarea from "@/components/ui/Textarea";
+import { buttonClasses } from "@/components/ui/button-classes";
 import { REQUEST_TYPE_LABEL, formatDeadline } from "@/lib/request-queue";
 import { STATUS_TONE, formatDate, formatDateTime, statusLabel, type QueueItem } from "./queue-types";
 
@@ -147,7 +148,7 @@ export function ExternalAnchor({ href, children }: { readonly href: string; read
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex min-h-11 items-center gap-1 font-semibold text-brand-text underline underline-offset-2"
+      className={`${buttonClasses("ghost", "sm")} -ml-3 max-w-full break-all`}
     >
       {children}
       <ExternalLink aria-hidden="true" className="size-4" />

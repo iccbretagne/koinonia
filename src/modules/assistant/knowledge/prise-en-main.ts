@@ -124,7 +124,7 @@ export const PRISE_EN_MAIN: readonly KnowledgeEntry[] = [
     title: "Messages de l'administration (bandeau)",
     questions: ["C'est quoi le bandeau en haut ?", "fermer le message", "le message revient", "message de l'église"],
     answer:
-      "Le bandeau affiche les messages de votre église ou de Koinonia qui vous concernent. « Lire » ouvre le message complet ; la croix le ferme sur tous vos appareils. Un message urgent reste affiché jusqu'à la fin de sa période.",
+      "Le bandeau affiche les messages de votre église ou de Koinonia qui vous concernent. « Lire le message » ouvre le message complet ; la croix le ferme sur tous vos appareils. Un message urgent reste affiché jusqu'à la fin de sa période.",
     href: "/accueil",
     hrefLabel: "Accueil",
     audience: ALL,

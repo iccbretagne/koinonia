@@ -112,8 +112,8 @@ export default function AnnouncementSheetManager({ eventId, data, onChange, embe
   }
 
   return (
-    <div className={embedded ? "print:hidden" : "mb-6 rounded-card border border-line bg-surface p-4 print:hidden"}>
-      <h2 className={embedded ? "mb-3 font-display text-sm font-semibold text-ink" : "mb-3 font-display text-lg font-semibold text-ink"}>
+    <div className={embedded ? "print:hidden" : "mb-6 print:hidden"}>
+      <h2 className={embedded ? "mb-3 font-display text-[15px] font-semibold leading-[22px] text-ink" : "mb-3 font-display text-[17px] font-semibold leading-6 text-ink"}>
         Trame des annonces
       </h2>
 

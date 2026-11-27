@@ -10,6 +10,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import StatusChip from "@/components/ui/StatusChip";
 import { serviceStatusDescriptor } from "@/components/ui/status";
 import { useToast } from "@/components/ui/Toast";
+import { buttonClasses } from "@/components/ui/button-classes";
 
 /**
  * Écran du service à remplacer (spec 061), conçu mobile d'abord : le STAR désisté et son message,
@@ -129,7 +130,7 @@ export default function ReplacementClient({ initial }: { readonly initial: Repla
 
   return (
     <div className="flex flex-col gap-6">
-      <section aria-label="Désistement" className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4">
+      <section aria-label="Désistement" className="flex flex-col gap-3">
         <p className="text-sm leading-5 text-ink-muted first-letter:uppercase">{formatEventDate(event.date)} · {department.name}</p>
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-[15px] font-semibold leading-[22px] text-ink">{memberName}</p>
@@ -143,7 +144,7 @@ export default function ReplacementClient({ initial }: { readonly initial: Repla
           )}
         </div>
         {withdrawal.message && (
-          <blockquote className="rounded-control bg-surface-sunken px-3 py-2 text-[15px] leading-[22px] text-ink">
+          <blockquote className="border-l-2 border-control-line pl-3 text-[15px] leading-[22px] text-ink">
             « {withdrawal.message} »
           </blockquote>
         )}
@@ -185,12 +186,13 @@ export default function ReplacementClient({ initial }: { readonly initial: Repla
                   {canReplace && (
                     <Button
                       type="button"
+                      variant="secondary"
                       onClick={() => choose(c)}
                       disabled={pendingMemberId !== null || closing}
                       aria-busy={pendingMemberId === c.memberId || undefined}
                       className="shrink-0"
                     >
-                      {pendingMemberId === c.memberId ? "Choix…" : "Choisir"}
+                      {pendingMemberId === c.memberId ? "Choix en cours…" : "Choisir"}
                     </Button>
                   )}
                 </li>
@@ -199,10 +201,7 @@ export default function ReplacementClient({ initial }: { readonly initial: Repla
           )}
           {canReplace && (
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
-              <Link
-                href={`/dashboard?event=${event.id}&dept=${department.id}`}
-                className="inline-flex min-h-11 items-center justify-center rounded-control px-4 font-display text-sm font-semibold text-brand-text hover:bg-brand-soft"
-              >
+              <Link href={`/dashboard?event=${event.id}&dept=${department.id}`} className={buttonClasses("ghost")}>
                 Ouvrir la grille
               </Link>
               <Button type="button" variant="secondary" onClick={() => setConfirmClose(true)} disabled={pendingMemberId !== null}>

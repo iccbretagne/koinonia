@@ -73,13 +73,10 @@ function formatTime(date: Date) {
 
 function SectionTitle({ title, href, linkLabel }: { readonly title: string; readonly href?: string; readonly linkLabel?: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-3">
+    <div className="flex items-center justify-between gap-3">
       <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">{title}</h2>
       {href && linkLabel && (
-        <Link
-          href={href}
-          className="shrink-0 rounded-chip text-[13px] font-semibold leading-[18px] text-brand-text hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-        >
+        <Link href={href} className={`${buttonClasses("ghost", "sm")} shrink-0`}>
           {linkLabel}
         </Link>
       )}
@@ -206,7 +203,7 @@ function ServicesSection({
 
       {agendaRows.length > 0 && (
         <>
-          <SectionTitle title="Mes prochains rendez-vous" href="/planning" linkLabel="Mon planning" />
+          <SectionTitle title="Mes prochains rendez-vous" href="/planning" linkLabel="Voir mon planning" />
           <ul className="overflow-hidden rounded-card border border-line bg-surface">
             {agendaRows.map((row) => (
               <li key={row.key} className="border-t border-line first:border-t-0">
@@ -251,7 +248,7 @@ function ChurchEventsSection({
         <SectionTitle
           title={canEvents ? "Prochains événements de l'église" : "Cette semaine à l'église"}
           href={canEvents ? "/events" : "/planning/events"}
-          linkLabel="Tout l'agenda"
+          linkLabel="Voir tout l'agenda"
         />
       </div>
       {upcomingEvents.length === 0 ? (
@@ -293,7 +290,7 @@ function RequestsSection({ openRequests }: { readonly openRequests: MyRequest[] 
   return (
     <section aria-labelledby="today-requests" className="flex flex-col gap-3">
       <div id="today-requests">
-        <SectionTitle title="Mes demandes en cours" href="/requests" linkLabel="Toutes mes demandes" />
+        <SectionTitle title="Mes demandes en cours" href="/requests" linkLabel="Voir toutes mes demandes" />
       </div>
       {openRequests.length === 0 ? (
         <div className="rounded-card border border-line bg-surface">
@@ -360,7 +357,7 @@ function QuestionnairesSection({ questionnaires }: { readonly questionnaires: Op
   return (
     <section aria-labelledby="today-questionnaires" className="flex flex-col gap-3">
       <div id="today-questionnaires">
-        <SectionTitle title="Questionnaires à remplir" href="/collectes" linkLabel="Collectes" />
+        <SectionTitle title="Questionnaires à remplir" href="/collectes" linkLabel="Voir les questionnaires" />
       </div>
       <ul className="overflow-hidden rounded-card border border-line bg-surface">
         {questionnaires.slice(0, MAX_QUESTIONNAIRES).map((q) => (

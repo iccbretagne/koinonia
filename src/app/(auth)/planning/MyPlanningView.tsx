@@ -8,6 +8,7 @@ import PeriodNav from "@/components/PeriodNav";
 import EmptyState from "@/components/ui/EmptyState";
 import StatusChip from "@/components/ui/StatusChip";
 import { serviceStatusDescriptor } from "@/components/ui/status";
+import { buttonClasses } from "@/components/ui/button-classes";
 import { CancelWithdrawalButton, DeadlinePassedNotice, WithdrawButton, type LeaderContact } from "./WithdrawalActions";
 
 type PlanningEntry = {
@@ -303,9 +304,9 @@ export default function MyPlanningView({
                       {tasks.length > 0 && (
                         <div className="mt-1 flex flex-wrap gap-1">
                           {tasks.map((task) => (
-                            <span key={task} className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold leading-4 text-brand-text">
+                            <StatusChip key={task} tone="brand">
                               {task}
-                            </span>
+                            </StatusChip>
                           ))}
                         </div>
                       )}
@@ -374,7 +375,7 @@ export function NextServiceCard({
       <div className="flex flex-wrap gap-2">
         <Link
           href={`/events/${event.id}/star-view`}
-          className="inline-flex min-h-11 flex-1 items-center justify-center rounded-control bg-surface px-4 font-display text-sm font-semibold text-brand-text transition-colors hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-brand sm:flex-none"
+          className={`${buttonClasses("on-brand")} flex-1 sm:flex-none`}
         >
           Voir l&apos;équipe
         </Link>

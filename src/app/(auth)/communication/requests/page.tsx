@@ -4,6 +4,7 @@ import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/
 import { loadRequestQueue, resolveRequestQueueAccess } from "@/modules/planning";
 import PageHeader from "@/components/ui/PageHeader";
 import Alert from "@/components/ui/Alert";
+import { buttonClasses } from "@/components/ui/button-classes";
 import StatusChip from "@/components/ui/StatusChip";
 import { CommunicationQueue } from "@/components/requests/TeamQueues";
 
@@ -19,7 +20,7 @@ export default async function CommunicationRequestsPage() {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader title="Demandes réseaux sociaux" />
-        <Alert tone="warning" action={<Link href="/admin/departments/functions" className="font-semibold underline">Configurer maintenant</Link>}>
+        <Alert tone="warning" action={<Link href="/admin/departments/functions" className={buttonClasses("secondary", "sm")}>Configurer les fonctions</Link>}>
           Aucun département n&apos;est configuré comme <strong>Communication</strong>.
         </Alert>
       </div>

@@ -2,7 +2,7 @@ import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import Link from "next/link";
+import { PageHeader } from "@/components/ui";
 import { assertOverageAllowed } from "@/modules/accounting";
 import NewRequestForm from "./NewRequestForm";
 
@@ -65,7 +65,7 @@ async function selectableDepartments(userId: string, churchId: string, isAdmin: 
 }
 
 /**
- * « Corriger et resoumettre » : pré-remplit le formulaire depuis la demande rejetée —
+ * « Corriger la demande » : pré-remplit le formulaire depuis la demande rejetée —
  * uniquement la sienne, dans l'église courante, et encore à l'état REJECTED.
  */
 async function loadCorrection(correctionOf: string | undefined, churchId: string, userId: string) {
@@ -136,19 +136,8 @@ export default async function NewAccountingRequestPage({
   const complement = await loadComplement((await searchParams).complement, churchId, session.user.id!);
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <div className="flex items-center gap-2">
-        <Link
-          href={fromRequests ? "/requests/new" : "/accounting/requests"}
-          className="text-sm text-ink-subtle hover:text-brand-text transition-colors"
-        >
-          ← {fromRequests ? "Nouvelle demande" : "Demandes"}
-        </Link>
-        <span className="text-ink-subtle">/</span>
-        <span className="text-sm text-ink-muted font-medium">
-          {correction ? "Correction" : "Nouvelle demande"}
-        </span>
-      </div>
+    <div className="flex max-w-2xl flex-col gap-6">
+      <PageHeader title={correction ? "Corriger la demande financière" : "Nouvelle demande financière"} />
       <NewRequestForm
         departments={departments}
         correction={correction}

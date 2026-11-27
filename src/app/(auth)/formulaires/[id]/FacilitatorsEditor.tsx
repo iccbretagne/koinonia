@@ -44,7 +44,7 @@ export default function FacilitatorsEditor({
   return (
     <section className="space-y-3">
       <div>
-        <h2 className="font-semibold text-ink">Intervenants</h2>
+        <h2 className="font-display text-[17px] font-semibold text-ink">Intervenants</h2>
         <p className="text-[14px] text-ink-muted">
           Ils voient les inscrits de leur périmètre et notent les présences, sans exporter ni modifier. Leur accès s&apos;éteint à la clôture.
         </p>
@@ -59,14 +59,14 @@ export default function FacilitatorsEditor({
                 <p className="font-semibold text-ink">{f.name}</p>
                 <IconButton icon={Trash2} aria-label={`Retirer ${f.name}`} onClick={() => setList(list.filter((x) => x.userId !== f.userId))} />
               </div>
-              <label className="flex min-h-9 items-center gap-2">
+              <label className="flex min-h-11 items-center gap-2">
                 <Checkbox checked={f.allScope} onChange={(e) => patch(f.userId, { allScope: e.target.checked })} />
                 <span className="text-[14px] text-ink">Tout le formulaire</span>
               </label>
               {!f.allScope && (
                 <div className="grid gap-1 sm:grid-cols-2">
                   {options.map((o) => (
-                    <label key={o.key} className="flex min-h-9 items-center gap-2">
+                    <label key={o.key} className="flex min-h-11 items-center gap-2">
                       <Checkbox
                         checked={selected.has(o.key)}
                         onChange={(e) =>
@@ -87,7 +87,7 @@ export default function FacilitatorsEditor({
         })}
       </ul>
       <div className="flex flex-wrap items-end gap-3">
-        <div className="w-72">
+        <div className="w-full sm:w-72">
           <Select
             label="Ajouter un intervenant"
             placeholder="Choisir un compte…"
@@ -106,10 +106,11 @@ export default function FacilitatorsEditor({
             setAdding("");
           }}
         >
-          <Plus className="size-4" aria-hidden="true" /> Ajouter
+          <Plus className="size-4" aria-hidden="true" /> Ajouter l&apos;intervenant
         </Button>
         <Button
           type="button"
+          variant="secondary"
           disabled={busy}
           onClick={() =>
             void call(
@@ -120,7 +121,7 @@ export default function FacilitatorsEditor({
             )
           }
         >
-          {busy ? "Enregistrement…" : "Enregistrer les intervenants"}
+          {busy ? "Enregistrement en cours…" : "Enregistrer les intervenants"}
         </Button>
       </div>
     </section>

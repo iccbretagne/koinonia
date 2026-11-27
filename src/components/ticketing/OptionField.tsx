@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { Minus, Plus } from "lucide-react";
-import { Button, Checkbox, Select } from "@/components/ui";
+import { Button, Checkbox, RadioGroup, Select } from "@/components/ui";
 import { formatEuros, type PublicOption } from "@/modules/ticketing/schemas";
 
 export type Choice = { variantId?: string; quantity: number };
@@ -105,6 +105,9 @@ function entries(options: PublicOption[]): Entry[] {
   return out;
 }
 
+/** Valeur du choix « Aucun » (les identifiants d'option ne sont jamais vides). */
+const NONE = "__none__";
+
 /** Groupe au choix unique : un bouton radio par option (« Aucun » compris), puis son détail. */
 function ChoiceGroup({
   name,
@@ -135,29 +138,29 @@ function ChoiceGroup({
   }
   const detail = options.find((o) => o.id === current && o.type !== "CHECKBOX");
   return (
-    <fieldset className="space-y-2">
-      <legend className="text-[15px] font-medium text-ink">{name} <span className="font-normal text-ink-muted">(un seul choix)</span></legend>
-      {[null, ...options].map((o) => {
-        const soldOut = !!o && o.remaining === 0 && !choices[o.id];
-        return (
-          <label key={o?.id ?? "none"} className="flex min-h-11 items-center gap-3">
-            <input
-              type="radio"
-              name={radio}
-              className="size-5 accent-brand"
-              checked={o ? current === o.id : current === null}
-              disabled={soldOut}
-              onChange={() => pick(o?.id ?? null)}
-            />
-            <span className="text-[15px] text-ink">
-              {o ? o.label : "Aucun"}
-              {o && o.price > 0 ? ` (${formatEuros(o.price)})` : ""}
-              {soldOut && " — épuisé"}
-              {o?.description && <span className="block text-[13px] text-ink-muted">{o.description}</span>}
-            </span>
-          </label>
-        );
-      })}
+    <div className="space-y-2">
+      <RadioGroup
+        legend={
+          <>
+            {name} <span className="font-normal text-ink-muted">(un seul choix)</span>
+          </>
+        }
+        name={radio}
+        value={current ?? NONE}
+        onChange={(v) => pick(v === NONE ? null : v)}
+        options={[
+          { value: NONE, label: "Aucun" },
+          ...options.map((o) => {
+            const soldOut = o.remaining === 0 && !choices[o.id];
+            return {
+              value: o.id,
+              label: `${o.label}${o.price > 0 ? ` (${formatEuros(o.price)})` : ""}${soldOut ? " — épuisé" : ""}`,
+              description: o.description || undefined,
+              disabled: soldOut,
+            };
+          }),
+        ]}
+      />
       {detail && (
         <div className="pl-8">
           <OptionField
@@ -168,7 +171,7 @@ function ChoiceGroup({
           />
         </div>
       )}
-    </fieldset>
+    </div>
   );
 }
 

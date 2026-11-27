@@ -3,6 +3,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { appIconUrl, getAppIconVersion } from "@/modules/core";
 import InstallGuide from "@/components/install/InstallGuide";
+import { buttonClasses } from "@/components/ui/button-classes";
 
 export const metadata: Metadata = {
   title: "Installer Koinonia",
@@ -41,11 +42,9 @@ export default async function InstallPage() {
 
       <InstallGuide signedIn={signedIn} />
 
-      <p className="text-center text-[15px]">
-        <Link href="/" className="font-semibold text-brand-text underline">
-          {signedIn ? "Retour à Koinonia" : "Se connecter"}
-        </Link>
-      </p>
+      <Link href="/" className={`${buttonClasses("secondary")} self-center`}>
+        {signedIn ? "Revenir à Koinonia" : "Se connecter"}
+      </Link>
     </main>
   );
 }

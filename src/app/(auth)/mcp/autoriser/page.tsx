@@ -3,7 +3,9 @@ import { OAuthError, UntrustedRedirectError, enabledChurchesFor, validateAuthori
 import { authorizeQuerySchema } from "@/app/api/mcp/oauth/authorize/contract";
 import PageHeader from "@/components/ui/PageHeader";
 import Alert from "@/components/ui/Alert";
+import Checkbox from "@/components/ui/Checkbox";
 import AuthorizeForm from "./AuthorizeForm";
+import RadioGroup from "@/components/ui/RadioGroup";
 
 /** Ce qu'un assistant connecté peut lire (spec 081) ; les actions sont une case à part (lot 2). */
 const READS = [
@@ -89,15 +91,12 @@ export default async function AuthorizeAssistantPage({
               </p>
             </>
           ) : (
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium text-ink mb-1">Pour quelle église ?</legend>
-              {available.map((c, i) => (
-                <label key={c.id} className="flex items-center gap-2 text-sm text-ink">
-                  <input type="radio" name="church_id" value={c.id} defaultChecked={i === 0} />
-                  {c.name}
-                </label>
-              ))}
-            </fieldset>
+            <RadioGroup
+              legend="Pour quelle église ?"
+              name="church_id"
+              defaultValue={available[0].id}
+              options={available.map((c) => ({ value: c.id, label: c.name }))}
+            />
           )}
 
           <div className="text-sm text-ink-muted space-y-1">
@@ -112,8 +111,8 @@ export default async function AuthorizeAssistantPage({
             </p>
           </div>
 
-          <label className="flex items-start gap-2 rounded-lg border border-line p-3 text-sm text-ink">
-            <input type="checkbox" name="allow_write" className="mt-1" />
+          <label className="flex items-start gap-2 rounded-control border border-line p-3 text-sm text-ink">
+            <Checkbox name="allow_write" className="mt-0.5" />
             <span>
               Autoriser aussi des actions, <strong>toujours confirmées par vous</strong>{" "}
               dans l&apos;assistant, selon vos droits dans Koinonia : déclarer une absence et répondre à une

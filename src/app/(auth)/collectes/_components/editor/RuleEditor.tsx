@@ -122,7 +122,7 @@ function JsonCheck({
       label="Contrôle (JSON)"
       rows={6}
       spellCheck={false}
-      className="font-mono text-[13px]"
+      className="font-mono"
       value={text}
       error={error ?? undefined}
       hint="Formes : lte, lt, gte, gt, eq, neq (deux opérandes), chain_gte, chain_lte (codes), implies, all ; opérande : code, nombre, oui/non (true/false) ou { sum: [...] }."

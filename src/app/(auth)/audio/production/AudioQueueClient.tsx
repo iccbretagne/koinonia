@@ -10,7 +10,7 @@ import Modal from "@/components/ui/Modal";
 import ServiceEventFields, { type DayEvent } from "./ServiceEventFields";
 import { EVENT_TYPE_OPTIONS, getEventTypeLabel } from "@/lib/event-types";
 import { eventTypeTone } from "@/components/event-type-tone";
-import StatusChip from "@/components/ui/StatusChip";
+import StatusChip, { type StatusTone } from "@/components/ui/StatusChip";
 import {
   type AudioServiceRow,
   type QueueCriteria,
@@ -40,12 +40,12 @@ const STATUS_LABELS: Record<AudioServiceRow["status"], string> = {
   UNPUBLISHED: "Dépublié",
 };
 
-const STATUS_BADGE: Record<AudioServiceRow["status"], string> = {
-  DRAFT: "bg-surface-sunken text-ink-muted",
-  PENDING_REVIEW: "bg-warning-soft text-warning",
-  READY: "bg-info/10 text-info",
-  PUBLISHED: "bg-success-soft text-success",
-  UNPUBLISHED: "bg-danger-soft text-danger",
+const STATUS_TONE: Record<AudioServiceRow["status"], StatusTone> = {
+  DRAFT: "neutral",
+  PENDING_REVIEW: "warning",
+  READY: "info",
+  PUBLISHED: "success",
+  UNPUBLISHED: "danger",
 };
 
 function todayIso(): string {
@@ -137,7 +137,7 @@ function NewServiceModal({ open, onClose }: { readonly open: boolean; readonly o
             Annuler
           </Button>
           <Button onClick={submit} disabled={creating}>
-            {creating ? "Création..." : "Créer"}
+            {creating ? "Création en cours…" : "Créer l'enregistrement"}
           </Button>
         </div>
       </div>
@@ -205,7 +205,7 @@ export default function AudioQueueClient({ services }: { readonly services: Audi
       <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
         <div className="w-full md:flex-1">
           <div className="md:hidden mb-2">
-            <Button variant="secondary" size="sm" onClick={() => setMobileFiltersOpen((o) => !o)}>
+            <Button variant="secondary" size="sm" aria-expanded={mobileFiltersOpen} onClick={() => setMobileFiltersOpen((o) => !o)}>
               Filtrer{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
             </Button>
           </div>
@@ -284,7 +284,7 @@ export default function AudioQueueClient({ services }: { readonly services: Audi
         </span>
         {showReset && (
           <Button variant="secondary" size="sm" onClick={reset}>
-            Réinitialiser
+            Réinitialiser les filtres
           </Button>
         )}
       </div>
@@ -318,9 +318,7 @@ export default function AudioQueueClient({ services }: { readonly services: Audi
           {
             header: "Statut",
             accessor: (row) => (
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[row.status]}`}>
-                {STATUS_LABELS[row.status]}
-              </span>
+              <StatusChip tone={STATUS_TONE[row.status]}>{STATUS_LABELS[row.status]}</StatusChip>
             ),
             sortKey: "status",
             defaultSortDir: "asc",
@@ -338,7 +336,7 @@ export default function AudioQueueClient({ services }: { readonly services: Audi
         }
         actions={(row) => (
           <Button variant="secondary" size="sm" onClick={() => router.push(`/audio/production/${row.id}`)}>
-            Ouvrir
+            Ouvrir l&apos;enregistrement
           </Button>
         )}
       />

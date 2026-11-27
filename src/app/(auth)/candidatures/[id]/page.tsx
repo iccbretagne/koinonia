@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowLeft, Download, ShieldOff } from "lucide-react";
 import { notFound } from "next/navigation";
 import { resolveChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -29,7 +30,7 @@ export default async function CandidaturePage({ params }: { readonly params: Pro
   } catch (error) {
     if (error instanceof ApiError && error.statusCode === 404) notFound();
     if (error instanceof Error && error.message === "FORBIDDEN") {
-      return <EmptyState title="Accès refusé" description="Cette candidature n'est pas visible pour toi." />;
+      return <EmptyState icon={ShieldOff} title="Accès refusé" description="Cette candidature n'est pas visible pour toi." />;
     }
     throw error;
   }
@@ -50,16 +51,16 @@ export default async function CandidaturePage({ params }: { readonly params: Pro
   const name = `${app.firstName} ${app.lastName}`;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
-      <Link href="/candidatures" className="text-sm text-ink-subtle hover:text-brand-text">
-        ← Candidatures
+    <div className="mx-auto flex max-w-4xl flex-col gap-4">
+      <Link href="/candidatures" className={`${buttonClasses("ghost", "sm")} self-start`}>
+        <ArrowLeft className="size-4" aria-hidden="true" /> Retour aux candidatures
       </Link>
       <PageHeader
         title={`${app.firstName} ${app.lastName}`}
         description={`Reçue le ${formatDay(app.createdAt)}`}
         actions={
           <a href={`/api/serving/applications/${app.id}/pdf`} className={buttonClasses("secondary")}>
-            Télécharger le PDF
+            <Download className="size-4" aria-hidden="true" /> Télécharger le PDF
           </a>
         }
       >
@@ -93,8 +94,8 @@ export default async function CandidaturePage({ params }: { readonly params: Pro
       )}
 
       {app.assignments.length > 0 && (
-        <section className="bg-surface rounded-xl border border-line p-4 sm:p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-brand-text mb-3">Affectations</h2>
+        <section>
+          <h2 className="mb-3 font-display text-[17px] font-semibold text-ink">Affectations</h2>
           <ul className="space-y-3">
             {app.assignments.map((a) => (
               <li key={a.id} className="flex flex-col gap-1">

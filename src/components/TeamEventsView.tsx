@@ -318,7 +318,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
             type="button"
             aria-pressed={period === option.value}
             onClick={() => setPeriod(option.value)}
-            className={`min-h-10 rounded-[7px] px-4 font-display text-sm font-semibold transition-colors duration-120
+            className={`min-h-11 rounded-[7px] px-4 font-display sm:min-h-10 text-sm font-semibold transition-colors duration-120
               focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus ${
                 period === option.value ? "bg-surface text-brand-text shadow-card" : "text-ink-muted hover:text-ink"
               }`}

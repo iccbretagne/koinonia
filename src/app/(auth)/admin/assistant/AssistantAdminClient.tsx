@@ -7,8 +7,10 @@ import { Inbox, MessageCircleQuestion } from "lucide-react";
 import {
   Alert,
   Button,
+  buttonClasses,
   ConfirmModal,
   EmptyState,
+  FilterChip,
   Input,
   Modal,
   SearchInput,
@@ -157,7 +159,11 @@ function EntryForm({
           <Button variant="secondary" onClick={onClose}>
             Annuler
           </Button>
-          <Button onClick={() => void submit()} disabled={saving || !entryTitle.trim() || !answer.trim() || !questions.trim()}>
+          <Button
+            onClick={() => void submit()}
+            disabled={saving || !entryTitle.trim() || !answer.trim() || !questions.trim()}
+            title={!entryTitle.trim() || !answer.trim() || !questions.trim() ? "Renseignez le titre, les questions et la réponse" : undefined}
+          >
             {saving ? "Enregistrement…" : submitLabel}
           </Button>
         </div>
@@ -185,7 +191,7 @@ function UsageTab({ stats }: { readonly stats: StatsPeriod }) {
       </p>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {tiles.map((tile) => (
-          <div key={tile.label} className="rounded-card border border-line bg-surface p-4 shadow-card">
+          <div key={tile.label}>
             <p className="text-[13px] text-ink-muted">{tile.label}</p>
             <p className="font-display text-2xl font-bold tabular-nums text-ink">{tile.value}</p>
           </div>
@@ -223,20 +229,13 @@ function QuestionsTab({ pending, entries, status }: { readonly pending: PendingR
         Les questions arrivent sans le nom ni l&apos;église de la personne ; emails, téléphones et liens sont masqués. Un prénom
         peut subsister : supprimez la question si besoin.
       </Alert>
-      <div className="flex flex-wrap gap-2">
+      <nav aria-label="Filtrer par statut" className="flex flex-wrap gap-2">
         {Object.entries(STATUS_LABEL).map(([value, label]) => (
-          <Link
-            key={value}
-            href={`/admin/assistant?onglet=questions&statut=${value}`}
-            aria-current={value === status ? "page" : undefined}
-            className={`rounded-full border px-3 py-1.5 text-[13px] font-semibold ${
-              value === status ? "border-brand bg-brand-soft text-brand-text" : "border-line text-ink-muted hover:text-ink"
-            }`}
-          >
+          <FilterChip key={value} href={`/admin/assistant?onglet=questions&statut=${value}`} pressed={value === status}>
             {label}
-          </Link>
+          </FilterChip>
         ))}
-      </div>
+      </nav>
       {pending.length === 0 ? (
         <EmptyState icon={Inbox} title="Aucune question ici" description="Les questions sans réponse ou jugées « Pas utile » apparaîtront ici." />
       ) : (
@@ -256,14 +255,14 @@ function QuestionsTab({ pending, entries, status }: { readonly pending: PendingR
               </p>
               {status === "OPEN" && (
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" onClick={() => setAnswering(row)}>
+                  <Button size="sm" variant="secondary" onClick={() => setAnswering(row)}>
                     Répondre
                   </Button>
                   <Button size="sm" variant="secondary" onClick={() => { setLinkKey(""); setLinking(row); }}>
-                    Rattacher à…
+                    Rattacher à une fiche
                   </Button>
                   <Button size="sm" variant="ghost" disabled={busy} onClick={() => void act(row, { action: "offtopic" }, "Question classée hors sujet")}>
-                    Hors sujet
+                    Classer hors sujet
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => setDeleting(row)}>
                     Supprimer
@@ -307,12 +306,13 @@ function QuestionsTab({ pending, entries, status }: { readonly pending: PendingR
               </Button>
               <Button
                 disabled={!linkKey || busy}
+                title={!linkKey ? "Choisissez une fiche" : undefined}
                 onClick={async () => {
                   await act(linking, { action: "link", entryKey: linkKey }, "Question rattachée");
                   setLinking(null);
                 }}
               >
-                Rattacher
+                {busy ? "Rattachement…" : "Rattacher la question"}
               </Button>
             </div>
           </div>
@@ -322,7 +322,7 @@ function QuestionsTab({ pending, entries, status }: { readonly pending: PendingR
         open={!!deleting}
         title="Supprimer la question ?"
         message="Elle disparaît définitivement de la liste."
-        confirmLabel="Supprimer"
+        confirmLabel="Supprimer la question"
         variant="danger"
         confirming={busy}
         onCancel={() => setDeleting(null)}
@@ -465,7 +465,7 @@ function BaseTab({ entries }: { readonly entries: AdminEntry[] }) {
         open={!!deleting}
         title="Supprimer la fiche ?"
         message="La fiche et ses formulations rattachées disparaissent de la base."
-        confirmLabel="Supprimer"
+        confirmLabel="Supprimer la fiche"
         variant="danger"
         onCancel={() => setDeleting(null)}
         onConfirm={async () => {
@@ -504,7 +504,7 @@ function SettingsTab({ enabled }: { readonly enabled: boolean }) {
   }
 
   return (
-    <section className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+    <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
         <MessageCircleQuestion aria-hidden="true" className="size-6 text-brand-text" strokeWidth={1.75} />
         <p className="min-w-0 flex-1 font-semibold text-ink">L&apos;assistant est {enabled ? "activé" : "désactivé"} pour toute l&apos;instance</p>
@@ -541,7 +541,14 @@ export default function AssistantAdminClient({
   return (
     <>
       {!enabled && tab !== "reglages" && (
-        <Alert tone="warning" action={<Link href="/admin/assistant?onglet=reglages" className="font-semibold underline">Réglages</Link>}>
+        <Alert
+          tone="warning"
+          action={
+            <Link href="/admin/assistant?onglet=reglages" className={buttonClasses("secondary", "sm")}>
+              Ouvrir les réglages
+            </Link>
+          }
+        >
           L&apos;assistant est désactivé : les utilisateurs voient le lien vers le guide.
         </Alert>
       )}

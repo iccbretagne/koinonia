@@ -120,7 +120,7 @@ export default function CollectionTab({
   return (
     <form onSubmit={(e) => void submit(e)} className="flex flex-wrap items-start gap-6">
       <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-6">
-        <section className="grid gap-4 rounded-card border border-line bg-surface p-5 sm:grid-cols-3">
+        <section className="grid gap-4 sm:grid-cols-3">
           <Select
             label="Culte"
             value={eventId}
@@ -132,8 +132,8 @@ export default function CollectionTab({
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-lg font-semibold text-ink">Par catégorie</h2>
-          <p className="text-sm text-ink-muted">Le total des espèces, sans le détail des billets et des pièces ; les chèques un par un, sans nom de donateur.</p>
+          <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Par catégorie</h2>
+          <p className="text-[15px] leading-[22px] text-ink-muted">Le total des espèces, sans le détail des billets et des pièces ; les chèques un par un, sans nom de donateur.</p>
           {rows.map((r) => {
             const isSpecial = r.categoryId === special?.id;
             return (
@@ -168,7 +168,7 @@ export default function CollectionTab({
                   ))}
                 </ul>
                 <Button type="button" variant="ghost" size="sm" onClick={() => update(r.key, { cheques: [...r.cheques, { key: newKey(), number: "", amount: "" }] })}>
-                  <Plus aria-hidden className="h-4 w-4" /> Ajouter un chèque
+                  <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} /> Ajouter un chèque
                 </Button>
               </div>
             );
@@ -178,14 +178,14 @@ export default function CollectionTab({
             variant="secondary"
             onClick={() => setRows((rs) => [...rs, { key: newKey(), categoryId: special?.id ?? incomes[0]?.id ?? "", purposeId: "", cash: "", cheques: [] }])}
           >
-            <Plus aria-hidden className="h-4 w-4" /> Ajouter une catégorie
+            <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} /> Ajouter une catégorie
           </Button>
         </section>
       </div>
 
-      <aside className="flex flex-[1_1_300px] flex-col gap-4 rounded-card border border-line bg-surface p-5">
-        <h2 className="text-lg font-semibold text-ink">Récapitulatif</h2>
-        <ul className="space-y-2 text-sm">
+      <aside className="flex flex-[1_1_300px] flex-col gap-4">
+        <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Récapitulatif</h2>
+        <ul className="space-y-2 text-[15px] leading-[22px]">
           {recap.byCategory.map((c) => (
             <li key={c.key} className="flex justify-between gap-3">
               <span className="text-ink">{c.label}</span>
@@ -193,12 +193,12 @@ export default function CollectionTab({
             </li>
           ))}
         </ul>
-        <div className="space-y-1 border-t border-line pt-3 text-sm">
+        <div className="space-y-1 border-t border-line pt-3 text-[15px] leading-[22px]">
           <p className="flex justify-between"><span className="text-ink-muted">Espèces</span><span className="tabular-nums">{euro(recap.cash)}</span></p>
           <p className="flex justify-between"><span className="text-ink-muted">Chèques</span><span className="tabular-nums">{euro(recap.cheques)}</span></p>
           <p className="flex justify-between text-base font-semibold"><span>Total de la collecte</span><span className="tabular-nums text-brand-text">{euro(recap.total)}</span></p>
         </div>
-        <p className="border-t border-line pt-3 text-sm text-ink-muted">Deux personnes comptent ensemble.</p>
+        <p className="border-t border-line pt-3 text-[15px] leading-[22px] text-ink-muted">Deux personnes comptent ensemble.</p>
         <Input label="Compté par" required value={counter1} onChange={(e) => setCounter1(e.target.value)} />
         <Input label="Vérifié par" required value={counter2} onChange={(e) => setCounter2(e.target.value)} />
         {error && <Alert tone="danger">{error}</Alert>}

@@ -30,8 +30,8 @@ Un gestionnaire crée la campagne (éditeur graphique, **import** d'un fichier J
 - **Chaque réponse porte un qualificatif.** *Exact* par défaut. *Estimation* si le chiffre est approché, *À rechercher* s'il reste à trouver, *Sans objet* si la question ne vous concerne pas, *NSP* (ne sait pas) quand le questionnaire l'autorise. Une estimation, un « à rechercher » ou un NSP demande une **note** : d'où vient le chiffre, ce qui manque.
 - **Les fichiers.** Là où une pièce est demandée, déposer un PDF, un tableur XLSX sans macro ou un CSV (10 Mo au plus). Le type est vérifié sur le contenu, pas sur l'extension.
 - **Les alertes de cohérence** (par exemple « S2 ne peut pas dépasser S1 ») préviennent, elles ne bloquent pas.
-- **Soumettre.** Les questions obligatoires doivent être renseignées ; un « à rechercher » est accepté et signalé au gestionnaire.
-- **Correction demandée.** Le gestionnaire indique un motif. Le questionnaire redevient modifiable : corriger, puis soumettre de nouveau.
+- **Envoyer le questionnaire.** Les questions obligatoires doivent être renseignées ; un « à rechercher » est accepté et signalé au gestionnaire.
+- **Correction demandée.** Le gestionnaire indique un motif. Le questionnaire redevient modifiable : corriger, puis envoyer de nouveau le questionnaire.
 
 ## Piloter
 

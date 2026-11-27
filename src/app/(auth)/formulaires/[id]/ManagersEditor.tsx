@@ -33,7 +33,7 @@ export default function ManagersEditor({
   return (
     <section className="space-y-3">
       <div>
-        <h2 className="font-semibold text-ink">Partage</h2>
+        <h2 className="font-display text-[17px] font-semibold text-ink">Partage</h2>
         <p className="text-[14px] text-ink-muted">
           Les personnes avec qui vous partagez ce formulaire peuvent le gérer, sauf le supprimer et gérer ce partage.
         </p>
@@ -56,7 +56,7 @@ export default function ManagersEditor({
       </ul>
       {editable && (
         <div className="flex flex-wrap items-end gap-3">
-          <div className="w-72">
+          <div className="w-full sm:w-72">
             <Select
               label="Partager avec"
               placeholder="Choisir un compte…"
@@ -75,7 +75,7 @@ export default function ManagersEditor({
               if (done) setAdding("");
             }}
           >
-            <Share2 className="size-4" aria-hidden="true" /> Partager
+            <Share2 className="size-4" aria-hidden="true" /> Partager le formulaire
           </Button>
         </div>
       )}

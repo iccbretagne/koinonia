@@ -1,7 +1,8 @@
 import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { buttonClasses } from "@/components/ui/button-classes";
+import { ArrowLeft, CalendarHeart, Plus } from "lucide-react";
+import { EmptyState, PageHeader, StatusChip, buttonClasses, type StatusTone } from "@/components/ui";
 import RequestForm from "./RequestForm";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -12,12 +13,12 @@ const STATUS_LABEL: Record<string, string> = {
   REJECTED: "Refusée",
 };
 
-const STATUS_COLOR: Record<string, string> = {
-  PENDING: "bg-warning-soft text-warning",
-  VALIDATED: "bg-info-soft text-info",
-  SCHEDULED: "bg-success-soft text-success",
-  CLOSED: "bg-surface-sunken text-ink-muted",
-  REJECTED: "bg-danger-soft text-danger",
+const STATUS_TONE: Record<string, StatusTone> = {
+  PENDING: "warning",
+  VALIDATED: "info",
+  SCHEDULED: "success",
+  CLOSED: "neutral",
+  REJECTED: "danger",
 };
 
 /**
@@ -33,7 +34,7 @@ export default async function CareRequestPage({
   const { from, new: isNew } = await searchParams;
   const fromRequests = from === "requests";
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-sm text-ink-muted">Aucune église sélectionnée.</p>;
   await requireChurchPermission("planning:view", churchId);
 
   // Aligné sur « Mes demandes » : la liste d'abord, le formulaire sur demande explicite.
@@ -47,29 +48,31 @@ export default async function CareRequestPage({
     });
 
     return (
-      <div className="max-w-xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-ink">Mes demandes de RDV</h1>
-          <Link href="/care/request?new=1" className={buttonClasses("primary")}>
-            + Nouvelle demande
-          </Link>
-        </div>
+      <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
+        <PageHeader
+          title="Mes demandes de RDV"
+          actions={
+            <Link href="/care/request?new=1" className={buttonClasses("primary")}>
+              <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
+              Demander un rendez-vous
+            </Link>
+          }
+        />
 
         {requests.length === 0 ? (
-          <div className="text-center py-12 text-ink-subtle border border-line border-dashed rounded-lg">
-            <p className="text-lg">Aucune demande de rendez-vous.</p>
-            <p className="text-sm mt-1">
-              Cliquez sur &quot;+ Nouvelle demande&quot; pour solliciter un entretien pastoral.
-            </p>
-          </div>
+          <EmptyState
+            icon={CalendarHeart}
+            title="Aucune demande de rendez-vous"
+            description="Demandez un rendez-vous pour solliciter un entretien pastoral."
+          />
         ) : (
-          <div className="space-y-3">
+          <ul className="flex flex-col gap-3">
             {requests.map((r) => (
-              <div key={r.id} className="bg-surface rounded-lg border border-line px-4 py-3">
+              <li key={r.id} className="rounded-card border border-line bg-surface px-4 py-3 shadow-card">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-medium text-ink">{r.subject}</p>
-                    <p className="text-xs text-ink-subtle mt-0.5">
+                    <p className="text-xs text-ink-muted mt-0.5">
                       {r.createdAt.toLocaleDateString("fr-FR", {
                         day: "2-digit",
                         month: "short",
@@ -77,17 +80,13 @@ export default async function CareRequestPage({
                       })}
                     </p>
                   </div>
-                  <span
-                    className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${
-                      STATUS_COLOR[r.status] ?? "bg-surface-sunken text-ink-muted"
-                    }`}
-                  >
+                  <StatusChip tone={STATUS_TONE[r.status] ?? "neutral"} className="shrink-0">
                     {STATUS_LABEL[r.status] ?? r.status}
-                  </span>
+                  </StatusChip>
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
     );
@@ -118,17 +117,15 @@ export default async function CareRequestPage({
   const backLabel = fromRequests ? "Nouvelle demande" : "Mes demandes de RDV";
 
   return (
-    <div className="max-w-xl mx-auto">
-      <Link
-        href={backHref}
-        className="text-sm text-ink-subtle hover:text-brand-text transition-colors mb-4 inline-block"
-      >
-        ← {backLabel}
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
+      <Link href={backHref} className={`${buttonClasses("ghost", "sm")} self-start`}>
+        <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
+        Retour à « {backLabel} »
       </Link>
-      <h1 className="text-2xl font-bold text-ink mb-2">Demande de RDV pastoral</h1>
-      <p className="text-sm text-ink-muted mb-6">
-        Soumettez votre demande. Elle sera étudiée puis confiée à un référent qui vous accompagnera.
-      </p>
+      <PageHeader
+        title="Demande de RDV pastoral"
+        description="Envoyez votre demande : elle sera étudiée puis confiée à un référent qui vous accompagnera."
+      />
       <RequestForm
         churchId={churchId}
         churchName={church?.name ?? "votre église"}

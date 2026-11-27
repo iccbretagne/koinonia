@@ -15,9 +15,13 @@ import {
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
 import Checkbox from "@/components/ui/Checkbox";
+import FilterChip from "@/components/ui/FilterChip";
+import { buttonClasses } from "@/components/ui/button-classes";
 import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
+import Textarea from "@/components/ui/Textarea";
 import { useToast } from "@/components/ui/Toast";
-import { controlClasses, fieldLabelClasses, textareaClasses } from "@/components/ui/field-classes";
+import { fieldLabelClasses } from "@/components/ui/field-classes";
 import { REQUEST_TYPE_ICON } from "../request-display";
 import { EVENT_TYPES, EVENT_TYPE_LABELS } from "@/lib/event-types";
 import { ROLE_LABELS } from "@/lib/roles";
@@ -73,8 +77,6 @@ const DEMAND_TYPES: { key: DemandType; label: string; icon: LucideIcon }[] = [
   { key: "DEMANDE_ACCES", label: "Demander un accès", icon: REQUEST_TYPE_ICON.DEMANDE_ACCES },
 ];
 
-const fieldControl = controlClasses();
-const selectControl = `${controlClasses()} cursor-pointer`;
 const listBox = "flex max-h-64 flex-col gap-0.5 overflow-y-auto rounded-control border border-line p-2";
 const checkRow = "flex min-h-11 cursor-pointer items-center gap-3 rounded-chip px-2 text-[15px] leading-[22px] text-ink hover:bg-surface-sunken";
 
@@ -121,7 +123,7 @@ function ChoiceTile({
 function ChoiceGroup({ title, children }: { readonly title: string; readonly children: React.ReactNode }) {
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-subtle">{title}</h2>
+      <h2 className="font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-muted">{title}</h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
     </section>
   );
@@ -646,17 +648,15 @@ export default function RequestForm({
             required
             placeholder="Ex : Concert de louange"
           />
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${formId}-f1`} className={fieldLabelClasses}>Contenu</label>
-            <textarea id={`${formId}-f1`}
-              value={annContent}
-              onChange={(e) => setAnnContent(e.target.value)}
-              required
-              rows={4}
-              placeholder="Texte de l'annonce…"
-              className={textareaClasses()}
-            />
-          </div>
+          <Textarea
+            id={`${formId}-f1`}
+            label="Contenu"
+            value={annContent}
+            onChange={(e) => setAnnContent(e.target.value)}
+            required
+            rows={4}
+            placeholder="Texte de l'annonce…"
+          />
           <Input
             label="Date de l'événement (facultatif)"
             type="date"
@@ -694,15 +694,17 @@ export default function RequestForm({
               <legend className={`${fieldLabelClasses} mb-2`}>
                 Dimanches de diffusion
                 {annTargetEventIds.length > 0 && (
-                  <span className="ml-2 text-xs font-normal text-brand-text">
+                  <span className="ml-2 text-[13px] font-normal leading-[18px] text-brand-text">
                     {annTargetEventIds.length} sélectionné{annTargetEventIds.length > 1 ? "s" : ""}
                   </span>
                 )}
               </legend>
               {announcementEvents.length === 0 ? (
-                <Alert tone="warning">
-                  Aucun événement ouvert à la diffusion dans les 90 prochains jours.{" "}
-                  <Link href="/admin/events" className="font-semibold text-brand-text underline">Configurer les événements</Link>
+                <Alert
+                  tone="warning"
+                  action={<Link href="/admin/events" className={buttonClasses("secondary", "sm")}>Configurer les événements</Link>}
+                >
+                  Aucun événement ouvert à la diffusion dans les 90 prochains jours.
                 </Alert>
               ) : (
                 <>
@@ -711,21 +713,11 @@ export default function RequestForm({
                       const selected = annTargetEventIds.includes(e.id);
                       const date = new Date(e.date);
                       return (
-                        <button
-                          key={e.id}
-                          type="button"
-                          onClick={() => toggleEvent(e.id)}
-                          aria-pressed={selected}
-                          className={`min-h-10 rounded-full border px-3 text-sm font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
-                            selected
-                              ? "border-brand bg-brand-soft text-brand-text"
-                              : "border-control-line bg-surface text-ink-muted hover:border-brand hover:text-ink"
-                          }`}
-                        >
+                        <FilterChip key={e.id} pressed={selected} onClick={() => toggleEvent(e.id)}>
                           {date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
                           {" · "}
                           {e.title}
-                        </button>
+                        </FilterChip>
                       );
                     })}
                   </div>
@@ -735,18 +727,13 @@ export default function RequestForm({
             </fieldset>
           )}
           {!isEditMode && sourceOptions.length > 1 && (
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor={`${formId}-f5`} className={fieldLabelClasses}>Département</label>
-              <select id={`${formId}-f5`}
-                value={annSourceId}
-                onChange={(e) => setAnnSourceId(e.target.value)}
-                className={selectControl}
-              >
-                {sourceOptions.map((s) => (
-                  <option key={s.id} value={s.id}>{s.label}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              id={`${formId}-f5`}
+              label="Département"
+              value={annSourceId}
+              onChange={(e) => setAnnSourceId(e.target.value)}
+              options={sourceOptions.map((s) => ({ value: s.id, label: s.label }))}
+            />
           )}
         </>
       )}
@@ -760,29 +747,22 @@ export default function RequestForm({
             required
             placeholder="Ex : Bannière formation leaders"
           />
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${formId}-f6`} className={fieldLabelClasses}>Brief</label>
-            <textarea id={`${formId}-f6`}
-              value={visualBrief}
-              onChange={(e) => setVisualBrief(e.target.value)}
-              rows={4}
-              placeholder="Description du besoin, couleurs, texte à inclure…"
-              className={textareaClasses()}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${formId}-f7`} className={fieldLabelClasses}>Format</label>
-            <select id={`${formId}-f7`}
-              value={visualFormat}
-              onChange={(e) => setVisualFormat(e.target.value)}
-              className={selectControl}
-            >
-              <option value="">— Sélectionner —</option>
-              {VISUAL_FORMATS.map((f) => (
-                <option key={f} value={f}>{f}</option>
-              ))}
-            </select>
-          </div>
+          <Textarea
+            id={`${formId}-f6`}
+            label="Brief"
+            value={visualBrief}
+            onChange={(e) => setVisualBrief(e.target.value)}
+            rows={4}
+            placeholder="Description du besoin, couleurs, texte à inclure…"
+          />
+          <Select
+            id={`${formId}-f7`}
+            label="Format"
+            value={visualFormat}
+            onChange={(e) => setVisualFormat(e.target.value)}
+            placeholder="— Sélectionner —"
+            options={VISUAL_FORMATS.map((f) => ({ value: f, label: f }))}
+          />
           <Input
             label="Échéance souhaitée"
             type="date"
@@ -795,18 +775,13 @@ export default function RequestForm({
             </Alert>
           )}
           {sourceOptions.length > 1 && (
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor={`${formId}-f8`} className={fieldLabelClasses}>Département</label>
-              <select id={`${formId}-f8`}
-                value={visualSourceId}
-                onChange={(e) => setVisualSourceId(e.target.value)}
-                className={selectControl}
-              >
-                {sourceOptions.map((s) => (
-                  <option key={s.id} value={s.id}>{s.label}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              id={`${formId}-f8`}
+              label="Département"
+              value={visualSourceId}
+              onChange={(e) => setVisualSourceId(e.target.value)}
+              options={sourceOptions.map((s) => ({ value: s.id, label: s.label }))}
+            />
           )}
         </>
       )}
@@ -820,18 +795,13 @@ export default function RequestForm({
             required
             placeholder="Ex : Culte de louange"
           />
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${formId}-f9`} className={fieldLabelClasses}>Type</label>
-            <select id={`${formId}-f9`}
-              value={eventType}
-              onChange={(e) => setEventType(e.target.value)}
-              className={selectControl}
-            >
-              {EVENT_TYPES.map((t) => (
-                <option key={t} value={t}>{EVENT_TYPE_LABELS[t]}</option>
-              ))}
-            </select>
-          </div>
+          <Select
+            id={`${formId}-f9`}
+            label="Type"
+            value={eventType}
+            onChange={(e) => setEventType(e.target.value)}
+            options={EVENT_TYPES.map((t) => ({ value: t, label: EVENT_TYPE_LABELS[t] }))}
+          />
           <Input
             label="Date"
             type="datetime-local"
@@ -845,26 +815,21 @@ export default function RequestForm({
             }}
             required
           />
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${formId}-f10`} className={fieldLabelClasses}>Délai avant l&apos;événement</label>
-            <select id={`${formId}-f10`}
-              value={deadlineOffset}
-              onChange={(e) => {
-                const offset = e.target.value;
-                setDeadlineOffset(offset);
-                if (offset && eventDate) {
-                  setPlanningDeadline(computeDeadlineFromOffset(eventDate, offset));
-                } else if (!offset) {
-                  setPlanningDeadline("");
-                }
-              }}
-              className={selectControl}
-            >
-              {DEADLINE_OFFSETS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </div>
+          <Select
+            id={`${formId}-f10`}
+            label="Délai avant l'événement"
+            value={deadlineOffset}
+            onChange={(e) => {
+              const offset = e.target.value;
+              setDeadlineOffset(offset);
+              if (offset && eventDate) {
+                setPlanningDeadline(computeDeadlineFromOffset(eventDate, offset));
+              } else if (!offset) {
+                setPlanningDeadline("");
+              }
+            }}
+            options={DEADLINE_OFFSETS.map((o) => ({ value: o.value, label: o.label }))}
+          />
           {!deadlineOffset && (
             <Input
               label="Échéance du planning (facultatif)"
@@ -907,21 +872,16 @@ export default function RequestForm({
               {eventDeptIds.length} département{eventDeptIds.length !== 1 ? "s" : ""} sélectionné{eventDeptIds.length !== 1 ? "s" : ""}
             </p>
           </fieldset>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${formId}-f12`} className={fieldLabelClasses}>Récurrence</label>
-            <select id={`${formId}-f12`}
-              value={recurrenceRule}
-              onChange={(e) => {
-                setRecurrenceRule(e.target.value);
-                if (!e.target.value) setRecurrenceEnd("");
-              }}
-              className={selectControl}
-            >
-              {RECURRENCE_RULES.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
-          </div>
+          <Select
+            id={`${formId}-f12`}
+            label="Récurrence"
+            value={recurrenceRule}
+            onChange={(e) => {
+              setRecurrenceRule(e.target.value);
+              if (!e.target.value) setRecurrenceEnd("");
+            }}
+            options={RECURRENCE_RULES.map((r) => ({ value: r.value, label: r.label }))}
+          />
           {recurrenceRule && (
             <Input
               label="Fin de récurrence"
@@ -936,137 +896,105 @@ export default function RequestForm({
 
       {demandType === "MODIFICATION_EVENEMENT" && (
         <>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${formId}-f13`} className={fieldLabelClasses}>Événement à modifier</label>
-            <select id={`${formId}-f13`}
-              value={selectedEventId}
-              onChange={(e) => {
-                const id = e.target.value;
-                setSelectedEventId(id);
-                const evt = events.find((ev) => ev.id === id);
-                if (evt) {
-                  setEventType(evt.type);
-                  // Format ISO date to datetime-local format (YYYY-MM-DDTHH:mm)
-                  const d = new Date(evt.date);
-                  const pad = (n: number) => String(n).padStart(2, "0");
-                  const local = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-                  setEventDate(local);
-                } else {
-                  setEventType("");
-                  setEventDate("");
-                }
-              }}
-              required
-              className={selectControl}
-            >
-              <option value="">— Sélectionner —</option>
-              {events.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.title} — {new Date(e.date).toLocaleDateString("fr-FR")}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Select
+            id={`${formId}-f13`}
+            label="Événement à modifier"
+            value={selectedEventId}
+            onChange={(e) => {
+              const id = e.target.value;
+              setSelectedEventId(id);
+              const evt = events.find((ev) => ev.id === id);
+              if (evt) {
+                setEventType(evt.type);
+                // Format ISO date to datetime-local format (YYYY-MM-DDTHH:mm)
+                const d = new Date(evt.date);
+                const pad = (n: number) => String(n).padStart(2, "0");
+                const local = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                setEventDate(local);
+              } else {
+                setEventType("");
+                setEventDate("");
+              }
+            }}
+            required
+            placeholder="— Sélectionner —"
+            options={events.map((e) => ({ value: e.id, label: `${e.title} — ${new Date(e.date).toLocaleDateString("fr-FR")}` }))}
+          />
           <Input
             label="Nouveau titre (laisser vide si inchangé)"
             value={eventTitle}
             onChange={(e) => setEventTitle(e.target.value)}
             placeholder="Nouveau titre…"
           />
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${formId}-f14`} className={fieldLabelClasses}>Nouveau type</label>
-            <select id={`${formId}-f14`}
-              value={eventType}
-              onChange={(e) => setEventType(e.target.value)}
-              className={selectControl}
-            >
-              <option value="">— Inchangé —</option>
-              {EVENT_TYPES.map((t) => (
-                <option key={t} value={t}>{EVENT_TYPE_LABELS[t]}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${formId}-f15`} className={fieldLabelClasses}>Nouvelle date</label>
-            <input id={`${formId}-f15`}
-              type="datetime-local"
-              value={eventDate}
-              onChange={(e) => setEventDate(e.target.value)}
-              className={fieldControl}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${formId}-f16`} className={fieldLabelClasses}>Échéance du planning</label>
-            <input id={`${formId}-f16`}
-              type="datetime-local"
-              value={planningDeadline}
-              onChange={(e) => setPlanningDeadline(e.target.value)}
-              className={fieldControl}
-            />
-          </div>
+          <Select
+            id={`${formId}-f14`}
+            label="Nouveau type"
+            value={eventType}
+            onChange={(e) => setEventType(e.target.value)}
+            placeholder="— Inchangé —"
+            options={EVENT_TYPES.map((t) => ({ value: t, label: EVENT_TYPE_LABELS[t] }))}
+          />
+          <Input
+            id={`${formId}-f15`}
+            label="Nouvelle date"
+            type="datetime-local"
+            value={eventDate}
+            onChange={(e) => setEventDate(e.target.value)}
+          />
+          <Input
+            id={`${formId}-f16`}
+            label="Échéance du planning"
+            type="datetime-local"
+            value={planningDeadline}
+            onChange={(e) => setPlanningDeadline(e.target.value)}
+          />
         </>
       )}
 
       {demandType === "ANNULATION_EVENEMENT" && (
         <>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${formId}-f17`} className={fieldLabelClasses}>Événement à annuler</label>
-            <select id={`${formId}-f17`}
-              value={selectedEventId}
-              onChange={(e) => setSelectedEventId(e.target.value)}
-              required
-              className={selectControl}
-            >
-              <option value="">— Sélectionner —</option>
-              {events.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.title} — {new Date(e.date).toLocaleDateString("fr-FR")}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${formId}-f18`} className={fieldLabelClasses}>Raison</label>
-            <textarea id={`${formId}-f18`}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              required
-              rows={3}
-              className={textareaClasses()}
-            />
-          </div>
+          <Select
+            id={`${formId}-f17`}
+            label="Événement à annuler"
+            value={selectedEventId}
+            onChange={(e) => setSelectedEventId(e.target.value)}
+            required
+            placeholder="— Sélectionner —"
+            options={events.map((e) => ({ value: e.id, label: `${e.title} — ${new Date(e.date).toLocaleDateString("fr-FR")}` }))}
+          />
+          <Textarea
+            id={`${formId}-f18`}
+            label="Raison"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            required
+            rows={3}
+          />
         </>
       )}
 
       {demandType === "MODIFICATION_PLANNING" && (
         <>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${formId}-f19`} className={fieldLabelClasses}>Événement</label>
-            <select id={`${formId}-f19`}
-              value={selectedEventId}
-              onChange={(e) => {
-                const id = e.target.value;
-                setSelectedEventId(id);
-                if (id) void loadEventDepartments(id);
-                else setPlanningDeptIds([]);
-              }}
-              required
-              className={selectControl}
-            >
-              <option value="">— Sélectionner —</option>
-              {events.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.title} — {new Date(e.date).toLocaleDateString("fr-FR")}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Select
+            id={`${formId}-f19`}
+            label="Événement"
+            value={selectedEventId}
+            onChange={(e) => {
+              const id = e.target.value;
+              setSelectedEventId(id);
+              if (id) void loadEventDepartments(id);
+              else setPlanningDeptIds([]);
+            }}
+            required
+            placeholder="— Sélectionner —"
+            options={events.map((e) => ({ value: e.id, label: `${e.title} — ${new Date(e.date).toLocaleDateString("fr-FR")}` }))}
+          />
           {selectedEventId && (
             <fieldset className="min-w-0 flex flex-col gap-1.5">
               <legend className={`${fieldLabelClasses} mb-1.5`}>
                 Départements assignés
                 {loadingEventDepts && (
-                  <span className="ml-2 text-xs font-normal text-ink-muted">Chargement…</span>
+                  <span className="ml-2 text-[13px] font-normal leading-[18px] text-ink-muted">Chargement…</span>
                 )}
               </legend>
               <p className="text-[13px] leading-[18px] text-ink-muted">
@@ -1102,48 +1030,33 @@ export default function RequestForm({
 
       {demandType === "DEMANDE_ACCES" && (
         <>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${formId}-f21`} className={fieldLabelClasses}>Utilisateur</label>
-            <select id={`${formId}-f21`}
-              value={targetUserId}
-              onChange={(e) => setTargetUserId(e.target.value)}
-              required
-              className={selectControl}
-            >
-              <option value="">— Sélectionner —</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>{u.label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${formId}-f22`} className={fieldLabelClasses}>Rôle</label>
-            <select id={`${formId}-f22`}
-              value={targetRole}
-              onChange={(e) => setTargetRole(e.target.value)}
-              required
-              className={selectControl}
-            >
-              {ROLES_FOR_ACCESS.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
-          </div>
+          <Select
+            id={`${formId}-f21`}
+            label="Utilisateur"
+            value={targetUserId}
+            onChange={(e) => setTargetUserId(e.target.value)}
+            required
+            placeholder="— Sélectionner —"
+            options={users.map((u) => ({ value: u.id, label: u.label }))}
+          />
+          <Select
+            id={`${formId}-f22`}
+            label="Rôle"
+            value={targetRole}
+            onChange={(e) => setTargetRole(e.target.value)}
+            required
+            options={ROLES_FOR_ACCESS.map((r) => ({ value: r.value, label: r.label }))}
+          />
           {targetRole === "MINISTER" && (
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor={`${formId}-f23`} className={fieldLabelClasses}>Ministère</label>
-              <select id={`${formId}-f23`}
-                value={targetMinistryId}
-                onChange={(e) => setTargetMinistryId(e.target.value)}
-                required
-                className={selectControl}
-              >
-                <option value="">— Sélectionner —</option>
-                {ministries.map((m) => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              id={`${formId}-f23`}
+              label="Ministère"
+              value={targetMinistryId}
+              onChange={(e) => setTargetMinistryId(e.target.value)}
+              required
+              placeholder="— Sélectionner —"
+              options={ministries.map((m) => ({ value: m.id, label: m.name }))}
+            />
           )}
           {targetRole === "DEPARTMENT_HEAD" && (
             <fieldset className="min-w-0 flex flex-col gap-1.5">

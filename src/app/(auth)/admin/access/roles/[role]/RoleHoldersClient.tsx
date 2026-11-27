@@ -4,7 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { ArrowLeft, Plus, X } from "lucide-react";
 import type { Role } from "@/generated/prisma/client";
+import { Alert, Button, EmptyState, IconButton, PageHeader, Select, StatusChip, buttonClasses } from "@/components/ui";
+import { useConfirm } from "../../../use-confirm";
 import ResponsibilityModal, { type ResponsibilitySelection } from "../../ResponsibilityModal";
 
 interface DeptRef {
@@ -52,7 +55,7 @@ function Avatar({ user, size = 32 }: { readonly user: HolderUser; readonly size?
   return (
     <div
       style={{ width: size, height: size }}
-      className="rounded-full bg-surface-sunken flex items-center justify-center text-xs font-semibold text-ink-muted shrink-0"
+      className="rounded-full bg-brand-soft flex items-center justify-center text-xs font-semibold text-brand-text shrink-0"
     >
       {user.name.charAt(0).toUpperCase()}
     </div>
@@ -66,11 +69,17 @@ export default function RoleHoldersClient({ churchId, role, label, description, 
   const [loading, setLoading] = useState<string | null>(null);
   const [addUserId, setAddUserId] = useState("");
   const [modal, setModal] = useState<{ targetId?: string; targetLabel?: string } | null>(null);
+  const [confirmDialog, ask] = useConfirm();
 
   const isStructured = role === "MINISTER" || role === "DEPARTMENT_HEAD";
 
-  async function removeHolder(roleId: string, userId: string) {
-    if (!confirm(`Retirer ce rôle ?`)) return;
+  async function removeHolder(roleId: string, userId: string, confirmed = false) {
+    if (
+      !confirmed &&
+      !(await ask({ title: `Retirer le rôle ${label} ?`, message: "La personne perd aussitôt les droits liés à ce rôle.", confirmLabel: "Retirer le rôle" }))
+    ) {
+      return;
+    }
     setLoading(roleId);
     try {
       const res = await fetch(`/api/users/${userId}/roles`, {
@@ -90,11 +99,11 @@ export default function RoleHoldersClient({ churchId, role, label, description, 
 
   async function removeDeptAssignment(holder: Holder, deptId: string) {
     const remaining = holder.departments.filter((d) => d.id !== deptId);
-    if (!confirm("Retirer cette responsabilité ?")) return;
+    if (!(await ask({ title: "Retirer cette responsabilité ?", message: "La personne n'est plus responsable de ce département.", confirmLabel: "Retirer la responsabilité" }))) return;
     setLoading(holder.roleId);
     try {
       if (remaining.length === 0) {
-        await removeHolder(holder.roleId, holder.user.id);
+        await removeHolder(holder.roleId, holder.user.id, true);
         return;
       }
       const res = await fetch(`/api/users/${holder.user.id}/roles`, {
@@ -231,57 +240,63 @@ export default function RoleHoldersClient({ churchId, role, label, description, 
   }
 
   return (
-    <div className="space-y-6">
-      <Link href="/admin/access" className="text-sm text-brand-text hover:underline">← Retour</Link>
+    <div className="flex flex-col gap-6">
+      <Link href="/admin/access" className={`${buttonClasses("ghost", "sm")} self-start`}>
+        <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
+        Revenir aux accès
+      </Link>
 
-      <div>
-        <h1 className="text-lg font-semibold text-ink">{label}</h1>
-        <p className="text-sm text-ink-muted mt-1">{description}</p>
-      </div>
+      <PageHeader eyebrow="Accès & rôles" title={label} description={description} />
 
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && <Alert tone="danger">{error}</Alert>}
 
       {!isStructured && (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           {canManage && (
-            <div className="flex gap-2">
-              <select
-                value={addUserId}
-                onChange={(e) => setAddUserId(e.target.value)}
-                className="flex-1 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
-              >
-                <option value="">-- Ajouter une personne --</option>
-                {addableUsers.map((u) => (
-                  <option key={u.id} value={u.id}>{u.name}</option>
-                ))}
-              </select>
-              <button
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <div className="flex-1">
+                <Select
+                  label="Ajouter une personne"
+                  value={addUserId}
+                  onChange={(e) => setAddUserId(e.target.value)}
+                  placeholder="Choisir une personne"
+                  options={addableUsers.map((u) => ({ value: u.id, label: u.name }))}
+                />
+              </div>
+              <Button
+                type="button"
                 onClick={addSimpleHolder}
                 disabled={!addUserId || loading === "add"}
-                className="px-4 py-2 text-sm rounded-lg bg-brand text-on-brand hover:bg-brand-hover disabled:opacity-50"
+                title={!addUserId ? "Choisissez d'abord une personne" : undefined}
               >
-                {loading === "add" ? "…" : "Ajouter"}
-              </button>
+                {loading === "add" ? "Ajout…" : "Ajouter le rôle"}
+              </Button>
             </div>
           )}
 
-          {holders.length === 0 && <p className="text-sm text-ink-subtle italic text-center py-8">Aucun détenteur.</p>}
+          {holders.length === 0 && <EmptyState size="sm" title="Aucun détenteur" description="Personne n'a encore ce rôle dans l'église." />}
 
           {holders.map((h) => (
-            <div key={h.roleId} className="flex items-center gap-3 bg-surface rounded-lg border border-line shadow-card px-4 py-3">
+            <div key={h.roleId} className="flex min-h-16 items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-card">
               <Avatar user={h.user} />
-              <Link href={`/admin/access/users/${h.user.id}`} className="flex-1 min-w-0 hover:underline">
-                <p className="text-sm font-medium text-ink truncate">{h.user.name}</p>
-                <p className="text-xs text-ink-subtle truncate">{h.user.email}</p>
+              <Link
+                href={`/admin/access/users/${h.user.id}`}
+                className="min-w-0 flex-1 rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+              >
+                <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{h.user.name}</p>
+                <p className="truncate text-[13px] leading-[18px] text-ink-muted">{h.user.email}</p>
               </Link>
               {canManage && (
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="shrink-0"
                   onClick={() => removeHolder(h.roleId, h.user.id)}
                   disabled={loading === h.roleId}
-                  className="text-xs px-3 py-1.5 rounded-md font-medium border border-danger/30 text-danger hover:bg-danger-soft disabled:opacity-50 shrink-0"
                 >
-                  {loading === h.roleId ? "…" : "Retirer"}
-                </button>
+                  {loading === h.roleId ? "Retrait…" : "Retirer"}
+                </Button>
               )}
             </div>
           ))}
@@ -289,101 +304,102 @@ export default function RoleHoldersClient({ churchId, role, label, description, 
       )}
 
       {isStructured && role === "MINISTER" && (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           {ministries.map((ministry) => {
             const holder = holders.find((h) => h.ministryId === ministry.id);
             return (
-              <div key={ministry.id} className="bg-surface rounded-lg border border-line shadow-card px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
-                <div>
-                  <p className="text-sm font-semibold text-ink-muted">{ministry.name}</p>
+              <div key={ministry.id} className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-card">
+                <div className="min-w-0">
+                  <p className="text-[15px] font-semibold leading-[22px] text-ink">{ministry.name}</p>
                   {holder ? (
-                    <Link href={`/admin/access/users/${holder.user.id}`} className="inline-flex items-center gap-1.5 text-xs text-brand-text hover:underline mt-1">
-                      <Avatar user={holder.user} size={14} /> {holder.user.name}
+                    <Link
+                      href={`/admin/access/users/${holder.user.id}`}
+                      className={`${buttonClasses("ghost", "sm")} -ml-3`}
+                    >
+                      <Avatar user={holder.user} size={16} /> {holder.user.name}
                     </Link>
                   ) : (
-                    <span className="text-xs text-ink-subtle italic">Aucun</span>
+                    <p className="text-[13px] leading-[18px] text-ink-muted">Aucun ministre</p>
                   )}
                 </div>
-                <div className="flex gap-2 shrink-0">
+                <div className="flex shrink-0 gap-2">
                   {holder && canManage && (
-                    <button
-                      onClick={() => removeHolder(holder.roleId, holder.user.id)}
-                      className="text-xs px-2.5 py-1 rounded-md font-medium border border-danger/30 text-danger hover:bg-danger-soft"
-                    >
+                    <Button type="button" variant="ghost" size="sm" onClick={() => removeHolder(holder.roleId, holder.user.id)}>
                       Retirer
-                    </button>
+                    </Button>
                   )}
                   {canManage && (
-                    <button
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
                       onClick={() => setModal({ targetId: ministry.id, targetLabel: ministry.name })}
-                      className="text-xs px-2.5 py-1 rounded-md font-medium bg-brand text-on-brand hover:bg-brand-hover"
                     >
-                      {holder ? "Changer" : "Assigner"}
-                    </button>
+                      {holder ? "Changer de ministre" : "Assigner un ministre"}
+                    </Button>
                   )}
                 </div>
               </div>
             );
           })}
-          {ministries.length === 0 && <p className="text-sm text-ink-subtle italic text-center py-8">Aucun ministère dans votre périmètre.</p>}
+          {ministries.length === 0 && <EmptyState size="sm" title="Aucun ministère dans votre périmètre" />}
         </div>
       )}
 
       {isStructured && role === "DEPARTMENT_HEAD" && (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6">
           {ministries.map((ministry) => (
-            <div key={ministry.id} className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
-              <div className="px-5 py-2.5 bg-surface-sunken border-b border-line">
-                <h3 className="text-sm font-semibold text-ink-muted">{ministry.name}</h3>
-              </div>
+            <section key={ministry.id} className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+              <h3 className="border-b border-line px-4 py-3 font-display text-[15px] font-semibold leading-5 text-ink">{ministry.name}</h3>
               <div className="divide-y divide-line">
                 {ministry.departments.map((dept) => {
                   const deptHolders = holders.filter((h) => h.departments.some((d) => d.id === dept.id));
                   return (
-                    <div key={dept.id} className="px-5 py-3 flex items-start gap-4 flex-wrap">
-                      <p className="text-sm text-ink-muted w-44 shrink-0 pt-1">{dept.name}</p>
-                      <div className="flex flex-wrap gap-2 flex-1 items-center">
+                    <div key={dept.id} className="flex flex-wrap items-start gap-x-4 gap-y-2 px-4 py-3">
+                      <p className="w-44 shrink-0 pt-2.5 text-[15px] leading-[22px] text-ink-muted">{dept.name}</p>
+                      <div className="flex flex-1 flex-wrap items-center gap-2">
                         {deptHolders.map((h) => {
                           const dep = h.departments.find((d) => d.id === dept.id)?.isDeputy ?? false;
                           return (
-                            <span
-                              key={h.roleId}
-                              className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full font-medium border ${
-                                dep ? "bg-surface-sunken text-ink-muted border-line" : "bg-brand text-on-brand border-brand"
-                              }`}
-                            >
-                              <Avatar user={h.user} size={14} />
-                              <Link href={`/admin/access/users/${h.user.id}`} className="hover:underline">{h.user.name}</Link>
-                              {dep && <span className="opacity-60 font-normal">· adj.</span>}
+                            <span key={h.roleId} className="inline-flex items-center gap-1">
+                              <Link
+                                href={`/admin/access/users/${h.user.id}`}
+                                className={buttonClasses("secondary", "sm")}
+                              >
+                                <Avatar user={h.user} size={16} />
+                                {h.user.name}
+                                {dep && <StatusChip>Adjoint</StatusChip>}
+                              </Link>
                               {canManage && (
-                                <button
+                                <IconButton
+                                  icon={X}
+                                  aria-label={`Retirer ${h.user.name} de ${dept.name}`}
                                   onClick={() => removeDeptAssignment(h, dept.id)}
-                                  className="ml-0.5 opacity-60 hover:opacity-100 hover:text-danger"
-                                  title="Retirer"
-                                >
-                                  ×
-                                </button>
+                                />
                               )}
                             </span>
                           );
                         })}
-                        {deptHolders.length === 0 && <span className="text-xs text-ink-subtle italic">Aucun responsable</span>}
+                        {deptHolders.length === 0 && <span className="text-[13px] leading-[18px] text-ink-muted">Aucun responsable</span>}
                         {canManage && (
-                          <button
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => setModal({ targetId: dept.id, targetLabel: `${ministry.name} / ${dept.name}` })}
-                            className="text-xs px-2.5 py-1 rounded-md font-medium border border-line text-ink-muted hover:bg-surface-sunken"
                           >
-                            + Ajouter
-                          </button>
+                            <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                            Ajouter un responsable
+                          </Button>
                         )}
                       </div>
                     </div>
                   );
                 })}
               </div>
-            </div>
+            </section>
           ))}
-          {ministries.length === 0 && <p className="text-sm text-ink-subtle italic text-center py-8">Aucun département dans votre périmètre.</p>}
+          {ministries.length === 0 && <EmptyState size="sm" title="Aucun département dans votre périmètre" />}
         </div>
       )}
 
@@ -398,9 +414,10 @@ export default function RoleHoldersClient({ churchId, role, label, description, 
           fixedTargetId={modal.targetId}
           fixedTargetLabel={modal.targetLabel}
           onSubmit={handleResponsibilitySubmit}
-          submitLabel={role === "MINISTER" ? "Assigner" : "Ajouter"}
+          submitLabel={role === "MINISTER" ? "Assigner le ministre" : "Ajouter le responsable"}
         />
       )}
+      {confirmDialog}
     </div>
   );
 }

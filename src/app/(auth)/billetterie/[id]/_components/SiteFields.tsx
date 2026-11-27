@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Checkbox, Input, Select, Textarea } from "@/components/ui";
+import { Button, Checkbox, Input, Select, Textarea, fieldLabelClasses } from "@/components/ui";
+import FileInput from "@/components/ui/FileInput";
 import { GRADIENT_DIRECTIONS, PALETTE_KEYS, PALETTE_LABEL, type PaletteKey, type SiteBackground } from "@/modules/ticketing/schemas";
 
 /** Champs partagés de l'éditeur du site (spec 084) : image, fond, texte analysé. */
@@ -30,28 +31,27 @@ export function ImageField({ label, current, tools, onPick, onClear }: { readonl
   ];
   return (
     <div className="space-y-1.5">
-      <span className="text-sm font-medium text-ink">{label}</span>
+      <span className={fieldLabelClasses}>{label}</span>
       <div className="flex flex-wrap items-center gap-3">
         {current && (
           // eslint-disable-next-line @next/next/no-img-element -- miniature servie par l'API de l'équipe
-          <img src={tools.assetUrl(current)} alt="" className="h-12 w-auto rounded border border-line" />
+          <img src={tools.assetUrl(current)} alt="" className="h-12 w-auto rounded-chip border border-line" />
         )}
-        {tools.pool.length > 0 && <Select label="" aria-label={`${label} : image du site`} value={current ?? ""} options={options} onChange={(e) => e.target.value && onPick(e.target.value)} />}
+        {tools.pool.length > 0 && <Select label={`${label} : image du site`} hideLabel value={current ?? ""} options={options} onChange={(e) => e.target.value && onPick(e.target.value)} />}
         <Input label="Texte alternatif de la nouvelle image (obligatoire)" value={alt} maxLength={200} onChange={(e) => setAlt(e.target.value)} />
-        <input
-          type="file"
+        <FileInput
           accept="image/jpeg,image/png,image/webp,image/svg+xml"
+          buttonLabel="Téléverser une image"
           aria-label={`${label} : téléverser (JPEG, PNG, WebP ou SVG, 8 Mo au plus)`}
           disabled={!alt.trim()}
           title={alt.trim() ? undefined : "Saisissez d'abord le texte alternatif"}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) tools.upload(file, alt.trim(), onPick);
-            e.target.value = "";
+          resetAfterSelect
+          onFiles={(files) => {
+            if (files[0]) tools.upload(files[0], alt.trim(), onPick);
           }}
-          className="text-sm text-ink-muted"
         />
-        {current && onClear && <Button type="button" variant="ghost" size="sm" onClick={onClear}>Retirer</Button>}
+        {!alt.trim() && <p className="w-full text-[13px] text-ink-muted">Saisissez d&apos;abord le texte alternatif pour téléverser une image.</p>}
+        {current && onClear && <Button type="button" variant="ghost" size="sm" onClick={onClear}>Retirer l&apos;image</Button>}
       </div>
     </div>
   );
@@ -95,7 +95,7 @@ export function BackgroundFields({ label, value, onChange, tools }: { readonly l
         <>
           <Select label="Couleur du voile" value={bg.veil} options={paletteOptions} onChange={(e) => onChange({ ...bg, veil: e.target.value as PaletteKey })} />
           <Input label={`Opacité du voile : ${Math.round(bg.opacity * 100)} %`} type="range" min={20} max={90} value={Math.round(bg.opacity * 100)} onChange={(e) => onChange({ ...bg, opacity: Number(e.target.value) / 100 })} />
-          <label className="flex items-center gap-2 text-sm text-ink"><Checkbox checked={bg.fixed} onChange={(e) => onChange({ ...bg, fixed: e.target.checked })} /> Image fixe au défilement</label>
+          <label className="flex min-h-11 items-center gap-3 text-[15px] text-ink"><Checkbox checked={bg.fixed} onChange={(e) => onChange({ ...bg, fixed: e.target.checked })} /> Image fixe au défilement</label>
         </>
       )}
     </div>

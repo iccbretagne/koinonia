@@ -3,12 +3,23 @@
 import { SubmitEvent, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
-import Select from "@/components/ui/Select";
-import CheckboxGroup from "@/components/ui/CheckboxGroup";
-import Modal from "@/components/ui/Modal";
-import { buttonClasses } from "@/components/ui/button-classes";
+import { Pencil, Plus, X } from "lucide-react";
+import {
+  Alert,
+  Button,
+  CheckboxGroup,
+  EmptyState,
+  FilterChip,
+  IconButton,
+  Input,
+  Modal,
+  SearchInput,
+  Select,
+  StatusChip,
+  buttonClasses,
+  useToast,
+} from "@/components/ui";
+import { useConfirm } from "../use-confirm";
 import { ROLE_LABELS } from "@/lib/roles";
 import type { Role } from "@/generated/prisma/client";
 
@@ -60,6 +71,8 @@ export default function UsersClient({
   canManageRoles,
 }: Props) {
   const [users, setUsers] = useState(initialUsers);
+  const [confirmDialog, ask] = useConfirm();
+  const toast = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeLetter, setActiveLetter] = useState<string | null>(null);
 
@@ -179,7 +192,13 @@ export default function UsersClient({
     churchId: string,
     role: string
   ) {
-    if (!confirm(`Supprimer le rôle ${ROLE_LABELS[role as Role] || role} ?`)) return;
+    const label = ROLE_LABELS[role as Role] || role;
+    const ok = await ask({
+      title: `Retirer le rôle ${label} ?`,
+      message: "La personne perd immédiatement les accès liés à ce rôle.",
+      confirmLabel: "Retirer le rôle",
+    });
+    if (!ok) return;
 
     try {
       const res = await fetch(`/api/users/${userId}/roles`, {
@@ -190,7 +209,7 @@ export default function UsersClient({
 
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Erreur");
+        toast.error(data.error || "Erreur lors du retrait du rôle");
         return;
       }
 
@@ -206,13 +225,19 @@ export default function UsersClient({
             : u
         )
       );
+      toast.success("Rôle retiré");
     } catch {
-      alert("Erreur");
+      toast.error("Erreur lors du retrait du rôle");
     }
   }
 
   async function handleDeleteUser(userId: string, email: string) {
-    if (!confirm(`Supprimer le compte préparé pour ${email} ? Cette action est irréversible.`)) return;
+    const ok = await ask({
+      title: `Supprimer le compte préparé pour ${email} ?`,
+      message: "Cette action est irréversible.",
+      confirmLabel: "Supprimer le compte",
+    });
+    if (!ok) return;
 
     try {
       const res = await fetch(`/api/users/${userId}`, {
@@ -223,13 +248,14 @@ export default function UsersClient({
 
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Erreur");
+        toast.error(data.error || "Erreur lors de la suppression");
         return;
       }
 
       setUsers((prev) => prev.filter((u) => u.id !== userId));
+      toast.success("Compte supprimé");
     } catch {
-      alert("Erreur");
+      toast.error("Erreur lors de la suppression");
     }
   }
 
@@ -273,54 +299,43 @@ export default function UsersClient({
 
   return (
     <>
-      <div className="mb-4 space-y-3">
+      <div className="mb-4 flex flex-col gap-3">
         {canManageRoles && (
           <div className="flex justify-end">
-            <Link href="/admin/users/new" className={buttonClasses("primary", "sm")}>
-              + Créer un utilisateur
+            <Link href="/admin/users/new" className={buttonClasses("primary")}>
+              <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
+              Créer un utilisateur
             </Link>
           </div>
         )}
-        <Input
+        <SearchInput
+          aria-label="Rechercher un utilisateur"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Rechercher par nom ou email..."
+          placeholder="Rechercher par nom ou email…"
         />
-        <div className="flex flex-wrap gap-1">
-          <button
-            onClick={() => setActiveLetter(null)}
-            className={`px-2 py-1 text-xs font-medium rounded ${
-              activeLetter === null
-                ? "bg-brand text-on-brand"
-                : "bg-surface-sunken text-ink-muted hover:bg-surface-sunken"
-            }`}
-          >
+        <div role="group" aria-label="Filtrer par initiale" className="flex flex-wrap gap-1">
+          <FilterChip pressed={activeLetter === null} onClick={() => setActiveLetter(null)}>
             Tous
-          </button>
+          </FilterChip>
           {LETTERS.map((letter) => (
-            <button
+            <FilterChip
               key={letter}
-              onClick={() =>
-                setActiveLetter(activeLetter === letter ? null : letter)
-              }
-              className={`px-2 py-1 text-xs font-medium rounded ${
-                activeLetter === letter
-                  ? "bg-brand text-on-brand"
-                  : "bg-surface-sunken text-ink-muted hover:bg-surface-sunken"
-              }`}
+              pressed={activeLetter === letter}
+              onClick={() => setActiveLetter(activeLetter === letter ? null : letter)}
             >
               {letter}
-            </button>
+            </FilterChip>
           ))}
         </div>
-        <p className="text-sm text-ink-muted">
-          {filteredUsers.length} utilisateur{filteredUsers.length !== 1 ? "s" : ""}
+        <p className="text-[13px] leading-[18px] text-ink-muted">
+          {filteredUsers.length} utilisateur{filteredUsers.length > 1 ? "s" : ""}
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         {filteredUsers.map((user) => (
-          <div key={user.id} className="bg-surface rounded-lg shadow-card p-4">
+          <div key={user.id} className="rounded-card border border-line bg-surface p-4 shadow-card">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-3 min-w-0">
                 {user.image && (
@@ -333,15 +348,13 @@ export default function UsersClient({
                   />
                 )}
                 <div className="min-w-0">
-                  <p className="font-medium text-ink truncate">
+                  <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">
                     {user.displayName || user.name || "Sans nom"}
                     {user.displayName && user.name && user.displayName !== user.name && (
-                      <span className="text-sm text-ink-subtle ml-1">({user.name})</span>
+                      <span className="ml-1 text-sm font-normal text-ink-muted">({user.name})</span>
                     )}
                     {user.neverConnected && (
-                      <span className="ml-2 inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-warning-soft text-warning">
-                        Jamais connecté
-                      </span>
+                      <StatusChip tone="warning" className="ml-2">Jamais connecté</StatusChip>
                     )}
                   </p>
                   <p className="text-sm text-ink-muted truncate">{user.email}</p>
@@ -349,12 +362,12 @@ export default function UsersClient({
               </div>
               <div className="flex flex-wrap gap-2">
                 {canManageRoles && (
-                  <Button variant="secondary" onClick={() => openEditDisplayName(user)}>
-                    Nom d&apos;affichage
+                  <Button variant="secondary" size="sm" onClick={() => openEditDisplayName(user)}>
+                    Modifier le nom d&apos;affichage
                   </Button>
                 )}
                 {canManageRoles && user.neverConnected && (
-                  <Button variant="danger" onClick={() => handleDeleteUser(user.id, user.email)}>
+                  <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(user.id, user.email)}>
                     Supprimer
                   </Button>
                 )}
@@ -366,48 +379,40 @@ export default function UsersClient({
                 {user.churchRoles.map((r) => (
                   <span
                     key={r.id}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-surface-sunken rounded-md text-sm text-ink-muted"
+                    className="inline-flex items-center gap-1 rounded-control border border-line py-0.5 pl-2.5 pr-0.5 text-sm text-ink"
                   >
                     {formatRoleBadge(r)}
                     {canManageRoles &&
                       (r.role === "MINISTER" ||
                         r.role === "DEPARTMENT_HEAD") && (
-                        <button
-                          onClick={() => openEditAssignment(user.id, r)}
-                          className="ml-1 p-0.5 rounded text-brand-text hover:bg-brand-hover hover:text-on-brand transition-colors"
+                        <IconButton
+                          icon={Pencil}
+                          size="sm"
+                          aria-label={`Modifier l'affectation : ${formatRoleBadge(r)}`}
                           title="Modifier l'affectation"
-                        >
-                          <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                          </svg>
-                        </button>
+                          onClick={() => openEditAssignment(user.id, r)}
+                        />
                       )}
                     {canManageRoles && (
-                      <button
-                        onClick={() =>
-                          handleRemoveRole(user.id, r.church.id, r.role)
-                        }
-                        className="ml-0.5 p-0.5 rounded text-danger hover:bg-danger hover:text-on-danger transition-colors"
-                        title="Supprimer le rôle"
-                      >
-                        <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+                      <IconButton
+                        icon={X}
+                        size="sm"
+                        aria-label={`Retirer le rôle : ${formatRoleBadge(r)}`}
+                        title="Retirer le rôle"
+                        onClick={() => handleRemoveRole(user.id, r.church.id, r.role)}
+                      />
                     )}
                   </span>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-ink-subtle">Aucun rôle</p>
+              <p className="text-sm text-ink-muted">Aucun rôle</p>
             )}
           </div>
         ))}
 
         {filteredUsers.length === 0 && (
-          <p className="text-center text-ink-muted py-8">
-            Aucun utilisateur trouvé.
-          </p>
+          <EmptyState title="Aucun utilisateur trouvé" description="Modifiez la recherche ou l'initiale choisie." />
         )}
       </div>
 
@@ -425,7 +430,7 @@ export default function UsersClient({
             required
           />
           {displayNameError && (
-            <p className="text-sm text-danger">{displayNameError}</p>
+            <Alert tone="danger">{displayNameError}</Alert>
           )}
           <div className="flex justify-end gap-2">
             <Button
@@ -436,7 +441,7 @@ export default function UsersClient({
               Annuler
             </Button>
             <Button type="submit" disabled={displayNameLoading}>
-              {displayNameLoading ? "Enregistrement..." : "Enregistrer"}
+              {displayNameLoading ? "Enregistrement…" : "Enregistrer"}
             </Button>
           </div>
         </form>
@@ -458,7 +463,7 @@ export default function UsersClient({
                 value: m.id,
                 label: m.name,
               }))}
-              placeholder="-- Aucun ministère --"
+              placeholder="Aucun ministère"
             />
           )}
 
@@ -474,7 +479,7 @@ export default function UsersClient({
             />
           )}
 
-          {editError && <p className="text-sm text-danger">{editError}</p>}
+          {editError && <Alert tone="danger">{editError}</Alert>}
           <div className="flex justify-end gap-2">
             <Button
               variant="secondary"
@@ -484,11 +489,12 @@ export default function UsersClient({
               Annuler
             </Button>
             <Button type="submit" disabled={editLoading}>
-              {editLoading ? "Enregistrement..." : "Enregistrer"}
+              {editLoading ? "Enregistrement…" : "Enregistrer"}
             </Button>
           </div>
         </form>
       </Modal>
+      {confirmDialog}
     </>
   );
 }

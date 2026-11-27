@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ClipboardList } from "lucide-react";
-import { StatusChip } from "@/components/ui";
+import { ChartColumn, ClipboardList } from "lucide-react";
+import { StatusChip, buttonClasses } from "@/components/ui";
 import type { EventForm } from "@/modules/forms";
 
 /**
@@ -10,28 +10,30 @@ import type { EventForm } from "@/modules/forms";
 export default function EventFormsBlock({ forms, manage = false }: { readonly forms: readonly EventForm[]; readonly manage?: boolean }) {
   if (forms.length === 0) return null;
   return (
-    <section className="space-y-2 rounded-card border border-line bg-surface p-4">
-      <h2 className="flex items-center gap-2 font-semibold text-ink">
-        <ClipboardList className="size-4" aria-hidden="true" /> Formulaires
+    <section className="flex flex-col gap-2">
+      <h2 className="flex items-center gap-2 font-display text-[17px] font-semibold leading-6 text-ink">
+        <ClipboardList className="size-5 text-ink-subtle" aria-hidden="true" strokeWidth={1.75} /> Formulaires
       </h2>
-      <ul className="space-y-2">
+      <ul className="flex flex-col gap-2">
         {forms.map((f) => (
           <li key={f.id} className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              {f.open ? (
-                <Link href={f.path} className="font-semibold text-brand-text underline">
-                  {f.title}
-                </Link>
-              ) : (
-                <span className="font-semibold text-ink">{f.title}</span>
-              )}
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <span className="font-semibold text-ink">{f.title}</span>
               <StatusChip tone={f.open ? "success" : "neutral"}>{f.open ? "Ouvert" : "Réponses closes"}</StatusChip>
             </div>
-            {manage && (
-              <Link href={`/formulaires/${f.id}?onglet=resultats`} className="text-[14px] text-ink-muted underline">
-                Résultats
-              </Link>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {manage && (
+                <Link href={`/formulaires/${f.id}?onglet=resultats`} className={buttonClasses("ghost", "sm")}>
+                  <ChartColumn aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                  Voir les résultats
+                </Link>
+              )}
+              {f.open && (
+                <Link href={f.path} className={buttonClasses("secondary", "sm")} aria-label={`Répondre au formulaire ${f.title}`}>
+                  Répondre
+                </Link>
+              )}
+            </div>
           </li>
         ))}
       </ul>

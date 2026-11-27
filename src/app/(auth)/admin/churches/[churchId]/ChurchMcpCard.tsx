@@ -68,9 +68,9 @@ export default function ChurchMcpCard({
   }
 
   return (
-    <section className="mt-8 flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+    <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="min-w-0 flex-1 font-display text-[17px] font-semibold text-ink">Assistants IA (MCP)</h2>
+        <h2 className="min-w-0 flex-1 font-display text-[17px] font-semibold leading-6 text-ink">Assistants IA (MCP)</h2>
         <StatusChip tone={enabled ? "success" : "neutral"}>{enabled ? "Activé" : "Coupé"}</StatusChip>
       </div>
       <p className="text-[15px] text-ink-muted">
@@ -85,18 +85,18 @@ export default function ChurchMcpCard({
         </Button>
       </div>
       {connections.length > 0 && (
-        <ul className="divide-y divide-line rounded-lg border border-line">
+        <ul className="divide-y divide-line rounded-control border border-line">
           {connections.map((c) => (
             <li key={c.id} className="flex flex-wrap items-center gap-3 px-3 py-2">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm text-ink">{c.user.name ?? c.user.email}</p>
-                <p className="text-xs text-ink-subtle">
+                <p className="text-[13px] leading-[18px] text-ink-muted">
                   {c.client} · {c.actions ? "lecture et actions" : "lecture seule"} · depuis le{" "}
                   {dayFmt.format(new Date(c.createdAt))}
                   {c.lastUsedAt === null ? "" : ` · utilisé le ${dayFmt.format(new Date(c.lastUsedAt))}`}
                 </p>
               </div>
-              <Button variant="danger" size="sm" onClick={() => setRemoving(c)} disabled={saving}>
+              <Button variant="ghost" size="sm" onClick={() => setRemoving(c)} disabled={saving}>
                 Révoquer
               </Button>
             </li>
@@ -107,7 +107,7 @@ export default function ChurchMcpCard({
         open={removing !== null}
         title="Révoquer la connexion"
         message={`L'assistant de ${removing?.user.name ?? removing?.user.email ?? "ce compte"} ne pourra plus lire Koinonia.`}
-        confirmLabel="Révoquer"
+        confirmLabel="Révoquer la connexion"
         confirmingLabel="Révocation…"
         variant="danger"
         confirming={saving}

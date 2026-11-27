@@ -4,7 +4,7 @@ import { useState } from "react";
 import FormFiller, { visibleAnswers } from "@/components/forms/FormFiller";
 import type { Answers, FillerForm } from "@/components/forms/types";
 import OfferPanel from "@/components/forms/OfferPanel";
-import { Alert, Button } from "@/components/ui";
+import { Alert, Button, ConfirmModal } from "@/components/ui";
 
 const STATUS: Record<string, string> = {
   CONFIRMED: "Votre réponse est enregistrée.",
@@ -33,12 +33,14 @@ export default function ManageResponse({
   const [answers, setAnswers] = useState<Answers>(initial);
   const [status, setStatus] = useState(initialStatus);
   const [busy, setBusy] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [pending, setPending] = useState<"PATCH" | "DELETE" | null>(null);
   const [message, setMessage] = useState<{ tone: "success" | "danger"; text: string } | null>(null);
   const open = ["CONFIRMED", "WAITLISTED", "OFFERED"].includes(status);
 
   async function call(method: "PATCH" | "DELETE") {
-    if (method === "DELETE" && !confirm("Annuler votre réponse ?")) return;
     setBusy(true);
+    setPending(method);
     setMessage(null);
     const res = await fetch(`/api/forms/public/responses/${token}`, {
       method,
@@ -47,6 +49,8 @@ export default function ManageResponse({
     });
     const body = await res.json().catch(() => ({}));
     setBusy(false);
+    setPending(null);
+    setConfirmCancel(false);
     if (!res.ok) return setMessage({ tone: "danger", text: body.error ?? "La demande n'a pas abouti." });
     setStatus(body.status);
     setMessage({ tone: "success", text: method === "PATCH" ? "Modifications enregistrées." : "Votre réponse est annulée." });
@@ -78,9 +82,9 @@ export default function ManageResponse({
           {editable ? (
             <div className="flex flex-wrap gap-3">
               <Button type="submit" disabled={busy}>
-                Enregistrer les modifications
+                {pending === "PATCH" ? "Enregistrement en cours…" : "Enregistrer les modifications"}
               </Button>
-              <Button type="button" variant="secondary" disabled={busy} onClick={() => void call("DELETE")}>
+              <Button type="button" variant="secondary" disabled={busy} onClick={() => setConfirmCancel(true)}>
                 Annuler ma réponse
               </Button>
             </div>
@@ -89,6 +93,18 @@ export default function ManageResponse({
           )}
         </form>
       )}
+      <ConfirmModal
+        open={confirmCancel}
+        title="Annuler votre réponse ?"
+        message="Votre réponse passe à « Annulée » et votre place éventuelle est libérée."
+        confirmLabel="Annuler ma réponse"
+        cancelLabel="Garder ma réponse"
+        confirmingLabel="Annulation en cours…"
+        variant="primary"
+        confirming={pending === "DELETE"}
+        onCancel={() => setConfirmCancel(false)}
+        onConfirm={() => void call("DELETE")}
+      />
     </div>
   );
 }

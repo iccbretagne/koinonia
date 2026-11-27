@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { ArrowLeft, ShieldOff } from "lucide-react";
 import { getCurrentChurchId, requireAuth } from "@/lib/auth";
-import { EmptyState, PageHeader } from "@/components/ui";
+import { EmptyState, PageHeader, buttonClasses } from "@/components/ui";
 import { countToComplete, listInterviewers, listSlots } from "@/modules/serving";
 import { requireServingActor } from "@/modules/serving/auth";
 import InterviewSlotsClient from "./InterviewSlotsClient";
@@ -12,7 +13,7 @@ export default async function EntretiensPage() {
   if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
   const actor = await requireServingActor(churchId);
   if (!actor.canManage) {
-    return <EmptyState title="Accès refusé" description="Les entretiens sont réservés à l'équipe Vie des STAR (PVS) et à l'administration." />;
+    return <EmptyState icon={ShieldOff} title="Accès refusé" description="Les entretiens sont réservés à l'équipe Vie des STAR (PVS) et à l'administration." />;
   }
   const now = new Date();
   const [slots, interviewers, toComplete] = await Promise.all([
@@ -22,9 +23,9 @@ export default async function EntretiensPage() {
   ]);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
-      <Link href="/candidatures" className="text-sm text-ink-subtle hover:text-brand-text">
-        ← Candidatures
+    <div className="mx-auto flex max-w-4xl flex-col gap-4">
+      <Link href="/candidatures" className={`${buttonClasses("ghost", "sm")} self-start`}>
+        <ArrowLeft className="size-4" aria-hidden="true" /> Retour aux candidatures
       </Link>
       <PageHeader
         title="Entretiens"

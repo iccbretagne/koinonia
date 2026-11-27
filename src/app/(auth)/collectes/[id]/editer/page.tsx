@@ -26,7 +26,7 @@ export default async function EditCampaignPage({ params }: Props) {
   });
   const header = (
     <PageHeader
-      eyebrow={<Link href={`/collectes/${id}`} className="hover:underline">{campaign.title}</Link>}
+      eyebrow={campaign.title}
       title="Éditer la campagne"
       description="L'enregistrement passe par l'aperçu de l'import : une modification qui ferait perdre des réponses ou des fichiers est refusée."
     />

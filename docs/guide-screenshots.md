@@ -38,7 +38,7 @@ Les captures se font sur l'environnement de développement local
    - une annonce avec visuel et diffusion réseaux sociaux (files Secrétariat, Visuels, Réseaux
      sociaux) ;
    - un département de fonction `MSDP` (accompagnants du suivi pastoral) ;
-   - une offre d'emploi en attente de confirmation (bandeau « Toujours d'actualité »).
+   - une offre d'emploi en attente de confirmation (bandeau « Confirmer l'offre »).
 
 Les comptes sont ceux de la connexion de développement (`devUserKey`) : `super-admin`, `admin`,
 `secretaire`, `ministre`, `resp-accueil`, `resp-secretariat`, `faiseur-disciples`, `reporter`,
@@ -194,7 +194,7 @@ fenêtre parasite.
 
 | # | Fichier | Fonction | Compte | URL | Avant la capture |
 |---|---|---|---|---|---|
-| 49 | `guide-comptabilite-demande.png` | Soumettre une demande financière | `resp-accueil` | `/accounting/requests/new` | — |
+| 49 | `guide-comptabilite-demande.png` | Envoyer une demande financière | `resp-accueil` | `/accounting/requests/new` | — |
 | 50 | `guide-comptabilite-gestion.png` | Traiter les demandes financières | `admin` | `/accounting/requests` | — |
 | 51 | `guide-comptabilite-stats.png` | Statistiques comptables | `admin` | `/accounting/stats` | — |
 

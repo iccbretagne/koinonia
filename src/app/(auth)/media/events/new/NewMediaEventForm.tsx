@@ -1,9 +1,10 @@
 "use client";
 
-import { SubmitEvent, useId, useState } from "react";
+import { SubmitEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import { Alert, Select, Textarea } from "@/components/ui";
 
 type PlanningEvent = {
   id: string;
@@ -23,7 +24,6 @@ export default function NewMediaEventForm({
   readonly churchId: string;
   readonly planningEvents: PlanningEvent[];
 }) {
-  const id = useId();
   const router = useRouter();
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
@@ -76,71 +76,38 @@ export default function NewMediaEventForm({
   return (
     <form onSubmit={handleSubmit} className="max-w-lg space-y-5">
       {planningEvents.length > 0 && (
-        <div>
-          <label htmlFor={`${id}-f1`} className="block text-sm font-medium text-ink-muted mb-1">
-            Lier à un événement planning <span className="text-ink-subtle">(optionnel)</span>
-          </label>
-          <select id={`${id}-f1`}
-            value={planningEventId}
-            onChange={(e) => onPlanningEventChange(e.target.value)}
-            className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-          >
-            <option value="">— Aucun —</option>
-            {planningEvents.map((pe) => (
-              <option key={pe.id} value={pe.id}>
-                {pe.title} — {formatDate(pe.date)}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Select
+          label="Lier à un événement du planning (facultatif)"
+          value={planningEventId}
+          onChange={(e) => onPlanningEventChange(e.target.value)}
+          placeholder="Aucun"
+          options={planningEvents.map((pe) => ({ value: pe.id, label: `${pe.title} — ${formatDate(pe.date)}` }))}
+        />
       )}
 
-      <div>
-        <label htmlFor={`${id}-f2`} className="block text-sm font-medium text-ink-muted mb-1">
-          Nom de l&apos;événement <span className="text-danger">*</span>
-        </label>
-        <Input id={`${id}-f2`}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          placeholder="Ex: Culte du 20 avril 2026"
-        />
-      </div>
+      <Input
+        label="Nom de l'événement"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        required
+        placeholder="Ex : Culte du 20 avril 2026"
+      />
 
-      <div>
-        <label htmlFor={`${id}-f3`} className="block text-sm font-medium text-ink-muted mb-1">
-          Date <span className="text-danger">*</span>
-        </label>
-        <Input id={`${id}-f3`}
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          required
-        />
-      </div>
+      <Input label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
 
-      <div>
-        <label htmlFor={`${id}-f4`} className="block text-sm font-medium text-ink-muted mb-1">
-          Description <span className="text-ink-subtle">(optionnel)</span>
-        </label>
-        <textarea id={`${id}-f4`}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={3}
-          placeholder="Notes ou contexte…"
-          className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent resize-none"
-        />
-      </div>
+      <Textarea
+        label="Description (facultative)"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        rows={3}
+        placeholder="Notes ou contexte…"
+      />
 
-      {error && (
-        <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-3 py-2">
-          {error}
-        </p>
-      )}
+      {error && <Alert tone="danger">{error}</Alert>}
 
       <div className="flex gap-3">
         <Button type="submit" disabled={loading}>
-          {loading ? "Création…" : "Créer l'événement"}
+          {loading ? "Création en cours…" : "Créer l'événement"}
         </Button>
         <Button
           type="button"

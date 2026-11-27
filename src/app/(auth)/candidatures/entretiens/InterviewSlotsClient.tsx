@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useState, type SubmitEvent } from "react";
-import { CalendarPlus, Pencil, Trash2 } from "lucide-react";
-import { Alert, Button, ConfirmModal, EmptyState, IconButton, Input, Modal, Select, StatusChip } from "@/components/ui";
+import { CalendarPlus, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { Alert, Button, ConfirmModal, EmptyState, IconButton, Input, Modal, Select, StatusChip, buttonClasses, fieldLabelClasses } from "@/components/ui";
 import Checkbox from "@/components/ui/Checkbox";
 import { useToast } from "@/components/ui/Toast";
 import type { SlotView } from "@/modules/serving";
 import { DEFAULT_INTERVIEW_MINUTES } from "@/modules/serving/schemas";
+import { choiceChipClasses } from "@/components/ui/RadioGroup";
 
 type Slot = Omit<SlotView, "startsAt"> & { startsAt: string };
 type Interviewer = { id: string; name: string };
@@ -68,13 +69,17 @@ function SlotForm({
   return (
     <form onSubmit={submit} className="space-y-4">
       {!editing && (
-        <div className="flex gap-2" role="radiogroup" aria-label="Type d'ajout">
-          {(["one", "series"] as const).map((m) => (
-            <Button key={m} type="button" size="sm" variant={f.mode === m ? "primary" : "secondary"} aria-pressed={f.mode === m} onClick={() => set("mode", m)}>
-              {m === "one" ? "Un créneau" : "Une série"}
-            </Button>
-          ))}
-        </div>
+        <fieldset className="min-w-0">
+          <legend className={`${fieldLabelClasses} mb-2`}>Type d&apos;ajout</legend>
+          <div className="flex flex-wrap gap-2">
+            {(["one", "series"] as const).map((m) => (
+              <label key={m} className={choiceChipClasses(f.mode === m)}>
+                <input type="radio" name="mode" value={m} checked={f.mode === m} onChange={() => set("mode", m)} className="sr-only" />
+                {m === "one" ? "Un créneau" : "Une série"}
+              </label>
+            ))}
+          </div>
+        </fieldset>
       )}
       {f.mode === "one" ? (
         <div className="grid gap-3 sm:grid-cols-3">
@@ -89,7 +94,7 @@ function SlotForm({
             <Input label="Au" type="date" required value={f.dayTo} onChange={(e) => set("dayTo", e.target.value)} />
           </div>
           <fieldset className="space-y-2">
-            <legend className="text-sm font-medium text-ink">Jours de la semaine</legend>
+            <legend className={fieldLabelClasses}>Jours de la semaine</legend>
             <div className="flex flex-wrap gap-x-4 gap-y-2">
               {WEEKDAYS.map((w, i) => (
                 <label key={w} className="flex min-h-11 items-center gap-2 text-sm text-ink">
@@ -121,11 +126,11 @@ function SlotForm({
         options={interviewers.map((i) => ({ value: i.id, label: i.name }))}
       />
       <fieldset className="space-y-2">
-        <legend className="text-sm font-medium text-ink">Où</legend>
-        <div className="flex gap-4">
+        <legend className={`${fieldLabelClasses} mb-2`}>Où</legend>
+        <div className="flex flex-wrap gap-2">
           {(["location", "visio"] as const).map((p) => (
-            <label key={p} className="flex min-h-11 items-center gap-2 text-sm text-ink">
-              <input type="radio" name="place" className="size-5 accent-brand" checked={f.place === p} onChange={() => set("place", p)} />
+            <label key={p} className={choiceChipClasses(f.place === p)}>
+              <input type="radio" name="place" value={p} checked={f.place === p} onChange={() => set("place", p)} className="sr-only" />
               {p === "location" ? "Sur place" : "En visio"}
             </label>
           ))}
@@ -136,8 +141,11 @@ function SlotForm({
           <Input label="Lien de la visio" type="url" required value={f.visioUrl} maxLength={500} onChange={(e) => set("visioUrl", e.target.value)} placeholder="https://…" />
         )}
       </fieldset>
+      {f.mode === "series" && seriesDays.length === 0 && (
+        <p className="text-[13px] text-ink-muted">Choisissez les dates et au moins un jour de la semaine pour créer la série.</p>
+      )}
       <Button type="submit" disabled={busy || (f.mode === "series" && seriesDays.length === 0)}>
-        {busy ? "Enregistrement…" : editing ? "Enregistrer" : "Ajouter"}
+        {busy ? "Enregistrement en cours…" : editing ? "Enregistrer le créneau" : f.mode === "series" ? "Ajouter les créneaux" : "Ajouter le créneau"}
       </Button>
     </form>
   );
@@ -268,22 +276,27 @@ export default function InterviewSlotsClient({
       </div>
       {interviewers.length === 0 && <Alert tone="warning" title="Aucun compte dans l'équipe Vie des STAR : ajoutez-en un pour recevoir les candidats." />}
       {pending > 0 && (
-        <Alert tone="warning" title={`${pending} entretien${pending > 1 ? "s" : ""} à compléter`}>
-          L&apos;issue (réalisé, absent, excusé) se note depuis la fiche de la candidature.{" "}
-          <Link href="/candidatures?onglet=todo" className="font-semibold underline">
-            Voir les candidatures
-          </Link>
+        <Alert
+          tone="warning"
+          title={`${pending} entretien${pending > 1 ? "s" : ""} à compléter`}
+          action={
+            <Link href="/candidatures?onglet=todo" className={buttonClasses("secondary", "sm")}>
+              Voir les candidatures
+            </Link>
+          }
+        >
+          L&apos;issue (réalisé, absent, excusé) se note depuis la fiche de la candidature.
         </Alert>
       )}
       {error && <Alert tone="danger">{error}</Alert>}
 
       {days.length === 0 ? (
-        <EmptyState title="Aucun créneau" description="Ajoutez des créneaux : ils seront proposés aux candidats dès l'envoi de leur fiche." />
+        <EmptyState icon={CalendarPlus} title="Aucun créneau" description="Ajoutez des créneaux : ils seront proposés aux candidats dès l'envoi de leur fiche." />
       ) : (
         days.map((d) => (
           <section key={d} className="space-y-2">
-            <h2 className="font-semibold text-ink first-letter:uppercase">{dayLabel(d)}</h2>
-            <ul className="divide-y divide-line rounded-card border border-line bg-surface">
+            <h2 className="font-display text-[17px] font-semibold text-ink first-letter:uppercase">{dayLabel(d)}</h2>
+            <ul className="divide-y divide-line rounded-card border border-line bg-surface shadow-card">
               {slots
                 .filter((s) => dayKey(s.startsAt) === d)
                 .map((s) => (
@@ -295,15 +308,13 @@ export default function InterviewSlotsClient({
                       </p>
                       <p className="text-[13px] text-ink-muted">
                         {s.interviewer ? `Reçu par ${s.interviewer.name}` : "Personne qui reçoit à choisir"}
-                        {s.candidate && (
-                          <>
-                            {" · "}
-                            <Link href={`/candidatures/${s.candidate.id}`} className="font-semibold text-brand-text underline">
-                              {s.candidate.firstName} {s.candidate.lastName}
-                            </Link>
-                          </>
-                        )}
                       </p>
+                      {s.candidate && (
+                        <Link href={`/candidatures/${s.candidate.id}`} className={`${buttonClasses("ghost", "sm")} -ml-3`}>
+                          {s.candidate.firstName} {s.candidate.lastName}
+                          <ChevronRight className="size-4" aria-hidden="true" />
+                        </Link>
+                      )}
                     </div>
                     {s.toReassign && <StatusChip tone="warning">À réattribuer</StatusChip>}
                     <StatusChip tone={s.past ? "neutral" : s.candidate ? "brand" : "success"}>{s.past ? "Passé" : s.candidate ? "Réservé" : "Libre"}</StatusChip>
@@ -343,8 +354,8 @@ export default function InterviewSlotsClient({
             ? `Le rendez-vous de ${removing.candidate.firstName} ${removing.candidate.lastName} sera annulé et le candidat invité à choisir un autre créneau.`
             : "Le créneau ne sera plus proposé."
         }
-        confirmLabel="Retirer"
-        confirmingLabel="Retrait…"
+        confirmLabel="Retirer le créneau"
+        confirmingLabel="Retrait en cours…"
         variant="danger"
         confirming={busy}
         onConfirm={() => void remove()}

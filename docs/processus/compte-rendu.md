@@ -18,7 +18,7 @@ Le reporter désigné (rôle Reporter), ou la Secrétaire, Admin et Super Admin 
 
 > Événement passé → Saisie du compte rendu → Complété → Diffusé et agrégé aux statistiques
 
-La liste de suivi classe chaque événement en **Aucun CR**, **Vide** ou **Complété**, avec un compteur global du type « 4 sur 27 événements ». C'est ce tableau qui permet de voir, sans enquêter, quels cultes n'ont jamais été documentés.
+La liste de suivi classe chaque événement en **Aucun compte rendu**, **Vide** ou **Complété**, avec un compteur global du type « 4 sur 27 événements ». C'est ce tableau qui permet de voir, sans enquêter, quels cultes n'ont jamais été documentés.
 
 ## Ce que contient un compte rendu
 
@@ -41,7 +41,7 @@ Des sections libres peuvent être ajoutées lorsque l'événement sort du cadre 
 | Pour… | Aller à… |
 |---|---|
 | Saisir ou consulter un compte rendu | Agenda → **Comptes rendus**, puis *Saisir* sur l'événement |
-| Accéder depuis l'événement | Le bouton **Saisir / voir le compte rendu** de sa configuration |
+| Accéder depuis l'événement | Le bouton **Saisir le compte rendu** de sa configuration |
 | Voir les chiffres agrégés | L'onglet **Statistiques** |
 | Diffuser | Les exports **PDF** et **WhatsApp** |
 

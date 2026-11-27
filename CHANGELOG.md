@@ -6,6 +6,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+
+- Design system : nouveaux composants `Menu` (actions « ⋯ », feuille du bas sur mobile), `SegmentedControl` (changer la vue d'une page), `Switch` (interrupteur), `RadioGroup` (choix unique, en liste ou en pastilles) et `FileInput` (sélecteur de fichier en bouton), et mode piloté par état de `Tabs` (onglets reliés à leur panneau). Fiches dans `docs/design-system/components/`.
+
+### Modifié
+
+- Interface entière mise en conformité avec le design system : liens internes et actions distingués (liens `next/link`, boutons pour les actions), contrôles refaits à la main remplacés par les composants communs (champs, listes, interrupteurs, choix, fichiers, onglets, menus d'actions), couleurs sur les seuls tokens sémantiques (clair et sombre), cibles tactiles de 44 px sur mobile, focus clavier visible, libellés de bouton à l'infinitif et « … en cours » pendant l'envoi, squelettes de chargement y compris sur les pages publiques, et fil d'Ariane nommé sur toutes les pages connectées (plus de « Détail »). Le lecteur audio de la page publique d'écoute se pose en bas de l'écran, faute de barre du bas.
+
 ## [v1.46.0] - 2026-11-27
 
 ### Ajouté

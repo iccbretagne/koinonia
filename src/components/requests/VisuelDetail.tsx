@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Download, FolderOpen } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import RadioGroup from "@/components/ui/RadioGroup";
 import Select from "@/components/ui/Select";
 import { buttonClasses } from "@/components/ui/button-classes";
 import { useToast } from "@/components/ui/Toast";
@@ -171,19 +172,16 @@ export default function VisuelDetail({
             if (canConfirmTake) void takeCharge();
           }}
         >
-          <fieldset className="flex flex-col gap-1">
-            <legend className="mb-1 text-[13px] font-semibold leading-[18px] text-ink-subtle">Rattacher à un projet média</legend>
-            {projects.length > 0 && (
-              <label className="flex min-h-11 cursor-pointer items-center gap-3 text-[15px] text-ink">
-                <input type="radio" name="project-mode" checked={projectMode === "existing"} onChange={() => setProjectMode("existing")} className="size-5 accent-brand" />
-                Projet existant
-              </label>
-            )}
-            <label className="flex min-h-11 cursor-pointer items-center gap-3 text-[15px] text-ink">
-              <input type="radio" name="project-mode" checked={projectMode === "new"} onChange={() => setProjectMode("new")} className="size-5 accent-brand" />
-              Nouveau projet
-            </label>
-          </fieldset>
+          <RadioGroup
+            legend="Rattacher à un projet média"
+            name="project-mode"
+            value={projectMode}
+            onChange={setProjectMode}
+            options={[
+              ...(projects.length > 0 ? [{ value: "existing" as const, label: "Projet existant" }] : []),
+              { value: "new" as const, label: "Nouveau projet" },
+            ]}
+          />
           {projectMode === "existing" ? (
             <Select
               label="Projet"
@@ -209,6 +207,7 @@ export default function VisuelDetail({
         <ReasonForm
           label="Motif de l'annulation"
           confirmLabel="Annuler la demande"
+          cancelLabel="Garder la demande"
           busy={busy}
           onCancel={() => setMode(null)}
           onConfirm={(reason) => void ctx.act({ status: "ANNULE", reviewNotes: reason }, { success: "Demande de visuel annulée" })}

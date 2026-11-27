@@ -41,8 +41,8 @@ export default function ChecksTab({
 
   return (
     <div className="flex flex-col gap-4">
-      <Alert tone={violated ? "warning" : "info"} title={violated ? `${violated} contrôle(s) non respecté(s).` : "Tous les contrôles évaluables sont respectés."}>
-        Ces contrôles sont indicatifs : ils ne bloquent ni la soumission ni la validation. « Non évaluable » : une valeur manque ou
+      <Alert tone={violated ? "warning" : "info"} title={violated ? `${violated} contrôle${violated > 1 ? "s" : ""} non respecté${violated > 1 ? "s" : ""}.` : "Tous les contrôles évaluables sont respectés."}>
+        Ces contrôles sont indicatifs : ils ne bloquent ni l&apos;envoi ni la validation. « Non évaluable » : une valeur manque ou
         n&apos;est pas exploitable (sans objet, NSP).
       </Alert>
       <ul className="overflow-hidden rounded-card border border-line bg-surface">

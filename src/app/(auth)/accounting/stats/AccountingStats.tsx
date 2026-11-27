@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Link from "next/link";
 import {
   BarChart,
   Bar,
@@ -11,6 +12,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { FilterChip } from "@/components/ui";
 import FundTrackingSection, { type FundTrackingData } from "./FundTrackingSection";
 
 const MONTH_NAMES = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
@@ -59,12 +61,6 @@ function fmt(amount: number) {
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(amount);
 }
 
-function kpiBorderClass(accent?: boolean, warning?: boolean): string {
-  if (accent) return "border-brand/30 bg-brand-soft";
-  if (warning) return "border-warning/30 bg-warning-soft";
-  return "border-line";
-}
-
 function kpiValueClass(accent?: boolean, warning?: boolean): string {
   if (accent) return "text-brand-text";
   if (warning) return "text-warning";
@@ -85,26 +81,20 @@ function KpiCard({
   readonly warning?: boolean;
 }) {
   return (
-    <div
-      className={`bg-surface rounded-xl border p-4 sm:p-5 ${kpiBorderClass(accent, warning)}`}
-    >
-      <p className="text-xs text-ink-muted font-medium mb-1">{label}</p>
-      <p
-        className={`text-2xl font-bold ${kpiValueClass(accent, warning)}`}
-      >
-        {value}
-      </p>
-      {sub && <p className="text-xs text-ink-subtle mt-1">{sub}</p>}
+    <div>
+      <p className="mb-1 text-[13px] font-semibold leading-[18px] text-ink-muted">{label}</p>
+      <p className={`text-2xl font-bold tabular-nums ${kpiValueClass(accent, warning)}`}>{value}</p>
+      {sub && <p className="mt-1 text-[13px] leading-[18px] text-ink-muted">{sub}</p>}
     </div>
   );
 }
 
 function Section({ title, children }: { readonly title: string; readonly children: React.ReactNode }) {
   return (
-    <div className="bg-surface rounded-xl border border-line p-5">
-      <h2 className="text-sm font-semibold text-ink-muted mb-4">{title}</h2>
+    <section>
+      <h2 className="mb-4 font-display text-[17px] font-semibold leading-6 text-ink">{title}</h2>
       {children}
-    </div>
+    </section>
   );
 }
 
@@ -112,11 +102,11 @@ function HBar({ label, value, max, sub }: { readonly label: string; readonly val
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
     <div className="flex items-center gap-3">
-      <span className="text-xs text-ink-muted w-28 shrink-0 truncate" title={label}>{label}</span>
-      <div className="flex-1 bg-surface-sunken rounded-full h-2">
+      <span className="w-28 shrink-0 truncate text-[13px] leading-[18px] text-ink-muted" title={label}>{label}</span>
+      <div className="flex-1 bg-line rounded-full h-2">
         <div className="bg-brand rounded-full h-2 transition-all" style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs font-medium text-ink w-20 text-right shrink-0">{sub ?? fmt(value)}</span>
+      <span className="w-20 shrink-0 text-right text-[13px] font-semibold tabular-nums leading-[18px] text-ink">{sub ?? fmt(value)}</span>
     </div>
   );
 }
@@ -165,6 +155,8 @@ export default function AccountingStats({
     ? `${new Date(dateRange.from).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })} – ${new Date(dateRange.to).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}`
     : null;
 
+  const pendingCount =
+    (byStatus.find((s) => s.status === "SUBMITTED")?.count ?? 0) + (byStatus.find((s) => s.status === "PROCESSING")?.count ?? 0);
   const maxDeptAmount = Math.max(...byDepartment.map((d) => d.amount), 1);
 
   const periodFrom = dateRange ? new Date(dateRange.from) : null;
@@ -189,25 +181,17 @@ export default function AccountingStats({
     });
 
   return (
-    <div className={`space-y-6 transition-opacity ${loading ? "opacity-60 pointer-events-none" : ""}`}>
+    <div className={`flex flex-col gap-6 transition-opacity ${loading ? "pointer-events-none opacity-60" : ""}`} aria-busy={loading}>
       {/* Sélecteur de période */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-      <div className="flex gap-1 bg-surface-sunken rounded-lg p-1 w-fit">
-        {(["month", "quarter", "year"] as Period[]).map((p) => (
-          <button
-            key={p}
-            onClick={() => handlePeriod(p)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              period === p ? "bg-surface text-brand-text shadow-card" : "text-ink-muted hover:text-ink-muted"
-            }`}
-          >
-            {PERIOD_LABELS[p]}
-          </button>
-        ))}
-      </div>
-      {dateLabel && (
-        <span className="text-xs text-ink-subtle">{dateLabel}</span>
-      )}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Période">
+          {(["month", "quarter", "year"] as Period[]).map((p) => (
+            <FilterChip key={p} pressed={period === p} onClick={() => handlePeriod(p)}>
+              {PERIOD_LABELS[p]}
+            </FilterChip>
+          ))}
+        </div>
+        {dateLabel && <span className="text-[13px] leading-[18px] text-ink-muted">{dateLabel}</span>}
       </div>
 
       {/* KPIs */}
@@ -222,7 +206,7 @@ export default function AccountingStats({
         <KpiCard
           label="En attente"
           value={fmt(overview.pendingAmount)}
-          sub={`${(byStatus.find((s) => s.status === "SUBMITTED")?.count ?? 0) + (byStatus.find((s) => s.status === "PROCESSING")?.count ?? 0)} demandes`}
+          sub={`${pendingCount} demande${pendingCount > 1 ? "s" : ""}`}
           warning={overview.pendingAmount > 0}
         />
         <KpiCard
@@ -236,7 +220,7 @@ export default function AccountingStats({
         {/* Par statut */}
         <Section title="Répartition par statut">
           {byStatus.length === 0 ? (
-            <p className="text-sm text-ink-subtle">Aucune donnée sur la période</p>
+            <p className="text-[15px] leading-[22px] text-ink-muted">Aucune donnée sur la période</p>
           ) : (
             <div className="space-y-3">
               {byStatus
@@ -246,10 +230,10 @@ export default function AccountingStats({
                     <div
                       className={`w-2.5 h-2.5 rounded-full shrink-0 ${STATUS_COLORS[s.status] ?? "bg-control-line"}`}
                     />
-                    <span className="text-xs text-ink-muted w-24 shrink-0">
+                    <span className="w-24 shrink-0 text-[13px] leading-[18px] text-ink-muted">
                       {STATUS_LABELS[s.status] ?? s.status}
                     </span>
-                    <div className="flex-1 bg-surface-sunken rounded-full h-2">
+                    <div className="flex-1 bg-line rounded-full h-2">
                       <div
                         className={`${STATUS_COLORS[s.status] ?? "bg-control-line"} rounded-full h-2 transition-all`}
                         style={{
@@ -257,10 +241,10 @@ export default function AccountingStats({
                         }}
                       />
                     </div>
-                    <span className="text-xs font-medium text-ink w-6 text-right shrink-0">
+                    <span className="w-6 shrink-0 text-right text-[13px] font-semibold tabular-nums leading-[18px] text-ink">
                       {s.count}
                     </span>
-                    <span className="text-xs text-ink-subtle w-20 text-right shrink-0">{fmt(s.amount)}</span>
+                    <span className="w-20 shrink-0 text-right text-[13px] tabular-nums leading-[18px] text-ink-muted">{fmt(s.amount)}</span>
                   </div>
                 ))}
             </div>
@@ -270,20 +254,20 @@ export default function AccountingStats({
         {/* Par type */}
         <Section title="Type de demande">
           {byType.length === 0 ? (
-            <p className="text-sm text-ink-subtle">Aucune donnée sur la période</p>
+            <p className="text-[15px] leading-[22px] text-ink-muted">Aucune donnée sur la période</p>
           ) : (
             <div className="space-y-4">
               {byType.map((t) => (
                 <div key={t.type} className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="font-medium text-ink-muted">
+                  <div className="flex justify-between gap-2 text-[13px] leading-[18px]">
+                    <span className="font-semibold text-ink">
                       {t.type === "EXPENSE_REPORT" ? "Note de frais" : "Avance de budget"}
                     </span>
                     <span className="text-ink-muted">
                       {t.count} demande{t.count > 1 ? "s" : ""} · {fmt(t.amount)}
                     </span>
                   </div>
-                  <div className="bg-surface-sunken rounded-full h-2">
+                  <div className="bg-line rounded-full h-2">
                     <div
                       className={`rounded-full h-2 ${t.type === "EXPENSE_REPORT" ? "bg-brand" : "bg-info"}`}
                       style={{
@@ -303,13 +287,13 @@ export default function AccountingStats({
       {/* Tendance mensuelle */}
       <Section title={`Tendance — montants soumis vs versés (€) · ${PERIOD_LABELS[period].toLowerCase()}`}>
         {chartData.every((d) => d.submitted === 0 && d.released === 0) ? (
-          <p className="text-sm text-ink-subtle">Aucune donnée sur les 12 derniers mois</p>
+          <p className="text-[15px] leading-[22px] text-ink-muted">Aucune donnée sur les 12 derniers mois</p>
         ) : (
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-              <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}€`} width={60} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--line)" />
+              <XAxis dataKey="label" tick={{ fontSize: 12, fill: "var(--ink-muted)" }} />
+              <YAxis tick={{ fontSize: 12, fill: "var(--ink-muted)" }} tickFormatter={(v) => `${v}€`} width={60} />
               <Tooltip
                 formatter={(value, name) => [
                   typeof value === "number" ? fmt(value) : value,
@@ -320,8 +304,8 @@ export default function AccountingStats({
                 formatter={(value) => (value === "submitted" ? "Soumis" : "Versé")}
                 wrapperStyle={{ fontSize: 12 }}
               />
-              <Bar dataKey="submitted" fill="#5E17EB" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="released" fill="#38B6FF" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="submitted" fill="var(--brand)" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="released" fill="var(--info)" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -330,14 +314,14 @@ export default function AccountingStats({
       {/* Par département */}
       <Section title="Par département — montant soumis vs versé">
         {byDepartment.length === 0 ? (
-          <p className="text-sm text-ink-subtle">Aucune donnée sur la période</p>
+          <p className="text-[15px] leading-[22px] text-ink-muted">Aucune donnée sur la période</p>
         ) : (
           <div className="space-y-4">
             {byDepartment.map((d) => (
               <div key={d.name} className="space-y-1.5">
-                <div className="flex justify-between text-xs">
-                  <span className="font-medium text-ink-muted">{d.name}</span>
-                  <span className="text-ink-subtle">{d.count} demande{d.count > 1 ? "s" : ""}</span>
+                <div className="flex justify-between gap-2 text-[13px] leading-[18px]">
+                  <span className="font-semibold text-ink">{d.name}</span>
+                  <span className="text-ink-muted">{d.count} demande{d.count > 1 ? "s" : ""}</span>
                 </div>
                 <HBar label="Soumis" value={d.amount} max={maxDeptAmount} />
                 <HBar label="Versé" value={d.released} max={maxDeptAmount} />
@@ -350,28 +334,29 @@ export default function AccountingStats({
       {/* Paiements en retard */}
       {overduePayments.length > 0 && (
         <Section title={`Paiements en retard (${overduePayments.length})`}>
-          <div className="space-y-2">
+          <ul className="flex flex-col">
             {overduePayments.map((p) => {
               const daysLate = Math.floor(
                 (now - new Date(p.scheduledDate).getTime()) / 86_400_000
               );
               return (
-                <div
-                  key={p.id}
-                  className="flex items-center justify-between py-2 border-b border-line last:border-0"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-ink">{p.requestLabel}</p>
-                    <p className="text-xs text-danger">
-                      Prévu le {new Date(p.scheduledDate).toLocaleDateString("fr-FR")} · {daysLate}j
-                      de retard
-                    </p>
-                  </div>
-                  <span className="text-sm font-semibold text-ink">{fmt(p.amount)}</span>
-                </div>
+                <li key={p.id} className="border-b border-line last:border-0">
+                  <Link
+                    href={`/accounting/requests/${p.requestId}`}
+                    className="flex min-h-11 items-center justify-between gap-3 rounded-control px-2 py-2 transition-colors duration-120 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{p.requestLabel}</p>
+                      <p className="text-[13px] leading-[18px] text-danger">
+                        Prévu le {new Date(p.scheduledDate).toLocaleDateString("fr-FR")} · {daysLate} jour{daysLate > 1 ? "s" : ""} de retard
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-[15px] font-semibold tabular-nums text-ink">{fmt(p.amount)}</span>
+                  </Link>
+                </li>
               );
             })}
-          </div>
+          </ul>
         </Section>
       )}
     </div>

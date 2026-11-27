@@ -1,7 +1,11 @@
 "use client";
 
 import { SubmitEvent, useEffect, useId, useRef, useState } from "react";
+import { Check } from "lucide-react";
 import TurnstileWidget from "@/components/TurnstileWidget";
+import RadioGroup from "@/components/ui/RadioGroup";
+import { buttonClasses } from "@/components/ui/button-classes";
+import { controlClasses, textareaClasses } from "@/components/ui/field-classes";
 
 interface AddressSuggestion {
   label: string;
@@ -104,50 +108,8 @@ function FieldError({ errors, field }: { readonly errors: FieldErrors; readonly 
 }
 
 function inputClass(errors: FieldErrors, field: string, extra = "") {
-  return `w-full border-2 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-brand ${
-    errors[field] ? "border-danger bg-danger-soft" : "border-control-line"
-  } ${extra}`;
-}
-
-function RadioGroup({
-  name,
-  options,
-  value,
-  onChange,
-  errors,
-}: {
-  readonly name: string;
-  readonly options: { value: string; label: string }[];
-  readonly value: string;
-  readonly onChange: (v: string) => void;
-  readonly errors: FieldErrors;
-}) {
-  return (
-    <div
-      className={`flex flex-wrap gap-2 ${errors[name] ? "p-2 rounded-lg border border-danger/30 bg-danger-soft" : ""}`}
-    >
-      {options.map((opt) => (
-        <label
-          key={opt.value}
-          className={`flex items-center gap-2 px-3 py-2.5 md:py-1.5 min-h-[44px] md:min-h-0 rounded-full border text-sm cursor-pointer transition-colors ${
-            value === opt.value
-              ? "bg-brand text-on-brand border-brand"
-              : "border-line text-ink-muted hover:border-brand"
-          }`}
-        >
-          <input
-            type="radio"
-            name={name}
-            value={opt.value}
-            checked={value === opt.value}
-            onChange={() => onChange(opt.value)}
-            className="sr-only"
-          />
-          {opt.label}
-        </label>
-      ))}
-    </div>
-  );
+  const base = extra.includes("resize-none") ? textareaClasses(Boolean(errors[field])) : controlClasses(Boolean(errors[field]));
+  return `${base} ${extra}`;
 }
 
 interface SuccessData {
@@ -247,11 +209,11 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
 
   if (success) {
     return (
-      <div className="bg-surface rounded-xl border border-success/30 p-6 sm:p-8 text-center space-y-4">
-        <div className="w-14 h-14 rounded-full bg-success-soft flex items-center justify-center mx-auto text-3xl">
-          ✓
+      <div className="bg-surface rounded-card border border-success/30 p-6 sm:p-8 text-center space-y-4">
+        <div className="mx-auto grid size-14 place-items-center rounded-full bg-success-soft text-success">
+          <Check aria-hidden="true" className="size-7" strokeWidth={1.75} />
         </div>
-        <h2 className="text-lg font-semibold text-ink">Demande envoyée !</h2>
+        <h2 className="font-display text-[22px] font-bold leading-7 text-ink">Demande envoyée</h2>
         <p className="text-sm text-ink-muted">
           Ta demande pour rejoindre une famille à <strong>{churchName}</strong> a bien été reçue.{" "}
           {success.contactLater
@@ -259,7 +221,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
             : "Notre équipe va prendre contact avec toi très prochainement."}
         </p>
         {success.suggestedFamilyName && (
-          <div className="bg-brand-soft border border-brand/30 rounded-lg px-4 py-3 text-sm text-left">
+          <div className="bg-brand-soft border border-brand/30 rounded-control px-4 py-3 text-sm text-left">
             <p className="font-medium text-brand-text mb-0.5">Famille suggérée</p>
             <p className="text-ink-muted">{success.suggestedFamilyName}</p>
             <p className="text-xs text-ink-muted mt-1">
@@ -268,7 +230,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
           </div>
         )}
         {success.pastoralCare && (
-          <div className="bg-warning-soft border border-warning/30 rounded-lg px-4 py-3 text-sm text-left">
+          <div className="bg-warning-soft border border-warning/30 rounded-control px-4 py-3 text-sm text-left">
             <p className="text-warning">
               Ta demande de soin pastoral a également été enregistrée. Un pasteur te contactera
               séparément.
@@ -285,8 +247,8 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {/* Identité */}
-      <div className="bg-surface rounded-xl border border-line p-4 sm:p-6 space-y-4">
-        <h2 className="text-base font-semibold text-ink">Qui es-tu ?</h2>
+      <div className="space-y-4">
+        <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Qui es-tu ?</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
@@ -352,7 +314,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
       </div>
 
       {/* Trouve ta famille */}
-      <div className={`rounded-xl border-2 p-4 sm:p-6 space-y-4 transition-colors ${familySuggestion.familyName ? "border-brand/30 bg-brand-soft" : "border-line bg-surface"}`}>
+      <div className={`rounded-card border-2 p-4 sm:p-6 space-y-4 transition-colors ${familySuggestion.familyName ? "border-brand/30 bg-brand-soft" : "border-line bg-surface"}`}>
         <div className="flex items-start gap-3">
           <div className="w-9 h-9 rounded-full bg-brand-soft flex items-center justify-center shrink-0 mt-0.5">
             <svg aria-hidden="true" className="w-4 h-4 text-brand-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -361,7 +323,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
             </svg>
           </div>
           <div>
-            <h2 className="text-base font-semibold text-ink">Trouve ta famille</h2>
+            <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Trouve ta famille</h2>
             <p className="text-xs text-ink-muted mt-0.5">
               Saisis ton adresse pour qu&apos;on t&apos;oriente vers la famille la plus proche de chez toi.
             </p>
@@ -400,7 +362,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
           )}
 
           {addressSuggestions.length > 0 && (
-            <ul className="absolute z-20 left-0 right-0 mt-1 bg-surface border border-line rounded-lg shadow-float overflow-y-auto max-h-48">
+            <ul className="absolute z-20 left-0 right-0 mt-1 bg-surface border border-line rounded-control shadow-float overflow-y-auto max-h-48">
               {addressSuggestions.map((s) => (
                 <li key={s.label}>
                   <button
@@ -436,7 +398,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
           </div>
         )}
         {!familySuggestion.loading && familySuggestion.familyName && (
-          <div className="flex items-center gap-3 bg-surface border border-brand/30 rounded-xl px-4 py-3.5 shadow-card min-h-[64px]">
+          <div className="flex items-center gap-3 bg-surface border border-brand/30 rounded-card px-4 py-3.5 shadow-card min-h-[64px]">
             <div className="w-10 h-10 rounded-full bg-brand flex items-center justify-center shrink-0">
               <svg aria-hidden="true" className="w-5 h-5 text-on-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
@@ -449,7 +411,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
           </div>
         )}
         {!familySuggestion.loading && familySuggestion.searched && familySuggestion.familyName === null && (
-          <div className="flex items-center gap-2 text-xs text-ink-muted bg-surface-sunken border border-line rounded-lg px-3 py-2.5">
+          <div className="flex items-center gap-2 text-xs text-ink-muted bg-surface-sunken border border-line rounded-control px-3 py-2.5">
             <svg aria-hidden="true" className="w-4 h-4 text-ink-subtle shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -459,55 +421,43 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
       </div>
 
       {/* Profil */}
-      <div className="bg-surface rounded-xl border border-line p-4 sm:p-6 space-y-4">
-        <h2 className="text-base font-semibold text-ink">Ton profil</h2>
+      <div className="space-y-4">
+        <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Ton profil</h2>
 
-        <fieldset className="min-w-0">
-          <legend className="block text-sm font-medium text-ink-muted mb-2">
-            Tranche d&apos;âge <span className="text-danger">*</span>
-          </legend>
-          <RadioGroup
-            name="ageRange"
-            options={AGE_RANGE_OPTIONS}
-            value={form.ageRange}
-            onChange={(v) => set("ageRange", v)}
-            errors={fieldErrors}
-          />
-          <FieldError errors={fieldErrors} field="ageRange" />
-        </fieldset>
+        <RadioGroup
+          legend={<>Tranche d&apos;âge <span className="text-danger">*</span></>}
+          variant="chips"
+          name="ageRange"
+          options={AGE_RANGE_OPTIONS}
+          value={form.ageRange}
+          onChange={(v) => set("ageRange", v)}
+          error={fieldErrors.ageRange}
+        />
 
-        <fieldset className="min-w-0">
-          <legend className="block text-sm font-medium text-ink-muted mb-2">
-            Quelle est ta situation à l&apos;église ? <span className="text-danger">*</span>
-          </legend>
-          <RadioGroup
-            name="churchStatus"
-            options={CHURCH_STATUS_OPTIONS}
-            value={form.churchStatus}
-            onChange={(v) => set("churchStatus", v)}
-            errors={fieldErrors}
-          />
-          <FieldError errors={fieldErrors} field="churchStatus" />
-        </fieldset>
+        <RadioGroup
+          legend={<>Quelle est ta situation à l&apos;église ? <span className="text-danger">*</span></>}
+          variant="chips"
+          name="churchStatus"
+          options={CHURCH_STATUS_OPTIONS}
+          value={form.churchStatus}
+          onChange={(v) => set("churchStatus", v)}
+          error={fieldErrors.churchStatus}
+        />
 
-        <fieldset className="min-w-0">
-          <legend className="block text-sm font-medium text-ink-muted mb-2">
-            Quand souhaites-tu être contacté·e ? <span className="text-danger">*</span>
-          </legend>
-          <RadioGroup
-            name="contactConsent"
-            options={CONTACT_CONSENT_OPTIONS}
-            value={form.contactConsent}
-            onChange={(v) => set("contactConsent", v)}
-            errors={fieldErrors}
-          />
-          <FieldError errors={fieldErrors} field="contactConsent" />
-        </fieldset>
+        <RadioGroup
+          legend={<>Quand souhaites-tu être contacté·e ? <span className="text-danger">*</span></>}
+          variant="chips"
+          name="contactConsent"
+          options={CONTACT_CONSENT_OPTIONS}
+          value={form.contactConsent}
+          onChange={(v) => set("contactConsent", v)}
+          error={fieldErrors.contactConsent}
+        />
       </div>
 
       {/* Appel au salut */}
-      <div className="bg-surface rounded-xl border border-line p-4 sm:p-6 space-y-3">
-        <h2 className="text-base font-semibold text-ink">Appel au salut</h2>
+      <div className="space-y-3">
+        <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Appel au salut</h2>
         <label className="flex items-start gap-3 cursor-pointer group">
           <div className="mt-0.5">
             <input
@@ -538,9 +488,9 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
 
       {/* Soin pastoral — case affichée seulement si `care` est actif (spec 052) */}
       {showPastoralCare && (
-      <div className="bg-surface rounded-xl border border-line p-4 sm:p-6 space-y-3">
+      <div className="space-y-3">
         <div>
-          <h2 className="text-base font-semibold text-ink">Soins pastoraux</h2>
+          <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Soins pastoraux</h2>
           <p className="text-sm text-ink-muted mt-1">
             Tu traverses une épreuve spirituelle, émotionnelle ou relationnelle&nbsp;? Tu portes des blessures
             du passé, une dépression ou des difficultés familiales dont tu voudrais te libérer&nbsp;?
@@ -599,7 +549,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
       </div>
 
       {globalError && (
-        <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-4 py-3">
+        <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-control px-4 py-3">
           {globalError}
         </p>
       )}
@@ -607,7 +557,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
       <button
         type="submit"
         disabled={submitting || !turnstileToken}
-        className="w-full bg-brand text-on-brand py-3 rounded-lg font-medium text-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-focus disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+        className={`${buttonClasses("primary")} w-full`}
       >
         {submitting ? "Envoi en cours…" : "Envoyer ma demande"}
       </button>

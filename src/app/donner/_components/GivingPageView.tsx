@@ -18,7 +18,7 @@ function SectionCard({
   readonly children: ReactNode;
 }) {
   return (
-    <section className="rounded-card border border-line bg-surface p-5 shadow-sm">
+    <section className="rounded-card border border-line bg-surface p-5 shadow-card">
       <div className="mb-3 flex items-center gap-3">
         <span className={`grid size-9 shrink-0 place-items-center rounded-full ${iconClass}`}>
           <Icon aria-hidden="true" className="size-[18px]" strokeWidth={1.75} />
@@ -68,7 +68,7 @@ export default function GivingPageView({ page }: { readonly page: PublicGivingPa
             Donner maintenant
             <ArrowUpRight aria-hidden="true" className="size-4" />
           </a>
-          {online.note && <p className="mt-3 text-center text-[13px] leading-[18px] text-ink-subtle">{online.note}</p>}
+          {online.note && <p className="mt-3 text-center text-[13px] leading-[18px] text-ink-muted">{online.note}</p>}
         </SectionCard>
       )}
 

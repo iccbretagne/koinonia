@@ -110,12 +110,16 @@ function EntryDetail({
     <Modal open onClose={onClose} title={line.label}>
       <div className="space-y-4 p-1">
         {!own && (
-          <Alert tone="info" title={SOURCE_LABEL[line.source]}>
-            Cette ligne se modifie à son origine.{" "}
-            {line.link && <Link href={line.link} className="font-semibold underline">Ouvrir l&apos;origine</Link>}
+          <Alert
+            tone="info"
+            title={SOURCE_LABEL[line.source]}
+            action={line.link && <Link href={line.link} className={buttonClasses("ghost", "sm")}>Ouvrir l&apos;origine</Link>}
+          >
+            Cette ligne se modifie à son origine.
+            
           </Alert>
         )}
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[15px] leading-[22px]">
           {rows.map(([k, v]) => (
             <div key={k} className="contents">
               <dt className="text-ink-muted">{k}</dt>
@@ -124,8 +128,8 @@ function EntryDetail({
           ))}
         </dl>
         {line.hasReceipt && (
-          <a href={`/api/accounting/tresorerie/entries/${line.id}/receipt`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm font-semibold text-brand-text">
-            <Paperclip aria-hidden className="h-4 w-4" /> Voir le justificatif
+          <a href={`/api/accounting/tresorerie/entries/${line.id}/receipt`} target="_blank" rel="noreferrer" className={`${buttonClasses("secondary", "sm")} self-start`}>
+            <Paperclip aria-hidden="true" className="size-4" strokeWidth={1.75} /> Voir le justificatif
           </a>
         )}
         {own && (
@@ -133,7 +137,7 @@ function EntryDetail({
             {history === null ? (
               <Button variant="ghost" size="sm" onClick={() => void loadHistory()}>Voir l&apos;historique</Button>
             ) : (
-              <ul className="space-y-1 text-sm text-ink-muted">
+              <ul className="flex flex-col gap-1 text-[13px] leading-[18px] text-ink-muted">
                 {history.map((h) => (
                   <li key={h.id}>{ACTION_LABEL[h.action] ?? h.action} le {new Date(h.at).toLocaleString("fr-FR")} par {h.by}</li>
                 ))}
@@ -245,15 +249,15 @@ export default function LedgerTab({
         />
         <div className="ml-auto flex flex-wrap gap-2">
           <a href={exportHref} className={buttonClasses("secondary", "md")}>
-            <Download aria-hidden className="h-4 w-4" /> Exporter
+            <Download aria-hidden="true" className="size-4" strokeWidth={1.75} /> Exporter
           </a>
           {activeAccounts.length > 1 && (
             <Button variant="secondary" onClick={() => setTransfer("new")}>
-              <ArrowLeftRight aria-hidden className="h-4 w-4" /> Transfert
+              <ArrowLeftRight aria-hidden="true" className="size-4" strokeWidth={1.75} /> Transférer entre comptes
             </Button>
           )}
           <Button onClick={() => setEditing("new")}>
-            <Plus aria-hidden className="h-4 w-4" /> Ajouter un mouvement
+            <Plus aria-hidden="true" className="size-4" strokeWidth={2} /> Ajouter un mouvement
           </Button>
         </div>
       </div>
@@ -264,15 +268,15 @@ export default function LedgerTab({
         </Alert>
       ))}
 
-      <section className="grid grid-cols-2 overflow-hidden rounded-card border border-line bg-surface md:grid-cols-4 md:divide-x md:divide-line">
+      <section className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-0 md:divide-x md:divide-line">
         {[
           ["Solde d'ouverture", p.opening, "text-ink"],
           ["Entrées", p.inflows, "text-success"],
           ["Sorties", p.outflows, "text-danger"],
           ["Solde de clôture", p.closing, "text-brand-text"],
         ].map(([label, value, tone]) => (
-          <div key={label as string} className="p-4">
-            <p className="text-sm text-ink-muted">{label as string}</p>
+          <div key={label as string} className="md:px-4 md:first:pl-0">
+            <p className="text-[13px] leading-[18px] text-ink-muted">{label as string}</p>
             <p className={`mt-1 text-lg font-semibold tabular-nums ${tone as string}`}>{euro(value as number)}</p>
           </div>
         ))}
@@ -288,11 +292,11 @@ export default function LedgerTab({
             header: "Libellé",
             primary: true,
             accessor: (l) => (
-              <button type="button" className="text-left font-semibold text-ink hover:text-brand-text" onClick={() => setDetailId(l.id)}>
-                {l.label}
-                {l.source !== "treasury" && <StatusChip tone="info" className="ml-2">Repris</StatusChip>}
-                {l.hasReceipt && <Paperclip aria-label="Justificatif" className="ml-1 inline h-3.5 w-3.5 text-ink-subtle" />}
-              </button>
+              <span className="flex flex-wrap items-center gap-1.5">
+                <span className="font-semibold text-ink">{l.label}</span>
+                {l.source !== "treasury" && <StatusChip tone="info">Repris</StatusChip>}
+                {l.hasReceipt && <Paperclip role="img" aria-label="Justificatif joint" className="size-3.5 text-ink-muted" strokeWidth={1.75} />}
+              </span>
             ),
           },
           { header: "Compte", accessor: (l) => l.accountName, hideOnMobile: true },
@@ -302,6 +306,11 @@ export default function LedgerTab({
           { header: "Sortie", align: "right", accessor: (l) => (l.direction === "OUT" ? <span className="text-danger">{euro(l.amount)}</span> : "") },
           { header: "Solde", align: "right", accessor: (l) => <span className={l.runningBalance < 0 ? "text-danger" : ""}>{euro(l.runningBalance)}</span> },
         ]}
+        actions={(l) => (
+          <Button size="sm" variant="ghost" onClick={() => setDetailId(l.id)}>
+            Voir le détail
+          </Button>
+        )}
       />
 
       {detail && (

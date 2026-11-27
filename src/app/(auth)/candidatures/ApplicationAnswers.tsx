@@ -54,12 +54,12 @@ function Section({ title, items }: { readonly title: string; readonly items: Ite
   const visible = items.filter((i) => i.value !== null && i.value !== "");
   if (visible.length === 0) return null;
   return (
-    <section className="bg-surface rounded-xl border border-line p-4 sm:p-5">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-brand-text mb-3">{title}</h2>
+    <section>
+      <h2 className="mb-3 font-display text-[17px] font-semibold text-ink">{title}</h2>
       <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
         {visible.map((i) => (
           <div key={i.label} className={i.full ? "sm:col-span-2" : undefined}>
-            <dt className="text-xs uppercase tracking-wide text-ink-subtle">{i.label}</dt>
+            <dt className="text-[13px] text-ink-muted">{i.label}</dt>
             <dd className="text-sm text-ink whitespace-pre-line break-words">{i.value}</dd>
           </div>
         ))}
@@ -73,7 +73,7 @@ export default function ApplicationAnswers({ app }: { readonly app: Answers }) {
     [app.street, [app.postalCode, app.city].filter(Boolean).join(" "), app.country].filter(Boolean).join(", ") || null;
   return (
     <div className="space-y-4">
-      <section className="bg-surface rounded-xl border border-line p-4 sm:p-5 flex flex-col-reverse sm:flex-row gap-4 sm:items-start">
+      <section className="flex flex-col-reverse sm:flex-row gap-4 sm:items-start">
         <dl className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
           {[
             { label: "Date de naissance", value: day(app.birthDate) },
@@ -84,7 +84,7 @@ export default function ApplicationAnswers({ app }: { readonly app: Answers }) {
             .filter((i) => i.value)
             .map((i) => (
               <div key={i.label}>
-                <dt className="text-xs uppercase tracking-wide text-ink-subtle">{i.label}</dt>
+                <dt className="text-[13px] text-ink-muted">{i.label}</dt>
                 <dd className="text-sm text-ink">{i.value}</dd>
               </div>
             ))}
@@ -93,7 +93,7 @@ export default function ApplicationAnswers({ app }: { readonly app: Answers }) {
         <img
           src={`/api/serving/applications/${app.id}/photo`}
           alt={`${app.firstName} ${app.lastName}`}
-          className="h-40 w-30 rounded-lg border border-line object-cover bg-surface-sunken self-start"
+          className="h-40 w-30 self-start rounded-control border border-line bg-surface object-cover"
         />
       </section>
       <Section

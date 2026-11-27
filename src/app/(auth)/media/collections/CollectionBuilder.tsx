@@ -1,6 +1,8 @@
 "use client";
 
-import { useId, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { Copy, ExternalLink } from "lucide-react";
+import { Alert, Button, Checkbox, FilterChip, Input, Select, StatusChip, buttonClasses } from "@/components/ui";
 
 type EventItem = {
   id: string;
@@ -20,7 +22,7 @@ type ProjectItem = {
 type Scope = "photos" | "files" | "both";
 
 const SCOPE_LABEL: Record<Scope, string> = {
-  both: "Photos + Visuels",
+  both: "Photos et visuels",
   photos: "Photos uniquement",
   files: "Visuels uniquement",
 };
@@ -61,7 +63,6 @@ export default function CollectionBuilder({
   readonly selection?: { photoIds: string[]; fileIds: string[]; eventIds: string[]; projectIds: string[] };
   readonly onCreated?: (result: { url: string; label: string | null }) => void;
 }) {
-  const uid = useId();
   const [scope, setScope]           = useState<Scope>(lockedScope ?? "both");
   const [includeAllPhotos, setIncludeAllPhotos] = useState(false);
   const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set(initialEventIds));
@@ -194,8 +195,8 @@ export default function CollectionBuilder({
   return (
     <div className="space-y-5 max-w-3xl">
       {selection && (
-        <div className="bg-surface rounded-2xl border border-line shadow-card p-5">
-          <h2 className="text-sm font-semibold text-ink">Contenu du lien</h2>
+        <div>
+          <h2 className="font-display text-[15px] font-semibold text-ink">Contenu du lien</h2>
           <p className="text-sm text-ink-muted mt-1">
             {selection.photoIds.length + selection.fileIds.length} média{selection.photoIds.length + selection.fileIds.length > 1 ? "s" : ""} sélectionné{selection.photoIds.length + selection.fileIds.length > 1 ? "s" : ""} dans la galerie : seuls ces médias seront visibles par le lien.
           </p>
@@ -203,48 +204,32 @@ export default function CollectionBuilder({
       )}
       {!selection && (<>
       {/* ── Scope ─────────────────────────────────────────────────────────── */}
-      <div className="bg-surface rounded-2xl border border-line shadow-card p-5 space-y-3">
-        <h2 className="text-sm font-semibold text-ink">Contenu à inclure</h2>
+      <div className="space-y-3">
+        <h2 className="font-display text-[15px] font-semibold text-ink">Contenu à inclure</h2>
         {!lockedScope && (
           <div className="flex gap-2 flex-wrap">
             {(["both", "photos", "files"] as Scope[]).map((s) => (
-              <button
-                key={s}
-                onClick={() => setScope(s)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
-                  scope === s
-                    ? "bg-brand text-on-brand border-brand"
-                    : "bg-surface text-ink-muted border-line hover:border-brand/40 hover:bg-brand-soft"
-                }`}
-              >
+              <FilterChip key={s} pressed={scope === s} onClick={() => setScope(s)}>
                 {SCOPE_LABEL[s]}
-              </button>
+              </FilterChip>
             ))}
           </div>
         )}
 
         {showEvents && (
           <div className="pt-2 border-t border-line space-y-2">
-            <p className="text-xs font-medium text-ink-muted">Périmètre des photos</p>
+            <p className="text-sm font-semibold text-ink">Périmètre des photos</p>
             <div className="flex gap-2 flex-wrap">
               {([false, true] as const).map((allPhotos) => (
-                <button
-                  key={String(allPhotos)}
-                  onClick={() => setIncludeAllPhotos(allPhotos)}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
-                    includeAllPhotos === allPhotos
-                      ? "bg-brand text-on-brand border-brand"
-                      : "bg-surface text-ink-muted border-line hover:border-brand/40 hover:bg-brand-soft"
-                  }`}
-                >
+                <FilterChip key={String(allPhotos)} pressed={includeAllPhotos === allPhotos} onClick={() => setIncludeAllPhotos(allPhotos)}>
                   {allPhotos ? "Toutes les photos" : "Photos validées uniquement"}
-                </button>
+                </FilterChip>
               ))}
             </div>
             {includeAllPhotos && (
-              <p className="text-xs text-warning bg-warning-soft border border-warning/30 rounded-lg px-3 py-2">
-                Attention : ce lien diffusera aussi les photos en attente ou non validées, sans distinction de statut.
-              </p>
+              <Alert tone="warning">
+                Ce lien diffusera aussi les photos en attente ou non validées, sans distinction de statut.
+              </Alert>
             )}
           </div>
         )}
@@ -252,31 +237,20 @@ export default function CollectionBuilder({
 
       {/* ── Events filter + selection ──────────────────────────────────────── */}
       {showEvents && (
-        <div className="bg-surface rounded-2xl border border-line shadow-card overflow-hidden">
+        <div className="bg-surface rounded-card border border-line shadow-card overflow-hidden">
           <div className="px-5 py-4 border-b border-line">
-            <h2 className="text-sm font-semibold text-ink mb-3">Événements — photos validées</h2>
-            <div className="flex gap-2">
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="text-xs border border-line rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-focus"
-                placeholder="Du"
-              />
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="text-xs border border-line rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-focus"
-                placeholder="Au"
-              />
+            <h2 className="font-display text-[15px] font-semibold text-ink mb-3">Événements — photos validées</h2>
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="w-40">
+                <Input label="Du" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+              </div>
+              <div className="w-40">
+                <Input label="Au" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+              </div>
               {(dateFrom || dateTo) && (
-                <button
-                  onClick={() => { setDateFrom(""); setDateTo(""); }}
-                  className="text-xs text-ink-subtle hover:text-ink-muted px-2"
-                >
-                  Effacer
-                </button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); }}>
+                  Effacer les dates
+                </Button>
               )}
             </div>
           </div>
@@ -285,17 +259,15 @@ export default function CollectionBuilder({
             <p className="p-5 text-sm text-ink-subtle">Aucun événement{dateFrom || dateTo ? " sur cette période" : ""}.</p>
           ) : (
             <>
-              <div className="px-5 py-2 border-b border-line flex items-center gap-2">
-                <input
-                  type="checkbox"
+              <label className="px-5 min-h-11 border-b border-line flex items-center gap-3 cursor-pointer">
+                <Checkbox
                   checked={selectedEvents.size === filteredEvents.length && filteredEvents.length > 0}
                   onChange={selectAllEvents}
-                  className="w-4 h-4 rounded border-control-line accent-brand"
                 />
-                <span className="text-xs text-ink-muted">
+                <span className="text-sm text-ink-muted">
                   {selectionSummary(selectedEvents.size, totalPhotos, "photo")}
                 </span>
-              </div>
+              </label>
               <ul className="max-h-64 overflow-y-auto divide-y divide-line">
                 {filteredEvents.map((e) => (
                   <li
@@ -303,19 +275,14 @@ export default function CollectionBuilder({
                     className={`hover:bg-surface-sunken transition-colors ${selectedEvents.has(e.id) ? "bg-brand-soft" : ""}`}
                   >
                     <label className="flex items-center gap-3 px-5 py-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedEvents.has(e.id)}
-                        onChange={() => toggleEvent(e.id)}
-                        className="w-4 h-4 rounded border-control-line accent-brand shrink-0"
-                      />
+                      <Checkbox checked={selectedEvents.has(e.id)} onChange={() => toggleEvent(e.id)} className="shrink-0" />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-ink truncate">{e.name}</p>
                         <p className="text-xs text-ink-subtle">{formatDate(e.date)}</p>
                       </div>
-                      <span className={`text-xs rounded-full px-2 py-0.5 shrink-0 ${e.approvedPhotoCount > 0 ? "bg-success-soft text-success" : "bg-surface-sunken text-ink-subtle"}`}>
-                        {e.approvedPhotoCount} validée{e.approvedPhotoCount !== 1 ? "s" : ""} / {e.totalPhotoCount} au total
-                      </span>
+                      <StatusChip tone={e.approvedPhotoCount > 0 ? "success" : "neutral"} className="shrink-0">
+                        {e.approvedPhotoCount} validée{e.approvedPhotoCount > 1 ? "s" : ""} / {e.totalPhotoCount} au total
+                      </StatusChip>
                     </label>
                   </li>
                 ))}
@@ -327,25 +294,23 @@ export default function CollectionBuilder({
 
       {/* ── Projects selection ─────────────────────────────────────────────── */}
       {showProjects && (
-        <div className="bg-surface rounded-2xl border border-line shadow-card overflow-hidden">
+        <div className="bg-surface rounded-card border border-line shadow-card overflow-hidden">
           <div className="px-5 py-4 border-b border-line">
-            <h2 className="text-sm font-semibold text-ink">Projets — visuels approuvés</h2>
+            <h2 className="font-display text-[15px] font-semibold text-ink">Projets — visuels approuvés</h2>
           </div>
           {projects.length === 0 ? (
             <p className="p-5 text-sm text-ink-subtle">Aucun projet disponible.</p>
           ) : (
             <>
-              <div className="px-5 py-2 border-b border-line flex items-center gap-2">
-                <input
-                  type="checkbox"
+              <label className="px-5 min-h-11 border-b border-line flex items-center gap-3 cursor-pointer">
+                <Checkbox
                   checked={selectedProjects.size === projects.length && projects.length > 0}
                   onChange={selectAllProjects}
-                  className="w-4 h-4 rounded border-control-line accent-brand"
                 />
-                <span className="text-xs text-ink-muted">
+                <span className="text-sm text-ink-muted">
                   {selectionSummary(selectedProjects.size, totalFiles, "visuel")}
                 </span>
-              </div>
+              </label>
               <ul className="max-h-64 overflow-y-auto divide-y divide-line">
                 {projects.map((p) => (
                   <li
@@ -353,19 +318,14 @@ export default function CollectionBuilder({
                     className={`hover:bg-surface-sunken transition-colors ${selectedProjects.has(p.id) ? "bg-brand-soft" : ""}`}
                   >
                     <label className="flex items-center gap-3 px-5 py-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedProjects.has(p.id)}
-                        onChange={() => toggleProject(p.id)}
-                        className="w-4 h-4 rounded border-control-line accent-brand shrink-0"
-                      />
+                      <Checkbox checked={selectedProjects.has(p.id)} onChange={() => toggleProject(p.id)} className="shrink-0" />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-ink truncate">{p.name}</p>
                         <p className="text-xs text-ink-subtle">{formatDate(p.createdAt)}</p>
                       </div>
-                      <span className={`text-xs rounded-full px-2 py-0.5 shrink-0 ${p.approvedFileCount > 0 ? "bg-success-soft text-success" : "bg-surface-sunken text-ink-subtle"}`}>
-                        {p.approvedFileCount} approuvé{p.approvedFileCount !== 1 ? "s" : ""}
-                      </span>
+                      <StatusChip tone={p.approvedFileCount > 0 ? "success" : "neutral"} className="shrink-0">
+                        {p.approvedFileCount} approuvé{p.approvedFileCount > 1 ? "s" : ""}
+                      </StatusChip>
                     </label>
                   </li>
                 ))}
@@ -378,78 +338,63 @@ export default function CollectionBuilder({
       </>)}
 
       {/* ── Options ────────────────────────────────────────────────────────── */}
-      <div className="bg-surface rounded-2xl border border-line shadow-card p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-ink">Options du lien</h2>
+      <div className="space-y-4">
+        <h2 className="font-display text-[15px] font-semibold text-ink">Options du lien</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor={`${uid}-f1`} className="block text-xs font-medium text-ink-muted mb-1">Nom du lien</label>
-            <input
-              id={`${uid}-f1`}
-              type="text"
-              required
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder="Ex : Mariage Dupont - Jan 2026"
-              className="w-full border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/30 focus:border-brand"
-            />
-          </div>
-          <div>
-            <label htmlFor={`${uid}-f2`} className="block text-xs font-medium text-ink-muted mb-1">Expiration</label>
-            <select
-              id={`${uid}-f2`}
-              value={expiresInDays}
-              onChange={(e) => setExpiresInDays(e.target.value === "" ? "" : Number(e.target.value))}
-              className="w-full border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/30 focus:border-brand"
-            >
-              <option value={7}>7 jours</option>
-              <option value={30}>30 jours</option>
-              <option value={90}>90 jours</option>
-              <option value={365}>1 an</option>
-              <option value="">Pas d&apos;expiration</option>
-            </select>
-          </div>
+          <Input
+            label="Nom du lien"
+            required
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            placeholder="Ex : Mariage Dupont - Jan 2026"
+          />
+          <Select
+            label="Expiration"
+            value={String(expiresInDays)}
+            onChange={(e) => setExpiresInDays(e.target.value === "" ? "" : Number(e.target.value))}
+            options={[
+              { value: "7", label: "7 jours" },
+              { value: "30", label: "30 jours" },
+              { value: "90", label: "90 jours" },
+              { value: "365", label: "1 an" },
+              { value: "", label: "Pas d'expiration" },
+            ]}
+          />
         </div>
 
-        <button
-          onClick={createCollection}
-          disabled={!canCreate}
-          className="w-full py-2.5 rounded-xl bg-brand text-on-brand text-sm font-medium hover:bg-brand-hover disabled:opacity-40 transition-colors"
-        >
-          {creating ? "Génération…" : "Générer le lien de collection"}
-        </button>
-
-        {error && (
-          <p className="text-xs text-danger bg-danger-soft px-3 py-2 rounded-lg">{error}</p>
+        <Button type="button" className="w-full" onClick={createCollection} disabled={!canCreate}>
+          {creating ? "Génération en cours…" : "Générer le lien de collection"}
+        </Button>
+        {!canCreate && !creating && (
+          <p className="text-[13px] text-ink-muted">Nommez le lien et choisissez au moins un élément à partager.</p>
         )}
+
+        {error && <Alert tone="danger">{error}</Alert>}
       </div>
 
       {/* ── Result ─────────────────────────────────────────────────────────── */}
       {result && (
-        <div className="bg-success-soft border border-success/30 rounded-2xl p-5 space-y-3">
-          <p className="text-sm font-semibold text-success">
+        <div className="bg-success-soft border border-success/30 rounded-card p-5 space-y-3">
+          <p className="text-sm font-semibold text-ink">
             Lien créé {result.label ? `"${result.label}"` : ""}
           </p>
-          <div className="flex items-center gap-2">
-            <input
-              readOnly
-              value={result.url}
-              className="flex-1 text-xs bg-surface border border-success/30 rounded-lg px-3 py-2 text-ink-muted truncate focus:outline-none"
-              onClick={(e) => (e.target as HTMLInputElement).select()}
-            />
-            <button
-              onClick={copyLink}
-              className="shrink-0 text-xs border border-success/40 text-success rounded-lg px-3 py-2 hover:bg-success/10 transition-colors font-medium"
-            >
-              {copied ? "Copié !" : "Copier"}
-            </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="min-w-0 flex-1 basis-56">
+              <Input
+                readOnly
+                aria-label="Adresse du lien"
+                value={result.url}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+              />
+            </div>
+            <Button type="button" variant="secondary" onClick={copyLink}>
+              <Copy aria-hidden="true" className="size-4" strokeWidth={1.75} />
+              {copied ? "Copié !" : "Copier le lien"}
+            </Button>
           </div>
-          <a
-            href={result.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block text-xs text-success underline hover:text-success"
-          >
-            Ouvrir la collection →
+          <a href={result.url} target="_blank" rel="noopener noreferrer" className={buttonClasses("secondary")}>
+            <ExternalLink aria-hidden="true" className="size-4" strokeWidth={1.75} />
+            Ouvrir la collection
           </a>
         </div>
       )}

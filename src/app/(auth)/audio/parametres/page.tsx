@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buttonClasses } from "@/components/ui";
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { requireAudioAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
@@ -36,13 +37,13 @@ export default async function AudioSettingsPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-ink mb-2">Audio — Paramètres</h1>
-      <p className="text-sm text-ink-muted mb-6">
+      <p className="text-sm text-ink-muted mb-3">
         Le département de captation audio se configure désormais parmi les{" "}
-        <Link href="/admin/departments/functions" className="text-brand-text underline">
-          fonctions départementales
-        </Link>{" "}
-        (fonction « Captation Audio »).
+        fonctions départementales (fonction « Captation Audio »).
       </p>
+      <Link href="/admin/departments/functions" className={`${buttonClasses("secondary", "sm")} mb-6`}>
+        Configurer les fonctions départementales
+      </Link>
       <AudioSettingsClient
         settings={
           settings

@@ -1,5 +1,6 @@
 import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
 import { computeAccountingStats } from "@/modules/accounting";
+import { PageHeader } from "@/components/ui";
 import AccountingStats from "./AccountingStats";
 import { isShuttleVisible } from "@/modules/shuttle/auth";
 import { isTreasuryVisible } from "@/modules/treasury/auth";
@@ -23,11 +24,8 @@ export default async function AccountingStatsPage() {
   ]);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-ink">Comptabilité</h1>
-        <p className="text-sm text-ink-muted mt-0.5">Vue d&apos;ensemble des demandes et paiements</p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Comptabilité" description="Vue d'ensemble des demandes et paiements" />
       <AccountingNav canViewStats canViewShuttle={canViewShuttle} canViewTreasury={canViewTreasury} active="stats" />
       <AccountingStats initialData={initialData} churchId={churchId} />
     </div>

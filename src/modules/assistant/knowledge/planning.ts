@@ -231,7 +231,7 @@ export const PLANNING_DEPARTEMENT: readonly KnowledgeEntry[] = [
       "relance automatique",
     ],
     answer:
-      "Dans « Disponibilités », l'onglet « Collectes » liste les mois et l'état de leur collecte ; « Ouvrir maintenant » ouvre un mois à l'avance et prévient les STAR. « Réglages » choisit la collecte automatique, son ouverture, sa clôture et la relance.",
+      "Dans « Disponibilités », l'onglet « Collectes » liste les mois et l'état de leur collecte ; « Ouvrir maintenant » ouvre un mois à l'avance et prévient les STAR. « Modifier les réglages » choisit la collecte automatique, son ouverture, sa clôture et la relance.",
     href: "/disponibilites/collectes",
     hrefLabel: "Collectes",
     audience: { permissions: ["availability:settings"] },

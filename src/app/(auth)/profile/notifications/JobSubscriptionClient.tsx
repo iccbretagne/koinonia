@@ -5,6 +5,7 @@ import { Check } from "lucide-react";
 import Checkbox from "@/components/ui/Checkbox";
 import Skeleton from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
+import { choiceChipClasses } from "@/components/ui/RadioGroup";
 
 interface Subscription {
   id: string;
@@ -68,7 +69,7 @@ export default function JobSubscriptionClient() {
     return (
       <section className="flex flex-col gap-3" aria-busy="true">
         {heading}
-        <div className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4 sm:p-5">
+        <div className="flex flex-col gap-3">
           <Skeleton className="h-5 w-56" />
           <Skeleton className="h-5 w-40" />
           <Skeleton className="h-9 w-full" />
@@ -87,7 +88,7 @@ export default function JobSubscriptionClient() {
   return (
     <section className="flex flex-col gap-3">
       {heading}
-      <div className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+      <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
           {channels.map(({ key, label, hint }) => (
             <label key={key} className="flex min-h-11 cursor-pointer items-start gap-3 py-1.5">
@@ -118,12 +119,7 @@ export default function JobSubscriptionClient() {
             ] as const).map(({ key, label }) => (
               <label
                 key={key}
-                className={`inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-sm font-semibold transition-colors duration-120
-                  has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${
-                    sub[key]
-                      ? "border-brand bg-brand-soft text-brand-text"
-                      : "border-control-line text-ink-muted hover:border-brand hover:text-ink"
-                  }`}
+                className={choiceChipClasses(sub[key])}
               >
                 <input
                   type="checkbox"

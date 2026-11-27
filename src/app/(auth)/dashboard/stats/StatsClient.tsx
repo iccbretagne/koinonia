@@ -13,6 +13,9 @@ import {
   Line,
 } from "recharts";
 import Select from "@/components/ui/Select";
+import SegmentedControl from "@/components/ui/SegmentedControl";
+import DataTable from "@/components/ui/DataTable";
+import StatusChip, { type StatusTone } from "@/components/ui/StatusChip";
 import EmptyState from "@/components/ui/EmptyState";
 import Skeleton from "@/components/ui/Skeleton";
 import { controlClasses, fieldLabelClasses } from "@/components/ui/field-classes";
@@ -24,40 +27,9 @@ import { ChartColumn, ListChecks } from "lucide-react";
  */
 const SERIES = { primary: "#7c4dff", danger: "#e5484d", secondary: "#38B6FF" };
 
-function Segmented<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  readonly label: string;
-  readonly value: T;
-  readonly options: { value: T; label: string }[];
-  readonly onChange: (v: T) => void;
-}) {
-  return (
-    <fieldset aria-label={label} className="inline-flex min-w-0 w-fit gap-0.5 rounded-control bg-surface-sunken p-[3px]">
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          aria-pressed={value === o.value}
-          onClick={() => onChange(o.value)}
-          className={`min-h-10 rounded-[7px] px-4 font-display text-sm font-semibold transition-colors duration-120
-            focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus ${
-              value === o.value ? "bg-surface text-brand-text shadow-card" : "text-ink-muted hover:text-ink"
-            }`}
-        >
-          {o.label}
-        </button>
-      ))}
-    </fieldset>
-  );
-}
-
 function StatTile({ label, value, accent = false }: { readonly label: string; readonly value: React.ReactNode; readonly accent?: boolean }) {
   return (
-    <div className="rounded-card border border-line bg-surface p-4 shadow-card">
+    <div>
       <p className="text-[13px] leading-[18px] text-ink-muted">{label}</p>
       <p className={`font-display text-[28px] font-bold leading-[34px] tabular-nums ${accent ? "text-brand-text" : "text-ink"}`}>{value}</p>
     </div>
@@ -111,10 +83,10 @@ interface Props {
   readonly initialDeptId?: string;
 }
 
-function rateClass(rate: number): string {
-  if (rate >= 50) return "bg-success-soft text-success";
-  if (rate >= 25) return "bg-warning-soft text-warning";
-  return "bg-danger-soft text-danger";
+function rateTone(rate: number): StatusTone {
+  if (rate >= 50) return "success";
+  if (rate >= 25) return "warning";
+  return "danger";
 }
 
 function toLocalDateInputValue(d: Date): string {
@@ -186,7 +158,7 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
 
         <div className="flex flex-col gap-1.5">
           <span className={fieldLabelClasses}>Période</span>
-          <Segmented
+          <SegmentedControl
             label="Période"
             value={periodMode}
             onChange={setPeriodMode}
@@ -225,7 +197,7 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
       </div>
 
       <div className="mb-6">
-        <Segmented
+        <SegmentedControl
           label="Statistiques"
           value={tab}
           onChange={setTab}
@@ -253,7 +225,7 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
         </div>
       )}
       {!loading && data && (
-        <div className="space-y-8">
+        <div className="flex flex-col gap-8">
           {tab === "planning" ? (
             <>
               {/* Summary cards */}
@@ -271,8 +243,8 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
 
               {/* Bar chart: services per member */}
               {data.members.length > 0 && (
-                <div className="rounded-card border border-line bg-surface shadow-card p-4">
-                  <h3 className="mb-4 font-display text-[15px] font-semibold text-ink">
+                <div>
+                  <h3 className="mb-4 font-display text-[17px] font-semibold leading-6 text-ink">
                     Services par STAR
                   </h3>
                   <ResponsiveContainer width="100%" height={300}>
@@ -299,8 +271,8 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
 
               {/* Line chart: monthly trend */}
               {data.trend.length > 1 && (
-                <div className="rounded-card border border-line bg-surface shadow-card p-4">
-                  <h3 className="mb-4 font-display text-[15px] font-semibold text-ink">
+                <div>
+                  <h3 className="mb-4 font-display text-[17px] font-semibold leading-6 text-ink">
                     Tendance mensuelle
                   </h3>
                   <ResponsiveContainer width="100%" height={250}>
@@ -336,53 +308,24 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
 
               {/* Table: member details */}
               {data.members.length > 0 && (
-                <div className="rounded-card border border-line bg-surface shadow-card overflow-hidden">
-                  <h3 className="border-b border-line px-4 py-3 font-display text-[15px] font-semibold text-ink">
+                <section aria-labelledby="stats-members-title" className="flex flex-col gap-3">
+                  <h3 id="stats-members-title" className="font-display text-[17px] font-semibold leading-6 text-ink">
                     Détail par STAR
                   </h3>
-                  <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-surface-sunken">
-                        <th className="px-4 py-2 text-left text-xs font-medium text-ink-muted">
-                          STAR
-                        </th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-ink-muted">
-                          Services
-                        </th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-ink-muted">
-                          Indispo.
-                        </th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-ink-muted">
-                          Taux
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {data.members.map((m) => (
-                        <tr key={m.id} className="hover:bg-surface-sunken">
-                          <td className="px-4 py-2 text-sm text-ink-muted">
-                            {m.name}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-right text-success">
-                            {m.services}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-right text-danger">
-                            {m.indisponible}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-right font-medium">
-                            <span
-                              className={`rounded-chip px-2 py-0.5 text-xs font-semibold tabular-nums ${rateClass(m.rate)}`}
-                            >
-                              {m.rate}%
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  </div>
-                </div>
+                  <DataTable
+                    data={data.members}
+                    columns={[
+                      { header: "STAR", accessor: "name", primary: true },
+                      { header: "Services", accessor: "services", align: "right" },
+                      { header: "Indisponible", accessor: "indisponible", align: "right" },
+                      {
+                        header: "Taux",
+                        align: "right",
+                        accessor: (m) => <StatusChip tone={rateTone(m.rate)}>{`${m.rate} %`}</StatusChip>,
+                      },
+                    ]}
+                  />
+                </section>
               )}
             </>
           ) : (
@@ -402,8 +345,8 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
                   </div>
 
                   {/* Bar chart: assignments per task */}
-                  <div className="rounded-card border border-line bg-surface shadow-card p-4">
-                    <h3 className="mb-4 font-display text-[15px] font-semibold text-ink">
+                  <div>
+                    <h3 className="mb-4 font-display text-[17px] font-semibold leading-6 text-ink">
                       Répartition par tâche
                     </h3>
                     <ResponsiveContainer width="100%" height={Math.max(200, data.taskStats.tasks.length * 40)}>
@@ -423,56 +366,23 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
                   </div>
 
                   {/* Table: member task breakdown */}
-                  <div className="rounded-card border border-line bg-surface shadow-card overflow-hidden">
-                    <h3 className="border-b border-line px-4 py-3 font-display text-[15px] font-semibold text-ink">
+                  <section aria-labelledby="stats-tasks-title" className="flex flex-col gap-3">
+                    <h3 id="stats-tasks-title" className="font-display text-[17px] font-semibold leading-6 text-ink">
                       Détail par STAR
                     </h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="bg-surface-sunken">
-                            <th className="px-4 py-2 text-left text-xs font-medium text-ink-muted sticky left-0 bg-surface-sunken">
-                              STAR
-                            </th>
-                            {data.taskStats.tasks.map((t) => (
-                              <th key={t.id} className="px-3 py-2 text-center text-xs font-medium text-ink-muted whitespace-nowrap">
-                                {t.name}
-                              </th>
-                            ))}
-                            <th className="px-4 py-2 text-right text-xs font-medium text-ink-muted">
-                              Total
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-line">
-                          {data.taskStats.memberTasks.map((m) => (
-                            <tr key={m.id} className="hover:bg-surface-sunken">
-                              <td className="px-4 py-2 text-sm text-ink-muted sticky left-0 bg-surface">
-                                {m.name}
-                              </td>
-                              {data.taskStats.tasks.map((t) => {
-                                const count = m.tasks.find((mt) => mt.taskId === t.id)?.count ?? 0;
-                                return (
-                                  <td key={t.id} className="px-3 py-2 text-sm text-center">
-                                    {count > 0 ? (
-                                      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-brand-soft text-brand-text text-xs font-medium">
-                                        {count}
-                                      </span>
-                                    ) : (
-                                      <span className="text-ink-subtle">—</span>
-                                    )}
-                                  </td>
-                                );
-                              })}
-                              <td className="px-4 py-2 text-sm text-right font-semibold text-ink">
-                                {m.totalAssignments}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                    <DataTable
+                      data={data.taskStats.memberTasks}
+                      columns={[
+                        { header: "STAR", accessor: "name", primary: true },
+                        ...data.taskStats.tasks.map((t) => ({
+                          header: t.name,
+                          align: "right" as const,
+                          accessor: (m: MemberTaskStat) => m.tasks.find((mt) => mt.taskId === t.id)?.count || "—",
+                        })),
+                        { header: "Total", accessor: "totalAssignments", align: "right" },
+                      ]}
+                    />
+                  </section>
                 </>
               )}
             </>

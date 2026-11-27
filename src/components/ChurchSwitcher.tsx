@@ -136,7 +136,7 @@ export default function ChurchSwitcher({
       {open && (
         <div
           id={menuId}
-          className={`absolute z-50 min-w-60 rounded-card border border-line bg-surface p-1.5 shadow-float ${menuPosition}`}
+          className={`absolute z-overlay min-w-60 rounded-card border border-line bg-surface p-1.5 shadow-float ${menuPosition}`}
         >
           <p className="px-3 pb-1 pt-2 font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-subtle">
             Changer d&apos;église

@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import Button from "@/components/ui/Button";
-import { buttonClasses } from "@/components/ui/button-classes";
-import Modal from "@/components/ui/Modal";
-import Input from "@/components/ui/Input";
+import Link from "next/link";
+import { Check, ChevronRight, Plus } from "lucide-react";
+import { Alert, Button, EmptyState, FilterChip, Input, Modal, PageHeader, SearchInput, StatusChip, Textarea, buttonClasses, type StatusTone } from "@/components/ui";
 
 export type SourceRequest = {
   id: string;
@@ -33,11 +32,11 @@ export type Journey = {
 };
 
 const MILESTONES = [
-  { key: "integratedInFamily", label: "Famille", color: "bg-info-soft text-info" },
-  { key: "followsPcnc", label: "PCNC", color: "bg-brand-soft text-brand-text" },
-  { key: "isStar", label: "Service", color: "bg-success-soft text-success" },
-  { key: "inDiscipleship", label: "Discipolat", color: "bg-warning-soft text-warning" },
-] as const;
+  { key: "integratedInFamily", label: "Famille", tone: "info" },
+  { key: "followsPcnc", label: "PCNC", tone: "brand" },
+  { key: "isStar", label: "Service", tone: "success" },
+  { key: "inDiscipleship", label: "Discipolat", tone: "warning" },
+] as const satisfies readonly { key: string; label: string; tone: StatusTone }[];
 
 type MilestoneKey = (typeof MILESTONES)[number]["key"];
 
@@ -47,16 +46,12 @@ function milestoneCount(j: Journey): number {
 
 function JourneyMilestoneBadges({ journey }: { readonly journey: Journey }) {
   return (
-    <div className="flex gap-1 flex-wrap">
+    <div className="flex flex-wrap gap-1">
       {MILESTONES.map((m) => (
-        <span
-          key={m.key}
-          className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-            journey[m.key] ? m.color : "bg-surface-sunken text-ink-subtle"
-          }`}
-        >
+        <StatusChip key={m.key} tone={journey[m.key] ? m.tone : "neutral"}>
           {m.label}
-        </span>
+          <span className="sr-only">{journey[m.key] ? " (atteint)" : " (non atteint)"}</span>
+        </StatusChip>
       ))}
     </div>
   );
@@ -153,84 +148,74 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">Parcours</h1>
-          <p className="text-sm text-ink-muted mt-0.5">
-            Suivi des jalons d&apos;intégration pour chaque personne
-          </p>
-        </div>
-        <Button onClick={() => setShowCreate(true)}>+ Nouveau dossier</Button>
-      </div>
+    <div className="mx-auto flex max-w-5xl flex-col gap-4">
+      <PageHeader
+        title="Parcours"
+        description="Suivi des jalons d'intégration pour chaque personne."
+        actions={
+          <Button onClick={() => setShowCreate(true)}>
+            <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
+            Créer un dossier
+          </Button>
+        }
+      />
 
       {/* Filtres par jalon manquant */}
-      <div className="flex gap-2 flex-wrap mb-4">
-        <button
-          onClick={() => setFilter("ALL")}
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition-colors ${
-            filter === "ALL"
-              ? "border-brand bg-brand text-on-brand"
-              : "border-line bg-surface text-ink-muted hover:border-control-line"
-          }`}
-        >
-          Tous ({filterCounts.ALL})
-        </button>
+      <div role="group" aria-label="Filtrer par jalon manquant" className="flex flex-wrap gap-2">
+        <FilterChip pressed={filter === "ALL"} onClick={() => setFilter("ALL")}>
+          Tous
+          <span className="font-normal tabular-nums">{filterCounts.ALL}</span>
+        </FilterChip>
         {MILESTONES.map((m) => (
-          <button
-            key={m.key}
-            onClick={() => setFilter(m.key)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition-colors ${
-              filter === m.key
-                ? "border-brand bg-brand text-on-brand"
-                : "border-line bg-surface text-ink-muted hover:border-control-line"
-            }`}
-          >
-            Sans {m.label} ({filterCounts[m.key]})
-          </button>
+          <FilterChip key={m.key} pressed={filter === m.key} onClick={() => setFilter(m.key)}>
+            Sans {m.label}
+            <span className="font-normal tabular-nums">{filterCounts[m.key]}</span>
+          </FilterChip>
         ))}
       </div>
 
       {/* Recherche */}
-      <div className="mb-4">
-        <Input
-          placeholder="Rechercher par nom, téléphone ou email…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
+      <SearchInput
+        aria-label="Rechercher un dossier"
+        placeholder="Rechercher par nom, téléphone ou email…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full sm:w-96"
+      />
 
       {/* Liste */}
       {filtered.length === 0 ? (
-        <p className="text-ink-subtle text-center py-12">Aucun dossier trouvé.</p>
+        <div className="rounded-card border border-line bg-surface">
+          <EmptyState size="sm" title="Aucun dossier trouvé" />
+        </div>
       ) : (
-        <div className="space-y-2">
+        <ul className="flex flex-col gap-2">
           {filtered.map((j) => (
-            <button
-              key={j.id}
-              onClick={() => setSelected(j)}
-              className="w-full text-left bg-surface border border-line rounded-lg px-4 py-3 hover:border-brand transition-colors"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="font-semibold text-ink truncate">
-                    {j.firstName} {j.lastName}
-                  </p>
-                  <p className="text-xs text-ink-subtle mt-0.5">
-                    {j.phone ?? j.email ?? "Aucun contact"}
-                    {j.sourceRequest?.assignedFamilyName && (
-                      <span className="ml-2 text-info">
-                        · {j.sourceRequest.assignedFamilyName}
-                      </span>
-                    )}
-                  </p>
+            <li key={j.id}>
+              <button
+                type="button"
+                onClick={() => setSelected(j)}
+                className="w-full rounded-card border border-line bg-surface px-4 py-3 text-left shadow-card transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+              >
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-ink">
+                      {j.firstName} {j.lastName}
+                    </p>
+                    <p className="mt-0.5 text-xs text-ink-muted">
+                      {j.phone ?? j.email ?? "Aucun contact"}
+                      {j.sourceRequest?.assignedFamilyName && <> · {j.sourceRequest.assignedFamilyName}</>}
+                    </p>
+                  </div>
+                  <div className="shrink-0">
+                    <JourneyMilestoneBadges journey={j} />
+                  </div>
                 </div>
-                <div className="flex-shrink-0">
-                  <JourneyMilestoneBadges journey={j} />
-                </div>
-              </div>
-              <div className="mt-2">
-                <div className="flex gap-0.5 h-1.5 rounded-full overflow-hidden bg-surface-sunken">
+                <div
+                  className="mt-2 flex h-1.5 gap-0.5 overflow-hidden rounded-full bg-line"
+                  role="img"
+                  aria-label={`${milestoneCount(j)} jalon${milestoneCount(j) > 1 ? "s" : ""} sur 4`}
+                >
                   {Array.from({ length: milestoneCount(j) }, (_, i) => (
                     <div key={i} className="flex-1 bg-brand" />
                   ))}
@@ -238,38 +223,36 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
                     <div key={i} className="flex-1" />
                   ))}
                 </div>
-              </div>
-            </button>
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
       {/* Modale détail */}
       {selected && (
         <Modal open onClose={() => setSelected(null)} title={`${selected.firstName} ${selected.lastName}`}>
-          <div className="p-6 space-y-6 min-w-[320px]">
-            <div>
-              <h2 className="text-xl font-bold text-ink">
-                {selected.firstName} {selected.lastName}
-              </h2>
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1">
               {(selected.phone || selected.email) && (
-                <p className="text-sm text-ink-muted mt-0.5">
+                <p className="text-sm text-ink-muted">
                   {[selected.phone, selected.email].filter(Boolean).join(" · ")}
                 </p>
               )}
               {selected.sourceRequest && (
-                <a
+                <Link
                   href={`/integration/requests/${selected.sourceRequest.id}`}
-                  className={`${buttonClasses("ghost", "sm")} mt-1`}
+                  className={`${buttonClasses("ghost", "sm")} -ml-3 self-start`}
                 >
-                  Voir la demande d&apos;intégration →
-                </a>
+                  Voir la demande d&apos;intégration
+                  <ChevronRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                </Link>
               )}
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold text-ink-muted mb-3">Jalons</h3>
-              <div className="space-y-2">
+              <h3 className="mb-3 text-sm font-semibold text-ink">Jalons</h3>
+              <ul className="flex flex-col divide-y divide-line rounded-card border border-line">
                 {MILESTONES.map((m) => {
                   const reached = selected[m.key];
                   const dateKey = {
@@ -280,118 +263,97 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
                   }[m.key] as keyof Journey;
                   const dateVal = selected[dateKey] as string | null;
                   return (
-                    <div
-                      key={m.key}
-                      className="flex items-center justify-between gap-4 p-3 rounded-lg bg-surface-sunken"
-                    >
+                    <li key={m.key} className="flex items-center justify-between gap-4 p-3">
                       <div className="flex items-center gap-3">
-                        <div
-                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                            reached
-                              ? "bg-brand border-brand"
-                              : "border-control-line bg-surface"
+                        <span
+                          className={`grid size-5 shrink-0 place-items-center rounded-full border-2 ${
+                            reached ? "border-brand bg-brand text-on-brand" : "border-control-line bg-surface"
                           }`}
                         >
-                          {reached && (
-                            <svg aria-hidden="true"
-                              className="w-3 h-3 text-on-brand"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={3}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          )}
-                        </div>
+                          {reached && <Check aria-hidden="true" className="size-3" strokeWidth={3} />}
+                        </span>
                         <div>
-                          <p className="text-sm font-medium text-ink">{m.label}</p>
+                          <p className="text-sm font-semibold text-ink">
+                            {m.label}
+                            <span className="sr-only">{reached ? " (atteint)" : " (non atteint)"}</span>
+                          </p>
                           {reached && dateVal && (
-                            <p className="text-xs text-ink-subtle">
+                            <p className="text-xs text-ink-muted">
                               {new Date(dateVal).toLocaleDateString("fr-FR")}
                             </p>
                           )}
                         </div>
                       </div>
-                      <button
+                      <Button
+                        type="button"
+                        variant={reached ? "ghost" : "secondary"}
+                        size="sm"
                         onClick={() => toggleMilestone(selected, m.key)}
-                        className={`text-xs px-3 py-1 rounded-lg border transition-colors ${
-                          reached
-                            ? "border-danger/30 text-danger hover:bg-danger-soft"
-                            : "border-brand text-brand-text hover:bg-brand-soft"
-                        }`}
                       >
-                        {reached ? "Retirer" : "Atteint"}
-                      </button>
-                    </div>
+                        {reached ? "Retirer le jalon" : "Marquer atteint"}
+                      </Button>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             </div>
 
             {selected.notes && (
               <div>
-                <h3 className="text-sm font-semibold text-ink-muted mb-1">Notes</h3>
-                <p className="text-sm text-ink-muted whitespace-pre-wrap">{selected.notes}</p>
+                <h3 className="mb-1 text-sm font-semibold text-ink">Notes</h3>
+                <p className="whitespace-pre-wrap text-sm text-ink-muted">{selected.notes}</p>
               </div>
             )}
 
-            <div className="text-xs text-ink-subtle">
+            <p className="text-xs text-ink-muted">
               Dossier créé le {new Date(selected.createdAt).toLocaleDateString("fr-FR")}
-            </div>
+            </p>
           </div>
         </Modal>
       )}
 
       {/* Modale création */}
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Nouveau dossier parcours">
-        <div className="p-6 space-y-4 min-w-[320px]">
-          <h2 className="text-xl font-bold text-ink">Nouveau dossier parcours</h2>
-          {createError && (
-            <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg p-2">
-              {createError}
-            </p>
-          )}
-          <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-4">
+          {createError && <Alert tone="danger">{createError}</Alert>}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input
-              placeholder="Prénom *"
+              label="Prénom"
+              required
               value={form.firstName}
               onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
             />
             <Input
-              placeholder="Nom *"
+              label="Nom"
+              required
               value={form.lastName}
               onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
             />
           </div>
           <Input
-            placeholder="Téléphone"
+            label="Téléphone"
+            type="tel"
             value={form.phone}
             onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
           />
           <Input
-            placeholder="Email"
+            label="Email"
             type="email"
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
           />
-          <textarea
-            placeholder="Notes (optionnel)"
+          <Textarea
+            label="Notes (facultatif)"
             value={form.notes}
             onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
             rows={3}
-            className="w-full border border-control-line rounded-lg p-3 text-sm focus:border-brand focus:outline-none resize-none"
           />
-          <div className="flex gap-3 justify-end">
-            <Button onClick={() => setShowCreate(false)} disabled={saving}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
+            <Button variant="secondary" onClick={() => setShowCreate(false)} disabled={saving}>
               Annuler
             </Button>
             <Button onClick={handleCreate} disabled={saving}>
-              {saving ? "Création…" : "Créer le dossier"}
+              {saving ? "Création en cours…" : "Créer le dossier"}
             </Button>
           </div>
         </div>

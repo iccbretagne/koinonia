@@ -77,7 +77,7 @@ export default function AssignmentPreview({
       <div
         className={
           display === "phone"
-            ? "mx-auto w-full max-w-[390px] overflow-hidden rounded-card border border-line bg-bg px-3 py-4 shadow-sm"
+            ? "mx-auto w-full max-w-[390px] overflow-hidden rounded-card border border-line bg-bg px-3 py-4 shadow-card"
             : "w-full"
         }
       >

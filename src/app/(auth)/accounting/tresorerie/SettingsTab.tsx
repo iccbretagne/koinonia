@@ -79,7 +79,7 @@ function AccountRow({ account }: { readonly account: AccountView }) {
         <span className="font-semibold text-ink">{account.name}</span>
         <StatusChip tone="neutral">{ACCOUNT_KIND_LABEL[account.kind]}</StatusChip>
         {account.archived && <StatusChip tone="warning">Archivé</StatusChip>}
-        <span className="text-sm text-ink-muted">Départ : {euro(account.openingBalance)} au {frDate(account.openingDate)}</span>
+        <span className="text-[15px] leading-[22px] text-ink-muted">Départ : {euro(account.openingBalance)} au {frDate(account.openingDate)}</span>
         <div className="ml-auto flex gap-2">
           <Button variant="ghost" size="sm" onClick={() => setEditing((v) => !v)}>{editing ? "Fermer" : "Modifier"}</Button>
           <Button
@@ -112,12 +112,12 @@ function NamedList({
   const { busy, error, run } = useAction();
   const [name, setName] = useState("");
   return (
-    <section className="rounded-card border border-line bg-surface p-5">
-      <h2 className="mb-2 text-lg font-semibold text-ink">{title}</h2>
+    <section>
+      <h2 className="mb-2 font-display text-[17px] font-semibold leading-6 text-ink">{title}</h2>
       <ul className="divide-y divide-line">
         {items.map((i) => (
-          <li key={i.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
-            <span className={i.active ? "text-ink" : "text-ink-subtle line-through"}>{i.name}</span>
+          <li key={i.id} className="flex flex-wrap items-center gap-2 py-2 text-[15px] leading-[22px]">
+            <span className={i.active ? "text-ink" : "text-ink-muted line-through"}>{i.name}</span>
             {i.system && <StatusChip tone="info">Utilisée par Koinonia</StatusChip>}
             <div className="ml-auto flex gap-1">
               <Button variant="ghost" size="sm" disabled={busy} onClick={() => void run(() => api(`${base}/${i.id}`, { method: "PATCH", json: { active: !i.active } }), i.active ? "Désactivée" : "Réactivée")}>
@@ -168,9 +168,9 @@ export default function SettingsTab({
           Créez la caisse principale (et les autres comptes de l&apos;église) avec leur solde actuel : c&apos;est le point de départ de la trésorerie.
         </Alert>
       )}
-      <section className="rounded-card border border-line bg-surface p-5">
-        <h2 className="mb-2 text-lg font-semibold text-ink">Comptes de trésorerie</h2>
-        <p className="mb-3 text-sm text-ink-muted">L&apos;argent que l&apos;église détient elle-même. Le compte bancaire commun n&apos;est pas suivi ici.</p>
+      <section>
+        <h2 className="mb-2 font-display text-[17px] font-semibold leading-6 text-ink">Comptes de trésorerie</h2>
+        <p className="mb-3 text-[15px] leading-[22px] text-ink-muted">L&apos;argent que l&apos;église détient elle-même. Le compte bancaire commun n&apos;est pas suivi ici.</p>
         {accounts.length > 0 && (
           <ul className="mb-4 divide-y divide-line">
             {accounts.map((a) => <AccountRow key={a.id} account={a} />)}

@@ -37,7 +37,7 @@ export default function ExportTab({
         export est journalisé.
       </Alert>
 
-      <section className="flex flex-col gap-3 rounded-card border border-line bg-surface px-4 py-4">
+      <section className="flex flex-col gap-3">
         <div className="flex items-start gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-control bg-brand-soft text-brand-text">
             <FileSpreadsheet aria-hidden="true" className="size-5" strokeWidth={1.75} />
@@ -55,7 +55,7 @@ export default function ExportTab({
         </a>
       </section>
 
-      <section className="flex flex-col gap-3 rounded-card border border-line bg-surface px-4 py-4">
+      <section className="flex flex-col gap-3">
         <div className="flex items-start gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-control bg-brand-soft text-brand-text">
             <FileJson aria-hidden="true" className="size-5" strokeWidth={1.75} />
@@ -92,11 +92,13 @@ export default function ExportTab({
                 {f.confidential && <StatusChip tone="danger">Confidentiel</StatusChip>}
               </span>
               <span className="flex gap-2">
-                <a href={url("csv", f.key)} className={buttonClasses("secondary", "sm")}>
-                  CSV
+                <a href={url("csv", f.key)} aria-label={`Télécharger ${f.title} en CSV`} className={buttonClasses("secondary", "sm")}>
+                  <Download aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                  Télécharger en CSV
                 </a>
-                <a href={url("xlsx", f.key)} className={buttonClasses("secondary", "sm")}>
-                  XLSX
+                <a href={url("xlsx", f.key)} aria-label={`Télécharger ${f.title} en XLSX`} className={buttonClasses("secondary", "sm")}>
+                  <Download aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                  Télécharger en XLSX
                 </a>
               </span>
             </li>

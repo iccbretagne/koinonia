@@ -303,7 +303,7 @@ function RailNav({
           aria-label={openSpace.label}
           tabIndex={-1}
           style={{ top: flyout.top, left: flyout.left }}
-          className="fixed z-50 flex max-h-[min(32rem,calc(100dvh-16px))] w-64 flex-col overflow-hidden rounded-card border border-line bg-surface shadow-float
+          className="fixed z-overlay flex max-h-[min(32rem,calc(100dvh-16px))] w-64 flex-col overflow-hidden rounded-card border border-line bg-surface shadow-float
             focus:outline-none"
         >
           <p className={`${overline} px-4 pb-1 pt-3`}>{openSpace.label}</p>

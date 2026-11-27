@@ -8,7 +8,7 @@ import type { ReadinessLike } from "./pilotage";
  */
 export default function ReadinessPanel({ readiness }: { readonly readiness: ReadinessLike }) {
   return (
-    <section aria-labelledby="readiness-title" className="flex flex-col gap-3 rounded-card border border-line bg-surface px-4 py-4">
+    <section aria-labelledby="readiness-title" className="flex flex-col gap-3">
       <div className="flex flex-col gap-0.5">
         <h2 id="readiness-title" className="font-display text-[17px] font-semibold leading-6 text-ink">
           Préparer l&apos;ouverture

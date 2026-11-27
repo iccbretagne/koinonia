@@ -13,7 +13,7 @@ import StatusChip from "@/components/ui/StatusChip";
 import { Bell, Bot, ChevronRight, Clock, FileText, Link2 } from "lucide-react";
 import { getOwnApplication } from "@/modules/serving";
 
-/** Section de la page profil : titre `title-md` puis contenu sur une carte. */
+/** Section de la page profil : titre `title-md` puis contenu, sans cadre (une section de page n'est pas une carte). */
 function ProfileSection({
   title,
   description,
@@ -29,7 +29,7 @@ function ProfileSection({
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">{title}</h2>
         {description && <p className="text-[13px] leading-[18px] text-ink-muted">{description}</p>}
       </div>
-      <div className="rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">{children}</div>
+      <div>{children}</div>
     </section>
   );
 }

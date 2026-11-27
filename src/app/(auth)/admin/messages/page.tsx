@@ -37,7 +37,7 @@ export default async function SystemMessagesPage({
         actions={
           <Link href="/admin/messages/new" className={buttonClasses("primary", "md")}>
             <Plus aria-hidden="true" className="size-4" />
-            Nouveau message
+            Créer un message
           </Link>
         }
       >

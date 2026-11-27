@@ -106,7 +106,7 @@ function ButtonFields({ button, onChange, pages, anchors }: { readonly button: S
 function OptionalButton({ button, fallbackLabel, onChange, pages, anchors }: { readonly button?: SiteButton; readonly fallbackLabel: string; readonly onChange: (b: SiteButton | undefined) => void; readonly pages: SitePage[]; readonly anchors: string[] }) {
   return (
     <>
-      <label className="flex items-center gap-2 text-sm text-ink"><Checkbox checked={!!button} onChange={(e) => onChange(e.target.checked ? { label: fallbackLabel, target: { booking: true } } : undefined)} /> Bouton personnalisé</label>
+      <label className="flex min-h-11 items-center gap-3 text-[15px] text-ink"><Checkbox checked={!!button} onChange={(e) => onChange(e.target.checked ? { label: fallbackLabel, target: { booking: true } } : undefined)} /> Bouton personnalisé</label>
       {button && <ButtonFields button={button} pages={pages} anchors={anchors} onChange={(fn) => { const next = structuredClone(button); fn(next); onChange(next); }} />}
     </>
   );
@@ -161,8 +161,8 @@ function BlockForm({ block, update, tools, pages, anchors }: { readonly block: S
           <Input label="Titre" value={block.title} maxLength={120} onChange={(e) => u<"hero">((b) => void (b.title = e.target.value))} />
           <Input label="Accroche" value={block.tagline ?? ""} maxLength={240} onChange={(e) => u<"hero">((b) => void (b.tagline = e.target.value || undefined))} />
           <Input label="Texte du bouton" value={block.buttonLabel ?? ""} maxLength={40} onChange={(e) => u<"hero">((b) => void (b.buttonLabel = e.target.value || undefined))} />
-          <label className="flex items-center gap-2 text-sm text-ink"><Checkbox checked={block.showDateLocation} onChange={(e) => u<"hero">((b) => void (b.showDateLocation = e.target.checked))} /> Date et lieu</label>
-          <label className="flex items-center gap-2 text-sm text-ink"><Checkbox checked={block.showCountdown} onChange={(e) => u<"hero">((b) => void (b.showCountdown = e.target.checked))} /> Compte à rebours</label>
+          <label className="flex min-h-11 items-center gap-3 text-[15px] text-ink"><Checkbox checked={block.showDateLocation} onChange={(e) => u<"hero">((b) => void (b.showDateLocation = e.target.checked))} /> Date et lieu</label>
+          <label className="flex min-h-11 items-center gap-3 text-[15px] text-ink"><Checkbox checked={block.showCountdown} onChange={(e) => u<"hero">((b) => void (b.showCountdown = e.target.checked))} /> Compte à rebours</label>
           <OptionalButton button={block.button} fallbackLabel={block.buttonLabel || "Je m'inscris"} pages={pages} anchors={anchors} onChange={(btn) => u<"hero">((b) => void (b.button = btn))} />
           <BackgroundFields label="Fond du bandeau" value={block.background ?? { kind: "none" }} tools={tools} onChange={(bg) => u<"hero">((b) => void (b.background = bg.kind === "none" ? undefined : bg))} />
         </>
@@ -195,7 +195,7 @@ function BlockForm({ block, update, tools, pages, anchors }: { readonly block: S
           <Input label="Titre" value={block.title ?? ""} maxLength={120} onChange={(e) => u<"palette">((b) => void (b.title = e.target.value || undefined))} />
           <ListEditor what="une couleur" max={SITE_LIMITS.swatches} items={block.swatches} add={() => ({ label: "Couleur", color: "#5e17eb" })} onChange={(swatches) => u<"palette">((b) => void (b.swatches = swatches))} render={(s, set) => (
             <div className="flex items-end gap-2">
-              <input type="color" aria-label={`Couleur ${s.label}`} value={s.color} onChange={(e) => set((x) => void (x.color = e.target.value.toLowerCase()))} className="size-10 cursor-pointer rounded border border-line" />
+              <input type="color" aria-label={`Couleur ${s.label}`} value={s.color} onChange={(e) => set((x) => void (x.color = e.target.value.toLowerCase()))} className="size-11 shrink-0 cursor-pointer rounded-control border border-control-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" />
               <Input label="Nom" value={s.label} maxLength={60} onChange={(e) => set((x) => void (x.label = e.target.value))} />
             </div>
           )} />
@@ -285,7 +285,7 @@ function SectionEditor({ section, p, s, count, edit, tools, pages }: { readonly 
       {section.blocks.length < SITE_LIMITS.blocks && (
         <div className="flex items-end gap-2">
           <Select label={`Ajouter un bloc (${section.blocks.length}/${SITE_LIMITS.blocks})`} value={kind} options={KIND_OPTIONS} onChange={(e) => setKind(e.target.value as SiteBlockKind)} />
-          <Button type="button" variant="secondary" onClick={() => edit((d) => void sec(d).blocks.push(newBlock(kind, tools.pool[0])))}><Plus className="size-4" aria-hidden="true" /> Ajouter</Button>
+          <Button type="button" variant="secondary" onClick={() => edit((d) => void sec(d).blocks.push(newBlock(kind, tools.pool[0])))}><Plus className="size-4" aria-hidden="true" /> Ajouter le bloc</Button>
         </div>
       )}
     </Box>
@@ -294,7 +294,7 @@ function SectionEditor({ section, p, s, count, edit, tools, pages }: { readonly 
 
 export default function SitePagesEditor({ doc, edit, tools }: { readonly doc: SiteDocument; readonly edit: Edit; readonly tools: ImageTools }) {
   return (
-    <section className="space-y-3 rounded-card border border-line bg-surface p-4">
+    <section className="space-y-3">
       <h2 className="font-semibold text-ink">Pages ({doc.pages.length}/{SITE_LIMITS.pages})</h2>
       <p className="text-[13px] text-ink-muted">La première page est l&apos;accueil. Les pages automatiques se mettent à jour avec l&apos;événement.</p>
       {doc.pages.map((page, p) => (
@@ -302,7 +302,7 @@ export default function SitePagesEditor({ doc, edit, tools }: { readonly doc: Si
           <Input label="Titre" value={page.title} maxLength={60} onChange={(e) => edit((d) => void (d.pages[p].title = e.target.value))} />
           <Input label="Adresse de la page" value={page.slug} maxLength={40} onChange={(e) => edit((d) => void (d.pages[p].slug = e.target.value))} />
           <Select label="Type" value={page.kind} options={PAGE_KINDS.map((k) => ({ value: k, label: PAGE_KIND_LABEL[k] }))} onChange={(e) => edit((d) => void (d.pages[p].kind = e.target.value as SitePage["kind"]))} />
-          <label className="flex items-center gap-2 text-sm text-ink"><Checkbox checked={page.inMenu} onChange={(e) => edit((d) => void (d.pages[p].inMenu = e.target.checked))} /> Dans le menu</label>
+          <label className="flex min-h-11 items-center gap-3 text-[15px] text-ink"><Checkbox checked={page.inMenu} onChange={(e) => edit((d) => void (d.pages[p].inMenu = e.target.checked))} /> Dans le menu</label>
           {page.kind === "content" && (
             <>
               {page.sections.map((section, s) => (

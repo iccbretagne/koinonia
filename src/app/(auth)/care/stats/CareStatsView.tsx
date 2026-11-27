@@ -1,6 +1,7 @@
 "use client";
 
 import { KpiCard, BarChart } from "@/components/StatsWidgets";
+import { StatusChip, type StatusTone } from "@/components/ui";
 
 const APPOINTMENT_STATUS_LABELS: Record<string, string> = {
   PENDING: "En attente",
@@ -18,12 +19,12 @@ const APPOINTMENT_STATUS_COLORS: Record<string, string> = {
   REJECTED: "bg-danger",
 };
 
-const APPOINTMENT_STATUS_BADGE: Record<string, string> = {
-  PENDING: "bg-warning-soft text-warning border-warning/30",
-  VALIDATED: "bg-info-soft text-info border-info/30",
-  SCHEDULED: "bg-success-soft text-success border-success/30",
-  CLOSED: "bg-surface-sunken text-ink-muted border-line",
-  REJECTED: "bg-danger-soft text-danger border-danger/30",
+const APPOINTMENT_STATUS_TONES: Record<string, StatusTone> = {
+  PENDING: "warning",
+  VALIDATED: "info",
+  SCHEDULED: "success",
+  CLOSED: "neutral",
+  REJECTED: "danger",
 };
 
 const APPOINTMENT_FUNNEL_STATUSES = ["PENDING", "VALIDATED", "SCHEDULED", "CLOSED"] as const;
@@ -57,13 +58,13 @@ const MSDP_STATUS_COLORS: Record<string, string> = {
   ABANDONED: "bg-danger",
 };
 
-const MSDP_STATUS_BADGE: Record<string, string> = {
-  SUBMITTED: "bg-warning-soft text-warning border-warning/30",
-  ASSIGNED: "bg-info-soft text-info border-info/30",
-  CONTACTED: "bg-info-soft text-info border-info/30",
-  IN_FORMATION: "bg-brand-soft text-brand-text border-brand/30",
-  COMPLETED: "bg-success-soft text-success border-success/30",
-  ABANDONED: "bg-danger-soft text-danger border-danger/30",
+const MSDP_STATUS_TONES: Record<string, StatusTone> = {
+  SUBMITTED: "warning",
+  ASSIGNED: "info",
+  CONTACTED: "info",
+  IN_FORMATION: "brand",
+  COMPLETED: "success",
+  ABANDONED: "danger",
 };
 
 const MSDP_FUNNEL_STATUSES = ["SUBMITTED", "ASSIGNED", "CONTACTED", "IN_FORMATION", "COMPLETED"] as const;
@@ -102,7 +103,7 @@ export default function CareStatsView({ appointments, msdp }: Props) {
     <div className="space-y-8">
       {/* ── Section Rendez-vous pastoraux ────────────────────────────────── */}
       <div className="space-y-4">
-        <h2 className="text-xl font-bold text-ink">Rendez-vous pastoraux</h2>
+        <h2 className="font-display text-xl font-semibold text-ink">Rendez-vous pastoraux</h2>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <KpiCard label="Total" value={appointments.total} />
@@ -113,13 +114,13 @@ export default function CareStatsView({ appointments, msdp }: Props) {
         </div>
 
         {appointments.total === 0 ? (
-          <div className="bg-surface rounded-xl border border-line p-6 text-center text-sm text-ink-subtle">
+          <div className="text-center text-sm text-ink-muted">
             Aucune demande de rendez-vous pastoral pour l&apos;instant.
           </div>
         ) : (
           <>
-            <div className="bg-surface rounded-xl border border-line p-5">
-              <h3 className="font-semibold text-ink mb-4">Entonnoir de progression</h3>
+            <div>
+              <h3 className="font-display text-[17px] font-semibold text-ink mb-4">Entonnoir de progression</h3>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2">
                 {APPOINTMENT_FUNNEL_STATUSES.map((s) => {
                   const count = apptStatusMap[s] ?? 0;
@@ -127,16 +128,14 @@ export default function CareStatsView({ appointments, msdp }: Props) {
                   return (
                     <div key={s} className="flex-1 flex flex-col items-center gap-1.5">
                       <span className="text-sm font-bold text-ink">{count}</span>
-                      <div className="w-full bg-surface-sunken rounded-lg overflow-hidden h-20 sm:h-auto sm:w-full sm:min-h-[20px]">
+                      <div className="w-full bg-line rounded-control overflow-hidden h-20 sm:h-auto sm:w-full sm:min-h-[20px]">
                         <div
-                          className={`${APPOINTMENT_STATUS_COLORS[s]} rounded-lg transition-all`}
+                          className={`${APPOINTMENT_STATUS_COLORS[s]} rounded-control transition-all`}
                           style={{ height: `${Math.max(pct, 4)}%`, minHeight: "8px" }}
                         />
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full border ${APPOINTMENT_STATUS_BADGE[s]}`}>
-                        {APPOINTMENT_STATUS_LABELS[s]}
-                      </span>
-                      <span className="text-xs text-ink-subtle">{pct}%</span>
+                      <StatusChip tone={APPOINTMENT_STATUS_TONES[s]}>{APPOINTMENT_STATUS_LABELS[s]}</StatusChip>
+                      <span className="text-xs text-ink-muted">{pct}%</span>
                     </div>
                   );
                 })}
@@ -144,15 +143,15 @@ export default function CareStatsView({ appointments, msdp }: Props) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-surface rounded-xl border border-line p-5">
-                <h3 className="font-semibold text-ink mb-4">Par référent</h3>
+              <div>
+                <h3 className="font-display text-[17px] font-semibold text-ink mb-4">Par référent</h3>
                 <BarChart
                   data={appointments.byAssignee.map((a) => ({ label: a.name, count: a.count }))}
                   total={appointments.total}
                 />
               </div>
-              <div className="bg-surface rounded-xl border border-line p-5">
-                <h3 className="font-semibold text-ink mb-4">Motifs de rejet</h3>
+              <div>
+                <h3 className="font-display text-[17px] font-semibold text-ink mb-4">Motifs de refus</h3>
                 <BarChart
                   data={appointments.byRejectReason.map((r) => ({
                     label: REJECT_REASON_LABELS[r.reasonCode] ?? r.reasonCode,
@@ -169,10 +168,8 @@ export default function CareStatsView({ appointments, msdp }: Props) {
       {/* ── Section MSDP (reprise, spec 052 lot 3) ──────────────────────────── */}
       <div className="space-y-4 pt-2">
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-bold text-ink">Suivi MSDP</h2>
-          <span className="text-xs px-2.5 py-1 rounded-full bg-brand-soft text-brand-text font-medium">
-            Nouveaux convertis
-          </span>
+          <h2 className="font-display text-xl font-semibold text-ink">Suivi MSDP</h2>
+          <StatusChip tone="brand">Nouveaux convertis</StatusChip>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -187,19 +184,19 @@ export default function CareStatsView({ appointments, msdp }: Props) {
           />
           <KpiCard
             label="Délai 1er contact"
-            value={msdp.avgDaysToContact !== null ? `${msdp.avgDaysToContact}j` : "–"}
+            value={msdp.avgDaysToContact !== null ? `${msdp.avgDaysToContact} j` : "–"}
             sub="appel → contact"
           />
         </div>
 
         {msdp.total === 0 ? (
-          <div className="bg-surface rounded-xl border border-line p-6 text-center text-sm text-ink-subtle">
+          <div className="text-center text-sm text-ink-muted">
             Aucun suivi MSDP démarré. Les suivis apparaissent ici une fois créés depuis une demande avec appel au salut.
           </div>
         ) : (
           <>
-            <div className="bg-surface rounded-xl border border-line p-5">
-              <h3 className="font-semibold text-ink mb-4">Entonnoir MSDP</h3>
+            <div>
+              <h3 className="font-display text-[17px] font-semibold text-ink mb-4">Entonnoir MSDP</h3>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2">
                 {MSDP_FUNNEL_STATUSES.map((s) => {
                   const count = msdp.byStatus.find((r) => r.status === s)?.count ?? 0;
@@ -207,16 +204,14 @@ export default function CareStatsView({ appointments, msdp }: Props) {
                   return (
                     <div key={s} className="flex-1 flex flex-col items-center gap-1.5">
                       <span className="text-sm font-bold text-ink">{count}</span>
-                      <div className="w-full bg-surface-sunken rounded-lg overflow-hidden h-20 sm:h-auto sm:w-full sm:min-h-[20px]">
+                      <div className="w-full bg-line rounded-control overflow-hidden h-20 sm:h-auto sm:w-full sm:min-h-[20px]">
                         <div
-                          className={`${MSDP_STATUS_COLORS[s]} rounded-lg transition-all`}
+                          className={`${MSDP_STATUS_COLORS[s]} rounded-control transition-all`}
                           style={{ height: `${Math.max(pct, 4)}%`, minHeight: "8px" }}
                         />
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full border ${MSDP_STATUS_BADGE[s]}`}>
-                        {MSDP_STATUS_LABELS[s]}
-                      </span>
-                      <span className="text-xs text-ink-subtle">{pct}%</span>
+                      <StatusChip tone={MSDP_STATUS_TONES[s]}>{MSDP_STATUS_LABELS[s]}</StatusChip>
+                      <span className="text-xs text-ink-muted">{pct}%</span>
                     </div>
                   );
                 })}
@@ -224,10 +219,10 @@ export default function CareStatsView({ appointments, msdp }: Props) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-surface rounded-xl border border-line p-5">
-                <h3 className="font-semibold text-ink mb-4">Suivis démarrés par mois (12 derniers mois)</h3>
+              <div>
+                <h3 className="font-display text-[17px] font-semibold text-ink mb-4">Suivis démarrés par mois (12 derniers mois)</h3>
                 {msdp.byMonth.every((m) => m.count === 0) ? (
-                  <p className="text-sm text-ink-subtle">Aucun suivi sur la période</p>
+                  <p className="text-sm text-ink-muted">Aucun suivi sur la période.</p>
                 ) : (() => {
                   const maxMonth = Math.max(...msdp.byMonth.map((m) => m.count), 1);
                   return (
@@ -240,7 +235,7 @@ export default function CareStatsView({ appointments, msdp }: Props) {
                           <div key={m.month} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
                             <span className="text-xs text-ink-muted font-medium">{m.count > 0 ? m.count : ""}</span>
                             <div className="w-full bg-brand rounded-t-md transition-all" style={{ height: `${height}%`, minHeight: m.count > 0 ? "4px" : "0" }} />
-                            <span className="text-[10px] text-ink-subtle leading-tight text-center">{label}</span>
+                            <span className="text-[11px] text-ink-muted leading-tight text-center">{label}</span>
                           </div>
                         );
                       })}
@@ -249,8 +244,8 @@ export default function CareStatsView({ appointments, msdp }: Props) {
                 })()}
               </div>
 
-              <div className="bg-surface rounded-xl border border-line p-5 space-y-4">
-                <h3 className="font-semibold text-ink">Jalons parcours (dossiers actifs)</h3>
+              <div className="space-y-4">
+                <h3 className="font-display text-[17px] font-semibold text-ink">Jalons parcours (dossiers actifs)</h3>
                 <div className="space-y-3">
                   {[
                     { label: "Intégré en famille", value: msdp.journeyMilestones.integratedInFamily },
@@ -260,14 +255,14 @@ export default function CareStatsView({ appointments, msdp }: Props) {
                   ].map(({ label, value }) => (
                     <div key={label} className="flex items-center gap-2">
                       <span className="text-xs text-ink-muted w-36 shrink-0">{label}</span>
-                      <div className="flex-1 bg-surface-sunken rounded-full h-2">
+                      <div className="flex-1 bg-line rounded-full h-2">
                         <div
                           className="bg-brand rounded-full h-2 transition-all"
                           style={{ width: msdp.total > 0 ? `${Math.round((value / msdp.total) * 100)}%` : "0%" }}
                         />
                       </div>
                       <span className="text-xs font-medium text-ink-muted w-6 text-right shrink-0">{value}</span>
-                      <span className="text-xs text-ink-subtle w-8 text-right shrink-0">
+                      <span className="text-xs text-ink-muted w-8 text-right shrink-0">
                         {msdp.total > 0 ? `${Math.round((value / msdp.total) * 100)}%` : "–"}
                       </span>
                     </div>
@@ -275,7 +270,7 @@ export default function CareStatsView({ appointments, msdp }: Props) {
                   {msdp.avgDaysToCompletion !== null && (
                     <div className="pt-2 border-t border-line">
                       <p className="text-xs text-ink-muted font-medium">Délai moyen appel → clôture</p>
-                      <p className="text-2xl font-bold text-brand-text mt-0.5">{msdp.avgDaysToCompletion}j</p>
+                      <p className="text-2xl font-bold text-brand-text mt-0.5">{msdp.avgDaysToCompletion} j</p>
                     </div>
                   )}
                 </div>

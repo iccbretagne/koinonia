@@ -137,7 +137,7 @@ export default function DepartmentTasksView({
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreate} className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4">
+        <form onSubmit={handleCreate} className="flex flex-col gap-4">
           <Input
             label="Nom de la tâche"
             value={name}

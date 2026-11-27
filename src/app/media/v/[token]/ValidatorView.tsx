@@ -1,7 +1,8 @@
 "use client";
 
-import { Moon, Sun, X, ZoomIn } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, ExternalLink, Moon, Sun, X, ZoomIn } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, type Dispatch, type SetStateAction } from "react";
+import IconButton from "@/components/ui/IconButton";
 
 type Photo = {
   id: string;
@@ -118,9 +119,7 @@ function HdLightbox({
     <div className="fixed inset-0 z-50 bg-scrim/95 flex flex-col" role="none" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
-        <button onClick={onClose} className="text-on-brand/70 hover:text-on-brand transition-colors" aria-label="Fermer">
-          <X className="w-6 h-6" aria-hidden="true" />
-        </button>
+        <IconButton variant="on-dark" icon={X} onClick={onClose} aria-label="Fermer la visionneuse" />
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-on-brand/60 text-xs truncate">{photo.filename}</span>
           <span className="text-on-brand/40 text-xs shrink-0">{formatSize(photo.size)}</span>
@@ -131,9 +130,10 @@ function HdLightbox({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="text-xs text-on-brand/50 hover:text-on-brand underline shrink-0 transition-colors"
+            className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-control px-3 font-display text-sm font-semibold text-on-brand/80 hover:text-on-brand transition-colors focus-visible:outline-2 focus-visible:outline-focus"
           >
-            Ouvrir ↗
+            <ExternalLink className="size-4" aria-hidden="true" strokeWidth={1.75} />
+            Ouvrir en HD
           </a>
         )}
       </div>
@@ -147,7 +147,7 @@ function HdLightbox({
           <img
             src={hdUrl ?? photo.thumbnailUrl}
             alt={photo.filename}
-            className="max-w-full max-h-[78vh] object-contain rounded shadow-overlay"
+            className="max-w-full max-h-[78vh] object-contain rounded-control shadow-overlay"
             style={{ filter: hdLoading && !hdUrl ? "blur(3px)" : "none", transition: "filter 300ms" }}
           />
           {hdLoading && !hdUrl && (
@@ -156,7 +156,7 @@ function HdLightbox({
             </div>
           )}
           {hdUrl && !hdLoading && (
-            <div className="absolute top-2 right-2 text-[10px] text-on-brand/40 bg-scrim rounded px-1.5 py-0.5">HD</div>
+            <div className="absolute top-2 right-2 text-xs text-on-brand/60 bg-scrim rounded-chip px-1.5 py-0.5">HD</div>
           )}
           {/* Status badge */}
           {photo.status !== "PENDING" && (
@@ -177,14 +177,14 @@ function HdLightbox({
           <button
             onClick={() => void handleAction(rejectStatus)}
             disabled={actionLoading}
-            className="flex items-center gap-2 bg-danger text-on-danger px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-danger/90 disabled:opacity-50 transition-colors"
+            className="flex min-h-11 items-center gap-2 bg-danger text-on-danger px-5 rounded-control text-sm font-semibold hover:bg-danger/90 disabled:opacity-50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           >
             ✗ {labels.rejected}
           </button>
           <button
             onClick={() => void handleAction(approveStatus)}
             disabled={actionLoading}
-            className="flex items-center gap-2 bg-success text-surface px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-success/90 disabled:opacity-50 transition-colors"
+            className="flex min-h-11 items-center gap-2 bg-success text-surface px-5 rounded-control text-sm font-semibold hover:bg-success/90 disabled:opacity-50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           >
             ✓ {labels.approved}
           </button>
@@ -275,10 +275,10 @@ function PhotoCard({
       {/* HD button — tap opens lightbox */}
       <button
         onClick={onOpenHd}
-        className="absolute bottom-3 right-3 text-xs text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-lg px-2.5 py-1.5 transition-colors flex items-center gap-1"
+        className="absolute bottom-3 right-3 min-h-11 text-sm font-semibold text-on-brand/80 hover:text-on-brand bg-scrim rounded-control px-3 transition-colors flex items-center gap-1.5 focus-visible:outline-2 focus-visible:outline-focus"
       >
-        <ZoomIn className="w-3.5 h-3.5" aria-hidden="true" />
-        HD
+        <ZoomIn className="size-4" aria-hidden="true" />
+        Voir en HD
       </button>
     </div>
   );
@@ -344,15 +344,15 @@ function SummaryStats({
 }) {
   return (
     <div className="grid grid-cols-3 gap-2 mb-4">
-      <div className={`rounded-xl px-3 py-2.5 text-center border ${dark ? "bg-success/15 border-success/30" : "bg-success-soft border-success/30"}`}>
+      <div className={`rounded-control px-3 py-2.5 text-center border ${dark ? "bg-success/15 border-success/30" : "bg-success-soft border-success/30"}`}>
         <p className={`text-2xl font-bold tabular-nums text-success`}>{approvedCount}</p>
         <p className={`text-xs mt-0.5 ${dark ? "text-success/70" : "text-success"}`}>{labels.approvedPlural}</p>
       </div>
-      <div className={`rounded-xl px-3 py-2.5 text-center border ${dark ? "bg-ink/5 border-ink/10" : "bg-surface-sunken border-line"}`}>
+      <div className={`rounded-control px-3 py-2.5 text-center border ${dark ? "bg-ink/5 border-ink/10" : "bg-surface-sunken border-line"}`}>
         <p className={`text-2xl font-bold tabular-nums ${dark ? "text-ink/50" : "text-ink-subtle"}`}>{pendingCount}</p>
         <p className={`text-xs mt-0.5 ${dark ? "text-ink/30" : "text-ink-subtle"}`}>en attente</p>
       </div>
-      <div className={`rounded-xl px-3 py-2.5 text-center border ${dark ? "bg-danger/15 border-danger/30" : "bg-danger-soft border-danger/30"}`}>
+      <div className={`rounded-control px-3 py-2.5 text-center border ${dark ? "bg-danger/15 border-danger/30" : "bg-danger-soft border-danger/30"}`}>
         <p className={`text-2xl font-bold tabular-nums text-danger`}>{rejectedCount}</p>
         <p className={`text-xs mt-0.5 ${dark ? "text-danger/70" : "text-danger"}`}>{labels.rejectedPlural}</p>
       </div>
@@ -365,8 +365,8 @@ function ThemeToggle({ dark, onToggle }: { readonly dark: boolean; readonly onTo
   return (
     <button
       onClick={onToggle}
-      className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${dark ? "bg-ink/10 hover:bg-ink/20 text-ink/70" : "bg-surface-sunken hover:bg-surface-sunken text-ink-muted"}`}
-      aria-label="Basculer le thème"
+      className={`size-11 rounded-full flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-focus ${dark ? "bg-ink/10 hover:bg-ink/20 text-ink/70" : "bg-surface-sunken hover:bg-surface-sunken text-ink-muted"}`}
+      aria-label={dark ? "Passer au thème clair" : "Passer au thème sombre"}
     >
       {dark ? (
         <Sun className="w-3.5 h-3.5" aria-hidden="true" />
@@ -422,7 +422,7 @@ function SummaryView({
   });
 
   return (
-    <div data-theme={dk ? "dark" : undefined} className={`min-h-screen flex flex-col transition-colors duration-300 ${dk ? "bg-bg text-ink" : "bg-surface-sunken"}`}>
+    <div data-theme={dk ? "dark" : undefined} className={`min-h-screen flex flex-col transition-colors duration-300 ${dk ? "bg-bg text-ink" : "bg-bg"}`}>
       {/* Progress bar */}
       <ProgressBar total={totalPhotos} approved={approvedCount} rejected={rejectedCount} />
 
@@ -431,13 +431,14 @@ function SummaryView({
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={onBack}
-            className={`text-sm transition-colors ${dk ? "text-ink/70 hover:text-ink" : "text-ink-muted hover:text-ink"}`}
+            className={`inline-flex min-h-11 items-center gap-1.5 rounded-control px-2 font-display text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-focus ${dk ? "text-ink/70 hover:text-ink" : "text-ink-muted hover:text-ink"}`}
           >
-            ← {pendingCount > 0 ? `${pendingCount} en attente` : "Retour"}
+            <ArrowLeft className="size-4" aria-hidden="true" strokeWidth={1.75} />
+            {pendingCount > 0 ? `Reprendre (${pendingCount} en attente)` : "Retour à la validation"}
           </button>
           <span className={`text-sm font-medium truncate max-w-[35%] ${dk ? "text-ink/80" : "text-ink"}`}>{eventName}</span>
           <div className="flex items-center gap-2 shrink-0">
-            <span className={`text-sm tabular-nums ${dk ? "text-ink/50" : "text-ink-subtle"}`}>{totalPhotos} photos</span>
+            <span className={`text-sm tabular-nums ${dk ? "text-ink/50" : "text-ink-subtle"}`}>{totalPhotos} photo{totalPhotos > 1 ? "s" : ""}</span>
             {/* Theme toggle */}
             <ThemeToggle dark={dk} onToggle={() => setDark((v) => !v)} />
           </div>
@@ -452,7 +453,8 @@ function SummaryView({
             <button
               key={key}
               onClick={() => setFilter(key)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0 border transition-colors ${
+              aria-pressed={filter === key}
+              className={`flex min-h-11 sm:min-h-9 items-center gap-1.5 px-3 rounded-full text-sm font-semibold whitespace-nowrap shrink-0 border transition-colors focus-visible:outline-2 focus-visible:outline-focus ${
                 filter === key ? activeClass : inactiveFilterClass
               }`}
             >
@@ -465,7 +467,7 @@ function SummaryView({
       </header>
 
       {/* Grid */}
-      <div className={`grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 gap-1 p-2 flex-1 ${dk ? "" : "bg-surface-sunken"}`}>
+      <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 gap-1 p-2 flex-1">
         {filteredPhotos.map((photo) => {
           const isApproved = photo.status === "APPROVED" || photo.status === "PREVALIDATED";
           const isRejected = photo.status === "REJECTED"  || photo.status === "PREREJECTED";
@@ -473,7 +475,8 @@ function SummaryView({
             <button
               key={photo.id}
               onClick={() => onToggle(photo.id)}
-              className="relative aspect-square overflow-hidden rounded-sm bg-surface-sunken"
+              aria-label={`Changer la décision pour ${photo.filename}`}
+              className="relative aspect-square overflow-hidden rounded-chip bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={photo.thumbnailUrl} alt={photo.filename} className="w-full h-full object-cover" />
@@ -649,7 +652,7 @@ export default function ValidatorView({ token, data }: { readonly token: string;
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-surface-sunken flex items-center justify-center p-4">
+      <div className="min-h-screen bg-bg flex items-center justify-center p-4">
         <p className="text-ink-muted">Aucun événement associé à ce lien.</p>
       </div>
     );
@@ -657,7 +660,7 @@ export default function ValidatorView({ token, data }: { readonly token: string;
 
   if (totalPhotos === 0) {
     return (
-      <div className="min-h-screen bg-surface-sunken flex items-center justify-center p-4">
+      <div className="min-h-screen bg-bg flex items-center justify-center p-4">
         <p className="text-ink-muted">Aucune photo à valider.</p>
       </div>
     );
@@ -727,32 +730,18 @@ export default function ValidatorView({ token, data }: { readonly token: string;
             {!allDecided && currentPhoto?.status !== "PENDING" && anyPendingIndex >= 0 && (
               <button
                 onClick={() => setCurrentIndex(anyPendingIndex)}
-                className="text-xs text-warning hover:text-warning bg-warning/40 border border-warning/50 rounded-full px-2.5 py-0.5 transition-colors"
+                className="min-h-11 text-sm font-semibold text-on-brand bg-warning/40 border border-warning/50 rounded-full px-3 transition-colors focus-visible:outline-2 focus-visible:outline-focus"
               >
-                {pendingCount} en attente →
+                Aller à la suivante ({pendingCount} en attente)
               </button>
             )}
-            <button
-              onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
-              disabled={currentIndex === 0}
-              className="text-on-brand disabled:opacity-30 text-xl px-1"
-              aria-label="Photo précédente"
-            >
-              ‹
-            </button>
+            <IconButton variant="on-dark" icon={ChevronLeft} onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))} disabled={currentIndex === 0} aria-label="Photo précédente" />
             <span className="text-sm tabular-nums text-on-brand/90">{currentIndex + 1}/{totalPhotos}</span>
-            <button
-              onClick={() => setCurrentIndex((i) => Math.min(totalPhotos - 1, i + 1))}
-              disabled={currentIndex === totalPhotos - 1}
-              className="text-on-brand disabled:opacity-30 text-xl px-1"
-              aria-label="Photo suivante"
-            >
-              ›
-            </button>
+            <IconButton variant="on-dark" icon={ChevronRight} onClick={() => setCurrentIndex((i) => Math.min(totalPhotos - 1, i + 1))} disabled={currentIndex === totalPhotos - 1} aria-label="Photo suivante" />
           </div>
 
-          <button onClick={() => setShowSummary(true)} className="text-sm text-on-brand/70 hover:text-on-brand">
-            Récap
+          <button onClick={() => setShowSummary(true)} className="min-h-11 rounded-control px-2 font-display text-sm font-semibold text-on-brand/80 hover:text-on-brand focus-visible:outline-2 focus-visible:outline-focus">
+            Voir le récapitulatif
           </button>
         </header>
 
@@ -783,8 +772,8 @@ export default function ValidatorView({ token, data }: { readonly token: string;
         {allDecided && (
           <div className="bg-success text-surface text-sm px-4 py-2 text-center shrink-0">
             Tout est traité.{" "}
-            <button onClick={() => setShowSummary(true)} className="font-bold underline">
-              Voir le récap
+            <button onClick={() => setShowSummary(true)} className="ml-2 inline-flex min-h-11 items-center rounded-control border border-surface/60 px-3 font-display font-semibold focus-visible:outline-2 focus-visible:outline-focus">
+              Voir le récapitulatif
             </button>
           </div>
         )}
@@ -804,8 +793,8 @@ export default function ValidatorView({ token, data }: { readonly token: string;
           </button>
           <button
             onClick={skipPhoto}
-            className="w-12 h-12 rounded-full bg-surface text-ink flex items-center justify-center text-xs hover:bg-surface-sunken active:scale-95 transition-all"
-            aria-label="Passer"
+            className="w-12 h-12 rounded-full bg-surface text-ink flex items-center justify-center text-xs font-semibold hover:bg-surface-sunken active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+            aria-label="Passer la photo"
           >
             Passer
           </button>
@@ -821,23 +810,23 @@ export default function ValidatorView({ token, data }: { readonly token: string;
 
         {/* Keyboard hints */}
         <div className="bg-scrim px-4 py-1 flex justify-center gap-4 shrink-0">
-          <span className="text-[10px] text-ink-subtle">← X : rejeter</span>
-          <span className="text-[10px] text-ink-subtle">Espace : passer</span>
-          <span className="text-[10px] text-ink-subtle">→ V : valider</span>
-          <span className="text-[10px] text-ink-subtle">H / Entrée : HD</span>
+          <span className="text-xs text-ink-subtle">← X : rejeter</span>
+          <span className="text-xs text-ink-subtle">Espace : passer</span>
+          <span className="text-xs text-ink-subtle">→ V : valider</span>
+          <span className="text-xs text-ink-subtle">H / Entrée : HD</span>
         </div>
 
         {/* Undo toast */}
         {undoAction && (
           <div
-            className="fixed left-4 right-4 bg-surface text-ink rounded-xl px-4 py-3 flex items-center justify-between z-50 shadow-overlay"
+            className="fixed left-4 right-4 bg-surface text-ink rounded-card px-4 py-2 flex items-center justify-between z-50 shadow-overlay"
             style={{ bottom: "calc(7rem + env(safe-area-inset-bottom))" }}
           >
             <span className="text-sm">
               {undoLabel(photos.find((p) => p.id === undoAction.photoId)?.status, labels)}
             </span>
-            <button onClick={undo} className="text-brand-text font-bold text-sm ml-4">
-              ANNULER
+            <button onClick={undo} className="ml-4 min-h-11 rounded-control px-3 font-display text-sm font-semibold text-brand-text hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-focus">
+              Annuler la décision
             </button>
           </div>
         )}

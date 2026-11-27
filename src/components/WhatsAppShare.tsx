@@ -5,6 +5,7 @@ import { Copy, MessageCircle } from "lucide-react";
 import Button from "@/components/ui/Button";
 import IconButton from "@/components/ui/IconButton";
 import Modal from "@/components/ui/Modal";
+import Textarea from "@/components/ui/Textarea";
 import { useToast } from "@/components/ui/Toast";
 import { whatsAppShareUrl } from "@/lib/whatsapp";
 
@@ -48,22 +49,26 @@ export default function WhatsAppShare({
   return (
     <span className="inline-flex items-center gap-1">
       <Button type="button" variant="secondary" size={size} onClick={share}>
-        <MessageCircle aria-hidden="true" className="size-4" />
+        <MessageCircle aria-hidden="true" className="size-4" strokeWidth={1.75} />
         WhatsApp
       </Button>
-      <IconButton icon={Copy} aria-label="Copier le message" size={size} onClick={() => void copy()} />
+      <IconButton
+        icon={Copy}
+        aria-label="Copier le message"
+        size={size}
+        onClick={() => void copy()}
+      />
       <Modal open={fallbackText !== null} onClose={() => setFallbackText(null)} title="Copier le message">
         <p className="mb-3 text-sm text-ink-muted">
           La copie automatique n&apos;a pas fonctionné. Sélectionnez le texte ci-dessous et copiez-le manuellement.
         </p>
-        <textarea
+        <Textarea
           readOnly
           autoFocus
           onFocus={(e) => e.currentTarget.select()}
           value={fallbackText ?? ""}
           rows={12}
           aria-label="Message à copier"
-          className="w-full rounded-control border border-control-line bg-surface p-2 font-mono text-xs text-ink focus:border-brand focus:outline-none"
         />
         <div className="mt-4 flex justify-end">
           <Button variant="secondary" onClick={() => setFallbackText(null)}>

@@ -143,12 +143,12 @@ export default async function TicketingEventPage({
             <StatusChip tone={event.status === "OPEN" ? "success" : "neutral"}>{EVENT_STATUS_LABEL[event.status]}</StatusChip>
             {can.reception && (
               <Link href={`/billetterie/${id}/controle`} className={buttonClasses("primary", "md")}>
-                <ScanLine className="size-4" aria-hidden="true" /> Contrôle
+                <ScanLine className="size-4" aria-hidden="true" /> Contrôler les entrées
               </Link>
             )}
             {can.catering && event.options.some((o) => o.pickup) && (
               <Link href={`/billetterie/${id}/restauration`} className={buttonClasses("secondary", "md")}>
-                <Utensils className="size-4" aria-hidden="true" /> Distribution
+                <Utensils className="size-4" aria-hidden="true" /> Distribuer les repas
               </Link>
             )}
           </div>
@@ -208,7 +208,7 @@ async function RestrictedEvent({ id, view }: { readonly id: string; readonly vie
       {view === "site" && site ? (
         <SiteTab eventId={id} site={site} event={event} title={event.title} churchSlug={event.churchSlug} eventSlug={event.slug} publicUrl={siteStatus?.url ?? null} warnings={siteStatus?.warnings ?? []} />
       ) : (
-        <div className="space-y-2 rounded-card border border-line bg-surface p-4">
+        <div className="space-y-2">
           <p className="text-[15px] text-ink">Page d&apos;inscription : <span className="break-all text-ink-muted">{`${appUrl()}/inscription/${event.churchSlug}/${event.slug}`}</span></p>
           {event.description && <p className="whitespace-pre-line text-[15px] text-ink-muted">{event.description}</p>}
         </div>

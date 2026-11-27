@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BellRing, Smartphone } from "lucide-react";
 import { Alert, Button, StatusChip, useToast } from "@/components/ui";
+import { buttonClasses } from "@/components/ui/button-classes";
 import type { StatusTone } from "@/components/ui";
 import { detectIos, pushDeviceState, urlBase64ToUint8Array, type PushDeviceState } from "./push-device-state";
 
@@ -139,7 +140,7 @@ export default function PushDeviceCard({
       <h2 id="push-device-title" className="font-display text-[17px] font-semibold leading-6 text-ink">
         Notifications sur cet appareil
       </h2>
-      <div className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+      <div className="flex flex-col gap-4">
         <div className="flex items-start gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-full bg-brand-soft text-brand-text">
             <Smartphone aria-hidden="true" className="size-5" strokeWidth={1.75} />
@@ -185,7 +186,7 @@ export default function PushDeviceCard({
             tone="info"
             title="Installez Koinonia sur l'écran d'accueil."
             action={
-              <Link href="/installer" className="text-[15px] font-semibold text-brand-text underline">
+              <Link href="/installer" className={buttonClasses("secondary", "sm")}>
                 Voir comment installer
               </Link>
             }

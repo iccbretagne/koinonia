@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { PageHeader } from "@/components/ui";
 import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import FreelanceProfileFormClient from "@/app/(auth)/jobs/freelance/profiles/new/FreelanceProfileFormClient";
@@ -18,8 +19,8 @@ export default async function EditFreelanceProfilePage({
   if (profile.authorId !== session.user.id) redirect(`/jobs/freelance/profiles/${id}`);
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-ink mb-6">Modifier mon profil freelance</h1>
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <PageHeader title="Modifier mon profil freelance" />
       <FreelanceProfileFormClient
         initial={{
           ...profile,

@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { PageHeader, buttonClasses } from "@/components/ui";
 import SeekerFormClient from "../../new/SeekerFormClient";
 
 export default async function EditSeekerPage({
@@ -21,13 +23,11 @@ export default async function EditSeekerPage({
   if (seeker.status !== "ACTIVE") redirect(`/jobs/seekers/${id}`);
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="flex items-center gap-2 mb-4">
-        <Link href={`/jobs/seekers/${id}`} className="text-sm text-ink-subtle hover:text-ink-muted">
-          ← Retour
-        </Link>
-      </div>
-      <h1 className="text-2xl font-bold text-ink mb-6">Modifier le profil</h1>
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <Link href={`/jobs/seekers/${id}`} className={`${buttonClasses("ghost", "sm")} self-start`}>
+        <ArrowLeft className="size-4" aria-hidden="true" /> Retour au profil
+      </Link>
+      <PageHeader title="Modifier le profil" />
       <SeekerFormClient
         initial={{
           id:             seeker.id,

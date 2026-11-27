@@ -4,8 +4,11 @@ import AvailabilityTabs from "@/components/AvailabilityTabs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Button from "@/components/ui/Button";
+import Alert from "@/components/ui/Alert";
+import PageHeader from "@/components/ui/PageHeader";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
+import SegmentedControl from "@/components/ui/SegmentedControl";
 import DataTable from "@/components/ui/DataTable";
 import { useToast } from "@/components/ui/Toast";
 import { isAbsencePast } from "@/lib/absence-lock";
@@ -349,40 +352,30 @@ export default function AbsencesClient({
   return (
     <div className="space-y-8">
       <AvailabilityTabs self={selfMembers.length > 0} team collections={canSettings} />
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">Indisponibilités</h1>
-          <p className="text-sm text-ink-muted mt-1">
-            Périodes déclarées et réponses « Pas disponible » de votre périmètre.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Indisponibilités"
+        description="Périodes déclarées et réponses « Pas disponible » de votre périmètre."
+      />
 
-      {error && <div className="p-3 bg-danger-soft text-danger text-sm rounded-lg">{error}</div>}
+      {error && <Alert tone="danger">{error}</Alert>}
 
       {canView && (
         <section className="space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <h2 className="text-lg font-semibold text-ink">Vue d&apos;ensemble</h2>
+            <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Vue d&apos;ensemble</h2>
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex border border-control-line rounded-lg overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("table")}
-                  className={`px-3 py-1.5 text-sm ${viewMode === "table" ? "bg-brand text-on-brand" : "bg-surface text-ink-muted"}`}
-                >
-                  Tableau
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("timeline")}
-                  className={`px-3 py-1.5 text-sm ${viewMode === "timeline" ? "bg-brand text-on-brand" : "bg-surface text-ink-muted"}`}
-                >
-                  Frise
-                </button>
-              </div>
+              <SegmentedControl
+                label="Affichage"
+                size="sm"
+                value={viewMode}
+                onChange={setViewMode}
+                options={[
+                  { value: "table", label: "Tableau" },
+                  { value: "timeline", label: "Frise" },
+                ]}
+              />
               <Button size="sm" variant="secondary" onClick={exportAbsences} disabled={exporting}>
-                {exporting ? "Export..." : "Exporter"}
+                {exporting ? "Export en cours…" : "Exporter"}
               </Button>
               {canManage && (
                 <Button size="sm" onClick={openForOther}>Déclarer pour un STAR</Button>
@@ -395,7 +388,7 @@ export default function AbsencesClient({
               <div className="flex-1 min-w-0">
                 <Input
                   label="Rechercher un membre"
-                  placeholder="Nom, prénom..."
+                  placeholder="Nom, prénom…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -469,7 +462,7 @@ export default function AbsencesClient({
             </div>
           </div>
 
-          {loadingAll && <p className="text-ink-muted text-sm">Chargement...</p>}
+          {loadingAll && <p role="status" className="text-sm text-ink-muted">Chargement en cours…</p>}
           {!loadingAll && viewMode === "timeline" && (
             <AbsencesTimeline absences={displayedAbsences} responses={displayedResponses} onSelect={selectFromTimeline} />
           )}
@@ -521,7 +514,7 @@ export default function AbsencesClient({
                 }
               />
 
-              <h3 className="text-base font-semibold text-ink pt-2">Réponses « Pas disponible » à venir</h3>
+              <h3 className="pt-2 font-display text-[15px] font-semibold leading-[22px] text-ink">Réponses « Pas disponible » à venir</h3>
               <DataTable
                 data={displayedResponses}
                 emptyMessage="Aucune réponse « Pas disponible » à venir."

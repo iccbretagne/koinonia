@@ -111,7 +111,7 @@ export default function BookingForm({
 
   function stepOneError(): string | null {
     if (participants.some((p) => !p.firstName.trim() || !p.lastName.trim())) return "Indiquez le prénom et le nom de chaque participant.";
-    if (participants.length > event.seatsRemaining) return `Il ne reste que ${event.seatsRemaining} place(s).`;
+    if (participants.length > event.seatsRemaining) return event.seatsRemaining > 1 ? `Il ne reste que ${event.seatsRemaining} places.` : `Il ne reste que ${event.seatsRemaining} place.`;
     if (unaccompanied && !event.allowUnaccompaniedMinors) return "Un adulte doit faire partie de la réservation pour accompagner les mineurs.";
     return null;
   }
@@ -162,9 +162,9 @@ export default function BookingForm({
   }
 
   const recoverLink = (
-    <button type="button" className="text-[15px] font-semibold text-brand-text underline" onClick={() => setRecover(true)}>
+    <Button type="button" variant="ghost" size="sm" onClick={() => setRecover(true)}>
       Retrouver ma réservation
-    </button>
+    </Button>
   );
 
   if (!event.open) {
@@ -192,7 +192,7 @@ export default function BookingForm({
                 <legend className="font-semibold text-ink">Participant {i + 1}</legend>
                 {participants.length > 1 && (
                   <Button type="button" variant="ghost" size="sm" onClick={() => setParticipants((l) => l.filter((_, j) => j !== i))}>
-                    <Trash2 className="size-4" aria-hidden="true" /> Retirer
+                    <Trash2 className="size-4" aria-hidden="true" /> Retirer le participant
                   </Button>
                 )}
               </div>
@@ -215,7 +215,7 @@ export default function BookingForm({
             </Button>
           )}
           {bookingOptions.length > 0 && (
-            <fieldset className="space-y-3 rounded-card border border-line bg-surface p-4">
+            <fieldset className="space-y-3">
               <legend className="font-semibold text-ink">Pour la réservation</legend>
               <OptionList options={bookingOptions} choices={booking} onChange={setBooking} />
             </fieldset>
@@ -234,14 +234,14 @@ export default function BookingForm({
               onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))}
             />
           ))}
-          <fieldset className="space-y-3 rounded-card border border-line bg-surface p-4">
+          <fieldset className="space-y-3">
             <legend className="font-semibold text-ink">Contact de la réservation</legend>
             <Input label="Nom" autoComplete="name" value={contact.name} onChange={(e) => setContact({ ...contact, name: e.target.value })} />
             <Input label="Email" type="email" autoComplete="email" hint="Vos billets et le lien de votre réservation y seront envoyés." value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} />
             <Input label="Téléphone (facultatif)" type="tel" autoComplete="tel" value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} />
           </fieldset>
           {unaccompanied && (
-            <fieldset className="space-y-3 rounded-card border border-line bg-surface p-4">
+            <fieldset className="space-y-3">
               <legend className="font-semibold text-ink">Responsable légal</legend>
               <p className="text-[13px] text-ink-muted">Un mineur sans adulte dans la réservation exige un responsable joignable pendant l&apos;événement.</p>
               <Input label="Nom du responsable" value={guardian.name} onChange={(e) => setGuardian({ ...guardian, name: e.target.value })} />
@@ -257,7 +257,7 @@ export default function BookingForm({
 
       {step === 3 && (
         <section className="space-y-4" aria-label="Récapitulatif">
-          <div className="rounded-card border border-line bg-surface p-4">
+          <div>
             <ul className="space-y-1 text-[15px] text-ink">
               {participants.map((p) => (
                 <li key={p.uid}>

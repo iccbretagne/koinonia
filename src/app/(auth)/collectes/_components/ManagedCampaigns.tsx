@@ -24,11 +24,11 @@ export default async function ManagedCampaigns({ session }: { readonly session: 
 
   const actions = canCreate ? (
     <div className="flex flex-wrap gap-2">
-      <Link href="/collectes/nouvelle" className={buttonClasses("primary", "sm")}>
+      <Link href="/collectes/nouvelle" className={buttonClasses("primary")}>
         <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
         Nouvelle campagne
       </Link>
-      <Link href="/collectes/import" className={buttonClasses("secondary", "sm")}>
+      <Link href="/collectes/import" className={buttonClasses("secondary")}>
         <Upload aria-hidden="true" className="size-4" strokeWidth={1.75} />
         Importer
       </Link>

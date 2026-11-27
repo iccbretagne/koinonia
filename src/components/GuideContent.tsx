@@ -1,8 +1,9 @@
 "use client";
 
-import { Ban, CirclePlay, Eye, Pencil } from "lucide-react";
+import { Ban, CirclePlay, Eye, Pencil, X } from "lucide-react";
+import Button from "@/components/ui/Button";
+import IconButton from "@/components/ui/IconButton";
 import StatusChip from "@/components/ui/StatusChip";
-import { buttonClasses } from "@/components/ui/button-classes";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ROLE_LABELS, ROLE_DESCRIPTIONS, ALL_ROLES } from "@/lib/roles";
@@ -445,7 +446,7 @@ const FEATURES: Feature[] = [
 
   // ── Comptabilité ─────────────────────────────────────────────────────────
   {
-    name: "Soumettre une demande financière",
+    name: "Envoyer une demande financière",
     description: "Déposez une note de frais ou une demande d'avance de budget depuis /accounting/requests/new. Un titulaire de profil pastoral peut également soumettre, indépendamment de son rôle global. Après la remise d'une avance (ou d'une note de frais payée sans pièce), déposez vos factures et le montant dépensé dans le bloc « Justificatifs » de la demande : rendez le reliquat, ou « Demandez le complément » si vous avez dépensé plus. Des relances partent chaque semaine tant que les factures manquent.",
     category: "Comptabilité",
     screenshotTitle: "Nouvelle demande financière",
@@ -495,7 +496,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Entretiens des candidats",
-    description: "Depuis « Candidatures », le bouton « Entretiens » ouvre les créneaux proposés aux candidats. « Ajouter des créneaux » en crée un, ou une série (du … au …, jours de la semaine, plage horaire, 30 min par défaut), avec la personne de l'équipe Vie des STAR qui reçoit et un lieu ou un lien de visio ; chaque créneau reste modifiable ou retirable seul. Après l'envoi de sa fiche, le candidat choisit un créneau libre (un seul candidat par créneau) ou indique qu'aucun ne lui convient ; il reçoit un email avec son lien « mon rendez-vous » pour changer ou annuler jusqu'à 24 h avant, et un rappel la veille, comme la personne qui le reçoit. Sans rendez-vous, la fiche est « À planifier » : le PVS est relancé tous les 14 jours (réglable) et les candidats sont invités par email quand de nouveaux créneaux s'ouvrent. Sur la fiche, le bloc « Entretien » permet de fixer, déplacer ou annuler le rendez-vous, d'inviter le candidat, puis, l'heure passée, de noter l'issue : réalisé, absent ou excusé (deux absences d'affilée sont signalées). Déplacer ou retirer un créneau réservé prévient le candidat ; une candidature non retenue annule son rendez-vous avec un message neutre.",
+    description: "Depuis « Candidatures », le bouton « Gérer les entretiens » ouvre les créneaux proposés aux candidats. « Ajouter des créneaux » en crée un, ou une série (du … au …, jours de la semaine, plage horaire, 30 min par défaut), avec la personne de l'équipe Vie des STAR qui reçoit et un lieu ou un lien de visio ; chaque créneau reste modifiable ou retirable seul. Après l'envoi de sa fiche, le candidat choisit un créneau libre (un seul candidat par créneau) ou indique qu'aucun ne lui convient ; il reçoit un email avec son lien « mon rendez-vous » pour changer ou annuler jusqu'à 24 h avant, et un rappel la veille, comme la personne qui le reçoit. Sans rendez-vous, la fiche est « À planifier » : le PVS est relancé tous les 14 jours (réglable) et les candidats sont invités par email quand de nouveaux créneaux s'ouvrent. Sur la fiche, le bloc « Entretien » permet de fixer, déplacer ou annuler le rendez-vous, d'inviter le candidat, puis, l'heure passée, de noter l'issue : réalisé, absent ou excusé (deux absences d'affilée sont signalées). Déplacer ou retirer un créneau réservé prévient le candidat ; une candidature non retenue annule son rendez-vous avec un message neutre.",
     category: "Membres",
     screenshotTitle: "Entretiens",
     screenshotFile: "guide-candidatures-entretiens.png",
@@ -593,7 +594,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Administrer l'assistant",
-    description: "Le Super Admin active l'assistant pour toute l'instance dans « Assistant » (Configuration) et suit son usage. L'onglet « Questions à traiter » regroupe les questions restées sans réponse ou jugées « Pas utile », anonymes : « Répondre » ajoute une fiche à la base, « Rattacher à… » en fait une formulation d'une fiche existante, « Hors sujet » la classe. La réponse sert dès la question suivante. L'onglet « Base » permet de corriger, masquer ou rétablir les fiches fournies et d'en ajouter ; une mise à jour de Koinonia ne les efface pas. L'Admin d'une église peut couper l'assistant pour son église dans « Paramètres de l'église ».",
+    description: "Le Super Admin active l'assistant pour toute l'instance dans « Assistant » (Configuration) et suit son usage. L'onglet « Questions à traiter » regroupe les questions restées sans réponse ou jugées « Pas utile », anonymes : « Répondre » ajoute une fiche à la base, « Rattacher à une fiche » en fait une formulation d'une fiche existante, « Classer hors sujet » la classe. La réponse sert dès la question suivante. L'onglet « Base » permet de corriger, masquer ou rétablir les fiches fournies et d'en ajouter ; une mise à jour de Koinonia ne les efface pas. L'Admin d'une église peut couper l'assistant pour son église dans « Paramètres de l'église ».",
     category: "Profil",
     screenshotTitle: "Administration de l'assistant",
     screenshotFile: "guide-assistant-admin.png",
@@ -645,7 +646,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Attente, relances et renvoi d'une demande",
-    description: "Sur la fiche d'une demande, « À recontacter plus tard » (la personne souhaite être recontactée ultérieurement, ou reste injoignable pour l'instant) et « Transmettre au département mission » (adresse hors zone, réservé à l'équipe intégration) sortent la demande de la file « À traiter » sans la perdre. Une fois le délai réglé écoulé, la demande apparaît dans le bandeau « À relancer » et toute l'équipe intégration est notifiée ; après avoir relancé, cliquez « J'ai relancé » pour remettre le décompte à zéro, puis « Reprendre le suivi » quand la personne ou le département mission a répondu. Un berger peut mettre en attente les demandes qui lui sont confiées, ou les « Renvoyer à l'intégration » avec une raison s'il ne peut pas les suivre. Un abandon exige un motif (numéro inconnu, injoignable, ne souhaite plus être contacté·e…). Chaque changement est conservé dans l'historique en bas de fiche. Les nouveaux arrivants peuvent aussi choisir, dès le formulaire d'accueil, d'être recontactés plus tard.",
+    description: "Sur la fiche d'une demande, « À recontacter plus tard » (la personne souhaite être recontactée ultérieurement, ou reste injoignable pour l'instant) et « Transmettre au département mission » (adresse hors zone, réservé à l'équipe intégration) sortent la demande de la file « À traiter » sans la perdre. Une fois le délai réglé écoulé, la demande apparaît dans le bandeau « À relancer » et toute l'équipe intégration est notifiée ; après avoir relancé, cliquez « Consigner une relance » pour remettre le décompte à zéro, puis « Reprendre le suivi » quand la personne ou le département mission a répondu. Un berger peut mettre en attente les demandes qui lui sont confiées, ou les « Renvoyer à l'intégration » avec une raison s'il ne peut pas les suivre. Un abandon exige un motif (numéro inconnu, injoignable, ne souhaite plus être contacté·e…). Chaque changement est conservé dans l'historique en bas de fiche. Les nouveaux arrivants peuvent aussi choisir, dès le formulaire d'accueil, d'être recontactés plus tard.",
     category: "Intégration",
     screenshotTitle: "Attente et relances",
     screenshotFile: "guide-integration-attente.png",
@@ -711,7 +712,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Cycle de vie des offres",
-    description: "Une offre publiée ne reste plus en ligne indéfiniment. Après 60 jours sans modification, son auteur est relancé par email et par notification pour confirmer qu'elle est toujours d'actualité — un bandeau et un bouton « Toujours d'actualité » apparaissent alors dans le détail de l'offre. Sans réponse sous 14 jours, l'offre est archivée automatiquement. Toute modification de l'offre vaut confirmation.",
+    description: "Une offre publiée ne reste plus en ligne indéfiniment. Après 60 jours sans modification, son auteur est relancé par email et par notification pour confirmer qu'elle est toujours d'actualité — un bandeau et un bouton « Confirmer l'offre » apparaissent alors dans le détail de l'offre. Sans réponse sous 14 jours, l'offre est archivée automatiquement. Toute modification de l'offre vaut confirmation.",
     category: "Emplois",
     screenshotTitle: "Relance d'une offre d'emploi",
     screenshotFile: "guide-emplois-relance.png",
@@ -786,7 +787,7 @@ function Screenshot({
 
   if (failed) {
     return (
-      <div className="w-full aspect-video bg-surface-sunken rounded-lg border border-dashed border-line flex items-center justify-center">
+      <div className="w-full aspect-video bg-surface-sunken rounded-control border border-dashed border-line flex items-center justify-center">
         <span className="text-xs text-ink-subtle">Capture à venir</span>
       </div>
     );
@@ -796,7 +797,7 @@ function Screenshot({
     <button
       type="button"
       onClick={() => onZoom({ src, alt: title })}
-      className="w-full aspect-video bg-surface-sunken rounded-lg border border-line overflow-hidden cursor-zoom-in group"
+      className="w-full aspect-video bg-surface-sunken rounded-control border border-line overflow-hidden cursor-zoom-in group"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -837,14 +838,10 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
             Lancez une visite guidée pour découvrir les fonctionnalités principales.
           </p>
         </div>
-        <button
-          onClick={() => router.push("/dashboard?tour=1")}
-          type="button"
-          className={`${buttonClasses("primary")} shrink-0`}
-        >
+        <Button onClick={() => router.push("/dashboard?tour=1")} type="button" className="shrink-0">
           <CirclePlay aria-hidden="true" className="size-4" strokeWidth={1.75} />
           Lancer la visite guidée
-        </button>
+        </Button>
       </div>
 
       {/* Onglets par rôle */}
@@ -855,7 +852,7 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
             onClick={() => setActiveRole(role)}
             type="button"
             aria-pressed={activeRole === role}
-            className={`-mb-px inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-3 font-display text-sm font-semibold transition-colors ${
+            className={`-mb-px inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-3 font-display text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${
               activeRole === role
                 ? "border-brand text-brand-text"
                 : "border-transparent text-ink-muted hover:text-ink"
@@ -867,7 +864,7 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
       </div>
 
       {/* Description du rôle */}
-      <div className="mb-6 rounded-card border border-line bg-surface p-4">
+      <div className="mb-6">
         <h2 className="text-lg font-semibold text-brand-text">{ROLE_LABELS[activeRole]}</h2>
         <p className="text-sm text-ink-muted mt-1">{ROLE_DESCRIPTIONS[activeRole]}</p>
         {activeRole === "MINISTER" && (
@@ -887,11 +884,11 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
         {categories.map((category) => (
           <section key={category}>
             <h3 className="text-base font-semibold text-ink mb-4 border-b pb-2">{category}</h3>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-6 sm:grid-cols-2">
               {visibleFeatures.filter((f) => f.category === category).map((feature) => (
-                <div key={feature.name} className="border rounded-lg p-4 space-y-3">
+                <div key={feature.name} className="flex flex-col gap-3">
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="text-sm font-medium text-ink-muted">{feature.name}</h4>
+                    <h4 className="text-sm font-semibold text-ink">{feature.name}</h4>
                     <AccessBadge level={feature.access[activeRole]} />
                   </div>
                   <p className="text-xs text-ink-muted">{feature.description}</p>
@@ -914,22 +911,18 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
           role="none"
           onClick={(e) => { if (e.target === e.currentTarget) setZoomedImage(null); }}
         >
-          <button
-            type="button"
+          <IconButton
+            icon={X}
             onClick={() => setZoomedImage(null)}
-            className="absolute top-4 right-4 text-ink bg-surface/90 hover:bg-surface rounded-full shadow-float p-2 transition-colors"
             aria-label="Fermer"
-          >
-            <svg aria-hidden="true" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+            className="absolute right-4 top-4 bg-surface shadow-float"
+          />
           <div className="max-w-full">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={zoomedImage.src}
               alt={zoomedImage.alt}
-              className="block max-w-full max-h-[90vh] object-contain rounded-lg shadow-overlay"
+              className="block max-w-full max-h-[90vh] object-contain rounded-card shadow-overlay"
             />
           </div>
         </div>

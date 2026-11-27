@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { hasCampaignsManage } from "@/modules/campaigns/auth";
@@ -14,7 +13,7 @@ export default async function NewCampaignPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow={<Link href="/collectes" className="hover:underline">Collectes</Link>}
+        eyebrow="Questionnaires"
         title="Nouvelle campagne"
         description="Composez les questionnaires, leurs destinataires et les contrôles. La campagne reste en brouillon jusqu'à son ouverture."
       />

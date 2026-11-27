@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/ui";
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { requireIntegrationSettingsAccess, getIntegrationSettings } from "@/modules/integration";
 import IntegrationSettingsClient from "./IntegrationSettingsClient";
@@ -12,11 +13,12 @@ export default async function IntegrationSettingsPage() {
 
   return (
     <div className="max-w-xl">
-      <h1 className="text-2xl font-bold text-ink mb-2">Intégration — Paramètres</h1>
-      <p className="text-sm text-ink-muted mb-6">
-        Délais au-delà desquels une demande en attente est signalée à toute l&apos;équipe
-        intégration comme à relancer. Consigner une relance remet le décompte à zéro.
-      </p>
+      <PageHeader
+        className="mb-6"
+        eyebrow="Intégration"
+        title="Paramètres"
+        description="Délais au-delà desquels une demande en attente est signalée à toute l'équipe intégration comme à relancer. Consigner une relance remet le décompte à zéro."
+      />
       <IntegrationSettingsClient churchId={churchId} settings={settings} />
     </div>
   );

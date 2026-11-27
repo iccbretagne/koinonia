@@ -1,5 +1,6 @@
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { getCareAccess, getCareStats } from "@/modules/care";
+import { PageHeader } from "@/components/ui";
 import CareStatsView from "./CareStatsView";
 
 export default async function CareStatsPage() {
@@ -15,8 +16,8 @@ export default async function CareStatsPage() {
   const stats = await getCareStats(churchId);
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-ink mb-6">Suivi pastoral — Statistiques</h1>
+    <div className="flex flex-col gap-6">
+      <PageHeader eyebrow="Suivi pastoral" title="Statistiques" />
       <CareStatsView {...stats} />
     </div>
   );

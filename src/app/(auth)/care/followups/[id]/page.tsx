@@ -1,10 +1,10 @@
 import { requireAuth } from "@/lib/auth";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { getMsdpFollowUpById, getCareAccess, getCareHistory, listRelatedItems } from "@/modules/care";
 import FollowupActions from "./FollowupActions";
 import DeleteItemButton from "@/components/DeleteItemButton";
 import CareItemFooter from "../../CareItemFooter";
+import { PageHeader, StatusChip, type StatusTone } from "@/components/ui";
 
 const STATUS_LABEL: Record<string, string> = {
   SUBMITTED: "Reçu",
@@ -13,6 +13,15 @@ const STATUS_LABEL: Record<string, string> = {
   IN_FORMATION: "En formation",
   COMPLETED: "Terminé",
   ABANDONED: "Abandonné",
+};
+
+const STATUS_TONE: Record<string, StatusTone> = {
+  SUBMITTED: "warning",
+  ASSIGNED: "info",
+  CONTACTED: "info",
+  IN_FORMATION: "brand",
+  COMPLETED: "success",
+  ABANDONED: "danger",
 };
 
 const HISTORY_ACTION_LABELS: Record<string, string> = {
@@ -65,21 +74,15 @@ export default async function CareFollowupDetailPage({
   const wasHandedBack = followUp.status === "SUBMITTED" && history.at(-1)?.action === "handback";
 
   return (
-    <div className="max-w-xl mx-auto">
-      <Link href="/care" className="text-sm text-ink-subtle hover:text-brand-text transition-colors mb-4 inline-block">
-        ← Suivi pastoral
-      </Link>
-      <h1 className="text-2xl font-bold text-ink mb-1">{name || "—"}</h1>
-      <p className="text-sm text-ink-muted mb-6">
-        {STATUS_LABEL[followUp.status] ?? followUp.status}
-        {wasHandedBack && (
-          <span className="ml-2 inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-warning-soft text-warning">
-            Rendu par le référent
-          </span>
-        )}
-      </p>
+    <div className="mx-auto max-w-xl">
+      <PageHeader className="mb-6" eyebrow="Suivi de nouveau converti" title={name || "—"}>
+        <div className="flex flex-wrap gap-1.5">
+          <StatusChip tone={STATUS_TONE[followUp.status] ?? "neutral"}>{STATUS_LABEL[followUp.status] ?? followUp.status}</StatusChip>
+          {wasHandedBack && <StatusChip tone="warning">Rendu par le référent</StatusChip>}
+        </div>
+      </PageHeader>
 
-      <div className="bg-surface rounded-xl border border-line p-5 space-y-3 mb-4">
+      <div className="mb-4 flex flex-col gap-3">
         {followUp.assignedConseillerMsdp && (
           <p className="text-sm text-ink-muted">
             Référent : <strong>{followUp.assignedConseillerMsdp.name ?? followUp.assignedConseillerMsdp.email}</strong>

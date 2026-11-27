@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { CheckCircle2, Circle, CircleAlert } from "lucide-react";
-import { Button } from "@/components/ui";
+import { Button, buttonClasses } from "@/components/ui";
 import type { TicketingEventStatus } from "@/generated/prisma/enums";
 import { useApi } from "../../use-api";
 import type { ReadinessCheck } from "@/modules/ticketing/schemas";
@@ -28,7 +28,7 @@ export default function OpeningChecklist({
   if (status !== "DRAFT") {
     const open = status === "OPEN";
     return (
-      <section className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line bg-surface p-4">
+      <section className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[15px] text-ink">
           {open ? "Les inscriptions sont ouvertes." : "Les inscriptions sont closes : la page publique reste visible, sans formulaire."}
         </p>
@@ -45,7 +45,7 @@ export default function OpeningChecklist({
   }
 
   return (
-    <section className="space-y-3 rounded-card border border-line bg-surface p-4">
+    <section className="space-y-3">
       <div>
         <h2 className="text-lg font-bold text-ink">Prêt à ouvrir ?</h2>
         <p className="text-[13px] text-ink-muted">L&apos;événement est en brouillon : personne ne peut encore s&apos;inscrire.</p>
@@ -65,7 +65,7 @@ export default function OpeningChecklist({
                 {c.detail && <span className="block text-[13px] text-ink-muted">{c.detail}</span>}
               </span>
               {!c.done && (
-                <Link href={c.href} className="shrink-0 text-[13px] font-semibold text-brand-text underline-offset-2 hover:underline">
+                <Link href={c.href} className={`${buttonClasses("ghost", "sm")} shrink-0`}>
                   Régler
                 </Link>
               )}

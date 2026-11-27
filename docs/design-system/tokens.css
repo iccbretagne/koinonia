@@ -157,6 +157,7 @@
   --z-nav: 30;
   --z-overlay: 50;
   --z-modal: 60;
+  --z-toast: 70;
   --z-banner: 100;
   --font-display: Montserrat, ui-sans-serif, system-ui, sans-serif;
   --font-body: "Source Sans 3", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;

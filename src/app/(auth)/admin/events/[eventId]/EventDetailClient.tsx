@@ -2,7 +2,8 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import Link from "next/link";
-import Button from "@/components/ui/Button";
+import { FileText } from "lucide-react";
+import { Button, Checkbox, Modal, RadioGroup, StatusChip, buttonClasses, useToast } from "@/components/ui";
 
 interface Department {
   id: string;
@@ -51,6 +52,7 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
 
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [seriesScope, setSeriesScope] = useState<"single" | "future">("single");
+  const toast = useToast();
 
   function requestAction(action: PendingAction) {
     if (!isRecurring) {
@@ -79,9 +81,9 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ [field]: !toggle.value, applyToSeries }),
       });
-      if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
+      if (!res.ok) { const data = await res.json(); toast.error(data.error || "Erreur lors de l'enregistrement"); return; }
       toggle.set((v) => !v);
-    } catch { alert("Erreur"); } finally { toggle.setSaving(false); }
+    } catch { toast.error("Erreur lors de l'enregistrement"); } finally { toggle.setSaving(false); }
   }
 
   /** Ajoute ou retire un département de l'événement (ou de la série). */
@@ -94,9 +96,9 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ departmentId: dept.id, applyToSeries }),
       });
-      if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
+      if (!res.ok) { const data = await res.json(); toast.error(data.error || "Erreur lors de l'enregistrement"); return; }
       setDepts((prev) => prev.map((d) => d.id === dept.id ? { ...d, linked: !d.linked } : d));
-    } catch { alert("Erreur"); } finally { setLoading(null); }
+    } catch { toast.error("Erreur lors de l'enregistrement"); } finally { setLoading(null); }
   }
 
   async function executeAction(action: PendingAction, applyToSeries: boolean) {
@@ -119,237 +121,123 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
     return `${toggles[action.type].value ? "désactiver" : "activer"} ${TOGGLE_LABELS[action.type]}`;
   }
 
+  /** Réglage activable de l'événement : case à cocher de 44 px, état « Actif » et aide. */
+  function toggleRow(field: ToggleField, label: string, saving: boolean, hint?: string) {
+    const on = toggles[field].value;
+    return (
+      <div>
+        <label className="flex min-h-11 cursor-pointer items-center gap-3">
+          <Checkbox checked={on} disabled={saving} onChange={() => requestAction({ type: field })} />
+          <span className="text-[15px] font-semibold leading-[22px] text-ink">{label}</span>
+          {saving ? <span className="text-[13px] text-ink-muted">Enregistrement…</span> : on && <StatusChip tone="brand">Actif</StatusChip>}
+        </label>
+        {hint && <p className="text-[13px] leading-[18px] text-ink-muted">{hint}</p>}
+      </div>
+    );
+  }
+
+  const H2 = "mb-3 font-display text-[17px] font-semibold leading-6 text-ink";
+
   return (
-    <div>
-      <div className="mb-4 flex flex-wrap gap-3">
-        <Link href="/admin/events">
-          <Button variant="secondary">&larr; Retour aux evenements</Button>
-        </Link>
-        <Link href={`/events/${eventId}/star-view`}>
-          <Button>Voir planning des STAR</Button>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap gap-3">
+        <Link href={`/events/${eventId}/star-view`} className={buttonClasses("secondary")}>
+          Voir le planning des STAR
         </Link>
       </div>
 
       {/* Modale de confirmation série */}
-      {pendingAction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim">
-          <div className="bg-surface rounded-xl shadow-overlay p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-semibold text-ink mb-1">Modifier la série</h3>
-            <p className="text-sm text-ink-muted mb-4">
-              Vous souhaitez <span className="font-medium text-ink-muted">{actionLabel(pendingAction)}</span>. Appliquer à :
+      <Modal open={pendingAction !== null} onClose={() => setPendingAction(null)} title="Modifier la série">
+        {pendingAction && (
+          <div className="flex flex-col gap-4">
+            <p className="text-[15px] leading-[22px] text-ink-muted">
+              Vous souhaitez <span className="font-semibold text-ink">{actionLabel(pendingAction)}</span>. Appliquer à :
             </p>
-            <div className="space-y-3 mb-5">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name="seriesScope"
-                  value="single"
-                  checked={seriesScope === "single"}
-                  onChange={() => setSeriesScope("single")}
-                  className="h-4 w-4 text-brand-text border-control-line focus:ring-focus"
-                />
-                <span className="text-sm text-ink-muted">Cet événement uniquement</span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name="seriesScope"
-                  value="future"
-                  checked={seriesScope === "future"}
-                  onChange={() => setSeriesScope("future")}
-                  className="h-4 w-4 text-brand-text border-control-line focus:ring-focus"
-                />
-                <span className="text-sm text-ink-muted">Cet événement et les suivants de la série</span>
-              </label>
-            </div>
-            <div className="flex gap-3 justify-end">
+            <RadioGroup
+              legend="Portée de la modification"
+              hideLegend
+              name="seriesScope"
+              value={seriesScope}
+              onChange={setSeriesScope}
+              options={[
+                { value: "single", label: "Cet événement uniquement" },
+                { value: "future", label: "Cet événement et les suivants de la série" },
+              ]}
+            />
+            <div className="flex justify-end gap-3">
               <Button variant="secondary" onClick={() => setPendingAction(null)}>Annuler</Button>
-              <Button onClick={() => executeAction(pendingAction, seriesScope === "future")}>Confirmer</Button>
+              <Button onClick={() => executeAction(pendingAction, seriesScope === "future")}>Appliquer</Button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
-      <div className="mb-6 p-4 bg-surface rounded-lg shadow-card">
-        <h2 className="text-lg font-semibold text-ink mb-3">
-          Annonces
-        </h2>
-        <label className="flex items-center gap-3 cursor-pointer">
-          <button
-            role="switch"
-            aria-checked={allowAnnouncements}
-            onClick={() => requestAction({ type: "allowAnnouncements" })}
-            disabled={savingAnnouncements}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 disabled:opacity-50 ${
-              allowAnnouncements ? "bg-brand" : "bg-surface-sunken"
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-surface transition-transform ${
-                allowAnnouncements ? "translate-x-6" : "translate-x-1"
-              }`}
-            />
-          </button>
-          <span className="text-sm font-medium text-ink-muted">
-            Accepter les demandes d&apos;annonces
-          </span>
-          {allowAnnouncements && (
-            <span className="text-xs bg-brand-soft text-brand-text px-2 py-0.5 rounded-full font-medium">
-              Actif
-            </span>
-          )}
-        </label>
-        <p className="mt-2 text-xs text-ink-muted">
-          Si activé, cet événement apparaîtra dans le sélecteur lors de la
-          soumission d&apos;une annonce.
-        </p>
-      </div>
+      <section>
+        <h2 className={H2}>Annonces</h2>
+        {toggleRow("allowAnnouncements", "Accepter les demandes d'annonces", savingAnnouncements, "Si activé, cet événement apparaîtra dans le sélecteur lors de la soumission d'une annonce.")}
+      </section>
 
-      <div className="mb-6 p-4 bg-surface rounded-lg shadow-card">
-        <h2 className="text-lg font-semibold text-ink mb-3">
-          Discipolat
-        </h2>
-        <label className="flex items-center gap-3 cursor-pointer">
-          <button
-            role="switch"
-            aria-checked={trackedForDiscipleship}
-            onClick={() => requestAction({ type: "trackedForDiscipleship" })}
-            disabled={savingDiscipleship}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 disabled:opacity-50 ${
-              trackedForDiscipleship ? "bg-brand" : "bg-surface-sunken"
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-surface transition-transform ${
-                trackedForDiscipleship ? "translate-x-6" : "translate-x-1"
-              }`}
-            />
-          </button>
-          <span className="text-sm font-medium text-ink-muted">
-            Suivre les présences pour le discipolat
-          </span>
-          {trackedForDiscipleship && (
-            <span className="text-xs bg-brand-soft text-brand-text px-2 py-0.5 rounded-full font-medium">
-              Actif
-            </span>
-          )}
-        </label>
-        <p className="mt-2 text-xs text-ink-muted">
-          Si activé, cet événement apparaîtra dans le module discipolat pour
-          l&apos;enregistrement des présences des disciples.
-        </p>
-      </div>
+      <section>
+        <h2 className={H2}>Discipolat</h2>
+        {toggleRow("trackedForDiscipleship", "Suivre les présences pour le discipolat", savingDiscipleship, "Si activé, cet événement apparaîtra dans le module discipolat pour l'enregistrement des présences des disciples.")}
+      </section>
 
-      <div className="mb-6 p-4 bg-surface rounded-lg shadow-card">
-        <h2 className="text-lg font-semibold text-ink mb-3">Compte rendu</h2>
-        <div className="space-y-3">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <button
-              role="switch"
-              aria-checked={reportEnabled}
-              onClick={() => requestAction({ type: "reportEnabled" })}
-              disabled={savingReport}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 disabled:opacity-50 ${reportEnabled ? "bg-brand" : "bg-surface-sunken"}`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-surface transition-transform ${reportEnabled ? "translate-x-6" : "translate-x-1"}`} />
-            </button>
-            <span className="text-sm font-medium text-ink-muted">Activer le compte rendu</span>
-            {reportEnabled && <span className="text-xs bg-brand-soft text-brand-text px-2 py-0.5 rounded-full font-medium">Actif</span>}
-          </label>
-          <label className="flex items-center gap-3 cursor-pointer">
-            <button
-              role="switch"
-              aria-checked={statsEnabled}
-              onClick={() => requestAction({ type: "statsEnabled" })}
-              disabled={savingStats}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 disabled:opacity-50 ${statsEnabled ? "bg-brand" : "bg-surface-sunken"}`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-surface transition-transform ${statsEnabled ? "translate-x-6" : "translate-x-1"}`} />
-            </button>
-            <span className="text-sm font-medium text-ink-muted">Activer les statistiques</span>
-            {statsEnabled && <span className="text-xs bg-brand-soft text-brand-text px-2 py-0.5 rounded-full font-medium">Actif</span>}
-          </label>
+      <section>
+        <h2 className={H2}>Compte rendu</h2>
+        <div className="flex flex-col gap-1">
+          {toggleRow("reportEnabled", "Activer le compte rendu", savingReport)}
+          {toggleRow("statsEnabled", "Activer les statistiques", savingStats)}
         </div>
         {reportEnabled && (
           <div className="mt-4">
-            <Link
-              href={`/admin/events/${eventId}/report`}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-on-brand bg-brand rounded-lg hover:bg-brand-hover transition-colors"
-            >
-              <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Saisir / voir le compte rendu
+            <Link href={`/admin/events/${eventId}/report`} className={buttonClasses("primary")}>
+              <FileText aria-hidden="true" className="size-4" strokeWidth={1.75} />
+              Saisir le compte rendu
             </Link>
           </div>
         )}
-      </div>
+      </section>
 
-      <div className="mb-6 p-4 bg-surface rounded-lg shadow-card">
-        <h2 className="text-lg font-semibold text-ink mb-3">Service d&apos;accueil</h2>
-        <label className="flex items-center gap-3 cursor-pointer">
-          <button
-            role="switch"
-            aria-checked={welcomeDutyEnabled}
-            onClick={() => requestAction({ type: "welcomeDutyEnabled" })}
-            disabled={savingWelcomeDuty}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 disabled:opacity-50 ${welcomeDutyEnabled ? "bg-brand" : "bg-surface-sunken"}`}
-          >
-            <span className={`inline-block h-4 w-4 transform rounded-full bg-surface transition-transform ${welcomeDutyEnabled ? "translate-x-6" : "translate-x-1"}`} />
-          </button>
-          <span className="text-sm font-medium text-ink-muted">Familles de service attendues</span>
-          {welcomeDutyEnabled && <span className="text-xs bg-brand-soft text-brand-text px-2 py-0.5 rounded-full font-medium">Actif</span>}
-        </label>
-        <p className="mt-2 text-xs text-ink-muted">
-          Si activé, cet événement apparaît dans le planning d&apos;accueil pour l&apos;affectation des familles.
-        </p>
+      <section>
+        <h2 className={H2}>Service d&apos;accueil</h2>
+        {toggleRow("welcomeDutyEnabled", "Familles de service attendues", savingWelcomeDuty, "Si activé, cet événement apparaît dans le planning d'accueil pour l'affectation des familles.")}
         {welcomeDutyEnabled && (
           <div className="mt-3">
-            <Link
-              href="/admin/welcome-duty"
-              className="inline-flex items-center gap-1.5 text-xs text-brand-text hover:text-brand-text"
-            >
-              Gérer les affectations →
+            <Link href="/admin/welcome-duty" className={buttonClasses("secondary", "sm")}>
+              Gérer les affectations
             </Link>
           </div>
         )}
-      </div>
+      </section>
 
-      <h2 className="text-lg font-semibold text-ink mb-4">
-        Départements associés
-      </h2>
+      <section>
+        <h2 className="mb-4 font-display text-[17px] font-semibold leading-6 text-ink">Départements associés</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Object.entries(grouped).map(([ministry, deps]) => (
-          <div key={ministry} className="bg-surface rounded-lg shadow-card p-4">
-            <h3 className="text-sm font-semibold text-ink-muted uppercase mb-3">
-              {ministry}
-            </h3>
-            <div className="space-y-2">
-              {deps.map((d) => (
-                <label
-                  key={d.id}
-                  className="flex items-center gap-3 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={d.linked}
-                    onChange={() => requestAction({ type: "department", dept: d })}
-                    disabled={loading === d.id}
-                    className="h-4 w-4 rounded border-control-line text-brand-text focus:ring-focus"
-                  />
-                  <span className="text-sm text-ink-muted">
-                    {d.name}
-                    {loading === d.id && (
-                      <span className="ml-2 text-ink-subtle">...</span>
-                    )}
-                  </span>
-                </label>
-              ))}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Object.entries(grouped).map(([ministry, deps]) => (
+            <div key={ministry}>
+              <h3 className="mb-2 font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-subtle">
+                {ministry}
+              </h3>
+              <div className="flex flex-col">
+                {deps.map((d) => (
+                  <label key={d.id} className="flex min-h-11 cursor-pointer items-center gap-3">
+                    <Checkbox
+                      checked={d.linked}
+                      onChange={() => requestAction({ type: "department", dept: d })}
+                      disabled={loading === d.id}
+                    />
+                    <span className="text-[15px] leading-[22px] text-ink">
+                      {d.name}
+                      {loading === d.id && <span className="ml-2 text-[13px] text-ink-muted">Enregistrement…</span>}
+                    </span>
+                  </label>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
