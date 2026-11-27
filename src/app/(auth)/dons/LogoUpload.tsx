@@ -83,17 +83,17 @@ export default function LogoUpload({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoSrc} alt="Logo actuel" className="max-h-14 w-auto max-w-full object-contain" />
         ) : (
-          <span className="text-sm text-ink-muted">Aucun logo</span>
+          <span className="text-[13px] leading-[18px] text-ink-muted">Aucun logo</span>
         )}
       </div>
       <div className="flex min-w-0 flex-col gap-2">
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="secondary" disabled={busy} onClick={() => fileRef.current?.click()}>
-            {busy ? "Envoi…" : logoVersion ? "Remplacer" : "Déposer un logo"}
+            {busy ? "Envoi…" : logoVersion ? "Remplacer le logo" : "Déposer un logo"}
           </Button>
           {logoVersion && (
             <Button type="button" variant="ghost" disabled={busy} onClick={() => setConfirmRemove(true)}>
-              Retirer
+              Retirer le logo
             </Button>
           )}
         </div>
@@ -121,6 +121,7 @@ export default function LogoUpload({
         title="Retirer le logo ?"
         message="Il disparaît aussitôt de la page publique et de la slide. La comptabilité est prévenue."
         confirmLabel="Retirer le logo"
+        confirmingLabel="Retrait…"
         confirming={busy}
         onConfirm={() => void remove()}
         onCancel={() => setConfirmRemove(false)}

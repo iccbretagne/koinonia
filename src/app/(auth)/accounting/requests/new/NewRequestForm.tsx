@@ -4,6 +4,7 @@ import { SubmitEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AttachmentManager, { type AttachmentItem } from "@/app/(auth)/accounting/components/AttachmentManager";
+import { Alert, Button, Input, Select, Textarea, buttonClasses, fieldLabelClasses } from "@/components/ui";
 
 interface Department {
   id: string;
@@ -117,177 +118,146 @@ export default function NewRequestForm({ departments, correction, complement, re
     finally { setLoading(false); }
   }
 
-  return (
-    <form onSubmit={submit} className="bg-surface rounded-xl border border-line p-5 space-y-5">
-      <h1 className="text-lg font-bold text-ink">
-        {correction ? "Corriger la demande financière" : "Nouvelle demande financière"}
-      </h1>
+  const modeOptions = [
+    { value: "one_shot",  label: "Note de frais",     desc: "Dépense déjà effectuée" },
+    { value: "one_shot",  label: "Avance ponctuelle", desc: "Dépense à venir, une seule fois", type: "BUDGET_ADVANCE" as const },
+    { value: "recurring", label: "Avance récurrente", desc: "Virement régulier planifié" },
+  ].filter((opt) => !correction || opt.value !== "recurring");
 
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-5 rounded-card border border-line bg-surface p-4 shadow-card md:p-5">
       {correction && (
-        <div className="bg-warning-soft border border-warning/30 rounded-lg px-3 py-2 text-sm text-warning space-y-1">
-          <p>
-            Correction de <span className="font-medium">&ldquo;{correction.label}&rdquo;</span> — les
-            informations de la demande rejetée sont reprises, modifiez ce qui doit l&apos;être.
-          </p>
+        <Alert tone="warning" title={`Correction de « ${correction.label} ».`}>
+          Les informations de la demande rejetée sont reprises, modifiez ce qui doit l&apos;être.
           {correction.attachmentCount > 0 && (
-            <p className="text-xs">
-              Les pièces jointes restent sur la demande rejetée : redéposez celles qui sont toujours
-              valables.
-            </p>
+            <span className="mt-1 block">
+              Les pièces jointes restent sur la demande rejetée : redéposez celles qui sont toujours valables.
+            </span>
           )}
-        </div>
+        </Alert>
       )}
 
       {complement && (
-        <div className="bg-info-soft border border-info/30 rounded-lg px-3 py-2 text-sm text-info">
-          Complément de <span className="font-medium">&ldquo;{complement.label}&rdquo;</span> : jusqu&apos;à{" "}
-          {complement.remaining.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}. Les factures déjà déposées
-          le justifient, inutile de les joindre à nouveau.
-        </div>
+        <Alert tone="info" title={`Complément de « ${complement.label} ».`}>
+          Jusqu&apos;à {complement.remaining.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}. Les factures
+          déjà déposées le justifient, inutile de les joindre à nouveau.
+        </Alert>
       )}
 
       {/* Mode */}
       {!complement && (
-      <fieldset className="space-y-2 min-w-0">
-        <legend className="block text-sm font-medium text-ink-muted">Type de demande</legend>
-        <div className="flex flex-wrap gap-2">
-          {[
-            { value: "one_shot",  label: "Note de frais",     desc: "Dépense déjà effectuée" },
-            { value: "one_shot",  label: "Avance one-shot",   desc: "Dépense à venir, ponctuelle", type: "BUDGET_ADVANCE" as const },
-            { value: "recurring", label: "Avance récurrente", desc: "Virement régulier planifié" },
-          ].filter((opt) => !correction || opt.value !== "recurring").map((opt) => {
-            const isActive = mode === opt.value && (opt.type ? type === opt.type : type === "EXPENSE_REPORT" || opt.value === "recurring");
-            return (
-              <button
-                key={opt.label}
-                type="button"
-                onClick={() => {
-                  setMode(opt.value as RequestMode);
-                  if (opt.type) setType(opt.type);
-                  else if (opt.value === "one_shot") setType("EXPENSE_REPORT");
-                }}
-                className={`flex-1 min-w-[140px] text-left px-4 py-3 rounded-xl border-2 transition-colors ${
-                  isActive ? "border-brand bg-brand-soft" : "border-line hover:border-control-line"
-                }`}
-              >
-                <p className={`text-sm font-medium ${isActive ? "text-brand-text" : "text-ink"}`}>{opt.label}</p>
-                <p className="text-xs text-ink-subtle mt-0.5">{opt.desc}</p>
-              </button>
-            );
-          })}
-        </div>
-      </fieldset>
+        <fieldset className="flex min-w-0 flex-col gap-1.5">
+          <legend className={`${fieldLabelClasses} mb-1.5`}>Type de demande</legend>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {modeOptions.map((opt) => {
+              const isActive = mode === opt.value && (opt.type ? type === opt.type : type === "EXPENSE_REPORT" || opt.value === "recurring");
+              return (
+                <button
+                  key={opt.label}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => {
+                    setMode(opt.value as RequestMode);
+                    if (opt.type) setType(opt.type);
+                    else if (opt.value === "one_shot") setType("EXPENSE_REPORT");
+                  }}
+                  className={`flex min-h-11 flex-col rounded-control border px-4 py-3 text-left transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+                    isActive ? "border-brand bg-brand-soft" : "border-control-line hover:bg-surface-sunken"
+                  }`}
+                >
+                  <span className="font-display text-[15px] font-semibold leading-[22px] text-ink">{opt.label}</span>
+                  <span className="mt-0.5 text-[13px] leading-[18px] text-ink-muted">{opt.desc}</span>
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
       )}
 
       {/* Département */}
-      <div className="space-y-1">
-        <label htmlFor={`${id}-department`} className="block text-sm font-medium text-ink-muted">
-          Département
-          {!isRecurringMode && <span className="text-ink-subtle font-normal ml-1">(facultatif pour les notes de frais personnelles)</span>}
-        </label>
-        <select
-          id={`${id}-department`}
-          value={form.departmentId}
-          onChange={(e) => set("departmentId", e.target.value)}
-          required={isRecurringMode}
-          className="w-full border border-line rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand"
-        >
-          {!isRecurringMode && (
-            <option value="">— Personnel (sans département)</option>
-          )}
-          {departments.map((d) => (
-            <option key={d.id} value={d.id}>{d.ministry.name} — {d.name}</option>
-          ))}
-        </select>
-      </div>
+      <Select
+        label="Département"
+        hint={isRecurringMode ? undefined : "Facultatif pour les notes de frais personnelles."}
+        value={form.departmentId}
+        onChange={(e) => set("departmentId", e.target.value)}
+        required={isRecurringMode}
+        options={[
+          ...(isRecurringMode ? [] : [{ value: "", label: "Personnel (sans département)" }]),
+          ...departments.map((d) => ({ value: d.id, label: `${d.ministry.name} — ${d.name}` })),
+        ]}
+      />
 
       {/* Intitulé */}
-      <div className="space-y-1">
-        <label htmlFor={`${id}-label`} className="block text-sm font-medium text-ink-muted">Intitulé</label>
-        <input
-          id={`${id}-label`}
-          type="text"
-          value={form.label}
-          onChange={(e) => set("label", e.target.value)}
-          required
-          maxLength={200}
-          placeholder="ex : Achat matériel son — culte du 15 juin"
-          className="w-full border border-line rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand"
-        />
-      </div>
+      <Input
+        label="Intitulé"
+        type="text"
+        value={form.label}
+        onChange={(e) => set("label", e.target.value)}
+        required
+        maxLength={200}
+        placeholder="ex : Achat matériel son — culte du 15 juin"
+      />
 
       {/* Montant */}
-      <div className="space-y-1">
-        <label htmlFor={`${id}-amount`} className="block text-sm font-medium text-ink-muted">Montant TTC (€)</label>
-        <input
-          id={`${id}-amount`}
-          type="number"
-          value={form.amount}
-          onChange={(e) => set("amount", e.target.value)}
-          required
-          min={0.01}
-          step={0.01}
-          placeholder="0,00"
-          className="w-full border border-line rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand"
-        />
-      </div>
+      <Input
+        label="Montant TTC (€)"
+        type="number"
+        inputMode="decimal"
+        value={form.amount}
+        onChange={(e) => set("amount", e.target.value)}
+        required
+        min={0.01}
+        step={0.01}
+        placeholder="0,00"
+      />
 
       {/* Récurrence */}
       {mode === "recurring" && (
-        <div className="space-y-3 bg-brand-soft border border-brand/30 rounded-xl p-4">
-          <p className="text-xs font-semibold text-brand-text uppercase tracking-wide">Paramètres de récurrence</p>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm text-ink-muted">Tous les</span>
-            <input
+        <fieldset className="flex min-w-0 flex-col gap-4 rounded-card border border-line p-4">
+          <legend className="px-1 font-display text-[15px] font-semibold leading-[22px] text-ink">Récurrence</legend>
+          <div className="flex flex-wrap items-end gap-3">
+            <Input
+              label="Tous les"
               type="number"
               value={recurrence.every}
               onChange={(e) => setRecurrence((r) => ({ ...r, every: e.target.value }))}
-              min={1} max={99}
-              className="w-16 border border-line rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:border-brand"
+              min={1}
+              max={99}
+              className="w-24"
             />
-            <select
+            <Select
+              label="Période"
               value={recurrence.unit}
               onChange={(e) => setRecurrence((r) => ({ ...r, unit: e.target.value as "WEEK" | "MONTH" }))}
-              className="border border-line rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-brand"
-            >
-              <option value="WEEK">semaine(s)</option>
-              <option value="MONTH">mois</option>
-            </select>
-          </div>
-          <div className="space-y-1">
-            <label htmlFor={`${id}-first-date`} className="block text-xs font-medium text-ink-muted">Date de la première occurrence</label>
-            <input
-              id={`${id}-first-date`}
-              type="date"
-              value={recurrence.firstDate}
-              onChange={(e) => setRecurrence((r) => ({ ...r, firstDate: e.target.value }))}
-              required={mode === "recurring"}
-              className="border border-line rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-brand"
+              options={[
+                { value: "WEEK", label: Number(recurrence.every) > 1 ? "semaines" : "semaine" },
+                { value: "MONTH", label: "mois" },
+              ]}
             />
           </div>
-        </div>
+          <Input
+            id={`${id}-first-date`}
+            label="Date de la première occurrence"
+            type="date"
+            value={recurrence.firstDate}
+            onChange={(e) => setRecurrence((r) => ({ ...r, firstDate: e.target.value }))}
+            required={mode === "recurring"}
+          />
+        </fieldset>
       )}
 
       {/* Description */}
-      <div className="space-y-1">
-        <label htmlFor={`${id}-description`} className="block text-sm font-medium text-ink-muted">
-          Description <span className="text-ink-subtle font-normal">(facultatif)</span>
-        </label>
-        <textarea
-          id={`${id}-description`}
-          value={form.description}
-          onChange={(e) => set("description", e.target.value)}
-          rows={3}
-          placeholder="Détail de la dépense, contexte, références devis…"
-          className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand resize-none"
-        />
-      </div>
+      <Textarea
+        label="Description (facultatif)"
+        value={form.description}
+        onChange={(e) => set("description", e.target.value)}
+        rows={3}
+        placeholder="Détail de la dépense, contexte, références devis…"
+      />
 
       {/* Pièces jointes */}
-      <fieldset className="space-y-2 min-w-0">
-        <legend className="block text-sm font-medium text-ink-muted">
-          Pièces jointes <span className="text-ink-subtle font-normal">(reçu, facture, devis…)</span>
-        </legend>
+      <fieldset className="flex min-w-0 flex-col gap-1.5">
+        <legend className={`${fieldLabelClasses} mb-1.5`}>Pièces jointes (reçu, facture, devis…)</legend>
         <AttachmentManager
           attachments={attachments}
           canUpload
@@ -296,17 +266,13 @@ export default function NewRequestForm({ departments, correction, complement, re
         />
       </fieldset>
 
-      {error && <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-3 py-2">{error}</p>}
+      {error && <Alert tone="danger" role="alert">{error}</Alert>}
 
-      <div className="flex gap-3 justify-end pt-1">
-        <Link href={redirectTo} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</Link>
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-5 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-        >
-          {loading ? "Envoi…" : "Soumettre la demande"}
-        </button>
+      <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+        <Link href={redirectTo} className={buttonClasses("secondary", "md")}>Annuler</Link>
+        <Button type="submit" disabled={loading}>
+          {loading ? "Envoi…" : "Envoyer la demande"}
+        </Button>
       </div>
     </form>
   );

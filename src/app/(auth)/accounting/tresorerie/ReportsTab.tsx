@@ -12,10 +12,10 @@ function Table({ title, head, rows }: { readonly title: string; readonly head: s
     <section className="overflow-hidden rounded-card border border-line bg-surface">
       <h2 className="px-5 py-4 text-lg font-semibold text-ink">{title}</h2>
       {rows.length === 0 ? (
-        <EmptyState size="sm" title="Rien sur la période" />
+        <EmptyState size="sm" className="min-h-11 sm:min-h-9" title="Rien sur la période" />
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
+          <table className="w-full border-collapse text-[15px] leading-[22px]">
             <thead>
               <tr className="bg-surface-sunken text-ink-muted">
                 {head.map((h, i) => (
@@ -55,16 +55,16 @@ export default function ReportsTab({ reports, from, to }: { readonly reports: Re
         <Input label="Du" type="date" value={from ?? ""} onChange={(e) => go(e.target.value || undefined, to)} />
         <Input label="Au" type="date" value={to ?? ""} onChange={(e) => go(from, e.target.value || undefined)} />
         <a href={exportHref} className={`ml-auto ${buttonClasses("secondary", "md")}`}>
-          <Download aria-hidden className="h-4 w-4" /> Exporter
+          <Download aria-hidden="true" className="size-4" strokeWidth={1.75} /> Exporter
         </a>
       </div>
       <section className="grid grid-cols-2 gap-4">
         <div className="rounded-card border border-line bg-surface p-4">
-          <p className="text-sm text-ink-muted">Entrées</p>
+          <p className="text-[15px] leading-[22px] text-ink-muted">Entrées</p>
           <p className="text-xl font-semibold tabular-nums text-success">{euro(reports.inflows)}</p>
         </div>
         <div className="rounded-card border border-line bg-surface p-4">
-          <p className="text-sm text-ink-muted">Sorties</p>
+          <p className="text-[15px] leading-[22px] text-ink-muted">Sorties</p>
           <p className="text-xl font-semibold tabular-nums text-danger">{euro(reports.outflows)}</p>
         </div>
       </section>

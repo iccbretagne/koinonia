@@ -39,7 +39,7 @@ export default function SlideSettings({
               // eslint-disable-next-line @next/next/no-img-element
               <img src={logoSrc} alt="Logo actuel" className="max-h-10 w-auto max-w-full object-contain" />
             ) : (
-              <span className="text-xs text-ink-muted">Aucun logo</span>
+              <span className="text-[13px] leading-[18px] text-ink-muted">Aucun logo</span>
             )}
           </div>
           <Button type="button" variant="ghost" onClick={onEditLogo}>
@@ -51,12 +51,12 @@ export default function SlideSettings({
 
       <Section title="Verset projeté" description="Le même que sur la page publique.">
         {verse ? (
-          <blockquote className="rounded-control bg-surface-sunken px-3 py-2 text-sm italic leading-5 text-ink">
+          <blockquote className="rounded-control border border-line px-3 py-2 text-[15px] italic leading-[22px] text-ink">
             « {slideVerse(verse.text)} »
             {verse.reference && <b className="not-italic text-brand-text"> — {verse.reference}</b>}
           </blockquote>
         ) : (
-          <p className="text-sm text-ink-muted">Aucun verset : la slide n&apos;en affiche pas.</p>
+          <p className="text-[15px] leading-[22px] text-ink-muted">Aucun verset : la slide n&apos;en affiche pas.</p>
         )}
         <div>
           <Button type="button" variant="ghost" onClick={onEditVerse}>

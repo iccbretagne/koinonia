@@ -15,7 +15,7 @@ Il choisit d'abord le **type**, qui détermine tout le reste :
 | Type | Quand l'utiliser |
 |---|---|
 | Note de frais | La dépense a déjà été effectuée |
-| Avance one-shot | Une dépense à venir, ponctuelle |
+| Avance ponctuelle | Une dépense à venir, une seule fois |
 | Avance récurrente | Un virement régulier, planifié à l'avance |
 
 Puis il renseigne le **département** concerné — facultatif pour une note de frais personnelle, obligatoire pour une avance récurrente —, un **intitulé**, le **montant TTC**, une description si nécessaire, et les **pièces jointes** : reçu, facture ou devis, au format JPEG, PNG ou PDF, jusqu'à 5 Mo.
@@ -57,7 +57,7 @@ Une fois la demande prise en charge, le demandeur ne peut plus y ajouter de piè
 
 - Le demandeur est prévenu (cloche, email selon ses préférences, notification sur ses appareils). Sur sa demande, un encart reprend le message et lui permet de déposer **une ou plusieurs pièces**, quel que soit l'état de la demande (sauf annulée ou rejetée).
 - Au dépôt, la mention **« Pièce demandée »** disparaît et le comptable est prévenu.
-- Sans réponse, le même bouton devient **« Relancer »** : la demande affiche la date de la première demande, le nombre de relances et la dernière. Il n'y a pas de relance automatique.
+- Sans réponse, le même bouton devient **« Relancer le demandeur »** : la demande affiche la date de la première demande, le nombre de relances et la dernière. Il n'y a pas de relance automatique.
 - Le comptable peut **annuler** la demande de pièce (pièce reçue autrement).
 - La liste des demandes propose le filtre **« Pièce demandée »**.
 - Navette : la comptabilité peut de même **demander le justificatif** d'une ligne à son auteur, qui peut alors le déposer même après le délai de 48 heures, sans modifier le reste de la ligne.
@@ -87,7 +87,7 @@ L'écran de traitement affiche les compteurs en tête — en attente, en traitem
 
 ## Les cas particuliers
 
-**Un rejet.** Le comptable motive sa décision, le motif est obligatoire. La demande reste consultable avec son motif, et son auteur peut la **corriger et la resoumettre** : une nouvelle demande naît, reliée à la première.
+**Un rejet.** Le comptable motive sa décision, le motif est obligatoire. La demande reste consultable avec son motif, et son auteur peut cliquer sur **« Corriger la demande »** : une nouvelle demande naît, reliée à la première.
 
 **Une annulation.** Le demandeur peut annuler sa demande tant qu'elle n'a pas été prise en charge — par exemple si la dépense n'a finalement pas lieu. Ensuite, c'est au comptable de la rejeter.
 

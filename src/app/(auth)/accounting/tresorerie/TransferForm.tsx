@@ -48,7 +48,7 @@ export default function TransferForm({
   return (
     <Modal open onClose={onClose} title={edit ? "Corriger le transfert" : "Transfert entre comptes"}>
       <form onSubmit={(e) => void submit(e)} className="space-y-4 p-1">
-        <p className="text-sm text-ink-muted">Le total de l&apos;église ne change pas : ce n&apos;est ni une recette ni une dépense.</p>
+        <p className="text-[15px] leading-[22px] text-ink-muted">Le total de l&apos;église ne change pas : ce n&apos;est ni une recette ni une dépense.</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <Select label="Depuis" value={fromId} onChange={(e) => setFromId(e.target.value)} options={options} />
           <Select label="Vers" value={toId} onChange={(e) => setToId(e.target.value)} options={options} />

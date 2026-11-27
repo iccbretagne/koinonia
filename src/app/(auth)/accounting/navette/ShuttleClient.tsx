@@ -13,6 +13,7 @@ import {
   Select,
   StatusChip,
   Tabs,
+  buttonClasses,
   useToast,
 } from "@/components/ui";
 import type { LedgerLine, LedgerSummary } from "@/modules/shuttle";
@@ -38,16 +39,16 @@ function Amount({ value, className = "" }: { readonly value: number; readonly cl
 
 function Bars({ items }: { readonly items: { label: string; value: number }[] }) {
   const max = Math.max(1, ...items.map((i) => i.value));
-  if (items.length === 0) return <p className="text-sm text-ink-muted">Rien sur la période.</p>;
+  if (items.length === 0) return <p className="text-[15px] leading-[22px] text-ink-muted">Rien sur la période.</p>;
   return (
-    <ul className="space-y-2">
+    <ul className="flex flex-col gap-2">
       {items.map((i) => (
         <li key={i.label}>
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between gap-2 text-[15px] leading-[22px]">
             <span className="text-ink">{i.label}</span>
             <Amount value={i.value} className="text-ink" />
           </div>
-          <div className="mt-1 h-2 rounded-full bg-surface-sunken">
+          <div className="mt-1 h-2 rounded-full bg-line">
             <div className="h-2 rounded-full bg-brand" style={{ width: `${(i.value / max) * 100}%` }} />
           </div>
         </li>
@@ -61,7 +62,7 @@ function renderLineCell(l: LedgerLine) {
     <span className="flex flex-wrap items-center gap-1.5">
       <span className="font-semibold text-ink">{lineTitle(l)}</span>
       {l.vendor && <span className="text-ink-muted">· {l.vendor}</span>}
-      {l.hasReceipt && <Paperclip aria-label="Justificatif joint" className="size-3.5 text-ink-muted" />}
+      {l.hasReceipt && <Paperclip role="img" aria-label="Justificatif joint" className="size-3.5 text-ink-muted" strokeWidth={1.75} />}
       {l.flagNote && (
         <StatusChip tone="warning" icon={Flag}>
           Signalée
@@ -87,12 +88,12 @@ const LEDGER_COLUMNS = [
   { header: "Solde", align: "right" as const, hideOnMobile: true, accessor: renderBalance },
 ];
 
-/** Action « Détail » d'une ligne du relevé. */
+/** Action « Voir le détail » d'une ligne du relevé. */
 function detailAction(open: (id: string) => void) {
   return function renderDetailAction(l: LedgerLine) {
     return (
-      <Button size="sm" variant="ghost" onClick={() => open(l.id)}>
-        Détail
+      <Button size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => open(l.id)}>
+        Voir le détail
       </Button>
     );
   };
@@ -191,52 +192,52 @@ export default function ShuttleClient({
   const p = ledger.period;
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Navette"
         description="Suivi du budget de la navette : abondements, dépenses et justificatifs."
         actions={
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => setFormSeed({ mode: "create", kind: "EXPENSE" })}>
-              <Plus aria-hidden="true" className="size-4" /> Déclarer une dépense
+              <Plus aria-hidden="true" className="size-4" strokeWidth={2} /> Déclarer une dépense
             </Button>
             {manager ? (
               <Button variant="secondary" onClick={() => setFormSeed({ mode: "create", kind: "FUNDING" })}>
-                Abondement
+                Ajouter un abondement
               </Button>
             ) : (
               <Button variant="secondary" onClick={() => setFormSeed({ mode: "create", kind: "DEPOSIT_RETURN" })}>
-                Autre entrée
+                Déclarer une autre entrée
               </Button>
             )}
             {manager && (
               <a
                 href={`/api/accounting/navette/export?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}`}
-                className="inline-flex min-h-11 items-center gap-2 rounded-control border border-control-line bg-surface px-4 text-sm font-semibold text-ink hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-focus"
+                className={buttonClasses("secondary", "md")}
               >
-                <Download aria-hidden="true" className="size-4" /> Exporter
+                <Download aria-hidden="true" className="size-4" strokeWidth={1.75} /> Exporter le relevé
               </a>
             )}
           </div>
         }
       />
 
-      <section aria-label="Solde" className="rounded-card border border-line bg-surface p-4">
-        <p className="text-sm text-ink-muted">Solde à date</p>
+      <section aria-label="Solde" className="rounded-card border border-line bg-surface p-4 shadow-card">
+        <p className="text-[15px] leading-[22px] text-ink-muted">Solde à date</p>
         <p className={`font-display text-3xl font-bold tabular-nums ${ledger.balanceToDate < 0 ? "text-danger" : "text-ink"}`}>
           {euro(ledger.balanceToDate)}
         </p>
         {!ledger.hasOpeningBalance && manager && (
-          <p className="mt-1 text-sm text-ink-muted">
-            Solde de départ non saisi.{" "}
-            <button type="button" className="font-semibold text-brand-text underline" onClick={() => setFormSeed({ mode: "create", kind: "OPENING_BALANCE" })}>
-              Le saisir
-            </button>
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <p className="text-[15px] leading-[22px] text-ink-muted">Solde de départ non saisi.</p>
+            <Button size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => setFormSeed({ mode: "create", kind: "OPENING_BALANCE" })}>
+              Saisir le solde de départ
+            </Button>
+          </div>
         )}
       </section>
 
-      <section aria-label="Période" className="space-y-3">
+      <section aria-label="Période" className="flex flex-col gap-3">
         <fieldset className="flex flex-wrap gap-2">
           <legend className="sr-only">Période</legend>
           {PRESETS.map((pr) => (
@@ -273,8 +274,8 @@ export default function ShuttleClient({
             ["Écart", p.net],
             ["Solde de fin", p.closingBalance],
           ].map(([label, value]) => (
-            <div key={label as string} className="rounded-control bg-surface-sunken px-3 py-2">
-              <dt className="text-[13px] text-ink-muted">{label}</dt>
+            <div key={label as string} className="rounded-control border border-line bg-surface px-3 py-2">
+              <dt className="text-[13px] leading-[18px] text-ink-muted">{label}</dt>
               <dd className="font-semibold text-ink">
                 <Amount value={value as number} />
               </dd>
@@ -297,21 +298,21 @@ export default function ShuttleClient({
 
       {view === "repartition" && (
         <div className="grid gap-6 md:grid-cols-2">
-          <section className="rounded-card border border-line bg-surface p-4">
-            <h2 className="mb-3 font-semibold text-ink">Sorties par type</h2>
+          <section className="rounded-card border border-line bg-surface p-4 shadow-card">
+            <h2 className="mb-3 font-display text-[17px] font-semibold leading-6 text-ink">Sorties par type</h2>
             <Bars items={ledger.byCategory.map((c) => ({ label: EXPENSE_CATEGORY_LABEL[c.category], value: c.total }))} />
           </section>
-          <section className="rounded-card border border-line bg-surface p-4">
-            <h2 className="mb-3 font-semibold text-ink">Par mois</h2>
+          <section className="rounded-card border border-line bg-surface p-4 shadow-card">
+            <h2 className="mb-3 font-display text-[17px] font-semibold leading-6 text-ink">Par mois</h2>
             {ledger.byMonth.length === 0 ? (
-              <p className="text-sm text-ink-muted">Rien sur la période.</p>
+              <p className="text-[15px] leading-[22px] text-ink-muted">Rien sur la période.</p>
             ) : (
-              <table className="w-full text-sm">
+              <table className="w-full text-[15px] leading-[22px]">
                 <thead>
-                  <tr className="text-left text-ink-muted">
-                    <th className="py-1 font-medium">Mois</th>
-                    <th className="py-1 text-right font-medium">Entrées</th>
-                    <th className="py-1 text-right font-medium">Sorties</th>
+                  <tr className="text-left">
+                    <th scope="col" className="py-1 font-display text-xs font-semibold uppercase tracking-[0.04em] text-ink-muted">Mois</th>
+                    <th scope="col" className="py-1 text-right font-display text-xs font-semibold uppercase tracking-[0.04em] text-ink-muted">Entrées</th>
+                    <th scope="col" className="py-1 text-right font-display text-xs font-semibold uppercase tracking-[0.04em] text-ink-muted">Sorties</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -332,29 +333,29 @@ export default function ShuttleClient({
               </table>
             )}
           </section>
-          <section className="rounded-card border border-line bg-surface p-4 md:col-span-2">
-            <h2 className="mb-3 font-semibold text-ink">Coût par location</h2>
+          <section className="rounded-card border border-line bg-surface p-4 shadow-card md:col-span-2">
+            <h2 className="mb-3 font-display text-[17px] font-semibold leading-6 text-ink">Coût par location</h2>
             <Bars items={ledger.byRental.map((r) => ({ label: r.label, value: r.cost }))} />
           </section>
         </div>
       )}
 
       {view === "cautions" && (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6">
           <section>
-            <h2 className="mb-2 font-semibold text-ink">Cautions en cours</h2>
+            <h2 className="mb-2 font-display text-[17px] font-semibold leading-6 text-ink">Cautions en cours</h2>
             {ledger.outstandingDeposits.length === 0 ? (
-              <p className="text-sm text-ink-muted">Aucune caution en attente de restitution.</p>
+              <p className="text-[15px] leading-[22px] text-ink-muted">Aucune caution en attente de restitution.</p>
             ) : (
               <ul className="divide-y divide-line rounded-card border border-line bg-surface">
                 {ledger.outstandingDeposits.map((d) => (
                   <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-                    <span className="text-sm text-ink">
+                    <span className="text-[15px] leading-[22px] text-ink">
                       {euro(d.amount)} · {d.vendor ?? "—"} · versée le {frDate(d.date)}{" "}
                       <span className={d.ageDays > 14 ? "text-warning" : "text-ink-muted"}>({d.ageDays} j)</span>
                     </span>
-                    <Button size="sm" variant="secondary" onClick={() => setDetailId(d.id)}>
-                      Gérer
+                    <Button size="sm" variant="secondary" className="min-h-11 sm:min-h-9" onClick={() => setDetailId(d.id)}>
+                      Gérer la caution
                     </Button>
                   </li>
                 ))}
@@ -362,20 +363,20 @@ export default function ShuttleClient({
             )}
           </section>
           <section>
-            <h2 className="mb-2 font-semibold text-ink">Avances personnelles de la période</h2>
+            <h2 className="mb-2 font-display text-[17px] font-semibold leading-6 text-ink">Avances personnelles de la période</h2>
             {ledger.personalAdvances.length === 0 ? (
-              <p className="text-sm text-ink-muted">Aucune avance personnelle sur la période.</p>
+              <p className="text-[15px] leading-[22px] text-ink-muted">Aucune avance personnelle sur la période.</p>
             ) : (
               <ul className="divide-y divide-line rounded-card border border-line bg-surface">
                 {ledger.personalAdvances.map((l) => (
                   <li key={l.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-                    <span className="text-sm text-ink">
+                    <span className="text-[15px] leading-[22px] text-ink">
                       {lineTitle(l)} · {euro(-l.amount)} · {l.createdBy?.name ?? "—"} · {frDate(l.date)}
                     </span>
                     <span className="flex items-center gap-2">
                       {l.reimbursement ? <ReimbursementChip status={l.reimbursement.status} /> : <StatusChip tone="neutral">Non demandé</StatusChip>}
-                      <Button size="sm" variant="ghost" onClick={() => setDetailId(l.id)}>
-                        Détail
+                      <Button size="sm" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => setDetailId(l.id)}>
+                        Voir le détail
                       </Button>
                     </span>
                   </li>
@@ -385,22 +386,22 @@ export default function ShuttleClient({
           </section>
           {manager && (
             <section>
-              <h2 className="mb-1 font-semibold text-ink">Notes de frais hors registre</h2>
-              <p className="mb-2 text-sm text-ink-muted">
+              <h2 className="mb-1 font-display text-[17px] font-semibold leading-6 text-ink">Notes de frais hors registre</h2>
+              <p className="mb-2 text-[15px] leading-[22px] text-ink-muted">
                 Notes de frais du département Navette faites directement dans la comptabilité. Ajoutez-les au registre pour
                 qu&apos;aucune dépense n&apos;échappe au suivi.
               </p>
               {ledger.unlinkedExpenseReports.length === 0 ? (
-                <p className="text-sm text-ink-muted">Aucune.</p>
+                <p className="text-[15px] leading-[22px] text-ink-muted">Aucune note de frais hors registre.</p>
               ) : (
                 <ul className="divide-y divide-line rounded-card border border-line bg-surface">
                   {ledger.unlinkedExpenseReports.map((r) => (
                     <li key={r.id} className="flex flex-wrap items-end justify-between gap-3 px-4 py-3">
-                      <span className="text-sm text-ink">
+                      <span className="text-[15px] leading-[22px] text-ink">
                         {r.label} · {euro(r.amount)} · {r.submittedBy} · {frDate(r.date)}
                         {!r.hasReceipt && <span className="text-ink-muted"> · sans justificatif</span>}
                       </span>
-                      <span className="flex items-end gap-2">
+                      <span className="flex flex-wrap items-end gap-2">
                         <Select
                           label="Type"
                           value={importCategory[r.id] ?? "FUEL"}
@@ -408,7 +409,7 @@ export default function ShuttleClient({
                           options={EXPENSE_CATEGORIES.map((c) => ({ value: c, label: EXPENSE_CATEGORY_LABEL[c] }))}
                         />
                         <Button
-                          size="sm"
+                          variant="secondary"
                           disabled={busy}
                           onClick={() =>
                             json(
@@ -431,9 +432,9 @@ export default function ShuttleClient({
       )}
 
       {view === "locations" && (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6">
           <form
-            className="grid gap-3 rounded-card border border-line bg-surface p-4 sm:grid-cols-5 sm:items-end"
+            className="grid gap-3 rounded-card border border-line bg-surface p-4 shadow-card sm:grid-cols-5 sm:items-end"
             onSubmit={async (e) => {
               e.preventDefault();
               const ok = await json(
@@ -451,8 +452,8 @@ export default function ShuttleClient({
             <Input label="Véhicule" value={rentalForm.vehicle} onChange={(e) => setRentalForm((f) => ({ ...f, vehicle: e.target.value }))} />
             <Input label="Début" type="date" required value={rentalForm.startDate} onChange={(e) => setRentalForm((f) => ({ ...f, startDate: e.target.value }))} />
             <Input label="Fin" type="date" value={rentalForm.endDate} onChange={(e) => setRentalForm((f) => ({ ...f, endDate: e.target.value }))} />
-            <Button type="submit" disabled={busy}>
-              Ajouter
+            <Button type="submit" variant="secondary" disabled={busy}>
+              {busy ? "Ajout…" : "Ajouter la location"}
             </Button>
           </form>
           {rentals.length === 0 ? (
@@ -462,7 +463,7 @@ export default function ShuttleClient({
               {rentals.map((r) => {
                 const cost = ledger.byRental.find((b) => b.id === r.id)?.cost;
                 return (
-                  <li key={r.id} className="flex flex-wrap justify-between gap-2 px-4 py-3 text-sm">
+                  <li key={r.id} className="flex flex-wrap justify-between gap-2 px-4 py-3 text-[15px] leading-[22px]">
                     <span className="text-ink">
                       {r.vendor}
                       {r.vehicle ? ` · ${r.vehicle}` : ""} · {frDate(r.startDate)}
@@ -479,7 +480,7 @@ export default function ShuttleClient({
 
       {view === "reglages" && manager && (
         <form
-          className="max-w-md space-y-3 rounded-card border border-line bg-surface p-4"
+          className="flex max-w-md flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card"
           onSubmit={(e) => {
             e.preventDefault();
             const value = threshold.trim() === "" ? null : Number(threshold.replace(",", "."));
@@ -497,8 +498,8 @@ export default function ShuttleClient({
             onChange={(e) => setThreshold(e.target.value)}
             hint="Vide : pas d'alerte. La compta et les responsables de la navette sont prévenus quand le solde passe sous ce seuil."
           />
-          <Button type="submit" disabled={busy}>
-            Enregistrer
+          <Button type="submit" variant="secondary" disabled={busy}>
+            {busy ? "Enregistrement…" : "Enregistrer le seuil"}
           </Button>
         </form>
       )}

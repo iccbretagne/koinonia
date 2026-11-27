@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExternalLink, Flag } from "lucide-react";
-import { Alert, Button, ConfirmModal, Modal, StatusChip, Textarea, useToast, type StatusTone } from "@/components/ui";
+import { Alert, Button, ConfirmModal, Modal, StatusChip, Textarea, buttonClasses, useToast, type StatusTone } from "@/components/ui";
 import type { LedgerLine } from "@/modules/shuttle";
 import {
   EXPENSE_CATEGORY_LABEL,
@@ -57,6 +57,7 @@ const NOTE_LABEL = {
   retained: "Pourquoi la caution n'est pas restituée",
   "receipt-request": "Message pour l'auteur (facultatif)",
 } as const;
+const NOTE_SUBMIT = { flag: "Signaler la ligne", retained: "Marquer non restituée", "receipt-request": "Demander le justificatif" } as const;
 const NOTE_SUCCESS = { flag: "Ligne signalée", retained: "Caution marquée non restituée", "receipt-request": "Justificatif demandé" } as const;
 
 const ACTION_LABEL: Record<string, string> = { CREATE: "Création", UPDATE: "Modification", DELETE: "Suppression" };
@@ -103,28 +104,28 @@ function AdvanceBlock({
     status = (
       <div className="flex flex-wrap items-center gap-2">
         <ReimbursementChip status={reimbursement.status} />
-        {reimbursement.paid > 0 && <span className="text-sm text-ink-muted">{euro(reimbursement.paid)} versés</span>}
+        {reimbursement.paid > 0 && <span className="text-[15px] leading-[22px] text-ink-muted">{euro(reimbursement.paid)} versés</span>}
         {reimbursement.status === "REJECTED" && reimbursement.rejectionReason && (
-          <span className="text-sm text-ink-muted">Motif : {reimbursement.rejectionReason}</span>
+          <span className="text-[15px] leading-[22px] text-ink-muted">Motif : {reimbursement.rejectionReason}</span>
         )}
       </div>
     );
   } else if (!line.sourceRequestId) {
-    status = <p className="text-sm text-ink-muted">Remboursement non demandé.</p>;
+    status = <p className="text-[15px] leading-[22px] text-ink-muted">Remboursement non demandé.</p>;
   }
   return (
-    <div className="space-y-2 rounded-control bg-surface-sunken px-3 py-2">
-      <p className="text-sm text-ink">Avance personnelle</p>
+    <div className="flex flex-col gap-2 rounded-control border border-line px-3 py-2">
+      <p className="font-display text-[15px] font-semibold leading-[22px] text-ink">Avance personnelle</p>
       {status}
       <div className="flex flex-wrap gap-2">
         {canRequest && (
-          <Button size="sm" disabled={busy} onClick={onRequest}>
-            Demander le remboursement
+          <Button size="sm" className="min-h-11 sm:min-h-9" disabled={busy} onClick={onRequest}>
+            {busy ? "Envoi…" : "Demander le remboursement"}
           </Button>
         )}
         {isAuthor && reimbursement?.status === "REQUESTED" && (
-          <Button size="sm" variant="secondary" disabled={busy} onClick={onCancel}>
-            Annuler la demande
+          <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" disabled={busy} onClick={onCancel}>
+            Annuler la demande de remboursement
           </Button>
         )}
       </div>
@@ -226,7 +227,7 @@ export default function EntryDetail({
   return (
     <>
       <Modal open onClose={onClose} title={lineTitle(line)} mobileLayout="sheet">
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           {line.receiptRequest && (
             <Alert
               tone="warning"
@@ -244,7 +245,7 @@ export default function EntryDetail({
                     accept="image/jpeg,image/png,image/webp,application/pdf"
                     aria-label="Justificatif"
                     onChange={(e) => setReceiptFile(e.target.files?.[0] ?? null)}
-                    className="text-sm"
+                    className="block min-h-11 w-full text-base text-ink file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-control file:border file:border-control-line file:bg-surface file:px-4 file:font-display file:text-sm file:font-semibold file:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                   />
                   <Button
                     size="sm"
@@ -255,19 +256,21 @@ export default function EntryDetail({
                       if (await call(`${base}/receipt`, { method: "POST", body: form }, "Justificatif envoyé")) onClose();
                     }}
                   >
-                    Envoyer
+                    {busy ? "Envoi…" : "Envoyer le justificatif"}
                   </Button>
                 </span>
+              )}
+              {isAuthor && !receiptFile && (
+                <span className="mt-1 block text-[13px] leading-[18px] text-ink-muted">Choisissez un fichier pour l&apos;envoyer.</span>
               )}
             </Alert>
           )}
           {line.flagNote && (
-            <p className="flex items-start gap-2 rounded-control bg-warning-soft px-3 py-2 text-sm text-ink">
-              <Flag aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
+            <Alert tone="warning" icon={Flag}>
               Signalée par la comptabilité : {line.flagNote}
-            </p>
+            </Alert>
           )}
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[15px] leading-[22px]">
             {rows.map(([k, v]) => (
               <div key={k} className="contents">
                 <dt className="text-ink-muted">{k}</dt>
@@ -277,14 +280,14 @@ export default function EntryDetail({
           </dl>
 
           {line.source === "accounting" && line.requestId && (
-            <p className="text-sm text-ink-muted">
-              Versement d&apos;une avance de budget, lu dans la comptabilité.{" "}
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[15px] leading-[22px] text-ink-muted">Versement d&apos;une avance de budget, lu dans la comptabilité.</p>
               {viewer.manager && (
-                <Link href={`/accounting/requests/${line.requestId}`} className="font-semibold text-brand-text underline">
+                <Link href={`/accounting/requests/${line.requestId}`} className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
                   Voir la demande
                 </Link>
               )}
-            </p>
+            </div>
           )}
 
           {line.hasReceipt && (
@@ -292,9 +295,9 @@ export default function EntryDetail({
               href={`${base}/receipt`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand-text underline"
+              className={`${buttonClasses("secondary", "sm")} min-h-11 self-start sm:min-h-9`}
             >
-              <ExternalLink aria-hidden="true" className="size-4" /> Voir le justificatif ({line.receiptName ?? "fichier"})
+              <ExternalLink aria-hidden="true" className="size-4" strokeWidth={1.75} /> Voir le justificatif ({line.receiptName ?? "fichier"})
             </a>
           )}
 
@@ -309,7 +312,7 @@ export default function EntryDetail({
           )}
 
           {noteFor ? (
-            <div className="space-y-2">
+            <div className="flex flex-col gap-2">
               <Textarea
                 label={NOTE_LABEL[noteFor]}
                 rows={2}
@@ -318,10 +321,10 @@ export default function EntryDetail({
                 onChange={(e) => setNote(e.target.value)}
               />
               <div className="flex gap-2">
-                <Button size="sm" disabled={busy || (noteFor !== "receipt-request" && !note.trim())} onClick={submitNote}>
-                  Enregistrer
+                <Button size="sm" className="min-h-11 sm:min-h-9" disabled={busy || (noteFor !== "receipt-request" && !note.trim())} onClick={submitNote}>
+                  {busy ? "Enregistrement…" : noteFor === "receipt-request" && line.receiptRequest ? "Envoyer la relance" : NOTE_SUBMIT[noteFor]}
                 </Button>
-                <Button size="sm" variant="secondary" onClick={() => setNoteFor(null)}>
+                <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => setNoteFor(null)}>
                   Annuler
                 </Button>
               </div>
@@ -329,48 +332,48 @@ export default function EntryDetail({
           ) : (
             <div className="flex flex-wrap gap-2">
               {editable && (
-                <Button size="sm" variant="secondary" onClick={() => onEdit(line)}>
-                  Corriger
+                <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => onEdit(line)}>
+                  Corriger la ligne
                 </Button>
               )}
               {line.kind === "EXPENSE" && line.category === "DEPOSIT" && !line.returned && !line.depositRetainedAt && (
-                <Button size="sm" variant="secondary" onClick={() => onReturnDeposit(line)}>
-                  Caution restituée
+                <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => onReturnDeposit(line)}>
+                  Déclarer la restitution
                 </Button>
               )}
               {viewer.manager && line.kind === "EXPENSE" && line.category === "DEPOSIT" && !line.returned && !line.depositRetainedAt && (
-                <Button size="sm" variant="secondary" onClick={() => setNoteFor("retained")}>
-                  Non restituée
+                <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => setNoteFor("retained")}>
+                  Marquer non restituée
                 </Button>
               )}
               {viewer.manager && line.source === "ledger" && !line.flagNote && (
-                <Button size="sm" variant="secondary" onClick={() => setNoteFor("flag")}>
-                  Signaler
+                <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => setNoteFor("flag")}>
+                  Signaler la ligne
                 </Button>
               )}
               {viewer.manager && line.source === "ledger" && !line.receiptRequest && (
-                <Button size="sm" variant="secondary" onClick={() => setNoteFor("receipt-request")}>
+                <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => setNoteFor("receipt-request")}>
                   Demander le justificatif
                 </Button>
               )}
               {viewer.manager && line.receiptRequest && (
                 <>
-                  <Button size="sm" variant="secondary" onClick={() => setNoteFor("receipt-request")}>
-                    Relancer
+                  <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => setNoteFor("receipt-request")}>
+                    Relancer l&apos;auteur
                   </Button>
-                  <Button size="sm" variant="ghost" disabled={busy} onClick={() => call(`${base}/receipt-request`, { method: "DELETE" }, "Demande annulée")}>
-                    Annuler la demande
+                  <Button size="sm" className="min-h-11 sm:min-h-9" variant="ghost" disabled={busy} onClick={() => call(`${base}/receipt-request`, { method: "DELETE" }, "Demande annulée")}>
+                    Annuler la demande de justificatif
                   </Button>
                 </>
               )}
               {viewer.manager && line.flagNote && (
-                <Button size="sm" variant="secondary" disabled={busy} onClick={() => call(`${base}/flag`, { method: "DELETE" }, "Signalement levé")}>
+                <Button size="sm" className="min-h-11 sm:min-h-9" variant="secondary" disabled={busy} onClick={() => call(`${base}/flag`, { method: "DELETE" }, "Signalement levé")}>
                   Lever le signalement
                 </Button>
               )}
               {editable && (
-                <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(true)}>
-                  Supprimer
+                <Button size="sm" className="min-h-11 sm:min-h-9" variant="ghost" onClick={() => setConfirmDelete(true)}>
+                  Supprimer la ligne
                 </Button>
               )}
             </div>
@@ -378,11 +381,11 @@ export default function EntryDetail({
 
           {line.source === "ledger" && (
             <section aria-label="Historique" className="border-t border-line pt-3">
-              <h3 className="mb-2 text-sm font-semibold text-ink">Historique</h3>
+              <h3 className="mb-2 font-display text-[15px] font-semibold leading-[22px] text-ink">Historique</h3>
               {history === null ? (
-                <p className="text-sm text-ink-muted">Chargement…</p>
+                <p className="text-[15px] leading-[22px] text-ink-muted">Chargement…</p>
               ) : (
-                <ul className="space-y-1.5">
+                <ul className="flex flex-col gap-1.5">
                   {history.map((h) => {
                     const detail = historyDetail(h);
                     return (
@@ -404,6 +407,7 @@ export default function EntryDetail({
         title="Supprimer cette ligne ?"
         message="Elle sort des soldes et reste visible dans l'historique. La comptabilité est prévenue."
         confirmLabel="Supprimer la ligne"
+        confirmingLabel="Suppression…"
         confirming={busy}
         onConfirm={async () => {
           const ok = await call(base, { method: "DELETE" }, "Ligne supprimée");

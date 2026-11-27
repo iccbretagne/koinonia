@@ -21,7 +21,7 @@ function Row({ label, hint, children }: { readonly label: string; readonly hint?
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-ink">{label}</p>
+        <p className="text-[15px] font-semibold leading-[22px] text-ink">{label}</p>
         {hint && <p className="text-[13px] leading-[18px] text-ink-muted">{hint}</p>}
       </div>
       {children}
@@ -57,7 +57,7 @@ function SizeChoice({
             aria-checked={active}
             disabled={disabled}
             onClick={() => onChange(size.value)}
-            className={`min-h-[40px] rounded-[8px] font-display text-sm font-semibold transition-colors disabled:cursor-not-allowed ${
+            className={`min-h-11 rounded-control font-display text-sm font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed ${
               active ? "bg-surface text-brand-text shadow-card" : "text-ink-muted hover:text-ink"
             }`}
           >

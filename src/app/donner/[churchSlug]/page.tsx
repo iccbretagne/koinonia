@@ -22,7 +22,7 @@ export default async function GivingPublicPage({ params }: Params) {
   if (!page) notFound();
 
   return (
-    <div className="flex min-h-screen flex-col bg-surface-sunken">
+    <div className="flex min-h-screen flex-col bg-bg">
       <header className="bg-brand px-4 py-6">
         <div className="mx-auto max-w-xl">
           <GivingPageHeader churchName={page.churchName} nameSize={page.churchNameSize} logoSrc={page.logo?.src ?? null} />
@@ -31,7 +31,7 @@ export default async function GivingPublicPage({ params }: Params) {
       <main className="mx-auto w-full max-w-xl flex-1 px-4 py-6">
         <GivingPageView page={page} />
       </main>
-      <footer className="py-4 text-center text-xs text-ink-subtle">
+      <footer className="py-4 text-center text-[13px] leading-[18px] text-ink-muted">
         Propulsé par <span className="font-medium text-ink-muted">Koinonia</span>
       </footer>
     </div>

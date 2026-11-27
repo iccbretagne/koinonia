@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Button, Input, Modal, Select, useToast } from "@/components/ui";
+import { Alert, Button, Input, Modal, Select, buttonClasses, fieldLabelClasses, useToast } from "@/components/ui";
 import type { AccountView, CategoryView, LedgerLine, PurposeView } from "@/modules/treasury";
 import { AUTOMATIC_SYSTEMS, METHODS, METHOD_LABEL, RECEIPT_MAX_BYTES } from "@/modules/treasury/schemas";
 import type { TreasuryDirection, TreasuryMethod } from "@/generated/prisma/enums";
@@ -123,7 +123,7 @@ export default function EntryForm({
         <fieldset className="flex gap-2">
           <legend className="sr-only">Sens</legend>
           {(["IN", "OUT"] as const).map((d) => (
-            <label key={d} className={`flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-control border text-sm font-semibold ${form.direction === d ? "border-brand bg-brand-soft text-brand-text" : "border-control-line text-ink-muted"}`}>
+            <label key={d} className={`flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-control border font-display text-sm font-semibold focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus ${form.direction === d ? "border-brand bg-brand-soft text-brand-text" : "border-control-line text-ink-muted"}`}>
               <input type="radio" className="sr-only" name={`${ids}-dir`} checked={form.direction === d} onChange={() => setForm((f) => ({ ...f, direction: d, categoryId: "" }))} />
               {d === "IN" ? "Entrée" : "Sortie"}
             </label>
@@ -157,24 +157,24 @@ export default function EntryForm({
         <Input label="Tiers (facultatif)" hint="Fournisseur, organisme…" maxLength={120} value={form.thirdParty} onChange={(e) => set("thirdParty", e.target.value)} />
 
         <div className="space-y-2">
-          <p className="text-sm font-semibold text-ink-muted">Justificatif (facultatif)</p>
+          <p className={fieldLabelClasses}>Justificatif (facultatif)</p>
           <div className="flex flex-wrap gap-2">
-            <label className="inline-flex min-h-11 cursor-pointer items-center rounded-control border border-control-line px-3 text-sm font-semibold text-ink">
+            <label className={`${buttonClasses("secondary", "md")} cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus`}>
               Prendre une photo
               <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
             </label>
-            <label className="inline-flex min-h-11 cursor-pointer items-center rounded-control border border-control-line px-3 text-sm font-semibold text-ink">
+            <label className={`${buttonClasses("secondary", "md")} cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus`}>
               Choisir un document
               <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
             </label>
           </div>
           {file && (
-            <p className="flex items-center gap-2 text-sm text-ink-muted">
+            <p className="flex flex-wrap items-center gap-2 text-[15px] leading-[22px] text-ink-muted">
               {file.name} · {(file.size / 1024 / 1024).toFixed(1)} Mo
-              <button type="button" className="font-semibold text-brand-text" onClick={() => setFile(null)}>Retirer</button>
+              <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setFile(null)}>Retirer le fichier</Button>
             </p>
           )}
-          {!file && line?.hasReceipt && <p className="text-sm text-ink-muted">Un justificatif est déjà enregistré.</p>}
+          {!file && line?.hasReceipt && <p className="text-[15px] leading-[22px] text-ink-muted">Un justificatif est déjà enregistré.</p>}
         </div>
 
         {error && <Alert tone={duplicate ? "warning" : "danger"}>{error}</Alert>}
