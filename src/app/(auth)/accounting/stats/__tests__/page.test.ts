@@ -12,7 +12,6 @@ vi.mock("@/lib/auth", () => ({
 const mockCompute = vi.fn();
 vi.mock("@/modules/accounting", () => ({ computeAccountingStats: (...a: unknown[]) => mockCompute(...a) }));
 vi.mock("../AccountingStats", () => ({ default: function AccountingStats() { return null; } }));
-vi.mock("../../AccountingNav", () => ({ default: function AccountingNav() { return null; } }));
 
 const Page = (await import("../page")).default;
 
@@ -37,6 +36,6 @@ describe("AccountingStatsPage", () => {
   it("transmet les statistiques de l'année au composant", async () => {
     const page = (await Page()) as ReactElement<{ children: ReactElement<Record<string, unknown>>[] }>;
     expect(mockCompute).toHaveBeenCalledWith("church-1", "year");
-    expect(page.props.children[2].props).toEqual({ initialData: { period: "year" }, churchId: "church-1" });
+    expect(page.props.children[1].props).toEqual({ initialData: { period: "year" }, churchId: "church-1" });
   });
 });

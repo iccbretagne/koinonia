@@ -74,37 +74,37 @@
 
 ## Lot 1 — Espaces, libellés, parenté (adresses actuelles)
 
-- [ ] **T1.1** [J] — Référence « avant » : script de test qui sérialise, par profil de l'audit
+- [x] **T1.1** [J] — Référence « avant » : script de test qui sérialise, par profil de l'audit
       (§2.1–2.3), l'ensemble des écrans atteignables (entrées de menu + liens de page de
       navigation), exécuté sur `main`. *(fichier : `src/lib/__tests__/fixtures/screens-before.json`)*
-- [ ] **T1.2** [J] — Extraire `loadNavigationInput(session)` du layout, sans changer requêtes ni
+- [x] **T1.2** [J] — Extraire `loadNavigationInput(session)` du layout, sans changer requêtes ni
       résultats. *(fichiers : `src/lib/navigation-input.ts`, `src/app/(auth)/layout.tsx`)*
       **Fait quand** : instantané `layout-props` identique.
-- [ ] **T1.3** [J] — Métadonnées `space`/`parent`/`label` par écran dans `paths.ts`, parenté H3
+- [x] **T1.3** [J] — Métadonnées `space`/`parent`/`label` par écran dans `paths.ts`, parenté H3
       comprise (événement vu par un STAR, `/absences`, `/care/request`, Mes réservations / Mes
       réponses, `ma-fiche`, `/messages/[id]`, onglets Finances/Trésorerie).
-- [ ] **T1.4** [J] — `navigation.ts` : onze espaces, blocs (Administration : *Église*, *Accès*,
+- [x] **T1.4** [J] — `navigation.ts` : onze espaces, blocs (Administration : *Église*, *Accès*,
       *Communication*, *Suivi* ; Événements : *Église*, *Inscriptions* ; Personnes : *Intégration*),
       Plateforme réservée au Super Admin, Finances, Pastoral, Ressources (Offres fusionnées).
-- [ ] **T1.5** [M] — Libellés du tableau de la spec dans la navigation, `SUBPAGE_LABELS`,
+- [x] **T1.5** [M] — Libellés du tableau de la spec dans la navigation, `SUBPAGE_LABELS`,
       `ITEM_LABELS`, `STANDALONE_LABELS`, en-têtes `PageHeader` concernés.
-- [ ] **T1.6** [J] — `parentLink`/`buildBreadcrumb` sur la chaîne de parents du registre ;
+- [x] **T1.6** [J] — `parentLink`/`buildBreadcrumb` sur la chaîne de parents du registre ;
       `fallbackParent` ne renvoie plus l'Accueil par défaut.
-- [ ] **T1.7** [P] [J] — Section « Demandes comptables » dans Mes demandes pour Ministre / Resp.
+- [x] **T1.7** [P] [J] — Section « Demandes comptables » dans Mes demandes pour Ministre / Resp.
       département (lecture de leur portée actuelle + « Nouvelle demande comptable ») ; entrée de
       menu comptable retirée de Demandes. *(fichiers : `requests/page.tsx`, `navigation.ts`)*
-- [ ] **T1.8** [P] [M] — Entrée « Mes inscriptions » (deux pages, `matchPrefixes`, barre d'onglets
+- [x] **T1.8** [P] [M] — Entrée « Mes inscriptions » (deux pages, `matchPrefixes`, barre d'onglets
       liens) et ses deux `count`. *(fichiers : `navigation-input.ts`, `billetterie/mes-reservations/page.tsx`, `formulaires/mes-reponses/page.tsx`)*
-- [ ] **T1.9** [P] [M] — Supprimer `AccountingNav` et ses usages.
-- [ ] **T1.10** [P] [M] — Ajuster les ancres `data-tour` dont la cible change. *(fichier : `src/lib/tour-steps.ts`)*
+- [x] **T1.9** [P] [M] — Supprimer `AccountingNav` et ses usages.
+- [x] **T1.10** [P] [M] — Ajuster les ancres `data-tour` dont la cible change. *(fichier : `src/lib/tour-steps.ts`)*
 
 ### Tests
 
-- [ ] **T1.11** [J] — Invariance des droits : écrans atteignables par profil = référence T1.1
+- [x] **T1.11** [J] — Invariance des droits : écrans atteignables par profil = référence T1.1
       (écart admis : « Mes inscriptions »). *(fichier : `src/lib/__tests__/navigation-invariance.test.ts`)*
-- [ ] **T1.12** [M] — Réécrire `navigation.test.ts` en tableau rôle × espaces ; `star-navigation.test.ts`.
-- [ ] **T1.13** [M] — `navigation-subpages.test.ts` : parent ≠ Accueil par défaut ; onglet ⇒ écran porteur.
-- [ ] **T1.14** [J] — Unicité des libellés par profil (exception de la question ouverte 2 seule
+- [x] **T1.12** [M] — Réécrire `navigation.test.ts` en tableau rôle × espaces ; `star-navigation.test.ts`.
+- [x] **T1.13** [M] — `navigation-subpages.test.ts` : parent ≠ Accueil par défaut ; onglet ⇒ écran porteur.
+- [x] **T1.14** [J] — Unicité des libellés par profil (exception de la question ouverte 2 seule
       admise) ; Plateforme absente pour l'Admin ; Finances sans entrée dans Demandes/Administration ;
       Suivi pastoral absent de Personnes.
 - [ ] **T1.15** [J] — Recette Playwright du lot 1 (5 scénarios) ; mesure du temps de rendu du layout avant/après.

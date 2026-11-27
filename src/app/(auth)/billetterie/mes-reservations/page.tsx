@@ -3,14 +3,19 @@ import { requireAuth } from "@/lib/auth";
 import { EmptyState, PageHeader, StatusChip } from "@/components/ui";
 import { formatDateTime } from "@/components/ticketing/format";
 import { listMyBookings } from "@/modules/ticketing";
+import { countMemberResponses } from "@/modules/forms";
+import { registry } from "@/lib/registry";
+import MyRegistrationsTabs from "@/components/MyRegistrationsTabs";
 
 /** Réservations liées au compte connecté (même email), sans passer par le lien personnel (spec 074). */
 export default async function MyBookingsPage() {
   const session = await requireAuth();
   const bookings = await listMyBookings(session.user.id);
+  const responses = registry.has("forms") ? await countMemberResponses(session.user.id).catch(() => 0) : 0;
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Billetterie" title="Mes réservations" description="Les réservations faites avec l'email de votre compte." />
+      <MyRegistrationsTabs reservations={bookings.length} responses={responses} active="reservations" />
       {bookings.length === 0 ? (
         <EmptyState icon={Ticket} title="Aucune réservation" description="Vos inscriptions aux événements apparaîtront ici." />
       ) : (

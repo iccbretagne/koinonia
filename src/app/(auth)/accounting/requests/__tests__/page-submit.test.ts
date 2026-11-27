@@ -24,7 +24,6 @@ vi.mock("@/modules/accounting", () => ({
   isRequestArchived: () => false,
 }));
 vi.mock("../AccountingDashboard", () => ({ default: () => createElement("div", { "data-dashboard": true }) }));
-vi.mock("../../AccountingNav", () => ({ default: () => null }));
 vi.mock("next/link", () => ({
   default: ({ href, children, ...rest }: { href: string; children: unknown }) =>
     createElement("a", { href, ...rest }, children as never),

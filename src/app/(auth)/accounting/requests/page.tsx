@@ -5,9 +5,6 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { PageHeader, buttonClasses } from "@/components/ui";
 import AccountingDashboard from "./AccountingDashboard";
-import { isShuttleVisible } from "@/modules/shuttle/auth";
-import { isTreasuryVisible } from "@/modules/treasury/auth";
-import AccountingNav from "../AccountingNav";
 import { getJustificationSettings, isJustificationClaimable, isRequestArchived } from "@/modules/accounting";
 import JustificationSettingsCard from "./JustificationSettingsCard";
 import { paths } from "@/lib/paths";
@@ -28,9 +25,6 @@ export default async function AccountingRequestsPage() {
   // `POST /api/accounting/requests` exige `accounting:submit` : le bouton ne s'affiche pas pour
   // un pasteur qui ne l'a pas (spec 092 — jamais de lien vers un refus).
   const canSubmit = perms.has("accounting:submit");
-  const canViewStats = perms.has("accounting:stats") || isPastoral;
-  const canViewShuttle = await isShuttleVisible(session, churchId);
-  const canViewTreasury = await isTreasuryVisible(session, churchId);
 
   // Scope des demandes visibles :
   // - canManage ou isPastoral → toutes les demandes de l'église
@@ -115,8 +109,6 @@ export default async function AccountingRequestsPage() {
           )
         }
       />
-
-      <AccountingNav canViewStats={canViewStats} canViewShuttle={canViewShuttle} canViewTreasury={canViewTreasury} active="requests" />
 
       <AccountingDashboard
         requests={requests.map((r) => ({

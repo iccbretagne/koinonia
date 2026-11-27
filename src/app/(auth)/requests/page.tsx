@@ -20,17 +20,20 @@ export default async function MyRequestsPage() {
   }
   await requireChurchPermission("members:view", churchId);
 
-  // Les demandes comptables ont leur propre espace (spec 043) : on n'en duplique plus un extrait
-  // ici, un lien en tête de page y renvoie.
+  // Les demandes comptables ont leur propre écran (spec 043) : on n'en duplique pas un extrait ici.
+  // Le Ministre et le Resp. département (accounting:view sans accounting:manage) n'ont plus d'entrée
+  // de menu comptable (spec 092, lot 1) : cette section leur donne la lecture de leur portée et la
+  // création, sans rien ouvrir de plus que ce que les écrans vérifient déjà.
   const churchPermissions = new Set(
     session.user.churchRoles
       .filter((r) => r.churchId === churchId)
       .flatMap((r) => rolePermissions[r.role] ?? [])
   );
   const isPastoral = (session.user.pastoralChurchIds ?? []).includes(churchId);
-  const showAccountingLink =
+  const canSubmitAccounting = churchPermissions.has("accounting:submit");
+  const showAccountingSection =
     registry.has("accounting") &&
-    (churchPermissions.has("accounting:submit") || isPastoral);
+    (canSubmitAccounting || churchPermissions.has("accounting:view") || isPastoral);
 
   const decoratedRequests = await loadMyRequests(session.user.id, churchId);
 
@@ -45,12 +48,6 @@ export default async function MyRequestsPage() {
         description="Annonces, visuels et demandes que vous avez envoyés, et leur avancement."
         actions={
           <>
-            {showAccountingLink && (
-              <Link href={paths.accounting.requests()} className={buttonClasses("secondary")}>
-                <Wallet aria-hidden="true" className="size-4" strokeWidth={1.75} />
-                Demandes comptables
-              </Link>
-            )}
             <Link href={paths.requests.newRequest()} className={buttonClasses("primary")}>
               <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
               Nouvelle demande
@@ -58,6 +55,26 @@ export default async function MyRequestsPage() {
           </>
         }
       />
+
+      {showAccountingSection && (
+        <section aria-labelledby="accounting-title" className="flex flex-col gap-3">
+          <h2 id="accounting-title" className="font-display text-[17px] font-semibold leading-6 text-ink">
+            Demandes comptables
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            <Link href={paths.accounting.requests()} className={buttonClasses("secondary")}>
+              <Wallet aria-hidden="true" className="size-4" strokeWidth={1.75} />
+              Voir les demandes comptables
+            </Link>
+            {canSubmitAccounting && (
+              <Link href={paths.accounting.newRequest()} className={buttonClasses("secondary")}>
+                <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                Nouvelle demande comptable
+              </Link>
+            )}
+          </div>
+        </section>
+      )}
 
       {appointmentRequests.length > 0 && (
         <section aria-labelledby="appointments-title" className="flex flex-col gap-3">

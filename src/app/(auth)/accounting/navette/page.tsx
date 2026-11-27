@@ -1,9 +1,8 @@
 import { getCurrentChurchId, requireAuth } from "@/lib/auth";
-import { registry, rolePermissions } from "@/lib/registry";
+import { registry } from "@/lib/registry";
 import { getLedger, getShuttleSettings, listRentals } from "@/modules/shuttle";
 import { requireShuttleAccess } from "@/modules/shuttle/auth";
 import { ledgerQuerySchema } from "@/modules/shuttle/schemas";
-import AccountingNav from "../AccountingNav";
 import ShuttleClient, { type ShuttleView } from "./ShuttleClient";
 
 const VIEWS: readonly ShuttleView[] = ["releve", "repartition", "cautions", "locations", "reglages"];
@@ -40,26 +39,14 @@ export default async function ShuttlePage({
     access.manager ? getShuttleSettings(churchId) : Promise.resolve(null),
   ]);
 
-  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
-  const perms = new Set(roles.flatMap((r) => rolePermissions[r] ?? []));
-  const canViewRequests = perms.has("accounting:view");
   // Comptes de trésorerie proposés pour un abondement (spec 076), à la compta si le module est actif.
   const treasuryAccounts =
     access.manager && registry.has("treasury")
       ? (await import("@/modules/treasury").then((m) => m.listAccounts(churchId, { includeArchived: false }))).map((a) => ({ id: a.id, name: a.name }))
       : [];
-  const canViewTreasury = registry.has("treasury") && perms.has("treasury:manage");
 
   return (
     <div className="space-y-6">
-      {canViewRequests && (
-        <AccountingNav
-          canViewStats={perms.has("accounting:stats")}
-          canViewShuttle
-          canViewTreasury={canViewTreasury}
-          active="navette"
-        />
-      )}
       <ShuttleClient
         ledger={ledger}
         rentals={rentals}
