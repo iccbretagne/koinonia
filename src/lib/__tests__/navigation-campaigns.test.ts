@@ -42,7 +42,8 @@ describe("navigation — collectes (spec 090)", () => {
     expect(trail("/collectes")).toEqual(["Demandes", "Questionnaires"]);
     expect(trail("/collectes/nouvelle")).toEqual(["Demandes", "Questionnaires", "Nouvelle campagne"]);
     expect(trail("/collectes/import")).toEqual(["Demandes", "Questionnaires", "Import"]);
-    expect(trail("/collectes/c-1")).toEqual(["Demandes", "Questionnaires", "Détail"]);
+    expect(trail("/collectes/c-1")).toEqual(["Demandes", "Questionnaires", "Campagne"]);
+    expect(trail("/collectes/r/a-1")).toEqual(["Demandes", "Questionnaires", "Contribution"]);
     expect(trail("/collectes/c-1/editer")).toEqual(["Demandes", "Questionnaires", "Modification"]);
     expect(trail("/collectes/c-1/import")).toEqual(["Demandes", "Questionnaires", "Import"]);
     expect(trail("/collectes/c-1/apercu/f-1")).toEqual(["Demandes", "Questionnaires", "Aperçu"]);

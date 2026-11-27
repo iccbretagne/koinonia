@@ -97,7 +97,7 @@ export default function SettingsTab({ campaign }: { readonly campaign: Campaign 
 
       <MessageTemplatesForm campaign={campaign} />
 
-      <section className="flex flex-col gap-3 rounded-card border border-line bg-surface px-4 py-4">
+      <section className="flex flex-col gap-3">
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Définition de la campagne</h2>
         <p className="text-[15px] leading-[22px] text-ink-muted">
           Questionnaires, questions, destinataires et répondants se mettent à jour en réimportant la définition JSON. Aucune réponse
@@ -147,7 +147,7 @@ function MessageTemplatesForm({ campaign }: { readonly campaign: Campaign }) {
   }
 
   return (
-    <form className="flex flex-col gap-4 rounded-card border border-line bg-surface px-4 py-4" onSubmit={submit} aria-labelledby="templates-title">
+    <form className="flex flex-col gap-4" onSubmit={submit} aria-labelledby="templates-title">
       <div className="flex flex-col gap-1">
         <h2 id="templates-title" className="font-display text-[17px] font-semibold leading-6 text-ink">
           Modèles de messages

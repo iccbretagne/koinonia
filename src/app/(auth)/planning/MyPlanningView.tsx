@@ -303,9 +303,9 @@ export default function MyPlanningView({
                       {tasks.length > 0 && (
                         <div className="mt-1 flex flex-wrap gap-1">
                           {tasks.map((task) => (
-                            <span key={task} className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold leading-4 text-brand-text">
+                            <StatusChip key={task} tone="brand">
                               {task}
-                            </span>
+                            </StatusChip>
                           ))}
                         </div>
                       )}

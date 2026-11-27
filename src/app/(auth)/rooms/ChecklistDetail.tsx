@@ -44,7 +44,7 @@ function Section({ title, children }: { readonly title: string; readonly childre
   return (
     <div>
       <h3 className="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1">{title}</h3>
-      <dl className="space-y-1 bg-surface-sunken rounded-lg p-3 text-sm">{children}</dl>
+      <dl className="space-y-1 rounded-control bg-surface-sunken p-3 text-sm">{children}</dl>
     </div>
   );
 }

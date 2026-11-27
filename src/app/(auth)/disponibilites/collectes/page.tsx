@@ -5,13 +5,14 @@ import { prisma } from "@/lib/prisma";
 import { listCollectionMonths } from "@/modules/planning";
 import AvailabilityTabs from "@/components/AvailabilityTabs";
 import { buttonClasses } from "@/components/ui/button-classes";
+import PageHeader from "@/components/ui/PageHeader";
 import CollectionsPanel from "./CollectionsPanel";
 
 /** Collectes par mois (spec 058) : état de chaque mois et ouverture anticipée — `availability:settings`. */
 export default async function AvailabilityCollectionsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-[15px] leading-[22px] text-ink-muted">Aucune église sélectionnée.</p>;
   await requireChurchPermission("availability:settings", churchId);
 
   const permissions = new Set(
@@ -23,20 +24,17 @@ export default async function AvailabilityCollectionsPage() {
   ]);
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="flex max-w-2xl flex-col gap-6">
       <AvailabilityTabs self={!!link} team={session.user.isSuperAdmin || permissions.has("absences:view")} collections />
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">Collectes des disponibilités</h1>
-          <p className="text-sm text-ink-muted mt-1">
-            Chaque collecte s&apos;ouvre automatiquement selon les réglages. Vous pouvez ouvrir celle d&apos;un mois à
-            l&apos;avance : les STAR concernés sont notifiés immédiatement.
-          </p>
-        </div>
-        <Link href="/disponibilites/parametres" className={buttonClasses("ghost", "md")}>
-          Réglages
-        </Link>
-      </div>
+      <PageHeader
+        title="Collectes des disponibilités"
+        description="Chaque collecte s'ouvre automatiquement selon les réglages. Vous pouvez ouvrir celle d'un mois à l'avance : les STAR concernés sont notifiés immédiatement."
+        actions={
+          <Link href="/disponibilites/parametres" className={buttonClasses("secondary")}>
+            Modifier les réglages
+          </Link>
+        }
+      />
       <CollectionsPanel
         churchId={churchId}
         months={months.map((m) => ({

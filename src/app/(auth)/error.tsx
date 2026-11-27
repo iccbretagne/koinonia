@@ -1,7 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { TriangleAlert } from "lucide-react";
+import { Button, buttonClasses } from "@/components/ui";
 
 const MESSAGES: Record<string, { title: string; body: string }> = {
   FORBIDDEN: {
@@ -24,37 +27,25 @@ export default function AuthError({ error }: { readonly error: Error & { digest?
   const known = MESSAGES[error.message];
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-surface rounded-lg border border-line p-8 text-center">
-        <div className="w-16 h-16 bg-danger-soft rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg aria-hidden="true" className="w-8 h-8 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-            />
-          </svg>
+    <div className="flex min-h-[60vh] items-center justify-center p-4">
+      <div className="flex w-full max-w-md flex-col items-center gap-2 rounded-card border border-line bg-surface p-8 text-center shadow-card">
+        <div className="mb-2 grid size-14 place-items-center rounded-full bg-danger-soft text-danger">
+          <TriangleAlert aria-hidden="true" className="size-6" strokeWidth={1.75} />
         </div>
-        <h1 className="text-xl font-bold text-ink mb-2">
+        <h1 className="font-display text-[22px] font-bold leading-7 text-balance text-ink">
           {known?.title ?? "Une erreur est survenue"}
         </h1>
-        <p className="text-sm text-ink-muted mb-6">
+        <p className="text-[15px] leading-[22px] text-ink-muted">
           {known?.body ?? "Impossible d'afficher cette page. Réessayez ou revenez à l'accueil."}
         </p>
-        <div className="flex items-center justify-center gap-3">
-          <button
-            onClick={() => router.back()}
-            className="px-4 py-2 text-sm font-medium rounded-lg border border-line text-ink-muted hover:bg-surface-sunken"
-          >
-            Page précédente
-          </button>
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="px-4 py-2 text-sm font-medium rounded-lg bg-brand text-on-brand hover:bg-brand-hover"
-          >
-            Accueil
-          </button>
+        <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-center sm:gap-3">
+          <Button type="button" variant="secondary" onClick={() => router.back()}>
+            Revenir à la page précédente
+          </Button>
+          {/* La racine redirige vers l'accueil du rôle (un STAR n'a pas accès à /dashboard). */}
+          <Link href="/" className={buttonClasses("primary")}>
+            Aller à l&apos;accueil
+          </Link>
         </div>
       </div>
     </div>

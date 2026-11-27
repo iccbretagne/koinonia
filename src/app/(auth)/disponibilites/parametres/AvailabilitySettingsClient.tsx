@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import Checkbox from "@/components/ui/Checkbox";
 import Alert from "@/components/ui/Alert";
 import { useToast } from "@/components/ui/Toast";
 
@@ -57,9 +58,9 @@ export default function AvailabilitySettingsClient({
   }
 
   return (
-    <div className="bg-surface rounded-xl border border-line p-4 md:p-5 space-y-4">
-      <label className="flex items-center gap-3 min-h-[44px] text-sm text-ink">
-        <input type="checkbox" className="h-5 w-5" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
+    <div className="flex max-w-2xl flex-col gap-4">
+      <label className="flex min-h-11 items-center gap-3 text-[15px] leading-[22px] text-ink">
+        <Checkbox checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
         <span>Collecte automatique activée</span>
       </label>
       <Input
@@ -87,7 +88,7 @@ export default function AvailabilitySettingsClient({
         onChange={(e) => setRelance(e.target.value)}
       />
       <div className="border-t border-line pt-4 space-y-4">
-        <h2 className="text-base font-semibold text-ink">Changements de planning</h2>
+        <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Changements de planning</h2>
         <Input
           label="Délai avant l'envoi (minutes)"
           type="number"

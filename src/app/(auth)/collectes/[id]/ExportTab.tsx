@@ -37,7 +37,7 @@ export default function ExportTab({
         export est journalisé.
       </Alert>
 
-      <section className="flex flex-col gap-3 rounded-card border border-line bg-surface px-4 py-4">
+      <section className="flex flex-col gap-3">
         <div className="flex items-start gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-control bg-brand-soft text-brand-text">
             <FileSpreadsheet aria-hidden="true" className="size-5" strokeWidth={1.75} />
@@ -55,7 +55,7 @@ export default function ExportTab({
         </a>
       </section>
 
-      <section className="flex flex-col gap-3 rounded-card border border-line bg-surface px-4 py-4">
+      <section className="flex flex-col gap-3">
         <div className="flex items-start gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-control bg-brand-soft text-brand-text">
             <FileJson aria-hidden="true" className="size-5" strokeWidth={1.75} />

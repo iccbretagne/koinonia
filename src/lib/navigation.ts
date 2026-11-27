@@ -587,7 +587,11 @@ export const ACCOUNT_PAGES: readonly { href: string; label: string; icon: Lucide
  */
 export const INSTALL_PAGE = { href: "/installer", label: "Installer l'application", icon: Download } as const;
 
-/** Libellé du dernier segment d'une sous-page que la navigation ne nomme pas. */
+/**
+ * Libellé d'une sous-page que la navigation ne nomme pas, par son dernier segment — ou par ses deux
+ * derniers (`parent/segment`) quand le même segment désigne des pages différentes selon l'espace.
+ * `navigation-subpages.test.ts` vérifie qu'aucune page de `(auth)` ne retombe sur « Détail ».
+ */
 const SUBPAGE_LABELS: Record<string, string> = {
   "star-view": "Planning des STAR",
   calendar: "Calendrier",
@@ -600,7 +604,6 @@ const SUBPAGE_LABELS: Record<string, string> = {
   settings: "Paramètres",
   ecouter: "(re)Écouter",
   production: "Production",
-  events: "Photos",
   projects: "Projets",
   galerie: "Galerie",
   requests: "Demandes",
@@ -609,17 +612,59 @@ const SUBPAGE_LABELS: Record<string, string> = {
   nouvelle: "Nouvelle campagne",
   import: "Import",
   editer: "Modification",
+  onboard: "Nouvelle église",
+  badges: "Badges",
+  controle: "Contrôle d'entrée",
+  etiquettes: "Étiquettes",
+  images: "Images du site",
+  restauration: "Restauration",
+  collections: "Partages",
+  assistants: "Assistants connectés",
+  checklists: "Contrôle des mains courantes",
+  entretiens: "Entretiens",
+  "ma-fiche": "Ma fiche",
+  "mes-reservations": "Mes réservations",
+  "mes-reponses": "Mes réponses",
+  slide: "Slide de projection",
+  "media/events": "Photos",
+  "planning/events": "Agenda de l'église",
+  "disponibilites/collectes": "Collectes",
+  "care/request": "Demande de RDV",
 };
 
-/** Sous-pages nommées par leur avant-dernier segment (`…/apercu/<id>`). */
-const PARENT_SUBPAGE_LABELS: Record<string, string> = {
+/**
+ * Sous-pages nommées par leur avant-dernier segment : l'objet ouvert depuis une liste
+ * (`…/events/<id>` → « Événement »), ou `…/apercu/<id>`.
+ */
+const ITEM_LABELS: Record<string, string> = {
   apercu: "Aperçu",
+  agenda: "Profil pastoral",
+  billetterie: "Événement",
+  candidatures: "Candidature",
+  churches: "Église",
+  collectes: "Campagne",
+  ecouter: "Culte",
+  events: "Événement",
+  followups: "Suivi",
+  formulaires: "Formulaire",
+  jobs: "Offre",
+  messages: "Message",
+  missions: "Mission",
+  production: "Culte",
+  profiles: "Profil freelance",
+  projects: "Projet",
+  r: "Contribution",
+  requests: "Demande",
+  roles: "Rôle",
+  seekers: "Recherche d'emploi",
+  users: "Utilisateur",
 };
 
 function subpageLabel(pathname: string): string {
   const segments = pathname.split("/").filter(Boolean);
   const last = segments.at(-1) ?? "";
-  return SUBPAGE_LABELS[last] ?? PARENT_SUBPAGE_LABELS[segments.at(-2) ?? ""] ?? "Détail";
+  const parent = segments.at(-2) ?? "";
+  return SUBPAGE_LABELS[`${parent}/${last}`] ?? SUBPAGE_LABELS[last] ?? ITEM_LABELS[parent] ?? "Détail";
 }
 
 function findPage(spaces: readonly NavSpace[], active: ActiveNav): { space: NavSpace; page: NavPage | null } | null {

@@ -73,7 +73,7 @@ export default async function StarWeeklyEventsPage({
             description="Passez à la semaine suivante pour voir les prochains événements."
             action={
               <Link href={`/planning/events?week=${nextWeek}`} className={buttonClasses("secondary")}>
-                Semaine suivante
+                Voir la semaine suivante
               </Link>
             }
           />

@@ -2,11 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Mail, Phone } from "lucide-react";
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import Textarea from "@/components/ui/Textarea";
 import { useToast } from "@/components/ui/Toast";
+import { buttonClasses } from "@/components/ui/button-classes";
+
+const contactLinkClasses = `${buttonClasses("ghost", "sm")} min-h-11 max-w-full justify-start break-all sm:min-h-9`;
 
 /**
  * Gestes du STAR sur ses services (spec 061) : « Je ne peux plus » (désistement, message
@@ -155,22 +159,22 @@ export function DeadlinePassedNotice({ contacts }: { readonly contacts: LeaderCo
       Si tu ne peux plus servir, contacte directement ton responsable
       {contacts.length > 0 ? " :" : "."}
       {contacts.length > 0 && (
-        <ul className="mt-1 flex flex-col gap-0.5">
+        <ul className="mt-2 flex flex-col gap-2">
           {contacts.map((c) => (
-            <li key={c.email} className="break-words">
+            <li key={c.email} className="flex flex-col items-start gap-1">
               <span className="font-semibold">{c.name}</span>
-              {" · "}
-              <a href={`mailto:${c.email}`} className="underline">
-                {c.email}
-              </a>
-              {c.phone && (
-                <>
-                  {" · "}
-                  <a href={`tel:${c.phone}`} className="underline">
+              <span className="-ml-3 flex flex-wrap gap-x-1">
+                <a href={`mailto:${c.email}`} className={contactLinkClasses}>
+                  <Mail aria-hidden="true" className="size-4 shrink-0" strokeWidth={1.75} />
+                  {c.email}
+                </a>
+                {c.phone && (
+                  <a href={`tel:${c.phone}`} className={contactLinkClasses}>
+                    <Phone aria-hidden="true" className="size-4 shrink-0" strokeWidth={1.75} />
                     {c.phone}
                   </a>
-                </>
-              )}
+                )}
+              </span>
             </li>
           ))}
         </ul>
