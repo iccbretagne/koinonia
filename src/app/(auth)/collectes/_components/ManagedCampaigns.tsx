@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Session } from "next-auth";
-import { ChevronRight, ClipboardList, Upload } from "lucide-react";
+import { ChevronRight, ClipboardList, Plus, Upload } from "lucide-react";
 import { getCurrentChurchId } from "@/lib/auth";
 import { hasCampaignsManage } from "@/modules/campaigns/auth";
 import { listMyCampaigns } from "@/modules/campaigns";
@@ -12,7 +12,7 @@ import { CAMPAIGN_STATUS_TONES, formatDay, percent } from "./display";
 
 /**
  * Campagnes que je pilote dans l'église courante (spec 090) : titre, état, échéance, avancement.
- * Le bouton d'import n'apparaît qu'avec `campaigns:manage` dans cette église. Rien n'est rendu si
+ * Les boutons « Nouvelle campagne » et « Importer » n'apparaissent qu'avec `campaigns:manage` dans cette église. Rien n'est rendu si
  * je ne pilote aucune campagne et ne peux pas en créer.
  */
 export default async function ManagedCampaigns({ session }: { readonly session: Session }) {
@@ -22,11 +22,17 @@ export default async function ManagedCampaigns({ session }: { readonly session: 
   const campaigns = managed.filter((c) => c.churchId === churchId);
   if (campaigns.length === 0 && !canCreate) return null;
 
-  const importLink = canCreate ? (
-    <Link href="/collectes/import" className={buttonClasses("secondary", "sm")}>
-      <Upload aria-hidden="true" className="size-4" strokeWidth={1.75} />
-      Importer une campagne
-    </Link>
+  const actions = canCreate ? (
+    <div className="flex flex-wrap gap-2">
+      <Link href="/collectes/nouvelle" className={buttonClasses("primary", "sm")}>
+        <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
+        Nouvelle campagne
+      </Link>
+      <Link href="/collectes/import" className={buttonClasses("secondary", "sm")}>
+        <Upload aria-hidden="true" className="size-4" strokeWidth={1.75} />
+        Importer
+      </Link>
+    </div>
   ) : null;
 
   return (
@@ -35,15 +41,15 @@ export default async function ManagedCampaigns({ session }: { readonly session: 
         <h2 id="managed-campaigns" className="font-display text-[17px] font-semibold leading-6 text-ink">
           Campagnes que je pilote
         </h2>
-        {campaigns.length > 0 && importLink}
+        {campaigns.length > 0 && actions}
       </div>
       {campaigns.length === 0 ? (
         <div className="rounded-card border border-line bg-surface">
           <EmptyState
             icon={ClipboardList}
             title="Aucune campagne"
-            description="Importez la définition d'une campagne pour préparer ses questionnaires."
-            action={importLink}
+            description="Composez une campagne avec l'éditeur ou importez sa définition pour préparer ses questionnaires."
+            action={actions}
             size="sm"
           />
         </div>
