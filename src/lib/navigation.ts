@@ -630,7 +630,26 @@ const SUBPAGE_LABELS: Record<string, string> = {
   "planning/events": "Agenda de l'église",
   "disponibilites/collectes": "Collectes",
   "care/request": "Demande de RDV",
+  "requests/new": "Nouvelle demande",
+  "messages/new": "Nouveau message",
+  "users/new": "Nouvel utilisateur",
+  "agenda/new": "Nouvelle entrée",
+  "jobs/new": "Nouvelle offre",
+  "missions/new": "Nouvelle mission",
+  "profiles/new": "Nouveau profil freelance",
+  "seekers/new": "Nouvelle recherche d'emploi",
+  "projects/new": "Nouveau projet",
+  "events/new": "Nouvel événement",
 };
+
+/**
+ * Pages connectées hors des espaces et du menu du compte, ouvertes depuis un lien (bandeau,
+ * notification, assistant IA) : un seul segment de fil d'Ariane, nommé par leur préfixe.
+ */
+const STANDALONE_LABELS: readonly { readonly prefix: string; readonly label: string }[] = [
+  { prefix: "/messages", label: "Message de l'administration" },
+  { prefix: "/mcp/autoriser", label: "Connecter un assistant IA" },
+];
 
 /**
  * Sous-pages nommées par leur avant-dernier segment : l'objet ouvert depuis une liste
@@ -675,7 +694,8 @@ function findPage(spaces: readonly NavSpace[], active: ActiveNav): { space: NavS
 
 /** Le chemin courant descend-il sous la page de navigation (page de détail) ? */
 function isDeeper(pathname: string, page: NavPage): boolean {
-  if (page.deptId) return false;
+  // Page de département : seule la grille `/dashboard` lui correspond, ses statistiques sont plus bas.
+  if (page.deptId) return pathOf(pathname) !== "/dashboard";
   return !pagePrefixes(page).includes(pathname) && pathname !== pathOf(page.href);
 }
 
@@ -688,7 +708,10 @@ export function buildBreadcrumb(spaces: readonly NavSpace[], pathname: string, d
 
   if (!found) {
     const account = ACCOUNT_PAGES.find((p) => matchesPath(pathname, p.href));
-    if (!account) return [];
+    if (!account) {
+      const standalone = STANDALONE_LABELS.find((p) => matchesPath(pathname, p.prefix));
+      return standalone ? [{ label: standalone.label }] : [];
+    }
     if (pathname === account.href) return [{ label: account.label }];
     return [{ label: account.label, href: account.href }, { label: subpageLabel(pathname) }];
   }

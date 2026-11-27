@@ -109,6 +109,41 @@ describe("navigation — sous-pages nommées", () => {
     expect(last("/rooms/checklists")).toBe("Contrôle des mains courantes");
   });
 
+  it("sous-pages nommées par leur objet : détails, créations, pages hors espace", () => {
+    const last = (p: string, dept: string | null = null) => buildBreadcrumb(spaces, p, dept).at(-1)?.label;
+    expect(last("/accounting/requests/x1")).toBe("Demande");
+    expect(last("/accounting/requests/new")).toBe("Nouvelle demande");
+    expect(last("/requests/new")).toBe("Nouvelle demande");
+    expect(last("/admin/messages/new")).toBe("Nouveau message");
+    expect(last("/admin/messages/x1")).toBe("Message");
+    expect(last("/admin/users/new")).toBe("Nouvel utilisateur");
+    expect(last("/admin/access/users/x1")).toBe("Utilisateur");
+    expect(last("/admin/churches/x1")).toBe("Église");
+    expect(last("/dons/slide")).toBe("Slide de projection");
+    expect(last("/agenda/schedule")).toBe("Planification");
+    expect(last("/agenda/new")).toBe("Nouvelle entrée");
+    expect(last("/agenda/x1")).toBe("Profil pastoral");
+    expect(last("/candidatures/entretiens")).toBe("Entretiens");
+    expect(last("/candidatures/ma-fiche")).toBe("Ma fiche");
+    expect(last("/formulaires/mes-reponses")).toBe("Mes réponses");
+    expect(last("/billetterie/x1/badges")).toBe("Badges");
+    expect(last("/billetterie/x1/images")).toBe("Images du site");
+    expect(last("/billetterie/mes-reservations")).toBe("Mes réservations");
+    expect(last("/media/events/new")).toBe("Nouvel événement");
+    expect(last("/jobs/freelance/missions/new")).toBe("Nouvelle mission");
+    expect(last("/messages/x1")).toBe("Message de l'administration");
+    expect(last("/mcp/autoriser")).toBe("Connecter un assistant IA");
+    expect(buildBreadcrumb(spaces, "/dashboard/stats", "d1").map((c) => c.label)).toEqual(["Planning", "Louange", "Son", "Statistiques"]);
+    expect(buildBreadcrumb(spaces, "/dashboard", "d1").at(-1)?.label).toBe("Son");
+  });
+
+  it("chaque page connectée hors redirection a un fil d'Ariane", () => {
+    const redirects = ["/absences", "/admin"];
+    const pastoral = (p: string) => p === "/pastoral" || p.startsWith("/pastoral/");
+    const empty = pages.filter((p) => !redirects.includes(p) && !pastoral(p) && buildBreadcrumb(spaces, p).length === 0);
+    expect(empty).toEqual([]);
+  });
+
   it("un STAR : l'agenda de l'église est sa page d'espace, ses sous-pages de profil sont nommées", () => {
     const star = buildSpaces({
       departments: [],
