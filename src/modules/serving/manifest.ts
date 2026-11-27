@@ -21,7 +21,7 @@ export const servingModule = defineModule({
   dependsOn: ["core", "planning", "storage"],
 
   routes: {
-    authenticated: [{ path: "/candidatures" }],
+    authenticated: [{ path: "/personnes/candidatures" }, { path: "/profile/candidature" }],
     api: [{ path: "/api/serving" }],
     public: [
       { path: "/servir" },

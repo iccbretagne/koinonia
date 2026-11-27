@@ -92,7 +92,7 @@ describe("loadTodoQueues", () => {
     m.resolveRequestQueueAccess.mockResolvedValue({ configured: true, allowed: true, canManage: false });
     m.countRequestQueueTodo.mockResolvedValue(0);
     expect(await loadTodoQueues(session("SECRETARY"), "ch1")).toEqual([
-      { key: "secretariat", label: "Demandes du secrétariat", count: 0, href: "/secretariat/requests" },
+      { key: "secretariat", label: "Demandes du secrétariat", count: 0, href: "/demandes/traitement" },
     ]);
   });
 
@@ -107,9 +107,9 @@ describe("loadTodoQueues", () => {
     m.accountingQueueCounts.mockResolvedValue({ submitted: 2, processing: 1, toPay: 4, toJustify: 3 });
     const queues = await loadTodoQueues(session("ACCOUNTANT"), "ch1");
     expect(queues.map((q) => [q.key, q.count, q.href])).toEqual([
-      ["accounting-validate", 3, "/accounting/requests"],
-      ["accounting-pay", 4, "/accounting/requests"],
-      ["accounting-justify", 3, "/accounting/requests?filtre=justifier"],
+      ["accounting-validate", 3, "/finances/demandes"],
+      ["accounting-pay", 4, "/finances/demandes"],
+      ["accounting-justify", 3, "/finances/demandes?filtre=justifier"],
     ]);
   });
 
@@ -123,14 +123,14 @@ describe("loadTodoQueues", () => {
       ],
     });
     const byKey = Object.fromEntries((await loadTodoQueues(session("ADMIN"), "ch1")).map((q) => [q.key, q.href]));
-    expect(byKey.ticketing).toBe("/billetterie/ev-1?vue=reglements");
-    expect(byKey.campaigns).toBe("/collectes?a-valider=1");
+    expect(byKey.ticketing).toBe("/evenements/billetterie/ev-1?vue=reglements");
+    expect(byKey.campaigns).toBe("/demandes/questionnaires?a-valider=1");
 
     m.countPendingDeclarations.mockResolvedValue({ count: 3, perEvent: [{ eventId: "ev-1", count: 1 }, { eventId: "ev-2", count: 2 }] });
     m.countSubmittedContributions.mockResolvedValue({ count: 1, perCampaign: [{ campaignId: "c1", count: 1 }] });
     const again = Object.fromEntries((await loadTodoQueues(session("ADMIN"), "ch1")).map((q) => [q.key, q.href]));
-    expect(again.ticketing).toBe("/billetterie?a-traiter=reglements");
-    expect(again.campaigns).toBe("/collectes/c1?onglet=suivi&etat=soumis");
+    expect(again.ticketing).toBe("/evenements/billetterie?a-traiter=reglements");
+    expect(again.campaigns).toBe("/demandes/questionnaires/c1?onglet=suivi&etat=soumis");
   });
 
   it("remplacements : le lien principal ouvre le plus proche, sans donnée nominative", async () => {
@@ -146,8 +146,8 @@ describe("loadTodoQueues", () => {
     m.careQueueCounts.mockResolvedValue({ requests: 1, followUps: 2 });
     m.countServingQueue.mockResolvedValue({ view: "department", count: 1 });
     const byKey = Object.fromEntries((await loadTodoQueues(session("ADMIN"), "ch1")).map((q) => [q.key, q]));
-    expect(byKey.care).toMatchObject({ count: 3, href: "/care" });
-    expect(byKey.serving).toMatchObject({ count: 1, href: "/candidatures?onglet=departments" });
+    expect(byKey.care).toMatchObject({ count: 3, href: "/pastoral/suivi" });
+    expect(byKey.serving).toMatchObject({ count: 1, href: "/personnes/candidatures?onglet=departments" });
   });
 
   it("une file en erreur disparaît seule, les autres restent", async () => {

@@ -241,7 +241,7 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     questions: ["Changer ma réponse au formulaire", "annuler mon inscription", "je me suis trompé dans le formulaire"],
     answer:
       "Sans compte, ouvrez le lien « Gérer ma réponse » de l'accusé de réception, ou cliquez sur « Retrouver ma réponse » dans le formulaire pour le recevoir à nouveau par email. Avec un compte, rouvrez le formulaire ou « Formulaires › Mes réponses ». La modification reste possible tant que le formulaire accepte des réponses ; un sondage anonyme ne se modifie pas. En liste d'attente, une place qui se libère vous est proposée par notification ou par email : acceptez-la ou déclinez-la depuis le même lien avant la date indiquée.",
-    href: paths.formulaires.mesReponses(),
+    href: paths.events.mesInscriptions({ vue: "formulaires" }),
     hrefLabel: "Mes réponses",
     audience: {},
   },

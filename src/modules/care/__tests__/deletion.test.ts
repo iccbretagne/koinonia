@@ -52,7 +52,7 @@ describe("deleteAppointmentRequest", () => {
     });
     expect(prismaMock.notification.deleteMany).toHaveBeenCalledWith({
       where: {
-        OR: [{ entityType: "AppointmentRequest", entityId: "r-1" }, { link: { in: ["/care/requests/r-1"] } }],
+        OR: [{ entityType: "AppointmentRequest", entityId: "r-1" }, { link: { in: ["/pastoral/suivi/rendez-vous/r-1", "/care/requests/r-1"] } }],
       },
     });
     expect(prismaMock.appointmentRequest.deleteMany).toHaveBeenCalledWith({ where: { id: "r-1", churchId } });
@@ -103,7 +103,7 @@ describe("deleteMsdpFollowUp", () => {
 
     expect(prismaMock.auditLog.deleteMany).toHaveBeenCalledWith({ where: { entityType: "MsdpFollowUp", entityId: "f-1" } });
     expect(prismaMock.notification.deleteMany).toHaveBeenCalledWith({
-      where: { OR: [{ entityType: "MsdpFollowUp", entityId: "f-1" }, { link: { in: ["/care/followups/f-1"] } }] },
+      where: { OR: [{ entityType: "MsdpFollowUp", entityId: "f-1" }, { link: { in: ["/pastoral/suivi/convertis/f-1", "/care/followups/f-1"] } }] },
     });
     expect(prismaMock.msdpFollowUp.deleteMany).toHaveBeenCalledWith({ where: { id: "f-1", churchId } });
     expect(prismaMock.appointmentRequest.deleteMany).not.toHaveBeenCalled();

@@ -57,12 +57,12 @@ describe("module coupé ⇒ adresses orphelines (ADR-0012 amendé)", () => {
   it.each([
     ["messages", "/admin/messages"],
     ["messages", "/admin/messages/x"],
-    ["shuttle", "/accounting/navette"],
+    ["shuttle", "/finances/navette"],
     ["shuttle", "/api/accounting/navette"],
-    ["treasury", "/accounting/tresorerie"],
-    ["assistant", "/admin/assistant"],
-    ["mcp", "/admin/mcp"],
-    ["ticketing", "/admin/site-domains"],
+    ["treasury", "/finances/tresorerie"],
+    ["assistant", "/plateforme/assistant"],
+    ["mcp", "/plateforme/mcp"],
+    ["ticketing", "/plateforme/site-domains"],
   ])("%s coupé : %s est orphelin (sans repli sur le préfixe parent)", (off, path) => {
     const table = new RouteTable([...allManifests], NOYAU_ROUTES, names.filter((n) => n !== off));
     expect(table.resolveDeclared(path).owner).toBe(off);

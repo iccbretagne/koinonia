@@ -4,15 +4,15 @@ exports[`AuthLayout — props de navigation > Admin aussi Admin d'une autre égl
 {
   "agendaLinks": [
     {
-      "href": "/agenda",
+      "href": "/pastoral/agenda",
       "label": "Agenda des pasteurs",
     },
     {
-      "href": "/agenda/schedule",
+      "href": "/pastoral/planification",
       "label": "Planification",
     },
     {
-      "href": "/care",
+      "href": "/pastoral/suivi",
       "label": "Suivi pastoral",
     },
   ],
@@ -36,7 +36,7 @@ exports[`AuthLayout — props de navigation > Admin aussi Admin d'une autre égl
   ],
   "configLinks": [
     {
-      "href": "/admin/churches/church-1",
+      "href": "/admin/eglise/church-1",
       "label": "Paramètres de l'église",
     },
     {
@@ -52,7 +52,7 @@ exports[`AuthLayout — props de navigation > Admin aussi Admin d'une autre égl
       "label": "Fonctions des départements",
     },
     {
-      "href": "/admin/rooms",
+      "href": "/admin/salles",
       "label": "Configuration des salles",
     },
     {
@@ -72,7 +72,7 @@ exports[`AuthLayout — props de navigation > Admin aussi Admin d'une autre égl
       "label": "Profils pastoraux",
     },
     {
-      "href": "/dons",
+      "href": "/finances/dons",
       "label": "Page de dons",
     },
     {
@@ -121,38 +121,37 @@ exports[`AuthLayout — props de navigation > Admin aussi Admin d'une autre égl
   "homeHref": "/accueil",
   "integrationLinks": [
     {
-      "href": "/integration/requests",
+      "href": "/personnes/integration/dossiers",
       "label": "Dossiers d'intégration",
     },
     {
-      "href": "/integration/leaders",
+      "href": "/personnes/integration/bergers",
       "label": "Bergers de famille",
     },
     {
-      "href": "/integration/parcours",
+      "href": "/personnes/integration/parcours",
       "label": "Parcours d'intégration",
     },
     {
-      "href": "/integration/stats",
+      "href": "/personnes/integration/stats",
       "label": "Statistiques intégration",
     },
     {
-      "href": "/integration/parametres",
+      "href": "/personnes/integration/parametres",
       "label": "Paramètres intégration",
     },
   ],
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/media",
+      "href": "/medias",
       "label": "Communication & Production",
       "matchPrefixes": [
-        "/media",
-        "/communication",
+        "/medias",
       ],
     },
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
@@ -162,17 +161,17 @@ exports[`AuthLayout — props de navigation > Admin aussi Admin d'une autre égl
   },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
     {
-      "href": "/secretariat/requests",
+      "href": "/demandes/traitement",
       "label": "Traitement des demandes",
     },
   ],
   "servingLinks": [
     {
-      "href": "/candidatures",
+      "href": "/personnes/candidatures",
       "label": "Candidatures",
     },
   ],
@@ -190,15 +189,15 @@ exports[`AuthLayout — props de navigation > Admin aussi pasteur, vue admin cho
 {
   "agendaLinks": [
     {
-      "href": "/agenda",
+      "href": "/pastoral/agenda",
       "label": "Agenda des pasteurs",
     },
     {
-      "href": "/agenda/schedule",
+      "href": "/pastoral/planification",
       "label": "Planification",
     },
     {
-      "href": "/care",
+      "href": "/pastoral/suivi",
       "label": "Suivi pastoral",
     },
   ],
@@ -222,7 +221,7 @@ exports[`AuthLayout — props de navigation > Admin aussi pasteur, vue admin cho
   ],
   "configLinks": [
     {
-      "href": "/admin/churches/church-1",
+      "href": "/admin/eglise/church-1",
       "label": "Paramètres de l'église",
     },
     {
@@ -238,7 +237,7 @@ exports[`AuthLayout — props de navigation > Admin aussi pasteur, vue admin cho
       "label": "Fonctions des départements",
     },
     {
-      "href": "/admin/rooms",
+      "href": "/admin/salles",
       "label": "Configuration des salles",
     },
     {
@@ -258,7 +257,7 @@ exports[`AuthLayout — props de navigation > Admin aussi pasteur, vue admin cho
       "label": "Profils pastoraux",
     },
     {
-      "href": "/dons",
+      "href": "/finances/dons",
       "label": "Page de dons",
     },
     {
@@ -307,38 +306,37 @@ exports[`AuthLayout — props de navigation > Admin aussi pasteur, vue admin cho
   "homeHref": "/accueil",
   "integrationLinks": [
     {
-      "href": "/integration/requests",
+      "href": "/personnes/integration/dossiers",
       "label": "Dossiers d'intégration",
     },
     {
-      "href": "/integration/leaders",
+      "href": "/personnes/integration/bergers",
       "label": "Bergers de famille",
     },
     {
-      "href": "/integration/parcours",
+      "href": "/personnes/integration/parcours",
       "label": "Parcours d'intégration",
     },
     {
-      "href": "/integration/stats",
+      "href": "/personnes/integration/stats",
       "label": "Statistiques intégration",
     },
     {
-      "href": "/integration/parametres",
+      "href": "/personnes/integration/parametres",
       "label": "Paramètres intégration",
     },
   ],
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/media",
+      "href": "/medias",
       "label": "Communication & Production",
       "matchPrefixes": [
-        "/media",
-        "/communication",
+        "/medias",
       ],
     },
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
@@ -348,17 +346,17 @@ exports[`AuthLayout — props de navigation > Admin aussi pasteur, vue admin cho
   },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
     {
-      "href": "/secretariat/requests",
+      "href": "/demandes/traitement",
       "label": "Traitement des demandes",
     },
   ],
   "servingLinks": [
     {
-      "href": "/candidatures",
+      "href": "/personnes/candidatures",
       "label": "Candidatures",
     },
   ],
@@ -376,15 +374,15 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
 {
   "agendaLinks": [
     {
-      "href": "/agenda",
+      "href": "/pastoral/agenda",
       "label": "Agenda des pasteurs",
     },
     {
-      "href": "/agenda/schedule",
+      "href": "/pastoral/planification",
       "label": "Planification",
     },
     {
-      "href": "/care",
+      "href": "/pastoral/suivi",
       "label": "Suivi pastoral",
     },
   ],
@@ -404,7 +402,7 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
   ],
   "configLinks": [
     {
-      "href": "/admin/churches/church-1",
+      "href": "/admin/eglise/church-1",
       "label": "Paramètres de l'église",
     },
     {
@@ -420,7 +418,7 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
       "label": "Fonctions des départements",
     },
     {
-      "href": "/admin/rooms",
+      "href": "/admin/salles",
       "label": "Configuration des salles",
     },
     {
@@ -440,7 +438,7 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
       "label": "Profils pastoraux",
     },
     {
-      "href": "/dons",
+      "href": "/finances/dons",
       "label": "Page de dons",
     },
     {
@@ -489,38 +487,37 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
   "homeHref": "/accueil",
   "integrationLinks": [
     {
-      "href": "/integration/requests",
+      "href": "/personnes/integration/dossiers",
       "label": "Dossiers d'intégration",
     },
     {
-      "href": "/integration/leaders",
+      "href": "/personnes/integration/bergers",
       "label": "Bergers de famille",
     },
     {
-      "href": "/integration/parcours",
+      "href": "/personnes/integration/parcours",
       "label": "Parcours d'intégration",
     },
     {
-      "href": "/integration/stats",
+      "href": "/personnes/integration/stats",
       "label": "Statistiques intégration",
     },
     {
-      "href": "/integration/parametres",
+      "href": "/personnes/integration/parametres",
       "label": "Paramètres intégration",
     },
   ],
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/media",
+      "href": "/medias",
       "label": "Communication & Production",
       "matchPrefixes": [
-        "/media",
-        "/communication",
+        "/medias",
       ],
     },
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
@@ -530,17 +527,17 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
   },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
     {
-      "href": "/secretariat/requests",
+      "href": "/demandes/traitement",
       "label": "Traitement des demandes",
     },
   ],
   "servingLinks": [
     {
-      "href": "/candidatures",
+      "href": "/personnes/candidatures",
       "label": "Candidatures",
     },
   ],
@@ -573,7 +570,7 @@ exports[`AuthLayout — props de navigation > Comptable 1`] = `
   ],
   "configLinks": [
     {
-      "href": "/dons",
+      "href": "/finances/dons",
       "label": "Page de dons",
     },
   ],
@@ -609,7 +606,7 @@ exports[`AuthLayout — props de navigation > Comptable 1`] = `
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
@@ -619,7 +616,7 @@ exports[`AuthLayout — props de navigation > Comptable 1`] = `
   },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
   ],
@@ -706,7 +703,7 @@ exports[`AuthLayout — props de navigation > Ministre 1`] = `
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
@@ -716,7 +713,7 @@ exports[`AuthLayout — props de navigation > Ministre 1`] = `
   },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
   ],
@@ -735,7 +732,7 @@ exports[`AuthLayout — props de navigation > Pasteur seul (profil pastoral, vue
 {
   "agendaLinks": [
     {
-      "href": "/agenda/pp-1",
+      "href": "/pastoral/agenda/pp-1",
       "label": "Mon agenda",
     },
   ],
@@ -791,7 +788,7 @@ exports[`AuthLayout — props de navigation > Pasteur seul (profil pastoral, vue
   },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
   ],
@@ -861,15 +858,14 @@ exports[`AuthLayout — props de navigation > Resp. département Communication, 
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/media",
+      "href": "/medias",
       "label": "Communication & Production",
       "matchPrefixes": [
-        "/media",
-        "/communication",
+        "/medias",
       ],
     },
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
@@ -879,7 +875,7 @@ exports[`AuthLayout — props de navigation > Resp. département Communication, 
   },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
   ],
@@ -951,38 +947,37 @@ exports[`AuthLayout — props de navigation > Resp. département Production Méd
   "homeHref": "/accueil",
   "integrationLinks": [
     {
-      "href": "/integration/requests",
+      "href": "/personnes/integration/dossiers",
       "label": "Dossiers d'intégration",
     },
     {
-      "href": "/integration/leaders",
+      "href": "/personnes/integration/bergers",
       "label": "Bergers de famille",
     },
     {
-      "href": "/integration/parcours",
+      "href": "/personnes/integration/parcours",
       "label": "Parcours d'intégration",
     },
     {
-      "href": "/integration/stats",
+      "href": "/personnes/integration/stats",
       "label": "Statistiques intégration",
     },
     {
-      "href": "/integration/parametres",
+      "href": "/personnes/integration/parametres",
       "label": "Paramètres intégration",
     },
   ],
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/media",
+      "href": "/medias",
       "label": "Communication & Production",
       "matchPrefixes": [
-        "/media",
-        "/communication",
+        "/medias",
       ],
     },
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
@@ -992,7 +987,7 @@ exports[`AuthLayout — props de navigation > Resp. département Production Méd
   },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
   ],
@@ -1011,7 +1006,7 @@ exports[`AuthLayout — props de navigation > Référent soins pastoraux 1`] = `
 {
   "agendaLinks": [
     {
-      "href": "/care",
+      "href": "/pastoral/suivi",
       "label": "Suivi pastoral",
     },
   ],
@@ -1062,7 +1057,7 @@ exports[`AuthLayout — props de navigation > Référent soins pastoraux 1`] = `
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
@@ -1072,7 +1067,7 @@ exports[`AuthLayout — props de navigation > Référent soins pastoraux 1`] = `
   },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
   ],
@@ -1091,11 +1086,11 @@ exports[`AuthLayout — props de navigation > STAR du Protocole 1`] = `
 {
   "agendaLinks": [
     {
-      "href": "/agenda",
+      "href": "/pastoral/agenda",
       "label": "Agenda des pasteurs",
     },
     {
-      "href": "/agenda/schedule",
+      "href": "/pastoral/planification",
       "label": "Planification",
     },
   ],
@@ -1146,7 +1141,7 @@ exports[`AuthLayout — props de navigation > STAR du Protocole 1`] = `
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
@@ -1156,7 +1151,7 @@ exports[`AuthLayout — props de navigation > STAR du Protocole 1`] = `
   },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
   ],
@@ -1219,14 +1214,14 @@ exports[`AuthLayout — props de navigation > STAR lié, berger de famille 1`] =
   "homeHref": "/accueil",
   "integrationLinks": [
     {
-      "href": "/integration/requests",
+      "href": "/personnes/integration/dossiers",
       "label": "Dossiers d'intégration",
     },
   ],
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
@@ -1236,7 +1231,7 @@ exports[`AuthLayout — props de navigation > STAR lié, berger de famille 1`] =
   },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
   ],
@@ -1255,19 +1250,19 @@ exports[`AuthLayout — props de navigation > Secrétaire avec profil pastoral p
 {
   "agendaLinks": [
     {
-      "href": "/agenda/pp-1",
+      "href": "/pastoral/agenda/pp-1",
       "label": "Mon agenda",
     },
     {
-      "href": "/agenda",
+      "href": "/pastoral/agenda",
       "label": "Agenda des pasteurs",
     },
     {
-      "href": "/agenda/schedule",
+      "href": "/pastoral/planification",
       "label": "Planification",
     },
     {
-      "href": "/care",
+      "href": "/pastoral/suivi",
       "label": "Suivi pastoral",
     },
   ],
@@ -1299,7 +1294,7 @@ exports[`AuthLayout — props de navigation > Secrétaire avec profil pastoral p
       "label": "Accès & rôles",
     },
     {
-      "href": "/dons",
+      "href": "/finances/dons",
       "label": "Page de dons",
     },
   ],
@@ -1344,38 +1339,37 @@ exports[`AuthLayout — props de navigation > Secrétaire avec profil pastoral p
   "homeHref": "/accueil",
   "integrationLinks": [
     {
-      "href": "/integration/requests",
+      "href": "/personnes/integration/dossiers",
       "label": "Dossiers d'intégration",
     },
     {
-      "href": "/integration/leaders",
+      "href": "/personnes/integration/bergers",
       "label": "Bergers de famille",
     },
     {
-      "href": "/integration/parcours",
+      "href": "/personnes/integration/parcours",
       "label": "Parcours d'intégration",
     },
     {
-      "href": "/integration/stats",
+      "href": "/personnes/integration/stats",
       "label": "Statistiques intégration",
     },
     {
-      "href": "/integration/parametres",
+      "href": "/personnes/integration/parametres",
       "label": "Paramètres intégration",
     },
   ],
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/media",
+      "href": "/medias",
       "label": "Communication & Production",
       "matchPrefixes": [
-        "/media",
-        "/communication",
+        "/medias",
       ],
     },
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
@@ -1385,11 +1379,11 @@ exports[`AuthLayout — props de navigation > Secrétaire avec profil pastoral p
   },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
     {
-      "href": "/secretariat/requests",
+      "href": "/demandes/traitement",
       "label": "Traitement des demandes",
     },
   ],
@@ -1408,15 +1402,15 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
 {
   "agendaLinks": [
     {
-      "href": "/agenda",
+      "href": "/pastoral/agenda",
       "label": "Agenda des pasteurs",
     },
     {
-      "href": "/agenda/schedule",
+      "href": "/pastoral/planification",
       "label": "Planification",
     },
     {
-      "href": "/care",
+      "href": "/pastoral/suivi",
       "label": "Suivi pastoral",
     },
   ],
@@ -1436,11 +1430,11 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
   ],
   "configLinks": [
     {
-      "href": "/admin/churches/church-1",
+      "href": "/admin/eglise/church-1",
       "label": "Paramètres de l'église",
     },
     {
-      "href": "/admin/churches",
+      "href": "/plateforme/eglises",
       "label": "Églises",
     },
     {
@@ -1456,7 +1450,7 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
       "label": "Fonctions des départements",
     },
     {
-      "href": "/admin/rooms",
+      "href": "/admin/salles",
       "label": "Configuration des salles",
     },
     {
@@ -1476,7 +1470,7 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
       "label": "Profils pastoraux",
     },
     {
-      "href": "/dons",
+      "href": "/finances/dons",
       "label": "Page de dons",
     },
     {
@@ -1484,27 +1478,27 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
       "label": "Historique",
     },
     {
-      "href": "/admin/backups",
+      "href": "/plateforme/backups",
       "label": "Sauvegardes",
     },
     {
-      "href": "/admin/api",
+      "href": "/plateforme/api",
       "label": "API",
     },
     {
-      "href": "/admin/app-icon",
+      "href": "/plateforme/app-icon",
       "label": "Icône de l'application",
     },
     {
-      "href": "/admin/site-domains",
+      "href": "/plateforme/site-domains",
       "label": "Domaines des sites",
     },
     {
-      "href": "/admin/assistant",
+      "href": "/plateforme/assistant",
       "label": "Assistant",
     },
     {
-      "href": "/admin/mcp",
+      "href": "/plateforme/mcp",
       "label": "Assistants IA",
     },
   ],
@@ -1549,38 +1543,37 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
   "homeHref": "/accueil",
   "integrationLinks": [
     {
-      "href": "/integration/requests",
+      "href": "/personnes/integration/dossiers",
       "label": "Dossiers d'intégration",
     },
     {
-      "href": "/integration/leaders",
+      "href": "/personnes/integration/bergers",
       "label": "Bergers de famille",
     },
     {
-      "href": "/integration/parcours",
+      "href": "/personnes/integration/parcours",
       "label": "Parcours d'intégration",
     },
     {
-      "href": "/integration/stats",
+      "href": "/personnes/integration/stats",
       "label": "Statistiques intégration",
     },
     {
-      "href": "/integration/parametres",
+      "href": "/personnes/integration/parametres",
       "label": "Paramètres intégration",
     },
   ],
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/media",
+      "href": "/medias",
       "label": "Communication & Production",
       "matchPrefixes": [
-        "/media",
-        "/communication",
+        "/medias",
       ],
     },
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
@@ -1590,17 +1583,17 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
   },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
     {
-      "href": "/secretariat/requests",
+      "href": "/demandes/traitement",
       "label": "Traitement des demandes",
     },
   ],
   "servingLinks": [
     {
-      "href": "/candidatures",
+      "href": "/personnes/candidatures",
       "label": "Candidatures",
     },
   ],
@@ -1633,7 +1626,7 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
   ],
   "configLinks": [
     {
-      "href": "/admin/churches",
+      "href": "/plateforme/eglises",
       "label": "Églises",
     },
     {
@@ -1649,7 +1642,7 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
       "label": "Fonctions des départements",
     },
     {
-      "href": "/admin/rooms",
+      "href": "/admin/salles",
       "label": "Configuration des salles",
     },
     {
@@ -1669,7 +1662,7 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
       "label": "Profils pastoraux",
     },
     {
-      "href": "/dons",
+      "href": "/finances/dons",
       "label": "Page de dons",
     },
     {
@@ -1677,27 +1670,27 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
       "label": "Historique",
     },
     {
-      "href": "/admin/backups",
+      "href": "/plateforme/backups",
       "label": "Sauvegardes",
     },
     {
-      "href": "/admin/api",
+      "href": "/plateforme/api",
       "label": "API",
     },
     {
-      "href": "/admin/app-icon",
+      "href": "/plateforme/app-icon",
       "label": "Icône de l'application",
     },
     {
-      "href": "/admin/site-domains",
+      "href": "/plateforme/site-domains",
       "label": "Domaines des sites",
     },
     {
-      "href": "/admin/assistant",
+      "href": "/plateforme/assistant",
       "label": "Assistant",
     },
     {
-      "href": "/admin/mcp",
+      "href": "/plateforme/mcp",
       "label": "Assistants IA",
     },
   ],

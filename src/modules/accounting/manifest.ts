@@ -6,7 +6,7 @@ export const accountingModule = defineModule({
   dependsOn: ["core", "planning"],
 
   routes: {
-    authenticated: [{ path: "/accounting" }],
+    authenticated: [{ path: "/finances/demandes" }, { path: "/finances/statistiques" }],
     api: [{ path: "/api/accounting" }],
   },
 

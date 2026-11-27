@@ -70,7 +70,7 @@ describe("composeMessage — collectif", () => {
     expect(text).toContain("*2/4* contributions transmises (*50 %*)");
     expect(text).toContain("Ont répondu");
     expect(text).toContain("1 contribution(s) confidentielle(s) non comptée(s)");
-    expect(text).toContain("https://koinonia.test/collectes");
+    expect(text).toContain("https://koinonia.test/demandes/questionnaires");
     expect(text).not.toMatch(/collecte\/kc_|questionnaire\/a1|Protection/);
   });
 
@@ -95,7 +95,7 @@ describe("composeMessage — individuel", () => {
     const r = composeMessage("individual", ctx());
     expect(r.messages.map((m) => m.contribution?.id)).toEqual(["a2", "a3"]);
     expect(r.messages[0].text).toContain("https://koinonia.test/collecte/kc_perso");
-    expect(r.messages[1].text).toContain("https://koinonia.test/collectes");
+    expect(r.messages[1].text).toContain("https://koinonia.test/demandes/questionnaires");
     expect(r.messages[1].text).toContain("4 décembre 2026");
   });
 
@@ -154,7 +154,7 @@ describe("annonce de lancement et clôture (messages à tous)", () => {
       expect(r.collective).toBe(true);
       expect(r.messages).toHaveLength(1);
       const text = r.messages[0].text;
-      if (kind === "launch") expect(text).toContain("https://koinonia.test/collectes");
+      if (kind === "launch") expect(text).toContain("https://koinonia.test/demandes/questionnaires");
       expect(text).not.toMatch(/kc_|\/collectes\/questionnaire\//);
     }
   });

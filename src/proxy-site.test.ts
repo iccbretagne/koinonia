@@ -27,7 +27,7 @@ describe("proxy — hôte de site : tout ce qui n'est pas listé répond 404", (
     "/api/users",
     "/api/auth/session",
     "/api/auth/signin",
-    "/billetterie/abc",
+    "/evenements/billetterie/abc",
     "/site/autre",
     "/a/b",
     "/api/ticketing/events/x",
@@ -143,7 +143,7 @@ describe("proxy — domaine dédié (cache des domaines approuvés)", () => {
   });
 
   it("domaine non approuvé (cache vide ou absent) ⇒ 404, jamais l'application", () => {
-    for (const path of ["/", "/billetterie", "/api/users", "/accueil"]) expect(proxy(req(FOREIGN, path)).status).toBe(404);
+    for (const path of ["/", "/evenements/billetterie", "/api/users", "/accueil"]) expect(proxy(req(FOREIGN, path)).status).toBe(404);
     resetSiteHostsCache({ "autre.exemple.org": "nuit" });
     expect(proxy(req(FOREIGN, "/")).status).toBe(404);
   });
@@ -156,12 +156,12 @@ describe("proxy — domaine dédié (cache des domaines approuvés)", () => {
   });
 
   it("l'hôte de l'application et la boucle locale ne sont pas concernés", () => {
-    expect(proxy(req(APP, "/dashboard")).status).not.toBe(404);
+    expect(proxy(req(APP, "/planning/departements")).status).not.toBe(404);
     expect(proxy(req("127.0.0.1:3001", "/api/internal/site-hosts")).status).toBe(200);
   });
 
   it("sans jeton configuré, comportement inchangé pour les hôtes étrangers", () => {
     delete process.env.TRAEFIK_PROVIDER_TOKEN;
-    expect(proxy(req(FOREIGN, "/dashboard")).status).not.toBe(404);
+    expect(proxy(req(FOREIGN, "/planning/departements")).status).not.toBe(404);
   });
 });

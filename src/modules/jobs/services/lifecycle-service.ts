@@ -110,7 +110,7 @@ export async function runJobOffersLifecycle(appUrl: string): Promise<JobOffersLi
         jobTitle: offer.title,
         company: offer.company,
         archiveDate,
-        jobUrl: `${appUrl}/jobs/${offer.id}`,
+        jobUrl: `${appUrl}${paths.jobs.offer(offer.id)}`,
       });
       const { failed } = await dispatchUserEmails([offer.authorId], "jobs", { subject, html });
       emailFailures += failed;

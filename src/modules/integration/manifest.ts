@@ -17,7 +17,7 @@ export const integrationModule = defineModule({
   dependsOn: ["core"],
 
   routes: {
-    authenticated: [{ path: "/integration" }],
+    authenticated: [{ path: "/personnes/integration" }],
     api: [{ path: "/api/integration" }],
     // Formulaire "rejoindre" (page /rejoindre/[churchSlug]) — hors session, Turnstile-protégé.
     public: [

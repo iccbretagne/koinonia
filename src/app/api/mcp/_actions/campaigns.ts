@@ -24,6 +24,7 @@ import {
   storedFormDefinitionSchema,
 } from "@/modules/campaigns/schemas";
 import { CHANGED, EXPIRED, confirmInput, fingerprint, previewText, refusal, type ActionContext, type ActionResult, type McpActionDef } from "./common";
+import { paths } from "@/lib/paths";
 
 /**
  * Campagnes de collecte (spec 090, lot 5) : importer une définition et changer l'état d'une
@@ -47,7 +48,7 @@ const auth = () => import("@/modules/campaigns/auth");
 const NOT_FOUND = "Campagne de collecte introuvable dans cette église.";
 const NOT_CREATOR = "Créer une campagne de collecte est réservé à l'Admin et au Super Admin de l'église (campaigns:manage).";
 
-const link = (campaignId?: string | null) => `${publicOrigin()}/collectes${campaignId ? `/${campaignId}` : ""}`;
+const link = (campaignId?: string | null) => `${publicOrigin()}${campaignId ? paths.collectes.campaign(campaignId) : paths.collectes()}`;
 const actorOf = async (ctx: ActionContext) => {
   const { userActor } = await auth();
   return { userId: ctx.session.user.id, name: userActor(ctx.session).name };

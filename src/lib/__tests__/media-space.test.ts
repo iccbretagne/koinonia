@@ -25,13 +25,13 @@ describe("buildMediaSpaceCards", () => {
   it("équipe Production Média seule : une carte Visuels (bibliothèque)", () => {
     const cards = buildMediaSpaceCards(access({ visuals: true, visualRequests: true }));
     expect(cards.map((c) => c.title)).toEqual(["Visuels"]);
-    expect(cards[0].href).toBe("/media/projects");
+    expect(cards[0].href).toBe("/medias/visuels");
   });
 
   it("carte Visuels visible via les demandes seules (sans accès à la bibliothèque)", () => {
     const cards = buildMediaSpaceCards(access({ visualRequests: true }));
     expect(cards.map((c) => c.title)).toEqual(["Visuels"]);
-    expect(cards[0].href).toBe("/media/requests");
+    expect(cards[0].href).toBe("/medias/visuels/demandes");
   });
 
   it("équipe Communication seule : une carte Réseaux sociaux", () => {
@@ -53,7 +53,7 @@ describe("buildMediaSpaceCards", () => {
   it("galerie (spec 080) : 4e carte, après Réseaux sociaux", () => {
     const cards = buildMediaSpaceCards(access({ photos: true, visuals: true, social: true, gallery: true }));
     expect(cards.map((c) => c.title)).toEqual(["Photos", "Visuels", "Réseaux sociaux", "Galerie"]);
-    expect(cards[3].href).toBe("/media/galerie");
+    expect(cards[3].href).toBe("/medias/galerie");
   });
 
   it("accès nominatif seul : la seule carte Galerie", () => {

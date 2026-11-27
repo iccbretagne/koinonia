@@ -1,5 +1,5 @@
 import type { KnowledgeEntry } from "./types";
-import { paths, PREFIXES } from "@/lib/paths";
+import { paths } from "@/lib/paths";
 
 /** 6. Demandes (KB-080 à KB-085). */
 export const DEMANDES: readonly KnowledgeEntry[] = [
@@ -20,7 +20,7 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
     hrefLabel: "Nouvelle demande",
     audience: { permissions: ["members:view"] },
     otherwise: "Un STAR fait passer sa demande d'annonce ou de visuel par son responsable de département.",
-    screens: [paths.requests(), paths.media(), PREFIXES.communication],
+    screens: [paths.requests(), paths.media()],
   },
   {
     key: "KB-081",
@@ -44,7 +44,7 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
     hrefLabel: "Traitement des demandes",
     audience: { permissions: ["events:manage"], predicates: ["secretariatTeam"] },
     otherwise: "Le traitement des demandes revient au Secrétariat et à l'administration de l'église.",
-    screens: [PREFIXES.secretariat],
+    screens: [paths.secretariat.requests()],
   },
   {
     key: "KB-083",
@@ -57,7 +57,7 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
     hrefLabel: "Communication & Production",
     audience: { permissions: ["events:manage"], predicates: ["mediaTeam"] },
     otherwise: "Ces demandes sont traitées par les équipes Production Média et Communication.",
-    screens: [paths.media(), PREFIXES.communication],
+    screens: [paths.media()],
   },
   {
     key: "KB-084",

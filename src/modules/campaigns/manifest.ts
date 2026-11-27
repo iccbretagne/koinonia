@@ -19,7 +19,7 @@ export const campaignsModule = defineModule({
   dependsOn: ["core"],
 
   routes: {
-    authenticated: [{ path: "/collectes" }],
+    authenticated: [{ path: "/demandes/questionnaires" }],
     api: [{ path: "/api/campaigns" }],
     public: [{ path: "/collecte" }, { path: "/api/campaigns/public" }],
   },

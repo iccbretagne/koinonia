@@ -189,7 +189,7 @@ describe("runCareRelances", () => {
       .mockResolvedValueOnce([pendingRequest()])
       .mockResolvedValueOnce([]);
     prismaMock.notification.findMany.mockResolvedValue([
-      { link: "/care/requests/req-1", type: "CARE_RELANCE_UNASSIGNED", createdAt: new Date() },
+      { link: "/pastoral/suivi/rendez-vous/req-1", type: "CARE_RELANCE_UNASSIGNED", createdAt: new Date() },
     ] as never);
 
     const result = await runCareRelances();
@@ -205,7 +205,7 @@ describe("runCareRelances", () => {
     prismaMock.userChurchRole.findMany.mockResolvedValue([{ userId: "admin-1" }] as never);
     prismaMock.notification.findMany.mockResolvedValue([
       {
-        link: "/care/requests/req-1",
+        link: "/pastoral/suivi/rendez-vous/req-1",
         type: "CARE_RELANCE_UNASSIGNED",
         createdAt: new Date(Date.now() - 8 * 86_400_000),
       },
@@ -271,7 +271,7 @@ describe("runCareRelances", () => {
       expect.objectContaining({
         type: "CARE_RELANCE_UNASSIGNED",
         title: "Suivi de nouveau converti à confier",
-        link: "/care/followups/f-2",
+        link: "/pastoral/suivi/convertis/f-2",
       })
     );
     expect(result.unassignedNotified).toBe(1);
@@ -289,7 +289,7 @@ describe("runCareRelances", () => {
       expect.objectContaining({
         userId: "member-2",
         type: "CARE_RELANCE_UNSCHEDULED",
-        link: "/care/followups/f-1",
+        link: "/pastoral/suivi/convertis/f-1",
         message: expect.stringContaining("Grâce Mavoungou"),
       })
     );

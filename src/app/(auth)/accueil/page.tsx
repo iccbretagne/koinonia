@@ -29,8 +29,8 @@ import { buttonClasses } from "@/components/ui/button-classes";
 import { serviceStatusDescriptor } from "@/components/ui/status";
 import { NextServiceCard } from "../planning/MyPlanningView";
 import { loadMyPlanning } from "../planning/my-planning-data";
-import { loadMyRequests } from "../requests/my-requests-data";
-import { REQUEST_TYPE_LABEL, requestStatus, requestTypeIcon } from "../requests/request-display";
+import { loadMyRequests } from "../demandes/my-requests-data";
+import { REQUEST_TYPE_LABEL, requestStatus, requestTypeIcon } from "../demandes/request-display";
 import { pickFirstName } from "./first-name";
 import InstallCard from "./InstallCard";
 import PastoralDashboard from "./PastoralDashboard";
@@ -165,7 +165,7 @@ function shortcutsFor(access: {
   if (access.canEvents) {
     agendaShortcut = [{ href: paths.events(), label: "Agenda de l'église", description: "Calendrier des événements", icon: CalendarDays }];
   } else if (access.canPlanning) {
-    agendaShortcut = [{ href: paths.planning.events(), label: "Agenda de l'église", description: "Les événements de la semaine", icon: CalendarDays }];
+    agendaShortcut = [{ href: paths.events(), label: "Agenda de l'église", description: "Les événements de la semaine", icon: CalendarDays }];
   }
   return [
     ...(access.hasMyPlanning ? [{ href: paths.planning(), label: "Mon planning", description: "Mes services du mois", icon: CalendarCheck }] : []),
@@ -257,7 +257,7 @@ function ChurchEventsSection({
       <div id="today-events">
         <SectionTitle
           title={canEvents ? "Prochains événements de l'église" : "Cette semaine à l'église"}
-          href={canEvents ? paths.events() : paths.planning.events()}
+          href={paths.events()}
           linkLabel="Voir tout l'agenda"
         />
       </div>

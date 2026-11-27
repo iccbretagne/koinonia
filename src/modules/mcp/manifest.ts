@@ -19,7 +19,7 @@ export const mcpModule = defineModule({
   dependsOn: ["core", "assistant"],
 
   routes: {
-    authenticated: [{ path: "/mcp" }, { path: "/profile/assistants" }, { path: "/admin/mcp" }],
+    authenticated: [{ path: "/mcp" }, { path: "/profile/assistants" }, { path: "/plateforme/mcp" }],
     api: [{ path: "/api/mcp" }],
     public: [
       // Découverte OAuth (RFC 9728, RFC 8414) : lue par les clients avant toute connexion.

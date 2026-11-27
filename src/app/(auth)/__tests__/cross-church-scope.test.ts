@@ -43,7 +43,7 @@ describe("Cross-tenant : événements 'requests' d'un autre secrétaire ne donne
     const { notFound } = await import("next/navigation");
     prismaMock.department.findMany.mockResolvedValue([{ id: "dept-media", name: "Média" }] as never);
 
-    const MediaRequestsPage = (await import("../media/(visuels)/requests/page")).default;
+    const MediaRequestsPage = (await import("../medias/visuels/demandes/page")).default;
     await MediaRequestsPage();
 
     expect(notFound).toHaveBeenCalled();
@@ -54,7 +54,7 @@ describe("Cross-tenant : événements 'requests' d'un autre secrétaire ne donne
     const { notFound } = await import("next/navigation");
     prismaMock.department.findMany.mockResolvedValue([{ id: "dept-secr", name: "Secrétariat" }] as never);
 
-    const SecretariatRequestsPage = (await import("../secretariat/requests/page")).default;
+    const SecretariatRequestsPage = (await import("../demandes/traitement/page")).default;
     await SecretariatRequestsPage();
 
     expect(notFound).toHaveBeenCalled();
@@ -65,7 +65,7 @@ describe("Cross-tenant : événements 'requests' d'un autre secrétaire ne donne
     const { notFound } = await import("next/navigation");
     prismaMock.department.findMany.mockResolvedValue([{ id: "dept-comm", name: "Communication" }] as never);
 
-    const CommunicationRequestsPage = (await import("../communication/requests/page")).default;
+    const CommunicationRequestsPage = (await import("../medias/reseaux-sociaux/page")).default;
     await CommunicationRequestsPage();
 
     expect(notFound).toHaveBeenCalled();

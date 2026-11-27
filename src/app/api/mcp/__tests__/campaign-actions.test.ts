@@ -159,7 +159,7 @@ describe("import d'une définition", () => {
     await run("import_campaign_preview", { definition: DEF });
     const token = lastToken;
     const out = await run("import_campaign_confirm", { confirmation: token });
-    expect(out.structured).toMatchObject({ done: true, campaignId: "cmp-1", link: "https://koinonia.test/collectes/cmp-1" });
+    expect(out.structured).toMatchObject({ done: true, campaignId: "cmp-1", link: "https://koinonia.test/demandes/questionnaires/cmp-1" });
     expect(svc.importCampaign).toHaveBeenLastCalledWith(expect.objectContaining({ dryRun: false, definition: DEF }));
     expect(auditContexts).toEqual([{ via: "mcp" }]);
     expect(mcp.consumeConfirmation).toHaveBeenCalledWith("g1", "import_campaign", token, expect.any(Date), { erase: true });

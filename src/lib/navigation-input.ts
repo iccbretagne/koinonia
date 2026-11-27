@@ -7,7 +7,7 @@ import { isTreasuryVisible } from "@/modules/treasury/auth";
 import { isTicketingVisible } from "@/modules/ticketing/auth";
 import type { NavigationInput } from "@/lib/navigation";
 import type { Session } from "next-auth";
-import { paths, PREFIXES } from "@/lib/paths";
+import { paths } from "@/lib/paths";
 
 /**
  * Entrées de navigation de l'espace authentifié, extraites de `(auth)/layout.tsx` (spec 092,
@@ -186,7 +186,7 @@ async function serviceTeamLinks(
     mediaLinks.push({
       href: paths.media(),
       label: "Communication & Production",
-      matchPrefixes: [paths.media(), PREFIXES.communication],
+      matchPrefixes: [paths.media()],
     });
   }
 
@@ -226,7 +226,7 @@ async function requestAndMediaLinks(
       select: { expiresAt: true },
     });
     if (grant && (grant.expiresAt === null || grant.expiresAt > new Date())) {
-      mediaLinks.unshift({ href: paths.media(), label: "Communication & Production", matchPrefixes: [paths.media(), PREFIXES.communication] });
+      mediaLinks.unshift({ href: paths.media(), label: "Communication & Production", matchPrefixes: [paths.media()] });
     }
   }
   // Lien "Audio" (spec 021 : un seul lien, onglets à droits distincts derrière)

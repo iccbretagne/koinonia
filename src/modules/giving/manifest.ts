@@ -21,7 +21,7 @@ export const givingModule = defineModule({
   dependsOn: ["core", "storage"],
 
   routes: {
-    authenticated: [{ path: "/dons" }],
+    authenticated: [{ path: "/finances/dons" }],
     api: [{ path: "/api/giving" }],
     public: [{ path: "/donner" }, { path: "/api/giving/public", method: "GET" }],
   },

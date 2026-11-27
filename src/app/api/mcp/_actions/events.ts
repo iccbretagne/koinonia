@@ -21,6 +21,7 @@ import {
   type ActionResult,
   type McpActionDef,
 } from "./common";
+import { paths } from "@/lib/paths";
 
 /**
  * Événements et salles (spec 081, lot 3c) : créer 1 à 12 événements (`events:manage`) avec
@@ -131,7 +132,7 @@ export async function confirmCreateEvents(input: z.infer<typeof confirmInput>, c
     if (error instanceof ApiError) return refusal(`${error.message} (${ids.length} événement(s) créé(s) avant l'erreur).`);
     throw error;
   }
-  const link = `${publicOrigin()}/events`;
+  const link = `${publicOrigin()}${paths.events()}`;
   return {
     text: `${ids.length} événement(s) créé(s).\nVoir dans Koinonia : ${link}`,
     structured: { done: true, action: "create_events", eventIds: ids, link },
@@ -209,7 +210,7 @@ export async function confirmReserve(input: z.infer<typeof confirmInput>, ctx: A
     if (error instanceof ApiError) return refusal(error.message);
     throw error;
   }
-  const link = `${publicOrigin()}/rooms`;
+  const link = `${publicOrigin()}${paths.rooms()}`;
   return { text: `Salle réservée.\nVoir dans Koinonia : ${link}`, structured: { done: true, action: "reserve_room", link } };
 }
 

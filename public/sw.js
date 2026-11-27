@@ -1,4 +1,6 @@
-const CACHE_NAME = "koinonia-v6";
+// v7 (spec 092, lot 4) : nouvelles adresses des écrans. L'activation efface le cache v6, qui
+// gardait des pages sous leurs anciennes adresses.
+const CACHE_NAME = "koinonia-v7";
 const STATIC_ASSETS = [
   "/",
   "/accueil",
@@ -45,7 +47,7 @@ self.addEventListener("fetch", (event) => {
         (cached) =>
           cached ||
           fetch(event.request).then((response) => {
-            if (response.ok) {
+            if (response.ok && !response.redirected) {
               const clone = response.clone();
               caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
             }
@@ -63,8 +65,10 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Cache successful responses
-        if (response.ok) {
+        // Seules les réponses directes sont gardées : une réponse obtenue après redirection
+        // (ancienne adresse d'écran, spec 092) ne doit jamais être servie hors ligne sous
+        // l'adresse demandée.
+        if (response.ok && !response.redirected) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, clone);

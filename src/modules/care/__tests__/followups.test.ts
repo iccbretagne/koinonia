@@ -41,7 +41,7 @@ describe("buildMsdpCounselorNotifEmail", () => {
 
     expect(html).toContain("Jean Dupont");
     expect(html).toContain("Marie Curie");
-    expect(html).toContain("https://koinonia.example/care/followups/f1");
+    expect(html).toContain("https://koinonia.example/pastoral/suivi/convertis/f1");
   });
 });
 
@@ -112,14 +112,14 @@ describe("buildMsdpInactivityEmail", () => {
       personName: "Marie Curie",
       status: "ASSIGNED",
       daysSince: 9,
-      link: "/care/followups/f1",
+      link: "/pastoral/suivi/convertis/f1",
       appUrl: "https://koinonia.example",
     });
 
     expect(html).toContain("Marie Curie");
     expect(html).toContain("9 jours");
     expect(html).toContain("Un référent a été désigné mais le contact n'a pas encore été établi.");
-    expect(html).toContain("https://koinonia.example/care/followups/f1");
+    expect(html).toContain("https://koinonia.example/pastoral/suivi/convertis/f1");
   });
 });
 
@@ -159,7 +159,7 @@ describe("runMsdpInactivityNotifications", () => {
 
     expect(mockCreateNotification).toHaveBeenCalledTimes(1);
     const [params, options] = mockCreateNotification.mock.calls[0];
-    expect(params).toEqual(expect.objectContaining({ userId: "counselor-1", domain: "care", type: "CARE_MSDP_INACTIVITY", link: "/care/followups/f1" }));
+    expect(params).toEqual(expect.objectContaining({ userId: "counselor-1", domain: "care", type: "CARE_MSDP_INACTIVITY", link: "/pastoral/suivi/convertis/f1" }));
     expect(options?.email).toBeDefined();
     expect(result).toEqual({ notified: 1, skipped: 0, total: 1 });
   });
@@ -220,7 +220,7 @@ describe("runMsdpInactivityNotifications", () => {
   it("ne renotifie pas un suivi déjà notifié récemment", async () => {
     prismaMock.msdpFollowUp.findMany.mockResolvedValue([makeFollowUp()] as never);
     prismaMock.notification.findMany.mockResolvedValue([
-      { link: "/care/followups/f1" },
+      { link: "/pastoral/suivi/convertis/f1" },
     ] as never);
 
     const result = await runMsdpInactivityNotifications("https://koinonia.example");

@@ -17,7 +17,13 @@ export const NOYAU_ROUTES: NoyauRoutes = {
   // "/admin" (exact) est un simple redirecteur d'atterrissage vers /admin/churches ou
   // /admin/users selon les droits — il ne rend rien de propre à un module, donc noyau. Les
   // sous-sections (/admin/churches, /admin/departments, …) restent déclarées par leur module.
-  pages: ["/", "/no-access", "/module-absent", "/admin", "/accueil"],
+  pages: [
+    "/", "/no-access", "/module-absent", "/accueil",
+    // Racines d'espace (spec 092, lot 4) : redirecteurs vers la première page accessible de l'espace.
+    "/admin", "/finances", "/pastoral", "/personnes", "/plateforme", "/ressources",
+    // Mes inscriptions : réservations (billetterie) et réponses (formulaires), onglet masqué si le module est coupé.
+    "/evenements/mes-inscriptions",
+  ],
   api: ["/api/auth", "/api/health", "/api/current-church", "/api/user", "/api/cron", "/api/csp-report", "/api/internal"],
 };
 

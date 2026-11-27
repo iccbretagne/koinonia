@@ -309,7 +309,7 @@ async function notifySubmitter(
     priorityNote,
     rejectionReason,
     churchName:      church?.name ?? "Koinonia",
-    requestUrl:      `${appUrl}/accounting/requests/${req.id}`,
+    requestUrl:      `${appUrl}${paths.accounting.request(req.id)}`,
   });
 
   await createNotification(

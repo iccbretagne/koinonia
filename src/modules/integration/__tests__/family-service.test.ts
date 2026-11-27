@@ -209,7 +209,7 @@ describe("notifyIntegrationTeamNewRequest (audit notifications)", () => {
 
     expect(mockNotifyUsers).toHaveBeenCalledWith(
       ["manager-1"],
-      expect.objectContaining({ domain: "integration", type: "INTEGRATION_NEW_REQUEST", link: "/integration/requests/req-1" })
+      expect.objectContaining({ domain: "integration", type: "INTEGRATION_NEW_REQUEST", link: "/personnes/integration/dossiers/req-1" })
     );
   });
 
@@ -235,8 +235,8 @@ describe("notifyBergerAssigned (#629)", () => {
     });
 
     const [notification, options] = mockCreateNotification.mock.calls[0];
-    expect(notification.link).toBe("/integration/requests/req-1");
-    expect(options.email.html).toContain('href="https://app.test/integration/requests/req-1"');
+    expect(notification.link).toBe("/personnes/integration/dossiers/req-1");
+    expect(options.email.html).toContain('href="https://app.test/personnes/integration/dossiers/req-1"');
     expect(options.email.html).not.toContain("/admin/integration");
   });
 });

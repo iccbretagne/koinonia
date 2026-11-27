@@ -30,15 +30,15 @@ vi.mock("@/lib/auth", async (importOriginal) => {
   return { ...original, auth: () => mockAuth() };
 });
 
-const MyRequestsPage = (await import("../requests/page")).default;
-const RequestsList = (await import("../requests/RequestsList")).default;
-const ReportsPage = (await import("../admin/reports/page")).default;
-const ReportsClient = (await import("../admin/reports/ReportsClient")).default;
-const EventReportPage = (await import("../admin/events/[eventId]/report/page")).default;
-const EventReportClient = (await import("../admin/events/[eventId]/report/EventReportClient")).default;
-const EventReportReadOnly = (await import("../admin/events/[eventId]/report/EventReportReadOnly")).default;
-const AccountingDetailPage = (await import("../accounting/requests/[id]/page")).default;
-const RequestDetail = (await import("../accounting/requests/[id]/RequestDetail")).default;
+const MyRequestsPage = (await import("../demandes/page")).default;
+const RequestsList = (await import("../demandes/RequestsList")).default;
+const ReportsPage = (await import("../evenements/comptes-rendus/page")).default;
+const ReportsClient = (await import("../evenements/comptes-rendus/ReportsClient")).default;
+const EventReportPage = (await import("../evenements/comptes-rendus/[eventId]/page")).default;
+const EventReportClient = (await import("../evenements/comptes-rendus/[eventId]/EventReportClient")).default;
+const EventReportReadOnly = (await import("../evenements/comptes-rendus/[eventId]/EventReportReadOnly")).default;
+const AccountingDetailPage = (await import("../finances/demandes/[id]/page")).default;
+const RequestDetail = (await import("../finances/demandes/[id]/RequestDetail")).default;
 
 /** Parcourt l'arbre d'éléments rendu (sans exécuter les composants enfants). */
 function find(node: ReactNode, type: unknown): ReactElement<Record<string, unknown>>[] {
@@ -75,7 +75,7 @@ beforeEach(() => {
   prismaMock.department.findMany.mockResolvedValue([]);
 });
 
-describe("/requests — « Mes demandes » pour tout compte de l'église", () => {
+describe("/demandes — « Mes demandes » pour tout compte de l'église", () => {
   const profiles: [string, () => ReturnType<typeof createSession>, boolean][] = [
     ["STAR", () => createStarSession("church-1"), false],
     ["Faiseur de disciples", () => createSession({ churchRoles: [role("DISCIPLE_MAKER")] } as never), false],
@@ -115,7 +115,7 @@ describe("/requests — « Mes demandes » pour tout compte de l'église", () =>
   });
 });
 
-describe("/admin/reports — lecture pastorale", () => {
+describe("/evenements/comptes-rendus — lecture pastorale", () => {
   beforeEach(() => prismaMock.event.findMany.mockResolvedValue([]));
 
   it("pasteur sans rôle : liste en lecture seule (ni saisie ni export)", async () => {

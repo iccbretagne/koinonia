@@ -15,7 +15,7 @@ import {
   resolveRequestQueueAccess,
 } from "@/modules/planning";
 import { loadMyPlanning } from "@/app/(auth)/planning/my-planning-data";
-import { loadMyRequests } from "@/app/(auth)/requests/my-requests-data";
+import { loadMyRequests } from "@/app/(auth)/demandes/my-requests-data";
 import {
   REFUSED,
   SERVICE_STATUS_LABEL,

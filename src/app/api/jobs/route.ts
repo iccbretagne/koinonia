@@ -90,7 +90,7 @@ async function notifySubscribers(job: {
   });
 
   const appUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-  const jobUrl = `${appUrl}/jobs/${job.id}`;
+  const jobUrl = `${appUrl}${paths.jobs.offer(job.id)}`;
 
   const TYPE_LABELS = { EMPLOI: "Emploi", STAGE: "Stage", ALTERNANCE: "Alternance" } as const;
   const typeLabel = TYPE_LABELS[job.type];

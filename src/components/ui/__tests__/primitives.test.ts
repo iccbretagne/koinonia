@@ -96,11 +96,11 @@ describe("selectionLabel", () => {
 
 describe("isTabActive", () => {
   it("active l'onglet sur son chemin et ses sous-pages, sauf en mode exact", () => {
-    expect(isTabActive({ href: "/audio/production", label: "Production" }, "/audio/production")).toBe(true);
-    expect(isTabActive({ href: "/audio/production", label: "Production" }, "/audio/production/42")).toBe(true);
-    expect(isTabActive({ href: "/audio/production", label: "Production" }, "/audio/production-x")).toBe(false);
-    expect(isTabActive({ href: "/media", label: "Accueil", exact: true }, "/media/events")).toBe(false);
-    expect(isTabActive({ href: "/media", label: "Accueil", active: true }, "/autre")).toBe(true);
-    expect(isTabActive({ href: "/media", label: "Accueil" }, null)).toBe(false);
+    expect(isTabActive({ href: "/medias/audio/production", label: "Production" }, "/medias/audio/production")).toBe(true);
+    expect(isTabActive({ href: "/medias/audio/production", label: "Production" }, "/medias/audio/production/42")).toBe(true);
+    expect(isTabActive({ href: "/medias/audio/production", label: "Production" }, "/audio/production-x")).toBe(false);
+    expect(isTabActive({ href: "/medias", label: "Accueil", exact: true }, "/medias/photos")).toBe(false);
+    expect(isTabActive({ href: "/medias", label: "Accueil", active: true }, "/autre")).toBe(true);
+    expect(isTabActive({ href: "/medias", label: "Accueil" }, null)).toBe(false);
   });
 });

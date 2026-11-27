@@ -89,7 +89,7 @@ describe("assignApplication", () => {
       data: [{ applicationId: "app-1", departmentId: DEPT.id, assignedById: "user-1" }],
     });
     expect(prismaMock.servingApplication.update.mock.calls[0][0].data).toMatchObject({ status: "VALIDATED", decidedById: "user-1" });
-    expect(notifyUsers).toHaveBeenCalledWith(["lead-1"], expect.objectContaining({ type: "SERVING_ASSIGNED", link: "/candidatures/app-1" }));
+    expect(notifyUsers).toHaveBeenCalledWith(["lead-1"], expect.objectContaining({ type: "SERVING_ASSIGNED", link: "/personnes/candidatures/app-1" }));
   });
 
   it("refuse un département système ou d'une autre église (400)", async () => {

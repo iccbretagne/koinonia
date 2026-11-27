@@ -35,23 +35,23 @@ function pageRoutes(): Set<string> {
 
 /** Permission exigée par la garde de l'écran (pages relevées à la main, spec 075). */
 const SCREEN_PERMISSION: Record<string, string> = {
-  "/dashboard": "planning:department",
-  "/dashboard/stats": "planning:department",
-  "/disponibilites/collectes": "availability:settings",
-  "/admin/members": "members:view",
+  "/planning/departements": "planning:department",
+  "/planning/departements/statistiques": "planning:department",
+  "/planning/disponibilites/collectes": "availability:settings",
+  "/personnes/star": "members:view",
   "/admin/access": "access:manage",
-  "/admin/events": "events:manage",
-  "/admin/reports": "reports:view",
-  "/admin/welcome-duty": "events:manage",
-  "/admin/discipleship": "discipleship:view",
+  "/evenements/gestion": "events:manage",
+  "/evenements/comptes-rendus": "reports:view",
+  "/evenements/service-accueil": "events:manage",
+  "/personnes/discipolat": "discipleship:view",
   "/admin/messages": "messages:publish",
-  "/requests": "members:view",
-  "/requests/new": "members:view",
-  "/rooms": "rooms:view",
-  "/dons": "giving:manage",
-  "/accounting/tresorerie": "treasury:manage",
-  "/care/request": "planning:view",
-  "/events/announcement-sheets": "planning:view",
+  "/demandes": "members:view",
+  "/demandes/nouvelle": "members:view",
+  "/ressources/salles": "rooms:view",
+  "/finances/dons": "giving:manage",
+  "/finances/tresorerie": "treasury:manage",
+  "/demandes/rendez-vous": "planning:view",
+  "/evenements/annonces": "planning:view",
 };
 
 describe("base de connaissances fournie (spec 075)", () => {
@@ -96,7 +96,7 @@ describe("base de connaissances fournie (spec 075)", () => {
       const owner = moduleOf(e);
       if (owner) expect(ALL_MODULES, e.key).toContain(owner);
     }
-    expect(moduleOf({ href: "/accounting/tresorerie?onglet=remise" })).toBe("treasury");
+    expect(moduleOf({ href: "/finances/tresorerie?onglet=remise" })).toBe("treasury");
     expect(moduleOf({ href: "/profile" })).toBe("core");
   });
 
@@ -138,7 +138,7 @@ describe("base de connaissances fournie (spec 075)", () => {
   });
 
   it("propose les questions fréquentes de l'écran courant", () => {
-    const keys = entriesForScreen(BUILTIN_ENTRIES, "/disponibilites").map((e) => e.key);
+    const keys = entriesForScreen(BUILTIN_ENTRIES, "/planning/disponibilites").map((e) => e.key);
     expect(keys).toContain("KB-021");
     expect(keys).toContain("KB-043");
     expect(entriesForScreen(BUILTIN_ENTRIES, undefined)).toEqual([]);

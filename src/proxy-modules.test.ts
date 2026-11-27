@@ -51,7 +51,7 @@ describe("proxy — contrôle de module (spec 038)", () => {
 
   it("réécrit vers /module-absent une page d'un module désactivé", async () => {
     const { proxy } = await loadProxy("core,planning");
-    const res = proxy(req("/audio", { withSession: true }));
+    const res = proxy(req("/medias/audio", { withSession: true }));
     // NextResponse.rewrite pose x-middleware-rewrite avec l'URL cible.
     const rewriteTarget = res.headers.get("x-middleware-rewrite");
     expect(rewriteTarget).not.toBeNull();
@@ -68,11 +68,11 @@ describe("proxy — contrôle de module (spec 038)", () => {
 
   it.each([
     ["messages", "/admin/messages"],
-    ["shuttle", "/accounting/navette"],
-    ["treasury", "/accounting/tresorerie"],
-    ["assistant,mcp", "/admin/assistant"],
-    ["mcp", "/admin/mcp"],
-    ["ticketing", "/admin/site-domains"],
+    ["shuttle", "/finances/navette"],
+    ["treasury", "/finances/tresorerie"],
+    ["assistant,mcp", "/plateforme/assistant"],
+    ["mcp", "/plateforme/mcp"],
+    ["ticketing", "/plateforme/site-domains"],
   ])("module(s) %s coupé(s) : la page %s est réécrite vers /module-absent (Super Admin compris)", async (off, path) => {
     const { proxy } = await loadProxy(ALL_BUT(off));
     const res = proxy(req(path, { withSession: true }));
@@ -86,7 +86,7 @@ describe("proxy — contrôle de module (spec 038)", () => {
     expect(await res.json()).toEqual({ error: "Not found" });
     const parent = proxy(req("/api/accounting/requests", { withSession: true }));
     expect(parent.status).toBe(200);
-    expect(proxy(req("/accounting/requests", { withSession: true })).headers.get("x-middleware-rewrite")).toBeNull();
+    expect(proxy(req("/finances/demandes", { withSession: true })).headers.get("x-middleware-rewrite")).toBeNull();
   });
 
   it("un lien public par jeton d'un module désactivé répond 404 avant toute vérification de jeton", async () => {
@@ -131,7 +131,7 @@ describe("proxy — contrôle de module (spec 038)", () => {
 
   it("redirige vers / un utilisateur non authentifié sur une page protégée d'un module actif (comportement préservé)", async () => {
     const { proxy } = await loadProxy(undefined);
-    const res = proxy(req("/dashboard"));
+    const res = proxy(req("/planning/departements"));
     expect(res.status).toBe(307);
     expect(res.headers.get("location")).toBe("http://localhost/");
   });

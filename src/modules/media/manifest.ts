@@ -21,7 +21,7 @@ export const mediaModule = defineModule({
   optionalDependencies: ["planning"],
 
   routes: {
-    authenticated: [{ path: "/media" }],
+    authenticated: [{ path: "/medias" }],
     api: [
       { path: "/api/media" },
       { path: "/api/media-events" },

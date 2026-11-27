@@ -17,7 +17,7 @@ export const BOTTOM_BAR_ATTRIBUTE = "data-k-bottom-bar";
 const GREETING_MS = 6000;
 
 /** Écrans de terrain plein écran (contrôle d'entrée, restauration) : pas de bulle. */
-const HIDDEN_ON = [/^\/billetterie\/[^/]+\/(controle|restauration)(\/|$)/];
+const HIDDEN_ON = [/^\/evenements\/billetterie\/[^/]+\/(controle|restauration)(\/|$)/];
 
 export interface AssistantShellProps {
   /** Module actif, assistant activé pour l'instance et non coupé pour l'église. */

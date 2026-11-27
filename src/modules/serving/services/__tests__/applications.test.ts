@@ -126,7 +126,7 @@ describe("submitApplication", () => {
     expect(notifyUsers).toHaveBeenCalledTimes(1);
     const [recipients, notif] = notifyUsers.mock.calls[0];
     expect(recipients).toEqual(["pvs-head"]);
-    expect(notif).toMatchObject({ domain: "serving", type: "SERVING_NEW", link: "/candidatures/app-1" });
+    expect(notif).toMatchObject({ domain: "serving", type: "SERVING_NEW", link: "/personnes/candidatures/app-1" });
     const text = JSON.stringify(notif) + JSON.stringify(sendEmail.mock.calls);
     for (const secret of ["0611223344", "marie@example.org", "Information très personnelle", "Rennes", "1995"]) {
       expect(text).not.toContain(secret);

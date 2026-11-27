@@ -1,5 +1,8 @@
 import { ALL, type KnowledgeEntry } from "./types";
-import { paths, PREFIXES } from "@/lib/paths";
+import { paths } from "@/lib/paths";
+
+/** Écrans de l'espace Finances (spec 092, lot 4 : ex-préfixe `/accounting`). */
+const ACCOUNTING_SCREENS = [paths.accounting.requests(), paths.accounting.stats(), paths.accounting.navette(), paths.accounting.tresorerie()];
 
 const TREASURY_OTHERWISE = "La trésorerie est réservée au Comptable et à l'administration de l'église.";
 
@@ -23,7 +26,7 @@ export const FINANCES: readonly KnowledgeEntry[] = [
     audience: { permissions: ["accounting:submit"], predicates: ["pastoral"] },
     otherwise:
       "Les demandes financières sont déposées par les responsables de département et les Ministres : un STAR passe par son responsable. Pour une dépense de la navette, l'équipe navette la déclare dans « Navette ».",
-    screens: [PREFIXES.accounting],
+    screens: ACCOUNTING_SCREENS,
   },
   {
     key: "KB-101",
@@ -41,7 +44,7 @@ export const FINANCES: readonly KnowledgeEntry[] = [
     hrefLabel: "Comptabilité",
     audience: { permissions: ["accounting:manage"] },
     otherwise: "Le traitement des demandes financières revient au Comptable.",
-    screens: [PREFIXES.accounting],
+    screens: ACCOUNTING_SCREENS,
   },
   {
     key: "KB-108",
@@ -61,7 +64,7 @@ export const FINANCES: readonly KnowledgeEntry[] = [
     hrefLabel: "Mes demandes comptables",
     audience: { permissions: ["accounting:submit"], predicates: ["pastoral"] },
     otherwise: "Les justificatifs sont déposés par la personne qui a demandé l'avance.",
-    screens: [PREFIXES.accounting],
+    screens: ACCOUNTING_SCREENS,
   },
   {
     key: "KB-109",
@@ -81,7 +84,7 @@ export const FINANCES: readonly KnowledgeEntry[] = [
     hrefLabel: "Comptabilité",
     audience: { permissions: ["accounting:manage"] },
     otherwise: "La vérification des justificatifs revient au Comptable.",
-    screens: [PREFIXES.accounting],
+    screens: ACCOUNTING_SCREENS,
   },
   {
     key: "KB-152",
@@ -101,7 +104,7 @@ export const FINANCES: readonly KnowledgeEntry[] = [
     hrefLabel: "Comptabilité",
     audience: { permissions: ["accounting:manage"] },
     otherwise: "Seule la comptabilité peut demander une pièce sur une demande.",
-    screens: [PREFIXES.accounting],
+    screens: ACCOUNTING_SCREENS,
   },
   {
     key: "KB-153",
@@ -120,7 +123,7 @@ export const FINANCES: readonly KnowledgeEntry[] = [
     hrefLabel: "Mes demandes comptables",
     audience: { permissions: ["accounting:submit"], predicates: ["shuttleTeam"] },
     otherwise: "Seul l'auteur de la demande peut y déposer la pièce demandée.",
-    screens: [PREFIXES.accounting],
+    screens: ACCOUNTING_SCREENS,
   },
   {
     key: "KB-102",

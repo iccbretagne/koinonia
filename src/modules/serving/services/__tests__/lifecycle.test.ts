@@ -136,7 +136,7 @@ describe("conservation", () => {
     expect(res.purged).toBe(1);
     expect(deleteMediaFile).toHaveBeenCalledWith("serving/church-1/app-1.jpg");
     expect(prismaMock.servingApplication.delete).toHaveBeenCalledWith({ where: { id: "app-1" } });
-    expect(deleteItemNotifications).toHaveBeenCalledWith(prismaMock, "ServingApplication", "app-1", ["/candidatures/app-1"]);
+    expect(deleteItemNotifications).toHaveBeenCalledWith(prismaMock, "ServingApplication", "app-1", ["/personnes/candidatures/app-1"]);
     expect(deleteMediaFile.mock.invocationCallOrder[0]).toBeLessThan(
       prismaMock.servingApplication.delete.mock.invocationCallOrder[0]
     );

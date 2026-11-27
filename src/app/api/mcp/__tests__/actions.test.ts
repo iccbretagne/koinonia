@@ -166,7 +166,7 @@ describe("répondre à une demande de disponibilité", () => {
 describe("préparer une demande", () => {
   it("lien prérempli vers le formulaire, rien d'enregistré ni de confirmation", async () => {
     const out = await actions.draftRequest({ type: "visuel", titre: "Affiche Noël", texte: "Format A3", date: "2099-12-01" });
-    expect(out.structured.link).toBe("https://koinonia.test/requests/new?type=visuel&titre=Affiche+No%C3%ABl&texte=Format+A3&date=2099-12-01");
+    expect(out.structured.link).toBe("https://koinonia.test/demandes/nouvelle?type=visuel&titre=Affiche+No%C3%ABl&texte=Format+A3&date=2099-12-01");
     expect(out.text).toContain("rien n'est encore envoyé");
     expect(mcp.createConfirmation).not.toHaveBeenCalled();
   });

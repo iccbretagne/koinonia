@@ -92,7 +92,7 @@ describe("buildJobOfferEmail — type et contact", () => {
     description: "Poste",
     contactEmail: null,
     contactUrl: null,
-    jobUrl: "https://x/jobs/1",
+    jobUrl: "https://x/ressources/offres/1",
   };
 
   it.each([
