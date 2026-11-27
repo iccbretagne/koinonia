@@ -164,10 +164,10 @@ describe("navigation — sous-pages nommées", () => {
 
   it("retour mobile : toute page qui n'est pas une page de navigation a un chevron, même hors des espaces du rôle", () => {
     const star = buildSpaces({ departments: [], configLinks: [], requestLinks: [], mediaLinks: [], hasMyPlanning: true, showStarEvents: true, homeHref: "/accueil" });
-    for (const sp of [spaces]) {
+    for (const sp of [spaces, star]) {
       const navHrefs = new Set(sp.flatMap((s) => s.pages).map((p) => p.href.split("?")[0]));
       // Pages de premier niveau d'un autre rôle (hors de ses espaces) et pages de compte : pas de retour.
-    const topLevel = ["/accueil", "/absences", "/admin", "/admin/jobs", "/pastoral", "/dashboard", "/accounting/stats", "/planning/events", "/guide", "/profile"];
+    const topLevel = ["/accueil", "/absences", "/admin", "/admin/jobs", "/pastoral", "/dashboard", "/accounting/stats", "/planning/events"];
     // Un écran sans parent dans le registre est une page d'espace d'un autre rôle : pas de retour.
     const hasParent = (p: string) => {
       const ref = screenOf(p);
@@ -179,8 +179,10 @@ describe("navigation — sous-pages nommées", () => {
     expect(parentLink(star, "/messages/x1")).toEqual({ href: "/accueil", label: "Accueil" });
     expect(parentLink(star, "/mcp/autoriser")).toEqual({ href: "/accueil", label: "Accueil" });
     expect(parentLink(star, "/pastoral/members")).toEqual({ href: "/pastoral", label: "Accueil" });
-    // Sans l'espace Questionnaires, aucun parent n'est dans la navigation : pas de retour inventé.
-    expect(parentLink(star, "/collectes/r/x1")).toBeNull();
+    // Sans l'espace Questionnaires : retour à l'Accueil, d'où le questionnaire est proposé.
+    expect(parentLink(star, "/collectes/r/x1")).toEqual({ href: "/accueil", label: "Accueil" });
+    expect(parentLink(star, "/profile")).toEqual({ href: "/accueil", label: "Accueil" });
+    expect(parentLink(star, "/guide")).toEqual({ href: "/accueil", label: "Accueil" });
     expect(parentLink(spaces, "/collectes/r/x1")).toEqual({ href: "/collectes", label: "Questionnaires" });
   });
 });

@@ -751,7 +751,9 @@ export function buildBreadcrumb(spaces: readonly NavSpace[], pathname: string, d
 export function parentLink(spaces: readonly NavSpace[], pathname: string, dept: string | null = null): { href: string; label: string } | null {
   const ref = screenOf(pathname);
   const own = coverOf(spaces, pathname, dept);
-  // Page d'espace ou page de compte de premier niveau : pas de retour.
+  // Page de compte (Mon profil, Guide), hors des espaces : retour à l'Accueil, comme toute page
+  // qui n'est pas une page de navigation (retour de recette, spec 055). Page d'espace : pas de retour.
+  if (own?.exact && own.page === null) return { href: TODAY_HREF ?? paths.accueil(), label: "Accueil" };
   if (own?.exact) return null;
   if (!ref) return own && !own.exact && own.page ? { href: own.page.href, label: own.page.label } : null;
   if (matchesPath(pathname, REPLACEMENT_PATH) && spaces.some((s) => s.key === "planning")) {
@@ -770,8 +772,10 @@ export function parentLink(spaces: readonly NavSpace[], pathname: string, dept: 
   // Vue pastorale (lot 3) : ses écrans reviennent à l'accueil pastoral, comme avant.
   if (pathname.startsWith(`${paths.pastoral()}/`)) return { href: paths.pastoral(), label: "Accueil" };
 
-  const orHome = [ref, ...collectAncestors(ref)].some((r) => SCREEN_META[r.key].orHome);
-  return orHome ? { href: TODAY_HREF ?? paths.accueil(), label: "Accueil" } : null;
+  // Écran hors des espaces du rôle (lien reçu, notification…) : retour à l'Accueil, sauf s'il est
+  // lui-même une page d'espace d'un autre rôle (aucun parent dans le registre).
+  const toHome = SCREEN_META[ref.key].parent !== null || [ref, ...collectAncestors(ref)].some((r) => SCREEN_META[r.key].orHome);
+  return toHome ? { href: TODAY_HREF ?? paths.accueil(), label: "Accueil" } : null;
 }
 
 function collectAncestors(ref: ScreenRef): ScreenRef[] {
