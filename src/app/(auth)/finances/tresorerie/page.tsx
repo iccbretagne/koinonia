@@ -1,3 +1,4 @@
+import { forbidden } from "next/navigation";
 import { getCurrentChurchId, requireAuth } from "@/lib/auth";
 import {
   budgetVsActual,
@@ -36,7 +37,7 @@ export default async function TreasuryPage({
   try {
     access = await requireTreasuryAccess(churchId);
   } catch {
-    return <p className="p-4 text-ink-muted">Accès non autorisé.</p>;
+    forbidden();
   }
 
   const params = await searchParams;

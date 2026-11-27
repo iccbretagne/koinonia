@@ -1,6 +1,7 @@
 import type { Session } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requireChurchPermission } from "@/lib/auth";
+import { forbiddenError } from "@/lib/forbidden";
 
 export type IntegrationScope =
   | { scoped: false }
@@ -45,7 +46,7 @@ export async function requireIntegrationAccess(
   if (session.user.isSuperAdmin) return { session, scope: { scoped: false } };
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-  if (roles.length === 0) throw new Error("FORBIDDEN");
+  if (roles.length === 0) throw forbiddenError();
 
   const { rolePermissions } = await import("@/lib/registry");
   const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
@@ -65,7 +66,7 @@ export async function requireIntegrationAccess(
   if (assignments.length > 0)
     return { session, scope: { scoped: true, familyIds: assignments.map((a) => a.familyId) } };
 
-  throw new Error("FORBIDDEN");
+  throw forbiddenError();
 }
 
 /**
@@ -92,7 +93,7 @@ export async function requireIntegrationFullAccess(
   churchId: string
 ): Promise<{ session: Session }> {
   const { session, scope } = await requireIntegrationAccess(churchId);
-  if (scope.scoped) throw new Error("FORBIDDEN");
+  if (scope.scoped) throw forbiddenError();
   return { session };
 }
 
@@ -110,7 +111,7 @@ export async function requireIntegrationSettingsAccess(
   if (session.user.isSuperAdmin) return { session };
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-  if (roles.length === 0) throw new Error("FORBIDDEN");
+  if (roles.length === 0) throw forbiddenError();
 
   const { rolePermissions } = await import("@/lib/registry");
   const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
@@ -126,7 +127,7 @@ export async function requireIntegrationSettingsAccess(
     if (count > 0) return { session };
   }
 
-  throw new Error("FORBIDDEN");
+  throw forbiddenError();
 }
 
 /**

@@ -9467,7 +9467,7 @@
         },
         "responses": {
           "302": {
-            "description": "Redirection vers `/dashboard` (ou `/` si le compte est inconnu)"
+            "description": "Redirection vers `/`, qui choisit l'écran d'arrivée du compte"
           }
         }
       }

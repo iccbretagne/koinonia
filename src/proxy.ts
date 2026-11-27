@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { approvedSiteSlug, isForeignHost, refreshSiteHosts, siteSlugFromHost } from "@/lib/site-host";
 import { resolveRouteOwner, isPublicRoute } from "@/lib/module-routes";
 import { matchLegacyPath } from "@/lib/legacy-paths";
+import { PATHNAME_HEADER } from "@/lib/request-pathname";
 import { buildCsp, buildSiteCsp, cspHeaderName, generateNonce, storageOrigins, CSP_REPORT_PATH } from "@/lib/csp";
 
 /**
@@ -50,6 +51,9 @@ export function proxy(request: NextRequest) {
   });
   const forwarded = new Headers(request.headers);
   forwarded.set(headerName, policy);
+  // Adresse demandée, pour la garde d'adresse de `(auth)/layout.tsx` (vrai 403) ; toujours
+  // écrasée, jamais celle qu'enverrait le navigateur.
+  forwarded.set(PATHNAME_HEADER, pathname);
 
   const response = route(request, forwarded);
   response.headers.set(headerName, policy);

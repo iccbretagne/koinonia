@@ -129,6 +129,19 @@ sont contrôlées par chaque page et chaque route, avec les helpers ci-dessous.
 Les gardes propres à un module vivent dans le module : `@/modules/audio/auth` (ci-dessous),
 `@/modules/agenda/auth`, `@/modules/integration/auth`, `@/modules/care/auth`.
 
+**Refus d'une page (HTTP 403).** Les gardes jettent `forbiddenError()` (`src/lib/forbidden.ts`) :
+une `Error("FORBIDDEN")` — les routes API répondent donc toujours un 403 JSON par
+`errorResponse` — qui porte aussi le digest de `forbidden()` de Next.js
+(`experimental.authInterrupts`). Dans une page, le refus affiche `forbidden.tsx`, qui montre
+le message commun `ForbiddenNotice`. Le statut ne peut plus changer une fois le flux parti :
+or presque chaque écran est sous un `loading.tsx`. `(auth)/layout.tsx`, qui s'exécute avant,
+rejoue donc la première garde de la page pour les adresses exactes de
+`src/app/(auth)/page-gates.ts` : refus ⇒ vrai 403. L'adresse vient de l'en-tête
+`x-koinonia-pathname`, toujours écrasé par le proxy. `page-gates.test.ts` vérifie que chaque page
+contient l'appel déclaré. Aucune adresse à identifiant n'y figure : un objet absent reste un 404.
+Hors de cette table (navigation côté client, refus objet par objet), la page affiche le même
+message, mais avec un statut 200.
+
 
 `audio:listen` (bibliothèque d'écoute, spec 021) est accordée à **tous les rôles** — le détail des routes audio est dans la référence OpenAPI (`docs/openapi.json`, tag `audio`).
 

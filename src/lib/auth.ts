@@ -5,6 +5,7 @@ import { prisma } from "./prisma";
 import type { Role } from "@/generated/prisma/client";
 import { DEPT_FN } from "@/lib/department-functions";
 import { getFunctionDepartmentIds } from "@/lib/function-departments";
+import { forbiddenError } from "./forbidden";
 
 /**
  * Le mode de connexion développement (choix d'un compte de test généré par
@@ -441,7 +442,7 @@ export function requireDepartmentAccess(
 ): void {
   const scope = getUserDepartmentScope(session, churchId);
   if (scope.scoped && !scope.departmentIds.includes(departmentId)) {
-    throw new Error("FORBIDDEN");
+    throw forbiddenError();
   }
 }
 
@@ -528,7 +529,7 @@ export async function requireChurchPermission(
     return session;
   }
 
-  if (roles.length === 0) throw new Error("FORBIDDEN");
+  if (roles.length === 0) throw forbiddenError();
 
   const { rolePermissions } = await import("./registry");
   const userPermissions = new Set(
@@ -536,7 +537,7 @@ export async function requireChurchPermission(
   );
 
   if (!userPermissions.has(permission)) {
-    throw new Error("FORBIDDEN");
+    throw forbiddenError();
   }
 
   return session;
@@ -571,7 +572,7 @@ export async function requireChurchAccess(churchId: string) {
   const hasPastoralAccess = (session.user.pastoralChurchIds ?? []).includes(churchId);
 
   if (!hasRoleAccess && !hasPastoralAccess) {
-    throw new Error("FORBIDDEN");
+    throw forbiddenError();
   }
 
   return session;
@@ -731,14 +732,14 @@ async function requireMediaGate(
   if (session.user.isSuperAdmin) return session;
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-  if (roles.length === 0) throw new Error("FORBIDDEN");
+  if (roles.length === 0) throw forbiddenError();
 
   const { rolePermissions } = await import("./registry");
   const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
 
   if (userPerms.has(permission) || (await isTeamMember(session))) return session;
 
-  throw new Error("FORBIDDEN");
+  throw forbiddenError();
 }
 
 /**
@@ -874,7 +875,7 @@ export async function requireMediaGalleryAccess(churchId: string): Promise<{ ses
 
   // Sans rôle dans l'église, aucun accès — pas même nominatif (compte sorti de l'église).
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-  if (roles.length === 0) throw new Error("FORBIDDEN");
+  if (roles.length === 0) throw forbiddenError();
   const { rolePermissions } = await import("./registry");
   const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
   if (userPerms.has("media:view")) return { session, grantOnly: false };
@@ -885,7 +886,7 @@ export async function requireMediaGalleryAccess(churchId: string): Promise<{ ses
     (await isMediaMinister(session, churchId));
   if (team) return { session, grantOnly: false };
   if (await hasValidGalleryGrant(session.user.id, churchId)) return { session, grantOnly: true };
-  throw new Error("FORBIDDEN");
+  throw forbiddenError();
 }
 
 /**
@@ -898,7 +899,7 @@ export async function requireMediaGalleryGrantAccess(churchId: string): Promise<
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
   if (roles.some((r) => r.role === "ADMIN")) return session;
   if (await isMediaMinister(session, churchId)) return session;
-  throw new Error("FORBIDDEN");
+  throw forbiddenError();
 }
 
 // Contexte d'AFFICHAGE, jamais une autorisation : la valeur peut provenir d'un cookie
@@ -947,7 +948,7 @@ export async function requireCurrentChurchPermission(permission: string) {
 export async function requireSuperAdmin() {
   const session = await requireAuth();
   if (!session.user.isSuperAdmin) {
-    throw new Error("FORBIDDEN");
+    throw forbiddenError();
   }
   return session;
 }
@@ -979,7 +980,7 @@ export async function requirePlatformPermission(permission: string) {
     session.user.churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
   );
   if (!userPermissions.has(permission)) {
-    throw new Error("FORBIDDEN");
+    throw forbiddenError();
   }
 
   return session;

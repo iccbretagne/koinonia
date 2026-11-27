@@ -7,6 +7,6 @@ export const contract = defineContract({
     access: "public",
     body: { contentType: "application/x-www-form-urlencoded", description: "`devUserKey` : clé d'un compte de test" },
     status: 302,
-    response: "Redirection vers `/dashboard` (ou `/` si le compte est inconnu)",
+    response: "Redirection vers `/`, qui choisit l'écran d'arrivée du compte",
   },
 });

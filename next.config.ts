@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
+    // `forbidden()` + `forbidden.tsx` : pages refusées en HTTP 403 (src/lib/forbidden.ts,
+    // src/app/(auth)/page-gates.ts).
+    authInterrupts: true,
     serverActions: {
       bodySizeLimit: "100mb",
     },

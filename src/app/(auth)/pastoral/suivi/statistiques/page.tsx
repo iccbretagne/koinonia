@@ -1,3 +1,4 @@
+import { forbidden } from "next/navigation";
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { getCareAccess, getCareStats } from "@/modules/care";
 import { PageHeader } from "@/components/ui";
@@ -10,7 +11,7 @@ export default async function CareStatsPage() {
 
   const access = await getCareAccess(session, churchId);
   if (!access.canOverview) {
-    return <p className="p-4 text-ink-muted">Accès non autorisé.</p>;
+    forbidden();
   }
 
   const stats = await getCareStats(churchId);

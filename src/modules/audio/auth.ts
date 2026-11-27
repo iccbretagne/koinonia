@@ -1,6 +1,7 @@
 import { requireAuth } from "@/lib/auth";
 import { isCaptureTeamMember, isCaptureTeamLead } from "./services/access";
 import { listOutgoingShares } from "./services/sharing";
+import { forbiddenError } from "@/lib/forbidden";
 
 /**
  * Gardes d'accès du module audio.
@@ -27,7 +28,7 @@ export async function requireAudioAccess(permission: string, churchId: string) {
   if (session.user.isSuperAdmin) return session;
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-  if (roles.length === 0) throw new Error("FORBIDDEN");
+  if (roles.length === 0) throw forbiddenError();
 
   const { rolePermissions } = await import("@/lib/registry");
   const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
@@ -36,7 +37,7 @@ export async function requireAudioAccess(permission: string, churchId: string) {
   const departmentIds = roles.flatMap((r) => r.departments.map((d) => d.department.id));
   if (await isCaptureTeamMember(churchId, departmentIds)) return session;
 
-  throw new Error("FORBIDDEN");
+  throw forbiddenError();
 }
 
 /**
@@ -70,7 +71,7 @@ export async function requireAudioListenAccess(churchId: string) {
     if (shares.some((s) => guestChurchIds.includes(s.churchId))) return session;
   }
 
-  throw new Error("FORBIDDEN");
+  throw forbiddenError();
 }
 
 /**
@@ -83,7 +84,7 @@ export async function requireAudioUnpublishAccess(churchId: string) {
   if (session.user.isSuperAdmin) return session;
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-  if (roles.length === 0) throw new Error("FORBIDDEN");
+  if (roles.length === 0) throw forbiddenError();
 
   const { rolePermissions } = await import("@/lib/registry");
   const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
@@ -91,5 +92,5 @@ export async function requireAudioUnpublishAccess(churchId: string) {
 
   if (await isCaptureTeamLead(session, churchId)) return session;
 
-  throw new Error("FORBIDDEN");
+  throw forbiddenError();
 }

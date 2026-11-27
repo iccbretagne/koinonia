@@ -2,6 +2,7 @@ import type { Session } from "next-auth";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { requireAuth } from "@/lib/auth";
 import { DEPT_FN } from "@/lib/department-functions";
+import { forbiddenError } from "@/lib/forbidden";
 
 type Db = Pick<PrismaClient, "department" | "memberUserLink" | "memberDepartment">;
 
@@ -69,14 +70,14 @@ export async function getShuttleAccess(session: Session, churchId: string, db?: 
 export async function requireShuttleAccess(churchId: string) {
   const session = await requireAuth();
   const access = await getShuttleAccess(session, churchId);
-  if (!access.manager && !access.member) throw new Error("FORBIDDEN");
+  if (!access.manager && !access.member) throw forbiddenError();
   return { session, ...access };
 }
 
 /** Gestionnaire du registre (`shuttle:manage`) dans `churchId`, sinon `FORBIDDEN`. */
 export async function requireShuttleManager(churchId: string) {
   const result = await requireShuttleAccess(churchId);
-  if (!result.manager) throw new Error("FORBIDDEN");
+  if (!result.manager) throw forbiddenError();
   return result;
 }
 

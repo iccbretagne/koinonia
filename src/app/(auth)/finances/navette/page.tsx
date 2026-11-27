@@ -1,3 +1,4 @@
+import { forbidden } from "next/navigation";
 import { getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { registry } from "@/lib/registry";
 import { getLedger, getShuttleSettings, listRentals } from "@/modules/shuttle";
@@ -24,7 +25,7 @@ export default async function ShuttlePage({
   try {
     access = await requireShuttleAccess(churchId);
   } catch {
-    return <p className="p-4 text-ink-muted">Accès non autorisé.</p>;
+    forbidden();
   }
 
   const params = await searchParams;

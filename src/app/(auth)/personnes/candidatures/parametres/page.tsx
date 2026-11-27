@@ -1,7 +1,8 @@
+import { forbidden } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ShieldOff } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { getCurrentChurchId, requireAuth } from "@/lib/auth";
-import { EmptyState, PageHeader, buttonClasses } from "@/components/ui";
+import { PageHeader, buttonClasses } from "@/components/ui";
 import { getServingSettings } from "@/modules/serving";
 import { requireServingActor } from "@/modules/serving/auth";
 import ServingSettingsForm from "./ServingSettingsForm";
@@ -14,7 +15,7 @@ export default async function CandidaturesParametresPage() {
   if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
   const actor = await requireServingActor(churchId);
   if (!actor.canEditSettings) {
-    return <EmptyState icon={ShieldOff} title="Accès refusé" description="Ces réglages sont réservés à l'administration et à l'équipe Vie des STAR (PVS)." />;
+    forbidden();
   }
   const settings = await getServingSettings(churchId, actor.pvsDeptIds);
 

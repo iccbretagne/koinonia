@@ -1,3 +1,4 @@
+import { forbidden } from "next/navigation";
 import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
 import { getGivingSettings } from "@/modules/giving";
 import { PageHeader } from "@/components/ui";
@@ -16,7 +17,7 @@ export default async function GivingSettingsPage({
   try {
     await requireChurchPermission("giving:manage", churchId);
   } catch {
-    return <p className="p-4 text-ink-muted">Accès non autorisé.</p>;
+    forbidden();
   }
 
   const settings = await getGivingSettings(churchId);
