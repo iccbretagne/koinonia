@@ -24,7 +24,9 @@ export default async function AccountingRequestsPage() {
   }
 
   const canManage = perms.has("accounting:manage");
-  const canSubmit = perms.has("accounting:submit") || isPastoral;
+  // `POST /api/accounting/requests` exige `accounting:submit` : le bouton ne s'affiche pas pour
+  // un pasteur qui ne l'a pas (spec 092 — jamais de lien vers un refus).
+  const canSubmit = perms.has("accounting:submit");
   const canViewStats = perms.has("accounting:stats") || isPastoral;
   const canViewShuttle = await isShuttleVisible(session, churchId);
   const canViewTreasury = await isTreasuryVisible(session, churchId);
