@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import type { GivingNameSize } from "@/generated/prisma/enums";
+import RadioGroup from "@/components/ui/RadioGroup";
 import Switch from "@/components/ui/Switch";
 
 const SIZES: readonly { value: GivingNameSize; label: string }[] = [
@@ -30,42 +31,29 @@ function Row({ label, hint, children }: { readonly label: string; readonly hint?
 }
 
 function SizeChoice({
-  label,
+  support,
   value,
   disabled,
   onChange,
 }: {
-  readonly label: string;
+  readonly support: string;
   readonly value: GivingNameSize;
   readonly disabled: boolean;
   readonly onChange: (next: GivingNameSize) => void;
 }) {
   return (
-    <div
-      role="radiogroup"
-      aria-label={label}
-      aria-disabled={disabled}
-      className={`grid grid-cols-3 gap-1 rounded-control bg-surface-sunken p-1 ${disabled ? "opacity-50" : ""}`}
-    >
-      {SIZES.map((size) => {
-        const active = value === size.value;
-        return (
-          <button
-            key={size.value}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            disabled={disabled}
-            onClick={() => onChange(size.value)}
-            className={`min-h-11 rounded-control font-display text-sm font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed ${
-              active ? "bg-surface text-brand-text shadow-card" : "text-ink-muted hover:text-ink"
-            }`}
-          >
-            {size.label}
-          </button>
-        );
-      })}
-    </div>
+    <RadioGroup
+      legend={
+        <>
+          <span className="sr-only">{support} : </span>Taille du nom
+        </>
+      }
+      variant="chips"
+      value={value}
+      disabled={disabled}
+      onChange={onChange}
+      options={SIZES}
+    />
   );
 }
 
@@ -99,7 +87,7 @@ export default function SupportIdentity({
         <Switch checked={value.nameShown} onChange={(v) => onChange({ nameShown: v })} label={`${support} : afficher le nom`} hideLabel />
       </Row>
       <SizeChoice
-        label={`${support} : taille du nom`}
+        support={support}
         value={value.nameSize}
         disabled={!value.nameShown}
         onChange={(v) => onChange({ nameSize: v })}

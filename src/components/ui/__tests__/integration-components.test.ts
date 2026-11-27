@@ -11,7 +11,7 @@ import IconButton from "../IconButton";
 import { X } from "lucide-react";
 import Switch from "../Switch";
 import SegmentedControl from "../SegmentedControl";
-import RadioGroup, { choiceChipClasses } from "../RadioGroup";
+import RadioGroup, { choiceCardClasses, choiceChipClasses } from "../RadioGroup";
 import FileInput, { fileNamesSummary } from "../FileInput";
 import Tabs, { TabPanel, tabIds } from "../Tabs";
 import Menu, { menuPosition } from "../Menu";
@@ -125,6 +125,44 @@ describe("RadioGroup", () => {
   it("non contrôlé : defaultChecked pour un formulaire serveur", () => {
     const out = html(createElement(RadioGroup, { legend: "Église", name: "church_id", defaultValue: "b", options: [{ value: "a", label: "A" }, { value: "b", label: "B" }] }));
     expect(out).toMatch(/checked="" value="b"/);
+  });
+  it("variante cards en grille : rond visible, description, option désactivée, cochée en brand-soft", () => {
+    const out = html(
+      createElement(RadioGroup, {
+        legend: "Créneau",
+        variant: "cards",
+        columns: 2,
+        value: "a",
+        onChange: () => {},
+        options: [
+          { value: "a", label: "10:00", description: "En visio" },
+          { value: "b", label: "11:00", description: "Complet", disabled: true },
+        ],
+      }),
+    );
+    expect(out).toContain("sm:grid-cols-2");
+    expect(out.match(/type="radio"/g)).toHaveLength(2);
+    expect(out).toContain("accent-brand");
+    expect(out).toContain("En visio");
+    expect(out.match(/disabled=""/g)).toHaveLength(1);
+    expect(choiceCardClasses).toContain("min-h-11");
+    expect(choiceCardClasses).toContain("has-[:checked]:bg-brand-soft");
+  });
+  it("description de groupe sous la légende, relue par aria-describedby avec l'aide", () => {
+    const out = html(
+      createElement(RadioGroup, {
+        legend: "Note",
+        description: "De 1 à 5",
+        hint: "Facultatif",
+        value: "",
+        onChange: () => {},
+        options: [{ value: "1", label: "1" }],
+      }),
+    );
+    const ids = /aria-describedby="([^"]+)"/.exec(out)?.[1].split(" ") ?? [];
+    expect(ids).toHaveLength(2);
+    expect(out).toContain(`id="${ids[0]}"`);
+    expect(out.indexOf("De 1 à 5")).toBeLessThan(out.indexOf('type="radio"'));
   });
 });
 

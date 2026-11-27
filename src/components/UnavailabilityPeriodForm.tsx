@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import RadioGroup from "@/components/ui/RadioGroup";
 import Select from "@/components/ui/Select";
 import CheckboxGroup from "@/components/ui/CheckboxGroup";
 import Alert from "@/components/ui/Alert";
@@ -86,43 +87,6 @@ function parseBackupSelection(selected: string[]) {
     const [type, id] = value.split(":");
     return type === "STAR" ? { type: "STAR" as const, memberId: id } : { type: "RESPONSIBLE" as const, userChurchRoleId: id };
   });
-}
-
-function RadioPills({
-  name,
-  options,
-  value,
-  onChange,
-}: {
-  readonly name: string;
-  readonly options: { value: string; label: string }[];
-  readonly value: string;
-  readonly onChange: (v: string) => void;
-}) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      {options.map((opt) => (
-        <label
-          key={opt.value}
-          className={`flex items-center gap-2 px-3 py-2.5 min-h-[44px] rounded-full border text-sm cursor-pointer transition-colors ${
-            value === opt.value
-              ? "bg-brand text-on-brand border-brand"
-              : "border-control-line text-ink-muted hover:border-brand"
-          }`}
-        >
-          <input
-            type="radio"
-            name={name}
-            value={opt.value}
-            checked={value === opt.value}
-            onChange={() => onChange(opt.value)}
-            className="sr-only"
-          />
-          {opt.label}
-        </label>
-      ))}
-    </div>
-  );
 }
 
 export default function UnavailabilityPeriodForm({
@@ -359,8 +323,9 @@ export default function UnavailabilityPeriodForm({
         </div>
 
         <div className="space-y-2">
-          <span className="block text-sm font-medium text-ink-muted">Pour quels départements ?</span>
-          <RadioPills
+          <RadioGroup
+            legend="Pour quels départements ?"
+            variant="chips"
             name="allDepartments"
             value={allDepartments ? "ALL" : "SOME"}
             onChange={(v) => setAllDepartments(v === "ALL")}

@@ -3,6 +3,7 @@
 import { SubmitEvent, useEffect, useId, useRef, useState } from "react";
 import { Check } from "lucide-react";
 import TurnstileWidget from "@/components/TurnstileWidget";
+import RadioGroup from "@/components/ui/RadioGroup";
 import { buttonClasses } from "@/components/ui/button-classes";
 import { controlClasses, textareaClasses } from "@/components/ui/field-classes";
 
@@ -109,47 +110,6 @@ function FieldError({ errors, field }: { readonly errors: FieldErrors; readonly 
 function inputClass(errors: FieldErrors, field: string, extra = "") {
   const base = extra.includes("resize-none") ? textareaClasses(Boolean(errors[field])) : controlClasses(Boolean(errors[field]));
   return `${base} ${extra}`;
-}
-
-function RadioGroup({
-  name,
-  options,
-  value,
-  onChange,
-  errors,
-}: {
-  readonly name: string;
-  readonly options: { value: string; label: string }[];
-  readonly value: string;
-  readonly onChange: (v: string) => void;
-  readonly errors: FieldErrors;
-}) {
-  return (
-    <div
-      className={`flex flex-wrap gap-2 ${errors[name] ? "p-2 rounded-control border border-danger/30 bg-danger-soft" : ""}`}
-    >
-      {options.map((opt) => (
-        <label
-          key={opt.value}
-          className={`flex items-center gap-2 px-3 py-2.5 md:py-1.5 min-h-[44px] md:min-h-0 rounded-full border text-sm cursor-pointer transition-colors ${
-            value === opt.value
-              ? "bg-brand text-on-brand border-brand"
-              : "border-line text-ink-muted hover:border-brand"
-          }`}
-        >
-          <input
-            type="radio"
-            name={name}
-            value={opt.value}
-            checked={value === opt.value}
-            onChange={() => onChange(opt.value)}
-            className="sr-only"
-          />
-          {opt.label}
-        </label>
-      ))}
-    </div>
-  );
 }
 
 interface SuccessData {
@@ -464,47 +424,35 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
       <div className="bg-surface rounded-card border border-line p-4 sm:p-6 space-y-4">
         <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">Ton profil</h2>
 
-        <fieldset className="min-w-0">
-          <legend className="block text-sm font-medium text-ink-muted mb-2">
-            Tranche d&apos;âge <span className="text-danger">*</span>
-          </legend>
-          <RadioGroup
-            name="ageRange"
-            options={AGE_RANGE_OPTIONS}
-            value={form.ageRange}
-            onChange={(v) => set("ageRange", v)}
-            errors={fieldErrors}
-          />
-          <FieldError errors={fieldErrors} field="ageRange" />
-        </fieldset>
+        <RadioGroup
+          legend={<>Tranche d&apos;âge <span className="text-danger">*</span></>}
+          variant="chips"
+          name="ageRange"
+          options={AGE_RANGE_OPTIONS}
+          value={form.ageRange}
+          onChange={(v) => set("ageRange", v)}
+          error={fieldErrors.ageRange}
+        />
 
-        <fieldset className="min-w-0">
-          <legend className="block text-sm font-medium text-ink-muted mb-2">
-            Quelle est ta situation à l&apos;église ? <span className="text-danger">*</span>
-          </legend>
-          <RadioGroup
-            name="churchStatus"
-            options={CHURCH_STATUS_OPTIONS}
-            value={form.churchStatus}
-            onChange={(v) => set("churchStatus", v)}
-            errors={fieldErrors}
-          />
-          <FieldError errors={fieldErrors} field="churchStatus" />
-        </fieldset>
+        <RadioGroup
+          legend={<>Quelle est ta situation à l&apos;église ? <span className="text-danger">*</span></>}
+          variant="chips"
+          name="churchStatus"
+          options={CHURCH_STATUS_OPTIONS}
+          value={form.churchStatus}
+          onChange={(v) => set("churchStatus", v)}
+          error={fieldErrors.churchStatus}
+        />
 
-        <fieldset className="min-w-0">
-          <legend className="block text-sm font-medium text-ink-muted mb-2">
-            Quand souhaites-tu être contacté·e ? <span className="text-danger">*</span>
-          </legend>
-          <RadioGroup
-            name="contactConsent"
-            options={CONTACT_CONSENT_OPTIONS}
-            value={form.contactConsent}
-            onChange={(v) => set("contactConsent", v)}
-            errors={fieldErrors}
-          />
-          <FieldError errors={fieldErrors} field="contactConsent" />
-        </fieldset>
+        <RadioGroup
+          legend={<>Quand souhaites-tu être contacté·e ? <span className="text-danger">*</span></>}
+          variant="chips"
+          name="contactConsent"
+          options={CONTACT_CONSENT_OPTIONS}
+          value={form.contactConsent}
+          onChange={(v) => set("contactConsent", v)}
+          error={fieldErrors.contactConsent}
+        />
       </div>
 
       {/* Appel au salut */}

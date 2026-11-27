@@ -2,7 +2,7 @@
 
 import { useState, type ComponentProps } from "react";
 import { X } from "lucide-react";
-import { Button, Checkbox, IconButton } from "@/components/ui";
+import { Checkbox, IconButton, SegmentedControl } from "@/components/ui";
 import { useModalDialog } from "@/components/ui/use-modal-dialog";
 import SiteRenderer from "@/app/site/_components/SiteRenderer";
 
@@ -46,13 +46,13 @@ export default function SitePreviewDialog({
       <div className="flex h-full flex-col">
         <div className="flex flex-wrap items-center gap-2 border-b border-line bg-surface px-3 py-2">
           <h2 className="mr-2 font-display text-[15px] font-semibold">Aperçu du brouillon</h2>
-          <div role="radiogroup" aria-label="Largeur d'écran" className="flex gap-1">
-            {DEVICES.map((d) => (
-              <Button key={d.key} type="button" size="sm" variant={device === d.key ? "primary" : "secondary"} role="radio" aria-checked={device === d.key} onClick={() => setDevice(d.key)}>
-                {d.label}
-              </Button>
-            ))}
-          </div>
+          <SegmentedControl
+            label="Largeur d'écran"
+            size="sm"
+            value={device}
+            onChange={setDevice}
+            options={DEVICES.map((d) => ({ value: d.key, label: d.label }))}
+          />
           <label className="flex min-h-11 items-center gap-3 text-[15px]">
             <Checkbox checked={ended} onChange={(e) => setEnded(e.target.checked)} />
             Événement terminé

@@ -1,17 +1,19 @@
 "use client";
 
 import { ChevronLeft, Share2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import H5AudioPlayer from "react-h5-audio-player";
 import "react-h5-audio-player/lib/styles.css";
 import "./audio-player-theme.css";
 import Button from "@/components/ui/Button";
+import Select from "@/components/ui/Select";
 import StatusChip from "@/components/ui/StatusChip";
 import { buttonClasses } from "@/components/ui/button-classes";
 import { getResumePosition, saveProgress, clearProgress } from "@/lib/audio-progress";
 
 const PLAYBACK_RATES = [0.75, 1, 1.25, 1.5, 2];
+const SPEED_OPTIONS = PLAYBACK_RATES.map((rate) => ({ value: String(rate), label: `${rate}×` }));
 const LISTEN_INTERVAL_MS = 5000; // throttle de l'écriture de la reprise (plan.md)
 
 export interface AudioPlayerSegment {
@@ -157,16 +159,6 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
     playerRef.current?.audio.current?.load();
   }
 
-  const speedOptions = useMemo(
-    () =>
-      PLAYBACK_RATES.map((rate) => (
-        <option key={rate} value={rate}>
-          {rate}×
-        </option>
-      )),
-    []
-  );
-
   return (
     <div className={`${withBottomNav ? "pb-[calc(192px+env(safe-area-inset-bottom))]" : "pb-[calc(128px+env(safe-area-inset-bottom))]"} md:pb-0`}>
       {backHref && (
@@ -238,14 +230,15 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
         <div data-k-bottom-bar className={`fixed ${withBottomNav ? "bottom-[calc(64px+env(safe-area-inset-bottom))]" : "bottom-0 pb-[calc(12px+env(safe-area-inset-bottom))]"} md:bottom-auto inset-x-0 md:static bg-surface border-t md:border border-line md:rounded-card shadow-float md:shadow-card p-3 md:p-4 z-sticky`}>
           <div className="flex items-center justify-between mb-1">
             <p className="font-medium text-ink text-sm truncate pr-2">{current.title}</p>
-            <select
-              aria-label="Vitesse de lecture"
-              value={playbackRate}
-              onChange={(e) => setPlaybackRate(Number.parseFloat(e.target.value))}
-              className="min-h-11 shrink-0 cursor-pointer rounded-control border border-control-line bg-surface px-2 text-base text-ink focus:border-focus focus:outline-none focus:ring-1 focus:ring-focus sm:min-h-9"
-            >
-              {speedOptions}
-            </select>
+            <div className="w-24 shrink-0">
+              <Select
+                label="Vitesse de lecture"
+                hideLabel
+                value={String(playbackRate)}
+                onChange={(e) => setPlaybackRate(Number.parseFloat(e.target.value))}
+                options={SPEED_OPTIONS}
+              />
+            </div>
           </div>
 
           {resumeOffer !== null && (

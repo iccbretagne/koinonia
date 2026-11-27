@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Video } from "lucide-react";
-import { Alert, Button, ConfirmModal, buttonClasses } from "@/components/ui";
+import { Alert, Button, ConfirmModal, RadioGroup, buttonClasses } from "@/components/ui";
 import type { PublicInterviewView } from "@/modules/serving";
 
 type View = PublicInterviewView;
@@ -28,26 +28,25 @@ function SlotPicker({ slots, busy, onPick, onDecline, showDecline }: {
       {days.map((d) => {
         const ofDay = slots.filter((s) => dayKey(s.startsAt) === d);
         return (
-          <fieldset key={d} className="space-y-2">
-            <legend className="font-semibold text-ink first-letter:uppercase">{dayLabel(ofDay[0].startsAt)}</legend>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {ofDay.map((s) => (
-                <label
-                  key={s.id}
-                  className={`flex min-h-11 cursor-pointer items-start gap-3 rounded-control border p-3 ${chosen === s.id ? "border-brand bg-brand-soft" : "border-control-line bg-surface"}`}
-                >
-                  <input type="radio" name="slot" className="mt-1 size-5 accent-brand" checked={chosen === s.id} disabled={busy} onChange={() => setChosen(s.id)} />
-                  <span className="text-[15px] text-ink">
-                    <span className="font-semibold">{timeLabel(s.startsAt)}</span> · {s.durationMinutes} min
-                    <span className="block text-[13px] text-ink-muted">
-                      {s.visioUrl ? "En visio" : (s.location ?? "Lieu communiqué par l'équipe")}
-                      {s.interviewerName ? ` · avec ${s.interviewerName}` : ""}
-                    </span>
-                  </span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
+          <RadioGroup
+            key={d}
+            legend={<span className="inline-block first-letter:uppercase">{dayLabel(ofDay[0].startsAt)}</span>}
+            name="slot"
+            variant="cards"
+            columns={2}
+            value={chosen ?? ""}
+            disabled={busy}
+            onChange={setChosen}
+            options={ofDay.map((s) => ({
+              value: s.id,
+              label: (
+                <>
+                  <span className="font-semibold">{timeLabel(s.startsAt)}</span> · {s.durationMinutes} min
+                </>
+              ),
+              description: `${s.visioUrl ? "En visio" : (s.location ?? "Lieu communiqué par l'équipe")}${s.interviewerName ? ` · avec ${s.interviewerName}` : ""}`,
+            }))}
+          />
         );
       })}
       <div className="flex flex-wrap gap-3">

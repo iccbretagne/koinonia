@@ -8,7 +8,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import EmptyState from "@/components/ui/EmptyState";
-import { FilterChip, Input, SearchInput, Select, buttonClasses, fieldLabelClasses } from "@/components/ui";
+import { FilterChip, Input, SearchInput, Select, buttonClasses, fieldLabelClasses, radioInputClasses } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
 import MediaLightbox from "@/components/media/MediaLightbox";
 import CollectionBuilder from "../collections/CollectionBuilder";
@@ -513,7 +513,7 @@ function FiltersDialog({
           <ul className="mt-2 max-h-56 overflow-y-auto border border-line rounded-control divide-y divide-line">
             <li>
               <label className="flex min-h-11 items-center gap-3 px-3 py-2 text-[15px] text-ink cursor-pointer">
-                <input className="size-5 shrink-0 accent-brand" type="radio" name={`${uid}-source`} checked={source === ""} onChange={() => setSource("")} /> Tous
+                <input className={radioInputClasses} type="radio" name={`${uid}-source`} checked={source === ""} onChange={() => setSource("")} /> Tous
               </label>
             </li>
             {sources === null && <li className="px-3 py-2 text-sm text-ink-subtle">Chargement…</li>}
@@ -522,7 +522,7 @@ function FiltersDialog({
               return (
                 <li key={value}>
                   <label className="flex min-h-11 items-center gap-3 px-3 py-2 text-[15px] text-ink cursor-pointer">
-                    <input className="size-5 shrink-0 accent-brand" type="radio" name={`${uid}-source`} checked={source === value} onChange={() => setSource(value)} />
+                    <input className={radioInputClasses} type="radio" name={`${uid}-source`} checked={source === value} onChange={() => setSource(value)} />
                     <span className="truncate">{s.name}</span>
                     <span className="ml-auto text-xs text-ink-subtle shrink-0">{s.type === "event" ? "Événement" : "Projet"}</span>
                   </label>

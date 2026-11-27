@@ -125,7 +125,7 @@ export default function EntryForm({
         <fieldset className="flex gap-2">
           <legend className="sr-only">Sens</legend>
           {(["IN", "OUT"] as const).map((d) => (
-            <label key={d} className={`flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-control border font-display text-sm font-semibold focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus ${form.direction === d ? "border-brand bg-brand-soft text-brand-text" : "border-control-line text-ink-muted"}`}>
+            <label key={d} className={`flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-control border font-display text-sm font-semibold has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${form.direction === d ? "border-brand bg-brand-soft text-brand-text" : "border-control-line text-ink-muted"}`}>
               <input type="radio" className="sr-only" name={`${ids}-dir`} checked={form.direction === d} onChange={() => setForm((f) => ({ ...f, direction: d, categoryId: "" }))} />
               {d === "IN" ? "Entrée" : "Sortie"}
             </label>

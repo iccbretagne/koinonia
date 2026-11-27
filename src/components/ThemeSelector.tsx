@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
+import SegmentedControl from "@/components/ui/SegmentedControl";
 
 type ThemeChoice = "system" | "light" | "dark";
 
@@ -59,25 +60,19 @@ export default function ThemeSelector() {
   const choice = useSyncExternalStore(subscribe, readChoice, () => "system" as ThemeChoice);
 
   return (
-    <div role="radiogroup" aria-label="Thème" className="inline-flex gap-1 rounded-control bg-surface-sunken p-1">
-      {OPTIONS.map(({ value, label, icon: Icon }) => {
-        const active = choice === value;
-        return (
-          <button
-            key={value}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            onClick={() => apply(value)}
-            className={`inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-[8px] px-3 font-display text-sm font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:min-h-10 ${
-              active ? "bg-surface text-brand-text shadow-card" : "text-ink-muted hover:text-ink"
-            }`}
-          >
+    <SegmentedControl
+      label="Thème"
+      value={choice}
+      onChange={apply}
+      options={OPTIONS.map(({ value, label, icon: Icon }) => ({
+        value,
+        label: (
+          <span className="inline-flex items-center gap-2">
             <Icon aria-hidden="true" className="size-4" strokeWidth={1.75} />
             {label}
-          </button>
-        );
-      })}
-    </div>
+          </span>
+        ),
+      }))}
+    />
   );
 }

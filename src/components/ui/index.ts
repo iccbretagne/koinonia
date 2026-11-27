@@ -30,6 +30,7 @@ export { default as Modal } from "./Modal";
 export { default as PageHeader } from "./PageHeader";
 export {
   default as RadioGroup,
+  choiceCardClasses,
   choiceChipClasses,
   radioInputClasses,
   type RadioOption,

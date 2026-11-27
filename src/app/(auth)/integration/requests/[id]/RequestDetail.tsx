@@ -19,7 +19,7 @@ import {
   type StatusTone,
 } from "@/components/ui";
 import HistoryTimeline from "@/components/HistoryTimeline";
-import { choiceChipClasses } from "@/components/ui/RadioGroup";
+import RadioGroup, { choiceChipClasses } from "@/components/ui/RadioGroup";
 
 type DateLike = Date | string;
 
@@ -1570,22 +1570,13 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
           <p className="text-[15px] leading-[22px] text-ink-muted">
             Cette demande sera marquée comme abandonnée. Elle pourra être rouverte si nécessaire.
           </p>
-          <fieldset className="flex min-w-0 flex-col">
-            <legend className={`${fieldLabelClasses} mb-1`}>Motif</legend>
-            {ABANDON_REASON_OPTIONS.map(([value, label]) => (
-              <label key={value} className="flex min-h-11 cursor-pointer items-center gap-3 text-[15px] text-ink">
-                <input
-                  type="radio"
-                  name="abandonReasonCode"
-                  value={value}
-                  checked={abandonReasonCode === value}
-                  onChange={() => setAbandonReasonCode(value)}
-                  className="size-5 accent-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-                />
-                {label}
-              </label>
-            ))}
-          </fieldset>
+          <RadioGroup
+            legend="Motif"
+            name="abandonReasonCode"
+            value={abandonReasonCode}
+            onChange={setAbandonReasonCode}
+            options={ABANDON_REASON_OPTIONS.map(([value, label]) => ({ value, label }))}
+          />
           <Textarea
             id={`${uid}-abandon-reason`}
             label="Commentaire (facultatif)"

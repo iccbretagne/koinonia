@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeftRight, X } from "lucide-react";
-import { Alert, Button, EmptyState, IconButton, Modal, SearchInput, StatusChip, type StatusTone } from "@/components/ui";
+import { Alert, Button, EmptyState, IconButton, Modal, RadioGroup, SearchInput, StatusChip, type StatusTone } from "@/components/ui";
 
 type MemberSummary = {
   id: string;
@@ -97,17 +97,17 @@ function FieldPicker<T extends string | null>({
     );
   }
   return (
-    <fieldset className="min-w-0 rounded-control border border-line bg-surface p-2">
-      <legend className="px-1 text-sm font-semibold text-ink">{label}</legend>
-      <label className="flex min-h-11 cursor-pointer items-center gap-3 px-1">
-        <input type="radio" className="size-5 accent-brand" checked={choice.from === "source"} onChange={() => onChange({ value: sourceValue, from: "source" })} />
-        <span className="text-[15px] text-ink">{sourceValue ?? <span className="text-ink-muted">vide</span>} <span className="text-[13px] leading-[18px] text-ink-muted">(fiche supprimée)</span></span>
-      </label>
-      <label className="flex min-h-11 cursor-pointer items-center gap-3 px-1">
-        <input type="radio" className="size-5 accent-brand" checked={choice.from === "target"} onChange={() => onChange({ value: targetValue, from: "target" })} />
-        <span className="text-[15px] text-ink">{targetValue ?? <span className="text-ink-muted">vide</span>} <span className="text-[13px] leading-[18px] text-ink-muted">(fiche conservée)</span></span>
-      </label>
-    </fieldset>
+    <div className="min-w-0 rounded-control border border-line bg-surface px-3 pt-2">
+      <RadioGroup
+        legend={label}
+        value={choice.from === "manual" ? "" : choice.from}
+        onChange={(from) => onChange({ value: from === "source" ? sourceValue : targetValue, from })}
+        options={[
+          { value: "source", label: sourceValue ?? <span className="text-ink-muted">vide</span>, description: "Fiche supprimée" },
+          { value: "target", label: targetValue ?? <span className="text-ink-muted">vide</span>, description: "Fiche conservée" },
+        ]}
+      />
+    </div>
   );
 }
 
@@ -238,24 +238,16 @@ function MergeModal({
         {/* Conflit de compte lié */}
         {bothHaveLink && (
           <Alert tone="warning" title="Les deux ont un compte Google lié — lequel conserver ?">
-            <label className="flex min-h-11 cursor-pointer items-center gap-3">
-              <input
-                type="radio"
-                className="size-5 accent-brand"
-                checked={keepUserId === source.userLink!.userId}
-                onChange={() => setKeepUserId(source.userLink!.userId)}
-              />
-              <span className="text-[15px] text-ink">{source.userLink!.name ?? source.userLink!.email} <span className="text-[13px] leading-[18px] text-ink-muted">(source)</span></span>
-            </label>
-            <label className="flex min-h-11 cursor-pointer items-center gap-3">
-              <input
-                type="radio"
-                className="size-5 accent-brand"
-                checked={keepUserId === target.userLink!.userId}
-                onChange={() => setKeepUserId(target.userLink!.userId)}
-              />
-              <span className="text-[15px] text-ink">{target.userLink!.name ?? target.userLink!.email} <span className="text-[13px] leading-[18px] text-ink-muted">(cible)</span></span>
-            </label>
+            <RadioGroup
+              legend="Compte Google à conserver"
+              hideLegend
+              value={keepUserId ?? ""}
+              onChange={setKeepUserId}
+              options={[
+                { value: source.userLink!.userId, label: source.userLink!.name ?? source.userLink!.email, description: "Source" },
+                { value: target.userLink!.userId, label: target.userLink!.name ?? target.userLink!.email, description: "Cible" },
+              ]}
+            />
           </Alert>
         )}
 

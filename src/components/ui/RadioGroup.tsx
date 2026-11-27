@@ -7,7 +7,7 @@ import { fieldLabelClasses } from "./field-classes";
 export interface RadioOption<T extends string> {
   readonly value: T;
   readonly label: ReactNode;
-  /** Précision sous le libellé (variante `list` seulement). */
+  /** Précision sous le libellé (variantes `list` et `cards`) : contenu, prix, raison d'une indisponibilité. */
   readonly description?: ReactNode;
   readonly disabled?: boolean;
 }
@@ -17,6 +17,8 @@ interface RadioGroupProps<T extends string> {
   readonly legend: ReactNode;
   /** Masque la légende à l'écran (elle reste lue) : un titre voisin pose déjà la question. */
   readonly hideLegend?: boolean;
+  /** Précision sous la légende, avant les choix (aide de la question), relue par `aria-describedby`. */
+  readonly description?: ReactNode;
   /** Nom du champ (formulaire natif) ; un identifiant stable est généré à défaut. */
   readonly name?: string;
   readonly options: readonly RadioOption<T>[];
@@ -26,9 +28,12 @@ interface RadioGroupProps<T extends string> {
   readonly onChange?: (value: T) => void;
   /**
    * `list` (défaut) : un rond par ligne de 44 px, pour des choix à lire ;
-   * `chips` : pastilles de choix sur une ligne qui passe à la ligne, pour des choix courts.
+   * `chips` : pastilles de choix sur une ligne qui passe à la ligne, pour des choix courts ;
+   * `cards` : cartes bordées (rond, libellé, description), cochée en `brand-soft`, pour des choix riches.
    */
-  readonly variant?: "list" | "chips";
+  readonly variant?: "list" | "chips" | "cards";
+  /** Colonnes à partir de 640 px (variantes `list` et `cards`) ; une seule sur mobile. */
+  readonly columns?: 1 | 2 | 3;
   readonly required?: boolean;
   readonly disabled?: boolean;
   readonly hint?: ReactNode;
@@ -48,6 +53,15 @@ export function choiceChipClasses(on: boolean): string {
     }`;
 }
 
+/**
+ * Carte de choix (radio visible dans un `<label>` bordé) : 44 px minimum, cochée en
+ * `brand-soft`/`brand` par `has-[:checked]` (contrôlé ou non), désactivée à 0.45.
+ */
+export const choiceCardClasses =
+  "flex min-h-11 cursor-pointer items-start gap-3 rounded-control border border-control-line bg-surface px-3 py-2.5 text-[15px] leading-[22px] text-ink transition-colors duration-120 has-[:checked]:border-brand has-[:checked]:bg-brand-soft has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-45";
+
+const COLUMNS = { 1: "", 2: "sm:grid-cols-2", 3: "sm:grid-cols-3" } as const;
+
 /** Rond de choix natif aux couleurs du design system (20 px, coché en `brand`). */
 export const radioInputClasses =
   "mt-0.5 size-5 shrink-0 cursor-pointer accent-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed";
@@ -60,12 +74,14 @@ export const radioInputClasses =
 export default function RadioGroup<T extends string>({
   legend,
   hideLegend = false,
+  description,
   name,
   options,
   value,
   defaultValue,
   onChange,
   variant = "list",
+  columns = 1,
   required,
   disabled = false,
   hint,
@@ -75,17 +91,32 @@ export default function RadioGroup<T extends string>({
   const generated = useId();
   const groupName = name ?? generated;
   const messageId = `${generated}-message`;
+  const descriptionId = `${generated}-description`;
   const controlled = value !== undefined;
+  const describedBy = [description ? descriptionId : null, hint || error ? messageId : null].filter(Boolean).join(" ");
+  const layout =
+    variant === "chips"
+      ? "flex flex-wrap gap-2"
+      : columns > 1
+        ? `grid gap-2 ${COLUMNS[columns]}`
+        : variant === "cards"
+          ? "flex flex-col gap-2"
+          : "flex flex-col";
 
   return (
     <fieldset
       className={`min-w-0 ${className}`}
       disabled={disabled}
-      aria-describedby={hint || error ? messageId : undefined}
+      aria-describedby={describedBy || undefined}
       aria-invalid={error ? true : undefined}
     >
-      <legend className={hideLegend ? "sr-only" : `${fieldLabelClasses} mb-2`}>{legend}</legend>
-      <div className={variant === "chips" ? "flex flex-wrap gap-2" : "flex flex-col"}>
+      <legend className={hideLegend ? "sr-only" : `${fieldLabelClasses} ${description ? "mb-1" : "mb-2"}`}>{legend}</legend>
+      {description && (
+        <p id={descriptionId} className="mb-2 text-[13px] leading-[18px] text-ink-muted">
+          {description}
+        </p>
+      )}
+      <div className={layout}>
         {options.map((opt) => {
           const checkedProps = controlled
             ? { checked: value === opt.value, onChange: () => onChange?.(opt.value) }
@@ -107,6 +138,28 @@ export default function RadioGroup<T extends string>({
               </label>
             );
           }
+          const text = (
+            <span className="flex min-w-0 flex-col">
+              <span>{opt.label}</span>
+              {opt.description && <span className="text-[13px] leading-[18px] text-ink-muted">{opt.description}</span>}
+            </span>
+          );
+          if (variant === "cards") {
+            return (
+              <label key={opt.value} className={choiceCardClasses}>
+                <input
+                  type="radio"
+                  name={groupName}
+                  value={opt.value}
+                  required={required}
+                  disabled={opt.disabled}
+                  className={radioInputClasses}
+                  {...checkedProps}
+                />
+                {text}
+              </label>
+            );
+          }
           return (
             <label
               key={opt.value}
@@ -123,10 +176,7 @@ export default function RadioGroup<T extends string>({
                 className={radioInputClasses}
                 {...checkedProps}
               />
-              <span className="flex min-w-0 flex-col">
-                <span>{opt.label}</span>
-                {opt.description && <span className="text-[13px] leading-[18px] text-ink-muted">{opt.description}</span>}
-              </span>
+              {text}
             </label>
           );
         })}

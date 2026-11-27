@@ -17,6 +17,7 @@ import {
   buttonClasses,
   iconButtonClasses,
   fieldLabelClasses,
+  radioInputClasses,
   useToast,
   type StatusTone,
 } from "@/components/ui";
@@ -222,7 +223,7 @@ function NumberInput({
 function Option({ children, input, disabled }: { readonly children: ReactNode; readonly input: ReactNode; readonly disabled: boolean }) {
   return (
     <label
-      className={`flex min-h-11 items-center gap-3 rounded-control border border-control-line bg-surface px-3 py-2 text-[15px] leading-[22px] text-ink ${
+      className={`flex min-h-11 items-center gap-3 rounded-control border border-control-line bg-surface px-3 py-2 text-[15px] leading-[22px] text-ink has-[:checked]:border-brand has-[:checked]:bg-brand-soft ${
         disabled ? "opacity-70" : "cursor-pointer hover:bg-surface-sunken"
       }`}
     >
@@ -243,7 +244,7 @@ function Radio({
   readonly disabled: boolean;
   readonly onChange: () => void;
 }) {
-  return <input type="radio" name={name} className="size-5 shrink-0 accent-brand" checked={checked} disabled={disabled} onChange={onChange} />;
+  return <input type="radio" name={name} className={radioInputClasses} checked={checked} disabled={disabled} onChange={onChange} />;
 }
 
 function FieldTitle({

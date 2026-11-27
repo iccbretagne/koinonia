@@ -119,7 +119,7 @@ Ajoutés pendant la mise en conformité, pour remplacer les contrôles refaits �
 - [`Menu`](components/Menu.md) : menu d'actions « ⋯ », liste ancrée sur desktop, feuille du bas sur mobile ;
 - [`SegmentedControl`](components/SegmentedControl.md) : deux à cinq options exclusives qui changent la vue d'une page ;
 - [`Switch`](components/Switch.md) : interrupteur `role="switch"` pour un réglage appliqué ;
-- [`RadioGroup`](components/RadioGroup.md) : choix unique dans un formulaire (liste ou pastilles, `choiceChipClasses`) ;
+- [`RadioGroup`](components/RadioGroup.md) : choix unique dans un formulaire (liste, pastilles ou cartes, en grille au besoin ; `choiceChipClasses`, `choiceCardClasses`, `radioInputClasses`) ;
 - [`FileInput`](components/FileInput.md) : sélecteur de fichier sous forme de bouton du design system ;
 - [`Tabs`](components/Tabs.md) en mode état (`value`/`onChange`/`idBase`, `TabPanel`) en plus du mode liens.
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { Button, Checkbox, EmptyState, IconButton, Input, Modal, StatusChip, Textarea, fieldLabelClasses } from "@/components/ui";
+import { Button, Checkbox, EmptyState, IconButton, Input, Modal, RadioGroup, StatusChip, Textarea } from "@/components/ui";
 import type { EventDetail } from "@/modules/ticketing";
 import { OPTION_SCOPE_LABEL, formatEuros } from "@/modules/ticketing/schemas";
 import type { TicketingOptionScope, TicketingOptionType } from "@/generated/prisma/enums";
@@ -106,33 +106,21 @@ function CardChoice<T extends string>({
   readonly onChange: (v: T) => void;
 }) {
   return (
-    <fieldset className="space-y-2">
-      <legend className={fieldLabelClasses}>{legend}</legend>
-      <div className="grid gap-2 sm:grid-cols-3">
-        {items.map((it) => (
-          <label
-            key={it.value}
-            className={`flex cursor-pointer items-start gap-2 rounded-control border p-3 ${
-              value === it.value ? "border-brand bg-brand-soft" : "border-control-line bg-surface"
-            } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
-          >
-            <input
-              type="radio"
-              name={name}
-              className="mt-0.5 size-4 accent-brand"
-              checked={value === it.value}
-              disabled={disabled}
-              onChange={() => onChange(it.value)}
-            />
-            <span>
-              <span className="block text-[15px] font-medium text-ink">{it.title}</span>
-              <span className="block text-[13px] text-ink-muted">{it.example}</span>
-            </span>
-          </label>
-        ))}
-      </div>
-      {hint && <p className="text-[13px] text-ink-muted">{hint}</p>}
-    </fieldset>
+    <RadioGroup
+      legend={legend}
+      name={name}
+      variant="cards"
+      columns={3}
+      value={value}
+      disabled={disabled}
+      hint={hint}
+      onChange={onChange}
+      options={items.map((it) => ({
+        value: it.value,
+        label: <span className="font-medium">{it.title}</span>,
+        description: it.example,
+      }))}
+    />
   );
 }
 
