@@ -5,7 +5,7 @@ import { buildSpaces, resolveActive, type NavigationInput } from "../navigation"
 const base: NavigationInput = {
   departments: [],
   configLinks: [],
-  requestLinks: [{ href: "/requests", label: "Mes demandes" }],
+  requestLinks: [{ href: "/demandes", label: "Mes demandes" }],
   mediaLinks: [],
   homeHref: "/accueil",
 };
@@ -24,11 +24,11 @@ describe("navigation — trésorerie (spec 076)", () => {
   });
 
   it("sans droit, aucune entrée « Trésorerie »", () => {
-    expect(financePages({ ...base, hasAccounting: true, hasAccountingManage: true }).some((p) => p.href === "/accounting/tresorerie")).toBe(false);
+    expect(financePages({ ...base, hasAccounting: true, hasAccountingManage: true }).some((p) => p.href === "/finances/tresorerie")).toBe(false);
   });
 
-  it("/accounting/tresorerie allume « Trésorerie »", () => {
+  it("/finances/tresorerie allume « Trésorerie »", () => {
     const spaces = buildSpaces({ ...base, hasAccounting: true, hasAccountingManage: true, hasTreasury: true });
-    expect(resolveActive(spaces, "/accounting/tresorerie")).toEqual({ space: "finances", page: "/accounting/tresorerie" });
+    expect(resolveActive(spaces, "/finances/tresorerie")).toEqual({ space: "finances", page: "/finances/tresorerie" });
   });
 });

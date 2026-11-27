@@ -3,6 +3,7 @@ import { createNotification, notifyDeptMembers, notifyUsers } from "@/lib/notifi
 import { DEPT_FN } from "@/lib/department-functions";
 import { DEFAULT_CARE_SETTINGS, type CareDelays } from "./settings";
 import { paths } from "@/lib/paths";
+import { currentHref, legacyAndCurrent } from "@/lib/legacy-paths";
 
 /**
  * Relances de l'espace suivi pastoral (spec 052, T60), pour les deux sortes de demandes :
@@ -192,12 +193,12 @@ async function lastRelanceDates(links: string[]): Promise<Map<string, Date>> {
   const lastNotifiedAt = new Map<string, Date>();
   if (links.length === 0) return lastNotifiedAt;
   const existingNotifs = await prisma.notification.findMany({
-    where: { type: { in: [RELANCE_TYPE_UNASSIGNED, RELANCE_TYPE_UNSCHEDULED] }, link: { in: links } },
+    where: { type: { in: [RELANCE_TYPE_UNASSIGNED, RELANCE_TYPE_UNSCHEDULED] }, link: { in: [...new Set(links.flatMap(legacyAndCurrent))] } },
     select: { link: true, type: true, createdAt: true },
     orderBy: { createdAt: "desc" },
   });
   for (const n of existingNotifs) {
-    const key = `${n.type}:${n.link}`;
+    const key = `${n.type}:${n.link && currentHref(n.link)}`;
     if (!lastNotifiedAt.has(key)) lastNotifiedAt.set(key, n.createdAt); // le plus récent d'abord
   }
   return lastNotifiedAt;

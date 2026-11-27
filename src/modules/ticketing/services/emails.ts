@@ -248,7 +248,7 @@ export async function deliverToContact(
     if (contact.userId) {
       const { createNotification } = await import("@/lib/notifications");
       await createNotification(
-        { userId: contact.userId, domain: "ticketing", link: paths.billetterie.mesReservations(), ...notification },
+        { userId: contact.userId, domain: "ticketing", link: paths.events.mesInscriptions(), ...notification },
         { email: mail }
       );
       return;

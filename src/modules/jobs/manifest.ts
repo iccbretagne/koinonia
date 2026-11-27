@@ -17,7 +17,7 @@ export const jobsModule = defineModule({
   dependsOn: ["core"],
 
   routes: {
-    authenticated: [{ path: "/jobs" }, { path: "/admin/jobs" }],
+    authenticated: [{ path: "/ressources/offres" }],
     api: [{ path: "/api/jobs" }],
   },
 

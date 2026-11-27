@@ -218,7 +218,7 @@ describe("bout en bout — activer un domaine désactivé par défaut déclenche
     prismaMock.notificationEmailPreference.findMany.mockResolvedValue([]);
 
     await createNotification(
-      { userId: "u1", domain: "media", type: "MEDIA_FILE_APPROVED", title: "t", message: "m", link: "/media" },
+      { userId: "u1", domain: "media", type: "MEDIA_FILE_APPROVED", title: "t", message: "m", link: "/medias" },
       { email: { subject: "s", html: "h" } }
     );
 
@@ -232,7 +232,7 @@ describe("bout en bout — activer un domaine désactivé par défaut déclenche
     ]);
 
     await createNotification(
-      { userId: "u1", domain: "media", type: "MEDIA_FILE_APPROVED", title: "t", message: "m", link: "/media" },
+      { userId: "u1", domain: "media", type: "MEDIA_FILE_APPROVED", title: "t", message: "m", link: "/medias" },
       { email: { subject: "s", html: "h" } }
     );
 
@@ -267,9 +267,9 @@ describe("rattachement à un objet (spec 057)", () => {
   });
 
   it("deleteItemNotifications : rattachement OU lien", async () => {
-    await deleteItemNotifications(prismaMock as never, "AppointmentRequest", "req-1", ["/care/requests/req-1"]);
+    await deleteItemNotifications(prismaMock as never, "AppointmentRequest", "req-1", ["/pastoral/suivi/rendez-vous/req-1"]);
     expect(prismaMock.notification.deleteMany).toHaveBeenCalledWith({
-      where: { OR: [entity, { link: { in: ["/care/requests/req-1"] } }] },
+      where: { OR: [entity, { link: { in: ["/pastoral/suivi/rendez-vous/req-1", "/care/requests/req-1"] } }] },
     });
   });
 

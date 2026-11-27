@@ -98,7 +98,7 @@ export async function PATCH(
       isPartial,
       residualAmount: isPartial ? fmt(remainder) : undefined,
       churchName:     church?.name ?? "Koinonia",
-      requestUrl:     `${appUrl}/accounting/requests/${payment.requestId}`,
+      requestUrl:     `${appUrl}${paths.accounting.request(payment.requestId)}`,
     });
     await createNotification(
       {

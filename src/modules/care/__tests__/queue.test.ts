@@ -1,4 +1,4 @@
-/** File « Rendez-vous et suivis à confier » (spec 092) : pastilles des onglets de `/care`. */
+/** File « Rendez-vous et suivis à confier » (spec 092) : pastilles des onglets de `/pastoral/suivi`. */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 

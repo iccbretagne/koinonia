@@ -12,14 +12,14 @@ import {
 import PageHeader from "@/components/ui/PageHeader";
 import StatusChip, { type StatusTone } from "@/components/ui/StatusChip";
 import type { SpaceCard } from "@/lib/media-space";
-import { paths, PREFIXES } from "@/lib/paths";
+import { paths } from "@/lib/paths";
 
 /** Icône d'une carte, d'après sa destination (les cartes sont décrites par `@/lib/media-space`). */
 const CARD_ICONS: { prefix: string; icon: LucideIcon }[] = [
   { prefix: paths.media.events(), icon: Camera },
   { prefix: paths.media.projects(), icon: ImageIcon },
   { prefix: paths.media.requests(), icon: ImageIcon },
-  { prefix: PREFIXES.communication, icon: Megaphone },
+  { prefix: paths.communication.requests(), icon: Megaphone },
   { prefix: paths.audio.ecouter(), icon: Headphones },
   { prefix: paths.audio.production(), icon: AudioLines },
   { prefix: paths.audio.parametres(), icon: SlidersHorizontal },

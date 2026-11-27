@@ -13,12 +13,12 @@ const ALL: Required<PaletteActionRights> = {
 };
 
 const EXPECTED: Record<keyof PaletteActionRights, [string, string]> = {
-  hasAvailability: ["Déclarer une absence", "/disponibilites?declarer=1"],
-  hasMembersAccess: ["Nouvelle demande", "/requests/new"],
-  hasCareRequest: ["Demander un rendez-vous", "/care/request?new=1"],
-  hasEventsManage: ["Nouvel événement", "/admin/events?nouveau=1"],
-  hasAccountingSubmit: ["Nouvelle demande comptable", "/accounting/requests/new"],
-  hasTreasury: ["Nouvelle saisie de trésorerie", "/accounting/tresorerie?saisie=1"],
+  hasAvailability: ["Déclarer une absence", "/planning/disponibilites?declarer=1"],
+  hasMembersAccess: ["Nouvelle demande", "/demandes/nouvelle"],
+  hasCareRequest: ["Demander un rendez-vous", "/demandes/rendez-vous?new=1"],
+  hasEventsManage: ["Nouvel événement", "/evenements/gestion?nouveau=1"],
+  hasAccountingSubmit: ["Nouvelle demande comptable", "/finances/demandes/nouvelle"],
+  hasTreasury: ["Nouvelle saisie de trésorerie", "/finances/tresorerie?saisie=1"],
 };
 
 describe("paletteActions", () => {

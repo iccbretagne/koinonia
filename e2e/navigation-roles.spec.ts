@@ -89,13 +89,13 @@ for (const [role, nav] of Object.entries(NAV_BY_ROLE)) {
 
 // Pages clés : accessibles (pas de « Accès refusé ») pour le rôle, lecture seule.
 const KEY_PAGES: Record<string, string[]> = {
-  admin: ["/admin/events", "/admin/members", "/events"],
-  secretaire: ["/admin/events", "/admin/members"],
+  admin: ["/evenements/gestion", "/personnes/star", "/evenements"],
+  secretaire: ["/evenements/gestion", "/personnes/star"],
   // Spec 092, lot 3 : « Mes demandes » et la demande de RDV pastoral ouvertes à tout compte.
-  star: ["/planning", "/profile/notifications", "/requests", "/care/request?new=1"],
-  comptable: ["/dons", "/requests", "/care/request?new=1"],
-  reporter: ["/admin/reports", "/requests", "/care/request?new=1"],
-  "referent-soins": ["/requests", "/care/request?new=1"],
+  star: ["/planning", "/profile/notifications", "/demandes", "/demandes/rendez-vous?new=1"],
+  comptable: ["/finances/dons", "/demandes", "/demandes/rendez-vous?new=1"],
+  reporter: ["/evenements/comptes-rendus", "/demandes", "/demandes/rendez-vous?new=1"],
+  "referent-soins": ["/demandes", "/demandes/rendez-vous?new=1"],
 };
 
 for (const [role, urls] of Object.entries(KEY_PAGES)) {

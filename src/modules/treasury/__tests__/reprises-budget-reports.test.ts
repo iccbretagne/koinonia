@@ -48,7 +48,7 @@ describe("reprises par lecture (spec 076, ADR-0027)", () => {
       date: "2026-10-20",
       categoryId: "ndf",
       label: "Reliquat rendu · Micros",
-      link: "/accounting/requests/r3",
+      link: "/finances/demandes/r3",
     });
     expect(lines.some((l) => l.id === "return:j2")).toBe(false);
     expect(listTreasuryReturns).toHaveBeenCalledWith("church-1");
@@ -57,7 +57,7 @@ describe("reprises par lecture (spec 076, ADR-0027)", () => {
   it("un paiement versé depuis une caisse est une sortie reprise, en lecture seule, avec son origine", async () => {
     const lines = await loadRepriseLines("church-1", accounts);
     const p1 = lines.find((l) => l.id === "payment:p1")!;
-    expect(p1).toMatchObject({ source: "accounting", direction: "OUT", amount: 84.9, date: "2026-10-09", categoryId: "ndf", link: "/accounting/requests/r1" });
+    expect(p1).toMatchObject({ source: "accounting", direction: "OUT", amount: 84.9, date: "2026-10-09", categoryId: "ndf", link: "/finances/demandes/r1" });
     expect(lines.find((l) => l.id === "payment:p2")).toMatchObject({ categoryId: "nav", amount: 200, label: "Avance de budget · Carburant" });
   });
 

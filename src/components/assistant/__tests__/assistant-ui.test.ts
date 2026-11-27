@@ -65,7 +65,7 @@ describe("bouton d'aide (spec 075)", () => {
   });
 
   it("se retire des écrans de terrain de la billetterie", () => {
-    pathname = "/billetterie/evt-1/controle";
+    pathname = "/evenements/billetterie/evt-1/controle";
     expect(renderToStaticMarkup(createElement(AssistantLauncher, { enabled: true, persona: "NIA", firstName: null }))).toBe("");
     pathname = "/planning";
   });

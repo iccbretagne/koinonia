@@ -19,8 +19,8 @@ export default function MyRegistrationsTabs({
     <Tabs
       ariaLabel="Mes inscriptions"
       tabs={[
-        { href: paths.billetterie.mesReservations(), label: "Réservations", count: reservations, active: active === "reservations" },
-        { href: paths.formulaires.mesReponses(), label: "Réponses", count: responses, active: active === "responses" },
+        { href: paths.events.mesInscriptions(), label: "Réservations", count: reservations, active: active === "reservations" },
+        { href: paths.events.mesInscriptions({ vue: "formulaires" }), label: "Réponses", count: responses, active: active === "responses" },
       ]}
     />
   );

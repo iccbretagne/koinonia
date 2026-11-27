@@ -37,7 +37,7 @@ Un écran de terrain suit ce patron, dans un module et sans infrastructure nouve
 5. **Incohérence gardée** : une opération incohérente (entrée d'une personne déjà à l'intérieur,
    vue d'un autre téléphone) est enregistrée, marquée « anomalie » et signalée, jamais perdue.
 6. **Rechargement hors ligne** : le service worker sert `/_next/static/*` (fichiers immuables à
-   empreinte) en **cache d'abord** (cache `koinonia-v6`) ; les pages restent en réseau d'abord
+   empreinte) en **cache d'abord** (cache `koinonia-v7` depuis la spec 092, lot 4 ; une réponse redirigée n'est jamais mise en cache) ; les pages restent en réseau d'abord
    avec le cache en repli. Un écran ouvert une fois en ligne se recharge donc sans réseau.
 
 ## Conséquences

@@ -54,7 +54,7 @@ export async function notifyAccountingNewRequest(churchId: string, req: RequestF
     submitterName:  req.submittedBy.name ?? req.submittedBy.email ?? "—",
     description:    req.description,
     churchName:     church!.name,
-    requestUrl:     `${appUrl}/accounting/requests/${req.id}`,
+    requestUrl:     `${appUrl}${paths.accounting.request(req.id)}`,
   });
 
   // Adresse institutionnelle configurée par l'église (church.accountingEmails, liste blanche :

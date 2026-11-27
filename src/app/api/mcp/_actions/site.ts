@@ -22,6 +22,7 @@ import { safeFetchImage } from "@/lib/safe-fetch";
 import { publicOrigin } from "@/modules/mcp";
 import { type ActionContext, type ActionResult, type McpActionDef, refusal } from "./common";
 import { eventAction, eventFor, eventRef, type Prepared } from "./ticketing";
+import { paths } from "@/lib/paths";
 
 /**
  * Site d'événement par l'assistant (spec 084, lot 4) : lecture du document avec ses identifiants
@@ -128,7 +129,7 @@ async function readAssets(input: z.infer<typeof eventInput>, ctx: ActionContext)
 async function uploadLink(input: z.infer<typeof eventInput>, ctx: ActionContext): Promise<ActionResult> {
   const found = await eventFor(ctx, input.event, "site");
   if (typeof found === "string") return refusal(found);
-  const url = `${publicOrigin()}/billetterie/${found.id}/images`;
+  const url = `${publicOrigin()}${paths.billetterie.images(found.id)}`;
   return {
     text: `Page de dépôt des images du site de « ${found.title} » : ${url}\nLa personne s'y connecte, dépose ses fichiers avec un texte alternatif pour chacun ; ensuite, relisez ticketing_site_assets pour retrouver les identifiants.`,
     structured: { url },

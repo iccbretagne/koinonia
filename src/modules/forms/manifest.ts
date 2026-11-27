@@ -21,7 +21,7 @@ export const formsModule = defineModule({
   dependsOn: ["core"],
 
   routes: {
-    authenticated: [{ path: "/formulaires" }],
+    authenticated: [{ path: "/evenements/formulaires" }],
     api: [{ path: "/api/forms" }],
     public: [{ path: "/f" }, { path: "/api/forms/public" }],
   },

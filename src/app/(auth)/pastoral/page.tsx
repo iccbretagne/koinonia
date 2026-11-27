@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation";
+import { redirectToSpace } from "@/lib/space-redirect";
 import { paths } from "@/lib/paths";
 
-/** Spec 092, lot 3 : le tableau pastoral est rendu par l'Accueil en vue pastorale. L'adresse reste servie pour les liens mémorisés. */
-export default function PastoralRedirect() {
-  redirect(paths.accueil());
+/** Racine de l'espace (spec 092, lot 4) : première page accessible de l'espace, sinon l'Accueil. */
+export default async function SpaceRoot() {
+  return redirectToSpace("pastoral", paths.pastoral());
 }

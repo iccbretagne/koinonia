@@ -93,11 +93,11 @@ describe("outils MCP — lot 1", () => {
   });
 
   it("lien direct par ligne quand la question en donne un, en texte et en données", () => {
-    const out = renderResult({ title: "T", items: [{ label: "dim. 25 oct. · Culte", href: "/admin/events/e25/report" }, { label: "sans lien" }], total: 2, href: "/admin/reports", hrefLabel: "R" });
-    expect(out.text).toContain("- dim. 25 oct. · Culte : https://koinonia.test/admin/events/e25/report");
+    const out = renderResult({ title: "T", items: [{ label: "dim. 25 oct. · Culte", href: "/evenements/comptes-rendus/e25" }, { label: "sans lien" }], total: 2, href: "/evenements/comptes-rendus", hrefLabel: "R" });
+    expect(out.text).toContain("- dim. 25 oct. · Culte : https://koinonia.test/evenements/comptes-rendus/e25");
     expect(out.text).toContain("- sans lien\n");
     expect(out.structured.items).toEqual([
-      { label: "dim. 25 oct. · Culte", detail: null, link: "https://koinonia.test/admin/events/e25/report" },
+      { label: "dim. 25 oct. · Culte", detail: null, link: "https://koinonia.test/evenements/comptes-rendus/e25" },
       { label: "sans lien", detail: null, link: null },
     ]);
   });

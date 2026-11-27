@@ -153,28 +153,28 @@ même église (berger également STAR, par exemple) : auparavant, la présence d
 **Exceptions de droits de la spec 092 (lot 3)** — sans changement de la matrice ni de
 `PASTORAL_READ_PERMISSIONS` :
 
-1. **« Mes demandes »** (`/requests`) est ouverte à tout compte de l'église courante
+1. **« Mes demandes »** (`/demandes`) est ouverte à tout compte de l'église courante
    (`requireChurchAccess`) : consultation de **ses propres** demandes (internes, comptables,
    navette, rendez-vous, questionnaires, inscriptions). Créer une demande interne exige toujours
    `members:view` (bouton « Nouvelle demande », `POST /api/requests` inchangés).
-2. **Demande de RDV pastoral** (`/care/request`, `POST /api/care/requests`) : tout compte de
+2. **Demande de RDV pastoral** (`/demandes/rendez-vous`, `POST /api/care/requests`) : tout compte de
    l'église (`requireChurchAccess(churchId)`), demandeur tiré de la session, débit limité à 5
    demandes par heure et par compte en plus du limiteur de mutation.
 3. **Lecture pastorale** des comptes rendus et de la comptabilité : `hasPastoralRead(session,
    churchId)` (`src/lib/auth.ts`, helper nommé, jamais une permission) ouvre, pour **l'église de
-   l'objet** et en lecture seule : `GET /api/events/[eventId]/report`, `/admin/reports`,
-   `/admin/events/[eventId]/report` (vue `EventReportReadOnly`), `GET
-   /api/accounting/requests/[id]` et `/accounting/requests/[id]` (toute l'église, email du
+   l'objet** et en lecture seule : `GET /api/events/[eventId]/report`, `/evenements/comptes-rendus`,
+   `/evenements/comptes-rendus/[eventId]` (vue `EventReportReadOnly`), `GET
+   /api/accounting/requests/[id]` et `/finances/demandes/[id]` (toute l'église, email du
    demandeur et clé de stockage des pièces retirés, pas de justificatif). Restent refusés à un
    lecteur pastoral sans rôle : toute écriture (`PUT` du compte rendu, `PATCH`/`POST` comptables,
    pièces, paiements), tout téléchargement de pièce (`?inline=1` compris) et tout export.
 
 La **vue pastorale** (cookie `koinonia-view-mode`) n'est plus une navigation à part : c'est un
 filtre de la navigation commune (`PASTORAL_VIEW_HREFS`, `src/lib/navigation.ts`), avec « Mes
-membres » à la place de `/admin/members` ; les espaces Pastoral, Administration et Plateforme
+membres » à la place de `/personnes/star` ; les espaces Pastoral, Administration et Plateforme
 sont conservés tels que les rôles les ouvrent. Le tableau pastoral est rendu par `/accueil` ;
-les anciens doublons `/pastoral`, `/pastoral/events`, `/pastoral/reports` et
-`/pastoral/accounting` redirigent vers les écrans communs. L'assistant et le serveur MCP ne sont
+les anciens doublons `/pastoral/events`, `/pastoral/reports` et
+`/pastoral/accounting` redirigent (307, table `src/lib/legacy-paths.ts`) vers les écrans communs. L'assistant et le serveur MCP ne sont
 pas élargis.
 
 Le partage de bibliothèque audio est le **deuxième** axe d'accès transverse inter-églises du
@@ -521,7 +521,7 @@ profil pastoral ou un STAR accompagnant (`AssigneeSelection`,
 `src/modules/care/services/assignee.ts`) — réservée à `care:qualify` (validation, réaffectation).
 Les étapes de suivi (fixer la date, renseigner le compte rendu, rendre au référent) sont réservées à
 l'accompagnant **en charge**, pas à toute l'équipe. `GET/PUT /api/care/settings`
-(`/care/parametres`) et `GET /api/care/stats` (`/care/stats`), ajoutés au lot 3, réutilisent ces
+(`/pastoral/suivi/parametres`) et `GET /api/care/stats` (`/pastoral/suivi/statistiques`), ajoutés au lot 3, réutilisent ces
 deux mêmes permissions sans en introduire de nouvelle : réglages des délais de relance réservés à
 `care:qualify`, statistiques ouvertes à `care:view`.
 
@@ -532,7 +532,7 @@ responsabilité de département) — auquel `care:qualify` peut déclarer des ex
 garde après son départ). `isEligibleCompanion()` applique cette règle à la fois pour la liste
 proposée (`GET /api/care/companions`) et pour la vérification à l'affectation (`resolveAssignee`),
 volontairement la même fonction des deux côtés (#616 : ces deux usages avaient divergé). Réglage
-dans `/care/parametres` (`PUT /api/care/companions`), réservé à `care:qualify`.
+dans `/pastoral/suivi/parametres` (`PUT /api/care/companions`), réservé à `care:qualify`.
 
 `care:delete` (spec 057, Admin/Super Admin seuls) permet de supprimer définitivement une demande
 de rendez-vous pastoral ou un suivi de nouveau converti (`DELETE /api/care/requests/[id]`,
@@ -632,7 +632,7 @@ qui la recopiaient. Jusque-là, tout Ministre et tout Resp. département y accé
 son département — un accès plus large que ce que cette documentation a toujours décrit.
 
 `requireIntegrationSettingsAccess()` garde le réglage des délais de relance (spec 051,
-`/integration/parametres` et `GET/PUT /api/integration/settings`) : Super Admin, `integration:manage`,
+`/personnes/integration/parametres` et `GET/PUT /api/integration/settings`) : Super Admin, `integration:manage`,
 ou `DEPARTMENT_HEAD` rattaché à un département de fonction `INTEGRATION`.
 
 Au sein d'une demande, les droits par action sont calculés par la machine à états
@@ -680,8 +680,8 @@ Infrastructure pure (client S3, jetons opaques), aucune permission propre — co
 
 **Spécificités du STAR** (spec 031, issues #462/#463) :
 - Permission `planning:view` — accède à « Mon planning » (vue macro personnelle), ses
-  événements (`/planning/events`) et l'auto-déclaration d'absences
-- N'a **pas** `planning:department` : pas d'accès à `/dashboard` (grille par département), ni
+  événements (`/evenements`) et l'auto-déclaration d'absences
+- N'a **pas** `planning:department` : pas d'accès à `/planning/departements` (grille par département), ni
   aux routes API de département (tâches, consignes, membres, stats, planning mensuel/hebdomadaire)
 - Aucun accès au module salles : ni `rooms:view` ni `rooms:reserve`
 - Pas d'accès aux sections membres, événements (liste/calendrier), admin, discipolat
@@ -720,7 +720,7 @@ renommé spec 052) :
   pas des permissions ; aucun accès hors de leur campagne ou de leur affectation
 
 **Spécificités du module formulaires** (spec 079, ADR-0030) :
-- `forms:manage` (Super Admin, Admin, Secrétaire) ouvre `/formulaires` : construire, publier,
+- `forms:manage` (Super Admin, Admin, Secrétaire) ouvre `/evenements/formulaires` : construire, publier,
   clôturer, dupliquer, supprimer, consulter et exporter les formulaires **de l'église du
   formulaire** (`requireFormManage`, `@/modules/forms/auth`) ; autre église, supprimé ou
   inexistant : 404
@@ -736,9 +736,9 @@ renommé spec 052) :
   ni réglages. Accès éteint à la clôture, au retrait, ou si le compte quitte l'église
 
 **Spécificités du module dons** (spec 065) :
-- `giving:manage` (Super Admin, Admin, Secrétaire, Comptable) ouvre `/dons` : paramétrage de la
+- `giving:manage` (Super Admin, Admin, Secrétaire, Comptable) ouvre `/finances/dons` : paramétrage de la
   page publique `/donner/<slug>` (sections activables, coordonnées bancaires, verset, adresse
-  courte) et slide de projection `/dons/slide` (QR code, PNG, plein écran)
+  courte) et slide de projection `/finances/dons/slide` (QR code, PNG, plein écran)
 - La page publique est sans connexion et ne montre que les sections activées ; une page
   désactivée, absente ou une église inconnue répondent le même « page non disponible »
 - Intégrité : IBAN vérifié (longueur par pays, clé mod 97), liens en https uniquement ; toute
@@ -747,11 +747,11 @@ renommé spec 052) :
   de notification `giving`)
 - Nom et logo de l'église (spec 066) : nom affiché ou masqué et taille (Petit, Moyen, Grand)
   réglés séparément pour la page et pour la slide ; un logo unique pour fond sombre (PNG/JPEG/WebP
-  ≤ 2 Mo, réencodé en PNG, jamais de SVG) déposé dans `/dons`, enregistré dès son dépôt et
+  ≤ 2 Mo, réencodé en PNG, jamais de SVG) déposé dans `/finances/dons`, enregistré dès son dépôt et
   affiché par support selon son interrupteur. Déposer, remplacer ou retirer le logo est journalisé
   et alerte la comptabilité comme un changement d'IBAN ; le logo est servi par Koinonia
   (`/api/giving/public/<slug>/logo`, page active uniquement)
-- Organisation de l'écran `/dons` (spec 067) : bloc « Publication » en tête (pastille sur la
+- Organisation de l'écran `/finances/dons` (spec 067) : bloc « Publication » en tête (pastille sur la
   version enregistrée, « Sera publiée / retirée à l'enregistrement » tant que le brouillon diffère),
   onglets « Page publique » / « Slide de projection » (`?support=slide`) qui pilotent formulaire et
   aperçu — l'aperçu de la slide réutilise la vraie scène via `toSlideProps`, seule traduction
@@ -761,7 +761,7 @@ renommé spec 052) :
 **Spécificités du module navette** (spec 073) — extension de la comptabilité, désactivable seule
 (`ENABLED_MODULES`) :
 - `shuttle:manage` (Super Admin, Admin, Comptable) : registre complet de la navette sous
-  `/accounting/navette` — solde de départ, abondements, correction ou suppression de n'importe
+  `/finances/navette` — solde de départ, abondements, correction ou suppression de n'importe
   quelle ligne à tout moment, signalements, cautions non restituées, seuil de solde bas, export
 - **Équipe navette** = membres d'un département de fonction `NAVETTE` (fiche liée), ses
   responsables et adjoints (`user_departments`) et le Ministre de son ministère
@@ -782,7 +782,7 @@ renommé spec 052) :
 
 **Spécificités du module trésorerie** (spec 076) — extension de la comptabilité, désactivable
 seule (`ENABLED_MODULES`) :
-- `treasury:manage` (Super Admin, Admin, Comptable) ouvre `/accounting/tresorerie` : comptes de
+- `treasury:manage` (Super Admin, Admin, Comptable) ouvre `/finances/tresorerie` : comptes de
   trésorerie (caisse, coffre, en ligne ; solde de départ daté, archivage), registre des entrées
   et sorties (montant positif + sens, solde après chaque ligne, calculé à la lecture en
   centimes), catégories et objets d'offrandes spéciales, collecte de culte (espèces par catégorie,
@@ -814,11 +814,11 @@ seule (`ENABLED_MODULES`) :
   les chargeurs et règles de périmètre des écrans (`loadMyPlanning`, `getUserDepartmentScope`,
   `resolveRequestQueueAccess`, `getShuttleAccess`…) et revérifient le droit de l'écran ; jamais de
   coordonnée d'autrui ni de donnée `care` (texte libre passé par `anonymize`)
-- Administration de la base (`/admin/assistant`, `/api/assistant/admin/*`, `/api/assistant/settings`) :
+- Administration de la base (`/plateforme/assistant`, `/api/assistant/admin/*`, `/api/assistant/settings`) :
   `requireSuperAdmin()` — la base et les questions remontées sont d'instance, sans compte ni église
 
 **Spécificités du module billetterie** (spec 074) — désactivable (`ENABLED_MODULES`) :
-- `ticketing:manage` (Super Admin, Admin, Secrétaire) ouvre `/billetterie` et la création
+- `ticketing:manage` (Super Admin, Admin, Secrétaire) ouvre `/evenements/billetterie` et la création
   d'événements ; son détenteur est **organisateur implicite** de tous les événements de son
   église
 - **Rôles d'événement** (`ticketing_event_roles`) : Organisateur, Trésorier, Accueil / sécurité,
@@ -843,7 +843,7 @@ seule (`ENABLED_MODULES`) :
   de la veille, clôture 24 h après la fin, purge des données nominatives après la durée de
   conservation
 - Écrans de terrain **hors ligne** ([ADR-0026](docs/adr/0026-ecrans-hors-ligne.md)) :
-  `/billetterie/[id]/controle` (accueil) et `/billetterie/[id]/restauration` — instantané
+  `/evenements/billetterie/[id]/controle` (accueil) et `/evenements/billetterie/[id]/restauration` — instantané
   d'empreintes, file IndexedDB, synchronisation idempotente (`…/sync`), présences **calculées** à
   partir des passages, seuils de jauge 90 % et 100 % notifiés une fois. L'équipe (postes,
   affectations, badges) est propre à l'événement ; « Mon planning » la lit seulement

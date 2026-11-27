@@ -18,6 +18,7 @@ import {
   type ActionResult,
   type McpActionDef,
 } from "./common";
+import { paths } from "@/lib/paths";
 
 /**
  * Remplir le compte rendu d'un événement (spec 081, lot 3) comme l'écran de saisie :
@@ -321,7 +322,7 @@ export async function confirmReport(input: z.infer<typeof confirmInput>, ctx: Ac
     if (error instanceof ApiError) return refusal(error.message);
     throw error;
   }
-  const link = `${publicOrigin()}/admin/events/${payload.eventId}/report`;
+  const link = `${publicOrigin()}${paths.admin.eventReport(payload.eventId)}`;
   return { text: `Compte rendu enregistré.\nVoir dans Koinonia : ${link}`, structured: { done: true, action: "fill_report", link } };
 }
 

@@ -22,8 +22,8 @@ const FAMILLES = "https://familles.example";
 const star: NavigationInput = {
   departments: [],
   configLinks: [],
-  requestLinks: [{ href: "/care/request", label: "Demande RDV pastoral" }],
-  mediaLinks: [{ href: "/audio", label: "Audio" }],
+  requestLinks: [{ href: "/demandes/rendez-vous", label: "Demande RDV pastoral" }],
+  mediaLinks: [{ href: "/medias/audio", label: "Audio" }],
   agendaLinks: [],
   integrationLinks: [],
   famillesUrl: FAMILLES,
@@ -42,8 +42,8 @@ const deptHead: NavigationInput = {
     { id: "d2", name: "Musiciens", ministryName: "Louange" },
   ],
   configLinks: [],
-  requestLinks: [{ href: "/requests", label: "Mes demandes" }],
-  mediaLinks: [{ href: "/audio", label: "Audio" }],
+  requestLinks: [{ href: "/demandes", label: "Mes demandes" }],
+  mediaLinks: [{ href: "/medias/audio", label: "Audio" }],
   famillesUrl: FAMILLES,
   hasPlanningAccess: true,
   hasMembersAccess: true,
@@ -54,7 +54,7 @@ const deptHead: NavigationInput = {
   hasAccounting: true,
   hasRooms: true,
   hasJobs: true,
-  homeHref: "/dashboard",
+  homeHref: "/planning/departements",
 };
 
 /** Admin : tout, dont l'administration, l'agenda pastoral et le suivi pastoral. */
@@ -65,19 +65,19 @@ const admin: NavigationInput = {
     { href: "/admin/departments/functions", label: "Fonctions dép." },
   ],
   requestLinks: [
-    { href: "/requests", label: "Mes demandes" },
-    { href: "/secretariat/requests", label: "Traitement des demandes" },
+    { href: "/demandes", label: "Mes demandes" },
+    { href: "/demandes/traitement", label: "Traitement des demandes" },
   ],
   mediaLinks: [
-    { href: "/media", label: "Communication & Production", matchPrefixes: ["/media", "/communication"] },
-    { href: "/audio", label: "Audio" },
+    { href: "/medias", label: "Communication & Production", matchPrefixes: ["/medias", "/communication"] },
+    { href: "/medias/audio", label: "Audio" },
   ],
   agendaLinks: [
-    { href: "/agenda", label: "Vue agenda" },
-    { href: "/agenda/schedule", label: "Planification" },
-    { href: "/care", label: "Suivi pastoral" },
+    { href: "/pastoral/agenda", label: "Vue agenda" },
+    { href: "/pastoral/planification", label: "Planification" },
+    { href: "/pastoral/suivi", label: "Suivi pastoral" },
   ],
-  integrationLinks: [{ href: "/integration/requests", label: "Intégration" }],
+  integrationLinks: [{ href: "/personnes/integration/dossiers", label: "Intégration" }],
   hasEventsManage: true,
   hasReports: true,
   hasAccountingManage: true,
@@ -120,18 +120,17 @@ describe("buildSpaces", () => {
   it("STAR : aucune grille par département, les liens STAR des événements, le RDV pastoral autonome", () => {
     const links = hrefs(star);
     expect(links).toEqual(
-      expect.arrayContaining(["/planning", "/disponibilites", "/planning/events", "/events/announcement-sheets", "/care/request", "/audio", "/jobs", FAMILLES])
+      expect.arrayContaining(["/planning", "/planning/disponibilites", "/evenements", "/evenements/annonces", "/demandes/rendez-vous", "/medias/audio", "/ressources/offres", FAMILLES])
     );
-    expect(links.some((h) => h.startsWith("/dashboard"))).toBe(false);
-    expect(links).not.toContain("/events");
-    expect(links).not.toContain("/admin/members");
+    expect(links.some((h) => h.startsWith("/planning/departements"))).toBe(false);
+    expect(links).not.toContain("/personnes/star");
   });
 
   it("#676 : « Trame des annonces » suit le droit de lecture, pas events:view ni planning:view", () => {
-    expect(hrefs({ ...star, hasAnnouncementSheet: false })).not.toContain("/events/announcement-sheets");
+    expect(hrefs({ ...star, hasAnnouncementSheet: false })).not.toContain("/evenements/annonces");
     const reporter: NavigationInput = { ...star, showStarEvents: false, hasEventsAccess: true, hasAnnouncementSheet: false };
-    expect(hrefs(reporter)).not.toContain("/events/announcement-sheets");
-    expect(hrefs(reporter)).toContain("/events");
+    expect(hrefs(reporter)).not.toContain("/evenements/annonces");
+    expect(hrefs(reporter)).toContain("/evenements");
   });
 
   it("conserve chaque lien calculé par le layout (aucune section perdue)", () => {
@@ -147,25 +146,25 @@ describe("buildSpaces", () => {
     }
     expect(links).toEqual(
       expect.arrayContaining([
-        "/dashboard?dept=d1",
-        "/dashboard?dept=d2",
-        "/admin/members",
-        "/admin/discipleship",
-        "/events",
-        "/admin/events",
-        "/admin/welcome-duty",
-        "/admin/reports",
-        "/rooms",
-        "/jobs",
+        "/planning/departements?dept=d1",
+        "/planning/departements?dept=d2",
+        "/personnes/star",
+        "/personnes/discipolat",
+        "/evenements",
+        "/evenements/gestion",
+        "/evenements/service-accueil",
+        "/evenements/comptes-rendus",
+        "/ressources/salles",
+        "/ressources/offres",
       ])
     );
   });
 
   it("range l'agenda pastoral et le suivi pastoral dans l'espace Pastoral", () => {
     const spaces = buildSpaces(admin);
-    expect(spaces.find((s) => s.key === "pastoral")?.pages.map((p) => p.href)).toEqual(["/agenda", "/agenda/schedule", "/care"]);
-    expect(spaces.find((s) => s.key === "people")?.pages.map((p) => p.href)).not.toContain("/care");
-    expect(spaces.find((s) => s.key === "events")?.pages.map((p) => p.href)).not.toContain("/agenda");
+    expect(spaces.find((s) => s.key === "pastoral")?.pages.map((p) => p.href)).toEqual(["/pastoral/agenda", "/pastoral/planification", "/pastoral/suivi"]);
+    expect(spaces.find((s) => s.key === "people")?.pages.map((p) => p.href)).not.toContain("/pastoral/suivi");
+    expect(spaces.find((s) => s.key === "events")?.pages.map((p) => p.href)).not.toContain("/pastoral/agenda");
   });
 
   it("conserve les ancres de visite guidée", () => {
@@ -201,7 +200,7 @@ describe("buildSpaces", () => {
   it("reporte le compteur des nouvelles offres sur la page et l'espace", () => {
     const resources = buildSpaces({ ...star, jobsUnseenCount: 3 }).find((s) => s.key === "resources")!;
     expect(resources.badge).toBe(3);
-    expect(resources.pages.find((p) => p.href === "/jobs")?.badge).toBe(3);
+    expect(resources.pages.find((p) => p.href === "/ressources/offres")?.badge).toBe(3);
   });
 
   it("vue pastorale = filtre de la navigation commune (spec 092, lot 3)", () => {
@@ -211,21 +210,21 @@ describe("buildSpaces", () => {
     // Lecture pastorale, écrans personnels, Pastoral et Administration.
     expect(links).toEqual(
       expect.arrayContaining([
-        "/planning", "/disponibilites", "/events", "/admin/reports", "/pastoral/members", "/admin/discipleship",
-        "/requests", "/accounting/requests", "/audio", "/jobs", "/agenda", "/care", "/admin/departments",
+        "/planning", "/planning/disponibilites", "/evenements", "/evenements/comptes-rendus", "/personnes/mes-membres", "/personnes/discipolat",
+        "/demandes", "/finances/demandes", "/medias/audio", "/ressources/offres", "/pastoral/agenda", "/pastoral/suivi", "/admin/departments",
       ])
     );
     // Aucun doublon pastoral ni écran de gestion.
-    for (const gone of ["/pastoral/events", "/pastoral/reports", "/pastoral/accounting", "/admin/events", "/admin/welcome-duty", "/secretariat/requests", "/media", "/admin/members", "/integration/requests", "/rooms"]) {
+    for (const gone of ["/evenements/gestion", "/evenements/service-accueil", "/demandes/traitement", "/medias", "/personnes/star", "/personnes/integration/dossiers", "/ressources/salles"]) {
       expect(links).not.toContain(gone);
     }
-    expect(links.some((h) => h.startsWith("/dashboard"))).toBe(false);
-    expect(links.filter((h) => h === "/pastoral/members")).toHaveLength(1);
+    expect(links.some((h) => h.startsWith("/planning/departements"))).toBe(false);
+    expect(links.filter((h) => h === "/personnes/mes-membres")).toHaveLength(1);
   });
 
   it("vue pastorale : un pasteur également STAR garde Mon planning et Audio", () => {
     const links = buildSpaces({ ...star, isPastoral: true, homeHref: "/accueil" }).flatMap((s) => s.pages.map((p) => p.href));
-    expect(links).toEqual(expect.arrayContaining(["/planning", "/audio"]));
+    expect(links).toEqual(expect.arrayContaining(["/planning", "/medias/audio"]));
   });
 
   it("vue pastorale : retour à la vue normale ⇒ mêmes espaces que sans profil", () => {
@@ -233,10 +232,10 @@ describe("buildSpaces", () => {
   });
 
   it("vue pastorale : demandes comptables en consultation même sans accounting:manage", () => {
-    const pastor: NavigationInput = { departments: [], configLinks: [], requestLinks: [{ href: "/requests", label: "Mes demandes" }], mediaLinks: [], hasAccounting: true, hasEventsAccess: true, hasReports: true, isPastoral: true, homeHref: "/accueil" };
+    const pastor: NavigationInput = { departments: [], configLinks: [], requestLinks: [{ href: "/demandes", label: "Mes demandes" }], mediaLinks: [], hasAccounting: true, hasEventsAccess: true, hasReports: true, isPastoral: true, homeHref: "/accueil" };
     const spaces = buildSpaces(pastor);
-    expect(spaces.find((s) => s.key === "finances")?.pages.map((p) => p.href)).toEqual(["/accounting/requests"]);
-    expect(spaces.find((s) => s.key === "events")?.pages.map((p) => p.href)).toEqual(["/events", "/admin/reports"]);
+    expect(spaces.find((s) => s.key === "finances")?.pages.map((p) => p.href)).toEqual(["/finances/demandes"]);
+    expect(spaces.find((s) => s.key === "events")?.pages.map((p) => p.href)).toEqual(["/evenements", "/evenements/comptes-rendus"]);
   });
 });
 
@@ -245,22 +244,22 @@ describe("resolveActive", () => {
 
   it("retient la page la plus spécifique", () => {
     expect(resolveActive(spaces, "/admin/departments/functions")).toEqual({ space: "admin", page: "/admin/departments/functions" });
-    expect(resolveActive(spaces, "/communication/requests")).toEqual({ space: "media", page: "/media" });
-    expect(resolveActive(spaces, "/events/abc/star-view")).toEqual({ space: "events", page: "/events" });
-    expect(resolveActive(spaces, "/accounting/stats")).toEqual({ space: "finances", page: "/accounting/requests" });
-    expect(resolveActive(buildSpaces({ ...admin, hasAccountingManage: true, hasAccountingStats: true }), "/accounting/stats")).toEqual({
+    expect(resolveActive(spaces, "/medias/reseaux-sociaux")).toEqual({ space: "media", page: "/medias" });
+    expect(resolveActive(spaces, "/evenements/abc")).toEqual({ space: "events", page: "/evenements" });
+    expect(resolveActive(spaces, "/finances/statistiques")).toEqual({ space: "finances", page: "/finances/demandes" });
+    expect(resolveActive(buildSpaces({ ...admin, hasAccountingManage: true, hasAccountingStats: true }), "/finances/statistiques")).toEqual({
       space: "finances",
-      page: "/accounting/stats",
+      page: "/finances/statistiques",
     });
   });
 
   it("distingue les départements par ?dept", () => {
-    expect(resolveActive(spaces, "/dashboard", "d2")).toEqual({ space: "planning", page: "/dashboard?dept=d2" });
-    expect(resolveActive(spaces, "/dashboard/stats", null)).toEqual({ space: "planning", page: null });
+    expect(resolveActive(spaces, "/planning/departements", "d2")).toEqual({ space: "planning", page: "/planning/departements?dept=d2" });
+    expect(resolveActive(spaces, "/planning/departements/statistiques", null)).toEqual({ space: "planning", page: null });
   });
 
   it("n'allume pas Mon planning sur les événements STAR", () => {
-    expect(resolveActive(buildSpaces(star), "/planning/events")).toEqual({ space: "events", page: "/planning/events" });
+    expect(resolveActive(buildSpaces(star), "/evenements")).toEqual({ space: "events", page: "/evenements" });
   });
 
   it("l'Accueil ne s'allume que si aucune autre page ne correspond", () => {
@@ -279,16 +278,16 @@ describe("buildBreadcrumb / parentLink", () => {
       { label: "Administration", href: "/admin/departments" },
       { label: "Départements" },
     ]);
-    expect(buildBreadcrumb(spaces, "/events/e1/star-view")).toEqual([
-      { label: "Événements", href: "/events" },
-      { label: "Calendrier de l'église", href: "/events" },
+    expect(buildBreadcrumb(spaces, "/evenements/e1")).toEqual([
+      { label: "Événements", href: "/evenements" },
+      { label: "Calendrier de l'église", href: "/evenements" },
       { label: "Planning des STAR" },
     ]);
   });
 
   it("département : planning › ministère › département", () => {
-    expect(buildBreadcrumb(spaces, "/dashboard", "d1")).toEqual([
-      { label: "Planning", href: "/dashboard" },
+    expect(buildBreadcrumb(spaces, "/planning/departements", "d1")).toEqual([
+      { label: "Planning", href: "/planning/departements" },
       { label: "Louange" },
       { label: "Choristes" },
     ]);
@@ -303,9 +302,9 @@ describe("buildBreadcrumb / parentLink", () => {
   });
 
   it("retour mobile vers la page parente, jamais sur une page d'espace", () => {
-    expect(parentLink(spaces, "/admin/events/e1")).toEqual({ href: "/admin/events", label: "Gérer les événements" });
-    expect(parentLink(spaces, "/admin/events")).toBeNull();
-    expect(parentLink(spaces, "/dashboard", "d1")).toBeNull();
+    expect(parentLink(spaces, "/evenements/gestion/e1")).toEqual({ href: "/evenements/gestion", label: "Gérer les événements" });
+    expect(parentLink(spaces, "/evenements/gestion")).toBeNull();
+    expect(parentLink(spaces, "/planning/departements", "d1")).toBeNull();
     expect(parentLink(spaces, "/profile/notifications")).toEqual({ href: "/profile", label: "Mon profil" });
   });
 });
@@ -341,18 +340,18 @@ describe("bottomDestinations", () => {
     const destinations = bottomDestinations(spaces, { role: "ADMIN", isPastoral: true });
     expect(destinations.map((d) => [d.label, d.href])).toEqual([
       ["Accueil", "/accueil"],
-      ["Mes membres", "/pastoral/members"],
+      ["Mes membres", "/personnes/mes-membres"],
     ]);
     const sidebar = spaces.flatMap((s) => s.pages).find((p) => p.label === "Mes membres");
-    expect(sidebar?.href).toBe("/pastoral/members");
+    expect(sidebar?.href).toBe("/personnes/mes-membres");
   });
 
   it("active la destination de l'espace courant", () => {
     const spaces = buildSpaces(deptHead);
     const [planning, agenda] = bottomDestinations(spaces, { role: "DEPARTMENT_HEAD" });
-    const active = resolveActive(spaces, "/events/calendar");
-    expect(isDestinationActive(agenda, active, "/events/calendar")).toBe(true);
-    expect(isDestinationActive(planning, active, "/events/calendar")).toBe(false);
+    const active = resolveActive(spaces, "/evenements");
+    expect(isDestinationActive(agenda, active, "/evenements")).toBe(true);
+    expect(isDestinationActive(planning, active, "/evenements")).toBe(false);
   });
 });
 
@@ -361,7 +360,7 @@ describe("recherche de pages", () => {
     const pages = searchablePages(buildSpaces(star));
     const list = pages.map((p) => p.href);
     expect(new Set(list).size).toBe(list.length);
-    expect(list).toEqual(expect.arrayContaining(["/planning", "/disponibilites", "/profile", "/guide"]));
+    expect(list).toEqual(expect.arrayContaining(["/planning", "/planning/disponibilites", "/profile", "/guide"]));
   });
 
   it("propose « Installer l'application » dans la recherche (spec 070)", () => {
@@ -390,16 +389,16 @@ const fullAdmin: NavigationInput = {
     { id: "d3", name: "Protocole", ministryName: "Accueil" },
   ],
   configLinks: [
-    { href: "/admin/churches", label: "Églises" },
+    { href: "/plateforme/eglises", label: "Églises" },
     { href: "/admin/departments", label: "Départements" },
     { href: "/admin/users", label: "Utilisateurs" },
     { href: "/admin/access", label: "Accès & rôles" },
     { href: "/admin/audit-logs", label: "Historique" },
   ],
   integrationLinks: [
-    { href: "/integration/requests", label: "Intégration" },
-    { href: "/integration/leaders", label: "Bergers de famille" },
-    { href: "/integration/parcours", label: "Parcours d'intégration" },
+    { href: "/personnes/integration/dossiers", label: "Intégration" },
+    { href: "/personnes/integration/bergers", label: "Bergers de famille" },
+    { href: "/personnes/integration/parcours", label: "Parcours d'intégration" },
   ],
   hasMyPlanning: true,
   hasAvailability: true,
@@ -457,7 +456,7 @@ describe("sidebarBlocks (sidebar desktop)", () => {
       ["Intégration", ["Dossiers", "Bergers de famille", "Parcours"]],
     ]);
     // Seul dans son espace, le bloc perd son intitulé et reprend le libellé complet.
-    const alone = buildSpaces({ ...star, famillesUrl: null, integrationLinks: [{ href: "/integration/requests", label: "Intégration" }] });
+    const alone = buildSpaces({ ...star, famillesUrl: null, integrationLinks: [{ href: "/personnes/integration/dossiers", label: "Intégration" }] });
     const people = alone.find((s) => s.key === "people")!;
     expect(outline(sidebarBlocks(people.pages)).map((b) => [b.label, b.pages])).toEqual([[null, ["Intégration"]]]);
   });
@@ -468,7 +467,7 @@ describe("sidebarBlocks (sidebar desktop)", () => {
       ["Accès", ["Utilisateurs", "Accès & rôles"]],
       ["Suivi", ["Historique"]],
     ]);
-    expect(spaceOf(fullAdmin, "platform").pages.map((p) => p.href)).toEqual(["/admin/churches"]);
+    expect(spaceOf(fullAdmin, "platform").pages.map((p) => p.href)).toEqual(["/plateforme/eglises"]);
   });
 });
 

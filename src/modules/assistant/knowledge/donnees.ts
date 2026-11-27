@@ -1,5 +1,8 @@
 import { ALL, type KnowledgeEntry } from "./types";
-import { paths, PREFIXES } from "@/lib/paths";
+import { paths } from "@/lib/paths";
+
+/** Écrans de l'espace Finances (spec 092, lot 4 : ex-préfixe `/accounting`). */
+const ACCOUNTING_SCREENS = [paths.accounting.requests(), paths.accounting.stats(), paths.accounting.navette(), paths.accounting.tresorerie()];
 
 /**
  * 12. Questions de données (D01 à D23). Chaque fiche renvoie vers un fournisseur
@@ -215,7 +218,7 @@ export const DONNEES: readonly KnowledgeEntry[] = [
     audience: { permissions: ["events:manage"], predicates: ["secretariatTeam"] },
     otherwise: reserved("au Secrétariat et à l'administration"),
     dataQuestion: "planning.secretariatPending",
-    screens: [PREFIXES.secretariat],
+    screens: [paths.secretariat.requests()],
   },
   {
     key: "D17",
@@ -241,7 +244,7 @@ export const DONNEES: readonly KnowledgeEntry[] = [
     audience: { permissions: ["accounting:manage"] },
     otherwise: reserved("au Comptable et à l'Admin"),
     dataQuestion: "accounting.toValidate",
-    screens: [PREFIXES.accounting],
+    screens: ACCOUNTING_SCREENS,
   },
   {
     key: "D19",
@@ -254,7 +257,7 @@ export const DONNEES: readonly KnowledgeEntry[] = [
     audience: { permissions: ["accounting:manage"] },
     otherwise: reserved("au Comptable et à l'Admin"),
     dataQuestion: "accounting.awaitingPayment",
-    screens: [PREFIXES.accounting],
+    screens: ACCOUNTING_SCREENS,
   },
   {
     key: "D20",
@@ -306,7 +309,7 @@ export const DONNEES: readonly KnowledgeEntry[] = [
     audience: { permissions: ["accounting:submit"], predicates: ["pastoral"] },
     otherwise: reserved("aux responsables de département, Ministres et Admin"),
     dataQuestion: "accounting.myRequests",
-    screens: [PREFIXES.accounting],
+    screens: ACCOUNTING_SCREENS,
   },
   {
     key: "D24",

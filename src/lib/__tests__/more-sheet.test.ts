@@ -11,10 +11,10 @@ const admin: NavigationInput = {
   ],
   configLinks: [{ href: "/admin/departments", label: "Départements" }],
   requestLinks: [
-    { href: "/requests", label: "Mes demandes" },
-    { href: "/secretariat/requests", label: "Traitement des demandes" },
+    { href: "/demandes", label: "Mes demandes" },
+    { href: "/demandes/traitement", label: "Traitement des demandes" },
   ],
-  mediaLinks: [{ href: "/audio", label: "Audio" }],
+  mediaLinks: [{ href: "/medias/audio", label: "Audio" }],
   hasPlanningAccess: true,
   hasMembersAccess: true,
   hasEventsAccess: true,

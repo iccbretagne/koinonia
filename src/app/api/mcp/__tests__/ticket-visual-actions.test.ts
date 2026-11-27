@@ -42,7 +42,7 @@ beforeEach(() => { vi.clearAllMocks(); saved = null; changed = false; churchId =
 it("lecture et lien de dépôt disponibles sans drapeau des sites ; ne publie rien", async () => {
   expect(TICKET_VISUAL_ACTIONS.every((a) => a.available(ctx.viewer))).toBe(true);
   const r = await run("ticketing_ticket_visual", { event: "e1" });
-  expect(r.structured.editor).toBe("https://koinonia.test/billetterie/e1?vue=billet");
+  expect(r.structured.editor).toBe("https://koinonia.test/evenements/billetterie/e1?vue=billet");
   expect(svc.saveTicketVisual).not.toHaveBeenCalled();
 });
 it("aperçu puis confirmation unique, via le service de l'écran", async () => {

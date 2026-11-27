@@ -54,7 +54,7 @@ describe("notifyAssigneeAssigned", () => {
         userId: "u1",
         domain: "care",
         type: "CARE_ASSIGNED",
-        link: "/care/requests/req-1",
+        link: "/pastoral/suivi/rendez-vous/req-1",
         message: "On vous a confié la demande de rendez-vous pastoral de Marie Curie.",
       })
     );

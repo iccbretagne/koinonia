@@ -34,6 +34,7 @@ import {
 } from "@/modules/ticketing/schemas";
 import { formatDay, formatTime } from "../../assistant/_data/common";
 import { CHANGED, EXPIRED, byText, confirmInput, fingerprint, parisDateTime, previewText, refusal, type ActionContext, type ActionResult, type McpActionDef } from "./common";
+import { paths } from "@/lib/paths";
 
 /**
  * Billetterie (spec 083) : conduire un événement de billetterie de sa création à sa clôture.
@@ -54,7 +55,7 @@ const NOT_MANAGER = "Créer un événement de billetterie est réservé à l'Adm
 
 export const eventRef = z.string().trim().min(1).max(200).describe("Identifiant de l'événement de billetterie, ou son titre exact");
 
-const link = (eventId: string, vue?: string) => `${publicOrigin()}/billetterie/${eventId}${vue ? `?vue=${vue}` : ""}`;
+const link = (eventId: string, vue?: string) => `${publicOrigin()}${paths.billetterie.event(eventId, { vue })}`;
 
 /** Événement désigné par identifiant ou titre, parmi ceux que le compte voit (comme la liste de l'écran). */
 export async function resolveEvent(ctx: ActionContext, ref: string): Promise<{ id: string; title: string } | string> {
@@ -202,7 +203,7 @@ export function eventAction<I extends z.ZodObject<z.ZodRawShape>, P extends { ev
       throw error;
     }
     const eventId = result.eventId ?? stored.payload.eventId;
-    const url = eventId ? link(eventId, result.vue) : `${publicOrigin()}/billetterie`;
+    const url = eventId ? link(eventId, result.vue) : `${publicOrigin()}${paths.billetterie()}`;
     return { text: `${result.text}\nVoir dans Koinonia : ${url}`, structured: { done: true, action: spec.action, link: url, ...result.structured } };
   }
 

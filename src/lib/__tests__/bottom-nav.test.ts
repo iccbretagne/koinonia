@@ -16,7 +16,7 @@ const base: NavigationInput = { departments: [], configLinks: [], requestLinks: 
 const deptHead: NavigationInput = {
   ...base,
   departments: [{ id: "d1", name: "Choristes", ministryName: "Louange" }],
-  requestLinks: [{ href: "/requests", label: "Mes demandes" }],
+  requestLinks: [{ href: "/demandes", label: "Mes demandes" }],
   hasPlanningAccess: true,
   hasMembersAccess: true,
   hasEventsAccess: true,
@@ -28,8 +28,8 @@ const secretary: NavigationInput = {
   hasPlanningAccess: false,
   hasMyPlanning: false,
   requestLinks: [
-    { href: "/requests", label: "Mes demandes" },
-    { href: "/secretariat/requests", label: "Traitement des demandes" },
+    { href: "/demandes", label: "Mes demandes" },
+    { href: "/demandes/traitement", label: "Traitement des demandes" },
   ],
 };
 
@@ -54,7 +54,7 @@ describe("bottomDestinations : liste du rôle principal", () => {
     // Comptable sans trésorerie ni navette : aucun repli accessible, la barre se raccourcit.
     expect(labels({ ...accountant, hasTreasury: false, hasShuttle: false }, "ACCOUNTANT")).toEqual(["Accueil", "Demandes"]);
     // Secrétaire sans équipe Secrétariat : le repli prend la place.
-    expect(labels({ ...secretary, requestLinks: [{ href: "/requests", label: "Mes demandes" }] }, "SECRETARY")).toEqual([
+    expect(labels({ ...secretary, requestLinks: [{ href: "/demandes", label: "Mes demandes" }] }, "SECRETARY")).toEqual([
       "Accueil",
       "Événements",
       "Personnes",
@@ -86,8 +86,8 @@ describe("activeDestinationKey", () => {
     const spaces = buildSpaces(deptHead);
     const list = bottomDestinations(spaces, { role: "DEPARTMENT_HEAD" });
     const at = (pathname: string) => activeDestinationKey(list, resolveActive(spaces, pathname), pathname);
-    expect(at("/events/calendar")).toBe("events");
-    expect(at("/dashboard")).toBe("planning");
+    expect(at("/evenements")).toBe("events");
+    expect(at("/planning/departements")).toBe("planning");
     expect(at("/accueil")).toBe("home");
   });
 
@@ -95,8 +95,8 @@ describe("activeDestinationKey", () => {
     const spaces = buildSpaces(accountant);
     const list = bottomDestinations(spaces, { role: "ACCOUNTANT" });
     const at = (pathname: string) => activeDestinationKey(list, resolveActive(spaces, pathname), pathname);
-    expect(at("/accounting/tresorerie")).toBe("treasury");
-    expect(at("/accounting/requests")).toBe("accountingRequests");
+    expect(at("/finances/tresorerie")).toBe("treasury");
+    expect(at("/finances/demandes")).toBe("accountingRequests");
   });
 
   it("aucune destination pour une page hors de la barre : « Plus » s'allume", () => {

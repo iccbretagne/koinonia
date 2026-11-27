@@ -16,7 +16,7 @@ export const discipleshipModule = defineModule({
   dependsOn: ["core", "planning"],
 
   routes: {
-    authenticated: [{ path: "/admin/discipleship" }],
+    authenticated: [{ path: "/personnes/discipolat" }],
     api: [{ path: "/api/discipleships" }],
   },
 

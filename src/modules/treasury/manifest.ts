@@ -21,7 +21,7 @@ export const treasuryModule = defineModule({
   dependsOn: ["core", "accounting"],
 
   routes: {
-    authenticated: [{ path: "/accounting/tresorerie" }],
+    authenticated: [{ path: "/finances/tresorerie" }],
     api: [{ path: "/api/accounting/tresorerie" }],
   },
 

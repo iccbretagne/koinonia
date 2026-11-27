@@ -3,6 +3,7 @@ import { DEPT_FN } from "@/lib/department-functions";
 import { getFunctionDepartmentIds } from "@/lib/function-departments";
 import { createNotification, notifyUsers } from "@/lib/notifications";
 import { paths } from "@/lib/paths";
+import { currentHref, legacyAndCurrent } from "@/lib/legacy-paths";
 
 /** Rattachement des notifications à la demande, pour les effacer avec elle (spec 057, ADR-0019). */
 const REQUEST_ENTITY = "FamilyIntegrationRequest";
@@ -82,7 +83,7 @@ export function buildBergerNotifEmail(params: {
         <p style="margin:0;color:#111827;font-size:15px;font-weight:600">${firstName} ${lastName}</p>
         ${familyName ? `<p style="margin:4px 0 0;color:#6b7280;font-size:13px">Famille : ${familyName}</p>` : ""}
       </div>
-      <a href="${appUrl}/integration/requests/${requestId}"
+      <a href="${appUrl}${paths.integration.request(requestId)}"
          style="display:inline-block;background:#5E17EB;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600">
         Voir la demande →
       </a>
@@ -246,12 +247,12 @@ export async function runInactivityNotifications(appUrl: string): Promise<{ noti
   const recentNotifs = await prisma.notification.findMany({
     where: {
       type: INACTIVITY_NOTIF_TYPE,
-      link: { in: requestIds.map((id) => paths.integration.request(id)) },
+      link: { in: requestIds.flatMap((id) => legacyAndCurrent(paths.integration.request(id))) },
       createdAt: { gte: dedupeThreshold },
     },
     select: { link: true },
   });
-  const alreadyNotifiedLinks = new Set(recentNotifs.map((n) => n.link));
+  const alreadyNotifiedLinks = new Set(recentNotifs.map((n) => n.link && currentHref(n.link)));
 
   const getManagers = createIntegrationManagersResolver();
 

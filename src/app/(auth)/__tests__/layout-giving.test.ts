@@ -45,6 +45,6 @@ describe("AuthLayout — module dons désactivé", () => {
     const element = await AuthLayout({ children: null as never });
     const { configLinks } = (element as unknown as { props: { configLinks: { href: string }[] } }).props;
     expect(configLinks.length).toBeGreaterThan(0);
-    expect(configLinks.map((l) => l.href)).not.toContain("/dons");
+    expect(configLinks.map((l) => l.href)).not.toContain("/finances/dons");
   });
 });

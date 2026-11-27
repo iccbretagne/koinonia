@@ -20,6 +20,7 @@ import {
   type McpActionDef,
 } from "./common";
 import { ANSWERS } from "./personal";
+import { paths } from "@/lib/paths";
 
 /**
  * Actions d'un responsable pour un STAR de son périmètre (spec 081, lot 3b) : déclarer une
@@ -153,7 +154,7 @@ export async function confirmAbsenceFor(input: z.infer<typeof confirmInput>, ctx
       { via: "mcp" }
     );
     return {
-      text: `Absence enregistrée pour ${await memberName(payload.memberId)}. Ses responsables sont prévenus.\nVoir dans Koinonia : ${publicOrigin()}/absences`,
+      text: `Absence enregistrée pour ${await memberName(payload.memberId)}. Ses responsables sont prévenus.\nVoir dans Koinonia : ${publicOrigin()}${paths.absences()}`,
       structured: { done: true, action: "declare_unavailability_for", absenceId: absence.id },
     };
   } catch (error) {

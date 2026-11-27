@@ -14,10 +14,9 @@ export async function deleteIntegrationRequest(
   { id, churchId }: { id: string; churchId: string }
 ): Promise<void> {
   await tx.auditLog.deleteMany({ where: { entityType: "FamilyIntegrationRequest", entityId: id } });
-  await deleteItemNotifications(tx, "FamilyIntegrationRequest", id, [
-    paths.integration.request(id),
-    `/admin/integration/requests/${id}`,
-  ]);
+  // Les anciennes formes du lien (dont `/admin/integration/requests/<id>`, #629) sont ajoutées
+  // par `deleteItemNotifications` depuis `legacy-paths.ts` (spec 092, lot 4).
+  await deleteItemNotifications(tx, "FamilyIntegrationRequest", id, [paths.integration.request(id)]);
   const { count } = await tx.familyIntegrationRequest.deleteMany({ where: { id, churchId } });
   if (count === 0) throw new ApiError(404, "Demande introuvable");
 }

@@ -214,7 +214,7 @@ function jobsPage(input: NavigationInput): NavPage {
   return {
     href: paths.jobs(),
     label: "Offres",
-    matchPrefixes: [paths.jobs(), paths.admin.jobs()],
+    matchPrefixes: [paths.jobs()],
     badge: input.jobsUnseenCount && input.jobsUnseenCount > 0 ? input.jobsUnseenCount : undefined,
   };
 }
@@ -257,8 +257,8 @@ function splitConfig(input: NavigationInput) {
     if (PLATFORM_HREFS.has(l.href)) platform.push({ href: l.href, label: l.label });
     else if (l.href === paths.dons()) giving.push({ href: l.href, label: l.label });
     else {
-      // Paramètres de l'église : `/admin/churches/<id>`.
-      const block = ADMIN_BLOCKS[l.href] ?? (l.href.startsWith(`${paths.admin.churches()}/`) ? "Église" : undefined);
+      // Paramètres de l'église : `/admin/eglise/<id>` (préfixe tiré du registre).
+      const block = ADMIN_BLOCKS[l.href] ?? (l.href.startsWith(CHURCH_SETTINGS_PREFIX) ? "Église" : undefined);
       admin.push({ href: l.href, label: l.label, sidebarBlock: block });
     }
   }
@@ -283,7 +283,7 @@ function financePagesFor(input: NavigationInput, giving: NavPage[]): NavPage[] {
   // Seul le Comptable (et l'administration) traite les demandes : le Ministre et le Resp.
   // département (accounting:view sans manage) passent par « Mes demandes ».
   if (input.hasAccountingManage) {
-    pages.push({ href: paths.accounting.requests(), label: "Demandes comptables", matchPrefixes: [PREFIXES.accounting] });
+    pages.push({ href: paths.accounting.requests(), label: "Demandes comptables", matchPrefixes: input.hasAccountingStats ? [paths.accounting.requests()] : [paths.accounting.requests(), paths.accounting.stats()] });
   }
   if (input.hasAccountingStats) pages.push({ href: paths.accounting.stats(), label: "Statistiques" });
   if (input.hasShuttle) pages.push({ href: paths.accounting.navette(), label: "Navette" });
@@ -304,14 +304,12 @@ const PASTORAL_VIEW_HREFS: ReadonlySet<string> = new Set([
   paths.planning(),
   paths.disponibilites(),
   paths.events(),
-  paths.planning.events(),
   paths.admin.reports(),
   paths.pastoral.members(),
   paths.admin.discipleship(),
   paths.requests(),
   paths.collectes(),
-  paths.billetterie.mesReservations(),
-  paths.formulaires.mesReponses(),
+  paths.events.mesInscriptions(),
   paths.accounting.requests(),
   paths.accounting.stats(),
   paths.accounting.navette(),
@@ -342,12 +340,12 @@ function planningPagesFor(input: NavigationInput): NavPage[] {
 function eventsPagesFor(input: NavigationInput): NavPage[] {
   const events: NavPage[] = [];
   const church = "Église";
-  // STAR sans events:view : vue hebdomadaire (spec 043).
-  if (input.showStarEvents) {
-    events.push({ href: paths.planning.events(), label: "Calendrier de l'église", sidebarBlock: church });
+  // Un seul « Calendrier de l'église » (spec 092, lot 4) : l'écran montre la vue hebdomadaire au
+  // STAR sans events:view (spec 043), l'agenda complet aux autres.
+  if (input.showStarEvents || input.hasEventsAccess) {
+    events.push({ href: paths.events(), label: "Calendrier de l'église", sidebarBlock: church });
   }
   if (input.hasEventsAccess) {
-    events.push({ href: paths.events(), label: "Calendrier de l'église", sidebarBlock: church });
     if (input.hasEventsManage) {
       events.push(
         { href: paths.admin.events(), label: "Gérer les événements", sidebarBlock: church },
@@ -374,9 +372,9 @@ function eventsPagesFor(input: NavigationInput): NavPage[] {
   const mine = input.myRegistrations;
   if (mine?.reservations || mine?.responses) {
     events.push({
-      href: mine.reservations ? paths.billetterie.mesReservations() : paths.formulaires.mesReponses(),
+      href: mine.reservations ? paths.events.mesInscriptions() : paths.events.mesInscriptions({ vue: "formulaires" }),
       label: "Mes inscriptions",
-      matchPrefixes: [paths.billetterie.mesReservations(), paths.formulaires.mesReponses()],
+      matchPrefixes: [paths.events.mesInscriptions()],
       sidebarBlock: signups,
     });
   }
@@ -434,7 +432,7 @@ export function buildSpaces(input: NavigationInput): NavSpace[] {
     people = [{ href: paths.pastoral.members(), label: "Mes membres" }, ...people.filter((p) => p.href !== paths.admin.members())];
     // Demandes comptables en consultation (lecture pastorale), même sans `accounting:manage`.
     if (input.hasAccounting && !finances.some((p) => p.href === paths.accounting.requests())) {
-      finances = [{ href: paths.accounting.requests(), label: "Demandes comptables", matchPrefixes: [PREFIXES.accounting] }, ...finances];
+      finances = [{ href: paths.accounting.requests(), label: "Demandes comptables", matchPrefixes: [paths.accounting.requests(), paths.accounting.stats()] }, ...finances];
     }
   }
 
@@ -700,6 +698,9 @@ export interface Crumb {
 }
 
 /** Pages de compte, hors espaces : présentes dans le menu compte et la palette. */
+/** Préfixe des paramètres d'une église (`/admin/eglise/<id>`), rangés dans le bloc « Église ». */
+const CHURCH_SETTINGS_PREFIX = paths.admin.church("_").slice(0, -1);
+
 export const ACCOUNT_PAGES: readonly { href: string; label: string; icon: LucideIcon }[] = [
   { href: paths.profile(), label: "Mon profil", icon: UserRound },
   { href: paths.guide(), label: "Guide d'utilisation", icon: BookOpen },
@@ -818,9 +819,6 @@ export function parentLink(spaces: readonly NavSpace[], pathname: string, dept: 
   });
   if (viaChain) return viaChain;
 
-  // Vue pastorale : « Mes membres » revient à l'Accueil (tableau pastoral, spec 092 lot 3).
-  if (pathname.startsWith(`${paths.pastoral()}/`)) return { href: paths.accueil(), label: "Accueil" };
-
   // Écran hors des espaces du rôle (lien reçu, notification…) : retour à l'Accueil, sauf s'il est
   // lui-même une page d'espace d'un autre rôle (aucun parent dans le registre).
   const toHome = SCREEN_META[ref.key].parent !== null || [ref, ...collectAncestors(ref)].some((r) => SCREEN_META[r.key].orHome);
@@ -878,7 +876,7 @@ const MAX_AFTER_HOME = 3;
 /** Destinations de page : adresses possibles (la première présente l'emporte), libellé court, icône. */
 const PAGE_DESTINATIONS: Partial<Record<DestinationKey, { hrefs: readonly string[]; label: string; icon: LucideIcon }>> = {
   myPlanning: { hrefs: [paths.planning()], label: "Mon planning", icon: CalendarCheck },
-  calendar: { hrefs: [paths.planning.events(), paths.events()], label: "Calendrier", icon: Calendar },
+  calendar: { hrefs: [paths.events()], label: "Calendrier", icon: Calendar },
   requestQueue: { hrefs: [paths.secretariat.requests()], label: "Traitement", icon: ListChecks },
   myRequests: { hrefs: [paths.requests()], label: "Mes demandes", icon: Inbox },
   accountingRequests: { hrefs: [paths.accounting.requests()], label: "Demandes", icon: Wallet },

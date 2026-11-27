@@ -23,12 +23,18 @@ import ts from "typescript";
 const ROOT = join(__dirname, "../../..");
 const SRC = join(ROOT, "src");
 
-/** Premiers segments des écrans connectés (specs/092-navigation-par-metier/url-mapping.txt). */
+/**
+ * Premiers segments des écrans connectés : adresses actuelles (lot 4) **et** anciennes adresses
+ * (specs/092-navigation-par-metier/url-mapping.txt), pour qu'aucune ne revienne en dur.
+ */
 const SCREEN_PREFIXES = [
-  "absences", "accounting", "accueil", "admin", "agenda", "audio", "billetterie", "candidatures",
-  "care", "collectes", "communication", "dashboard", "disponibilites", "dons", "events",
-  "formulaires", "guide", "integration", "jobs", "mcp", "media", "messages", "pastoral",
-  "planning", "profile", "requests", "rooms", "secretariat",
+  // Actuels
+  "accueil", "admin", "demandes", "evenements", "finances", "guide", "mcp", "medias", "messages",
+  "pastoral", "personnes", "planning", "plateforme", "profile", "ressources",
+  // Anciens (redirigés par legacy-paths.ts)
+  "absences", "accounting", "agenda", "audio", "billetterie", "candidatures", "care", "collectes",
+  "communication", "dashboard", "disponibilites", "dons", "events", "formulaires", "integration",
+  "jobs", "media", "requests", "rooms", "secretariat",
 ];
 
 /** Adresses publiques par jeton, hors `(auth)` : `/media/{c,d,g,v}/<jeton>`. */
@@ -41,13 +47,13 @@ const EXCLUDED_FILES = new Set([
 ]);
 
 /** Littéraux restants, chacun justifié. Fichier → nombre de littéraux tolérés. */
+const MEDIA_SHARE = "lien public par jeton `/media/{c,d,g,v}/<jeton>` (hors écrans connectés), segment choisi à l'exécution";
 const RESIDUAL: Record<string, { count: number; reason: string }> = {
-  "src/modules/integration/services/deletion.ts": {
-    count: 1,
-    reason:
-      "ancienne adresse /admin/integration/requests/<id>, qui n'est plus un écran : seulement pour " +
-      "effacer les notifications historiques qui la portent encore (relève de legacy-paths.ts, lot 4)",
-  },
+  "src/modules/media/services/tokens.ts": { count: 1, reason: MEDIA_SHARE },
+  "src/modules/media/services/shares.ts": { count: 1, reason: MEDIA_SHARE },
+  "src/app/api/_media-share/handlers.ts": { count: 1, reason: MEDIA_SHARE },
+  "src/app/(auth)/medias/photos/[id]/MediaEventDetail.tsx": { count: 1, reason: MEDIA_SHARE },
+  "src/app/(auth)/medias/visuels/[id]/MediaProjectDetail.tsx": { count: 1, reason: MEDIA_SHARE },
 };
 
 function excluded(rel: string): boolean {
@@ -72,7 +78,14 @@ const LITERAL = new RegExp(`^/(${SCREEN_PREFIXES.join("|")})(?=$|[/?#])`);
 
 function literalText(node: ts.Node): string | null {
   if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
-  if (ts.isTemplateExpression(node)) return node.head.text + (node.templateSpans.length ? "\u0000" : "");
+  if (ts.isTemplateExpression(node)) {
+    // `${origine}/ecran…` (lien absolu, lot 4) : la tête est vide, l'adresse suit la 1re substitution.
+    if (node.head.text === "" && node.templateSpans.length) {
+      const [first, ...rest] = node.templateSpans;
+      return first.literal.text + (rest.length ? "\u0000" : "");
+    }
+    return node.head.text + (node.templateSpans.length ? "\u0000" : "");
+  }
   return null;
 }
 

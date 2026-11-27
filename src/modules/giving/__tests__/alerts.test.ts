@@ -38,7 +38,7 @@ describe("alertPaymentDetailsChange (spec 065)", () => {
     expect(notifyUsersWithRole).toHaveBeenCalledWith(
       "church-1",
       "ADMIN",
-      expect.objectContaining({ domain: "giving", type: "GIVING_PAYMENT_DETAILS_CHANGED", link: "/dons" }),
+      expect.objectContaining({ domain: "giving", type: "GIVING_PAYMENT_DETAILS_CHANGED", link: "/finances/dons" }),
       expect.objectContaining({ email: expect.objectContaining({ subject: expect.any(String) }) })
     );
   });

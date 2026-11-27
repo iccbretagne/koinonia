@@ -33,6 +33,7 @@ import {
   type ActionResult,
   type McpActionDef,
 } from "./common";
+import { paths } from "@/lib/paths";
 
 /**
  * Actions de planning des responsables (spec 081, lot 3a) : lectures qui donnent les
@@ -297,7 +298,7 @@ export async function confirmFillPlanning(input: z.infer<typeof confirmInput>, c
     if (error instanceof ApiError) return refusal(error.message);
     throw error;
   }
-  const link = `${publicOrigin()}/dashboard`;
+  const link = `${publicOrigin()}${paths.dashboard()}`;
   return {
     text: `Planning enregistré pour ${slot.department.name}.\nVoir dans Koinonia : ${link}`,
     structured: { done: true, action: "fill_planning", link },
@@ -395,7 +396,7 @@ export async function confirmCopyPlanning(input: z.infer<typeof confirmInput>, c
       entityId: payload.targetEventId,
       details: { sourceEventId: payload.sourceEventId, copied: result.copied, departments: result.departments, via: "mcp" },
     });
-    const link = `${publicOrigin()}/dashboard`;
+    const link = `${publicOrigin()}${paths.dashboard()}`;
     return {
       text: `Planning recopié : ${result.copied} affectation(s) dans ${result.departments} département(s).\nVoir dans Koinonia : ${link}`,
       structured: { done: true, action: "copy_planning", ...result, link },
@@ -670,7 +671,7 @@ export async function confirmAssignTasks(input: z.infer<typeof confirmInput>, ct
       details: { eventId: payload.eventId, departmentId: payload.departmentId, memberIds: a.memberIds, via: "mcp" },
     });
   }
-  const link = `${publicOrigin()}/dashboard`;
+  const link = `${publicOrigin()}${paths.dashboard()}`;
   return {
     text: `Tâches affectées pour ${slot.department.name} (${payload.assignments.length} tâche(s)).\nVoir dans Koinonia : ${link}`,
     structured: { done: true, action: "assign_tasks", tasks: payload.assignments.length, link },

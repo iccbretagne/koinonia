@@ -21,7 +21,7 @@ export const shuttleModule = defineModule({
   dependsOn: ["core", "planning", "accounting"],
 
   routes: {
-    authenticated: [{ path: "/accounting/navette" }],
+    authenticated: [{ path: "/finances/navette" }],
     api: [{ path: "/api/accounting/navette" }],
   },
 

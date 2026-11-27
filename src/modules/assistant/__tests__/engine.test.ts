@@ -45,7 +45,7 @@ const fullAccess = viewerFor("SUPER_ADMIN", {
 describe("moteur de réponse (spec 075)", () => {
   it("reconnaît une question libre, avec fautes et mots familiers", async () => {
     const answer = await lexical.answer({ question: "chui pas dispo dimanch je fé comment", viewer: fullAccess, entries: BUILTIN_ENTRIES });
-    expect(answer).toMatchObject({ kind: "howto", key: "KB-021", href: "/disponibilites" });
+    expect(answer).toMatchObject({ kind: "howto", key: "KB-021", href: "/planning/disponibilites" });
   });
 
   it("met la bonne fiche en tête pour au moins 85 % du jeu d'évaluation (recherche par mots)", async () => {

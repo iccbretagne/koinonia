@@ -11,7 +11,7 @@ const deptScope = vi.fn();
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/auth", () => ({ getUserDepartmentScope: (...a: unknown[]) => deptScope(...a) }));
 vi.mock("@/lib/registry", () => ({ registry: { has: () => true }, rolePermissions: {} }));
-vi.mock("@/modules/campaigns", () => ({ listMyCampaigns: vi.fn(async () => ({ managed: [], assignments: [] })), assignmentPath: (id: string) => `/collectes/r/${id}` }));
+vi.mock("@/modules/campaigns", () => ({ listMyCampaigns: vi.fn(async () => ({ managed: [], assignments: [] })), assignmentPath: (id: string) => `/demandes/questionnaires/r/${id}` }));
 vi.mock("@/app/(auth)/planning/my-planning-data", () => ({
   loadMyPlanning: vi.fn(async () => ({
     member: { firstName: "Marie", lastName: "K" },
@@ -28,7 +28,7 @@ vi.mock("@/app/(auth)/planning/my-planning-data", () => ({
     contactsByDepartment: { d1: [{ name: "Paul", email: "jean.dupont@exemple.fr", phone: "06 12 34 56 78" }] },
   })),
 }));
-vi.mock("@/app/(auth)/requests/my-requests-data", () => ({
+vi.mock("@/app/(auth)/demandes/my-requests-data", () => ({
   loadMyRequests: vi.fn(async () => [{ type: "VISUEL", status: "EN_ATTENTE", announcement: { title: `Affiche ${SECRET}` } }]),
 }));
 vi.mock("@/modules/planning", () => ({
@@ -194,7 +194,7 @@ describe("catalogue des questions de données (spec 075)", () => {
     prismaMock.event.findMany.mockResolvedValue([{ id: "e8", title: "Culte  ", date: new Date(Date.now() - 86_400_000) }]);
     const missing = (await run("planning.missingReports", FULL)) as DataAnswer;
     expect(missing.items[0].label).toMatch(/· Culte$/);
-    expect(missing.items[0].href).toBe("/admin/events/e8/report");
+    expect(missing.items[0].href).toBe("/evenements/comptes-rendus/e8");
   });
 
   it("file du secrétariat : le total compte les lignes, le nombre de demandes est dans le titre", async () => {
@@ -209,7 +209,7 @@ describe("catalogue des questions de données (spec 075)", () => {
       { speaker: "Pasteur A", messageTitle: null, event: { title: "Culte", date: new Date("2026-10-18T10:00:00Z") } },
     ]);
     const result = (await run("reports.recent", FULL)) as DataAnswer;
-    expect(result.items[0]).toEqual({ label: "dim. 25 oct. · Culte", detail: "Orateur et titre du message non renseignés", href: "/admin/events/e25/report" });
+    expect(result.items[0]).toEqual({ label: "dim. 25 oct. · Culte", detail: "Orateur et titre du message non renseignés", href: "/evenements/comptes-rendus/e25" });
     expect(result.items[1].detail).toBe("Pasteur A · Titre non renseigné");
   });
 
@@ -230,7 +230,7 @@ describe("catalogue des questions de données (spec 075)", () => {
     ]);
     const result = (await run("reports.get", FULL, { day: "2026-10-25" })) as DataAnswer;
     expect(result.title).toBe("Compte rendu — dim. 25 oct. · Culte");
-    expect(result.href).toBe("/admin/events/e9/report");
+    expect(result.href).toBe("/evenements/comptes-rendus/e9");
     expect(result.items.map((i) => i.label)).toEqual(["Orateur", "Message", "Accueil", "Son", "Observations générales", "Décisions / actions"]);
     expect(result.items[1].detail).toBe("non renseigné");
     expect(result.items[2].detail).toBe("Hommes : 40 | Femmes : 50 | Enfants : 10 · Total adultes : 90 | Total général : 100");

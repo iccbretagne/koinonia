@@ -52,7 +52,7 @@ Un gestionnaire crée la campagne (éditeur graphique, **import** d'un fichier J
 | Repérer le reste à faire | Suivi : filtres (à rechercher, estimations, manquants, contrôles, fichiers), questions concernées, **Exploitable** (soumis ou validé et sans manque) |
 | Rouvrir | **Rouvrir** une contribution soumise (motif facultatif) : elle repasse « En cours », réponses gardées. Une validée : **Annuler la validation** d'abord |
 | Réutiliser | **Exporter la définition** (réimportable sans perte, sans réponse ni répondant) ou **Dupliquer** (structure seule, en brouillon) |
-| Créer ou modifier sans JSON | **Éditeur graphique** (`/collectes/nouvelle`, *Modifier* sur une campagne) ; l'enregistrement passe par le même aperçu et les mêmes blocages que l'import |
+| Créer ou modifier sans JSON | **Éditeur graphique** (`/demandes/questionnaires/nouveau`, *Modifier* sur une campagne) ; l'enregistrement passe par le même aperçu et les mêmes blocages que l'import |
 | Corriger | **Demander une correction** avec un motif |
 | Valider | **Valider** un questionnaire soumis ; cocher « validé par la Pasteure » si c'est le cas |
 | Exporter | **Exporter** en XLSX ou CSV, pour toute la campagne ou un questionnaire |

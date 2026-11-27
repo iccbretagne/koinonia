@@ -5,7 +5,7 @@ import { buildSpaces, resolveActive, type NavigationInput } from "../navigation"
 const base: NavigationInput = {
   departments: [],
   configLinks: [],
-  requestLinks: [{ href: "/requests", label: "Mes demandes" }],
+  requestLinks: [{ href: "/demandes", label: "Mes demandes" }],
   mediaLinks: [],
   homeHref: "/planning",
 };
@@ -25,13 +25,13 @@ describe("navigation — navette (spec 073)", () => {
 
   it("un STAR de l'équipe sans comptabilité ne voit que « Navette », hors de Demandes", () => {
     const pages = financePages({ ...base, hasShuttle: true });
-    expect(pages.map((p) => p.href)).toEqual(["/accounting/navette"]);
-    expect(buildSpaces({ ...base, hasShuttle: true }).find((s) => s.key === "requests")?.pages.map((p) => p.href)).toEqual(["/requests"]);
+    expect(pages.map((p) => p.href)).toEqual(["/finances/navette"]);
+    expect(buildSpaces({ ...base, hasShuttle: true }).find((s) => s.key === "requests")?.pages.map((p) => p.href)).toEqual(["/demandes"]);
   });
 
-  it("/accounting/navette allume « Navette », pas « Demandes comptables »", () => {
+  it("/finances/navette allume « Navette », pas « Demandes comptables »", () => {
     const spaces = buildSpaces({ ...base, hasAccounting: true, hasAccountingManage: true, hasShuttle: true });
-    expect(resolveActive(spaces, "/accounting/navette")).toEqual({ space: "finances", page: "/accounting/navette" });
-    expect(resolveActive(spaces, "/accounting/requests/abc")).toEqual({ space: "finances", page: "/accounting/requests" });
+    expect(resolveActive(spaces, "/finances/navette")).toEqual({ space: "finances", page: "/finances/navette" });
+    expect(resolveActive(spaces, "/finances/demandes/abc")).toEqual({ space: "finances", page: "/finances/demandes" });
   });
 });

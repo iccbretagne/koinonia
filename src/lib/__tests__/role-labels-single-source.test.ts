@@ -26,7 +26,7 @@ const ALLOWLIST: Record<string, string> = {
   // demande d'accès — `DEPUTY` n'est pas un membre de l'enum `Role` (c'est le flag `isDeputy`
   // d'un DEPARTMENT_HEAD), donc ne peut pas venir de `@/lib/roles` tel quel. Les 4 vrais rôles
   // référencent `ROLE_LABELS_BASE.<ROLE>` importé de `@/lib/roles` ; seul `DEPUTY` est un littéral.
-  "src/app/(auth)/admin/members/LinkRequestsClient.tsx": "Record<NonNullable<RequestedRole>, string> avec DEPUTY (hors enum Role) en plus des 4 rôles importés de @/lib/roles",
+  "src/app/(auth)/personnes/star/LinkRequestsClient.tsx": "Record<NonNullable<RequestedRole>, string> avec DEPUTY (hors enum Role) en plus des 4 rôles importés de @/lib/roles",
   "src/app/no-access/NoAccessClient.tsx": "Record<NonNullable<RequestedRole>, string> avec DEPUTY (hors enum Role) en plus des 4 rôles importés de @/lib/roles",
 };
 

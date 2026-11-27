@@ -87,19 +87,19 @@ describe("registre des écrans (paths.ts)", () => {
   });
 
   it("encode les segments dynamiques : aucune injection de segment, de requête ni d'origine", () => {
-    expect(paths.accounting.request("a/b?c#d")).toBe("/accounting/requests/a%2Fb%3Fc%23d");
-    expect(paths.collectes.apercu("x y", "//evil.example")).toBe("/collectes/x%20y/apercu/%2F%2Fevil.example");
+    expect(paths.accounting.request("a/b?c#d")).toBe("/finances/demandes/a%2Fb%3Fc%23d");
+    expect(paths.collectes.apercu("x y", "//evil.example")).toBe("/demandes/questionnaires/x%20y/apercu/%2F%2Fevil.example");
     // Jamais d'exception (lien de notification construit en transaction) : même adresse qu'avant.
-    expect((paths.accounting.request as (a: unknown) => string)(undefined)).toBe("/accounting/requests/undefined");
+    expect((paths.accounting.request as (a: unknown) => string)(undefined)).toBe("/finances/demandes/undefined");
     for (const key of Object.keys(SCREENS) as ScreenKey[]) {
       expect(ctorOf(key)("//evil.example", "//evil.example")).toMatch(/^\/[a-z]/);
     }
   });
 
   it("encode la requête et omet les valeurs absentes", () => {
-    expect(paths.dashboard({ dept: "d 1&x=y", event: undefined, all: false })).toBe("/dashboard?dept=d+1%26x%3Dy");
-    expect(paths.dashboard({ dept: "d1", n: 2, on: true })).toBe("/dashboard?dept=d1&n=2&on=true");
-    expect(paths.dashboard({})).toBe("/dashboard");
+    expect(paths.dashboard({ dept: "d 1&x=y", event: undefined, all: false })).toBe("/planning/departements?dept=d+1%26x%3Dy");
+    expect(paths.dashboard({ dept: "d1", n: 2, on: true })).toBe("/planning/departements?dept=d1&n=2&on=true");
+    expect(paths.dashboard({})).toBe("/planning/departements");
   });
 
   it("les préfixes ne sont pas des écrans mais préfixent des écrans", () => {

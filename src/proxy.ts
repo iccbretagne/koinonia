@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { approvedSiteSlug, isForeignHost, refreshSiteHosts, siteSlugFromHost } from "@/lib/site-host";
 import { resolveRouteOwner, isPublicRoute } from "@/lib/module-routes";
+import { matchLegacyPath } from "@/lib/legacy-paths";
 import { buildCsp, buildSiteCsp, cspHeaderName, generateNonce, storageOrigins, CSP_REPORT_PATH } from "@/lib/csp";
 
 /**
@@ -38,6 +39,8 @@ export function proxy(request: NextRequest) {
   // Le site d'un événement n'est servi que par son hôte (ADR-0031) ; l'aperçu passe par l'onglet Site.
   if (pathname === "/site" || pathname.startsWith("/site/")) return notFoundResponse(pathname);
   if (pathname.startsWith("/api/")) return route(request);
+  const legacy = legacyRedirect(request);
+  if (legacy) return legacy;
 
   const headerName = cspHeaderName();
   const policy = buildCsp({
@@ -55,6 +58,32 @@ export function proxy(request: NextRequest) {
 
 function notFoundResponse(pathname: string): NextResponse {
   return pathname.startsWith("/api/") ? NextResponse.json({ error: "Not found" }, { status: 404 }) : new NextResponse("Not found", { status: 404 });
+}
+
+/**
+ * Ancienne adresse d'écran (spec 092, lot 4) : redirection **temporaire** (307) vers la nouvelle,
+ * requête conservée, depuis la table fixe de `legacy-paths.ts`. `GET`/`HEAD` seulement — un
+ * `POST` vers une ancienne adresse n'est pas rejoué ailleurs (404 comme toute adresse inconnue).
+ * Même origine par construction : seul le `pathname` d'une copie de l'URL change. Une cible d'un
+ * module désactivé répond 404 à l'ancienne adresse, sans révéler la nouvelle. Placée avant le
+ * contrôle de session : sans session, la nouvelle adresse renvoie ensuite vers la connexion.
+ */
+function legacyRedirect(request: NextRequest): NextResponse | null {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  const match = matchLegacyPath(request.nextUrl.pathname);
+  if (!match) return null;
+  // Module coupé : pas de redirection ; l'ancienne adresse, revendiquée par aucun manifeste, suit
+  // le chemin ordinaire et répond le même 404 (`/module-absent`) que la nouvelle.
+  if (resolveRouteOwner(match.pathname).kind === "orphan") return null;
+  const url = request.nextUrl.clone();
+  url.pathname = match.pathname;
+  if (match.query) {
+    for (const [key, value] of new URLSearchParams(match.query)) url.searchParams.set(key, value);
+  }
+  const response = NextResponse.redirect(url, 307);
+  // Jamais mise en cache (navigateur, service worker, intermédiaires) : la table est temporaire.
+  response.headers.set("Cache-Control", "no-store");
+  return response;
 }
 
 /** Chemins qu'un hôte de site laisse passer tels quels (liste blanche, ADR-0031). */

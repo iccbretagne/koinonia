@@ -20,7 +20,7 @@ describe("deleteIntegrationRequest", () => {
       where: {
         OR: [
           { entityType: "FamilyIntegrationRequest", entityId: "int-1" },
-          { link: { in: ["/integration/requests/int-1", "/admin/integration/requests/int-1"] } },
+          { link: { in: ["/personnes/integration/dossiers/int-1", "/integration/requests/int-1", "/admin/integration/requests/int-1"] } },
         ],
       },
     });

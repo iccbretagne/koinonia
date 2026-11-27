@@ -31,7 +31,7 @@ for (const name of ["EventSelector", "PlanningGrid", "DashboardActions", "Monthl
   vi.doMock(`@/components/${name}`, () => ({ default: Object.assign(() => null, { displayName: name }) }));
 }
 
-const DashboardPage = (await import("../dashboard/page")).default;
+const DashboardPage = (await import("../planning/departements/page")).default;
 
 function seen(session: Session): Session {
   return { ...session, user: { ...session.user, hasSeenTour: true } };
@@ -82,16 +82,16 @@ describe("DashboardPage", () => {
   });
 
   it("choisit le premier département de l'église pour l'administration, en gardant la vue", async () => {
-    await expect(render({ view: "month" })).rejects.toThrow("REDIRECT:/dashboard?dept=d-first&view=month");
+    await expect(render({ view: "month" })).rejects.toThrow("REDIRECT:/planning/departements?dept=d-first&view=month");
   });
 
   it("choisit le premier département du responsable, et lance la visite guidée à la première venue", async () => {
     mockAuth.mockResolvedValue(createDepartmentHeadSession([{ id: "d-own", name: "Own" }]));
-    await expect(render({})).rejects.toThrow("REDIRECT:/dashboard?dept=d-own&tour=1");
+    await expect(render({})).rejects.toThrow("REDIRECT:/planning/departements?dept=d-own&tour=1");
   });
 
   it("transmet une visite demandée lors du choix du département", async () => {
-    await expect(render({ tour: "admin" })).rejects.toThrow("REDIRECT:/dashboard?dept=d-first&tour=admin");
+    await expect(render({ tour: "admin" })).rejects.toThrow("REDIRECT:/planning/departements?dept=d-first&tour=admin");
   });
 
   it("reste sur place sans département à proposer", async () => {
@@ -102,7 +102,7 @@ describe("DashboardPage", () => {
   it("lance la visite guidée sur un département déjà choisi, en gardant événement et vue", async () => {
     mockAuth.mockResolvedValue(createAdminSession());
     await expect(render({ dept: "d1", event: "e1", view: "week" })).rejects.toThrow(
-      "REDIRECT:/dashboard?dept=d1&event=e1&view=week&tour=1"
+      "REDIRECT:/planning/departements?dept=d1&event=e1&view=week&tour=1"
     );
   });
 

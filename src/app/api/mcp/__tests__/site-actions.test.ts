@@ -346,7 +346,7 @@ describe("images", () => {
 
   it("lien de dépôt : adresse de la page Images, refus sans droit", async () => {
     const out = await A("ticketing_site_upload_link").run({ event: "tk-1" } as never, ctx);
-    expect(out.structured.url).toBe("https://koinonia.test/billetterie/tk-1/images");
+    expect(out.structured.url).toBe("https://koinonia.test/evenements/billetterie/tk-1/images");
     roles = new Set(["OBSERVER"]);
     expect((await A("ticketing_site_upload_link").run({ event: "tk-1" } as never, ctx)).structured.url).toBeUndefined();
   });

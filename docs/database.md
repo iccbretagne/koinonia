@@ -1301,7 +1301,7 @@ Index : `[churchId, status]`, `[assignedConseillerMsdpId]`, `[assignedProfileId]
 
 #### `care_settings`
 
-Délais de relance du module `care` (`/care/parametres`), une ligne par église.
+Délais de relance du module `care` (`/pastoral/suivi/parametres`), une ligne par église.
 
 | Champ | Type | Description |
 |---|---|---|
@@ -1665,7 +1665,7 @@ Index : `[churchId, familyId]` ; unicité : `[churchId, userId, familyId]`
 
 #### `integration_settings`
 
-Délais de relance du module intégration (spec 051, `/integration/parametres`), une ligne par église.
+Délais de relance du module intégration (spec 051, `/personnes/integration/parametres`), une ligne par église.
 
 | Champ | Type | Description |
 |---|---|---|
@@ -2232,7 +2232,7 @@ n'est stockée.
 #### `giving_pages`
 
 Page publique « Donner » d'une église (spec 065) : une ligne au plus par église, créée au premier
-enregistrement (avant, `/dons` propose des textes par défaut, page inactive). Chaque section a son
+enregistrement (avant, `/finances/dons` propose des textes par défaut, page inactive). Chaque section a son
 interrupteur d'affichage ; la page publique `/donner/<slug>` ne montre que les sections activées
 et complètes.
 

@@ -1,4 +1,4 @@
-/** Files de la comptabilité (spec 092) : mêmes règles que les indicateurs de `/accounting/requests`. */
+/** Files de la comptabilité (spec 092) : mêmes règles que les indicateurs de `/finances/demandes`. */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 
