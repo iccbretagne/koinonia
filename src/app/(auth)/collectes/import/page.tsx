@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { hasCampaignsManage } from "@/modules/campaigns/auth";
@@ -13,7 +12,7 @@ export default async function ImportCampaignPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow={<Link href="/collectes" className="hover:underline">Collectes</Link>}
+        eyebrow="Questionnaires"
         title="Importer une campagne"
         description="Collez ou choisissez la définition JSON, vérifiez l'aperçu, puis créez la campagne. Elle reste en brouillon jusqu'à son ouverture."
       />

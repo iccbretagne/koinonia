@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { Button, Input, Select, Textarea } from "@/components/ui";
+import { Button, Input, Select, Textarea, fieldLabelClasses } from "@/components/ui";
 import {
   DECIMALS_MAX,
   DEFAULT_QUALIFIERS,
@@ -122,9 +122,9 @@ export default function ItemEditor<T extends AnyItem>({
 
       {(any.type === "single" || any.type === "multiple") && (
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-[13px] font-semibold text-ink">Choix</legend>
+          <legend className={`${fieldLabelClasses} mb-1`}>Choix</legend>
           {any.choices.map((c, ci) => (
-            <div key={c.key} className="flex flex-col gap-1 rounded-control border border-line bg-surface-sunken p-2 sm:flex-row sm:items-center">
+            <div key={c.key} className="flex flex-col gap-1 rounded-control border border-line p-2 sm:flex-row sm:items-center">
               <div className="min-w-0 flex-1">
                 <Input
                   aria-label={`Choix ${ci + 1}`}
@@ -157,7 +157,7 @@ export default function ItemEditor<T extends AnyItem>({
           {any.type === "multiple" && (
             <p className="text-[13px] text-ink-muted">Un choix exclusif (« Aucun ») ne peut pas être coché avec un autre.</p>
           )}
-          <Button type="button" variant="secondary" size="sm" className="self-start" disabled={any.choices.length >= 100} onClick={() => onChange(addChoice(item, takenIds()))}>
+          <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9 self-start" disabled={any.choices.length >= 100} onClick={() => onChange(addChoice(item, takenIds()))}>
             <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
             Ajouter un choix
           </Button>
@@ -166,11 +166,11 @@ export default function ItemEditor<T extends AnyItem>({
 
       {any.type === "group" && (
         <fieldset className="flex flex-col gap-3">
-          <legend className="mb-1 text-[13px] font-semibold text-ink">Champs de chaque ligne</legend>
+          <legend className={`${fieldLabelClasses} mb-1`}>Champs de chaque ligne</legend>
           {any.fields.map((field, fi) => {
             const open = openField === field.code;
             return (
-              <div key={field.code} className="rounded-control border border-line bg-surface-sunken p-2">
+              <div key={field.code} className="rounded-control border border-line p-2">
                 <div className="flex flex-wrap items-center gap-1">
                   <Disclosure id={`field-${field.code}`} open={open} onToggle={() => setOpenField(open ? null : field.code)}>
                     <span className="block truncate text-[15px] text-ink">{field.label || "Champ sans libellé"}</span>
@@ -203,7 +203,7 @@ export default function ItemEditor<T extends AnyItem>({
             type="button"
             variant="secondary"
             size="sm"
-            className="self-start"
+            className="min-h-11 sm:min-h-9 self-start"
             disabled={any.fields.length >= 30}
             onClick={() => onChange(addGroupField(any, takenIds()) as T)}
           >
@@ -234,7 +234,7 @@ export default function ItemEditor<T extends AnyItem>({
       {any.type === "file_request" && (
         <div className="flex flex-col gap-3">
           <fieldset className="flex flex-col">
-            <legend className="text-[13px] font-semibold text-ink">Formats acceptés</legend>
+            <legend className={fieldLabelClasses}>Formats acceptés</legend>
             <div className="flex flex-wrap gap-x-4">
               {FILE_ACCEPT.map((ext) => {
                 const accepted = any.accept ?? [...FILE_ACCEPT];
@@ -268,7 +268,7 @@ export default function ItemEditor<T extends AnyItem>({
 
       {qualified && (
         <fieldset className="flex flex-col">
-          <legend className="text-[13px] font-semibold text-ink">Natures de réponse proposées</legend>
+          <legend className={fieldLabelClasses}>Natures de réponse proposées</legend>
           <div className="flex flex-wrap gap-x-4">
             <CheckField label={QUALIFIER_LABELS.EXACT} checked disabled onChange={() => {}} />
             {OPTIONAL_QUALIFIERS.map((q) => (
@@ -284,7 +284,7 @@ export default function ItemEditor<T extends AnyItem>({
       )}
 
       <details className="rounded-control border border-line">
-        <summary className="flex min-h-11 cursor-pointer items-center px-3 text-[15px] font-semibold text-ink">Avancé</summary>
+        <summary className="flex min-h-11 cursor-pointer items-center px-3 text-[15px] font-semibold text-ink rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">Avancé</summary>
         <div className="flex flex-col gap-3 border-t border-line p-3">
           <Input label="Code (généré)" value={any.code} readOnly hint="Identifiant stable de la question, jamais réutilisé." className="font-mono" />
           <Input

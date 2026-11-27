@@ -51,3 +51,17 @@ export const buttonBaseClasses =
 export function buttonClasses(variant: Variant = "primary", size: Size = "md"): string {
   return `${buttonBaseClasses} ${sizeClasses[size]} ${variantClasses[variant]}`;
 }
+
+/**
+ * Apparence de `IconButton` (carré à une icône), réutilisable sur un `<a>` (téléchargement) qui
+ * doit avoir l'apparence du bouton sans en être un. `md` = 44px, `sm` = 36px (densité desktop).
+ */
+export function iconButtonClasses(size: Size = "md"): string {
+  return (
+    "relative inline-grid shrink-0 cursor-pointer place-items-center rounded-control text-ink-muted " +
+    "transition-[background-color,color,transform] duration-120 hover:bg-surface-sunken hover:text-ink active:scale-[0.96] " +
+    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus " +
+    "disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent motion-reduce:active:scale-100 " +
+    (size === "sm" ? "size-9" : "size-11")
+  );
+}

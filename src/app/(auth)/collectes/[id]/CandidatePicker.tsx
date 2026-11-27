@@ -63,7 +63,7 @@ export default function CandidatePicker({
                 <p className="truncate text-[15px] font-semibold text-ink">{c.name}</p>
                 <p className="truncate text-[13px] text-ink-muted">{c.email}</p>
               </div>
-              <Button type="button" size="sm" variant="secondary" disabled={disabled} onClick={() => onPick(c)}>
+              <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="secondary" disabled={disabled} onClick={() => onPick(c)}>
                 {actionLabel}
               </Button>
             </li>

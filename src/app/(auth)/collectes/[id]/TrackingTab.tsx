@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import { Alert, Button, Checkbox, ConfirmModal, DataTable, FilterChip, Input, Modal, Select, StatusChip, Textarea, buttonClasses } from "@/components/ui";
 import { ASSIGNMENT_STATUSES, ASSIGNMENT_STATUS_LABELS, type AssignmentStatus } from "@/modules/campaigns/schemas";
 import { ASSIGNMENT_STATUS_TONES, formatDateTime, formatDay, parisDayKey, percent } from "../_components/display";
@@ -34,7 +35,8 @@ function IssuesDetails({ row }: { readonly row: Row }) {
   const groups = groupIssues(row.issues);
   return (
     <details className="group max-w-sm">
-      <summary className="inline-flex min-h-11 cursor-pointer items-center text-[13px] font-semibold text-brand-text md:min-h-0">
+      <summary className={`${buttonClasses("ghost", "sm")} min-h-11 list-none sm:min-h-9 [&::-webkit-details-marker]:hidden`}>
+        <ChevronDown aria-hidden="true" className="size-4 transition-transform group-open:rotate-180" strokeWidth={1.75} />
         {row.issues.length} question{row.issues.length > 1 ? "s" : ""} concernée{row.issues.length > 1 ? "s" : ""}
       </summary>
       <div className="mt-1 flex flex-col gap-2">
@@ -259,7 +261,7 @@ export default function TrackingTab({
               Ouvrir
             </Link>
             <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="ghost" onClick={() => onMessage({ kind: messageKindForStatus(r, new Date()), contributionId: r.id })}>
-              Message
+              Préparer un message
             </Button>
             {open && OPEN_STATUSES.includes(r.status) && (
               <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="ghost" disabled={busy || r.respondents.length === 0} onClick={() => remind(r)}>
@@ -287,10 +289,10 @@ export default function TrackingTab({
               </Button>
             )}
             <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="ghost" disabled={busy} onClick={() => setDue({ row: r, value: parisDayKey(r.assignmentDueAt), initial: parisDayKey(r.assignmentDueAt) })}>
-              Échéance
+              Changer l&apos;échéance
             </Button>
             <Link href={`/collectes/${campaign.id}/apercu/${r.formId}`} className={`${buttonClasses("ghost", "sm")} min-h-11 sm:min-h-9`}>
-              Aperçu
+              Voir l&apos;aperçu
             </Link>
           </div>
         )}

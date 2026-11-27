@@ -141,7 +141,7 @@ export default function CommunicationModal({
   }
 
   const scope = result.excludedConfidential
-    ? `${result.excludedConfidential} contribution(s) confidentielle(s) non comptée(s).`
+    ? `${result.excludedConfidential} ${result.excludedConfidential > 1 ? "contributions confidentielles non comptées" : "contribution confidentielle non comptée"}.`
     : settings.includeConfidential
       ? "Contributions confidentielles comprises."
       : null;
@@ -216,7 +216,7 @@ export default function CommunicationModal({
         <p className="text-[13px] leading-[18px] text-ink-muted" aria-live="polite">
           {result.counts.done}/{result.counts.total} contributions transmises · {result.counts.overdue} en retard
           {scope ? ` · ${scope}` : ""}
-          {!collective && ` · ${entries.length} message(s)`}
+          {!collective && ` · ${entries.length} message${entries.length > 1 ? "s" : ""}`}
         </p>
 
         {entries.length === 0 && (
@@ -230,7 +230,7 @@ export default function CommunicationModal({
             const guests = !e.guest && assignment ? assignment.respondents.filter((r) => r.kind === "link") : [];
             const hasAccount = !!assignment?.respondents.some((r) => r.kind === "account");
             return (
-              <li key={e.key} className="flex flex-col gap-2 rounded-card border border-line bg-surface-sunken px-3 py-3">
+              <li key={e.key} className="flex flex-col gap-2 rounded-card border border-line px-3 py-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="min-w-0 font-display text-[15px] font-semibold leading-[22px] text-ink">{e.title}</h3>
                   {e.guest && <StatusChip tone="warning">Lien personnel</StatusChip>}
@@ -245,9 +245,9 @@ export default function CommunicationModal({
                   hint={e.guest ? "Contient un lien personnel : à envoyer à cette seule personne, par un canal privé." : undefined}
                 />
                 <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                  <Button type="button" size="sm" className="min-h-11 sm:min-h-9" onClick={() => void copy(textOf(e), "Message copié", fieldId)}>
+                  <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9" onClick={() => void copy(textOf(e), "Message copié", fieldId)}>
                     <Copy aria-hidden="true" className="size-4" strokeWidth={1.75} />
-                    Copier
+                    Copier le message
                   </Button>
                   {e.assignmentId ? (
                     <Link href={`/collectes/r/${e.assignmentId}`} target="_blank" className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>

@@ -8,7 +8,7 @@ export { Badge, Badge as CountBadge, formatCount } from "./Badge";
 export { default as BottomSheet } from "./BottomSheet";
 export { default as BulkActionBar, selectionLabel } from "./BulkActionBar";
 export { default as Button } from "./Button";
-export { buttonClasses, type Size as ButtonSize, type Variant as ButtonVariant } from "./button-classes";
+export { buttonClasses, iconButtonClasses, type Size as ButtonSize, type Variant as ButtonVariant } from "./button-classes";
 export { default as Checkbox } from "./Checkbox";
 export { default as CheckboxGroup } from "./CheckboxGroup";
 export { default as ConfirmModal } from "./ConfirmModal";

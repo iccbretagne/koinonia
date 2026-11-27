@@ -98,11 +98,7 @@ export default function CampaignView({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow={
-          <Link href="/collectes" className="hover:underline">
-            Collectes
-          </Link>
-        }
+        eyebrow="Questionnaires"
         title={campaign.title}
         description={
           <span className="flex flex-wrap items-center gap-2">
@@ -114,11 +110,11 @@ export default function CampaignView({
           <>
             <Button type="button" variant="secondary" onClick={() => setCommunication(null)}>
               <MessageSquareText aria-hidden="true" className="size-4" strokeWidth={1.75} />
-              Communication
+              Préparer un message
             </Button>
             <Link href={`${base}/editer`} className={buttonClasses("secondary")}>
               <PencilLine aria-hidden="true" className="size-4" strokeWidth={1.75} />
-              Éditer
+              Modifier la campagne
             </Link>
             <Button type="button" variant={statusAction.variant === "danger" ? "secondary" : "primary"} onClick={() => setPending(action)} disabled={busy}>
               {statusAction.label}

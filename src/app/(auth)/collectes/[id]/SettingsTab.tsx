@@ -153,13 +153,13 @@ function MessageTemplatesForm({ campaign }: { readonly campaign: Campaign }) {
           Modèles de messages
         </h2>
         <p className="text-[15px] leading-[22px] text-ink-muted">
-          Textes proposés par « Communication », au format WhatsApp (<code>*gras*</code>, <code>_italique_</code>). Les variables entre
+          Textes proposés par « Préparer un message », au format WhatsApp (<code>*gras*</code>, <code>_italique_</code>). Les variables entre
           accolades sont remplacées par l&apos;état réel de la campagne.
         </p>
       </div>
 
       <details className="rounded-control border border-line px-3 py-2">
-        <summary className="min-h-11 cursor-pointer content-center text-[15px] font-semibold text-ink">Variables disponibles</summary>
+        <summary className="min-h-11 cursor-pointer content-center text-[15px] font-semibold text-ink rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">Variables disponibles</summary>
         <dl className="mt-2 flex flex-col gap-2 pb-1">
           {MESSAGE_PLACEHOLDERS.map((p) => (
             <div key={p.key} className="flex flex-col gap-0.5 sm:flex-row sm:gap-3">
@@ -187,7 +187,7 @@ function MessageTemplatesForm({ campaign }: { readonly campaign: Campaign }) {
               type="button"
               size="sm"
               variant="ghost"
-              className="self-start"
+              className="min-h-11 sm:min-h-9 self-start"
               disabled={isDefault}
               onClick={() => setValues((v) => ({ ...v, [k]: DEFAULT_MESSAGE_TEMPLATES[k] }))}
             >
@@ -198,7 +198,7 @@ function MessageTemplatesForm({ campaign }: { readonly campaign: Campaign }) {
       })}
 
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-        <Button type="submit" disabled={busy || !changed || tooLong.length > 0}>
+        <Button type="submit" variant="secondary" disabled={busy || !changed || tooLong.length > 0}>
           {busy ? "Enregistrement…" : "Enregistrer les modèles"}
         </Button>
       </div>

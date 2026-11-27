@@ -260,7 +260,7 @@ export default function CampaignEditor({
               />
             </div>
             <details className="rounded-control border border-line">
-              <summary className="flex min-h-11 cursor-pointer items-center px-3 text-[15px] font-semibold text-ink">
+              <summary className="flex min-h-11 cursor-pointer items-center px-3 text-[15px] font-semibold text-ink rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
                 Modèles de messages
               </summary>
               <div className="flex flex-col gap-5 border-t border-line p-3">
@@ -277,7 +277,7 @@ export default function CampaignEditor({
                         {custom === undefined ? (
                           <StatusChip tone="neutral">Par défaut</StatusChip>
                         ) : (
-                          <Button type="button" variant="ghost" size="sm" onClick={() => setMessage(kind, undefined)}>
+                          <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setMessage(kind, undefined)}>
                             Rétablir le texte par défaut
                           </Button>
                         )}
@@ -336,7 +336,7 @@ export default function CampaignEditor({
                     )
                   }
                 >
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setPreviewForm(fi)}>
+                  <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9" onClick={() => setPreviewForm(fi)}>
                     <Eye aria-hidden="true" className="size-4" strokeWidth={1.75} />
                     Aperçu
                   </Button>
@@ -379,7 +379,7 @@ export default function CampaignEditor({
                       Destinataires ({form.assignments.length})
                     </legend>
                     {form.assignments.map((a, ai) => (
-                      <div key={a.key} className="flex flex-col gap-2 rounded-control border border-line bg-surface-sunken p-2">
+                      <div key={a.key} className="flex flex-col gap-2 rounded-control border border-line p-2">
                         <div className="flex flex-col gap-2 md:flex-row md:items-start">
                           <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-[1fr_11rem]">
                             <Input
@@ -420,7 +420,7 @@ export default function CampaignEditor({
                       type="button"
                       variant="secondary"
                       size="sm"
-                      className="self-start"
+                      className="min-h-11 sm:min-h-9 self-start"
                       onClick={() => setDef((x) => addAssignment(x, fi))}
                     >
                       <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
@@ -444,7 +444,7 @@ export default function CampaignEditor({
                               <span className="block truncate text-[15px] font-semibold text-ink">
                                 {section.title || "Section sans titre"}
                               </span>
-                              <span className="block text-[13px] text-ink-muted">{section.items.length} question(s)</span>
+                              <span className="block text-[13px] text-ink-muted">{section.items.length} question{section.items.length > 1 ? "s" : ""}</span>
                             </Disclosure>
                             <IssueCount count={countWhere(`section:${fi}:${si}`) + countWhere(`item:${fi}:${si}`)} />
                             <RowActions
@@ -550,7 +550,7 @@ export default function CampaignEditor({
                       type="button"
                       variant="secondary"
                       size="sm"
-                      className="self-start"
+                      className="min-h-11 sm:min-h-9 self-start"
                       onClick={() =>
                         setDef((x) => {
                           const next = addSection(x, fi);
@@ -632,7 +632,7 @@ export default function CampaignEditor({
                 Un contrôle compare des questions numériques ou oui/non : ajoutez-en d&apos;abord.
               </p>
             )}
-            <Button type="button" variant="secondary" size="sm" className="self-start" onClick={() => setDef((x) => addRule(x))}>
+            <Button type="button" variant="secondary" size="sm" className="min-h-11 sm:min-h-9 self-start" onClick={() => setDef((x) => addRule(x))}>
               <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
               Ajouter un contrôle
             </Button>
@@ -655,7 +655,7 @@ export default function CampaignEditor({
       {/* ── Barre d'actions ── */}
       <div
         data-k-bottom-bar
-        className="sticky bottom-20 z-10 flex flex-wrap items-center justify-between gap-2 rounded-card border border-line bg-surface px-3 py-2 shadow-sm md:bottom-4"
+        className="sticky bottom-20 z-10 flex flex-wrap items-center justify-between gap-2 rounded-card border border-line bg-surface px-3 py-2 shadow-float md:bottom-4"
       >
         <p aria-live="polite" className="min-w-0 text-[13px] text-ink-muted">
           {issues.length > 0
@@ -670,7 +670,7 @@ export default function CampaignEditor({
         </p>
         <div className="flex items-center gap-2">
           <Link href={backHref} className={buttonClasses("secondary")}>
-            {dirty ? "Annuler" : "Retour"}
+            {dirty ? "Annuler" : "Quitter l'éditeur"}
           </Link>
           <Button type="button" disabled={blocked || busy !== null || (!dirty && !!campaignId)} onClick={startSave}>
             Enregistrer
@@ -721,7 +721,7 @@ export default function CampaignEditor({
               disabled={!importPreview || isPreviewBlocked(importPreview) || busy !== null}
               onClick={() => void send(false)}
             >
-              {busy === "apply" ? "Enregistrement…" : importPreview?.campaign.action === "create" ? "Créer la campagne" : "Confirmer"}
+              {busy === "apply" ? "Enregistrement…" : importPreview?.campaign.action === "create" ? "Créer la campagne" : "Enregistrer les modifications"}
             </Button>
           </div>
         </div>

@@ -94,7 +94,7 @@ export default function ImportCampaign({
           onChange={(e) => change(e.target.value)}
           rows={10}
           spellCheck={false}
-          className="font-mono text-[13px]"
+          className="font-mono"
           placeholder='{ "format": "koinonia.campaign", "version": 1, … }'
         />
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">

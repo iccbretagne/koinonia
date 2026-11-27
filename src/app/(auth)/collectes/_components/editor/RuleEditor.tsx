@@ -122,7 +122,7 @@ function JsonCheck({
       label="Contrôle (JSON)"
       rows={6}
       spellCheck={false}
-      className="font-mono text-[13px]"
+      className="font-mono"
       value={text}
       error={error ?? undefined}
       hint="Formes : lte, lt, gte, gt, eq, neq (deux opérandes), chain_gte, chain_lte (codes), implies, all ; opérande : code, nombre, oui/non (true/false) ou { sum: [...] }."
@@ -170,7 +170,7 @@ export default function RuleEditor({
         <>
           <JsonCheck check={rule.check} onChange={(check) => onChange({ ...rule, check })} onInvalid={onInvalid} />
           {simple && (
-            <Button type="button" variant="ghost" size="sm" className="self-start" onClick={() => setJson(false)}>
+            <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9 self-start" onClick={() => setJson(false)}>
               Revenir à l&apos;éditeur simple
             </Button>
           )}
@@ -204,7 +204,7 @@ export default function RuleEditor({
               <ComparisonEditor comparison={simple.consequence} candidates={candidates} onInvalid={onInvalid} onChange={(consequence) => setSimple({ ...simple, consequence })} />
             </>
           )}
-          <Button type="button" variant="ghost" size="sm" className="self-start" onClick={() => setJson(true)}>
+          <Button type="button" variant="ghost" size="sm" className="min-h-11 sm:min-h-9 self-start" onClick={() => setJson(true)}>
             Modifier en JSON
           </Button>
         </>

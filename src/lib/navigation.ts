@@ -606,11 +606,20 @@ const SUBPAGE_LABELS: Record<string, string> = {
   requests: "Demandes",
   notifications: "Notifications",
   functions: "Fonctions",
+  nouvelle: "Nouvelle campagne",
+  import: "Import",
+  editer: "Modification",
+};
+
+/** Sous-pages nommées par leur avant-dernier segment (`…/apercu/<id>`). */
+const PARENT_SUBPAGE_LABELS: Record<string, string> = {
+  apercu: "Aperçu",
 };
 
 function subpageLabel(pathname: string): string {
-  const last = pathname.split("/").findLast(Boolean) ?? "";
-  return SUBPAGE_LABELS[last] ?? "Détail";
+  const segments = pathname.split("/").filter(Boolean);
+  const last = segments.at(-1) ?? "";
+  return SUBPAGE_LABELS[last] ?? PARENT_SUBPAGE_LABELS[segments.at(-2) ?? ""] ?? "Détail";
 }
 
 function findPage(spaces: readonly NavSpace[], active: ActiveNav): { space: NavSpace; page: NavPage | null } | null {

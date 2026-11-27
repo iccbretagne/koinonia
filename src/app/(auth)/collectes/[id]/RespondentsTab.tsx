@@ -164,6 +164,7 @@ export default function RespondentsTab({
                           <Button
                             type="button"
                             size="sm"
+                            className="min-h-11 sm:min-h-9"
                             variant="ghost"
                             disabled={busy || viewing !== null}
                             onClick={() => void viewLink(a.id, r)}
@@ -176,6 +177,7 @@ export default function RespondentsTab({
                           <Button
                             type="button"
                             size="sm"
+                            className="min-h-11 sm:min-h-9"
                             variant="ghost"
                             disabled={busy}
                             onClick={() => setRegenerating({ assignmentId: a.id, respondent: r })}
@@ -187,6 +189,7 @@ export default function RespondentsTab({
                         <Button
                           type="button"
                           size="sm"
+                          className="min-h-11 sm:min-h-9"
                           variant="ghost"
                           disabled={busy}
                           onClick={() => setReplacing({ assignment: a, respondent: r, mode: "account" })}
@@ -194,7 +197,7 @@ export default function RespondentsTab({
                           <Replace aria-hidden="true" className="size-4" strokeWidth={1.75} />
                           Remplacer
                         </Button>
-                        <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => setRemoving({ assignmentId: a.id, respondent: r, last: a.respondents.length === 1 })}>
+                        <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="ghost" disabled={busy} onClick={() => setRemoving({ assignmentId: a.id, respondent: r, last: a.respondents.length === 1 })}>
                           Retirer
                         </Button>
                       </div>
@@ -204,11 +207,11 @@ export default function RespondentsTab({
               )}
 
               <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                <Button type="button" size="sm" variant="secondary" onClick={() => setAddAccount({ assignment: a, formTitle: f.title })}>
+                <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="secondary" onClick={() => setAddAccount({ assignment: a, formTitle: f.title })}>
                   <UserPlus aria-hidden="true" className="size-4" strokeWidth={1.75} />
                   Ajouter un compte
                 </Button>
-                <Button type="button" size="sm" variant="ghost" onClick={() => setAddGuest({ assignment: a, formTitle: f.title })}>
+                <Button type="button" size="sm" className="min-h-11 sm:min-h-9" variant="ghost" onClick={() => setAddGuest({ assignment: a, formTitle: f.title })}>
                   Ajouter une personne sans compte
                 </Button>
               </div>

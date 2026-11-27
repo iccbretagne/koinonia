@@ -3,6 +3,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Badge } from "./Badge";
+import { iconButtonClasses } from "./button-classes";
 
 interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "aria-label"> {
   /** Nom accessible, obligatoire : « Fermer », « Notifications, 3 non lues ». */
@@ -35,11 +36,7 @@ export default function IconButton({
     <button
       type={type}
       title={title ?? props["aria-label"]}
-      className={`relative inline-grid shrink-0 cursor-pointer place-items-center rounded-control text-ink-muted
-        transition-[background-color,color,transform] duration-120 hover:bg-surface-sunken hover:text-ink active:scale-[0.96]
-        focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus
-        disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent motion-reduce:active:scale-100
-        ${size === "sm" ? "size-9" : "size-11"} ${className}`}
+      className={`${iconButtonClasses(size)} ${className}`}
       {...props}
     >
       {Icon ? <Icon aria-hidden="true" className="size-5" strokeWidth={1.75} /> : children}

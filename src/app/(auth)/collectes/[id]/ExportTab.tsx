@@ -92,11 +92,13 @@ export default function ExportTab({
                 {f.confidential && <StatusChip tone="danger">Confidentiel</StatusChip>}
               </span>
               <span className="flex gap-2">
-                <a href={url("csv", f.key)} className={buttonClasses("secondary", "sm")}>
-                  CSV
+                <a href={url("csv", f.key)} aria-label={`Télécharger ${f.title} en CSV`} className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+                  <Download aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                  Télécharger en CSV
                 </a>
-                <a href={url("xlsx", f.key)} className={buttonClasses("secondary", "sm")}>
-                  XLSX
+                <a href={url("xlsx", f.key)} aria-label={`Télécharger ${f.title} en XLSX`} className={`${buttonClasses("secondary", "sm")} min-h-11 sm:min-h-9`}>
+                  <Download aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                  Télécharger en XLSX
                 </a>
               </span>
             </li>

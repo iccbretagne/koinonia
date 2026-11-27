@@ -47,7 +47,7 @@ export default async function CampaignsPage() {
                 <li key={a.id}>
                   <Link
                     href={`/collectes/r/${a.id}`}
-                    className="flex min-h-11 items-center gap-3 rounded-card border border-line bg-surface p-4 hover:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                    className="flex min-h-11 items-center gap-3 rounded-card border border-line bg-surface p-4 transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                   >
                     <div className="min-w-0 flex-1">
                       <p className="text-[13px] text-ink-muted">{a.campaignTitle}</p>

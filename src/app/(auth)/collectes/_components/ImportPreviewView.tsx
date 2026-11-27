@@ -167,7 +167,7 @@ export default function ImportPreviewView({
           </ul>
         )}
         {preview.forms.length > changedForms.length && (
-          <p className="text-[13px] text-ink-muted">{preview.forms.length - changedForms.length} inchangé(s).</p>
+          <p className="text-[13px] text-ink-muted">{preview.forms.length - changedForms.length} inchangé{preview.forms.length - changedForms.length > 1 ? "s" : ""}.</p>
         )}
       </Block>
 
@@ -191,13 +191,13 @@ export default function ImportPreviewView({
       {showRespondents && (
         <Block title="Répondants">
           <p className="text-[15px] text-ink">
-            {preview.respondents.resolved.length} compte(s) retrouvé(s) par email
+            {preview.respondents.resolved.length} {preview.respondents.resolved.length > 1 ? "comptes retrouvés" : "compte retrouvé"} par email
             {preview.respondents.resolved.length > 0 && (
               <span className="text-ink-muted"> : {preview.respondents.resolved.map((r) => r.name).join(", ")}</span>
             )}
           </p>
           {preview.respondents.unresolved.length > 0 && (
-            <Alert tone="warning" title={`${preview.respondents.unresolved.length} adresse(s) sans compte dans l'église.`}>
+            <Alert tone="warning" title={`${preview.respondents.unresolved.length} ${preview.respondents.unresolved.length > 1 ? "adresses" : "adresse"} sans compte dans l'église.`}>
               Ces personnes ne seront pas ajoutées ; ajoutez-les ensuite dans l&apos;onglet Répondants (compte ou lien personnel).
               <ul className="mt-1 list-disc pl-5 text-[13px] leading-[18px]">
                 {preview.respondents.unresolved.map((email) => (
