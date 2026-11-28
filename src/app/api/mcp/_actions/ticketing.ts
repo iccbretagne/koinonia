@@ -329,7 +329,7 @@ async function readBookings(input: z.infer<typeof bookingsInput>, ctx: ActionCon
     text:
       page.length === 0
         ? "Aucune réservation ne correspond."
-        : page.map((b) => `${b.reference} · ${quoted(b.contactName)} ·${b.participants.length} participant(s) · ${b.status} [${b.id}]`).join("\n"),
+        : page.map((b) => `${b.reference} · ${quoted(b.contactName)} · ${b.participants.length} participant(s) · ${b.status} [${b.id}]`).join("\n"),
     structured: { total: filtered.length, nextOffset: next, bookings: page },
   };
 }
@@ -468,7 +468,7 @@ async function readPayments(input: z.infer<typeof paymentsInput>, ctx: ActionCon
   const payments = picked.map((p) => ({ id: p.id, reference: p.reference, contactName: person(p.contactName), kind: p.kind, status: p.status, method: p.method, amount: p.amount, reason: p.reason === null ? null : untrustedText(p.reason, 300) }));
   return {
     text: payments.length
-      ? payments.map((p) => `${p.reference} · ${quoted(p.contactName, 80)} ·${PAYMENT_METHOD_LABEL[p.method]} · ${euros(p.amount)} · ${p.kind} ${p.status} [${p.id}]`).join("\n")
+      ? payments.map((p) => `${p.reference} · ${quoted(p.contactName, 80)} · ${PAYMENT_METHOD_LABEL[p.method]} · ${euros(p.amount)} · ${p.kind} ${p.status} [${p.id}]`).join("\n")
       : "Aucun paiement à traiter.",
     structured: { payments },
   };
@@ -1109,7 +1109,7 @@ const handlePaymentsAction = eventAction({
     return {
       lines: [
         `${input.decision === "confirm" ? "Confirmer" : "Refuser"} ${ids.length} déclaration(s) de paiement, ${euros(total)} au total${action.action === "reject" ? ` — motif : ${action.reason}` : ""}`,
-        ...picked.map((p) => `${p!.reference} · ${quoted(p!.contactName, 80)} ·${PAYMENT_METHOD_LABEL[p!.method]} · ${euros(p!.amount)}`),
+        ...picked.map((p) => `${p!.reference} · ${quoted(p!.contactName, 80)} · ${PAYMENT_METHOD_LABEL[p!.method]} · ${euros(p!.amount)}`),
         "Les contacts sont prévenus par email, comme dans l'application. Tout ou rien : si l'une change avant la confirmation, aucune n'est traitée.",
       ],
       payload: { eventId: event!.id, ids, decision: input.decision, reason: action.action === "reject" ? action.reason : null },
@@ -1164,7 +1164,7 @@ function settlementAction(spec: { action: string; role: EventAction; what: strin
       return {
         lines: [
           // Nom du contact : seulement pour qui voit le détail de la réservation (pas l'accueil ni la restauration).
-          `${spec.verb} sur la réservation ${view.reference}${scope === "all" ? ` (${quoted(view.contact.name, 80)})` : ""} par${PAYMENT_METHOD_LABEL[input.method]} : ${euros(picked.reduce((n, c) => n + c!.amount, 0))}`,
+          `${spec.verb} sur la réservation ${view.reference}${scope === "all" ? ` (${quoted(view.contact.name, 80)})` : ""} par ${PAYMENT_METHOD_LABEL[input.method]} : ${euros(picked.reduce((n, c) => n + c!.amount, 0))}`,
           ...picked.map((c) => `${c!.label} · ${euros(c!.amount)}`),
         ],
         payload: { eventId: event!.id, bookingId: view.id, method: data.method, charges: data.charges, opId: randomUUID() },
@@ -1234,7 +1234,7 @@ const cancelAction = eventAction({
     const sum = (rows: typeof hit) => rows.reduce((n, r) => n + r.amount, 0);
     return {
       lines: [
-        input.participantId ? `Annuler la participation de ${quoted(personOf(target[0]), 80)} (réservation ${view.reference})` : `Annuler toute la réservation ${view.reference} (${quoted(view.contact.name, 80)},${target.length} participant(s))`,
+        input.participantId ? `Annuler la participation de ${quoted(personOf(target[0]), 80)} (réservation ${view.reference})` : `Annuler toute la réservation ${view.reference} (${quoted(view.contact.name, 80)}, ${target.length} participant(s))`,
         `À rembourser ensuite : ${euros(sum(hit.filter((r) => r.refundable)))} · conservé (non remboursable ou hors délai) : ${euros(sum(hit.filter((r) => !r.refundable)))}`,
         ...hit.map((r) => `${r.label} · ${euros(r.amount)} · ${r.refundable ? "à rembourser" : "conservé"}`),
         "Le contact est prévenu par email ; les places et plats sont libérés.",

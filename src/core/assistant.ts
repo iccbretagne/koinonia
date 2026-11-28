@@ -96,7 +96,9 @@ export function isDataRefusal(result: DataResult): result is DataRefusal {
  * largeur nulle) : un texte saisi par un tiers ne doit jamais pouvoir se faire passer, une fois
  * renvoyé à un assistant IA, pour une nouvelle ligne ou une consigne.
  */
-const INVISIBLE = /[\u0000-\u001F\u007F-\u009F\u00AD\u061C\u180E\u200B-\u200F\u2028-\u202E\u2060-\u206F\uFEFF]/g;
+// U+200C/U+200D (liants) gardés : ils composent les emoji et certaines écritures. Les caractères
+// « étiquettes » (U+E0000–E007F), invisibles, servent à cacher des consignes : retirés.
+const INVISIBLE = /[\u0000-\u001F\u007F-\u009F\u00AD\u061C\u180E\u200B\u200E\u200F\u2028-\u202E\u2060-\u206F\uFEFF\u{E0000}-\u{E007F}]/gu;
 
 /** Coupe à `max` caractères (points de code, jamais au milieu d'un emoji), avec « … ». */
 function bound(text: string, max: number): string {
@@ -104,8 +106,8 @@ function bound(text: string, max: number): string {
   return chars.length > max ? `${chars.slice(0, max - 1).join("").trimEnd()}…` : text;
 }
 
-/** Texte d'une ligne : caractères invisibles retirés, espaces réduits, borné (2 000 caractères par défaut). */
-export const cleanText = (text: string | null | undefined, max = 2000) =>
+/** Texte d'une ligne : caractères invisibles retirés, espaces réduits ; borné seulement si `max` est donné. */
+export const cleanText = (text: string | null | undefined, max = Infinity) =>
   bound((text ?? "").replace(INVISIBLE, " ").replace(/\s+/g, " ").trim(), max);
 
 /**
