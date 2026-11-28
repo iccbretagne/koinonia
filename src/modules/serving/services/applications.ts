@@ -196,6 +196,45 @@ export async function listApplications(actor: ServingActor, view: "pvs" | "depar
   });
 }
 
+/**
+ * File « À traiter » des candidatures (spec 092), mêmes règles que les onglets de `/candidatures` :
+ * pour le PVS (et l'Admin), les fiches du compartiment « À traiter » (`needsPvsAction`) ; pour un
+ * responsable ou un Ministre, les affectations en attente de réponse dans ses départements.
+ * `null` sans accès à l'espace (aucune file, pas même vide).
+ */
+export async function countServingQueue(
+  actor: ServingActor
+): Promise<{ view: "pvs" | "department"; count: number } | null> {
+  if (actor.canManage) {
+    const count = await prisma.servingApplication.count({ where: pvsTodoWhere(actor.churchId) });
+    return { view: "pvs", count };
+  }
+  const deptIds = (await leadDepartments(actor)).map((d) => d.id);
+  if (deptIds.length === 0) return null;
+  const [any, count] = await Promise.all([
+    prisma.servingAssignment.count({ where: { departmentId: { in: deptIds }, application: { churchId: actor.churchId } } }),
+    // Fiches distinctes (comme l'onglet), pas affectations : une fiche affectée à deux de ses
+    // départements ne compte qu'une fois.
+    prisma.servingApplication.count({
+      where: { churchId: actor.churchId, assignments: { some: { status: "PENDING", departmentId: { in: deptIds } } } },
+    }),
+  ]);
+  // Même condition que `hasServingAccess` : un responsable sans aucune affectation n'a pas l'espace.
+  if (any === 0) return null;
+  return { view: "department", count };
+}
+
+/** Traduction en requête de `needsPvsAction` : reçue, ou validée avec un renvoi non résolu. */
+function pvsTodoWhere(churchId: string): Prisma.ServingApplicationWhereInput {
+  return {
+    churchId,
+    OR: [
+      { status: "RECEIVED" },
+      { status: "VALIDATED", assignments: { some: { status: "SENT_BACK", resolvedAt: null } } },
+    ],
+  };
+}
+
 /** Candidatures que l'appelant peut ouvrir, pour décider du lien « Candidatures » du menu. */
 export async function hasServingAccess(actor: ServingActor): Promise<boolean> {
   if (actor.canManage) return true;

@@ -17,6 +17,7 @@ import {
 } from "@/lib/roles";
 import type { InheritedAccess } from "@/lib/access-overview";
 import ResponsibilityModal, { type ResponsibilitySelection } from "../../ResponsibilityModal";
+import { paths } from "@/lib/paths";
 
 interface DeptRef {
   id: string;
@@ -296,7 +297,7 @@ export default function PersonAccessClient({
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/admin/access" className={`${buttonClasses("ghost", "sm")} self-start`}>
+      <Link href={paths.admin.access()} className={`${buttonClasses("ghost", "sm")} self-start`}>
         <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
         Revenir aux accès
       </Link>

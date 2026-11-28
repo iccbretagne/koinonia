@@ -68,7 +68,7 @@ describe("requestPiece", () => {
     });
     expect(logAudit).toHaveBeenCalledWith(expect.objectContaining({ entityType: "FinancialRequest", details: { pieceRequest: "request", note: "La facture" } }));
     expect(createNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: "user-1", domain: "accounting", type: "ACCOUNTING_PIECE_REQUESTED", link: "/accounting/requests/req-1" })
+      expect.objectContaining({ userId: "user-1", domain: "accounting", type: "ACCOUNTING_PIECE_REQUESTED", link: "/finances/demandes/req-1" })
     );
   });
 

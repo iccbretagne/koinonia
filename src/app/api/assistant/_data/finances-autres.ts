@@ -2,6 +2,7 @@ import { boundedAnswer } from "@/core/assistant";
 import { prisma } from "@/lib/prisma";
 import { anonymize } from "@/modules/assistant";
 import { REFUSED, can, formatDay, formatEuros, formatTime, paramsSchema, type DataQuestion } from "./common";
+import { paths } from "@/lib/paths";
 
 /**
  * Questions de données de la billetterie (D08), des salles (D10), de la comptabilité (D18, D19,
@@ -33,7 +34,7 @@ export const TICKETING_QUESTIONS: DataQuestion[] = [
       });
       return boundedAnswer({
         title: "Mes affectations",
-        href: "/planning",
+        href: paths.planning(),
         hrefLabel: "Mon planning",
         items,
         empty: "Vous n'êtes affecté à aucune équipe d'événement à venir.",
@@ -50,12 +51,12 @@ export const TICKETING_QUESTIONS: DataQuestion[] = [
       const events = await listEvents(churchId, viewer.userId, await isTicketingManager(session, churchId));
       return boundedAnswer({
         title: "Mes événements de billetterie",
-        href: "/billetterie",
+        href: paths.billetterie(),
         hrefLabel: "Billetterie",
         items: events.map((e) => ({
           label: `${formatDay(e.startsAt)} · ${e.title}`,
           detail: `${TICKETING_STATUS[e.status] ?? e.status} · ${e.seatsTaken} inscrits / ${e.seatsOpen} places`,
-          href: `/billetterie/${e.id}`,
+          href: paths.billetterie.event(e.id),
         })),
         empty: "Aucun événement de billetterie pour vous dans cette église.",
       });
@@ -68,25 +69,27 @@ export const TICKETING_QUESTIONS: DataQuestion[] = [
     async run({ session, churchId, viewer }) {
       if (!viewer.predicates.includes("ticketing")) return REFUSED;
       const m = await import("@/modules/ticketing");
-      const events = await m.listEvents(churchId, viewer.userId, await m.isTicketingManager(session, churchId));
+      // Même sélection d'événements que la carte « À traiter » de l'Accueil (spec 092).
+      const events = await prisma.ticketingEvent.findMany({
+        where: await m.paymentsEventsWhere(session, churchId),
+        select: { id: true, title: true },
+        orderBy: { startsAt: "desc" },
+      });
       const items: { label: string; detail: string; href: string }[] = [];
-      let treasurer = false;
-      for (const e of events.filter((x) => x.status !== "ARCHIVED")) {
-        const access = await m.getEventAccess(session, e.id).catch(() => null);
-        if (!access || !m.canDo(access, "payments")) continue;
-        treasurer = true;
+      const treasurer = events.length > 0;
+      for (const e of events) {
         const [payments, bookings] = await Promise.all([m.listPayments(e.id), m.listBookings(e.id, false)]);
         for (const p of payments.filter((x) => x.kind === "DECLARATION" && x.status === "PENDING")) {
-          items.push({ label: `${e.title} · ${p.reference} · ${p.contactName}`, detail: `À confirmer : ${formatEuros(p.amount)} (${p.method}), déclaré le ${formatDay(new Date(p.createdAt))}`, href: `/billetterie/${e.id}?vue=reglements` });
+          items.push({ label: `${e.title} · ${p.reference} · ${p.contactName}`, detail: `À confirmer : ${formatEuros(p.amount)} (${p.method}), déclaré le ${formatDay(new Date(p.createdAt))}`, href: paths.billetterie.event(e.id, { vue: "reglements" }) });
         }
         for (const b of bookings.filter((x) => x.balances.refundDue > 0)) {
-          items.push({ label: `${e.title} · ${b.reference} · ${b.contact.name}`, detail: `À rembourser : ${formatEuros(b.balances.refundDue)}`, href: `/billetterie/${e.id}?vue=reglements` });
+          items.push({ label: `${e.title} · ${b.reference} · ${b.contact.name}`, detail: `À rembourser : ${formatEuros(b.balances.refundDue)}`, href: paths.billetterie.event(e.id, { vue: "reglements" }) });
         }
       }
       if (!treasurer) return REFUSED;
       return boundedAnswer({
         title: "Paiements de billetterie à traiter",
-        href: "/billetterie",
+        href: paths.billetterie(),
         hrefLabel: "Billetterie",
         items,
         empty: "Aucun paiement à confirmer ni remboursement à faire.",
@@ -121,7 +124,7 @@ export const ROOMS_QUESTIONS: DataQuestion[] = [
       }));
       return boundedAnswer({
         title: "Mes réservations",
-        href: "/rooms",
+        href: paths.rooms(),
         hrefLabel: "Salles",
         items,
         empty: "Vous n'avez aucune réservation à venir.",
@@ -137,8 +140,10 @@ export const ACCOUNTING_QUESTIONS: DataQuestion[] = [
     params: paramsSchema,
     async run({ viewer, churchId }) {
       if (!can(viewer, "accounting:manage")) return REFUSED;
+      // Même règle que la carte « À traiter » de l'Accueil et le tableau de bord (spec 092).
+      const { toValidateWhere } = await import("@/modules/accounting");
       const requests = await prisma.financialRequest.findMany({
-        where: { churchId, status: { in: ["SUBMITTED", "PROCESSING"] } },
+        where: toValidateWhere(churchId),
         select: { label: true, amount: true, status: true, department: { select: { name: true } } },
         orderBy: { createdAt: "asc" },
       });
@@ -149,7 +154,7 @@ export const ACCOUNTING_QUESTIONS: DataQuestion[] = [
       }));
       return boundedAnswer({
         title: requests.length > 0 ? `À valider : ${requests.length} (${formatEuros(total)})` : "Demandes à valider",
-        href: "/accounting/requests",
+        href: paths.accounting.requests(),
         hrefLabel: "Comptabilité",
         items,
         empty: "Aucune demande financière à valider.",
@@ -174,7 +179,7 @@ export const ACCOUNTING_QUESTIONS: DataQuestion[] = [
       }));
       return boundedAnswer({
         title: payments.length > 0 ? `En attente de paiement : ${formatEuros(total)}` : "Paiements en attente",
-        href: "/accounting/requests",
+        href: paths.accounting.requests(),
         hrefLabel: "Comptabilité",
         items,
         empty: "Aucun paiement en attente.",
@@ -203,7 +208,7 @@ export const ACCOUNTING_QUESTIONS: DataQuestion[] = [
       });
       return boundedAnswer({
         title: "Mes demandes financières",
-        href: "/accounting/requests",
+        href: paths.accounting.requests(),
         hrefLabel: "Comptabilité",
         items,
         empty: "Vous n'avez aucune demande financière en cours.",
@@ -224,7 +229,7 @@ export const SHUTTLE_QUESTIONS: DataQuestion[] = [
       const balance = await currentBalance(churchId);
       return boundedAnswer({
         title: "Navette",
-        href: "/accounting/navette",
+        href: paths.accounting.navette(),
         hrefLabel: "Navette",
         items: [{ label: `Solde à date : ${formatEuros(balance)}` }],
       });
@@ -244,7 +249,7 @@ export const TREASURY_QUESTIONS: DataQuestion[] = [
       const items = dashboard.accounts.map((a) => ({ label: a.name, detail: formatEuros(a.balance) }));
       return boundedAnswer({
         title: `Trésorerie : ${formatEuros(dashboard.total)}`,
-        href: "/accounting/tresorerie",
+        href: paths.accounting.tresorerie(),
         hrefLabel: "Trésorerie",
         items,
         empty: "Aucun compte de trésorerie n'est encore ouvert.",
@@ -274,7 +279,7 @@ export const TREASURY_QUESTIONS: DataQuestion[] = [
       }));
       return boundedAnswer({
         title: count > 0 ? `Chèques en caisse : ${count} (${formatEuros(amount)})` : "Chèques en caisse",
-        href: "/accounting/tresorerie?onglet=remise",
+        href: paths.accounting.tresorerie({ onglet: "remise" }),
         hrefLabel: "Trésorerie › Remise",
         items,
         empty: "Aucun chèque en caisse.",

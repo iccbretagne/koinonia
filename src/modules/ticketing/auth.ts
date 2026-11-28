@@ -2,6 +2,7 @@ import type { Session } from "next-auth";
 import type { PrismaClient, TicketingEventStatus, TicketingRole } from "@/generated/prisma/client";
 import { requireAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/errors";
+import { forbiddenError } from "@/lib/forbidden";
 
 type Db = Pick<PrismaClient, "ticketingEvent" | "ticketingEventRole">;
 
@@ -80,7 +81,7 @@ export function canDo(access: Pick<EventAccess, "roles">, action: EventAction): 
 export async function requireEventAction(eventId: string, action: EventAction) {
   const session = await requireAuth();
   const access = await getEventAccess(session, eventId);
-  if (!canDo(access, action)) throw new Error("FORBIDDEN");
+  if (!canDo(access, action)) throw forbiddenError();
   return { session, access };
 }
 
@@ -88,7 +89,7 @@ export async function requireEventAction(eventId: string, action: EventAction) {
 export async function requireEventRole(eventId: string, allowed: readonly TicketingRole[]) {
   const session = await requireAuth();
   const access = await getEventAccess(session, eventId);
-  if (!allowed.some((r) => access.roles.has(r))) throw new Error("FORBIDDEN");
+  if (!allowed.some((r) => access.roles.has(r))) throw forbiddenError();
   return { session, access };
 }
 

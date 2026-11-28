@@ -1,0 +1,83 @@
+import Link from "next/link";
+import { CalendarClock, Inbox, Settings } from "lucide-react";
+import { buttonClasses } from "@/components/ui/button-classes";
+import { getCurrentChurchId, requireAuth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import PublicFormBanner from "@/components/PublicFormBanner";
+import { EmptyState, PageHeader } from "@/components/ui";
+import { countServingQueue, listApplications, type ApplicationSummary } from "@/modules/serving";
+import { requireServingActor } from "@/modules/serving/auth";
+import ApplicationsClient, { type ApplicationsTab } from "./ApplicationsClient";
+import { paths } from "@/lib/paths";
+
+/**
+ * Candidatures au service (spec 077). Le PVS (et l'Admin) voit toutes les candidatures de
+ * l'église ; un responsable ou un Ministre voit celles affectées à ses départements.
+ */
+export default async function CandidaturesPage({
+  searchParams,
+}: {
+  readonly searchParams: Promise<{ onglet?: string }>;
+}) {
+  const session = await requireAuth();
+  const churchId = await getCurrentChurchId(session);
+  if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
+
+  const actor = await requireServingActor(churchId);
+  const [pvs, departments, church, queue] = await Promise.all([
+    actor.canManage ? listApplications(actor, "pvs") : Promise.resolve<ApplicationSummary[]>([]),
+    listApplications(actor, "department"),
+    prisma.church.findUnique({ where: { id: churchId }, select: { slug: true } }),
+    // Pastille « À traiter » : même compte que la carte de l'Accueil (spec 092).
+    actor.canManage ? countServingQueue(actor) : Promise.resolve(null),
+  ]);
+
+  if (!actor.canManage && departments.length === 0) {
+    return (
+      <EmptyState
+        icon={Inbox}
+        title="Aucune candidature"
+        description="Les candidatures orientées vers tes départements apparaîtront ici."
+      />
+    );
+  }
+
+  const tabs: ApplicationsTab[] = actor.canManage
+    ? ["todo", "ongoing", ...(departments.length > 0 ? (["departments"] as const) : []), "archived"]
+    : ["departments"];
+  const requested = (await searchParams).onglet as ApplicationsTab | undefined;
+  const tab = requested && tabs.includes(requested) ? requested : tabs[0];
+
+  return (
+    <div className="max-w-5xl mx-auto space-y-4">
+      <PageHeader
+        title="Candidatures au service"
+        description={
+          actor.canManage
+            ? "Fiches reçues par le formulaire « Servir » : étude, orientation vers les départements et suivi de l'observation."
+            : "Personnes orientées vers tes départements par l'équipe Vie des STAR."
+        }
+        actions={
+          actor.canManage || actor.canEditSettings ? (
+            <div className="flex flex-wrap gap-2">
+              {actor.canManage && (
+                <Link href={paths.candidatures.entretiens()} className={buttonClasses("secondary", "sm")}>
+                  <CalendarClock className="size-4" aria-hidden="true" /> Gérer les entretiens
+                </Link>
+              )}
+              {actor.canEditSettings && (
+                <Link href={paths.candidatures.parametres()} className={buttonClasses("secondary", "sm")}>
+                  <Settings className="size-4" aria-hidden="true" /> Régler l&apos;observation et l&apos;email du PVS
+                </Link>
+              )}
+            </div>
+          ) : undefined
+        }
+      />
+      {actor.canManage && church?.slug && (
+        <PublicFormBanner path={`/servir/${church.slug}`} label="Lien public — candidature au service" />
+      )}
+      <ApplicationsClient tab={tab} tabs={tabs} pvs={pvs} departments={departments} todoCount={queue?.count ?? 0} />
+    </div>
+  );
+}

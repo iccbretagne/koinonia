@@ -21,7 +21,7 @@ export const mediaModule = defineModule({
   optionalDependencies: ["planning"],
 
   routes: {
-    authenticated: [{ path: "/media" }],
+    authenticated: [{ path: "/medias" }],
     api: [
       { path: "/api/media" },
       { path: "/api/media-events" },
@@ -65,9 +65,5 @@ export const mediaModule = defineModule({
       defaultEmail: false,
       visibleWith: ["media:upload", "media:review"],
     },
-  ],
-
-  navigation: [
-    { label: "Communication & Production", icon: "media", href: "/media", permission: "media:view" },
   ],
 });

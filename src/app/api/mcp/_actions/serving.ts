@@ -6,6 +6,7 @@ import type { createSlots } from "@/modules/serving";
 import { DEFAULT_INTERVIEW_MINUTES } from "@/modules/serving/schemas";
 import { formatDay, formatTime } from "../../assistant/_data/common";
 import { EXPIRED, confirmInput, day, hhmm, previewText, refusal, type ActionContext, type ActionResult, type McpActionDef } from "./common";
+import { paths } from "@/lib/paths";
 
 /**
  * Créneaux d'entretien de candidature (spec 082) : l'équipe Vie des STAR (ou l'Admin) les crée
@@ -104,7 +105,7 @@ export async function confirmCreateInterviewSlots(input: z.infer<typeof confirmI
     entityId: ctx.churchId,
     details: { created, series: "series" in payload.input, via: "mcp" },
   });
-  const link = `${publicOrigin()}/candidatures/entretiens`;
+  const link = `${publicOrigin()}${paths.candidatures.entretiens()}`;
   return { text: `${created} créneau(x) créé(s).\nVoir dans Koinonia : ${link}`, structured: { done: true, action: "create_interview_slots", created, link } };
 }
 

@@ -9,6 +9,7 @@ import {
   getStaffingGapViewer,
   isUpcoming,
 } from "@/modules/planning";
+import { paths } from "@/lib/paths";
 
 export async function GET(
   _request: Request,
@@ -96,7 +97,7 @@ export async function GET(
       select: { id: true, status: true },
     });
     const audioLink =
-      audioService?.status === "PUBLISHED" ? { url: `/audio/ecouter/${audioService.id}` } : null;
+      audioService?.status === "PUBLISHED" ? { url: paths.audio.ecouterService(audioService.id) } : null;
 
     const openingClosing = {
       opening: event.openingClosingAssignments

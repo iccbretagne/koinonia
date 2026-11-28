@@ -1,0 +1,75 @@
+import Link from "next/link";
+import { buttonClasses } from "@/components/ui";
+import { requireAuth, getCurrentChurchId } from "@/lib/auth";
+import { requireAudioAccess } from "@/modules/audio/auth";
+import { prisma } from "@/lib/prisma";
+import { getSignedStreamUrl } from "@/modules/storage";
+import { listOutgoingShares } from "@/modules/audio";
+import AudioSettingsClient from "./AudioSettingsClient";
+import LibrarySharingClient from "./LibrarySharingClient";
+import { paths } from "@/lib/paths";
+
+export default async function AudioSettingsPage() {
+  const session = await requireAuth();
+  const churchId = await getCurrentChurchId(session);
+  if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  await requireAudioAccess("audio:manage", churchId);
+
+  const settings = await prisma.audioSettings.findUnique({ where: { churchId } });
+
+  const coverPreviewUrl = settings?.defaultCoverKey
+    ? await getSignedStreamUrl(settings.defaultCoverKey)
+    : null;
+
+  // Le partage de bibliothèque reste réservé à Super Admin/Admin (spec 036) — pas de
+  // passe-droit équipe de captation, contrairement à l'accès à cette page.
+  const { rolePermissions } = await import("@/lib/registry");
+  const canManageSharing =
+    session.user.isSuperAdmin ||
+    session.user.churchRoles
+      .filter((r) => r.churchId === churchId)
+      .some((r) => (rolePermissions[r.role] ?? []).includes("audio:manage"));
+
+  const church = canManageSharing
+    ? await prisma.church.findUnique({ where: { id: churchId }, select: { slug: true } })
+    : null;
+  const outgoingShares = canManageSharing ? await listOutgoingShares(churchId) : [];
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold text-ink mb-2">Audio — Paramètres</h1>
+      <p className="text-sm text-ink-muted mb-3">
+        Le département de captation audio se configure désormais parmi les{" "}
+        fonctions départementales (fonction « Captation Audio »).
+      </p>
+      <Link href={paths.admin.departmentFunctions()} className={`${buttonClasses("secondary", "sm")} mb-6`}>
+        Configurer les fonctions départementales
+      </Link>
+      <AudioSettingsClient
+        settings={
+          settings
+            ? {
+                defaultCoverKey: settings.defaultCoverKey,
+                sequenceTemplate: Array.isArray(settings.sequenceTemplate)
+                  ? (settings.sequenceTemplate as unknown[]).filter((n): n is string => typeof n === "string")
+                  : [],
+              }
+            : { defaultCoverKey: null, sequenceTemplate: [] }
+        }
+        coverPreviewUrl={coverPreviewUrl}
+      />
+
+      {canManageSharing && church && (
+        <LibrarySharingClient
+          ownSlug={church.slug}
+          initialShares={outgoingShares.map((s) => ({
+            id: s.id,
+            churchName: s.churchName,
+            churchSlug: s.churchSlug,
+            createdAt: s.createdAt.toISOString(),
+          }))}
+        />
+      )}
+    </div>
+  );
+}

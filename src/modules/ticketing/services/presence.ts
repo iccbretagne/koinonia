@@ -1,4 +1,5 @@
 import type { TicketingAgeGroup, TicketingDirection, TicketingPassageSubject } from "@/generated/prisma/client";
+import { paths } from "@/lib/paths";
 
 /**
  * Présences (spec 074, lot 2) : calculées à partir des passages, jamais stockées. Les passages
@@ -144,6 +145,6 @@ export async function notifyCapacity(eventId: string, total: number) {
     type: "TICKETING_CAPACITY",
     title: `${event.title} : jauge ${level === 100 ? "atteinte" : "à 90 %"}`,
     message: `${total} personnes présentes pour une jauge de ${event.capacity}.`,
-    link: `/billetterie/${eventId}/controle`,
+    link: paths.billetterie.controle(eventId),
   });
 }

@@ -1,6 +1,7 @@
 import { sendEmail } from "@/lib/email";
 import { formatEuros, PAYMENT_METHOD_LABEL, type PaymentInstructions } from "../schemas";
 import type { Balances } from "./rules";
+import { paths } from "@/lib/paths";
 
 /**
  * Emails de la billetterie (spec 074), adressés au contact de la réservation.
@@ -247,7 +248,7 @@ export async function deliverToContact(
     if (contact.userId) {
       const { createNotification } = await import("@/lib/notifications");
       await createNotification(
-        { userId: contact.userId, domain: "ticketing", link: "/billetterie/mes-reservations", ...notification },
+        { userId: contact.userId, domain: "ticketing", link: paths.events.mesInscriptions(), ...notification },
         { email: mail }
       );
       return;

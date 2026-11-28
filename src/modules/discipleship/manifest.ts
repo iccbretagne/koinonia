@@ -16,7 +16,7 @@ export const discipleshipModule = defineModule({
   dependsOn: ["core", "planning"],
 
   routes: {
-    authenticated: [{ path: "/admin/discipleship" }],
+    authenticated: [{ path: "/personnes/discipolat" }],
     api: [{ path: "/api/discipleships" }],
   },
 
@@ -25,8 +25,4 @@ export const discipleshipModule = defineModule({
     "discipleship:manage": ["SUPER_ADMIN", "ADMIN", "SECRETARY", "DISCIPLE_MAKER"],
     "discipleship:export": ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
   },
-
-  navigation: [
-    { label: "Discipolat", icon: "discipleship", href: "/admin/discipleship", permission: "discipleship:view" },
-  ],
 });

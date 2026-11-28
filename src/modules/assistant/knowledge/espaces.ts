@@ -1,4 +1,5 @@
 import { ALL, type KnowledgeEntry } from "./types";
+import { paths, PREFIXES } from "@/lib/paths";
 
 /** 8. Discipolat, 9. Suivi pastoral et intégration, 10. Autres espaces (KB-120 à KB-144). */
 export const ESPACES: readonly KnowledgeEntry[] = [
@@ -9,10 +10,10 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     questions: ["Faire l'appel", "présence de mes disciples", "ajouter un disciple", "mes disciples"],
     answer:
       "Dans « Discipolat », gérez vos relations (ajouter un disciple, changer de FD) et enregistrez la présence de vos disciples à chaque événement de discipolat. Un FD ne marque que ses propres disciples.",
-    href: "/admin/discipleship",
+    href: paths.admin.discipleship(),
     hrefLabel: "Discipolat",
     audience: { permissions: ["discipleship:view"] },
-    screens: ["/admin/discipleship"],
+    screens: [paths.admin.discipleship()],
   },
   {
     key: "KB-130",
@@ -26,11 +27,11 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     ],
     answer:
       "Dans « Suivi pastoral », confiez chaque demande à un profil pastoral ou à un accompagnant, avec une note, ou rejetez-la avec un motif. Une demande confiée peut être réaffectée. Je ne donne aucune information sur les demandes elles-mêmes.",
-    href: "/care",
+    href: paths.care(),
     hrefLabel: "Suivi pastoral",
     audience: { permissions: ["care:qualify", "care:view"] },
     otherwise: "Je ne donne aucune information sur les demandes pastorales : elles sont traitées par le Référent soins pastoraux et l'administration.",
-    screens: ["/care"],
+    screens: [paths.care()],
   },
   {
     key: "KB-131",
@@ -39,11 +40,11 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     questions: ["Nouveaux convertis", "suivi MSDP", "appel au salut", "faire avancer un suivi"],
     answer:
       "L'onglet « Nouveaux convertis » de « Suivi pastoral » permet de confier le suivi puis, en tant que référent en charge, de le faire progresser (contacté, en formation, terminé) et d'ajouter des notes.",
-    href: "/care",
+    href: paths.care(),
     hrefLabel: "Suivi pastoral",
     audience: { permissions: ["care:qualify", "care:view"] },
     otherwise: "Je ne donne aucune information sur les suivis : ils sont traités par le Référent soins pastoraux et l'équipe MSDP.",
-    screens: ["/care"],
+    screens: [paths.care()],
   },
   {
     key: "KB-132",
@@ -52,11 +53,11 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     questions: ["Nouvelle famille", "demande d'intégration", "assigner un berger", "recontacter plus tard"],
     answer:
       "« Intégration » suit les demandes : assignez un berger, faites avancer le statut, mettez « À recontacter plus tard » ou transmettez au département mission. Les demandes à relancer apparaissent dans le bandeau « À relancer ».",
-    href: "/integration/requests",
+    href: paths.integration.requests(),
     hrefLabel: "Intégration",
     audience: { permissions: ["integration:manage"], predicates: ["integrationTeam"] },
     otherwise: "Les demandes d'intégration sont suivies par l'équipe Intégration et l'administration.",
-    screens: ["/integration"],
+    screens: [PREFIXES.integration],
   },
   {
     key: "KB-140",
@@ -65,11 +66,11 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     questions: ["Réserver une salle", "salle libre jeudi", "réserver le local", "mes réservations"],
     answer:
       "Dans « Salles », la vue « Semaine » montre toutes les salles et leurs créneaux libres ; réservez un créneau depuis la même page. Certaines salles demandent l'accord de l'équipe de contrôle. « Mes réservations » liste les vôtres.",
-    href: "/rooms",
+    href: paths.rooms(),
     hrefLabel: "Salles",
     audience: { permissions: ["rooms:reserve"] },
     otherwise: "La réservation des salles est ouverte aux responsables de département, Ministres, Secrétaire et Admin : un STAR passe par son responsable.",
-    screens: ["/rooms"],
+    screens: [paths.rooms()],
   },
   {
     key: "KB-141",
@@ -78,10 +79,10 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     questions: ["Réécouter le message", "prédication de dimanche", "audio du culte", "podcast"],
     answer:
       "« Audio » regroupe les cultes publiés : recherche par titre, orateur ou date, lecture avec vitesse réglable et reprise, lien de partage par culte ou par séquence.",
-    href: "/audio",
+    href: paths.audio(),
     hrefLabel: "Audio",
     audience: { permissions: ["audio:listen"] },
-    screens: ["/audio"],
+    screens: [paths.audio()],
   },
   {
     key: "KB-142",
@@ -90,10 +91,10 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     questions: ["Offres d'emploi", "publier une offre", "je cherche du travail", "freelance", "stage"],
     answer:
       "L'espace Offres a deux onglets : « Opportunités » et « Profils disponibles ». « Publier » propose les quatre sortes d'annonces ; « Mes publications » retrouve les vôtres.",
-    href: "/jobs",
+    href: paths.jobs(),
     hrefLabel: "Offres",
     audience: { permissions: ["jobs:view"] },
-    screens: ["/jobs"],
+    screens: [paths.jobs()],
   },
   {
     key: "KB-143",
@@ -108,11 +109,11 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     ],
     answer:
       "Dans « Billetterie », l'administration crée l'événement et confie les rôles. L'accueil scanne les billets depuis l'écran « Contrôler les entrées » (fonctionne sans réseau), la restauration depuis « Distribuer les repas ». Une affectation à l'équipe apparaît dans « Mon planning » avec son badge.",
-    href: "/billetterie",
+    href: paths.billetterie(),
     hrefLabel: "Billetterie",
     audience: { predicates: ["ticketing"] },
     otherwise: "La billetterie est gérée par le Secrétaire, l'administration et l'équipe de chaque événement.",
-    screens: ["/billetterie"],
+    screens: [paths.billetterie()],
   },
   {
     key: "KB-BILLET-VISUEL",
@@ -120,11 +121,11 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     title: "Personnaliser le visuel du billet",
     questions: ["appliquer une maquette au billet", "visuel du billet", "fond du billet d'entrée", "télécharger mon billet en PDF", "personnaliser le billet avec mon assistant IA"],
     answer: "Dans l'onglet « Visuel du billet » de l'événement, l'organisateur dépose un fond portrait sans nom ni QR, puis règle les vignettes de texte ou d'image. Le nom reste nominatif et le QR est généré par Koinonia. Vérifiez l'aperçu fictif puis publiez : les billets déjà envoyés suivent le visuel actuel et se téléchargent en PNG ou PDF. Le brouillon seul ne change pas les billets. Une image fixe de date, lieu ou adresse ne suit pas les changements de l'événement. Un assistant IA connecté peut déposer, modifier, publier ou retirer le visuel, seulement après aperçu puis confirmation ; il ne suffit pas de lui demander d'activer une image du site.",
-    href: "/billetterie",
+    href: paths.billetterie(),
     hrefLabel: "Billetterie",
     audience: { predicates: ["ticketing"] },
     otherwise: "Le visuel du billet est réglé et publié par l'organisateur de l'événement.",
-    screens: ["/billetterie", "/profile/assistants"],
+    screens: [paths.billetterie(), paths.profile.assistants()],
   },
   {
     key: "KB-SITE-EVT",
@@ -139,11 +140,11 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     ],
     answer:
       "Dans l'onglet « Site » d'un événement de billetterie, l'organisateur et le rôle Communication règlent le thème (couleurs, polices, fond), les pages et les blocs (boutons vers une page, un lien https, un email, un téléphone ou une ancre), déposent des images avec leur texte alternatif, vérifient l'aperçu plein écran puis cliquent sur « Publier ». L'administrateur de l'église doit avoir activé les sites d'événement dans ses paramètres ; sinon un avertissement l'indique. Seul l'organisateur demande un domaine dédié (deux enregistrements DNS, puis approbation de la plateforme).",
-    href: "/billetterie",
+    href: paths.billetterie(),
     hrefLabel: "Billetterie",
     audience: { predicates: ["ticketing"] },
     otherwise: "Le site d'un événement est géré par son organisateur et par le rôle Communication de l'événement.",
-    screens: ["/billetterie"],
+    screens: [paths.billetterie()],
   },
   {
     key: "KB-SITE-IA",
@@ -157,11 +158,11 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     ],
     answer:
       "Avec un assistant IA connecté (actions confirmées) et les sites d'événement activés par l'administrateur de l'église, demandez-lui de modifier le thème, les pages et les blocs : il peut grouper jusqu'à 50 changements en un seul, tout ou rien. Il ajoute des images depuis une adresse https ou un fichier (texte alternatif obligatoire, SVG converti en image) et ne supprime que celles qui ne servent plus. Il montre toujours un aperçu, y compris l'adresse publique et les avertissements avant de publier, et attend votre accord.",
-    href: "/profile/assistants",
+    href: paths.profile.assistants(),
     hrefLabel: "Assistants IA connectés",
     audience: { predicates: ["ticketingSites"] },
     otherwise: "Le site d'un événement est piloté par son organisateur et le rôle Communication, une fois les sites activés par l'administrateur de l'église.",
-    screens: ["/billetterie", "/profile/assistants"],
+    screens: [paths.billetterie(), paths.profile.assistants()],
   },
   {
     key: "KB-EVT-DUP",
@@ -175,11 +176,11 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     ],
     answer:
       "Avec un assistant IA connecté, l'administration (Admin, Secrétaire) demande de dupliquer un événement : la copie est en brouillon avec son paramétrage, ses tarifs, ses options, ses plats, ses postes et son site (images comprises), les échéances suivant la nouvelle date. Elle ne reprend ni inscrits, ni paiements, ni rôles, ni affectations, et l'IBAN est à ressaisir. L'export en JSON permet aussi de recréer un événement dans une autre instance de Koinonia.",
-    href: "/profile/assistants",
+    href: paths.profile.assistants(),
     hrefLabel: "Assistants IA connectés",
     audience: { permissions: ["ticketing:manage"] },
     otherwise: "Dupliquer un événement est réservé à l'administration de l'église (Admin, Secrétaire).",
-    screens: ["/billetterie", "/profile/assistants"],
+    screens: [paths.billetterie(), paths.profile.assistants()],
   },
   {
     key: "KB-144",
@@ -188,11 +189,11 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     questions: ["Prévenir toute l'église", "bandeau de maintenance", "message urgent", "annoncer une nouveauté"],
     answer:
       "Dans « Messages système », publiez un message pour toute l'église ou certains rôles, ministères ou départements, avec sa sévérité et sa période. Les statistiques (visées, vues, fermetures) s'affichent ensuite.",
-    href: "/admin/messages",
+    href: paths.admin.messages(),
     hrefLabel: "Messages système",
     audience: { permissions: ["messages:publish"] },
     otherwise: "Les messages système sont publiés par le Secrétaire et l'administration de l'église.",
-    screens: ["/admin/messages"],
+    screens: [paths.admin.messages()],
   },
   {
     key: "KB-145",
@@ -201,11 +202,11 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     questions: ["Repas adulte ou enfant au choix", "une seule option parmi plusieurs", "options qui ne se cumulent pas", "groupe d'options"],
     answer:
       "Dans l'événement, onglet « Options », ouvrez chaque option (crayon) et donnez-leur, dans « Réglages avancés », le même « Groupe au choix unique » (par exemple « Repas »). L'inscrit n'en prend qu'une, ou aucune, par participant ou pour la réservation : elles s'affichent en boutons radio. Chaque option garde son prix et son stock.",
-    href: "/billetterie",
+    href: paths.billetterie(),
     hrefLabel: "Billetterie",
     audience: { predicates: ["ticketing"] },
     otherwise: "Les options d'un événement sont réglées par son organisateur.",
-    screens: ["/billetterie"],
+    screens: [paths.billetterie()],
   },
   {
     key: "KB-146",
@@ -214,11 +215,11 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     questions: ["Organiser les gens de service à la soirée", "affecter quelqu'un à un poste", "planning des bénévoles de l'événement", "changer le poste de quelqu'un"],
     answer:
       "Dans l'événement, onglet « Équipe » : créez les postes (porte, parking, vestiaire…), puis affectez les personnes, en les retrouvant par département ou par nom, avec des horaires si besoin. Le planning s'affiche par poste ; le crayon change le poste ou les horaires d'une personne, qui en est prévenue. Chacun voit son affectation dans « Mon planning » avec son badge.",
-    href: "/billetterie",
+    href: paths.billetterie(),
     hrefLabel: "Billetterie",
     audience: { predicates: ["ticketing"] },
     otherwise: "L'équipe d'un événement est constituée par son organisateur.",
-    screens: ["/billetterie"],
+    screens: [paths.billetterie()],
   },
   {
     key: "KB-147",
@@ -227,11 +228,11 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     questions: ["Créer un formulaire d'inscription", "faire un sondage", "qui vient à l'événement", "remplacer Google Forms", "inscriptions PCNC", "résultats du sondage", "combien de participants"],
     answer:
       "Dans « Formulaires », créez une inscription, une participation ou un sondage, ajoutez les questions (texte, choix avec places, oui/non, nombre, date, email, note, consentement…) et une condition d'affichage si besoin, puis publiez et copiez le lien. Un formulaire public demande toujours l'email du répondant (question ajoutée d'office). L'onglet « Résultats » regroupe les réponses par question (graphiques, réponses libres sans nom) ; une participation se rattache à un événement, et « Je viens » plus « Nombre d'accompagnants » donnent le total des participants. Les réponses s'exportent et s'effacent au terme de la conservation choisie (12 mois par défaut). Le Secrétaire et l'administration voient tous les formulaires et peuvent donner à un compte l'accès « Formulaires » (bouton « Gérer les accès ») : il ne gère alors que ses propres formulaires, qu'il peut partager avec un autre compte autorisé (onglet « Réglages › Partage »).",
-    href: "/formulaires",
+    href: paths.formulaires(),
     hrefLabel: "Formulaires",
     audience: { predicates: ["forms"] },
     otherwise: "Les formulaires sont créés par le Secrétaire et l'administration de l'église, qui peuvent aussi vous donner accès à vos propres formulaires.",
-    screens: ["/formulaires"],
+    screens: [paths.formulaires()],
   },
   {
     key: "KB-148",
@@ -240,7 +241,7 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     questions: ["Changer ma réponse au formulaire", "annuler mon inscription", "je me suis trompé dans le formulaire"],
     answer:
       "Sans compte, ouvrez le lien « Gérer ma réponse » de l'accusé de réception, ou cliquez sur « Retrouver ma réponse » dans le formulaire pour le recevoir à nouveau par email. Avec un compte, rouvrez le formulaire ou « Formulaires › Mes réponses ». La modification reste possible tant que le formulaire accepte des réponses ; un sondage anonyme ne se modifie pas. En liste d'attente, une place qui se libère vous est proposée par notification ou par email : acceptez-la ou déclinez-la depuis le même lien avant la date indiquée.",
-    href: "/formulaires/mes-reponses",
+    href: paths.events.mesInscriptions({ vue: "formulaires" }),
     hrefLabel: "Mes réponses",
     audience: {},
   },
@@ -251,10 +252,10 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     questions: ["Noter les présences PCNC", "faire l'appel de ma session", "liste des inscrits de mon niveau", "je suis formateur PCNC"],
     answer:
       "Si le secrétariat vous a désigné intervenant d'une inscription, ouvrez « Formulaires » : l'onglet « Inscrits » liste les personnes de vos sessions et niveaux, l'onglet « Présence » coche matin et après-midi pour chaque jour. Plusieurs intervenants peuvent cocher en même temps ; la feuille se met à jour toute seule. Votre accès s'arrête à la clôture, le lendemain de la dernière session.",
-    href: "/formulaires",
+    href: paths.formulaires(),
     hrefLabel: "Formulaires",
     audience: {},
-    screens: ["/formulaires"],
+    screens: [paths.formulaires()],
   },
   {
     key: "KB-150",
@@ -263,11 +264,11 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     questions: ["Voir les candidatures au service", "formulaire servir", "orienter une candidature vers un département", "durée d'observation", "email du PVS"],
     answer:
       "Dans « Candidatures », l'équipe Vie des STAR (PVS) étudie les fiches reçues par le formulaire « Servir » et les oriente vers un ou plusieurs départements. Le responsable du département accueille la personne : elle est en observation (3 mois par défaut), puis il la confirme ou la renvoie au PVS. Avant la fin de l'observation, puis chaque semaine tant qu'aucune décision n'est prise, le département et le PVS reçoivent un rappel. Après l'envoi de sa fiche, le candidat choisit lui-même un créneau d'entretien proposé par le PVS (bouton « Gérer les entretiens ») ; sans créneau, la fiche est « À planifier ». Le bouton « Régler l'observation et l'email du PVS » règle la durée d'observation, la conservation des fiches, le délai de relance « À planifier » et l'adresse email du PVS ; il est ouvert à toute l'équipe PVS et à l'Admin.",
-    href: "/candidatures",
+    href: paths.candidatures(),
     hrefLabel: "Candidatures",
     audience: { predicates: ["pvsTeam"], permissions: ["serving:manage"] },
     otherwise: "Les candidatures au service sont étudiées par l'équipe Vie des STAR.",
-    screens: ["/candidatures"],
+    screens: [paths.candidatures()],
     module: "serving",
   },
   {
@@ -284,11 +285,11 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     ],
     answer:
       "Dans « Candidatures › Entretiens », ajoutez un créneau ou une série (jours, plage horaire, 30 min par défaut), avec la personne de l'équipe Vie des STAR qui reçoit et un lieu ou un lien de visio. Le candidat choisit un créneau libre après l'envoi de sa fiche, et peut le changer ou l'annuler jusqu'à 24 h avant ; il reçoit un rappel la veille, comme la personne qui le reçoit. Sans créneau, la fiche est « À planifier » et le PVS est relancé tous les 14 jours (réglable dans « Paramètres ») ; les candidats sont invités par email quand de nouveaux créneaux s'ouvrent. Après l'heure, notez l'issue depuis la fiche : réalisé, absent ou excusé. Déplacer ou retirer un créneau réservé prévient le candidat.",
-    href: "/candidatures/entretiens",
+    href: paths.candidatures.entretiens(),
     hrefLabel: "Entretiens",
     audience: { predicates: ["pvsTeam"], permissions: ["serving:manage"] },
     otherwise: "Les entretiens des candidats sont organisés par l'équipe Vie des STAR.",
-    screens: ["/candidatures/entretiens", "/candidatures"],
+    screens: [paths.candidatures.entretiens(), paths.candidatures()],
     module: "serving",
   },
   {
@@ -298,10 +299,10 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     questions: ["Remplir un questionnaire de collecte", "répondre à la collecte", "envoyer mon questionnaire", "joindre un fichier à la collecte", "correction demandée sur mon questionnaire"],
     answer:
       "Ouvrez « Demandes › Questionnaires » (ou le lien reçu par notification ou par email) puis votre questionnaire. La saisie s'enregistre au fur et à mesure : vous pouvez y revenir jusqu'à l'échéance. Pour un chiffre incertain, choisissez « Estimation » ou « À rechercher » plutôt que de laisser vide ; joignez les fichiers demandés (Excel, CSV ou PDF). Quand tout est prêt, cliquez sur « Envoyer le questionnaire » : il n'est plus modifiable, sauf si un gestionnaire demande une correction — vous êtes alors prévenu et la saisie rouvre.",
-    href: "/collectes",
+    href: paths.collectes(),
     hrefLabel: "Questionnaires",
     audience: ALL,
-    screens: ["/collectes"],
+    screens: [paths.collectes()],
     module: "campaigns",
   },
   {
@@ -311,11 +312,11 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     questions: ["Piloter une campagne de collecte", "importer une campagne de collecte", "ouvrir une campagne de collecte", "relancer un questionnaire en retard", "valider un questionnaire de collecte", "contrôles de cohérence de la collecte"],
     answer:
       "Dans « Demandes › Questionnaires », l'Admin importe la définition d'une campagne (créée en brouillon) ; un réimport met à jour les questionnaires sans jamais effacer de réponse. Depuis la campagne, l'onglet « Suivi » montre l'état de chaque questionnaire, les manques, estimations et fichiers reçus ; « Contrôles » signale les incohérences entre questionnaires. Une campagne se crée aussi dans l'éditeur graphique ou par duplication, et l'aperçu montre un questionnaire comme le répondant le verra. Ouvrez la campagne pour prévenir les répondants ; « Préparer un message » ouvre des messages à copier (rien n'est envoyé) : annonce de lancement et clôture avec remerciements pour tout le groupe, demandes et relances une par destinataire, points d'avancement. Relancez, demandez une correction, rouvrez une contribution soumise (ou annulez une validation), remplacez un répondant ou changez une échéance, puis validez les questionnaires soumis et clôturez. Les gestionnaires se désignent dans l'onglet « Gestionnaires » de la campagne ; un assistant IA connecté peut aussi lister vos campagnes, en donner l'avancement, importer ou exporter une définition, ouvrir ou clôturer, et rouvrir une contribution, après votre accord.",
-    href: "/collectes",
+    href: paths.collectes(),
     hrefLabel: "Questionnaires",
     audience: { predicates: ["campaignManager"], permissions: ["campaigns:manage"] },
     otherwise: "Les campagnes de collecte sont pilotées par leurs gestionnaires et l'administration de l'église.",
-    screens: ["/collectes"],
+    screens: [paths.collectes()],
     module: "campaigns",
   },
 ];

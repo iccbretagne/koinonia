@@ -20,6 +20,7 @@ import {
 import {
   bottomDestinations,
   buildSpaces,
+  paletteActions,
   resolveActive,
   searchablePages,
   type NavigationInput,
@@ -29,6 +30,7 @@ import {
 // omettaient PASTORAL_CARE_REFERENT, privant ce role des etapes de tour ciblees.
 import type { RoleKey } from "@/lib/tour-steps";
 import type { ChurchLogoSources } from "@/modules/core/schemas";
+import { paths } from "@/lib/paths";
 
 interface AuthLayoutShellProps extends Omit<NavigationInput, "jobsUnseenCount" | "isPastoral"> {
   /** Vue pastorale active. */
@@ -129,7 +131,7 @@ export default function AuthLayoutShell({
   }, [hasJobs]);
 
   useEffect(() => {
-    if (!hasJobs || pathname !== "/jobs" || jobsUnseenCount === 0) return;
+    if (!hasJobs || pathname !== paths.jobs() || jobsUnseenCount === 0) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronisation avec une source externe (route courante)
     setJobsUnseenCount(0);
     fetch("/api/jobs/unseen-count", { method: "POST" }).catch(() => {
@@ -149,6 +151,11 @@ export default function AuthLayoutShell({
   const active = resolveActive(spaces, pathname, searchParams.get("dept"));
   const destinations = useMemo(() => bottomDestinations(spaces, { role: userRole, isPastoral }), [spaces, userRole, isPastoral]);
   const pages = useMemo(() => searchablePages(spaces), [spaces]);
+  const actions = useMemo(
+    () => paletteActions(navInput),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [navInputKey]
+  );
   const moreBadge = spaces
     .filter((s) => !destinations.some((d) => d.space === s.key))
     .reduce((sum, s) => sum + (s.badge ?? 0), 0);
@@ -240,6 +247,8 @@ export default function AuthLayoutShell({
           open={searchOpen}
           onClose={() => setSearchOpen(false)}
           pages={pages}
+          actions={actions}
+          destinations={destinations}
           churchId={currentChurchId}
           canSearchMembers={!!navInput.hasMembersAccess}
           canSearchEvents={!!navInput.hasEventsAccess}

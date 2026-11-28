@@ -5,6 +5,7 @@ import { logger } from "@/lib/logger";
 import { displayValue } from "./engine";
 import type { FormWithQuestions } from "./builder";
 import { manageTokenPair } from "./tokens";
+import { paths } from "@/lib/paths";
 
 /**
  * Notifications des formulaires (spec 079), domaine `forms`.
@@ -160,7 +161,7 @@ export async function signalNewResponses(): Promise<number> {
       type: "FORM_NEW_RESPONSES",
       title: form.title,
       message: fresh > 1 ? `${fresh} nouvelles réponses` : "1 nouvelle réponse",
-      link: `/formulaires/${form.id}?onglet=reponses`,
+      link: paths.formulaires.form(form.id, { onglet: "reponses" }),
       entityType: "Form",
       entityId: form.id,
     });

@@ -37,7 +37,7 @@ Fournit le "système de plugins" que les modules utilisent :
 
 ### Couche modules (`src/modules/`)
 
-Chaque module expose un **manifeste** (`manifest.ts`) qui déclare ses permissions, sa navigation et ses dépendances, et un **index** (`index.ts`) qui re-exporte ce manifeste avec les services publics du module. La couche `src/app/` ne peut importer qu'à partir de l'index (règle CI `app-only-module-public-api`).
+Chaque module expose un **manifeste** (`manifest.ts`) qui déclare ses permissions, ses routes et ses dépendances (la navigation est définie une seule fois dans `src/lib/navigation.ts`), et un **index** (`index.ts`) qui re-exporte ce manifeste avec les services publics du module. La couche `src/app/` ne peut importer qu'à partir de l'index (règle CI `app-only-module-public-api`).
 
 Le manifeste vit dans son propre fichier parce que l'index tire les services — donc Prisma, NextAuth et le client S3. Un manifeste isolé est importable depuis un test `node` sans mock, ce qui permet de couvrir les 11 modules dans `src/modules/__tests__/manifests.test.ts` et `src/core/__tests__/permissions.test.ts` — voir [ADR-0011](adr/0011-manifeste-separe-de-l-index.md).
 
@@ -54,7 +54,7 @@ Le manifeste vit dans son propre fichier parce que l'index tire les services —
 | `rooms` | Réservation de salles (partage cross-église via liste blanche `RoomAccess`) et main courante (ouverture/fermeture, contrôle). Dépend de `core` |
 | `integration` | Suivi des parcours d'intégration : demandes aux familles, appel au salut (MSDP), affectation bergers/conseillers, KPIs. Dépend de `core` |
 | `jobs` | Offres d'emploi/stage/alternance, profils de recherche d'emploi, abonnements aux notifications, modération. Module transversal ouvert à tous les rôles authentifiés. Dépend de `core` |
-| `giving` | Page publique « Donner » paramétrable par église (`/donner/<slug>`, sans connexion), paramétrage (`/dons`, `giving:manage`) et slide de projection avec QR code (`/dons/slide`). Vérifie l'IBAN, journalise toute modification et alerte la comptabilité (à défaut les Admins) d'un changement de coordonnées de paiement (spec 065). Nom et logo de l'église réglables par support, logo stocké via `storage` (spec 066). Dépend de `core`, `storage` |
+| `giving` | Page publique « Donner » paramétrable par église (`/donner/<slug>`, sans connexion), paramétrage (`/finances/dons`, `giving:manage`) et slide de projection avec QR code (`/finances/dons/slide`). Vérifie l'IBAN, journalise toute modification et alerte la comptabilité (à défaut les Admins) d'un changement de coordonnées de paiement (spec 065). Nom et logo de l'église réglables par support, logo stocké via `storage` (spec 066). Dépend de `core`, `storage` |
 | `care` | Suivi pastoral (spec 052, ADR-0015) : demandes de rendez-vous pastoral et suivis de nouveaux convertis MSDP, qualification et affectation (`care:qualify`/`care:view`), relances, statistiques |
 | `shuttle` | Navette (spec 073), extension de la comptabilité : registre à montants signés, dépenses avec justificatif, cautions, locations, notes de frais liées. Équipe = département de fonction `NAVETTE`. Dépend d'`accounting` (via son index) |
 | `treasury` | Trésorerie (spec 076) : comptes (caisse, coffre, en ligne), registre, collectes de culte, remises, transferts, budget, clôture mensuelle ; reprend par lecture les paiements et abondements payés depuis une caisse (ADR-0027) |
@@ -87,7 +87,7 @@ Le manifeste vit dans son propre fichier parce que l'index tire les services —
   (jamais l'inverse — un partage sortant ne donne rien en retour)
 - `listOutgoingShares(ownerChurchId)`, `grantLibraryShare(ownerChurchId, slug, options)`,
   `revokeLibraryShare(ownerChurchId, shareId)` — administration des partages (écran
-  `/audio/parametres`, garde par `audio:manage`)
+  `/medias/audio/parametres`, garde par `audio:manage`)
 
 ### Registry (`src/lib/registry.ts`)
 
@@ -511,7 +511,7 @@ import { createSchema } from "./contract";
 const data = createSchema.parse(await request.json());
 ```
 
-`npm run openapi` régénère `docs/openapi.json` (affiché par Swagger UI sur `/admin/api`, Super
+`npm run openapi` régénère `docs/openapi.json` (affiché par Swagger UI sur `/plateforme/api`, Super
 Admin) ; `src/lib/openapi/__tests__/openapi.test.ts` bloque une route sans contrat ou une
 spécification pas à jour. Conventions communes de l'API : [api.md](api.md).
 

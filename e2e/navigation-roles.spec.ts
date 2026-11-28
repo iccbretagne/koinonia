@@ -4,11 +4,25 @@ import { expect, test } from "./roles";
 /**
  * Navigation par rôle : espaces visibles (sidebar desktop, barre du bas + panneau « Plus »
  * mobile). Table de données volontairement petite, à mettre à jour avec src/lib/navigation.ts
- * (spec 092). Constat du comportement actuel, pas une prescription : en cas d'écart légitime,
- * corriger la table.
+ * (spec 092 : onze espaces au lot 1, barre du bas par rôle principal au lot 2, « Mes demandes »
+ * pour tous au lot 3 ; vue pastorale : seul le compte `pasteur`, sans rôle d'église, a un profil
+ * pastoral lié — `prisma/seed-dev.ts` —, le cumul rôle + profil reste couvert par Vitest). Constat du comportement, pas une prescription : en cas d'écart
+ * légitime, corriger la table.
  */
 
-const SPACES = ["Accueil", "Planning", "Agenda", "Personnes", "Demandes", "Médias", "Ressources", "Administration"] as const;
+const SPACES = [
+  "Accueil",
+  "Planning",
+  "Événements",
+  "Pastoral",
+  "Personnes",
+  "Demandes",
+  "Finances",
+  "Médias",
+  "Ressources",
+  "Administration",
+  "Plateforme",
+] as const;
 type Space = (typeof SPACES)[number];
 
 interface RoleNav {
@@ -18,21 +32,25 @@ interface RoleNav {
   bottom: string[];
 }
 
-const ALL_ADMIN: Space[] = ["Accueil", "Planning", "Agenda", "Personnes", "Demandes", "Médias", "Ressources", "Administration"];
-const DEPT_HEAD: Space[] = ["Accueil", "Planning", "Agenda", "Personnes", "Demandes", "Médias", "Ressources"];
+const SUPER_ADMIN: Space[] = ["Accueil", "Planning", "Événements", "Pastoral", "Personnes", "Demandes", "Finances", "Médias", "Ressources", "Administration", "Plateforme"];
+const ADMIN: Space[] = SUPER_ADMIN.filter((s) => s !== "Plateforme");
+const MINISTRE: Space[] = ["Accueil", "Planning", "Événements", "Personnes", "Demandes", "Médias", "Ressources", "Administration"];
+const DEPT_HEAD: Space[] = ["Accueil", "Planning", "Événements", "Personnes", "Demandes", "Médias", "Ressources"];
 
 export const NAV_BY_ROLE: Record<string, RoleNav> = {
-  "super-admin": { spaces: ALL_ADMIN, bottom: ["Accueil", "Agenda", "Demandes", "Personnes"] },
-  admin: { spaces: ALL_ADMIN, bottom: ["Accueil", "Agenda", "Demandes", "Personnes"] },
-  secretaire: { spaces: ALL_ADMIN, bottom: ["Accueil", "Agenda", "Demandes", "Personnes"] },
-  ministre: { spaces: ALL_ADMIN, bottom: ["Accueil", "Planning", "Agenda", "Personnes"] },
-  "resp-accueil": { spaces: DEPT_HEAD, bottom: ["Accueil", "Planning", "Agenda", "Personnes"] },
-  "resp-secretariat": { spaces: DEPT_HEAD, bottom: ["Accueil", "Planning", "Agenda", "Personnes"] },
-  "faiseur-disciples": { spaces: ["Accueil", "Planning", "Personnes", "Médias", "Ressources"], bottom: ["Accueil", "Planning", "Personnes"] },
-  reporter: { spaces: ["Accueil", "Agenda", "Personnes", "Médias", "Ressources"], bottom: ["Accueil", "Agenda"] },
-  star: { spaces: DEPT_HEAD, bottom: ["Accueil", "Mon planning", "Agenda", "Demandes"] },
-  comptable: { spaces: ["Accueil", "Personnes", "Demandes", "Médias", "Ressources", "Administration"], bottom: ["Accueil", "Comptabilité"] },
-  "referent-soins": { spaces: ["Accueil", "Personnes", "Médias", "Ressources"], bottom: ["Accueil", "Suivi"] },
+  "super-admin": { spaces: SUPER_ADMIN, bottom: ["Accueil", "Événements", "Personnes", "Planning"] },
+  admin: { spaces: ADMIN, bottom: ["Accueil", "Événements", "Personnes", "Planning"] },
+  secretaire: { spaces: ADMIN, bottom: ["Accueil", "Traitement", "Événements", "Personnes"] },
+  ministre: { spaces: MINISTRE, bottom: ["Accueil", "Planning", "Événements", "Personnes"] },
+  "resp-accueil": { spaces: DEPT_HEAD, bottom: ["Accueil", "Planning", "Événements", "Personnes"] },
+  "resp-secretariat": { spaces: DEPT_HEAD, bottom: ["Accueil", "Planning", "Événements", "Personnes"] },
+  "faiseur-disciples": { spaces: ["Accueil", "Planning", "Personnes", "Demandes", "Médias", "Ressources"], bottom: ["Accueil", "Discipolat", "Mes demandes", "Planning"] },
+  reporter: { spaces: ["Accueil", "Événements", "Demandes", "Médias", "Ressources"], bottom: ["Accueil", "Comptes rendus", "Calendrier", "Mes demandes"] },
+  star: { spaces: DEPT_HEAD.filter((s) => s !== "Personnes"), bottom: ["Accueil", "Mon planning", "Calendrier", "Mes demandes"] },
+  comptable: { spaces: ["Accueil", "Demandes", "Finances", "Médias", "Ressources"], bottom: ["Accueil", "Demandes", "Trésorerie", "Mes demandes"] },
+  "referent-soins": { spaces: ["Accueil", "Pastoral", "Demandes", "Médias", "Ressources"], bottom: ["Accueil", "Suivi", "Mes demandes"] },
+  // Profil pastoral seul, sans rôle d'église (lecture pastorale, spec 092 lot 3).
+  pasteur: { spaces: ["Accueil", "Événements", "Pastoral", "Personnes", "Demandes", "Finances", "Ressources"], bottom: ["Accueil", "Mes membres"] },
 };
 
 /** Lignes de navigation visibles sous forme de texte (le texte inclut pastilles et « (nouvel onglet) »). */
@@ -73,11 +91,13 @@ for (const [role, nav] of Object.entries(NAV_BY_ROLE)) {
 
 // Pages clés : accessibles (pas de « Accès refusé ») pour le rôle, lecture seule.
 const KEY_PAGES: Record<string, string[]> = {
-  admin: ["/admin/events", "/admin/members", "/events"],
-  secretaire: ["/admin/events", "/admin/members"],
-  star: ["/planning", "/profile/notifications"],
-  comptable: ["/dons"],
-  reporter: ["/admin/reports"],
+  admin: ["/evenements/gestion", "/personnes/star", "/evenements"],
+  secretaire: ["/evenements/gestion", "/personnes/star"],
+  // Spec 092, lot 3 : « Mes demandes » et la demande de RDV pastoral ouvertes à tout compte.
+  star: ["/planning", "/profile/notifications", "/demandes", "/demandes/rendez-vous?new=1"],
+  comptable: ["/finances/dons", "/demandes", "/demandes/rendez-vous?new=1"],
+  reporter: ["/evenements/comptes-rendus", "/demandes", "/demandes/rendez-vous?new=1"],
+  "referent-soins": ["/demandes", "/demandes/rendez-vous?new=1"],
 };
 
 for (const [role, urls] of Object.entries(KEY_PAGES)) {

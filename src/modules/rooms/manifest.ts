@@ -19,7 +19,7 @@ export const roomsModule = defineModule({
   dependsOn: ["core"],
 
   routes: {
-    authenticated: [{ path: "/rooms" }, { path: "/admin/rooms" }],
+    authenticated: [{ path: "/ressources/salles" }, { path: "/admin/salles" }],
     api: [{ path: "/api/rooms" }, { path: "/api/room-reservations" }],
   },
 
@@ -42,9 +42,5 @@ export const roomsModule = defineModule({
       defaultEmail: true,
       visibleWith: ["rooms:reserve", "rooms:manage"],
     },
-  ],
-
-  navigation: [
-    { label: "Salles", icon: "rooms", href: "/rooms", permission: "rooms:view" },
   ],
 });

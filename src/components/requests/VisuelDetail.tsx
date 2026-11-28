@@ -13,6 +13,7 @@ import { REQUEST_TYPE_LABEL } from "@/lib/request-queue";
 import ReasonForm from "./ReasonForm";
 import { ActionRow, DetailField, DetailMeta, ExternalAnchor, ReviewBlock } from "./DetailBlocks";
 import { textOf, type DetailContext, type QueueItem } from "./queue-types";
+import { paths } from "@/lib/paths";
 
 export interface MediaProjectOption {
   readonly id: string;
@@ -113,7 +114,7 @@ export default function VisuelDetail({
 
       {linked && (item.status === "EN_COURS" || item.status === "LIVRE") && (
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <Link href={`/media/projects/${linked.id}`} className={buttonClasses("secondary")}>
+          <Link href={paths.media.project(linked.id)} className={buttonClasses("secondary")}>
             <FolderOpen aria-hidden="true" className="size-4" />
             {linked.name}
           </Link>

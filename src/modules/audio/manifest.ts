@@ -15,7 +15,7 @@ export const audioModule = defineModule({
   dependsOn: ["core", "storage", "planning"],
 
   routes: {
-    authenticated: [{ path: "/audio" }],
+    authenticated: [{ path: "/medias/audio" }],
     api: [{ path: "/api/audio" }],
     // Liens de partage d'écoute par jeton (spec 036) — accessibles sans compte Koinonia.
     public: [{ path: "/ecouter" }, { path: "/api/audio/public" }],
@@ -35,8 +35,4 @@ export const audioModule = defineModule({
     // Administration du module (paramètres — couverture, template de séquences)
     "audio:manage":  ["SUPER_ADMIN", "ADMIN"],
   },
-
-  navigation: [
-    { label: "Audio", icon: "audio", href: "/audio", permission: "audio:listen" },
-  ],
 });

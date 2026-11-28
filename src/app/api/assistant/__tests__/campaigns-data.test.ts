@@ -45,7 +45,7 @@ vi.mock("@/modules/campaigns", () => ({
   listMyCampaigns: vi.fn(async () => ({ managed: MANAGED, assignments: [] })),
   getCampaignOverview: vi.fn(async () => OVERVIEW),
   storedItems: () => [{ code: "P1" }],
-  assignmentPath: (id: string) => `/collectes/r/${id}`,
+  assignmentPath: (id: string) => `/demandes/questionnaires/r/${id}`,
 }));
 
 const { CAMPAIGNS_QUESTIONS } = await import("../_data/campaigns");
@@ -67,7 +67,7 @@ describe("campaigns.list", () => {
     expect(text).toContain("clé f9");
     expect(text).toContain("50 % soumis ou validés (2/4)");
     expect(text).not.toContain("Autre église");
-    expect(answer.items.find((i) => i.href === "/collectes/r/a9")?.label).toBe("À remplir · Intégration — Rennes");
+    expect(answer.items.find((i) => i.href === "/demandes/questionnaires/r/a9")?.label).toBe("À remplir · Intégration — Rennes");
     expect(db.campaignRespondent.findMany.mock.calls[0]).toEqual([expect.objectContaining({ where: { userId: "user-1", assignment: { campaign: { churchId: "c1", status: { not: "DRAFT" } } } } })]);
   });
 });

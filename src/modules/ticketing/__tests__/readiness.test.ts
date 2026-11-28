@@ -46,6 +46,6 @@ describe("checklist d'ouverture de la billetterie", () => {
     expect(readinessChecks(base()).some((c) => c.key === "deadline")).toBe(false);
     const checks = readinessChecks(base({ options: [option({})] }));
     expect(checks.find((c) => c.key === "deadline")).toMatchObject({ required: false, done: false });
-    expect(checks.find((c) => c.key === "menus")?.href).toBe("/billetterie/ev-1?vue=options");
+    expect(checks.find((c) => c.key === "menus")?.href).toBe("/evenements/billetterie/ev-1?vue=options");
   });
 });

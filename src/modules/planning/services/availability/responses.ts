@@ -7,6 +7,7 @@ import { createWithdrawal, sendWithdrawalNotice } from "../withdrawals/withdraw"
 import { withdrawable } from "../withdrawals/rules";
 import { defaultDb } from "./db";
 import { monthStart, nextMonthStart, resolveAvailability, type AvailabilityState } from "./state";
+import { paths } from "@/lib/paths";
 
 /**
  * Réponses de disponibilité d'un STAR (spec 058) : lecture de son écran « Mes disponibilités »
@@ -327,7 +328,7 @@ async function notifyPlannedUnavailable(
       type: "AVAILABILITY_PLANNED_UNAVAILABLE",
       title: "STAR planifié devenu indisponible",
       message: `${member.firstName} ${member.lastName} est planifié(e) sur « ${p.eventTitle} » mais a répondu « Pas disponible ».`,
-      link: "/dashboard",
+      link: paths.dashboard(),
       entityType: "Event",
       entityId: p.eventId,
     });

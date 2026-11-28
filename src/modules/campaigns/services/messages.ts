@@ -1,3 +1,4 @@
+import { paths } from "@/lib/paths";
 import { parisDateTime } from "@/lib/paris-time";
 import type { AssignmentStatus } from "../schemas";
 
@@ -9,7 +10,7 @@ import type { AssignmentStatus } from "../schemas";
  * Générer un message n'envoie rien. Format compatible WhatsApp : `*gras*`, `_italique_`, sauts de
  * ligne, liens en clair, aucun HTML. Les messages **collectifs** (`launch`, `progress`,
  * `collective`, `closing`) ne
- * portent jamais de lien personnel ni de lien de contribution : seulement `${appUrl}/collectes`.
+ * portent jamais de lien personnel ni de lien de contribution : seulement `${appUrl}` + `paths.collectes()`.
  *
  * Ce fichier n'importe que des types depuis `../schemas` (qui le réexporte) : aucune valeur n'y
  * est lue au chargement.
@@ -295,7 +296,7 @@ export function composeMessage(kind: MessageKind, ctx: MessageContext, options: 
     ? ctx.contributions.filter((c) => precise.has(c.id) && (!collective || counted.includes(c)))
     : counted.filter((c) => (!statuses || statuses.includes(c.status)) && (!overdueOnly || isOverdue(c, ctx.now)));
 
-  const genericLink = `${ctx.appUrl.replace(/\/+$/, "")}/collectes`;
+  const genericLink = `${ctx.appUrl.replace(/\/+$/, "")}${paths.collectes()}`;
   const common = {
     eglise: ctx.churchName,
     campagne: ctx.campaignTitle,

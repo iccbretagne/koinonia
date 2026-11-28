@@ -2,6 +2,7 @@ import type { Session } from "next-auth";
 import { isMediaTeamMember, isCommunicationMember, isMediaMinister, hasValidGalleryGrant } from "./auth";
 import { rolePermissions } from "./registry";
 import { prisma } from "./prisma";
+import { paths } from "@/lib/paths";
 
 /**
  * Droits d'accès à l'espace « Communication & Production » (spec 049, remplace la spec 043) —
@@ -44,12 +45,12 @@ interface SpaceTab {
  */
 export function buildMediaSpaceCards(access: MediaSpaceAccess): SpaceCard[] {
   const cards: SpaceCard[] = [];
-  if (access.photos) cards.push({ href: "/media/events", title: "Photos" });
+  if (access.photos) cards.push({ href: paths.media.events(), title: "Photos" });
   if (access.visuals || access.visualRequests) {
-    cards.push({ href: access.visuals ? "/media/projects" : "/media/requests", title: "Visuels" });
+    cards.push({ href: access.visuals ? paths.media.projects() : paths.media.requests(), title: "Visuels" });
   }
-  if (access.social) cards.push({ href: "/communication/requests", title: "Réseaux sociaux" });
-  if (access.gallery) cards.push({ href: "/media/galerie", title: "Galerie" });
+  if (access.social) cards.push({ href: paths.communication.requests(), title: "Réseaux sociaux" });
+  if (access.gallery) cards.push({ href: paths.media.galerie(), title: "Galerie" });
   return cards;
 }
 
@@ -59,8 +60,8 @@ export function buildMediaSpaceCards(access: MediaSpaceAccess): SpaceCard[] {
  */
 export function buildVisualsTabs(access: MediaSpaceAccess): SpaceTab[] {
   const tabs: SpaceTab[] = [];
-  if (access.visuals) tabs.push({ href: "/media/projects", label: "Projets" });
-  if (access.visualRequests) tabs.push({ href: "/media/requests", label: "Demandes" });
+  if (access.visuals) tabs.push({ href: paths.media.projects(), label: "Projets" });
+  if (access.visualRequests) tabs.push({ href: paths.media.requests(), label: "Demandes" });
   return tabs;
 }
 

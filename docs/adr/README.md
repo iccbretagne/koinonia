@@ -59,6 +59,7 @@ Statuts possibles : `Proposé`, `Accepté`, `Rejeté`, `Déprécié`, `Remplacé
 | [0030](0030-moteur-de-formulaires.md) | Moteur de formulaires générique et anonymat par séparation | Accepté |
 | [0031](0031-sites-evenement-routage-par-hote.md) | Sites d'événement : routage par hôte et domaines dédiés | Accepté |
 | [0032](0032-campagnes-de-collecte.md) | Campagnes de collecte : module distinct de `forms`, définition JSON versionnée, réponses par code | Accepté |
+| [0033](0033-architecture-information-par-metier.md) | Architecture de l'information par métier, adresses par espace et politique de redirection | Proposé |
 
 ## Note sur les ADR 0001–0003
 

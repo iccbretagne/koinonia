@@ -10,7 +10,7 @@ La V2 est disponible en recette dans la version `1.42.0-6736889` (commit `673688
 | --- | --- | --- |
 | Stockage | `prisma/schema.prisma`, modèle `TicketingEvent`, modèle `TicketingTicketImage` | Deux colonnes JSON nullables `ticketVisualDraft`/`ticketVisualPublished` ; images WebP binaires attachées à un événement. Pas de table de versions historiques. |
 | Document | `src/modules/ticketing/ticket-visual-schemas.ts` | V1 : surface 1000 × 1500, fond obligatoire, QR carré, quatre zones fixes participant/date/lieu/adresse. Familles sans/serif/mono ; taille limitée à 100. |
-| Éditeur | `src/app/(auth)/billetterie/[id]/_components/TicketVisualTab.tsx` | Formulaires de coordonnées, aperçu PNG serveur différé ; pas de composition libre ni d'alignements dans le document initial. |
+| Éditeur | `src/app/(auth)/evenements/billetterie/[id]/_components/TicketVisualTab.tsx` | Formulaires de coordonnées, aperçu PNG serveur différé ; pas de composition libre ni d'alignements dans le document initial. |
 | Services | `src/modules/ticketing/services/ticket-visual.ts` | Validation Zod, appartenance des images à l'événement, transactions/verrou SQL pour les références d'images, audit ; brouillon indépendant du publié. |
 | Rendu | `src/modules/ticketing/services/ticket-render.ts` | Sharp compose fond, SVG texte et QR ; le PDF React PDF embarque ce même PNG sur une page 400 × 600 points. |
 | Ressources | `src/modules/ticketing/services/site-assets.ts`, `ticket-visual.ts` | Traitement d'image existant réutilisé : réencodage WebP, suppression des métadonnées, limites de taille/dimensions. Pas de police externe téléchargée au rendu. |
@@ -91,7 +91,7 @@ Le PDF demeure une image 1000 × 1500 sur 400 × 600 points, soit 180 ppp : text
 | --- | --- |
 | Schémas et conversion | `src/modules/ticketing/ticket-visual-schemas.ts` |
 | Moteur et persistance | `src/modules/ticketing/services/ticket-render.ts`, `ticket-render-v2.ts`, `ticket-text-layout.ts`, `ticket-visual.ts` |
-| Interface | `src/app/(auth)/billetterie/[id]/_components/TicketVisualTab.tsx`, `TicketVisualV2Tab.tsx` |
+| Interface | `src/app/(auth)/evenements/billetterie/[id]/_components/TicketVisualTab.tsx`, `TicketVisualV2Tab.tsx` |
 | Contrats et intégration | `src/app/api/ticketing/events/[id]/ticket-visual/preview/contract.ts`, `preview/route.ts`, `src/app/api/mcp/_actions/ticket-visual.ts`, `docs/openapi.json` |
 | Tests | `src/modules/ticketing/__tests__/ticket-visual.test.ts`, `src/app/api/ticketing/__tests__/ticket-visual-routes.test.ts`, `src/app/api/mcp/__tests__/ticket-visual-actions.test.ts` |
 | Démonstration | `scripts/demo-ticket-v2.ts`, `scripts/test-ticket-v2-browser.mjs`, `docs/examples/ticket-v2/document.json`, `family.webp` |

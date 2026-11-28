@@ -21,7 +21,7 @@ export const agendaModule = defineModule({
   dependsOn: ["core"],
 
   routes: {
-    authenticated: [{ path: "/agenda" }],
+    authenticated: [{ path: "/pastoral/agenda" }, { path: "/pastoral/planification" }],
     api: [{ path: "/api/agenda" }],
     // Le formulaire public (/agenda-public) et sa route de soumission appartiennent à `care`
     // depuis la spec 052 (ADR-0015) — adresse historique conservée, module propriétaire changé.
@@ -33,9 +33,4 @@ export const agendaModule = defineModule({
     // Saisie directe + planification des demandes validées (+ Protocole via dept function)
     "agenda:manage":  ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
   },
-
-  navigation: [
-    { label: "Agenda",    icon: "calendar", href: "/agenda",          permission: "agenda:manage" },
-    { label: "Planifier", icon: "clock",    href: "/agenda/schedule", permission: "agenda:manage" },
-  ],
 });

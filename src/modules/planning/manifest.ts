@@ -20,21 +20,14 @@ export const planningModule = defineModule({
 
   routes: {
     authenticated: [
-      { path: "/dashboard" },
-      { path: "/events" },
       { path: "/planning" },
-      { path: "/absences" },
-      { path: "/disponibilites" },
-      { path: "/requests" },
-      { path: "/secretariat" },
-      { path: "/communication" },
+      { path: "/evenements" },
+      { path: "/demandes" },
+      { path: "/medias/reseaux-sociaux" },
+      { path: "/personnes/star" },
       { path: "/admin/departments" },
       { path: "/admin/ministries" },
-      { path: "/admin/members" },
-      { path: "/admin/events" },
-      { path: "/admin/reports" },
       { path: "/admin/users" },
-      { path: "/admin/welcome-duty" },
     ],
     api: [
       { path: "/api/absences" },
@@ -100,12 +93,5 @@ export const planningModule = defineModule({
       defaultEmail: false,
       visibleWith: ["planning:view", "media:view"],
     },
-  ],
-
-  navigation: [
-    { label: "Planning",    icon: "planning",    href: "/dashboard",    permission: "planning:department" },
-    { label: "Événements",  icon: "calendar",    href: "/events",       permission: "events:view" },
-    { label: "Membres",     icon: "members",     href: "/admin/members",permission: "members:view" },
-    { label: "Annonces",    icon: "megaphone",   href: "/announcements",permission: "events:view" },
   ],
 });

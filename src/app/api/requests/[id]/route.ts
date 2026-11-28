@@ -10,6 +10,7 @@ import { isMemberOfFunction, getFunctionDepartmentsMap } from "@/lib/function-de
 import type { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 import { patchSchema } from "./contract";
+import { paths } from "@/lib/paths";
 
 const EXECUTABLE_TYPES = new Set([
   "AJOUT_EVENEMENT",
@@ -290,7 +291,7 @@ function notifySubmitter(existing: ExistingRequest, data: PatchData, updatedStat
       type: "REQUEST_APPROVED",
       title: "Demande approuvée",
       message: `Votre demande « ${existing.title} » a été approuvée.`,
-      link: `/requests`,
+      link: paths.requests(),
     }).catch(() => {});
   } else if (data.status === "ANNULE") {
     createNotification({
@@ -299,7 +300,7 @@ function notifySubmitter(existing: ExistingRequest, data: PatchData, updatedStat
       type: "REQUEST_CANCELLED",
       title: "Demande annulée",
       message: `Votre demande « ${existing.title} » a été annulée.${data.reviewNotes ? ` Motif : ${data.reviewNotes}` : ""}`,
-      link: `/requests`,
+      link: paths.requests(),
     }).catch(() => {});
   } else if (data.status === "REFUSEE") {
     const rejectionReason = data.reviewNotes ? ` Motif : ${data.reviewNotes}` : "";
@@ -309,7 +310,7 @@ function notifySubmitter(existing: ExistingRequest, data: PatchData, updatedStat
       type: "REQUEST_REJECTED",
       title: "Demande refusée",
       message: `Votre demande « ${existing.title} » a été refusée.${rejectionReason}`,
-      link: `/requests`,
+      link: paths.requests(),
     }).catch(() => {});
   }
 }

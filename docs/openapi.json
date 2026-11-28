@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "API Koinonia",
-    "version": "1.45.0",
+    "version": "1.46.0",
     "description": "API interne de Koinonia, appelée par l'application (session NextAuth, même origine). Générée depuis les contrats `contract.ts` des routes — voir `docs/api.md` (conventions) et ADR-0023."
   },
   "components": {
@@ -2581,7 +2581,7 @@
           "accounting"
         ],
         "summary": "Détail d'une demande financière",
-        "description": "**Accès** : permission `accounting:view` — dans l'église courante ; périmètre du responsable, ou sa propre demande.",
+        "description": "**Accès** : permission `accounting:view` — dans l'église courante ; périmètre du responsable, ou sa propre demande. Profil pastoral de l'église (spec 092) : toute l'église en lecture seule, sans email du demandeur ni clé des pièces (`readOnly: true`).",
         "security": [
           {
             "session": []
@@ -9467,7 +9467,7 @@
         },
         "responses": {
           "302": {
-            "description": "Redirection vers `/dashboard` (ou `/` si le compte est inconnu)"
+            "description": "Redirection vers `/`, qui choisit l'écran d'arrivée du compte"
           }
         }
       }
@@ -12199,13 +12199,13 @@
           "care"
         ],
         "summary": "Demande de rendez-vous pastoral (membre connecté)",
-        "description": "**Accès** : permission `planning:view`.\n\nLimité en débit. Journalisé.",
+        "description": "**Accès** : toute personne connectée — tout compte de l'église `churchId` (rôle ou profil pastoral, spec 092).\n\nLimité en débit (5 demandes par heure et par compte). Journalisé.",
         "security": [
           {
             "session": []
           }
         ],
-        "x-access": "planning:view",
+        "x-access": "session",
         "requestBody": {
           "description": "Demande (`appointmentSubmitSchema` du module care) : motifs, détails, disponibilités",
           "content": {
@@ -16419,7 +16419,7 @@
           "planning"
         ],
         "summary": "Compte rendu d'un événement",
-        "description": "**Accès** : permission `reports:view` — ou `events:manage`, dans l'église de l'événement.",
+        "description": "**Accès** : permission `reports:view` — ou `events:manage`, ou profil pastoral (lecture seule, spec 092), dans l'église de l'événement.",
         "security": [
           {
             "session": []

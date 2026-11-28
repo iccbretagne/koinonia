@@ -40,7 +40,9 @@ export async function POST(request: Request) {
   const expires = new Date(Date.now() + SESSION_MAX_AGE_MS);
   await prisma.session.create({ data: { sessionToken, userId: dbUser.id, expires } });
 
-  const response = NextResponse.redirect(new URL("/dashboard", request.url));
+  // Même retour qu'une connexion Google : « / » choisit l'écran d'arrivée du compte (la grille
+  // par département, refusée à un STAR, répond désormais en 403).
+  const response = NextResponse.redirect(new URL("/", request.url));
   response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
     httpOnly: true,
     sameSite: "lax",

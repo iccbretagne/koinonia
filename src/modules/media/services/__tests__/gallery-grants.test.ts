@@ -36,7 +36,7 @@ describe("upsertGalleryGrant", () => {
     const view = await upsertGalleryGrant("church-1", "admin-1", { userId: "u-1", expiresAt: future });
     expect(view).toMatchObject({ id: "g-1", name: "Jean", grantedBy: "L'admin", expired: false });
     expect(logAudit).toHaveBeenCalledWith(expect.objectContaining({ action: "CREATE", entityType: "MediaGalleryGrant", churchId: "church-1", userId: "admin-1" }));
-    expect(createNotification).toHaveBeenCalledWith(expect.objectContaining({ userId: "u-1", domain: "media", type: "MEDIA_GALLERY_GRANTED", link: "/media/galerie" }));
+    expect(createNotification).toHaveBeenCalledWith(expect.objectContaining({ userId: "u-1", domain: "media", type: "MEDIA_GALLERY_GRANTED", link: "/medias/galerie" }));
   });
 
   it("prolonger un accès actif : mise à jour journalisée, pas de nouvelle notification", async () => {

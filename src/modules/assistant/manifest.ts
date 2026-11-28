@@ -21,7 +21,7 @@ export const assistantModule = defineModule({
   dependsOn: ["core"],
 
   routes: {
-    authenticated: [{ path: "/admin/assistant" }],
+    authenticated: [{ path: "/plateforme/assistant" }],
     api: [{ path: "/api/assistant" }],
   },
 

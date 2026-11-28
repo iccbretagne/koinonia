@@ -49,6 +49,8 @@ const EVENTS_MANAGE_FRAGILE =
 
 const ALLOWLIST: Record<string, string> = {
   "src/modules/planning/manifest.ts": "déclaration des permissions elles-mêmes",
+  "src/app/(auth)/page-gates.ts":
+    "garde d'adresse (vrai 403) : rejoue mot pour mot la garde de la page (page-gates.test.ts), jamais un raccourci de rôle",
 
   "src/app/api/members/route.ts": MEMBERS_MANAGE_LEGIT,
   "src/app/api/members/[memberId]/route.ts": MEMBERS_MANAGE_LEGIT,
@@ -57,15 +59,15 @@ const ALLOWLIST: Record<string, string> = {
     "members:manage — recherche de STAR à l'échelle de l'église, volontairement hors périmètre (voir commentaire du fichier)",
   "src/app/api/admin/members/duplicates/route.ts": `${MEMBERS_MANAGE_LEGIT} ; liste filtrée au périmètre`,
   "src/app/api/admin/members/merge/route.ts": `${MEMBERS_MANAGE_LEGIT} ; fusion refusée si une fiche déborde (isMemberFullyInScope)`,
-  "src/app/(auth)/admin/members/page.tsx": `${MEMBERS_MANAGE_LEGIT} (bouton Doublons)`,
-  "src/app/(auth)/admin/members/duplicates/page.tsx": `${MEMBERS_MANAGE_LEGIT} ; liste filtrée au périmètre`,
+  "src/app/(auth)/personnes/star/page.tsx": `${MEMBERS_MANAGE_LEGIT} (bouton Doublons)`,
+  "src/app/(auth)/personnes/star/doublons/page.tsx": `${MEMBERS_MANAGE_LEGIT} ; liste filtrée au périmètre`,
 
   "src/app/(auth)/admin/departments/functions/page.tsx": EVENTS_MANAGE_LEGIT,
-  "src/app/(auth)/admin/events/page.tsx": EVENTS_MANAGE_LEGIT,
-  "src/app/(auth)/admin/events/[eventId]/page.tsx": EVENTS_MANAGE_LEGIT,
-  "src/app/(auth)/admin/events/[eventId]/report/page.tsx": `${EVENTS_MANAGE_LEGIT} (ou reports:view)`,
-  "src/app/(auth)/admin/welcome-duty/page.tsx": EVENTS_MANAGE_LEGIT,
-  "src/app/(auth)/events/page.tsx": EVENTS_MANAGE_LEGIT,
+  "src/app/(auth)/evenements/gestion/page.tsx": EVENTS_MANAGE_LEGIT,
+  "src/app/(auth)/evenements/gestion/[eventId]/page.tsx": EVENTS_MANAGE_LEGIT,
+  "src/app/(auth)/evenements/comptes-rendus/[eventId]/page.tsx": `${EVENTS_MANAGE_LEGIT} (ou reports:view)`,
+  "src/app/(auth)/evenements/service-accueil/page.tsx": EVENTS_MANAGE_LEGIT,
+  "src/app/(auth)/evenements/page.tsx": EVENTS_MANAGE_LEGIT,
   "src/app/api/departments/[departmentId]/route.ts": EVENTS_MANAGE_LEGIT,
   "src/app/api/events/route.ts": EVENTS_MANAGE_LEGIT,
   "src/app/api/events/[eventId]/route.ts": EVENTS_MANAGE_LEGIT,
@@ -80,7 +82,7 @@ const ALLOWLIST: Record<string, string> = {
   "src/app/api/welcome-duty/suggestions/route.ts": EVENTS_MANAGE_LEGIT,
   "src/app/api/welcome-duty/available-families/route.ts": EVENTS_MANAGE_LEGIT,
 
-  "src/app/(auth)/layout.tsx": EVENTS_MANAGE_FRAGILE,
+  "src/lib/navigation-input.ts": EVENTS_MANAGE_FRAGILE,
   // Pages Secrétariat, Communication et Visuels › Demandes (spec 063) : contrôle factorisé ici.
   "src/modules/planning/services/request-queue/access.ts": EVENTS_MANAGE_FRAGILE,
   // Assistant (spec 075) : l'audience d'une fiche reprend la garde de son écran, rien de plus.

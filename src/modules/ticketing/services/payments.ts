@@ -4,6 +4,7 @@ import { PAYMENT_METHOD_LABEL, formatEuros, type ChargeRef } from "../schemas";
 import { bookingMail, chargesOf, loadBooking } from "./booking";
 import { deliverToContact, paymentConfirmedEmail, paymentRejectedEmail } from "./emails";
 import { round, type Charge } from "./rules";
+import { paths } from "@/lib/paths";
 
 /**
  * Règlements (spec 074) : l'état de paiement est porté par chaque élément payant (entrée ou
@@ -62,7 +63,7 @@ export async function declarePayment(bookingId: string, method: TicketingPayment
     type: "TICKETING_PAYMENT_DECLARED",
     title: `${payment.booking.event.title} : paiement déclaré`,
     message: `${payment.booking.reference} déclare ${formatEuros(Number(payment.amount))} par ${PAYMENT_METHOD_LABEL[method]}.`,
-    link: `/billetterie/${payment.eventId}?vue=reglements`,
+    link: paths.billetterie.event(payment.eventId, { vue: "reglements" }),
   });
   return payment;
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readdirSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import { fullRouteTable, NOYAU_ROUTES } from "../module-routes";
+import { routeTable, NOYAU_ROUTES } from "../module-routes";
 import { allManifests } from "../manifests";
 
 /**
@@ -55,7 +55,7 @@ describe("exhaustivité des routes — spec 038", () => {
   });
 
   it.each(urls)("$url ($file) est revendiqué par un module ou le noyau", ({ url }) => {
-    const owner = fullRouteTable.resolve(url);
+    const owner = routeTable.resolveDeclared(url);
     expect(owner.kind, `"${url}" n'est revendiqué par aucun manifeste ni par NOYAU_ROUTES`).not.toBe(
       "orphan"
     );

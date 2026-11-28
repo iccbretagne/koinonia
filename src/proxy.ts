@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { approvedSiteSlug, isForeignHost, refreshSiteHosts, siteSlugFromHost } from "@/lib/site-host";
 import { resolveRouteOwner, isPublicRoute } from "@/lib/module-routes";
+import { matchLegacyPath } from "@/lib/legacy-paths";
+import { PATHNAME_HEADER } from "@/lib/request-pathname";
 import { buildCsp, buildSiteCsp, cspHeaderName, generateNonce, storageOrigins, CSP_REPORT_PATH } from "@/lib/csp";
 
 /**
@@ -34,10 +36,16 @@ export function proxy(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
   // Fichiers statiques (`public/`) : jamais interceptés, comme avant l'élargissement du matcher.
-  if (/\.[a-z0-9]+$/i.test(pathname)) return NextResponse.next();
+  // L'adresse vue par la garde d'adresse ne vient jamais du navigateur, même sur les sorties
+  // anticipées (fichier « statique » qui retombe sur une page, API).
+  const clean = new Headers(request.headers);
+  clean.delete(PATHNAME_HEADER);
+  if (/\.[a-z0-9]+$/i.test(pathname)) return NextResponse.next({ request: { headers: clean } });
   // Le site d'un événement n'est servi que par son hôte (ADR-0031) ; l'aperçu passe par l'onglet Site.
   if (pathname === "/site" || pathname.startsWith("/site/")) return notFoundResponse(pathname);
-  if (pathname.startsWith("/api/")) return route(request);
+  if (pathname.startsWith("/api/")) return route(request, clean);
+  const legacy = legacyRedirect(request);
+  if (legacy) return legacy;
 
   const headerName = cspHeaderName();
   const policy = buildCsp({
@@ -47,6 +55,9 @@ export function proxy(request: NextRequest) {
   });
   const forwarded = new Headers(request.headers);
   forwarded.set(headerName, policy);
+  // Adresse demandée, pour la garde d'adresse de `(auth)/layout.tsx` (vrai 403) ; toujours
+  // écrasée, jamais celle qu'enverrait le navigateur.
+  forwarded.set(PATHNAME_HEADER, pathname);
 
   const response = route(request, forwarded);
   response.headers.set(headerName, policy);
@@ -55,6 +66,32 @@ export function proxy(request: NextRequest) {
 
 function notFoundResponse(pathname: string): NextResponse {
   return pathname.startsWith("/api/") ? NextResponse.json({ error: "Not found" }, { status: 404 }) : new NextResponse("Not found", { status: 404 });
+}
+
+/**
+ * Ancienne adresse d'écran (spec 092, lot 4) : redirection **temporaire** (307) vers la nouvelle,
+ * requête conservée, depuis la table fixe de `legacy-paths.ts`. `GET`/`HEAD` seulement — un
+ * `POST` vers une ancienne adresse n'est pas rejoué ailleurs (404 comme toute adresse inconnue).
+ * Même origine par construction : seul le `pathname` d'une copie de l'URL change. Une cible d'un
+ * module désactivé répond 404 à l'ancienne adresse, sans révéler la nouvelle. Placée avant le
+ * contrôle de session : sans session, la nouvelle adresse renvoie ensuite vers la connexion.
+ */
+function legacyRedirect(request: NextRequest): NextResponse | null {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  const match = matchLegacyPath(request.nextUrl.pathname);
+  if (!match) return null;
+  // Module coupé : pas de redirection ; l'ancienne adresse, revendiquée par aucun manifeste, suit
+  // le chemin ordinaire et répond le même 404 (`/module-absent`) que la nouvelle.
+  if (resolveRouteOwner(match.pathname).kind === "orphan") return null;
+  const url = request.nextUrl.clone();
+  url.pathname = match.pathname;
+  if (match.query) {
+    for (const [key, value] of new URLSearchParams(match.query)) url.searchParams.set(key, value);
+  }
+  const response = NextResponse.redirect(url, 307);
+  // Jamais mise en cache (navigateur, service worker, intermédiaires) : la table est temporaire.
+  response.headers.set("Cache-Control", "no-store");
+  return response;
 }
 
 /** Chemins qu'un hôte de site laisse passer tels quels (liste blanche, ADR-0031). */
@@ -135,8 +172,9 @@ function route(request: NextRequest, forwarded?: Headers): NextResponse {
   // les modules qui ne déclarent aucune permission (integration) : aucune de ces gardes
   // n'a besoin d'être modifiée, elles ne sont simplement jamais atteintes.
   //
-  // `resolveRouteOwner` ne connaît que les modules **actifs** (ENABLED_MODULES) — une
-  // adresse d'un module désactivé résout donc "orphan" au même titre qu'une adresse
+  // `resolveRouteOwner` cherche le propriétaire parmi tous les manifestes puis vérifie qu'il
+  // est actif (ENABLED_MODULES, amendement d'ADR-0012) — une adresse d'un module désactivé,
+  // même placée sous le préfixe d'un module actif ou du noyau, résout donc "orphan" au même titre qu'une adresse
   // jamais revendiquée par personne. Les deux cas reçoivent la même réponse
   // "introuvable" : c'est le comportement voulu, une adresse réellement orpheline (bug)
   // est interceptée en amont par le test d'exhaustivité (CI), jamais en production.

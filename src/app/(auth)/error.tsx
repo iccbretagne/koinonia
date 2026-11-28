@@ -5,12 +5,9 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { TriangleAlert } from "lucide-react";
 import { Button, buttonClasses } from "@/components/ui";
+import ForbiddenNotice from "@/components/ForbiddenNotice";
 
 const MESSAGES: Record<string, { title: string; body: string }> = {
-  FORBIDDEN: {
-    title: "Accès refusé",
-    body: "Vous n'avez pas les droits nécessaires pour accéder à cette page.",
-  },
   UNAUTHORIZED: {
     title: "Session expirée",
     body: "Votre session a expiré ou n'est plus valide. Reconnectez-vous pour continuer.",
@@ -23,6 +20,10 @@ export default function AuthError({ error }: { readonly error: Error & { digest?
   useEffect(() => {
     console.error(error);
   }, [error]);
+
+  // Refus qui n'est pas passé par `forbidden()` (garde hors `forbiddenError`) : même message
+  // que `forbidden.tsx`, pour qu'un refus n'ait qu'un seul visage.
+  if (error.message === "FORBIDDEN") return <ForbiddenNotice />;
 
   const known = MESSAGES[error.message];
 

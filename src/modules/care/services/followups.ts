@@ -9,6 +9,8 @@ import { resolveAssignee, type ResolvedAssignee } from "./assignee";
 import { computeFollowupTransitionData, type FollowupActor, type FollowupPatchBody } from "./followup-state";
 import { recordCareHistory } from "./history";
 import { notifyAssigneeAssigned, notifyAssigneeUnassigned, notifyReferentsHandback } from "./notifications";
+import { paths } from "@/lib/paths";
+import { currentHref, legacyAndCurrent } from "@/lib/legacy-paths";
 
 /**
  * Suivi des nouveaux convertis MSDP (ex-`integration`, spec 052). L'accès passe par
@@ -278,7 +280,7 @@ export function buildMsdpCounselorNotifEmail(params: {
       <div style="background:#f5f3ff;border-left:4px solid #5E17EB;padding:12px 16px;border-radius:0 8px 8px 0;margin:0 0 20px">
         <p style="margin:0;color:#111827;font-size:15px;font-weight:600">${personName}</p>
       </div>
-      <a href="${appUrl}/care/followups/${followUpId}"
+      <a href="${appUrl}${paths.care.followup(followUpId)}"
          style="display:inline-block;background:#5E17EB;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600">
         Voir le suivi →
       </a>
@@ -313,7 +315,7 @@ export async function notifyMsdpCounselorAssigned(params: {
       type: "CARE_MSDP_ASSIGNED",
       title: "Nouveau suivi MSDP assigné",
       message: `Vous êtes désigné comme référent pour le suivi de ${personName}.`,
-      link: `/care/followups/${followUpId}`,
+      link: paths.care.followup(followUpId),
       entityType: "MsdpFollowUp",
       entityId: followUpId,
     },
@@ -414,12 +416,12 @@ export async function runMsdpInactivityNotifications(
   const recentNotifs = await prisma.notification.findMany({
     where: {
       type: MSDP_INACTIVITY_NOTIF_TYPE,
-      link: { in: followUpIds.map((id) => `/care/followups/${id}`) },
+      link: { in: followUpIds.flatMap((id) => legacyAndCurrent(paths.care.followup(id))) },
       createdAt: { gte: dedupeThreshold },
     },
     select: { link: true },
   });
-  const alreadyNotifiedLinks = new Set(recentNotifs.map((n) => n.link));
+  const alreadyNotifiedLinks = new Set(recentNotifs.map((n) => n.link && currentHref(n.link)));
 
   const managersByChurch: Record<string, { id: string; email: string | null }[]> = {};
 
@@ -450,7 +452,7 @@ export async function runMsdpInactivityNotifications(
   let skipped = 0;
 
   for (const followUp of staleFollowUps) {
-    const link = `/care/followups/${followUp.id}`;
+    const link = paths.care.followup(followUp.id);
     if (alreadyNotifiedLinks.has(link)) { skipped++; continue; }
 
     const personName = `${followUp.request?.firstName ?? ""} ${followUp.request?.lastName ?? ""}`.trim();

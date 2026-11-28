@@ -231,8 +231,8 @@ describe("Menu", () => {
 
 describe("FilterChip, Select et ConfirmModal", () => {
   it("FilterChip href : lien aria-current", () => {
-    const out = html(createElement(FilterChip, { href: "/admin/assistant?status=open", pressed: true, children: "Ouvertes" }));
-    expect(out).toContain('href="/admin/assistant?status=open"');
+    const out = html(createElement(FilterChip, { href: "/plateforme/assistant?status=open", pressed: true, children: "Ouvertes" }));
+    expect(out).toContain('href="/plateforme/assistant?status=open"');
     expect(out).toContain('aria-current="page"');
     const btn = html(createElement(FilterChip, { pressed: false, onClick: () => {}, children: "Tous" }));
     expect(btn).toContain('aria-pressed="false"');

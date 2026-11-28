@@ -1,4 +1,4 @@
-import { requireAuth, getCurrentChurchId } from "@/lib/auth";
+import { requireAuth, getCurrentChurchId, hasPastoralRead } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rolePermissions } from "@/lib/registry";
@@ -7,9 +7,22 @@ import { createNotification } from "@/lib/notifications";
 import { cancelPieceRequest, claimJustification, getAccountingDepartmentScope, requestPiece, setRequestArchived } from "@/modules/accounting";
 import type { z } from "zod";
 import { patchSchema } from "./contract";
+import { paths } from "@/lib/paths";
 
 function hasPermission(permissions: string[], perm: string) {
   return permissions.includes(perm);
+}
+
+/** Demande vue en lecture pastorale : sans email du demandeur, pièces réduites à leur nom. */
+function pastoralProjection<
+  T extends { submittedBy: { email: string | null } | null; attachments: { id: string; filename: string; mimeType: string; size: number }[] },
+>(req: T) {
+  return {
+    ...req,
+    submittedBy: req.submittedBy ? { ...req.submittedBy, email: null } : null,
+    attachments: req.attachments.map(({ id, filename, mimeType, size }) => ({ id, filename, mimeType, size })),
+    readOnly: true as const,
+  };
 }
 
 export async function GET(
@@ -24,7 +37,10 @@ export async function GET(
 
     const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
     const perms = roles.flatMap((r) => rolePermissions[r] ?? []);
-    if (!hasPermission(perms, "accounting:view")) throw new ApiError(403, "Accès refusé");
+    const canView = hasPermission(perms, "accounting:view");
+    // Lecture pastorale (spec 092, exception 3) : toute l'église, en lecture seule.
+    const pastoralRead = hasPastoralRead(session, churchId);
+    if (!canView && !pastoralRead) throw new ApiError(403, "Accès refusé");
 
     const req = await prisma.financialRequest.findUnique({
       where: { id },
@@ -46,9 +62,12 @@ export async function GET(
     if (!hasPermission(perms, "accounting:manage")) {
       // Propre demande → toujours accessible
       if (req.submittedById !== session.user.id!) {
-        const allowedDeptIds = (await getAccountingDepartmentScope(session, churchId)) ?? [];
+        const allowedDeptIds = canView ? ((await getAccountingDepartmentScope(session, churchId)) ?? []) : [];
         if (!req.departmentId || !allowedDeptIds.includes(req.departmentId)) {
-          throw new ApiError(403, "Accès refusé");
+          if (!pastoralRead) throw new ApiError(403, "Accès refusé");
+          // Hors périmètre de rôle, lu au seul titre pastoral : ni email du demandeur ni clé de
+          // stockage des pièces (leur téléchargement reste refusé par `canReadAttachment`).
+          return successResponse(pastoralProjection(req));
         }
       }
     }
@@ -239,7 +258,7 @@ async function createNextOccurrence(
       type:    "ACCOUNTING_NEW_OCCURRENCE",
       title:   "Nouvelle occurrence créée",
       message: `Une nouvelle occurrence de "${current.label}" a été soumise automatiquement.`,
-      link:    `/accounting/requests/${nextReq.id}`,
+      link:    paths.accounting.request(nextReq.id),
     },
     { tx }
   );
@@ -290,7 +309,7 @@ async function notifySubmitter(
     priorityNote,
     rejectionReason,
     churchName:      church?.name ?? "Koinonia",
-    requestUrl:      `${appUrl}/accounting/requests/${req.id}`,
+    requestUrl:      `${appUrl}${paths.accounting.request(req.id)}`,
   });
 
   await createNotification(
@@ -300,7 +319,7 @@ async function notifySubmitter(
       type:    `ACCOUNTING_${status}`,
       title:   titles[status] ?? "Mise à jour demande",
       message: messages[status] ?? `Statut mis à jour : ${status}`,
-      link:    `/accounting/requests/${req.id}`,
+      link:    paths.accounting.request(req.id),
     },
     { email }
   );

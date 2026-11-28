@@ -1,6 +1,7 @@
 import { buildGivingPaymentDetailsEmail, parseEmailList, sendEmail } from "@/lib/email";
 import { notifyUsersWithRole } from "@/lib/notifications";
 import { logger } from "@/lib/logger";
+import { paths } from "@/lib/paths";
 
 export interface PaymentDetailsChange {
   label: string;
@@ -21,7 +22,7 @@ export async function alertPaymentDetailsChange(
   actor: { id: string; name: string }
 ): Promise<void> {
   if (changes.length === 0) return;
-  const link = "/dons";
+  const link = paths.dons();
   const email = buildGivingPaymentDetailsEmail({
     churchName: church.name,
     changes,

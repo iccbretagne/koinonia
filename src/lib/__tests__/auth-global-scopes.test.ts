@@ -46,11 +46,14 @@ function findGlobalScopeUsages(guardName: string): string[] {
 // (spec 075) est commune à l'instance : son administration aussi. L'interrupteur d'instance des
 // assistants IA (MCP, spec 081) aussi : chaque église l'active ensuite pour elle-même. L'approbation des
 // domaines dédiés des sites d'événement (spec 084) est une décision de plateforme.
+// La garde d'adresse (`(auth)/page-gates.ts`) rejoue celle des pages de plateforme ci-dessous
+// pour répondre un vrai 403 : elle n'ouvre rien de plus.
 const EXPECTED_SUPER_ADMIN_FILES = [
-  "(auth)/admin/assistant/page.tsx",
-  "(auth)/admin/mcp/page.tsx",
-  "(auth)/admin/churches/onboard/page.tsx",
-  "(auth)/admin/churches/page.tsx",
+  "(auth)/page-gates.ts",
+  "(auth)/plateforme/assistant/page.tsx",
+  "(auth)/plateforme/mcp/page.tsx",
+  "(auth)/plateforme/eglises/nouvelle/page.tsx",
+  "(auth)/plateforme/eglises/page.tsx",
   "api/admin/app-icon/preview/route.ts",
   "api/admin/app-icon/route.ts",
   "api/assistant/_shared.ts",

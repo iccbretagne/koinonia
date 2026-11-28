@@ -7,6 +7,7 @@ import { createNotification } from "@/lib/notifications";
 import { sendEmail, buildAppointmentScheduledEmail } from "@/lib/email";
 import { markAppointmentScheduled, NEUTRAL_REQUEST_LABEL } from "@/modules/care";
 import { scheduleSchema } from "./contract";
+import { paths } from "@/lib/paths";
 
 /**
  * Orchestrateur (spec 052, ADR-0015) : le Protocole planifie toujours dans l'agenda, mais la
@@ -107,7 +108,7 @@ export async function PATCH(
           type: "CARE_APPOINTMENT_SCHEDULED",
           title: "Rendez-vous pastoral confirmé",
           message: `Votre demande « ${existing.subject} » a été planifiée le ${dateStr} à ${timeStr}.`,
-          link: "/requests",
+          link: paths.requests(),
           entityType: "AppointmentRequest",
           entityId: id,
         },

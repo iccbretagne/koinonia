@@ -3,6 +3,7 @@ import type { AccountView } from "./accounts";
 import { getSystemCategory } from "./categories";
 import { db, toIsoDate } from "./common";
 import type { RawLine } from "./ledger";
+import { paths } from "@/lib/paths";
 
 /**
  * Mouvements repris dans le registre, sans ressaisie (spec 076, ADR-0027) : ils sont **lus** à
@@ -47,7 +48,7 @@ async function paymentLines(churchId: string, names: Map<string, string>): Promi
         collectionId: null,
         transferGroupId: null,
         hasReceipt: false,
-        link: `/accounting/requests/${p.request.id}`,
+        link: paths.accounting.request(p.request.id),
         createdAt: p.releasedAt.toISOString(),
       },
     ];
@@ -89,7 +90,7 @@ async function shuttleLines(churchId: string, names: Map<string, string>): Promi
         collectionId: null,
         transferGroupId: null,
         hasReceipt: false,
-        link: `/accounting/navette?ligne=${r.id}`,
+        link: paths.accounting.navette({ ligne: r.id }),
         createdAt: r.createdAt.toISOString(),
       },
     ];
@@ -127,7 +128,7 @@ async function returnLines(churchId: string, names: Map<string, string>): Promis
         collectionId: null,
         transferGroupId: null,
         hasReceipt: false,
-        link: r.requestId ? `/accounting/requests/${r.requestId}` : null,
+        link: r.requestId ? paths.accounting.request(r.requestId) : null,
         createdAt: r.returnedAt.toISOString(),
       },
     ];

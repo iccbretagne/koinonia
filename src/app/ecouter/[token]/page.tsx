@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { resolvePublicAudioService, recordAudioServiceOpen } from "@/modules/audio";
 import PublicAudioPlayer from "./PublicAudioPlayer";
+import { paths } from "@/lib/paths";
 
 interface Props {
   readonly params: Promise<{ token: string }>;
@@ -47,7 +48,7 @@ export default async function PublicAudioPage({ params }: Props) {
   const session = await auth();
   const backHref =
     result.status === "OK" && result.data.planningEventId && session?.user
-      ? `/events/${result.data.planningEventId}/star-view`
+      ? paths.events.starView(result.data.planningEventId)
       : null;
 
   if (result.status !== "OK") {

@@ -17,6 +17,7 @@ import {
   createProtocoleMemberSession,
 } from "@/__mocks__/auth";
 import { prismaMock } from "@/__mocks__/prisma";
+import { currentHref } from "@/lib/legacy-paths";
 
 const mockAuth = vi.fn();
 const mockGetCurrentChurchId = vi.fn();
@@ -51,6 +52,8 @@ vi.mock("@/modules/planning", async (importOriginal) => ({
   canReadAnnouncementSheet: (...args: Parameters<typeof mockCanReadAnnouncementSheet>) => mockCanReadAnnouncementSheet(...args),
 }));
 vi.mock("next/headers", () => ({
+  // En-tête du proxy absent : la garde d'adresse (page-gates.ts) ne s'applique pas.
+  headers: () => Promise.resolve(new Headers()),
   cookies: () =>
     Promise.resolve({ get: () => (viewModeCookie ? { value: viewModeCookie } : undefined), set: () => {} }),
 }));
@@ -63,6 +66,9 @@ const mockGetCareAccess = vi.fn();
 vi.mock("@/modules/care", () => ({ getCareAccess: (...a: unknown[]) => mockGetCareAccess(...a) }));
 
 const AuthLayout = (await import("../layout")).default;
+const { buildSpaces } = await import("@/lib/navigation");
+type NavigationInput = import("@/lib/navigation").NavigationInput;
+const screensBefore = (await import("@/lib/__tests__/fixtures/screens-before.json")).default;
 
 /** Props sérialisables passées à AuthLayoutShell (actions et éléments React écartés). */
 async function navProps() {
@@ -151,6 +157,13 @@ const scenarios: [string, () => Session, Parameters<typeof world>[0]?, string?][
   ],
 ];
 
+/** Doublons pastoraux retirés au lot 3 (spec 092) : ancienne adresse → écran commun. */
+const LOT3_PASTORAL_TWINS: Record<string, string> = {
+  "/evenements": "/evenements",
+  "/evenements/comptes-rendus": "/evenements/comptes-rendus",
+  "/finances/demandes": "/finances/demandes",
+};
+
 describe("AuthLayout — props de navigation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -165,12 +178,71 @@ describe("AuthLayout — props de navigation", () => {
     expect(await navProps()).toMatchSnapshot();
   });
 
+  // Invariance des droits (spec 092, lot 1) : la nouvelle navigation ne retire aucun écran à un profil.
+  // Référence : `screens-before.json`, relevée sur le code d'avant le lot. Seul écart admis : les
+  // demandes comptables du Ministre et du Resp. département (accounting:view sans manage) passent
+  // du menu à une section de « Mes demandes ».
+  it.each(scenarios)("invariance des écrans atteignables — %s", async (name, session, data, cookie) => {
+    world(data);
+    viewModeCookie = cookie;
+    mockAuth.mockResolvedValue(session());
+    const props = await navProps();
+    const after = new Set(buildSpaces(props as unknown as NavigationInput).flatMap((sp) => sp.pages.map((pg) => pg.href)));
+    // Référence relevée avant le lot 1, aux anciennes adresses : ramenée aux adresses actuelles (lot 4).
+    const before = (screensBefore as Record<string, string[]>)[name]?.map(currentHref);
+    expect(before, `référence manquante pour ${name}`).toBeDefined();
+    const missing = before.filter((href) => {
+      if (after.has(href)) return false;
+      const movedToMyRequests = href === "/finances/demandes" && !props.hasAccountingManage && after.has("/demandes");
+      // Lot 3 : le RDV pastoral passe par « Mes demandes » (ouverte à tous) ; les doublons
+      // pastoraux redirigent vers les écrans communs, présents dans la navigation.
+      const careViaMyRequests = href === "/demandes/rendez-vous" && after.has("/demandes");
+      const pastoralTwin = LOT3_PASTORAL_TWINS[href];
+      return !movedToMyRequests && !careViaMyRequests && !(pastoralTwin && after.has(pastoralTwin));
+    });
+    expect(missing).toEqual([]);
+    // Aucune entrée nouvelle, hors : « Mes inscriptions », réglages de l'église du Super Admin, et
+    // deux écrans déjà ouverts aux mêmes personnes (« Questionnaires » = `hasCampaigns`, absent de la
+    // référence ; « Statistiques » = onglet de l'ancienne barre `AccountingNav`, même droit).
+    // Lot 3 : « Mes demandes » pour tous (exception 1) ; lecture pastorale (exception 3).
+    const isPastoralReader = ((session().user.pastoralChurchIds ?? []) as string[]).includes("church-1");
+    const known = [
+      "/demandes/questionnaires",
+      "/finances/statistiques",
+      "/demandes",
+      // Vue pastorale = filtre de la navigation commune : Familles (site externe) en fait partie.
+      ...(isPastoralReader ? ["/evenements/comptes-rendus", "/finances/demandes", "/evenements", props.famillesUrl as string] : []),
+    ];
+    const added = [...after].filter(
+      (href) =>
+        !before.includes(href) &&
+        !known.includes(href) &&
+        !href.startsWith("/admin/eglise/") &&
+        !href.startsWith("/evenements/billetterie/mes-") &&
+        !href.startsWith("/evenements/formulaires/mes-")
+    );
+    expect(added).toEqual([]);
+
+    // Libellés uniques par profil, Plateforme réservée au Super Admin, Suivi pastoral hors Personnes,
+    // Finances sans entrée dans Demandes ni Administration (T1.14).
+    const spaces = buildSpaces(props as unknown as NavigationInput);
+    if (!props.isPastoral) {
+      const labels = spaces.flatMap((sp) => sp.pages.filter((pg) => !pg.deptId).map((pg) => pg.label));
+      expect(labels.filter((label, i) => labels.indexOf(label) !== i)).toEqual([]);
+    }
+    expect(spaces.some((sp) => sp.key === "platform")).toBe(name === "Super Admin");
+    const hrefsOf = (key: string) => spaces.find((sp) => sp.key === key)?.pages.map((pg) => pg.href) ?? [];
+    expect(hrefsOf("people")).not.toContain("/pastoral/suivi");
+    expect(hrefsOf("requests").filter((href) => href.startsWith("/accounting"))).toEqual([]);
+    expect(hrefsOf("admin").filter((href) => href.startsWith("/accounting") || href === "/finances/dons")).toEqual([]);
+  });
+
   it("assignee d'un suivi pastoral sans care:view : lien « Suivi pastoral »", async () => {
     world();
     mockGetCareAccess.mockResolvedValue({ ownProfileIds: ["pp-1"] });
     mockAuth.mockResolvedValue(createStarSession());
     const props = await navProps();
-    expect(props.agendaLinks).toContainEqual({ href: "/care", label: "Suivi pastoral" });
+    expect(props.agendaLinks).toContainEqual({ href: "/pastoral/suivi", label: "Suivi pastoral" });
   });
 
   it("sans église courante, ni départements d'admin ni sections d'église", async () => {

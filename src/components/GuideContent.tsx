@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ROLE_LABELS, ROLE_DESCRIPTIONS, ALL_ROLES } from "@/lib/roles";
 import type { Role } from "@/generated/prisma/client";
+import { paths } from "@/lib/paths";
 
 type RoleKey = Role;
 
@@ -169,7 +170,7 @@ const FEATURES: Feature[] = [
   // ── Annonces ─────────────────────────────────────────────────────────────
   {
     name: "Nouvelle demande",
-    description: "Déposez une demande : diffusion d'annonce (interne, réseaux sociaux, visuel) depuis /requests/new. Renseignez le titre, le brief, la deadline et les canaux souhaités.",
+    description: "Déposez une demande : diffusion d'annonce (interne, réseaux sociaux, visuel) depuis /demandes/nouvelle. Renseignez le titre, le brief, la deadline et les canaux souhaités.",
     category: "Demandes",
     screenshotTitle: "Nouvelle demande",
     screenshotFile: "guide-requests-new.png",
@@ -177,7 +178,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Mes demandes",
-    description: "Suivez l'état de toutes vos soumissions depuis /requests : En attente, En cours, Livrée, Refusée. L'annonce principale affiche le statut du visuel associé si demandé.",
+    description: "Suivez l'état de toutes vos soumissions depuis /demandes : En attente, En cours, Livrée, Refusée. L'annonce principale affiche le statut du visuel associé si demandé.",
     category: "Demandes",
     screenshotTitle: "Mes demandes",
     screenshotFile: "guide-requests-list.png",
@@ -185,7 +186,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Traitement des demandes (Secrétariat)",
-    description: "Traitez les annonces et les demandes (événements, planning, accès) depuis /secretariat/requests : trois onglets À traiter, En cours, Traitées, une file triée par échéance (En retard, Cette semaine, Plus tard), recherche et filtres par type. Ouvrez une demande pour voir le détail et agir : approuver, refuser avec motif, marquer une annonce diffusée. Un refus ou une annulation demande un motif, transmis au demandeur ; « Annuler » dans le message de confirmation revient sur une mise en cours ou une diffusion. Visible pour les membres du département Secrétariat.",
+    description: "Traitez les annonces et les demandes (événements, planning, accès) depuis /demandes/traitement : trois onglets À traiter, En cours, Traitées, une file triée par échéance (En retard, Cette semaine, Plus tard), recherche et filtres par type. Ouvrez une demande pour voir le détail et agir : approuver, refuser avec motif, marquer une annonce diffusée. Un refus ou une annulation demande un motif, transmis au demandeur ; « Annuler » dans le message de confirmation revient sur une mise en cours ou une diffusion. Visible pour les membres du département Secrétariat.",
     category: "Demandes",
     screenshotTitle: "Traitement des demandes — Secrétariat",
     screenshotFile: "guide-secretariat-dashboard.png",
@@ -277,7 +278,7 @@ const FEATURES: Feature[] = [
   // ── Tâches ───────────────────────────────────────────────────────────────
   {
     name: "Tâches de département",
-    description: "Depuis le planning (/dashboard), la vue « Tâches » permet de définir les tâches récurrentes d'un département (Mixage, Retours, Accueil VIP…) et d'affecter un STAR à chacune pour un événement donné. Complète le planning : celui-ci dit qui est en service, les tâches disent qui fait quoi.",
+    description: "Depuis le planning (/planning/departements), la vue « Tâches » permet de définir les tâches récurrentes d'un département (Mixage, Retours, Accueil VIP…) et d'affecter un STAR à chacune pour un événement donné. Complète le planning : celui-ci dit qui est en service, les tâches disent qui fait quoi.",
     category: "Tâches",
     screenshotTitle: "Tâches du département",
     screenshotFile: "guide-taches.png",
@@ -355,7 +356,7 @@ const FEATURES: Feature[] = [
   // ── Salles ───────────────────────────────────────────────────────────────
   {
     name: "Réserver une salle",
-    description: "Depuis /rooms, la vue « Semaine » affiche toutes les salles d'un coup, en grille salles × jours, pour repérer immédiatement celles qui sont libres ; le calendrier mensuel est lui aussi multi-salles et le choix d'une salle devient un filtre facultatif. Un encart « Mes réservations », visible quelle que soit la vue, liste vos prochaines réservations avec les actions de main courante au plus près. Réservez un créneau depuis cette même page. La réservation est soumise à l'accord de l'équipe de contrôle si la salle le requiert.",
+    description: "Depuis /ressources/salles, la vue « Semaine » affiche toutes les salles d'un coup, en grille salles × jours, pour repérer immédiatement celles qui sont libres ; le calendrier mensuel est lui aussi multi-salles et le choix d'une salle devient un filtre facultatif. Un encart « Mes réservations », visible quelle que soit la vue, liste vos prochaines réservations avec les actions de main courante au plus près. Réservez un créneau depuis cette même page. La réservation est soumise à l'accord de l'équipe de contrôle si la salle le requiert.",
     category: "Salles",
     screenshotTitle: "Réservation de salles",
     screenshotFile: "guide-salles-reservation.png",
@@ -363,7 +364,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Contrôle des mains courantes",
-    description: "Validez l'état des lieux (ouverture/fermeture) des salles réservées depuis /rooms/checklists. Accessible aux gestionnaires de salles et, par appartenance de département, aux membres de l'équipe de contrôle — indépendamment du rôle global.",
+    description: "Validez l'état des lieux (ouverture/fermeture) des salles réservées depuis /ressources/salles/checklists. Accessible aux gestionnaires de salles et, par appartenance de département, aux membres de l'équipe de contrôle — indépendamment du rôle global.",
     category: "Salles",
     screenshotTitle: "Contrôle des mains courantes",
     screenshotFile: "guide-salles-mains-courantes.png",
@@ -373,7 +374,7 @@ const FEATURES: Feature[] = [
   // ── Suivi pastoral ───────────────────────────────────────────────────────
   {
     name: "Demande de RDV pastoral",
-    description: "Déposez une demande de rendez-vous avec un pasteur ou responsable depuis une tuile « Rendez-vous pastoral » dans « Mes demandes » (ou le lien de menu autonome pour le STAR, sans accès à « Mes demandes »). Disponible pour toute personne ayant accès au planning de son église. Suivez ensuite l'état de la demande (et, si elle est refusée, le motif) dans la section « Rendez-vous pastoraux » de « Mes demandes ».",
+    description: "Déposez une demande de rendez-vous avec un pasteur ou responsable depuis « Demander un rendez-vous » dans « Mes demandes ». Ouvert à tout compte de l’église, quel que soit son rôle (au plus 5 demandes par heure). Suivez ensuite l'état de la demande (et, si elle est refusée, le motif) dans la section « Rendez-vous pastoraux » de « Mes demandes ».",
     category: "Suivi pastoral",
     screenshotTitle: "Demande de RDV pastoral",
     screenshotFile: "guide-care-demande.png",
@@ -381,7 +382,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Qualification et affectation des demandes",
-    description: "Depuis /care, confiez chaque demande de RDV en attente à un profil pastoral ou à un STAR accompagnant (membres du MSDP par défaut, plus les STAR ajoutés nominativement — voir « Accompagnants » ci-dessous ; indicateur « prévenu par email seulement » si le profil pastoral n'a pas de compte), avec une note optionnelle — ou rejetez-la avec un motif qualifié (liste fixe + commentaire libre). Une demande déjà confiée peut être réaffectée à un autre référent.",
+    description: "Depuis /pastoral/suivi, confiez chaque demande de RDV en attente à un profil pastoral ou à un STAR accompagnant (membres du MSDP par défaut, plus les STAR ajoutés nominativement — voir « Accompagnants » ci-dessous ; indicateur « prévenu par email seulement » si le profil pastoral n'a pas de compte), avec une note optionnelle — ou rejetez-la avec un motif qualifié (liste fixe + commentaire libre). Une demande déjà confiée peut être réaffectée à un autre référent.",
     category: "Suivi pastoral",
     screenshotTitle: "Qualification et affectation des demandes de RDV",
     screenshotFile: "guide-care-qualification.png",
@@ -389,7 +390,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Suivi par le référent : date et compte rendu",
-    description: "Sur la fiche d'une demande confiée (/care/requests/[id]), le référent en charge peut fixer lui-même la date du rendez-vous s'il est membre du MSDP (un profil pastoral est planifié par le protocole, voir « Vue et planification agenda » ci-dessous), rendre la demande avec une raison s'il ne peut pas la suivre (elle revient aux Référents soins pastoraux pour être confiée à nouveau), puis renseigner le compte rendu du rendez-vous une fois celui-ci passé : tenu, orienté vers un suivi de nouveau converti, absent (clôturer ou replanifier), ou nouveau rendez-vous à reprendre.",
+    description: "Sur la fiche d'une demande confiée (/pastoral/suivi/rendez-vous/[id]), le référent en charge peut fixer lui-même la date du rendez-vous s'il est membre du MSDP (un profil pastoral est planifié par le protocole, voir « Vue et planification agenda » ci-dessous), rendre la demande avec une raison s'il ne peut pas la suivre (elle revient aux Référents soins pastoraux pour être confiée à nouveau), puis renseigner le compte rendu du rendez-vous une fois celui-ci passé : tenu, orienté vers un suivi de nouveau converti, absent (clôturer ou replanifier), ou nouveau rendez-vous à reprendre.",
     category: "Suivi pastoral",
     screenshotTitle: "Suivi par le référent",
     screenshotFile: "guide-care-suivi-accompagnant.png",
@@ -397,7 +398,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Suivi des nouveaux convertis (MSDP)",
-    description: "Depuis l'onglet « Nouveaux convertis » de /care, créé automatiquement à la réponse à l'appel au salut : confiez le suivi à un profil pastoral ou à un membre du MSDP, puis, en tant que référent en charge, faites progresser le statut (contacté, en formation, terminé), ajoutez des notes, ou rendez le suivi au référent. Un Référent soins pastoraux peut aussi réaffecter ou rouvrir un suivi abandonné.",
+    description: "Depuis l'onglet « Nouveaux convertis » de /pastoral/suivi, créé automatiquement à la réponse à l'appel au salut : confiez le suivi à un profil pastoral ou à un membre du MSDP, puis, en tant que référent en charge, faites progresser le statut (contacté, en formation, terminé), ajoutez des notes, ou rendez le suivi au référent. Un Référent soins pastoraux peut aussi réaffecter ou rouvrir un suivi abandonné.",
     category: "Suivi pastoral",
     screenshotTitle: "Suivi des nouveaux convertis",
     screenshotFile: "guide-care-msdp.png",
@@ -405,7 +406,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Vue et planification agenda",
-    description: "Consultez l'agenda hebdomadaire de chaque profil pastoral depuis /agenda, planifiez les créneaux des demandes confiées à un profil pastoral depuis /agenda/schedule (un membre du MSDP fixe lui-même sa date depuis /care), ou inscrivez directement une activité ou un rendez-vous avec le bouton \"Ajouter à l'agenda\" de /agenda. Un titulaire de profil pastoral voit également \"Mon agenda\", indépendamment de son rôle global.",
+    description: "Consultez l'agenda hebdomadaire de chaque profil pastoral depuis /pastoral/agenda, planifiez les créneaux des demandes confiées à un profil pastoral depuis /pastoral/planification (un membre du MSDP fixe lui-même sa date depuis /pastoral/suivi), ou inscrivez directement une activité ou un rendez-vous avec le bouton \"Ajouter à l'agenda\" de /pastoral/agenda. Un titulaire de profil pastoral voit également \"Mon agenda\", indépendamment de son rôle global.",
     category: "Suivi pastoral",
     screenshotTitle: "Vue et planification de l'agenda",
     screenshotFile: "guide-agenda-planification.png",
@@ -413,7 +414,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Paramètres du suivi pastoral (délais de relance)",
-    description: "Depuis /care/parametres, réglez les deux délais au-delà desquels une demande est signalée à relancer dans le bandeau « À relancer » de /care : non confiée (alerte aux Référents soins pastoraux, 7 jours par défaut), et confiée sans suite — RDV sans date fixée ou suivi de nouveau converti sans premier contact (alerte au référent en charge, 14 jours par défaut).",
+    description: "Depuis /pastoral/suivi/parametres, réglez les deux délais au-delà desquels une demande est signalée à relancer dans le bandeau « À relancer » de /pastoral/suivi : non confiée (alerte aux Référents soins pastoraux, 7 jours par défaut), et confiée sans suite — RDV sans date fixée ou suivi de nouveau converti sans premier contact (alerte au référent en charge, 14 jours par défaut).",
     category: "Suivi pastoral",
     screenshotTitle: "Paramètres du suivi pastoral",
     screenshotFile: "guide-care-parametres.png",
@@ -421,7 +422,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Accompagnants du suivi pastoral",
-    description: "Depuis /care/parametres, section « Accompagnants » : tout membre du MSDP est accompagnant par défaut (décochez pour en écarter un, sans retirer les demandes déjà en cours) ; ajoutez aussi un STAR d'un autre département qui accompagne effectivement (il peut être retiré de la même façon). Un STAR qui rejoint le MSDP devient accompagnant automatiquement.",
+    description: "Depuis /pastoral/suivi/parametres, section « Accompagnants » : tout membre du MSDP est accompagnant par défaut (décochez pour en écarter un, sans retirer les demandes déjà en cours) ; ajoutez aussi un STAR d'un autre département qui accompagne effectivement (il peut être retiré de la même façon). Un STAR qui rejoint le MSDP devient accompagnant automatiquement.",
     category: "Suivi pastoral",
     screenshotTitle: "Accompagnants du suivi pastoral",
     screenshotFile: "guide-care-accompagnants.png",
@@ -437,7 +438,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Statistiques du suivi pastoral",
-    description: "Visualisez depuis /care/stats les volumes de demandes de RDV par état, par référent et les motifs de rejet, ainsi que les statistiques du suivi MSDP (entonnoir, délais, jalons de parcours).",
+    description: "Visualisez depuis /pastoral/suivi/statistiques les volumes de demandes de RDV par état, par référent et les motifs de rejet, ainsi que les statistiques du suivi MSDP (entonnoir, délais, jalons de parcours).",
     category: "Suivi pastoral",
     screenshotTitle: "Statistiques du suivi pastoral",
     screenshotFile: "guide-care-stats.png",
@@ -447,7 +448,7 @@ const FEATURES: Feature[] = [
   // ── Comptabilité ─────────────────────────────────────────────────────────
   {
     name: "Envoyer une demande financière",
-    description: "Déposez une note de frais ou une demande d'avance de budget depuis /accounting/requests/new. Un titulaire de profil pastoral peut également soumettre, indépendamment de son rôle global. Après la remise d'une avance (ou d'une note de frais payée sans pièce), déposez vos factures et le montant dépensé dans le bloc « Justificatifs » de la demande : rendez le reliquat, ou « Demandez le complément » si vous avez dépensé plus. Des relances partent chaque semaine tant que les factures manquent.",
+    description: "Déposez une note de frais ou une demande d'avance de budget depuis /finances/demandes/nouvelle. Un titulaire de profil pastoral peut également soumettre, indépendamment de son rôle global. Après la remise d'une avance (ou d'une note de frais payée sans pièce), déposez vos factures et le montant dépensé dans le bloc « Justificatifs » de la demande : rendez le reliquat, ou « Demandez le complément » si vous avez dépensé plus. Des relances partent chaque semaine tant que les factures manquent.",
     category: "Comptabilité",
     screenshotTitle: "Nouvelle demande financière",
     screenshotFile: "guide-comptabilite-demande.png",
@@ -455,7 +456,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Traiter les demandes financières",
-    description: "Consultez et traitez les notes de frais et avances de budget depuis /accounting/requests : confirmez le paiement ou refusez avec un motif. Le compteur « À justifier » liste ensuite les avances en attente de factures : acceptez, renvoyez avec un motif, dispensez, puis confirmez la restitution d'un reliquat (« Rendu sur » une caisse l'ajoute à la trésorerie). Les délais de relance se règlent en bas de la liste ; le filtre « Arriéré » réclame les justificatifs des avances versées avant la mise en service. Les Ministres et Resp. département voient leurs propres demandes en lecture seule.",
+    description: "Consultez et traitez les notes de frais et avances de budget depuis /finances/demandes : confirmez le paiement ou refusez avec un motif. Le compteur « À justifier » liste ensuite les avances en attente de factures : acceptez, renvoyez avec un motif, dispensez, puis confirmez la restitution d'un reliquat (« Rendu sur » une caisse l'ajoute à la trésorerie). Les délais de relance se règlent en bas de la liste ; le filtre « Arriéré » réclame les justificatifs des avances versées avant la mise en service. Les Ministres et Resp. département voient leurs propres demandes en lecture seule.",
     category: "Comptabilité",
     screenshotTitle: "Gestion des demandes financières",
     screenshotFile: "guide-comptabilite-gestion.png",
@@ -463,7 +464,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Statistiques comptables",
-    description: "Visualisez le total des demandes financières sur l'année en cours depuis /accounting/stats, par statut et par département. Le « Suivi de l'argent versé » range chaque euro versé dans une seule case (justifié, rendu, à rendre, à justifier, Navette, avant le suivi) : les cases s'additionnent au montant versé, avec un taux de justification par département.",
+    description: "Visualisez le total des demandes financières sur l'année en cours depuis /finances/statistiques, par statut et par département. Le « Suivi de l'argent versé » range chaque euro versé dans une seule case (justifié, rendu, à rendre, à justifier, Navette, avant le suivi) : les cases s'additionnent au montant versé, avec un taux de justification par département.",
     category: "Comptabilité",
     screenshotTitle: "Statistiques comptables",
     screenshotFile: "guide-comptabilite-stats.png",
@@ -471,7 +472,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Navette : suivi du budget",
-    description: "Sous « Comptabilité », l'écran « Navette » suit le budget de la navette comme un relevé de compte : la comptabilité saisit le solde de départ et les abondements, l'équipe navette déclare chaque dépense (carburant, location, caution, péage…) avec son justificatif, en photo ou en document. Pas de validation : la dépense compte aussitôt, et la comptabilité est prévenue. L'auteur corrige ou supprime sa ligne pendant 48 heures ; tout changement est conservé dans l'historique. Choisissez une période pour voir les entrées, les sorties et le solde. Une dépense payée de sa poche se rembourse depuis la ligne (« Demander le remboursement ») ; les avances de budget versées à la Navette s'ajoutent toutes seules. L'accès est ouvert à la comptabilité et aux membres d'un département de fonction « Navette » : ajouter quelqu'un à ce département lui donne ces droits.",
+    description: "Dans « Finances », l'écran « Navette » suit le budget de la navette comme un relevé de compte : la comptabilité saisit le solde de départ et les abondements, l'équipe navette déclare chaque dépense (carburant, location, caution, péage…) avec son justificatif, en photo ou en document. Pas de validation : la dépense compte aussitôt, et la comptabilité est prévenue. L'auteur corrige ou supprime sa ligne pendant 48 heures ; tout changement est conservé dans l'historique. Choisissez une période pour voir les entrées, les sorties et le solde. Une dépense payée de sa poche se rembourse depuis la ligne (« Demander le remboursement ») ; les avances de budget versées à la Navette s'ajoutent toutes seules. L'accès est ouvert à la comptabilité et aux membres d'un département de fonction « Navette » : ajouter quelqu'un à ce département lui donne ces droits.",
     category: "Comptabilité",
     screenshotTitle: "Navette",
     screenshotFile: "guide-navette.png",
@@ -479,7 +480,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Trésorerie de l'église",
-    description: "Sous « Comptabilité », l'écran « Trésorerie » tient l'argent que l'église détient elle-même — caisse, coffre, compte en ligne — comme un relevé de compte : chaque entrée et chaque sortie, et le solde après chaque ligne. Après le culte, « Collecte » enregistre en une fois les dîmes, offrandes et offrandes spéciales, le total des espèces par catégorie et les chèques un par un, comptés par deux personnes. « Remise » inscrit le dépôt au compte commun avec son bordereau et sort de la caisse les chèques cochés. Les paiements de notes de frais et les abondements de la navette payés depuis une caisse s'ajoutent tout seuls. Le budget annuel par catégorie se compare au réalisé ; un dépassement est signalé. Une fois vérifié, un mois se clôture et ne se modifie plus (seul un Admin le rouvre, avec un motif). Le compte bancaire commun n'est pas suivi ici. Accès : Comptable, Admin, Super Admin.",
+    description: "Dans « Finances », l'écran « Trésorerie » tient l'argent que l'église détient elle-même — caisse, coffre, compte en ligne — comme un relevé de compte : chaque entrée et chaque sortie, et le solde après chaque ligne. Après le culte, « Collecte » enregistre en une fois les dîmes, offrandes et offrandes spéciales, le total des espèces par catégorie et les chèques un par un, comptés par deux personnes. « Remise » inscrit le dépôt au compte commun avec son bordereau et sort de la caisse les chèques cochés. Les paiements de notes de frais et les abondements de la navette payés depuis une caisse s'ajoutent tout seuls. Le budget annuel par catégorie se compare au réalisé ; un dépassement est signalé. Une fois vérifié, un mois se clôture et ne se modifie plus (seul un Admin le rouvre, avec un motif). Le compte bancaire commun n'est pas suivi ici. Accès : Comptable, Admin, Super Admin.",
     category: "Comptabilité",
     screenshotTitle: "Trésorerie",
     screenshotFile: "guide-tresorerie.png",
@@ -569,7 +570,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Page de dons et slide",
-    description: "Depuis « Page de dons » (/dons), paramétrez la page publique où chacun trouve comment donner : don en ligne, virement (IBAN vérifié, copiable en un geste), chèques et espèces dans l'enveloppe de l'accueil, reçu fiscal, verset. L'aperçu se met à jour en direct ; activez la page puis enregistrez. « Slide de projection » affiche le QR code vers la page : téléchargez-la en PNG ou projetez-la en plein écran (Échap pour sortir). « Message WhatsApp » prépare le message « Dîmes / Offrandes » à diffuser, prêt à copier. Tout changement de coordonnées bancaires est signalé à la comptabilité.",
+    description: "Depuis « Page de dons » (/finances/dons), paramétrez la page publique où chacun trouve comment donner : don en ligne, virement (IBAN vérifié, copiable en un geste), chèques et espèces dans l'enveloppe de l'accueil, reçu fiscal, verset. L'aperçu se met à jour en direct ; activez la page puis enregistrez. « Slide de projection » affiche le QR code vers la page : téléchargez-la en PNG ou projetez-la en plein écran (Échap pour sortir). « Message WhatsApp » prépare le message « Dîmes / Offrandes » à diffuser, prêt à copier. Tout changement de coordonnées bancaires est signalé à la comptabilité.",
     category: "Comptabilité",
     screenshotTitle: "Page de dons",
     screenshotFile: "guide-page-dons.png",
@@ -620,7 +621,7 @@ const FEATURES: Feature[] = [
   // ── Emplois ──────────────────────────────────────────────────────────────
   {
     name: "Offres, recherches d'emploi & freelance",
-    description: "L'espace Offres (/jobs) a deux onglets : « Opportunités » (emplois, stages, alternances et missions freelance) et « Profils disponibles » (personnes en recherche et freelances). Filtrez par type avec les pastilles, cherchez par métier, entreprise ou ville, et retrouvez vos annonces avec « Mes publications ». Touchez une publication pour l'ouvrir dans le panneau de détail : postuler, modifier, marquer comme pourvue ou retirer. Un seul bouton « Publier » propose les quatre sortes d'annonces. Le point « Nouveau » signale les opportunités parues depuis votre dernière visite. Fonctionnalité ouverte à tous les comptes de l'église.",
+    description: "L'espace Offres (/ressources/offres) a deux onglets : « Opportunités » (emplois, stages, alternances et missions freelance) et « Profils disponibles » (personnes en recherche et freelances). Filtrez par type avec les pastilles, cherchez par métier, entreprise ou ville, et retrouvez vos annonces avec « Mes publications ». Touchez une publication pour l'ouvrir dans le panneau de détail : postuler, modifier, marquer comme pourvue ou retirer. Un seul bouton « Publier » propose les quatre sortes d'annonces. Le point « Nouveau » signale les opportunités parues depuis votre dernière visite. Fonctionnalité ouverte à tous les comptes de l'église.",
     category: "Emplois",
     screenshotTitle: "Offres et recherches d'emploi",
     screenshotFile: "guide-emplois-liste.png",
@@ -638,7 +639,7 @@ const FEATURES: Feature[] = [
   // ── Intégration ──────────────────────────────────────────────────────────
   {
     name: "Demandes d'intégration (familles)",
-    description: "Suivez les demandes d'intégration de nouvelles familles depuis /integration/requests : assignez un berger, faites avancer le statut, filtrez les demandes en attente. L'étiquette « Adresse non rattachée » signale une adresse qu'aucune famille ne couvre. Accessible aussi, par appartenance de département (fonction Intégration) ou en tant que berger assigné, indépendamment du rôle global.",
+    description: "Suivez les demandes d'intégration de nouvelles familles depuis /personnes/integration/dossiers : assignez un berger, faites avancer le statut, filtrez les demandes en attente. L'étiquette « Adresse non rattachée » signale une adresse qu'aucune famille ne couvre. Accessible aussi, par appartenance de département (fonction Intégration) ou en tant que berger assigné, indépendamment du rôle global.",
     category: "Intégration",
     screenshotTitle: "Demandes d'intégration",
     screenshotFile: "guide-integration-demandes.png",
@@ -654,7 +655,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Paramètres intégration (délais de relance)",
-    description: "Depuis /integration/parametres, réglez les deux délais au-delà desquels une demande en attente est signalée comme à relancer : l'attente de recontact (60 jours par défaut) et l'attente du département mission (30 jours par défaut). Accessible à l'Admin, au Secrétaire et au responsable du département intégration.",
+    description: "Depuis /personnes/integration/parametres, réglez les deux délais au-delà desquels une demande en attente est signalée comme à relancer : l'attente de recontact (60 jours par défaut) et l'attente du département mission (30 jours par défaut). Accessible à l'Admin, au Secrétaire et au responsable du département intégration.",
     category: "Intégration",
     screenshotTitle: "Paramètres intégration",
     screenshotFile: "guide-integration-parametres.png",
@@ -662,7 +663,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Bergers de famille",
-    description: "Gérez la liste des bergers de famille et leurs affectations depuis /integration/leaders. Réservé à l'accès complet (Admin, Secrétaire, équipe Intégration) : un berger voit les demandes de ses familles, mais ne gère pas les affectations.",
+    description: "Gérez la liste des bergers de famille et leurs affectations depuis /personnes/integration/bergers. Réservé à l'accès complet (Admin, Secrétaire, équipe Intégration) : un berger voit les demandes de ses familles, mais ne gère pas les affectations.",
     category: "Intégration",
     screenshotTitle: "Bergers de famille",
     screenshotFile: "guide-integration-bergers.png",
@@ -670,7 +671,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Parcours & statistiques d'intégration",
-    description: "Consultez le parcours d'intégration type et les statistiques (délais, taux de complétion, répartition des abandons par motif) depuis /integration/parcours et /integration/stats.",
+    description: "Consultez le parcours d'intégration type et les statistiques (délais, taux de complétion, répartition des abandons par motif) depuis /personnes/integration/parcours et /personnes/integration/stats.",
     category: "Intégration",
     screenshotTitle: "Parcours et statistiques d'intégration",
     screenshotFile: "guide-integration-stats.png",
@@ -680,7 +681,7 @@ const FEATURES: Feature[] = [
   // ── Audio ────────────────────────────────────────────────────────────────
   {
     name: "(re)Écouter les cultes",
-    description: "Depuis /audio, retrouvez la bibliothèque des cultes publiés : recherche par titre, orateur, type ou période, lecture avec vitesse ajustable et reprise d'écoute, partage d'un lien par culte ou par séquence. Accessible à tout membre connecté, quel que soit son rôle.",
+    description: "Depuis /medias/audio, retrouvez la bibliothèque des cultes publiés : recherche par titre, orateur, type ou période, lecture avec vitesse ajustable et reprise d'écoute, partage d'un lien par culte ou par séquence. Accessible à tout membre connecté, quel que soit son rôle.",
     category: "Audio",
     screenshotTitle: "Bibliothèque d'écoute",
     screenshotFile: "guide-audio-library.png",
@@ -688,7 +689,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Production audio (dépôt, découpage, publication)",
-    description: "Depuis l'onglet Production de /audio, déposez les séquences enregistrées, ajustez leur ordre et leurs noms, puis publiez le culte pour le rendre disponible dans la bibliothèque et via un lien partageable. Réservé aux rôles de gestion et aux membres du département de captation audio.",
+    description: "Depuis l'onglet Production de /medias/audio, déposez les séquences enregistrées, ajustez leur ordre et leurs noms, puis publiez le culte pour le rendre disponible dans la bibliothèque et via un lien partageable. Réservé aux rôles de gestion et aux membres du département de captation audio.",
     category: "Audio",
     screenshotTitle: "File d'attente Production audio",
     screenshotFile: "guide-audio-production.png",
@@ -696,7 +697,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Paramètres audio",
-    description: "Depuis l'onglet Paramètres de /audio, définissez la couverture par défaut des cultes et le modèle de séquences appliqué aux nouveaux dépôts. Le département de captation se configure comme une fonction de département, dans Configuration → Départements → Fonctions.",
+    description: "Depuis l'onglet Paramètres de /medias/audio, définissez la couverture par défaut des cultes et le modèle de séquences appliqué aux nouveaux dépôts. Le département de captation se configure comme une fonction de département, dans Configuration → Départements → Fonctions.",
     category: "Audio",
     screenshotTitle: "Paramètres audio",
     screenshotFile: "guide-audio-parametres.png",
@@ -744,7 +745,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Sauvegardes et export de configuration",
-    description: "Depuis /admin/backups, déclenchez une sauvegarde de la base et exportez la configuration de l'église (structure des ministères et départements, comptes et rôles) au format JSON. Sert aussi à monter un environnement de test ou de formation.",
+    description: "Depuis /plateforme/backups, déclenchez une sauvegarde de la base et exportez la configuration de l'église (structure des ministères et départements, comptes et rôles) au format JSON. Sert aussi à monter un environnement de test ou de formation.",
     category: "Administration",
     screenshotTitle: "Sauvegardes et export de configuration",
     screenshotFile: "guide-admin-backups.png",
@@ -838,7 +839,7 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
             Lancez une visite guidée pour découvrir les fonctionnalités principales.
           </p>
         </div>
-        <Button onClick={() => router.push("/dashboard?tour=1")} type="button" className="shrink-0">
+        <Button onClick={() => router.push(paths.dashboard({ tour: "1" }))} type="button" className="shrink-0">
           <CirclePlay aria-hidden="true" className="size-4" strokeWidth={1.75} />
           Lancer la visite guidée
         </Button>

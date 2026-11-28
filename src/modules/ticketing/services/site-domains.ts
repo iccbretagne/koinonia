@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { ApiError } from "@/lib/errors";
 import { normalizeHost } from "@/lib/site-host";
+import { paths } from "@/lib/paths";
 
 /**
  * Domaines dédiés des sites d'événement (spec 084, ADR-0031). Un domaine n'est servi qu'après
@@ -23,7 +24,7 @@ async function audit(userId: string | null, churchId: string, entityId: string, 
 
 async function notifyOrganizers(eventId: string, type: string, title: string, message: string) {
   const { notifyEventTeam } = await import("./team-notify");
-  await notifyEventTeam(eventId, ["ORGANIZER"], { type, title, message, link: `/billetterie/${eventId}?vue=site` });
+  await notifyEventTeam(eventId, ["ORGANIZER"], { type, title, message, link: paths.billetterie.event(eventId, { vue: "site" }) });
 }
 
 function appHost(): string {

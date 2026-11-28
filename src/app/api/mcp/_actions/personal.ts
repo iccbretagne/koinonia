@@ -21,6 +21,7 @@ import {
   type ActionResult,
   type McpActionDef,
 } from "./common";
+import { paths } from "@/lib/paths";
 
 /**
  * Actions du lot 2 (spec 081) pour la fiche STAR liée au compte, jamais pour un tiers :
@@ -127,7 +128,7 @@ export async function confirmUnavailability(input: z.infer<typeof confirmInput>,
     entityId: absence.id,
     details: { memberId: payload.memberId, kind: "PERIOD", startDate: payload.startDate, endDate: payload.endDate, allDepartments: true, via: "mcp" },
   });
-  const link = `${publicOrigin()}/planning`;
+  const link = `${publicOrigin()}${paths.planning()}`;
   return {
     text: `Absence enregistrée. Vos responsables sont prévenus.\nVoir dans Koinonia : ${link}`,
     structured: { done: true, action: "declare_unavailability", absenceId: absence.id, link },
@@ -200,7 +201,7 @@ export async function confirmServiceAnswer(input: z.infer<typeof confirmInput>, 
       entityId: payload.memberId,
       details: { eventIds: payload.eventIds, answer: payload.answer, withdrawals: result.withdrawals, via: "mcp" },
     });
-    const link = `${publicOrigin()}/disponibilites`;
+    const link = `${publicOrigin()}${paths.disponibilites()}`;
     const withdrawn = result.withdrawals > 0 ? ` ${result.withdrawals} désistement(s) enregistré(s), vos responsables sont prévenus.` : "";
     return {
       text: `Réponse « ${ANSWERS[payload.answer]} » enregistrée.${withdrawn}\nVoir dans Koinonia : ${link}`,

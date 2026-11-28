@@ -1,4 +1,5 @@
 import Tabs, { type TabItem } from "@/components/ui/Tabs";
+import { paths } from "@/lib/paths";
 
 /**
  * Onglets de l'espace Disponibilités (spec 058) : chacun n'apparaît qu'avec son droit, et la barre
@@ -17,9 +18,9 @@ export default function AvailabilityTabs({
   readonly collections: boolean;
 }) {
   const tabs: TabItem[] = [];
-  if (self) tabs.push({ href: "/disponibilites", label: "Mes disponibilités", exact: true });
-  if (team) tabs.push({ href: "/absences", label: "Indisponibilités de l'équipe" });
-  if (collections) tabs.push({ href: "/disponibilites/collectes", label: "Collectes" });
+  if (self) tabs.push({ href: paths.disponibilites(), label: "Mes disponibilités", exact: true });
+  if (team) tabs.push({ href: paths.absences(), label: "Indisponibilités de l'équipe" });
+  if (collections) tabs.push({ href: paths.disponibilites.collectes(), label: "Collectes" });
   if (tabs.length < 2) return null;
   return <Tabs ariaLabel="Disponibilités" tabs={tabs} />;
 }

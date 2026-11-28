@@ -93,6 +93,16 @@ const include = {
 type Row = Prisma.RequestGetPayload<{ include: typeof include }>;
 type EventRow = { id: string; title: string; type: string; date: Date; planningDeadline: Date | null };
 
+/**
+ * Demandes « à traiter » d'une file (spec 092) : en attente, dans le périmètre de la fonction. Un
+ * seul compte, partagé par l'écran de la file et par l'Accueil. Le droit d'accès à la file
+ * (`resolveRequestQueueAccess`) reste à vérifier par l'appelant, avant d'appeler.
+ */
+export async function countRequestQueueTodo(churchId: string, fn: QueueFunction = "SECRETARIAT", db?: DbClient): Promise<number> {
+  db ??= await defaultDb();
+  return db.request.count({ where: { AND: [scopeWhere(churchId, fn), { status: "EN_ATTENTE" }] } });
+}
+
 /** Demandes routées vers la fonction (spec 046) : racines seulement pour le Secrétariat. */
 function scopeWhere(churchId: string, fn: QueueFunction): Prisma.RequestWhereInput {
   switch (fn) {

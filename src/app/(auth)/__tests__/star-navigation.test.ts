@@ -25,6 +25,8 @@ vi.mock("@/modules/planning", async (importOriginal) => ({
   canReadAnnouncementSheet: (...args: Parameters<typeof mockCanReadAnnouncementSheet>) => mockCanReadAnnouncementSheet(...args),
 }));
 vi.mock("next/headers", () => ({
+  // En-tête du proxy absent : la garde d'adresse (page-gates.ts) ne s'applique pas.
+  headers: () => Promise.resolve(new Headers()),
   cookies: () => Promise.resolve({ get: () => undefined, set: () => {} }),
 }));
 vi.mock("next/navigation", () => ({
@@ -106,10 +108,9 @@ describe("Navigation STAR après spec 031/#462 (T29)", () => {
   });
 });
 
-// Spec 043 — la « Demande RDV pastoral » devient une tuile de /requests/new pour qui a
-// "Mes demandes" (members:view). Le STAR n'y a pas accès (pas de members:view) : il garde
-// le lien de menu autonome, seul moyen d'accès pour lui.
-describe("Lien « Demande RDV pastoral » après spec 043", () => {
+// Spec 092, lot 3 (exceptions 1 et 2) — « Mes demandes » est ouverte à tout compte de l'église
+// et porte « Demander un rendez-vous » : plus de lien de menu autonome, pour personne.
+describe("« Mes demandes » et RDV pastoral après spec 092 (lot 3)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetCurrentChurchId.mockResolvedValue("church-1");
@@ -121,19 +122,25 @@ describe("Lien « Demande RDV pastoral » après spec 043", () => {
     prismaMock.memberUserLink.findUnique.mockResolvedValue({ id: "link-1" } as never);
   });
 
-  it("un STAR (planning:view sans members:view) garde le lien autonome dans requestLinks", async () => {
-    mockAuth.mockResolvedValue(createStarSession("church-1"));
+  it.each([
+    ["STAR", () => createStarSession("church-1")],
+    ["Reporter", () => createSession({ churchRoles: [{ id: "r", churchId: "church-1", role: "REPORTER", ministryId: null, church: { id: "church-1", name: "É", slug: "e" }, departments: [] }] } as never)],
+    ["Comptable", () => createSession({ churchRoles: [{ id: "r", churchId: "church-1", role: "ACCOUNTANT", ministryId: null, church: { id: "church-1", name: "É", slug: "e" }, departments: [] }] } as never)],
+    ["Référent soins pastoraux", () => createSession({ churchRoles: [{ id: "r", churchId: "church-1", role: "PASTORAL_CARE_REFERENT", ministryId: null, church: { id: "church-1", name: "É", slug: "e" }, departments: [] }] } as never)],
+  ])("%s : « Mes demandes » en tête, sans lien RDV autonome", async (_name, session) => {
+    mockAuth.mockResolvedValue(session());
     const element = await AuthLayout({ children: null as never });
     const requestLinks = shellProps(element).requestLinks as { href: string; label: string }[];
-    expect(requestLinks).toContainEqual({ href: "/agenda/request", label: "Demande RDV pastoral" });
+    expect(requestLinks[0]).toEqual({ href: "/demandes", label: "Mes demandes" });
+    expect(requestLinks).not.toContainEqual({ href: "/demandes/rendez-vous", label: "Demander un rendez-vous" });
   });
 
-  it("un Admin (members:view) n'a plus le lien autonome — devenu une tuile dans « Mes demandes »", async () => {
+  it("un Admin (members:view) n'a pas de lien autonome", async () => {
     mockAuth.mockResolvedValue(createAdminSession("church-1"));
     prismaMock.memberUserLink.findUnique.mockResolvedValue(null);
     const element = await AuthLayout({ children: null as never });
     const requestLinks = shellProps(element).requestLinks as { href: string; label: string }[];
-    expect(requestLinks).not.toContainEqual({ href: "/agenda/request", label: "Demande RDV pastoral" });
+    expect(requestLinks).not.toContainEqual({ href: "/demandes/rendez-vous", label: "Demander un rendez-vous" });
   });
 });
 
@@ -158,12 +165,12 @@ describe("Espace « Communication & Production » après spec 043", () => {
     const element = await AuthLayout({ children: null as never });
     const mediaLinks = shellProps(element).mediaLinks as { href: string; label: string }[];
     expect(mediaLinks).toContainEqual(
-      expect.objectContaining({ href: "/media", label: "Communication & Production" })
+      expect.objectContaining({ href: "/medias", label: "Communication & Production" })
     );
-    expect(mediaLinks.find((l) => l.href === "/media/requests")).toBeUndefined();
-    expect(mediaLinks.find((l) => l.href === "/media/projects")).toBeUndefined();
-    expect(mediaLinks.find((l) => l.href === "/media/collections")).toBeUndefined();
-    expect(mediaLinks.find((l) => l.href === "/communication/requests")).toBeUndefined();
+    expect(mediaLinks.find((l) => l.href === "/medias/visuels/demandes")).toBeUndefined();
+    expect(mediaLinks.find((l) => l.href === "/medias/visuels")).toBeUndefined();
+    expect(mediaLinks.find((l) => l.href === "/medias/partages")).toBeUndefined();
+    expect(mediaLinks.find((l) => l.href === "/medias/reseaux-sociaux")).toBeUndefined();
   });
 
   it("un utilisateur sans droit média n'a pas l'entrée « Communication & Production »", async () => {
@@ -171,7 +178,7 @@ describe("Espace « Communication & Production » après spec 043", () => {
     mockAuth.mockResolvedValue(createStarSession("church-1"));
     const element = await AuthLayout({ children: null as never });
     const mediaLinks = shellProps(element).mediaLinks as { href: string; label: string }[];
-    expect(mediaLinks.find((l) => l.href === "/media")).toBeUndefined();
+    expect(mediaLinks.find((l) => l.href === "/medias")).toBeUndefined();
   });
 
   it("Audio reste présent et distinct de « Communication & Production »", async () => {
@@ -179,6 +186,6 @@ describe("Espace « Communication & Production » après spec 043", () => {
     mockAuth.mockResolvedValue(createDepartmentHeadSession([PROD_MEDIA_DEPT], "church-1"));
     const element = await AuthLayout({ children: null as never });
     const mediaLinks = shellProps(element).mediaLinks as { href: string; label: string }[];
-    expect(mediaLinks).toContainEqual({ href: "/audio", label: "Audio" });
+    expect(mediaLinks).toContainEqual({ href: "/medias/audio", label: "Audio" });
   });
 });

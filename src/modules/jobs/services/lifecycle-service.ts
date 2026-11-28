@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { buildJobOfferRenewalEmail } from "@/lib/email";
 import { createNotification, dispatchUserEmails } from "@/lib/notifications";
+import { paths } from "@/lib/paths";
 
 /**
  * Cycle de vie des offres d'emploi (spec 034).
@@ -92,7 +93,7 @@ export async function runJobOffersLifecycle(appUrl: string): Promise<JobOffersLi
           type: RENEWAL_NOTIF_TYPE,
           title: "Votre offre d'emploi est-elle toujours d'actualité ?",
           message,
-          link: `/jobs/${offer.id}`,
+          link: paths.jobs.offer(offer.id),
         },
         { email: false }
       );
@@ -109,7 +110,7 @@ export async function runJobOffersLifecycle(appUrl: string): Promise<JobOffersLi
         jobTitle: offer.title,
         company: offer.company,
         archiveDate,
-        jobUrl: `${appUrl}/jobs/${offer.id}`,
+        jobUrl: `${appUrl}${paths.jobs.offer(offer.id)}`,
       });
       const { failed } = await dispatchUserEmails([offer.authorId], "jobs", { subject, html });
       emailFailures += failed;

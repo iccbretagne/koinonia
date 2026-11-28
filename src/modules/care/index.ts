@@ -2,6 +2,7 @@ export { careModule } from "./manifest";
 
 export { requireCareQualify, requireCareDelete, getCareAccess } from "./auth";
 export type { CareAccess } from "./auth";
+export { careQueueCounts } from "./services/queue";
 
 export {
   deleteAppointmentRequest,

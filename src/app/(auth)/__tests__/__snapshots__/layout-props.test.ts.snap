@@ -4,15 +4,15 @@ exports[`AuthLayout — props de navigation > Admin aussi Admin d'une autre égl
 {
   "agendaLinks": [
     {
-      "href": "/agenda",
-      "label": "Vue agenda",
+      "href": "/pastoral/agenda",
+      "label": "Agenda des pasteurs",
     },
     {
-      "href": "/agenda/schedule",
+      "href": "/pastoral/planification",
       "label": "Planification",
     },
     {
-      "href": "/care",
+      "href": "/pastoral/suivi",
       "label": "Suivi pastoral",
     },
   ],
@@ -36,7 +36,7 @@ exports[`AuthLayout — props de navigation > Admin aussi Admin d'une autre égl
   ],
   "configLinks": [
     {
-      "href": "/admin/churches/church-1",
+      "href": "/admin/eglise/church-1",
       "label": "Paramètres de l'église",
     },
     {
@@ -49,11 +49,11 @@ exports[`AuthLayout — props de navigation > Admin aussi Admin d'une autre égl
     },
     {
       "href": "/admin/departments/functions",
-      "label": "Fonctions dép.",
+      "label": "Fonctions des départements",
     },
     {
-      "href": "/admin/rooms",
-      "label": "Salles",
+      "href": "/admin/salles",
+      "label": "Configuration des salles",
     },
     {
       "href": "/admin/messages",
@@ -72,7 +72,7 @@ exports[`AuthLayout — props de navigation > Admin aussi Admin d'une autre égl
       "label": "Profils pastoraux",
     },
     {
-      "href": "/dons",
+      "href": "/finances/dons",
       "label": "Page de dons",
     },
     {
@@ -96,10 +96,14 @@ exports[`AuthLayout — props de navigation > Admin aussi Admin d'une autre égl
   "famillesUrl": "https://familles.iccrennes.fr",
   "hasAbsences": true,
   "hasAccounting": true,
+  "hasAccountingManage": true,
+  "hasAccountingStats": true,
+  "hasAccountingSubmit": true,
   "hasAnnouncementSheet": true,
   "hasAvailability": false,
   "hasBothRoles": false,
   "hasCampaigns": true,
+  "hasCareRequest": true,
   "hasDiscipleship": true,
   "hasEventsAccess": true,
   "hasEventsManage": true,
@@ -117,54 +121,57 @@ exports[`AuthLayout — props de navigation > Admin aussi Admin d'une autre égl
   "homeHref": "/accueil",
   "integrationLinks": [
     {
-      "href": "/integration/requests",
-      "label": "Intégration",
+      "href": "/personnes/integration/dossiers",
+      "label": "Dossiers d'intégration",
     },
     {
-      "href": "/integration/leaders",
+      "href": "/personnes/integration/bergers",
       "label": "Bergers de famille",
     },
     {
-      "href": "/integration/parcours",
+      "href": "/personnes/integration/parcours",
       "label": "Parcours d'intégration",
     },
     {
-      "href": "/integration/stats",
+      "href": "/personnes/integration/stats",
       "label": "Statistiques intégration",
     },
     {
-      "href": "/integration/parametres",
+      "href": "/personnes/integration/parametres",
       "label": "Paramètres intégration",
     },
   ],
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/media",
+      "href": "/medias",
       "label": "Communication & Production",
       "matchPrefixes": [
-        "/media",
-        "/communication",
+        "/medias",
       ],
     },
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
+  "myRegistrations": {
+    "reservations": false,
+    "responses": false,
+  },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
     {
-      "href": "/secretariat/requests",
+      "href": "/demandes/traitement",
       "label": "Traitement des demandes",
     },
   ],
   "servingLinks": [
     {
-      "href": "/candidatures",
+      "href": "/personnes/candidatures",
       "label": "Candidatures",
     },
   ],
@@ -182,15 +189,15 @@ exports[`AuthLayout — props de navigation > Admin aussi pasteur, vue admin cho
 {
   "agendaLinks": [
     {
-      "href": "/agenda",
-      "label": "Vue agenda",
+      "href": "/pastoral/agenda",
+      "label": "Agenda des pasteurs",
     },
     {
-      "href": "/agenda/schedule",
+      "href": "/pastoral/planification",
       "label": "Planification",
     },
     {
-      "href": "/care",
+      "href": "/pastoral/suivi",
       "label": "Suivi pastoral",
     },
   ],
@@ -214,7 +221,7 @@ exports[`AuthLayout — props de navigation > Admin aussi pasteur, vue admin cho
   ],
   "configLinks": [
     {
-      "href": "/admin/churches/church-1",
+      "href": "/admin/eglise/church-1",
       "label": "Paramètres de l'église",
     },
     {
@@ -227,11 +234,11 @@ exports[`AuthLayout — props de navigation > Admin aussi pasteur, vue admin cho
     },
     {
       "href": "/admin/departments/functions",
-      "label": "Fonctions dép.",
+      "label": "Fonctions des départements",
     },
     {
-      "href": "/admin/rooms",
-      "label": "Salles",
+      "href": "/admin/salles",
+      "label": "Configuration des salles",
     },
     {
       "href": "/admin/messages",
@@ -250,7 +257,7 @@ exports[`AuthLayout — props de navigation > Admin aussi pasteur, vue admin cho
       "label": "Profils pastoraux",
     },
     {
-      "href": "/dons",
+      "href": "/finances/dons",
       "label": "Page de dons",
     },
     {
@@ -274,10 +281,14 @@ exports[`AuthLayout — props de navigation > Admin aussi pasteur, vue admin cho
   "famillesUrl": "https://familles.iccrennes.fr",
   "hasAbsences": true,
   "hasAccounting": true,
+  "hasAccountingManage": true,
+  "hasAccountingStats": true,
+  "hasAccountingSubmit": true,
   "hasAnnouncementSheet": true,
   "hasAvailability": false,
   "hasBothRoles": true,
   "hasCampaigns": true,
+  "hasCareRequest": true,
   "hasDiscipleship": true,
   "hasEventsAccess": true,
   "hasEventsManage": true,
@@ -295,54 +306,57 @@ exports[`AuthLayout — props de navigation > Admin aussi pasteur, vue admin cho
   "homeHref": "/accueil",
   "integrationLinks": [
     {
-      "href": "/integration/requests",
-      "label": "Intégration",
+      "href": "/personnes/integration/dossiers",
+      "label": "Dossiers d'intégration",
     },
     {
-      "href": "/integration/leaders",
+      "href": "/personnes/integration/bergers",
       "label": "Bergers de famille",
     },
     {
-      "href": "/integration/parcours",
+      "href": "/personnes/integration/parcours",
       "label": "Parcours d'intégration",
     },
     {
-      "href": "/integration/stats",
+      "href": "/personnes/integration/stats",
       "label": "Statistiques intégration",
     },
     {
-      "href": "/integration/parametres",
+      "href": "/personnes/integration/parametres",
       "label": "Paramètres intégration",
     },
   ],
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/media",
+      "href": "/medias",
       "label": "Communication & Production",
       "matchPrefixes": [
-        "/media",
-        "/communication",
+        "/medias",
       ],
     },
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
+  "myRegistrations": {
+    "reservations": false,
+    "responses": false,
+  },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
     {
-      "href": "/secretariat/requests",
+      "href": "/demandes/traitement",
       "label": "Traitement des demandes",
     },
   ],
   "servingLinks": [
     {
-      "href": "/candidatures",
+      "href": "/personnes/candidatures",
       "label": "Candidatures",
     },
   ],
@@ -360,15 +374,15 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
 {
   "agendaLinks": [
     {
-      "href": "/agenda",
-      "label": "Vue agenda",
+      "href": "/pastoral/agenda",
+      "label": "Agenda des pasteurs",
     },
     {
-      "href": "/agenda/schedule",
+      "href": "/pastoral/planification",
       "label": "Planification",
     },
     {
-      "href": "/care",
+      "href": "/pastoral/suivi",
       "label": "Suivi pastoral",
     },
   ],
@@ -388,7 +402,7 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
   ],
   "configLinks": [
     {
-      "href": "/admin/churches/church-1",
+      "href": "/admin/eglise/church-1",
       "label": "Paramètres de l'église",
     },
     {
@@ -401,11 +415,11 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
     },
     {
       "href": "/admin/departments/functions",
-      "label": "Fonctions dép.",
+      "label": "Fonctions des départements",
     },
     {
-      "href": "/admin/rooms",
-      "label": "Salles",
+      "href": "/admin/salles",
+      "label": "Configuration des salles",
     },
     {
       "href": "/admin/messages",
@@ -424,7 +438,7 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
       "label": "Profils pastoraux",
     },
     {
-      "href": "/dons",
+      "href": "/finances/dons",
       "label": "Page de dons",
     },
     {
@@ -448,10 +462,14 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
   "famillesUrl": "https://familles.iccrennes.fr",
   "hasAbsences": true,
   "hasAccounting": true,
+  "hasAccountingManage": true,
+  "hasAccountingStats": true,
+  "hasAccountingSubmit": true,
   "hasAnnouncementSheet": true,
   "hasAvailability": true,
   "hasBothRoles": false,
   "hasCampaigns": true,
+  "hasCareRequest": true,
   "hasDiscipleship": true,
   "hasEventsAccess": true,
   "hasEventsManage": true,
@@ -469,54 +487,57 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
   "homeHref": "/accueil",
   "integrationLinks": [
     {
-      "href": "/integration/requests",
-      "label": "Intégration",
+      "href": "/personnes/integration/dossiers",
+      "label": "Dossiers d'intégration",
     },
     {
-      "href": "/integration/leaders",
+      "href": "/personnes/integration/bergers",
       "label": "Bergers de famille",
     },
     {
-      "href": "/integration/parcours",
+      "href": "/personnes/integration/parcours",
       "label": "Parcours d'intégration",
     },
     {
-      "href": "/integration/stats",
+      "href": "/personnes/integration/stats",
       "label": "Statistiques intégration",
     },
     {
-      "href": "/integration/parametres",
+      "href": "/personnes/integration/parametres",
       "label": "Paramètres intégration",
     },
   ],
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/media",
+      "href": "/medias",
       "label": "Communication & Production",
       "matchPrefixes": [
-        "/media",
-        "/communication",
+        "/medias",
       ],
     },
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
+  "myRegistrations": {
+    "reservations": false,
+    "responses": false,
+  },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
     {
-      "href": "/secretariat/requests",
+      "href": "/demandes/traitement",
       "label": "Traitement des demandes",
     },
   ],
   "servingLinks": [
     {
-      "href": "/candidatures",
+      "href": "/personnes/candidatures",
       "label": "Candidatures",
     },
   ],
@@ -549,7 +570,7 @@ exports[`AuthLayout — props de navigation > Comptable 1`] = `
   ],
   "configLinks": [
     {
-      "href": "/dons",
+      "href": "/finances/dons",
       "label": "Page de dons",
     },
   ],
@@ -558,10 +579,14 @@ exports[`AuthLayout — props de navigation > Comptable 1`] = `
   "famillesUrl": "https://familles.iccrennes.fr",
   "hasAbsences": false,
   "hasAccounting": true,
+  "hasAccountingManage": true,
+  "hasAccountingStats": true,
+  "hasAccountingSubmit": false,
   "hasAnnouncementSheet": false,
   "hasAvailability": false,
   "hasBothRoles": false,
   "hasCampaigns": false,
+  "hasCareRequest": true,
   "hasDiscipleship": false,
   "hasEventsAccess": false,
   "hasEventsManage": false,
@@ -581,11 +606,20 @@ exports[`AuthLayout — props de navigation > Comptable 1`] = `
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
-  "requestLinks": [],
+  "myRegistrations": {
+    "reservations": false,
+    "responses": false,
+  },
+  "requestLinks": [
+    {
+      "href": "/demandes",
+      "label": "Mes demandes",
+    },
+  ],
   "servingLinks": [],
   "showStarEvents": false,
   "user": {
@@ -642,10 +676,14 @@ exports[`AuthLayout — props de navigation > Ministre 1`] = `
   "famillesUrl": "https://familles.iccrennes.fr",
   "hasAbsences": true,
   "hasAccounting": true,
+  "hasAccountingManage": false,
+  "hasAccountingStats": false,
+  "hasAccountingSubmit": true,
   "hasAnnouncementSheet": true,
   "hasAvailability": false,
   "hasBothRoles": false,
   "hasCampaigns": false,
+  "hasCareRequest": true,
   "hasDiscipleship": true,
   "hasEventsAccess": true,
   "hasEventsManage": false,
@@ -665,13 +703,17 @@ exports[`AuthLayout — props de navigation > Ministre 1`] = `
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
+  "myRegistrations": {
+    "reservations": false,
+    "responses": false,
+  },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
   ],
@@ -690,7 +732,7 @@ exports[`AuthLayout — props de navigation > Pasteur seul (profil pastoral, vue
 {
   "agendaLinks": [
     {
-      "href": "/agenda/pp-1",
+      "href": "/pastoral/agenda/pp-1",
       "label": "Mon agenda",
     },
   ],
@@ -713,11 +755,15 @@ exports[`AuthLayout — props de navigation > Pasteur seul (profil pastoral, vue
   "departments": [],
   "famillesUrl": "https://familles.iccrennes.fr",
   "hasAbsences": false,
-  "hasAccounting": false,
+  "hasAccounting": true,
+  "hasAccountingManage": false,
+  "hasAccountingStats": false,
+  "hasAccountingSubmit": false,
   "hasAnnouncementSheet": false,
   "hasAvailability": false,
   "hasBothRoles": false,
   "hasCampaigns": false,
+  "hasCareRequest": true,
   "hasDiscipleship": true,
   "hasEventsAccess": true,
   "hasEventsManage": false,
@@ -726,19 +772,23 @@ exports[`AuthLayout — props de navigation > Pasteur seul (profil pastoral, vue
   "hasMembersAccess": true,
   "hasMyPlanning": false,
   "hasPlanningAccess": false,
-  "hasReports": false,
+  "hasReports": true,
   "hasRooms": false,
   "hasShuttle": false,
   "hasTicketing": false,
   "hasTreasury": false,
   "headerColor": "#123456",
-  "homeHref": "/pastoral",
+  "homeHref": "/accueil",
   "integrationLinks": [],
   "isPastoral": true,
   "mediaLinks": [],
+  "myRegistrations": {
+    "reservations": false,
+    "responses": false,
+  },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
   ],
@@ -749,7 +799,7 @@ exports[`AuthLayout — props de navigation > Pasteur seul (profil pastoral, vue
     "image": null,
     "name": "Test User",
   },
-  "userRole": "DEPARTMENT_HEAD",
+  "userRole": "STAR",
 }
 `;
 
@@ -781,10 +831,14 @@ exports[`AuthLayout — props de navigation > Resp. département Communication, 
   "famillesUrl": "https://familles.iccrennes.fr",
   "hasAbsences": true,
   "hasAccounting": true,
+  "hasAccountingManage": false,
+  "hasAccountingStats": false,
+  "hasAccountingSubmit": true,
   "hasAnnouncementSheet": true,
   "hasAvailability": false,
   "hasBothRoles": false,
   "hasCampaigns": false,
+  "hasCareRequest": true,
   "hasDiscipleship": true,
   "hasEventsAccess": true,
   "hasEventsManage": false,
@@ -804,21 +858,24 @@ exports[`AuthLayout — props de navigation > Resp. département Communication, 
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/media",
+      "href": "/medias",
       "label": "Communication & Production",
       "matchPrefixes": [
-        "/media",
-        "/communication",
+        "/medias",
       ],
     },
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
+  "myRegistrations": {
+    "reservations": false,
+    "responses": false,
+  },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
   ],
@@ -865,10 +922,14 @@ exports[`AuthLayout — props de navigation > Resp. département Production Méd
   "famillesUrl": "https://familles.iccrennes.fr",
   "hasAbsences": true,
   "hasAccounting": true,
+  "hasAccountingManage": false,
+  "hasAccountingStats": false,
+  "hasAccountingSubmit": true,
   "hasAnnouncementSheet": true,
   "hasAvailability": false,
   "hasBothRoles": false,
   "hasCampaigns": false,
+  "hasCareRequest": true,
   "hasDiscipleship": true,
   "hasEventsAccess": true,
   "hasEventsManage": false,
@@ -886,44 +947,47 @@ exports[`AuthLayout — props de navigation > Resp. département Production Méd
   "homeHref": "/accueil",
   "integrationLinks": [
     {
-      "href": "/integration/requests",
-      "label": "Intégration",
+      "href": "/personnes/integration/dossiers",
+      "label": "Dossiers d'intégration",
     },
     {
-      "href": "/integration/leaders",
+      "href": "/personnes/integration/bergers",
       "label": "Bergers de famille",
     },
     {
-      "href": "/integration/parcours",
+      "href": "/personnes/integration/parcours",
       "label": "Parcours d'intégration",
     },
     {
-      "href": "/integration/stats",
+      "href": "/personnes/integration/stats",
       "label": "Statistiques intégration",
     },
     {
-      "href": "/integration/parametres",
+      "href": "/personnes/integration/parametres",
       "label": "Paramètres intégration",
     },
   ],
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/media",
+      "href": "/medias",
       "label": "Communication & Production",
       "matchPrefixes": [
-        "/media",
-        "/communication",
+        "/medias",
       ],
     },
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
+  "myRegistrations": {
+    "reservations": false,
+    "responses": false,
+  },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
   ],
@@ -942,7 +1006,7 @@ exports[`AuthLayout — props de navigation > Référent soins pastoraux 1`] = `
 {
   "agendaLinks": [
     {
-      "href": "/care",
+      "href": "/pastoral/suivi",
       "label": "Suivi pastoral",
     },
   ],
@@ -966,10 +1030,14 @@ exports[`AuthLayout — props de navigation > Référent soins pastoraux 1`] = `
   "famillesUrl": "https://familles.iccrennes.fr",
   "hasAbsences": false,
   "hasAccounting": false,
+  "hasAccountingManage": false,
+  "hasAccountingStats": false,
+  "hasAccountingSubmit": false,
   "hasAnnouncementSheet": false,
   "hasAvailability": false,
   "hasBothRoles": false,
   "hasCampaigns": false,
+  "hasCareRequest": true,
   "hasDiscipleship": false,
   "hasEventsAccess": false,
   "hasEventsManage": false,
@@ -989,11 +1057,20 @@ exports[`AuthLayout — props de navigation > Référent soins pastoraux 1`] = `
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
-  "requestLinks": [],
+  "myRegistrations": {
+    "reservations": false,
+    "responses": false,
+  },
+  "requestLinks": [
+    {
+      "href": "/demandes",
+      "label": "Mes demandes",
+    },
+  ],
   "servingLinks": [],
   "showStarEvents": false,
   "user": {
@@ -1009,11 +1086,11 @@ exports[`AuthLayout — props de navigation > STAR du Protocole 1`] = `
 {
   "agendaLinks": [
     {
-      "href": "/agenda",
-      "label": "Vue agenda",
+      "href": "/pastoral/agenda",
+      "label": "Agenda des pasteurs",
     },
     {
-      "href": "/agenda/schedule",
+      "href": "/pastoral/planification",
       "label": "Planification",
     },
   ],
@@ -1037,10 +1114,14 @@ exports[`AuthLayout — props de navigation > STAR du Protocole 1`] = `
   "famillesUrl": "https://familles.iccrennes.fr",
   "hasAbsences": false,
   "hasAccounting": false,
+  "hasAccountingManage": false,
+  "hasAccountingStats": false,
+  "hasAccountingSubmit": false,
   "hasAnnouncementSheet": false,
   "hasAvailability": false,
   "hasBothRoles": false,
   "hasCampaigns": false,
+  "hasCareRequest": true,
   "hasDiscipleship": false,
   "hasEventsAccess": false,
   "hasEventsManage": false,
@@ -1060,14 +1141,18 @@ exports[`AuthLayout — props de navigation > STAR du Protocole 1`] = `
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
+  "myRegistrations": {
+    "reservations": false,
+    "responses": false,
+  },
   "requestLinks": [
     {
-      "href": "/agenda/request",
-      "label": "Demande RDV pastoral",
+      "href": "/demandes",
+      "label": "Mes demandes",
     },
   ],
   "servingLinks": [],
@@ -1104,10 +1189,14 @@ exports[`AuthLayout — props de navigation > STAR lié, berger de famille 1`] =
   "famillesUrl": "https://familles.iccrennes.fr",
   "hasAbsences": false,
   "hasAccounting": false,
+  "hasAccountingManage": false,
+  "hasAccountingStats": false,
+  "hasAccountingSubmit": false,
   "hasAnnouncementSheet": false,
   "hasAvailability": true,
   "hasBothRoles": false,
   "hasCampaigns": false,
+  "hasCareRequest": true,
   "hasDiscipleship": false,
   "hasEventsAccess": false,
   "hasEventsManage": false,
@@ -1125,21 +1214,25 @@ exports[`AuthLayout — props de navigation > STAR lié, berger de famille 1`] =
   "homeHref": "/accueil",
   "integrationLinks": [
     {
-      "href": "/integration/requests",
-      "label": "Intégration",
+      "href": "/personnes/integration/dossiers",
+      "label": "Dossiers d'intégration",
     },
   ],
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
+  "myRegistrations": {
+    "reservations": false,
+    "responses": false,
+  },
   "requestLinks": [
     {
-      "href": "/agenda/request",
-      "label": "Demande RDV pastoral",
+      "href": "/demandes",
+      "label": "Mes demandes",
     },
   ],
   "servingLinks": [],
@@ -1157,19 +1250,19 @@ exports[`AuthLayout — props de navigation > Secrétaire avec profil pastoral p
 {
   "agendaLinks": [
     {
-      "href": "/agenda/pp-1",
+      "href": "/pastoral/agenda/pp-1",
       "label": "Mon agenda",
     },
     {
-      "href": "/agenda",
-      "label": "Vue agenda",
+      "href": "/pastoral/agenda",
+      "label": "Agenda des pasteurs",
     },
     {
-      "href": "/agenda/schedule",
+      "href": "/pastoral/planification",
       "label": "Planification",
     },
     {
-      "href": "/care",
+      "href": "/pastoral/suivi",
       "label": "Suivi pastoral",
     },
   ],
@@ -1190,7 +1283,7 @@ exports[`AuthLayout — props de navigation > Secrétaire avec profil pastoral p
   "configLinks": [
     {
       "href": "/admin/departments/functions",
-      "label": "Fonctions dép.",
+      "label": "Fonctions des départements",
     },
     {
       "href": "/admin/messages",
@@ -1201,7 +1294,7 @@ exports[`AuthLayout — props de navigation > Secrétaire avec profil pastoral p
       "label": "Accès & rôles",
     },
     {
-      "href": "/dons",
+      "href": "/finances/dons",
       "label": "Page de dons",
     },
   ],
@@ -1221,10 +1314,14 @@ exports[`AuthLayout — props de navigation > Secrétaire avec profil pastoral p
   "famillesUrl": "https://familles.iccrennes.fr",
   "hasAbsences": true,
   "hasAccounting": false,
+  "hasAccountingManage": false,
+  "hasAccountingStats": true,
+  "hasAccountingSubmit": false,
   "hasAnnouncementSheet": true,
   "hasAvailability": false,
   "hasBothRoles": false,
   "hasCampaigns": false,
+  "hasCareRequest": true,
   "hasDiscipleship": true,
   "hasEventsAccess": true,
   "hasEventsManage": true,
@@ -1242,48 +1339,51 @@ exports[`AuthLayout — props de navigation > Secrétaire avec profil pastoral p
   "homeHref": "/accueil",
   "integrationLinks": [
     {
-      "href": "/integration/requests",
-      "label": "Intégration",
+      "href": "/personnes/integration/dossiers",
+      "label": "Dossiers d'intégration",
     },
     {
-      "href": "/integration/leaders",
+      "href": "/personnes/integration/bergers",
       "label": "Bergers de famille",
     },
     {
-      "href": "/integration/parcours",
+      "href": "/personnes/integration/parcours",
       "label": "Parcours d'intégration",
     },
     {
-      "href": "/integration/stats",
+      "href": "/personnes/integration/stats",
       "label": "Statistiques intégration",
     },
     {
-      "href": "/integration/parametres",
+      "href": "/personnes/integration/parametres",
       "label": "Paramètres intégration",
     },
   ],
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/media",
+      "href": "/medias",
       "label": "Communication & Production",
       "matchPrefixes": [
-        "/media",
-        "/communication",
+        "/medias",
       ],
     },
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
+  "myRegistrations": {
+    "reservations": false,
+    "responses": false,
+  },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
     {
-      "href": "/secretariat/requests",
+      "href": "/demandes/traitement",
       "label": "Traitement des demandes",
     },
   ],
@@ -1302,15 +1402,15 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
 {
   "agendaLinks": [
     {
-      "href": "/agenda",
-      "label": "Vue agenda",
+      "href": "/pastoral/agenda",
+      "label": "Agenda des pasteurs",
     },
     {
-      "href": "/agenda/schedule",
+      "href": "/pastoral/planification",
       "label": "Planification",
     },
     {
-      "href": "/care",
+      "href": "/pastoral/suivi",
       "label": "Suivi pastoral",
     },
   ],
@@ -1330,7 +1430,11 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
   ],
   "configLinks": [
     {
-      "href": "/admin/churches",
+      "href": "/admin/eglise/church-1",
+      "label": "Paramètres de l'église",
+    },
+    {
+      "href": "/plateforme/eglises",
       "label": "Églises",
     },
     {
@@ -1343,11 +1447,11 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
     },
     {
       "href": "/admin/departments/functions",
-      "label": "Fonctions dép.",
+      "label": "Fonctions des départements",
     },
     {
-      "href": "/admin/rooms",
-      "label": "Salles",
+      "href": "/admin/salles",
+      "label": "Configuration des salles",
     },
     {
       "href": "/admin/messages",
@@ -1366,7 +1470,7 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
       "label": "Profils pastoraux",
     },
     {
-      "href": "/dons",
+      "href": "/finances/dons",
       "label": "Page de dons",
     },
     {
@@ -1374,28 +1478,28 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
       "label": "Historique",
     },
     {
-      "href": "/admin/backups",
+      "href": "/plateforme/backups",
       "label": "Sauvegardes",
     },
     {
-      "href": "/admin/api",
+      "href": "/plateforme/api",
       "label": "API",
     },
     {
-      "href": "/admin/app-icon",
+      "href": "/plateforme/app-icon",
       "label": "Icône de l'application",
     },
     {
-      "href": "/admin/site-domains",
+      "href": "/plateforme/site-domains",
       "label": "Domaines des sites",
     },
     {
-      "href": "/admin/assistant",
+      "href": "/plateforme/assistant",
       "label": "Assistant",
     },
     {
-      "href": "/admin/mcp",
-      "label": "Assistants IA (MCP)",
+      "href": "/plateforme/mcp",
+      "label": "Assistants IA",
     },
   ],
   "currentChurchId": "church-1",
@@ -1414,10 +1518,14 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
   "famillesUrl": "https://familles.iccrennes.fr",
   "hasAbsences": true,
   "hasAccounting": true,
+  "hasAccountingManage": true,
+  "hasAccountingStats": true,
+  "hasAccountingSubmit": true,
   "hasAnnouncementSheet": true,
   "hasAvailability": false,
   "hasBothRoles": false,
   "hasCampaigns": true,
+  "hasCareRequest": true,
   "hasDiscipleship": true,
   "hasEventsAccess": true,
   "hasEventsManage": true,
@@ -1435,54 +1543,57 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
   "homeHref": "/accueil",
   "integrationLinks": [
     {
-      "href": "/integration/requests",
-      "label": "Intégration",
+      "href": "/personnes/integration/dossiers",
+      "label": "Dossiers d'intégration",
     },
     {
-      "href": "/integration/leaders",
+      "href": "/personnes/integration/bergers",
       "label": "Bergers de famille",
     },
     {
-      "href": "/integration/parcours",
+      "href": "/personnes/integration/parcours",
       "label": "Parcours d'intégration",
     },
     {
-      "href": "/integration/stats",
+      "href": "/personnes/integration/stats",
       "label": "Statistiques intégration",
     },
     {
-      "href": "/integration/parametres",
+      "href": "/personnes/integration/parametres",
       "label": "Paramètres intégration",
     },
   ],
   "isPastoral": false,
   "mediaLinks": [
     {
-      "href": "/media",
+      "href": "/medias",
       "label": "Communication & Production",
       "matchPrefixes": [
-        "/media",
-        "/communication",
+        "/medias",
       ],
     },
     {
-      "href": "/audio",
+      "href": "/medias/audio",
       "label": "Audio",
     },
   ],
+  "myRegistrations": {
+    "reservations": false,
+    "responses": false,
+  },
   "requestLinks": [
     {
-      "href": "/requests",
+      "href": "/demandes",
       "label": "Mes demandes",
     },
     {
-      "href": "/secretariat/requests",
+      "href": "/demandes/traitement",
       "label": "Traitement des demandes",
     },
   ],
   "servingLinks": [
     {
-      "href": "/candidatures",
+      "href": "/personnes/candidatures",
       "label": "Candidatures",
     },
   ],
@@ -1515,7 +1626,7 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
   ],
   "configLinks": [
     {
-      "href": "/admin/churches",
+      "href": "/plateforme/eglises",
       "label": "Églises",
     },
     {
@@ -1528,11 +1639,11 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
     },
     {
       "href": "/admin/departments/functions",
-      "label": "Fonctions dép.",
+      "label": "Fonctions des départements",
     },
     {
-      "href": "/admin/rooms",
-      "label": "Salles",
+      "href": "/admin/salles",
+      "label": "Configuration des salles",
     },
     {
       "href": "/admin/messages",
@@ -1551,7 +1662,7 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
       "label": "Profils pastoraux",
     },
     {
-      "href": "/dons",
+      "href": "/finances/dons",
       "label": "Page de dons",
     },
     {
@@ -1559,28 +1670,28 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
       "label": "Historique",
     },
     {
-      "href": "/admin/backups",
+      "href": "/plateforme/backups",
       "label": "Sauvegardes",
     },
     {
-      "href": "/admin/api",
+      "href": "/plateforme/api",
       "label": "API",
     },
     {
-      "href": "/admin/app-icon",
+      "href": "/plateforme/app-icon",
       "label": "Icône de l'application",
     },
     {
-      "href": "/admin/site-domains",
+      "href": "/plateforme/site-domains",
       "label": "Domaines des sites",
     },
     {
-      "href": "/admin/assistant",
+      "href": "/plateforme/assistant",
       "label": "Assistant",
     },
     {
-      "href": "/admin/mcp",
-      "label": "Assistants IA (MCP)",
+      "href": "/plateforme/mcp",
+      "label": "Assistants IA",
     },
   ],
   "currentChurchId": null,
@@ -1588,10 +1699,14 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
   "famillesUrl": "https://familles.iccrennes.fr",
   "hasAbsences": false,
   "hasAccounting": false,
+  "hasAccountingManage": false,
+  "hasAccountingStats": false,
+  "hasAccountingSubmit": false,
   "hasAnnouncementSheet": false,
   "hasAvailability": false,
   "hasBothRoles": false,
   "hasCampaigns": false,
+  "hasCareRequest": false,
   "hasDiscipleship": false,
   "hasEventsAccess": false,
   "hasEventsManage": true,
@@ -1610,6 +1725,10 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
   "integrationLinks": [],
   "isPastoral": false,
   "mediaLinks": [],
+  "myRegistrations": {
+    "reservations": false,
+    "responses": false,
+  },
   "requestLinks": [],
   "servingLinks": [],
   "showStarEvents": false,
@@ -1618,6 +1737,6 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
     "image": null,
     "name": "Test User",
   },
-  "userRole": "DEPARTMENT_HEAD",
+  "userRole": "SUPER_ADMIN",
 }
 `;

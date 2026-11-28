@@ -78,7 +78,7 @@ describe("collectEventChangeNotices (spec 059)", () => {
     const { items } = await collectEventChangeNotices(tx, "church-1", [moved()], { now });
     const users = byUser(items);
     expect(users["u-head"].message).toContain("Personnes concernées : Louange (1).");
-    expect(users["u-head"].link).toBe("/dashboard");
+    expect(users["u-head"].link).toBe("/planning/departements");
     // STAR de l'Accueil sans compte : compté chez le Ministre, ne reçoit rien lui-même.
     expect(users["u-min"].message).toContain("Accueil (1)");
     expect(items).toHaveLength(3);
@@ -88,7 +88,7 @@ describe("collectEventChangeNotices (spec 059)", () => {
     setup({ plannings: [planned("evt-1", "dept-L", louange, ["u-head"])] });
     const { items } = await collectEventChangeNotices(tx, "church-1", [moved()], { now });
     expect(items).toHaveLength(1);
-    expect(items[0]).toMatchObject({ userId: "u-head", link: "/dashboard" });
+    expect(items[0]).toMatchObject({ userId: "u-head", link: "/planning/departements" });
     expect(items[0].message).toContain("Vous êtes vous-même planifié.");
   });
 

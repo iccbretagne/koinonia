@@ -2,50 +2,51 @@ import { readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, it, expect } from "vitest";
 import { buildBreadcrumb, buildSpaces, parentLink, type NavigationInput } from "../navigation";
+import { SCREEN_META, screenOf } from "../paths";
 
 /** Toutes les sections ouvertes : chaque page de `(auth)` trouve son espace. */
 const everything: NavigationInput = {
   departments: [{ id: "d1", name: "Son", ministryName: "Louange" }],
   configLinks: [
-    { href: "/admin/churches", label: "Églises" },
+    { href: "/plateforme/eglises", label: "Églises" },
     { href: "/admin/ministries", label: "Ministères" },
     { href: "/admin/departments", label: "Départements" },
     { href: "/admin/departments/functions", label: "Fonctions dép." },
-    { href: "/admin/rooms", label: "Salles" },
+    { href: "/admin/salles", label: "Salles" },
     { href: "/admin/messages", label: "Messages système" },
     { href: "/admin/users", label: "Utilisateurs" },
     { href: "/admin/access", label: "Accès & rôles" },
     { href: "/admin/pastoral-profiles", label: "Profils pastoraux" },
-    { href: "/dons", label: "Page de dons" },
+    { href: "/finances/dons", label: "Page de dons" },
     { href: "/admin/audit-logs", label: "Historique" },
-    { href: "/admin/backups", label: "Sauvegardes" },
-    { href: "/admin/api", label: "API" },
-    { href: "/admin/app-icon", label: "Icône de l'application" },
-    { href: "/admin/site-domains", label: "Domaines des sites" },
-    { href: "/admin/assistant", label: "Assistant" },
-    { href: "/admin/mcp", label: "Assistants IA (MCP)" },
+    { href: "/plateforme/backups", label: "Sauvegardes" },
+    { href: "/plateforme/api", label: "API" },
+    { href: "/plateforme/app-icon", label: "Icône de l'application" },
+    { href: "/plateforme/site-domains", label: "Domaines des sites" },
+    { href: "/plateforme/assistant", label: "Assistant" },
+    { href: "/plateforme/mcp", label: "Assistants IA (MCP)" },
   ],
   requestLinks: [
-    { href: "/requests", label: "Mes demandes" },
-    { href: "/secretariat/requests", label: "Traitement des demandes" },
+    { href: "/demandes", label: "Mes demandes" },
+    { href: "/demandes/traitement", label: "Traitement des demandes" },
   ],
   mediaLinks: [
-    { href: "/media", label: "Communication & Production", matchPrefixes: ["/media", "/communication"] },
-    { href: "/audio", label: "Audio" },
+    { href: "/medias", label: "Communication & Production", matchPrefixes: ["/medias", "/communication"] },
+    { href: "/medias/audio", label: "Audio" },
   ],
   agendaLinks: [
-    { href: "/agenda", label: "Vue agenda" },
-    { href: "/agenda/schedule", label: "Planification" },
-    { href: "/care", label: "Suivi pastoral" },
+    { href: "/pastoral/agenda", label: "Vue agenda" },
+    { href: "/pastoral/planification", label: "Planification" },
+    { href: "/pastoral/suivi", label: "Suivi pastoral" },
   ],
   integrationLinks: [
-    { href: "/integration/requests", label: "Intégration" },
-    { href: "/integration/leaders", label: "Bergers de famille" },
-    { href: "/integration/parcours", label: "Parcours d'intégration" },
-    { href: "/integration/stats", label: "Statistiques intégration" },
-    { href: "/integration/parametres", label: "Paramètres intégration" },
+    { href: "/personnes/integration/dossiers", label: "Intégration" },
+    { href: "/personnes/integration/bergers", label: "Bergers de famille" },
+    { href: "/personnes/integration/parcours", label: "Parcours d'intégration" },
+    { href: "/personnes/integration/stats", label: "Statistiques intégration" },
+    { href: "/personnes/integration/parametres", label: "Paramètres intégration" },
   ],
-  servingLinks: [{ href: "/candidatures", label: "Candidatures" }],
+  servingLinks: [{ href: "/personnes/candidatures", label: "Candidatures" }],
   hasDiscipleship: true,
   hasEventsAccess: true,
   hasEventsManage: true,
@@ -58,6 +59,8 @@ const everything: NavigationInput = {
   hasAvailability: true,
   hasRooms: true,
   hasAccounting: true,
+  hasAccountingManage: true,
+  hasAccountingStats: true,
   hasShuttle: true,
   hasTreasury: true,
   hasTicketing: true,
@@ -96,50 +99,50 @@ describe("navigation — sous-pages nommées", () => {
 
   it("même segment, page différente selon l'espace", () => {
     const last = (p: string) => buildBreadcrumb(spaces, p).at(-1)?.label;
-    expect(last("/media/events/x1")).toBe("Événement");
-    expect(last("/admin/events/x1")).toBe("Événement");
-    expect(last("/admin/events/x1/report")).toBe("Compte rendu");
-    expect(last("/planning/events")).toBe("Agenda de l'église");
-    expect(last("/disponibilites/collectes")).toBe("Collectes");
-    expect(last("/collectes/x1")).toBe("Campagne");
-    expect(last("/care/request")).toBe("Demande de RDV");
-    expect(last("/care/requests/x1")).toBe("Demande");
-    expect(last("/billetterie/x1/controle")).toBe("Contrôle d'entrée");
+    expect(last("/medias/photos/x1")).toBe("Événement");
+    expect(last("/evenements/gestion/x1")).toBe("Événement");
+    expect(last("/evenements/comptes-rendus/x1")).toBe("Compte rendu");
+    expect(last("/evenements")).toBe("Calendrier de l'église");
+    expect(last("/planning/disponibilites/collectes")).toBe("Collectes de disponibilités");
+    expect(last("/demandes/questionnaires/x1")).toBe("Campagne");
+    expect(last("/demandes/rendez-vous")).toBe("Demander un rendez-vous");
+    expect(last("/pastoral/suivi/rendez-vous/x1")).toBe("Demande de rendez-vous");
+    expect(last("/evenements/billetterie/x1/controle")).toBe("Contrôle d'entrée");
     expect(last("/profile/assistants")).toBe("Assistants connectés");
-    expect(last("/rooms/checklists")).toBe("Contrôle des mains courantes");
+    expect(last("/ressources/salles/checklists")).toBe("Contrôle des mains courantes");
   });
 
   it("sous-pages nommées par leur objet : détails, créations, pages hors espace", () => {
     const last = (p: string, dept: string | null = null) => buildBreadcrumb(spaces, p, dept).at(-1)?.label;
-    expect(last("/accounting/requests/x1")).toBe("Demande");
-    expect(last("/accounting/requests/new")).toBe("Nouvelle demande");
-    expect(last("/requests/new")).toBe("Nouvelle demande");
-    expect(last("/admin/messages/new")).toBe("Nouveau message");
+    expect(last("/finances/demandes/x1")).toBe("Demande comptable");
+    expect(last("/finances/demandes/nouvelle")).toBe("Nouvelle demande comptable");
+    expect(last("/demandes/nouvelle")).toBe("Nouvelle demande");
+    expect(last("/admin/messages/nouveau")).toBe("Nouveau message");
     expect(last("/admin/messages/x1")).toBe("Message");
-    expect(last("/admin/users/new")).toBe("Nouvel utilisateur");
+    expect(last("/admin/users/nouveau")).toBe("Nouvel utilisateur");
     expect(last("/admin/access/users/x1")).toBe("Utilisateur");
-    expect(last("/admin/churches/x1")).toBe("Église");
-    expect(last("/dons/slide")).toBe("Slide de projection");
-    expect(last("/agenda/schedule")).toBe("Planification");
-    expect(last("/agenda/new")).toBe("Nouvelle entrée");
-    expect(last("/agenda/x1")).toBe("Profil pastoral");
-    expect(last("/candidatures/entretiens")).toBe("Entretiens");
-    expect(last("/candidatures/ma-fiche")).toBe("Ma fiche");
-    expect(last("/formulaires/mes-reponses")).toBe("Mes réponses");
-    expect(last("/billetterie/x1/badges")).toBe("Badges");
-    expect(last("/billetterie/x1/images")).toBe("Images du site");
-    expect(last("/billetterie/mes-reservations")).toBe("Mes réservations");
-    expect(last("/media/events/new")).toBe("Nouvel événement");
-    expect(last("/jobs/freelance/missions/new")).toBe("Nouvelle mission");
+    expect(last("/admin/eglise/x1")).toBe("Paramètres de l'église");
+    expect(last("/finances/dons/slide")).toBe("Slide de projection");
+    expect(last("/pastoral/planification")).toBe("Planification");
+    expect(last("/pastoral/agenda/nouveau")).toBe("Nouvelle entrée");
+    expect(last("/pastoral/agenda/x1")).toBe("Profil pastoral");
+    expect(last("/personnes/candidatures/entretiens")).toBe("Entretiens");
+    expect(last("/profile/candidature")).toBe("Ma fiche");
+    expect(last("/evenements/mes-inscriptions?vue=formulaires")).toBe("Mes inscriptions");
+    expect(last("/evenements/billetterie/x1/badges")).toBe("Badges");
+    expect(last("/evenements/billetterie/x1/images")).toBe("Images du site");
+    expect(last("/evenements/mes-inscriptions")).toBe("Mes inscriptions");
+    expect(last("/medias/photos/nouveau")).toBe("Nouvel événement");
+    expect(last("/ressources/offres/freelance/missions/nouveau")).toBe("Nouvelle mission");
     expect(last("/messages/x1")).toBe("Message de l'administration");
     expect(last("/mcp/autoriser")).toBe("Connecter un assistant IA");
-    expect(buildBreadcrumb(spaces, "/dashboard/stats", "d1").map((c) => c.label)).toEqual(["Planning", "Louange", "Son", "Statistiques"]);
-    expect(buildBreadcrumb(spaces, "/dashboard", "d1").at(-1)?.label).toBe("Son");
+    expect(buildBreadcrumb(spaces, "/planning/departements/statistiques", "d1").map((c) => c.label)).toEqual(["Planning", "Louange", "Son", "Statistiques du département"]);
+    expect(buildBreadcrumb(spaces, "/planning/departements", "d1").at(-1)?.label).toBe("Son");
   });
 
   it("chaque page connectée hors redirection a un fil d'Ariane", () => {
-    const redirects = ["/absences", "/admin"];
-    const pastoral = (p: string) => p === "/pastoral" || p.startsWith("/pastoral/");
+    const redirects = ["/planning/disponibilites/equipe", "/admin", "/finances", "/personnes", "/plateforme", "/ressources"];
+    const pastoral = (p: string) => p === "/pastoral" || p.startsWith("/pastoral/") || p === "/personnes/mes-membres";
     const empty = pages.filter((p) => !redirects.includes(p) && !pastoral(p) && buildBreadcrumb(spaces, p).length === 0);
     expect(empty).toEqual([]);
   });
@@ -155,7 +158,7 @@ describe("navigation — sous-pages nommées", () => {
       hasAvailability: true,
       homeHref: "/accueil",
     });
-    expect(buildBreadcrumb(star, "/planning/events").map((c) => c.label)).toEqual(["Agenda de l'église"]);
+    expect(buildBreadcrumb(star, "/evenements").map((c) => c.label)).toEqual(["Calendrier de l'église"]);
     expect(buildBreadcrumb(star, "/profile/assistants").map((c) => c.label)).toEqual(["Mon profil", "Assistants connectés"]);
   });
 
@@ -163,13 +166,23 @@ describe("navigation — sous-pages nommées", () => {
     const star = buildSpaces({ departments: [], configLinks: [], requestLinks: [], mediaLinks: [], hasMyPlanning: true, showStarEvents: true, homeHref: "/accueil" });
     for (const sp of [spaces, star]) {
       const navHrefs = new Set(sp.flatMap((s) => s.pages).map((p) => p.href.split("?")[0]));
-      const missing = pages.filter((p) => !navHrefs.has(p) && !["/accueil", "/absences", "/admin", "/admin/jobs", "/pastoral", "/dashboard"].includes(p) && !parentLink(sp, p, "d1"));
+      // Pages de premier niveau d'un autre rôle (hors de ses espaces) et pages de compte : pas de retour.
+    const topLevel = ["/accueil", "/planning/disponibilites/equipe", "/admin", "/ressources/offres", "/pastoral", "/planning/departements", "/finances/statistiques", "/evenements"];
+    // Un écran sans parent dans le registre est une page d'espace d'un autre rôle : pas de retour.
+    const hasParent = (p: string) => {
+      const ref = screenOf(p);
+      return !ref || SCREEN_META[ref.key].parent !== null || SCREEN_META[ref.key].orHome === true;
+    };
+    const missing = pages.filter((p) => !navHrefs.has(p) && !topLevel.includes(p) && hasParent(p) && !parentLink(sp, p, "d1"));
       expect(missing).toEqual([]);
     }
     expect(parentLink(star, "/messages/x1")).toEqual({ href: "/accueil", label: "Accueil" });
     expect(parentLink(star, "/mcp/autoriser")).toEqual({ href: "/accueil", label: "Accueil" });
-    expect(parentLink(star, "/pastoral/members")).toEqual({ href: "/pastoral", label: "Accueil" });
-    expect(parentLink(star, "/collectes/r/x1")).toEqual({ href: "/accueil", label: "Accueil" });
-    expect(parentLink(spaces, "/collectes/r/x1")).toEqual({ href: "/collectes", label: "Questionnaires" });
+    expect(parentLink(star, "/personnes/mes-membres")).toEqual({ href: "/accueil", label: "Accueil" });
+    // Sans l'espace Questionnaires : retour à l'Accueil, d'où le questionnaire est proposé.
+    expect(parentLink(star, "/demandes/questionnaires/r/x1")).toEqual({ href: "/accueil", label: "Accueil" });
+    expect(parentLink(star, "/profile")).toEqual({ href: "/accueil", label: "Accueil" });
+    expect(parentLink(star, "/guide")).toEqual({ href: "/accueil", label: "Accueil" });
+    expect(parentLink(spaces, "/demandes/questionnaires/r/x1")).toEqual({ href: "/demandes/questionnaires", label: "Questionnaires" });
   });
 });

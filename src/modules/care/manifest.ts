@@ -18,7 +18,7 @@ export const careModule = defineModule({
   dependsOn: ["core"],
 
   routes: {
-    authenticated: [{ path: "/care" }],
+    authenticated: [{ path: "/pastoral/suivi" }, { path: "/demandes/rendez-vous" }],
     api: [{ path: "/api/care" }],
     // Formulaire public de demande de RDV (Turnstile-protégé) — adresse historique
     // conservée (ADR-0015), déplacée depuis `agenda`.
@@ -48,9 +48,5 @@ export const careModule = defineModule({
       defaultEmail: true,
       visibleWith: ["care:qualify", "care:view"],
     },
-  ],
-
-  navigation: [
-    { label: "Suivi pastoral", icon: "heart", href: "/care", permission: "care:view" },
   ],
 });

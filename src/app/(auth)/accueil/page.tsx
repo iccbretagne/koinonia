@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import {
   CalendarCheck,
@@ -28,12 +29,18 @@ import { buttonClasses } from "@/components/ui/button-classes";
 import { serviceStatusDescriptor } from "@/components/ui/status";
 import { NextServiceCard } from "../planning/MyPlanningView";
 import { loadMyPlanning } from "../planning/my-planning-data";
-import { loadMyRequests } from "../requests/my-requests-data";
-import { REQUEST_TYPE_LABEL, requestStatus, requestTypeIcon } from "../requests/request-display";
+import { loadMyRequests } from "../demandes/my-requests-data";
+import { REQUEST_TYPE_LABEL, requestStatus, requestTypeIcon } from "../demandes/request-display";
 import { pickFirstName } from "./first-name";
 import InstallCard from "./InstallCard";
+import PastoralDashboard from "./PastoralDashboard";
+import { cookies } from "next/headers";
+import { isPastoralView } from "@/lib/view-mode";
+import TodoBlock from "./TodoBlock";
+import { SkeletonList } from "@/components/ui/Skeleton";
 import { countUnstaffedDepartments, getStaffingGapViewer } from "@/modules/planning";
 import type { OpenAssignment } from "@/modules/campaigns";
+import { paths } from "@/lib/paths";
 
 /**
  * Accueil « Aujourd'hui » (spec 055, lot 4) : assemble, pour le rôle connecté, des données que
@@ -48,6 +55,9 @@ import type { OpenAssignment } from "@/modules/campaigns";
  * - Raccourcis : uniquement vers les sections que les mêmes gardes ouvrent déjà.
  * - Questionnaires à remplir : `listMyOpenAssignments`, affectations non soumises des campagnes
  *   ouvertes de l'église courante dont le compte est répondant (comme `/collectes`) ; rien si aucune.
+ *
+ * - À traiter (spec 092) : `TodoBlock`, les files de travail de la personne, chacune avec le compte
+ *   et la garde de son écran ; rendu en différé (`Suspense`), le reste de l'Accueil n'attend pas.
  *
  * Chaque garde passe par `requireChurchPermission`, exactement comme la page source.
  */
@@ -124,7 +134,7 @@ function agendaRowsOf(myPlanning: MyPlanning | null, upcomingServices: UpcomingS
       title: p.eventDepartment.event.title,
       meta: `${formatTime(new Date(p.eventDepartment.event.date))} · ${p.eventDepartment.department.name}`,
       status: serviceStatusDescriptor(p.status),
-      href: `/events/${p.eventDepartment.event.id}/star-view`,
+      href: paths.events.starView(p.eventDepartment.event.id),
     })),
     ...upcomingTeamEvents.map((t) => {
       const locationSuffix = t.location ? ` · ${t.location}` : "";
@@ -134,7 +144,7 @@ function agendaRowsOf(myPlanning: MyPlanning | null, upcomingServices: UpcomingS
         title: t.title,
         meta: `${formatTime(new Date(t.startsAt))} · ${t.department.name}${locationSuffix}`,
         status: null,
-        href: "/planning",
+        href: paths.planning(),
       };
     }),
   ]
@@ -153,19 +163,19 @@ function shortcutsFor(access: {
 }): Shortcut[] {
   let agendaShortcut: Shortcut[] = [];
   if (access.canEvents) {
-    agendaShortcut = [{ href: "/events", label: "Agenda de l'église", description: "Calendrier des événements", icon: CalendarDays }];
+    agendaShortcut = [{ href: paths.events(), label: "Agenda de l'église", description: "Calendrier des événements", icon: CalendarDays }];
   } else if (access.canPlanning) {
-    agendaShortcut = [{ href: "/planning/events", label: "Agenda de l'église", description: "Les événements de la semaine", icon: CalendarDays }];
+    agendaShortcut = [{ href: paths.events(), label: "Agenda de l'église", description: "Les événements de la semaine", icon: CalendarDays }];
   }
   return [
-    ...(access.hasMyPlanning ? [{ href: "/planning", label: "Mon planning", description: "Mes services du mois", icon: CalendarCheck }] : []),
+    ...(access.hasMyPlanning ? [{ href: paths.planning(), label: "Mon planning", description: "Mes services du mois", icon: CalendarCheck }] : []),
     ...(access.canDepartment
-      ? [{ href: "/dashboard", label: "Planning", description: "Saisir le planning d'un département", icon: LayoutGrid }]
+      ? [{ href: paths.dashboard(), label: "Planning", description: "Saisir le planning d'un département", icon: LayoutGrid }]
       : []),
     ...agendaShortcut,
-    ...(access.canRequests ? [{ href: "/requests", label: "Mes demandes", description: "Annonces, visuels, événements", icon: Inbox }] : []),
-    ...(access.canAudio ? [{ href: "/audio", label: "Audio", description: "Réécouter les cultes", icon: Headphones }] : []),
-    { href: "/profile", label: "Mon profil", description: "Compte, apparence, notifications", icon: UserRound },
+    ...(access.canRequests ? [{ href: paths.requests(), label: "Mes demandes", description: "Annonces, visuels, événements", icon: Inbox }] : []),
+    ...(access.canAudio ? [{ href: paths.audio(), label: "Audio", description: "Réécouter les cultes", icon: Headphones }] : []),
+    { href: paths.profile(), label: "Mon profil", description: "Compte, apparence, notifications", icon: UserRound },
   ];
 }
 
@@ -203,7 +213,7 @@ function ServicesSection({
 
       {agendaRows.length > 0 && (
         <>
-          <SectionTitle title="Mes prochains rendez-vous" href="/planning" linkLabel="Voir mon planning" />
+          <SectionTitle title="Mes prochains rendez-vous" href={paths.planning()} linkLabel="Voir mon planning" />
           <ul className="overflow-hidden rounded-card border border-line bg-surface">
             {agendaRows.map((row) => (
               <li key={row.key} className="border-t border-line first:border-t-0">
@@ -247,7 +257,7 @@ function ChurchEventsSection({
       <div id="today-events">
         <SectionTitle
           title={canEvents ? "Prochains événements de l'église" : "Cette semaine à l'église"}
-          href={canEvents ? "/events" : "/planning/events"}
+          href={paths.events()}
           linkLabel="Voir tout l'agenda"
         />
       </div>
@@ -263,7 +273,7 @@ function ChurchEventsSection({
         <ul className="overflow-hidden rounded-card border border-line bg-surface">
           {upcomingEvents.map((event) => (
             <li key={event.id} className="border-t border-line first:border-t-0">
-              <Link href={`/events/${event.id}/star-view`} className={rowLinkClasses}>
+              <Link href={paths.events.starView(event.id)} className={rowLinkClasses}>
                 <DateTile date={event.date} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{event.title}</p>
@@ -290,7 +300,7 @@ function RequestsSection({ openRequests }: { readonly openRequests: MyRequest[] 
   return (
     <section aria-labelledby="today-requests" className="flex flex-col gap-3">
       <div id="today-requests">
-        <SectionTitle title="Mes demandes en cours" href="/requests" linkLabel="Voir toutes mes demandes" />
+        <SectionTitle title="Mes demandes en cours" href={paths.requests()} linkLabel="Voir toutes mes demandes" />
       </div>
       {openRequests.length === 0 ? (
         <div className="rounded-card border border-line bg-surface">
@@ -298,7 +308,7 @@ function RequestsSection({ openRequests }: { readonly openRequests: MyRequest[] 
             icon={Inbox}
             title="Aucune demande en cours"
             action={
-              <Link href="/requests/new" className={buttonClasses("secondary", "sm")}>
+              <Link href={paths.requests.newRequest()} className={buttonClasses("secondary", "sm")}>
                 <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
                 Nouvelle demande
               </Link>
@@ -313,7 +323,7 @@ function RequestsSection({ openRequests }: { readonly openRequests: MyRequest[] 
             const status = requestStatus(req.status);
             return (
               <li key={req.id} className="border-t border-line first:border-t-0">
-                <Link href="/requests" className={rowLinkClasses}>
+                <Link href={paths.requests()} className={rowLinkClasses}>
                   <span className="grid size-10 shrink-0 place-items-center rounded-full bg-brand-soft text-brand-text">
                     <Icon aria-hidden="true" className="size-5" strokeWidth={1.75} />
                   </span>
@@ -357,12 +367,12 @@ function QuestionnairesSection({ questionnaires }: { readonly questionnaires: Op
   return (
     <section aria-labelledby="today-questionnaires" className="flex flex-col gap-3">
       <div id="today-questionnaires">
-        <SectionTitle title="Questionnaires à remplir" href="/collectes" linkLabel="Voir les questionnaires" />
+        <SectionTitle title="Questionnaires à remplir" href={paths.collectes()} linkLabel="Voir les questionnaires" />
       </div>
       <ul className="overflow-hidden rounded-card border border-line bg-surface">
         {questionnaires.slice(0, MAX_QUESTIONNAIRES).map((q) => (
           <li key={q.id} className="border-t border-line first:border-t-0">
-            <Link href={`/collectes/r/${q.id}`} className={rowLinkClasses}>
+            <Link href={paths.collectes.reponse(q.id)} className={rowLinkClasses}>
               <span className="grid size-10 shrink-0 place-items-center rounded-full bg-brand-soft text-brand-text">
                 <ClipboardList aria-hidden="true" className="size-5" strokeWidth={1.75} />
               </span>
@@ -436,6 +446,20 @@ export default async function TodayPage() {
     return (
       <EmptyState icon={Church} title="Aucune église sélectionnée" description="Choisissez une église dans le menu." />
     );
+  }
+
+  // Vue pastorale (spec 092, lot 3) : l'Accueil rend le tableau pastoral (ex-`/pastoral`).
+  const isPastoralChurch = (session.user.pastoralChurchIds ?? []).includes(churchId);
+  if (
+    isPastoralChurch &&
+    isPastoralView({
+      isPastoral: isPastoralChurch,
+      hasClassicRole: session.user.churchRoles.some((r) => r.churchId === churchId),
+      viewModeCookie: (await cookies()).get("koinonia-view-mode")?.value,
+    })
+  ) {
+    const pastoral = await PastoralDashboard({ session, currentChurchId: churchId });
+    if (pastoral) return pastoral;
   }
 
   const planningModule = registry.has("planning");
@@ -525,6 +549,10 @@ export default async function TodayPage() {
 
       <div className={`grid grid-cols-1 gap-6 ${hasAside ? "lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]" : ""}`}>
         <div className="flex min-w-0 flex-col gap-6">
+          <Suspense fallback={<SkeletonList rows={2} label="Chargement des éléments à traiter…" />}>
+            <TodoBlock session={session} churchId={churchId} />
+          </Suspense>
+
           {questionnaires.length > 0 && <QuestionnairesSection questionnaires={questionnaires} />}
 
           {myPlanning && <ServicesSection myPlanning={myPlanning} nextService={nextService} agendaRows={agendaRows} />}

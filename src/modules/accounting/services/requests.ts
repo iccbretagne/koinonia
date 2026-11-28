@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { FinancialRequestType, Prisma } from "@/generated/prisma/client";
 import { sendEmail, buildAccountingNewRequestEmail, parseEmailList } from "@/lib/email";
+import { paths } from "@/lib/paths";
 
 /**
  * Création et notification des demandes financières, partagées par la route
@@ -53,7 +54,7 @@ export async function notifyAccountingNewRequest(churchId: string, req: RequestF
     submitterName:  req.submittedBy.name ?? req.submittedBy.email ?? "—",
     description:    req.description,
     churchName:     church!.name,
-    requestUrl:     `${appUrl}/accounting/requests/${req.id}`,
+    requestUrl:     `${appUrl}${paths.accounting.request(req.id)}`,
   });
 
   // Adresse institutionnelle configurée par l'église (church.accountingEmails, liste blanche :
@@ -70,7 +71,7 @@ export async function notifyAccountingNewRequest(churchId: string, req: RequestF
       type:    "ACCOUNTING_NEW_REQUEST",
       title:   "Nouvelle demande financière",
       message: `${req.type === "EXPENSE_REPORT" ? "Note de frais" : "Avance de budget"} : ${req.label}`,
-      link:    `/accounting/requests/${req.id}`,
+      link:    paths.accounting.request(req.id),
     },
     { email }
   );

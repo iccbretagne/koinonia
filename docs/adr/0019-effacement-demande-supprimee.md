@@ -66,3 +66,15 @@ réécrire ou d'élaguer le journal.
 
 - Spec : `specs/057-suppression-demandes-pastorales/`
 - ADR-0001 (frontières de modules), ADR-0016 (notifications), ADR-0017 (permissions dédiées)
+
+## Amendement (spec 092) — 2026-11-27
+
+Les adresses d'écrans changent ([ADR-0033](0033-architecture-information-par-metier.md)). Le
+principe (retrouver les notifications d'un objet par leur lien) est conservé, avec trois règles :
+- le lien est construit par le registre des écrans (`src/lib/paths.ts`), jamais par un littéral,
+  à l'écriture comme à l'effacement ;
+- les liens déjà stockés (`Notification.link`) sont réécrits par le script de la bascule, pour
+  que les anciennes notifications restent retrouvables ;
+- pendant l'observation, l'effacement cherche l'ancienne **et** la nouvelle forme du lien
+  (intervalle entre le déploiement et le script) ; cette double recherche est retirée au passage
+  en redirections permanentes.

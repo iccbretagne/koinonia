@@ -1,6 +1,6 @@
 import { OpenAPIRegistry, OpenApiGeneratorV3, extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
-import { fullRouteTable } from "@/lib/module-routes";
+import { routeTable } from "@/lib/module-routes";
 import { isRawBody, type Access, type Contract, type HttpMethod, type Operation } from "./contract";
 
 /**
@@ -126,7 +126,7 @@ export function buildOpenApiDocument(entries: readonly ContractEntry[], version:
 
   const sorted = [...entries].sort((a, b) => a.path.localeCompare(b.path));
   for (const { path, contract } of sorted) {
-    const owner = fullRouteTable.resolve(path).owner ?? "noyau";
+    const owner = routeTable.resolveDeclared(path).owner ?? "noyau";
     for (const method of METHODS) {
       const op = contract[method];
       if (op) registerOperation(registry, path, owner, method, op);

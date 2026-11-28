@@ -93,7 +93,7 @@ describe("POST /api/accounting/requests — notification emails multiples", () =
 
     await vi.waitFor(() => expect(mockBuildEmail).toHaveBeenCalled());
     expect(mockBuildEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ requestUrl: "https://koinonia.example.org/accounting/requests/req-1" })
+      expect.objectContaining({ requestUrl: "https://koinonia.example.org/finances/demandes/req-1" })
     );
     vi.unstubAllEnvs();
   });

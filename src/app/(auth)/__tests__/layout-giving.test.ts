@@ -21,6 +21,8 @@ vi.mock("@/lib/registry", async (importOriginal) => {
   return { ...actual, registry };
 });
 vi.mock("next/headers", () => ({
+  // En-tête du proxy absent : la garde d'adresse (page-gates.ts) ne s'applique pas.
+  headers: () => Promise.resolve(new Headers()),
   cookies: () => Promise.resolve({ get: () => undefined, set: () => {} }),
 }));
 vi.mock("next/navigation", () => ({
@@ -45,6 +47,6 @@ describe("AuthLayout — module dons désactivé", () => {
     const element = await AuthLayout({ children: null as never });
     const { configLinks } = (element as unknown as { props: { configLinks: { href: string }[] } }).props;
     expect(configLinks.length).toBeGreaterThan(0);
-    expect(configLinks.map((l) => l.href)).not.toContain("/dons");
+    expect(configLinks.map((l) => l.href)).not.toContain("/finances/dons");
   });
 });

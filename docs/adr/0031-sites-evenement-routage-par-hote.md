@@ -59,3 +59,13 @@ donner accès à l'application (administration, API, Auth.js) ni voir ses cookie
 ## Références
 
 - Spec 084 (`specs/084-site-evenement/`), ADR-0012 (surface HTTP des modules), ADR-0022 (CSP).
+
+## Amendement (spec 092) — 2026-11-27
+
+Les anciennes adresses des écrans connectés sont redirigées par le proxy
+([ADR-0033](0033-architecture-information-par-metier.md)), **après** la branche des hôtes de
+site : aucune redirection ne s'applique sur un hôte de site ni un domaine dédié. Les pages d'un
+site (`accueil`, `billetterie`…) sont donc servies telles quelles, et `/billetterie` comme
+`/evenements/…` restent 404 sur un hôte de site. Les redirections ne passent jamais par
+`next.config.ts`, qui s'appliquerait avant ce routage. L'instantané `site-render.test.ts.snap`
+sert de garde-fou et ne doit pas changer.

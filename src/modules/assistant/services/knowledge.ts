@@ -1,5 +1,5 @@
 import type { AssistantViewer } from "@/core/assistant";
-import { fullRouteTable } from "@/lib/module-routes";
+import { routeTable } from "@/lib/module-routes";
 import { prisma } from "@/lib/prisma";
 import { BUILTIN_ENTRIES } from "../knowledge";
 import { ALL, type Audience, type KnowledgeEntry } from "../knowledge/types";
@@ -107,7 +107,7 @@ export async function loadKnowledge(now = Date.now()): Promise<LoadedKnowledge> 
 export function moduleOf(entry: Pick<KnowledgeEntry, "module" | "href">): string | null {
   if (entry.module) return entry.module;
   if (!entry.href) return null;
-  const owner = fullRouteTable.resolve(entry.href.split("?")[0]);
+  const owner = routeTable.resolveDeclared(entry.href.split("?")[0]);
   return owner.kind === "module" ? owner.owner : null;
 }
 

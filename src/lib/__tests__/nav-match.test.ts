@@ -3,16 +3,16 @@ import { matchesPath, activeHref } from "../nav-match";
 
 describe("matchesPath", () => {
   it("correspond à l'URL exacte et à ses sous-pages", () => {
-    expect(matchesPath("/audio", "/audio")).toBe(true);
-    expect(matchesPath("/audio/ecouter/abc", "/audio")).toBe(true);
+    expect(matchesPath("/medias/audio", "/medias/audio")).toBe(true);
+    expect(matchesPath("/medias/audio/ecouter/abc", "/medias/audio")).toBe(true);
   });
 
   it("ne confond pas deux segments qui partagent un préfixe", () => {
-    expect(matchesPath("/agenda/requests", "/agenda/request")).toBe(false);
+    expect(matchesPath("/pastoral/suivi", "/demandes/rendez-vous")).toBe(false);
   });
 
   it("ignore la query string du lien", () => {
-    expect(matchesPath("/dashboard", "/dashboard?dept=d1")).toBe(true);
+    expect(matchesPath("/planning/departements", "/planning/departements?dept=d1")).toBe(true);
   });
 });
 
@@ -24,10 +24,10 @@ describe("activeHref", () => {
   });
 
   it("n'allume pas Mon planning sur les événements STAR", () => {
-    expect(activeHref("/planning/events", ["/planning", "/planning/events"])).toBe("/planning/events");
+    expect(activeHref("/evenements", ["/planning", "/evenements"])).toBe("/evenements");
   });
 
   it("renvoie null quand aucun lien ne correspond", () => {
-    expect(activeHref("/profile", ["/planning", "/events"])).toBeNull();
+    expect(activeHref("/profile", ["/planning", "/evenements"])).toBeNull();
   });
 });

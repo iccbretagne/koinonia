@@ -199,7 +199,7 @@ describe("constructeur eventAction", () => {
     expect(execute).toHaveBeenCalledWith({ eventId: "tk-1", value: "x" }, ctx);
     expect(withAuditContext).toHaveBeenCalledWith({ via: "mcp" }, expect.any(Function));
     expect(logAudit).toHaveBeenCalledWith(expect.objectContaining({ entityType: "TicketingEvent", entityId: "tk-1", churchId: "c1" }));
-    expect(out.text).toContain("https://koinonia.test/billetterie/tk-1");
+    expect(out.text).toContain("https://koinonia.test/evenements/billetterie/tk-1");
   });
 
   it("confirmation refusée : jeton expiré, rôle perdu, données changées, règle du service", async () => {
@@ -313,7 +313,7 @@ describe("lot B : événement, état, options, plats", () => {
     expect(created.p.text).toContain("brouillon");
     expect(svc.createEvent).toHaveBeenCalledWith("c1", "user-1", expect.objectContaining({ title: "Nuit de la traversée", capacity: 150 }));
     expect(created.c.text).toContain("https://koinonia.test/inscription/icc/nuit");
-    expect(created.c.text).toContain("https://koinonia.test/billetterie/tk-9");
+    expect(created.c.text).toContain("https://koinonia.test/evenements/billetterie/tk-9");
 
     const updated = await full("update_ticketing_event", {
       event: "tk-1",

@@ -31,12 +31,15 @@ vi.mock("../../planning/MyPlanningView", () => ({
 const mockLoadMyPlanning = vi.fn();
 vi.mock("../../planning/my-planning-data", () => ({ loadMyPlanning: (...a: unknown[]) => mockLoadMyPlanning(...a) }));
 const mockLoadMyRequests = vi.fn();
-vi.mock("../../requests/my-requests-data", () => ({ loadMyRequests: (...a: unknown[]) => mockLoadMyRequests(...a) }));
+vi.mock("../../demandes/my-requests-data", () => ({ loadMyRequests: (...a: unknown[]) => mockLoadMyRequests(...a) }));
 vi.mock("@/modules/campaigns", () => ({ listMyOpenAssignments: async () => [] }));
 vi.mock("@/modules/planning", () => ({
   getStaffingGapViewer: async () => ({ viewer: true }),
   countUnstaffedDepartments: async () => new Map([["ev-1", 2]]),
 }));
+
+// Bloc « À traiter » : testé à part (TodoBlock.test.ts), hors de ce rendu figé.
+vi.mock("../TodoBlock", () => ({ default: () => null }));
 
 const TodayPage = (await import("../page")).default;
 

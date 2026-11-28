@@ -82,41 +82,30 @@ koinonia/
 │   │   ├── layout.tsx           # Root layout (Montserrat, metadata)
 │   │   ├── page.tsx             # Page de connexion (Google OAuth)
 │   │   ├── globals.css          # Tailwind v4 (@theme couleurs ICC)
-│   │   ├── (auth)/              # Route group : pages authentifiees
+│   │   ├── (auth)/              # Route group : pages authentifiees, une adresse par espace (spec 092, lot 4)
 │   │   │   ├── layout.tsx       # Auth guard, header, sidebar, footer version
-│   │   │   ├── dashboard/       # Vue planning par departement
-│   │   │   │   └── stats/       # Statistiques par departement
-│   │   │   ├── events/          # Liste et calendrier des evenements
-│   │   │   │   └── calendar/    # Vue calendrier
-│   │   │   ├── profile/         # Profil utilisateur et liaison compte STAR
-│   │   │   ├── requests/        # "Mes demandes" (annonces + demandes unifiees)
-│   │   │   │   ├── new/         # Formulaire unifie : annonce, visuel standalone, demandes
-│   │   │   │   └── [id]/edit/   # Edition d'une demande en attente
-│   │   │   ├── secretariat/
-│   │   │   │   └── requests/    # Dashboard Secretariat (toutes demandes)
-│   │   │   ├── media/
-│   │   │   │   └── requests/    # Dashboard Production Media (VISUEL) — traitement uniquement
-│   │   │   ├── communication/
-│   │   │   │   └── requests/    # Dashboard Communication (RESEAUX_SOCIAUX)
-│   │   │   ├── audio/           # Espace a onglets (spec 021), layout calcule les droits une fois
-│   │   │   │   ├── ecouter/     # Onglet (re)Écouter — bibliotheque des cultes publies ([id])
-│   │   │   │   ├── production/  # Onglet Production — file d'attente + depot/nommage ([id])
-│   │   │   │   └── parametres/  # Onglet Paramètres — couverture par defaut, modele de sequences
+│   │   │   ├── accueil/         # Accueil « Aujourd'hui », commun a tous les roles
+│   │   │   ├── planning/        # Mon planning ; departements/ (grille, statistiques), disponibilites/, remplacements/
+│   │   │   ├── evenements/      # Calendrier de l'eglise (un seul ecran), [eventId], annonces/, gestion/,
+│   │   │   │                    #   comptes-rendus/, service-accueil/, billetterie/, formulaires/, mes-inscriptions/
+│   │   │   ├── demandes/        # Mes demandes, nouvelle/, [id]/, traitement/ (Secretariat), rendez-vous/, questionnaires/
+│   │   │   ├── finances/        # demandes/ (compta), statistiques/, navette/, tresorerie/, dons/ ; racine = redirection
+│   │   │   ├── medias/          # Accueil a cartes : photos/, visuels/, reseaux-sociaux/, galerie/, partages/,
+│   │   │   │                    #   audio/ (onglets ecouter/production/parametres, spec 021)
+│   │   │   ├── personnes/       # star/ (fiches STAR), discipolat/, integration/, candidatures/, mes-membres/
+│   │   │   ├── pastoral/        # agenda/, planification/, suivi/ (RDV pastoral, nouveaux convertis)
+│   │   │   ├── ressources/      # salles/, offres/ (emploi)
+│   │   │   ├── plateforme/      # Super Admin : eglises/, api/, app-icon/, assistant/, backups/, mcp/, site-domains/
+│   │   │   ├── profile/         # Mon profil et ses sous-pages (notifications, assistants, candidature…)
 │   │   │   ├── guide/           # Guide utilisateur par role
-│   │   │   └── admin/           # Section administration
-│   │   │       ├── layout.tsx   # Guard acces eglise (requireAuth + requireChurchAccess)
-│   │   │       ├── churches/    # CRUD eglises + onboarding
-│   │   │       ├── users/       # Gestion utilisateurs
-│   │   │       ├── access/      # Gestion des acces et roles
-│   │   │       ├── ministries/  # CRUD ministeres
-│   │   │       ├── departments/ # CRUD departements
-│   │   │       │   └── functions/ # Config fonctions departementales
-│   │   │       ├── members/     # CRUD membres (STAR)
-│   │   │       ├── events/      # CRUD evenements
-│   │   │       │   └── [eventId]/report/ # Saisie compte rendu
-│   │   │       ├── reports/     # Dashboard comptes rendus et statistiques
-│   │   │       ├── discipleship/ # Dashboard discipolat (relations, appel, stats)
+│   │   │   ├── messages/        # Messages de l'administration
+│   │   │   └── admin/           # Administration de l'eglise (layout : requireAuth + requireChurchAccess)
+│   │   │       ├── eglise/[churchId]/ # Parametres de l'eglise
+│   │   │       ├── users/ access/ ministries/ departments/ (functions/) salles/ messages/
+│   │   │       ├── pastoral-profiles/
 │   │   │       └── audit-logs/  # Historique des modifications
+│   │   │   # Anciennes adresses : redirection 307 par le proxy (src/lib/legacy-paths.ts, table fixe) ;
+│   │   │   # toute adresse d'ecran se construit par src/lib/paths.ts (paths.*), jamais en dur.
 │   │   └── api/                 # Route handlers (API REST), chacun avec son contract.ts (ADR-0023)
 │   │       ├── auth/[...nextauth]/
 │   │       ├── announcements/   # GET/POST + [id] GET/PATCH/DELETE
@@ -162,6 +151,8 @@ koinonia/
 │   │   ├── audit.ts             # logAudit() — journal des actions
 │   │   ├── rate-limit.ts        # Limiteur de debit par utilisateur
 │   │   ├── openapi/             # Contrats de routes -> spec OpenAPI (contract.ts, document.ts, collect.ts)
+│   │   ├── paths.ts             # Registre des adresses d'ecran (paths.*, SCREENS, SCREEN_META)
+│   │   ├── legacy-paths.ts      # Table fixe ancienne -> nouvelle adresse (redirections 307, spec 092 lot 4)
 │   └── proxy.ts                 # Middleware Next.js 16 (protection routes, runtime Node.js)
 ├── docs/                        # Documentation detaillee
 │   └── adr/                     # Architecture Decision Records (decisions structurantes)
@@ -455,7 +446,7 @@ berger/conseiller assigné. Depuis la spec 054 (issue #583), cette permission **
 l'ancienne approximation par `members:manage`/`events:manage` : jusque-là, tout Ministre et tout
 Resp. département y accédait quel que soit son département, alors que la documentation l'a
 toujours réservé à l'administration et à l'équipe dédiée. Le réglage des délais de relance
-(spec 051, `/integration/parametres`) passe par `requireIntegrationSettingsAccess()`, plus strict :
+(spec 051, `/personnes/integration/parametres`) passe par `requireIntegrationSettingsAccess()`, plus strict :
 Super Admin, `integration:manage`, ou `DEPARTMENT_HEAD` d'un département `INTEGRATION`. Le module
 `storage` est une infrastructure pure sans permission propre.
 
@@ -472,10 +463,10 @@ d'accompagnants — un profil pastoral ou un membre d'un département de fonctio
 (`AssigneeSelection`/`resolveAssignee`, `src/modules/care/services/assignee.ts`) — réservée à
 `care:qualify`. Les étapes de suivi (fixer la date, renseigner le compte rendu, rendre au référent) sont
 réservées à l'accompagnant **en charge**, et non plus à toute l'équipe MSDP comme au lot 1. Le
-lot 3 ajoute `/care/parametres` (délais de relance, `CareSettings`, `care:qualify`), les relances
-elles-mêmes (`runCareRelances`, branchées au cron, bandeau « À relancer » dans `/care`) et
-`/care/stats` (volumes par état/accompagnant/motif de rejet, reprise de la section MSDP retirée
-de `/integration/stats` au lot 1, `care:view`) — sans introduire de permission supplémentaire.
+lot 3 ajoute `/pastoral/suivi/parametres` (délais de relance, `CareSettings`, `care:qualify`), les relances
+elles-mêmes (`runCareRelances`, branchées au cron, bandeau « À relancer » dans `/pastoral/suivi`) et
+`/pastoral/suivi/statistiques` (volumes par état/accompagnant/motif de rejet, reprise de la section MSDP retirée
+de `/personnes/integration/stats` au lot 1, `care:view`) — sans introduire de permission supplémentaire.
 
 **Visibilité des départements** :
 - Super Admin / Admin / Secrétaire : tous les départements de l'église (lecture globale)
@@ -513,10 +504,10 @@ de `/integration/stats` au lot 1, `care:view`) — sans introduire de permission
   `INTEGRATION`/`MSDP`)
 
 **Spécificités du STAR** (spec 031, issues #462/#463) :
-- N'a pas `planning:department` : pas d'accès à `/dashboard` (grille par département), ni aux
+- N'a pas `planning:department` : pas d'accès à `/planning/departements` (grille par département), ni aux
   routes API de département (tâches, consignes, membres, stats, planning mensuel/hebdomadaire)
 - Conserve `planning:view` : « Mon planning » (vue macro personnelle), ses événements
-  (`/planning/events`) et l'auto-déclaration d'absences restent accessibles
+  (`/evenements`) et l'auto-déclaration d'absences restent accessibles
 - Aucun accès au module salles : ni `rooms:view` ni `rooms:reserve` — retirés totalement
 - Conserve `audio:listen` (bibliothèque d'écoute, comme tous les rôles) et les permissions
   transverses du module emploi (`jobs:view`/`post`/`seek`/`freelance`, hors `jobs:manage`)
@@ -524,6 +515,17 @@ de `/integration/stats` au lot 1, `care:view`) — sans introduire de permission
   ce rôle (aucun `user_departments`), ce qui produit la restriction totale de `requireDepartmentAccess`
   sans code spécifique — voir ADR-0009. Décision actée : la chaîne d'appartenance (`Member` →
   `member_departments`) n'est pas fusionnée avec le périmètre de responsabilité
+
+**Exceptions de droits de la navigation par métier** (spec 092, lot 3 — matrice inchangée, détail
+dans [docs/auth.md](docs/auth.md)) :
+- « Mes demandes » (`/demandes`) : tout compte de l'église (`requireChurchAccess`), ses propres
+  demandes seulement ; « Nouvelle demande » exige toujours `members:view`
+- Demande de RDV pastoral (`/demandes/rendez-vous`, `POST /api/care/requests`) : tout compte de l'église,
+  5 demandes par heure et par compte
+- Lecture pastorale (`hasPastoralRead`, église de l'objet) des comptes rendus et des demandes
+  comptables : lecture seule, sans écriture, ni téléchargement de pièce, ni export. La vue
+  pastorale est un **filtre** de la navigation commune (`PASTORAL_VIEW_HREFS`) ; tableau pastoral
+  sur `/accueil`, anciens `/pastoral/{events,reports,accounting}` redirigés
 
 **Événements d'équipe** (spec 044, issue #522) : rendez-vous internes à un département
 (répétition, réunion, formation), distincts des événements d'église (`TeamEvent`, table
@@ -544,9 +546,9 @@ renommé spec 052) :
   `jobs:manage`)
 
 **Spécificités du module dons** (spec 065) :
-- `giving:manage` (Super Admin, Admin, Secrétaire, Comptable) ouvre `/dons` : paramétrage de la
+- `giving:manage` (Super Admin, Admin, Secrétaire, Comptable) ouvre `/finances/dons` : paramétrage de la
   page publique `/donner/<slug>` (sections activables, coordonnées bancaires, verset, adresse
-  courte) et slide de projection `/dons/slide` (QR code, PNG, plein écran)
+  courte) et slide de projection `/finances/dons/slide` (QR code, PNG, plein écran)
 - La page publique est sans connexion et ne montre que les sections activées ; une page
   désactivée, absente ou une église inconnue répondent le même « page non disponible »
 - Intégrité : IBAN vérifié (longueur par pays, clé mod 97), liens en https uniquement ; toute
@@ -555,11 +557,11 @@ renommé spec 052) :
   de notification `giving`)
 - Nom et logo de l'église (spec 066) : nom affiché ou masqué et taille (Petit, Moyen, Grand)
   réglés séparément pour la page et pour la slide ; un logo unique pour fond sombre (PNG/JPEG/WebP
-  ≤ 2 Mo, réencodé en PNG, jamais de SVG) déposé dans `/dons`, enregistré dès son dépôt et
+  ≤ 2 Mo, réencodé en PNG, jamais de SVG) déposé dans `/finances/dons`, enregistré dès son dépôt et
   affiché par support selon son interrupteur. Déposer, remplacer ou retirer le logo est journalisé
   et alerte la comptabilité comme un changement d'IBAN ; le logo est servi par Koinonia
   (`/api/giving/public/<slug>/logo`, page active uniquement)
-- Organisation de l'écran `/dons` (spec 067) : bloc « Publication » en tête (pastille sur la
+- Organisation de l'écran `/finances/dons` (spec 067) : bloc « Publication » en tête (pastille sur la
   version enregistrée, « Sera publiée / retirée à l'enregistrement » tant que le brouillon diffère),
   onglets « Page publique » / « Slide de projection » (`?support=slide`) qui pilotent formulaire et
   aperçu — l'aperçu de la slide réutilise la vraie scène via `toSlideProps`, seule traduction
@@ -569,7 +571,7 @@ renommé spec 052) :
 **Spécificités du module navette** (spec 073) — extension de la comptabilité, désactivable seule
 (`ENABLED_MODULES`) :
 - `shuttle:manage` (Super Admin, Admin, Comptable) : registre complet de la navette sous
-  `/accounting/navette` — solde de départ, abondements, correction ou suppression de n'importe
+  `/finances/navette` — solde de départ, abondements, correction ou suppression de n'importe
   quelle ligne à tout moment, signalements, cautions non restituées, seuil de solde bas, export
 - **Équipe navette** = membres d'un département de fonction `NAVETTE` (fiche liée), ses
   responsables et adjoints (`user_departments`) et le Ministre de son ministère
@@ -594,7 +596,7 @@ renommé spec 052) :
 
 **Spécificités du module trésorerie** (spec 076) — extension de la comptabilité, désactivable
 seule (`ENABLED_MODULES`) :
-- `treasury:manage` (Super Admin, Admin, Comptable) ouvre `/accounting/tresorerie` : comptes de
+- `treasury:manage` (Super Admin, Admin, Comptable) ouvre `/finances/tresorerie` : comptes de
   trésorerie (caisse, coffre, en ligne ; solde de départ daté, archivage), registre des entrées
   et sorties (montant positif + sens, solde après chaque ligne, calculé à la lecture en
   centimes), catégories et objets d'offrandes spéciales, collecte de culte (espèces par catégorie,
@@ -626,7 +628,7 @@ seule (`ENABLED_MODULES`) :
   les chargeurs et règles de périmètre des écrans (`loadMyPlanning`, `getUserDepartmentScope`,
   `resolveRequestQueueAccess`, `getShuttleAccess`…) et revérifient le droit de l'écran ; jamais de
   coordonnée d'autrui ni de donnée `care` (texte libre passé par `anonymize`)
-- Administration de la base (`/admin/assistant`, `/api/assistant/admin/*`, `/api/assistant/settings`) :
+- Administration de la base (`/plateforme/assistant`, `/api/assistant/admin/*`, `/api/assistant/settings`) :
   `requireSuperAdmin()` — la base et les questions remontées sont d'instance, sans compte ni église
 
 **Spécificités du module mcp** (spec 081, [ADR-0029](docs/adr/0029-serveur-autorisation-oauth-mcp.md))
@@ -656,7 +658,7 @@ seule (`ENABLED_MODULES`) :
   `mcp_confirmations`, lié à la connexion et à l'action, résumé figé) puis `…_confirm` (droits
   revérifiés, services de `planning`, `logAudit` `via: "mcp"`). Les instructions du serveur
   exigent l'accord explicite de la personne entre les deux. `draft_request` n'écrit rien : lien
-  vers `/requests/new` prérempli par l'adresse (`src/app/(auth)/requests/prefill.ts`, texte et
+  vers `/demandes/nouvelle` prérempli par l'adresse (`src/lib/request-prefill.ts`, texte et
   dates seulement), proposé avec `members:view`. Lot 3a (`planning:edit` + périmètre) :
   lectures `planning_eventsToStaff`/`planning_candidates` (identifiants, état de la grille,
   services sur 60 jours, sans coordonnée), remplir, recopier, relancer, consignes, et tâches du
@@ -684,7 +686,7 @@ seule (`ENABLED_MODULES`) :
   (`/profile/assistants`) ou l'Admin d'église ; purge quotidienne (`mcp-maintenance`)
 
 **Spécificités du module billetterie** (spec 074) — désactivable (`ENABLED_MODULES`) :
-- `ticketing:manage` (Super Admin, Admin, Secrétaire) ouvre `/billetterie` et la création
+- `ticketing:manage` (Super Admin, Admin, Secrétaire) ouvre `/evenements/billetterie` et la création
   d'événements ; son détenteur est **organisateur implicite** de tous les événements de son
   église
 - **Rôles d'événement** (`ticketing_event_roles`) : Organisateur, Trésorier, Accueil / sécurité,
@@ -712,7 +714,7 @@ seule (`ENABLED_MODULES`) :
   de la veille, clôture 24 h après la fin, purge des données nominatives après la durée de
   conservation
 - Écrans de terrain **hors ligne** ([ADR-0026](docs/adr/0026-ecrans-hors-ligne.md)) :
-  `/billetterie/[id]/controle` (accueil) et `/billetterie/[id]/restauration` — instantané
+  `/evenements/billetterie/[id]/controle` (accueil) et `/evenements/billetterie/[id]/restauration` — instantané
   d'empreintes, file IndexedDB, synchronisation idempotente (`…/sync`), présences **calculées** à
   partir des passages, seuils de jauge 90 % et 100 % notifiés une fois. L'équipe (postes,
   affectations, badges) est propre à l'événement ; « Mon planning » la lit seulement
@@ -735,13 +737,13 @@ seule (`ENABLED_MODULES`) :
   a activé les sites (`church:settings`, coupé par défaut). **Rôle d'événement Communication** : seul geste
   `site` (avec l'Organisateur) ; ni chiffres, ni paiements, ni domaine. Un hôte de site ne sert qu'une
   liste blanche (jamais l'application ni Auth.js, aucun cookie). **Domaine dédié** : demande par
-  l'Organisateur (`configure`), vérification DNS, approbation du Super Admin (`/admin/site-domains`),
+  l'Organisateur (`configure`), vérification DNS, approbation du Super Admin (`/plateforme/site-domains`),
   recontrôle quotidien (cron `ticketing-site-domains`) ; le proxy lit un cache mémoire (60 s) fourni
   par `/api/internal/site-hosts`, et Traefik interroge `/api/internal/traefik` — ces deux adresses
   exigent la boucle locale **et** `TRAEFIK_PROVIDER_TOKEN`. Pages automatiques (Billetterie, Menus,
   Infos pratiques) construites sur `getPublicEvent` seulement : aucune donnée personnelle. Pilotable
   par l'assistant IA (`_actions/site.ts`)
-- **Images du site depuis l'assistant** (spec 087) : page `/billetterie/[id]/images` (rôle `site`, dépôt
+- **Images du site depuis l'assistant** (spec 087) : page `/evenements/billetterie/[id]/images` (rôle `site`, dépôt
   multiple, route d'upload de l'éditeur réutilisée) ; outil `ticketing_site_upload_link` (adresse de
   cette page) ; `upload_ticketing_site_asset` accepte aussi `file` (`download_url`/`file_id`, client IA
   compatible, `_meta` `openai/fileParams`) — exactement un de `file`/`source`, même garde `safeFetchImage`
@@ -793,15 +795,15 @@ seule (`ENABLED_MODULES`) :
   valide d'un destinataire d'une campagne ouverte est refusé ; échéance modifiable par
   contribution. **Suivi** : préparation de l'ouverture (`/readiness`), filtres (à rechercher,
   estimations, manquants, contrôles, fichiers), questions concernées, « Exploitable » distinct de
-  « Soumis ». **Aperçu répondant** (`/collectes/[id]/apercu/[formId]`, rien n'est enregistré).
+  « Soumis ». **Aperçu répondant** (`/demandes/questionnaires/[id]/apercu/[formId]`, rien n'est enregistré).
   **Définition** : export `koinonia.campaign` v1 sans réponse, fichier, répondant ni lien
   (réimport « inchangé ») ; *Dupliquer* = structure seule, en brouillon. **Éditeur graphique**
-  (`/collectes/nouvelle`, `/collectes/[id]/editer`) : produit le même document et l'enregistre
+  (`/demandes/questionnaires/nouveau`, `/demandes/questionnaires/[id]/editer`) : produit le même document et l'enregistre
   **par l'import** (mêmes aperçu, blocages et révisions) ; règles complexes en JSON. MCP :
   `campaign_import_contract`, `campaign_structure`, `export_campaign_definition`,
   `reopen_contribution_*` (aperçu puis confirmation) ; les questionnaires confidentiels sont
   **omis** de l'export et de la structure, et **conservés d'office** à l'import de l'assistant.
-- Entrée « Questionnaires » (`/collectes`) dans l'espace **Demandes**, vue pastorale comprise
+- Entrée « Questionnaires » (`/demandes/questionnaires`) dans l'espace **Demandes**, vue pastorale comprise
   (`hasCampaignsSpace`) ; carte « Questionnaires à remplir » sur l'Accueil. MCP : lectures `campaigns_list`/`campaigns_progress` (prédicat
   `campaignManager`, `_viewer.ts`) et actions `import_campaign`/`set_campaign_status` (aperçu →
   confirmation) — **jamais de valeur, de fichier ni d'email** ; un questionnaire confidentiel ne
@@ -809,7 +811,7 @@ seule (`ENABLED_MODULES`) :
 
 **Spécificités du module formulaires** (spec 079, [ADR-0030](docs/adr/0030-moteur-de-formulaires.md)) —
 désactivable (`ENABLED_MODULES`) :
-- `forms:manage` (Super Admin, Admin, Secrétaire) ouvre `/formulaires` (espace Agenda, bloc
+- `forms:manage` (Super Admin, Admin, Secrétaire) ouvre `/evenements/formulaires` (espace Agenda, bloc
   « Inscriptions » avec la Billetterie) : construire (13 types de questions, choix avec places, condition
   d'affichage sur une question précédente), publier, clôturer, dupliquer, supprimer, voir et
   exporter les réponses. L'église qui fait foi est celle **du formulaire** (`requireFormManage`,
@@ -843,7 +845,7 @@ désactivable (`ENABLED_MODULES`) :
   total des participants ; rattachement à un événement d'église ou de billetterie validé par
   `src/app/api/forms/_events.ts` (ADR-0027), bloc `EventFormsBlock` via `listFormsForEvent`
 - **Accès délégué** (spec 085) : un compte reçoit l'accès « Formulaires » de la part de `forms:manage`
-  (`forms_grants`, bouton « Accès » de `/formulaires`) et ne gère que **ses** formulaires
+  (`forms_grants`, bouton « Accès » de `/evenements/formulaires`) et ne gère que **ses** formulaires
   (`Form.createdById`) ou ceux **partagés** avec lui (`form_managers`, co-gestionnaire : tout sauf
   supprimer et gérer le partage). Ce sont des données, pas une permission : `getFormAccess`
   (`via: "role" | "author" | "comanager"`), `requireFormManage(id, { owner })`, `getFormsCapability`
@@ -882,7 +884,7 @@ désactivable (`ENABLED_MODULES`) :
   lien seul, copie à `Department.contactEmail` du PVS (liste blanche `sendEmail`)
 - Le module ne peut importer ni `planning` ni `core` : les routes injectent
   `attachMemberToDepartment`/`detachMemberFromDepartment` et le logo de l'église
-- **Entretiens** (spec 082) : le PVS propose des créneaux (`/candidatures/entretiens`, un par
+- **Entretiens** (spec 082) : le PVS propose des créneaux (`/personnes/candidatures/entretiens`, un par
   un ou en série, à l'heure de Paris via `src/lib/paris-time.ts`, personne qui reçoit = membre du
   PVS, lieu ou visio, jamais de chevauchement) ; le candidat choisit après l'envoi de sa fiche et
   gère son rendez-vous par `/entretien/<lien>` (public, jeton dérivé de `SERVING_TOKEN_SECRET`,
@@ -939,7 +941,7 @@ désactivable (`ENABLED_MODULES`) :
 
 **Spécificités de l'Admin d'église** :
 - Administre **son** église : `church:settings` ouvre les profils pastoraux, les paramètres de
-  l'église (`/admin/churches/[churchId]`, lien « Paramètres de l'église » : emails du
+  l'église (`/admin/eglise/[churchId]`, lien « Paramètres de l'église » : emails du
   secrétariat et de la comptabilité, couleur, responsable pastoral) et l'historique des
   modifications de l'église ; `access:admins` lui permet de nommer ou retirer un Admin ou un
   Secrétaire dans cette église
@@ -953,7 +955,7 @@ désactivable (`ENABLED_MODULES`) :
   les ministères et départements « système », et le rôle Super Admin
 - Ne change pas non plus l'**icône de l'application** (spec 069) : réglage de plateforme (une
   icône pour toute l'instance, l'application installée étant liée à une seule adresse), écran
-  `/admin/app-icon` et API `/api/admin/app-icon` derrière `requireSuperAdmin()`. Variantes
+  `/plateforme/app-icon` et API `/api/admin/app-icon` derrière `requireSuperAdmin()`. Variantes
   préparées en base (`app_icon_variants`, service `@/modules/core`), servies par
   `/api/app-icon/<variante>.png` (redirection vers `public/brand/` sans icône déposée) et par le
   manifeste dynamique `/api/app-icon/manifest` — `public/manifest.json` n'existe plus
@@ -964,14 +966,14 @@ désactivable (`ENABLED_MODULES`) :
 - Pas d'accès au planning, membres, ou administration
 
 **Spécificités du module audio** — le tableau ci-dessus ne suffit pas :
-- `/audio` est un espace à onglets à droits distincts (spec 021), un seul lien de navigation
+- `/medias/audio` est un espace à onglets à droits distincts (spec 021), un seul lien de navigation
   **« Audio »** conditionné par `audio:listen` — chaque onglet vérifie en plus son propre droit
   server-side (l'onglet masqué ne dispense jamais du contrôle) :
-  - `/audio/ecouter` (+ `/audio/ecouter/[id]`) — **(re)Écouter**, bibliothèque des cultes publiés,
+  - `/medias/audio/ecouter` (+ `/medias/audio/ecouter/[id]`) — **(re)Écouter**, bibliothèque des cultes publiés,
     `audio:listen` — accordée à **tous les rôles**, y compris STAR
-  - `/audio/production` (+ `/audio/production/[id]`) — **Production**, file d'attente et
+  - `/medias/audio/production` (+ `/medias/audio/production/[id]`) — **Production**, file d'attente et
     dépot/nommage, `requireAudioAccess("audio:view", …)`
-  - `/audio/parametres` — **Paramètres**, couverture par défaut et modèle de séquences,
+  - `/medias/audio/parametres` — **Paramètres**, couverture par défaut et modèle de séquences,
     `requireAudioAccess("audio:manage", …)`
 - `requireAudioAccess(permission, churchId)` vérifie d'abord les permissions de rôle, puis
   retombe sur `isCaptureTeamMember()` — un STAR de l'un des départements de captation audio passe
@@ -990,11 +992,11 @@ désactivable (`ENABLED_MODULES`) :
 
 **Spécificités de l'espace « Communication & Production »** (spec 049, remplace la spec 043 —
 même pattern d'accueil à cartes que l'espace Audio ci-dessus) :
-- `/media` est un accueil à cartes filtrées (`SpaceHome`, `buildMediaSpaceCards` dans
+- `/medias` est un accueil à cartes filtrées (`SpaceHome`, `buildMediaSpaceCards` dans
   `src/lib/media-space.ts`) — redirection directe si une seule carte accessible. Cartes
-  possibles : **Photos** (`/media/events`, ex-Événements médias), **Visuels** (`/media/projects`
-  + `/media/requests`, onglets internes via `buildVisualsTabs`), **Réseaux sociaux**
-  (`/communication/requests`) — calculées par `resolveMediaSpaceAccess` (layouts `/media` et
+  possibles : **Photos** (`/medias/photos`, ex-Événements médias), **Visuels** (`/medias/visuels`
+  + `/medias/visuels/demandes`, onglets internes via `buildVisualsTabs`), **Réseaux sociaux**
+  (`/medias/reseaux-sociaux`) — calculées par `resolveMediaSpaceAccess` (layouts `/medias` et
   `/communication`) ou reconstruites sans requête supplémentaire dans `(auth)/layout.tsx`
 - Deux activités distinctes avec fonctions de département propres : `PHOTOS` (photos
   d'événements) et `PRODUCTION_MEDIA` (visuels + demandes de visuels). `isMediaTeamMember(session,
@@ -1007,7 +1009,7 @@ même pattern d'accueil à cartes que l'espace Audio ci-dessus) :
   `listActiveShares`/`countActiveShares`/`revokeShare`, filtrés au périmètre de l'appelant via
   `getMediaShareScope`) — une collection mixte photos+visuels reste masquée à une équipe qui n'a
   que l'un des deux périmètres
-- **Galerie** (spec 080, `/media/galerie`, 4e carte) : vue de lecture sur les médias validés de
+- **Galerie** (spec 080, `/medias/galerie`, 4e carte) : vue de lecture sur les médias validés de
   l'église (photos `APPROVED`, visuels `VISUAL` `APPROVED`/`FINAL_APPROVED` en dernière version),
   service `listLibraryItems` (`@/modules/media`, pagination par curseur `date|type|id`). Accès :
   `requireMediaGalleryAccess` (`src/lib/auth.ts`) — `media:view`, équipes Photos / Production
@@ -1045,7 +1047,7 @@ Chaque église (`Church`) est un tenant isolé. Les données sont rattachées à
 | [DAT](docs/dat.md) | Dossier d'architecture technique — vue d'ensemble, synthèse des autres documents |
 | [Architecture](docs/architecture.md) | Structure, patterns, conventions |
 | [Base de données](docs/database.md) | Schéma Prisma, modèles, relations |
-| [API](docs/api.md) | Conventions de l'API ; référence des endpoints générée dans `docs/openapi.json` (Swagger UI `/admin/api`, ADR-0023) |
+| [API](docs/api.md) | Conventions de l'API ; référence des endpoints générée dans `docs/openapi.json` (Swagger UI `/plateforme/api`, ADR-0023) |
 | [Authentification](docs/auth.md) | NextAuth, OAuth, RBAC, permissions |
 | [Production](docs/production.md) | Déploiement Debian, Traefik, systemd |
 | [Environnement de dev](docs/dev-onboarding.md) | Setup conteneurisé, jeu de données fictif, connexion sans Google OAuth |
@@ -1153,6 +1155,12 @@ Créer une branche `feat/X` comme base. Les sous-features ouvrent des PRs vers `
 6. **`rolePermissions` est la seule matrice** — `src/lib/permissions.ts` (`hasPermission`) a été supprimé. Utiliser `rolePermissions` de `@/lib/registry`.
 
 7. **Conflits de migration** — si deux branches modifient `schema.prisma`, rebaser sur `main` avant `npm run db:migrate` pour éviter des conflits de fichiers de migration.
+
+8. **Adresses d'écran** (spec 092, lot 4) — jamais en dur : `paths.*` (`src/lib/paths.ts`), y
+   compris dans un lien absolu (`${origine}${paths.x()}`) ; le cliquet `no-screen-literals.test.ts`
+   refuse sinon. Une ancienne adresse n'est ajoutée qu'à la table fixe `src/lib/legacy-paths.ts`
+   (jamais de joker, jamais une adresse publique). Une page sortie de `/admin` porte sa propre garde
+   (`moved-admin-guards.test.ts`).
 
 ## Règles pour les agents IA
 

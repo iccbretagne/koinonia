@@ -4,6 +4,7 @@ import { sendEmail, buildAppointmentScheduledEmail, buildAppointmentRejectedEmai
 import { DEPT_FN } from "@/lib/department-functions";
 import type { ResolvedAssignee } from "./assignee";
 import { REJECT_REASON_LABELS, type REJECT_REASON_CODES } from "./appointment-state";
+import { paths } from "@/lib/paths";
 
 type RejectReasonCode = (typeof REJECT_REASON_CODES)[number];
 
@@ -25,7 +26,7 @@ const DOMAIN = "care";
 export type CareItemKind = "requests" | "followups";
 
 function itemLink(kind: CareItemKind, id: string): string {
-  return `/care/${kind}/${id}`;
+  return kind === "requests" ? paths.care.requestDetail(id) : paths.care.followup(id);
 }
 
 /** Rattachement de la notification à son objet, pour l'effacer avec lui (spec 057, ADR-0019). */
@@ -100,7 +101,7 @@ export async function notifyAssigneeUnassigned(params: {
     type: "CARE_UNASSIGNED",
     title: "Accompagnement réaffecté",
     message: `Vous n'êtes plus en charge de ${itemLabel(params.kind)} ${params.personName}.`,
-    link: "/care",
+    link: paths.care(),
     ...itemEntity(params.kind, params.itemId),
   }).catch(() => {});
 }
@@ -145,7 +146,7 @@ export async function notifyProtocoleToSchedule(params: {
     type: "CARE_APPOINTMENT_VALIDATED",
     title: "Demande RDV à planifier",
     message: `La demande de ${params.personName} est prête à être planifiée.`,
-    link: "/agenda/schedule",
+    link: paths.agenda.schedule(),
     ...itemEntity("requests", params.requestId),
   }).catch(() => {});
 }
@@ -188,7 +189,7 @@ export async function notifyRequesterScheduled(params: {
         type: "CARE_APPOINTMENT_SCHEDULED",
         title: "Rendez-vous pastoral confirmé",
         message: `Votre demande « ${subject} » a été planifiée le ${dateStr} à ${timeStr}.`,
-        link: "/requests",
+        link: paths.requests(),
         ...itemEntity("requests", params.requestId),
       },
       emailContent ? { email: emailContent } : undefined
@@ -251,7 +252,7 @@ export async function notifyRequesterRejected(params: {
         type: "CARE_APPOINTMENT_REJECTED",
         title: "Demande de RDV non retenue",
         message: `Votre demande de rendez-vous pastoral n'a pas pu être retenue. Motif : ${fullReason}`,
-        link: "/requests",
+        link: paths.requests(),
         ...itemEntity("requests", params.requestId),
       },
       emailContent ? { email: emailContent } : undefined

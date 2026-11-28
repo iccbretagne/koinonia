@@ -11,10 +11,11 @@ import {
   listMemberAvailability,
   listTeamEventsForMember,
   loadRequestQueue,
+  pendingWithdrawalsWhere,
   resolveRequestQueueAccess,
 } from "@/modules/planning";
 import { loadMyPlanning } from "@/app/(auth)/planning/my-planning-data";
-import { loadMyRequests } from "@/app/(auth)/requests/my-requests-data";
+import { loadMyRequests } from "@/app/(auth)/demandes/my-requests-data";
 import {
   REFUSED,
   SERVICE_STATUS_LABEL,
@@ -33,6 +34,7 @@ import {
   typeDetail,
   type DataQuestion,
 } from "./common";
+import { paths } from "@/lib/paths";
 
 /**
  * Questions de données du planning (D01–D07, D09, D11–D17). Les réponses personnelles relisent
@@ -103,7 +105,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
     async run({ viewer, churchId }) {
       if (!personal(viewer)) return REFUSED;
       const data = await loadMyPlanning(viewer.userId, churchId);
-      const base = { title: "Mon prochain service", href: "/planning", hrefLabel: "Mon planning" };
+      const base = { title: "Mon prochain service", href: paths.planning(), hrefLabel: "Mon planning" };
       if (!data) return boundedAnswer({ ...base, items: [], empty: NO_LINK });
       const from = startOfToday();
       const next = data.plannings
@@ -128,7 +130,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
     async run({ viewer, churchId, params }) {
       if (!personal(viewer)) return REFUSED;
       const month = params.month ?? today().slice(0, 7);
-      const base = { title: `Mes services · ${formatMonth(month)}`, href: "/planning", hrefLabel: "Mon planning" };
+      const base = { title: `Mes services · ${formatMonth(month)}`, href: paths.planning(), hrefLabel: "Mon planning" };
       const data = await loadMyPlanning(viewer.userId, churchId);
       if (!data) return boundedAnswer({ ...base, items: [], empty: NO_LINK });
       const { from, to } = monthRange(month);
@@ -148,7 +150,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
     params: paramsSchema,
     async run({ viewer, churchId }) {
       if (!personal(viewer)) return REFUSED;
-      const base = { title: "Mes indisponibilités", href: "/disponibilites", hrefLabel: "Disponibilités" };
+      const base = { title: "Mes indisponibilités", href: paths.disponibilites(), hrefLabel: "Disponibilités" };
       const memberIds = await validatedMemberIds(viewer.userId, churchId);
       if (memberIds.length === 0) return boundedAnswer({ ...base, items: [], empty: NO_LINK });
       const from = startOfToday();
@@ -192,7 +194,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
     params: paramsSchema,
     async run({ viewer, churchId }) {
       if (!personal(viewer)) return REFUSED;
-      const base = { title: "Ma collecte de disponibilités", href: "/disponibilites", hrefLabel: "Disponibilités" };
+      const base = { title: "Ma collecte de disponibilités", href: paths.disponibilites(), hrefLabel: "Disponibilités" };
       const memberIds = await validatedMemberIds(viewer.userId, churchId);
       if (memberIds.length === 0) return boundedAnswer({ ...base, items: [], empty: NO_LINK });
       const now = new Date();
@@ -221,7 +223,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
     params: paramsSchema,
     async run({ viewer, churchId }) {
       if (!personal(viewer)) return REFUSED;
-      const base = { title: "Mes services remplacés", href: "/planning", hrefLabel: "Mon planning" };
+      const base = { title: "Mes services remplacés", href: paths.planning(), hrefLabel: "Mon planning" };
       const memberId = await linkedMemberId(viewer.userId, churchId);
       if (!memberId) return boundedAnswer({ ...base, items: [], empty: NO_LINK });
       const withdrawals = await prisma.serviceWithdrawal.findMany({
@@ -250,7 +252,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
     params: paramsSchema,
     async run({ viewer, session, churchId }) {
       if (!can(viewer, "planning:department")) return REFUSED;
-      const base = { title: "Consignes du prochain événement", href: "/dashboard", hrefLabel: "Planning" };
+      const base = { title: "Consignes du prochain événement", href: paths.dashboard(), hrefLabel: "Planning" };
       const departmentIds = scopedDepartmentIds(session, churchId);
       if (departmentIds?.length === 0) return boundedAnswer({ ...base, items: [], empty: "Aucun département dans votre périmètre." });
       const notices = await prisma.departmentNotice.findMany({
@@ -279,7 +281,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
     params: paramsSchema,
     async run({ viewer, churchId }) {
       if (!personal(viewer)) return REFUSED;
-      const base = { title: "Mes événements d'équipe", href: "/planning", hrefLabel: "Mon planning" };
+      const base = { title: "Mes événements d'équipe", href: paths.planning(), hrefLabel: "Mon planning" };
       const memberId = await linkedMemberId(viewer.userId, churchId);
       if (!memberId) return boundedAnswer({ ...base, items: [], empty: NO_LINK });
       const now = new Date();
@@ -308,7 +310,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
       }));
       return boundedAnswer({
         title: "Mes demandes en cours",
-        href: "/requests",
+        href: paths.requests(),
         hrefLabel: "Mes demandes",
         items,
         empty: "Vous n'avez aucune demande en cours.",
@@ -323,7 +325,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
       if (!can(viewer, "planning:department")) return REFUSED;
       const departmentIds = scopedDepartmentIds(session, churchId);
       const { day, events } = await eventsOnDay(churchId, params.day, new Date());
-      const base = { title: day ? `En service · ${formatDay(new Date(`${day}T12:00:00Z`))}` : "En service", href: "/dashboard", hrefLabel: "Planning" };
+      const base = { title: day ? `En service · ${formatDay(new Date(`${day}T12:00:00Z`))}` : "En service", href: paths.dashboard(), hrefLabel: "Planning" };
       if (events.length === 0 || departmentIds?.length === 0) return boundedAnswer({ ...base, items: [], empty: "Aucun service prévu ce jour-là dans votre périmètre." });
       const plannings = await prisma.planning.findMany({
         where: {
@@ -355,7 +357,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
       if (!can(viewer, "planning:department")) return REFUSED;
       const departmentIds = scopedDepartmentIds(session, churchId);
       const { day, events } = await eventsOnDay(churchId, params.day, new Date());
-      const base = { title: day ? `Indisponibles · ${formatDay(new Date(`${day}T12:00:00Z`))}` : "Indisponibles", href: "/dashboard", hrefLabel: "Planning" };
+      const base = { title: day ? `Indisponibles · ${formatDay(new Date(`${day}T12:00:00Z`))}` : "Indisponibles", href: paths.dashboard(), hrefLabel: "Planning" };
       if (events.length === 0 || departmentIds?.length === 0) return boundedAnswer({ ...base, items: [], empty: "Aucun événement ce jour-là dans votre périmètre." });
       const eventDepts = await prisma.eventDepartment.findMany({
         where: { eventId: { in: events.map((e) => e.id) }, department: { ...departmentFilter(departmentIds), isSystem: false } },
@@ -387,15 +389,13 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
     async run({ viewer, session, churchId }) {
       if (!can(viewer, "planning:edit")) return REFUSED;
       const departmentIds = scopedDepartmentIds(session, churchId);
-      const base = { title: "Services à remplacer", href: "/dashboard", hrefLabel: "Planning" };
+      const base = { title: "Services à remplacer", href: paths.dashboard(), hrefLabel: "Planning" };
       if (departmentIds?.length === 0) return boundedAnswer({ ...base, items: [], empty: "Aucun département dans votre périmètre." });
+      // Même sélection que la carte « À traiter » de l'Accueil (spec 092).
+      const where = await pendingWithdrawalsWhere(session, churchId);
+      if (!where) return REFUSED;
       const withdrawals = await prisma.serviceWithdrawal.findMany({
-        where: {
-          churchId,
-          status: "PENDING",
-          event: { date: { gte: new Date() } },
-          ...(departmentIds === null ? {} : { departmentId: { in: departmentIds } }),
-        },
+        where,
         select: {
           event: { select: { title: true, date: true } },
           department: { select: { name: true } },
@@ -417,7 +417,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
     async run({ viewer, session, churchId, params }) {
       if (!can(viewer, "absences:view")) return REFUSED;
       const month = params.month ?? today().slice(0, 7);
-      const base = { title: `Absences · ${formatMonth(month)}`, href: "/disponibilites", hrefLabel: "Disponibilités" };
+      const base = { title: `Absences · ${formatMonth(month)}`, href: paths.disponibilites(), hrefLabel: "Disponibilités" };
       const departmentIds = scopedDepartmentIds(session, churchId);
       if (departmentIds?.length === 0) return boundedAnswer({ ...base, items: [], empty: "Aucun département dans votre périmètre." });
       const { from, to } = monthRange(month);
@@ -456,7 +456,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
       const items = events.map((e) => ({ label: `${formatDay(e.date)} ${formatTime(e.date)} · ${e.title}`, detail: typeDetail(e.title, e.type) }));
       return boundedAnswer({
         title: "Événements de la semaine",
-        href: "/events",
+        href: paths.events(),
         hrefLabel: "Agenda de l'église",
         items,
         empty: "Aucun événement dans les 7 prochains jours.",
@@ -489,7 +489,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
       // Une ligne par type : le nombre de demandes est dans le titre, pas dans le total des lignes.
       return boundedAnswer({
         title: queue.open.length > 0 ? `Demandes à traiter (${queue.open.length})` : "Demandes à traiter",
-        href: "/secretariat/requests",
+        href: paths.secretariat.requests(),
         hrefLabel: "Traitement des demandes",
         items,
         empty: "Aucune demande en attente.",
@@ -514,10 +514,10 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
         orderBy: { date: "desc" },
       });
       // Lien direct vers la saisie du compte rendu de chaque événement.
-      const items = events.map((e) => ({ label: `${formatDay(e.date)} · ${e.title}`, href: `/admin/events/${e.id}/report` }));
+      const items = events.map((e) => ({ label: `${formatDay(e.date)} · ${e.title}`, href: paths.admin.eventReport(e.id) }));
       return boundedAnswer({
         title: "Comptes rendus manquants",
-        href: "/admin/reports",
+        href: paths.admin.reports(),
         hrefLabel: "Comptes rendus",
         items,
         empty: "Tous les événements récents ont leur compte rendu.",

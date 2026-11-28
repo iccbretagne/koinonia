@@ -44,7 +44,7 @@ export const contract = defineContract({
   GET: {
     summary: "Détail d'une demande financière",
     access: "accounting:view",
-    accessNote: "dans l'église courante ; périmètre du responsable, ou sa propre demande",
+    accessNote: "dans l'église courante ; périmètre du responsable, ou sa propre demande. Profil pastoral de l'église (spec 092) : toute l'église en lecture seule, sans email du demandeur ni clé des pièces (`readOnly: true`)",
     response: "Demande avec historique, pièces et paiements",
   },
   PATCH: {

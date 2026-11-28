@@ -4,6 +4,7 @@ import { notificationDomains } from "@/lib/registry";
 import { resolveEmailPreference, GLOBAL_DOMAIN } from "@/lib/notification-preferences";
 import type { Prisma } from "@/generated/prisma/client";
 import { deliverPendingPush } from "@/lib/push/deliver";
+import { legacyAndCurrent } from "@/lib/legacy-paths";
 
 /** Client Prisma acceptant un contexte transactionnel — miroir de `JobDescriptor.handler` (`@/core/module-registry`). */
 type PrismaOrTx = typeof prisma | Prisma.TransactionClient;
@@ -179,9 +180,11 @@ export async function deleteItemNotifications(
   entityId: string,
   links: string[]
 ): Promise<void> {
+  // Anciennes adresses comprises (spec 092, lot 4) : notifications créées avant la réécriture.
+  const allLinks = [...new Set(links.flatMap(legacyAndCurrent))];
   await client.notification.deleteMany({
     where: {
-      OR: [{ entityType, entityId }, ...(links.length > 0 ? [{ link: { in: links } }] : [])],
+      OR: [{ entityType, entityId }, ...(allLinks.length > 0 ? [{ link: { in: allLinks } }] : [])],
     },
   });
 }

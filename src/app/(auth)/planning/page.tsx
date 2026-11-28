@@ -7,6 +7,7 @@ import { buttonClasses } from "@/components/ui/button-classes";
 import MyPlanningView from "./MyPlanningView";
 import { loadMyPlanning } from "./my-planning-data";
 import TicketingAssignments from "./TicketingAssignments";
+import { paths } from "@/lib/paths";
 
 export default async function MyPlanningPage() {
   const session = await requireAuth();
@@ -30,7 +31,7 @@ export default async function MyPlanningPage() {
             title="Aucun compte STAR lié"
             description="Liez votre compte à votre fiche STAR depuis votre profil pour voir vos services."
             action={
-              <Link href="/profile" className={buttonClasses("primary")}>
+              <Link href={paths.profile()} className={buttonClasses("primary")}>
                 Gérer mon profil
               </Link>
             }

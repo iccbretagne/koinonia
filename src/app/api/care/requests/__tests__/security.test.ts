@@ -8,7 +8,7 @@ import {
 } from "@/__mocks__/auth";
 
 const mockAuth = vi.fn();
-const mockRequireChurchPermission = vi.fn();
+const mockRequireChurchAccess = vi.fn();
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn().mockResolvedValue(undefined) }));
 vi.mock("@/lib/rate-limit", () => ({
@@ -28,7 +28,7 @@ vi.mock("@/lib/auth", async (importOriginal) => {
   return {
     ...original,
     auth: () => mockAuth(),
-    requireChurchPermission: (...args: unknown[]) => mockRequireChurchPermission(...args),
+    requireChurchAccess: (...args: unknown[]) => mockRequireChurchAccess(...args),
   };
 });
 
@@ -111,13 +111,13 @@ describe("GET /api/care/requests — validation et accès", () => {
 describe("POST /api/care/requests — dépôt connecté", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequireChurchPermission.mockResolvedValue(createAdminSession("church-1"));
+    mockRequireChurchAccess.mockResolvedValue(createAdminSession("church-1"));
     prismaMock.appointmentRequest.create.mockResolvedValue({ id: "req-1" });
     prismaMock.church.findUnique.mockResolvedValue({ name: "ICC Rennes" });
   });
 
   it("returns 401 when unauthenticated", async () => {
-    mockRequireChurchPermission.mockRejectedValue(new Error("UNAUTHORIZED"));
+    mockRequireChurchAccess.mockRejectedValue(new Error("UNAUTHORIZED"));
     const req = new Request("http://localhost/api/care/requests", {
       method: "POST",
       body: JSON.stringify({

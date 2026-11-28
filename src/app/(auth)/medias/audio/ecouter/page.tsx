@@ -1,0 +1,162 @@
+import { z } from "zod";
+import Link from "next/link";
+import { requireAuth, requireChurchPermission, getCurrentChurchId } from "@/lib/auth";
+import { listPublishedServices, listSpeakers, listSeries, listAccessibleLibraryChurches } from "@/modules/audio";
+import { EVENT_TYPE_OPTIONS, getEventTypeLabel } from "@/lib/event-types";
+import LibraryFiltersClient from "./LibraryFiltersClient";
+import ResumeBanner from "./ResumeBanner";
+import { StatusChip, buttonClasses } from "@/components/ui";
+import { paths } from "@/lib/paths";
+
+const searchParamsSchema = z.object({
+  q: z.string().trim().min(1).optional().catch(undefined),
+  speaker: z.string().trim().min(1).optional().catch(undefined),
+  series: z.string().trim().min(1).optional().catch(undefined),
+  type: z.string().trim().min(1).optional().catch(undefined),
+  from: z.string().trim().min(1).optional().catch(undefined),
+  to: z.string().trim().min(1).optional().catch(undefined),
+  sort: z.enum(["recent", "oldest", "speaker"]).optional().catch(undefined),
+  church: z.string().trim().min(1).optional().catch(undefined),
+});
+
+function formatDuration(ms: number): string {
+  const totalMinutes = Math.round(ms / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours > 0 ? `${hours}h${minutes.toString().padStart(2, "0")}` : `${minutes} min`;
+}
+
+export default async function AudioLibraryPage({
+  searchParams,
+}: {
+  readonly searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const session = await requireAuth();
+  const churchId = await getCurrentChurchId(session);
+  if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  await requireChurchPermission("audio:listen", churchId);
+
+  const rawParams = await searchParams;
+  // Une URL bricolée retombe sur les valeurs par défaut plutôt que de casser la page (plan.md).
+  const parsed = searchParamsSchema.safeParse(
+    Object.fromEntries(Object.entries(rawParams).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v]))
+  );
+  const filters = parsed.success ? parsed.data : {};
+
+  // Périmètre d'églises lisibles, calculé serveur (spec 036) — le paramètre `church` de l'URL
+  // n'est JAMAIS utilisé directement dans la requête : il ne fait qu'intersecter ce périmètre.
+  const accessibleChurches = await listAccessibleLibraryChurches(churchId);
+  const accessibleChurchIds = accessibleChurches.map((c) => c.id);
+  const selectedChurchId =
+    filters.church && accessibleChurchIds.includes(filters.church) ? filters.church : undefined;
+  const scopedChurchIds = selectedChurchId ? [selectedChurchId] : accessibleChurchIds;
+
+  const hasActiveFilters = Boolean(
+    filters.q || filters.speaker || filters.series || filters.type || filters.from || filters.to || selectedChurchId
+  );
+
+  const [services, speakers, series] = await Promise.all([
+    listPublishedServices({
+      churchIds: scopedChurchIds,
+      q: filters.q,
+      speaker: filters.speaker,
+      series: filters.series,
+      type: filters.type,
+      from: filters.from ? new Date(filters.from) : undefined,
+      to: filters.to ? new Date(filters.to) : undefined,
+      sort: filters.sort,
+    }),
+    listSpeakers(scopedChurchIds),
+    listSeries(scopedChurchIds),
+  ]);
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold text-ink mb-4">(re)Écouter</h1>
+
+      <LibraryFiltersClient
+        speakers={speakers}
+        seriesOptions={series}
+        typeOptions={EVENT_TYPE_OPTIONS}
+        churchOptions={accessibleChurches.map((c) => ({ value: c.id, label: c.name }))}
+        current={{
+          q: filters.q ?? "",
+          speaker: filters.speaker ?? "",
+          series: filters.series ?? "",
+          type: filters.type ?? "",
+          from: filters.from ?? "",
+          to: filters.to ?? "",
+          sort: filters.sort ?? "recent",
+          church: selectedChurchId ?? "",
+        }}
+      />
+
+      <ResumeBanner
+        services={services.map((s) => ({
+          id: s.id,
+          title: s.title,
+          serviceDate: s.serviceDate.toISOString(),
+          segmentIds: s.segmentIds,
+        }))}
+      />
+
+      {services.length === 0 ? (
+        <div className="text-center py-16 px-4">
+          {hasActiveFilters ? (
+            <>
+              <p className="text-ink-muted mb-4">Aucun résultat pour cette recherche.</p>
+              <Link href={paths.audio.ecouter()} className={buttonClasses("secondary", "sm")}>
+                Voir tous les enregistrements
+              </Link>
+            </>
+          ) : (
+            <p className="text-ink-muted">Aucun enregistrement publié pour l&apos;instant.</p>
+          )}
+        </div>
+      ) : (
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {services.map((s) => (
+            <li key={s.id}>
+              <Link
+                href={paths.audio.ecouterService(s.id)}
+                className="block bg-surface rounded-card shadow-card border border-line p-4 hover:border-brand/40 transition-colors h-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+              >
+                <div className="flex items-center justify-between mb-2 gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <StatusChip tone="brand" className="shrink-0">
+                      {getEventTypeLabel(s.type)}
+                    </StatusChip>
+                    {s.churchId !== churchId && (
+                      // Couleur de l'église choisie par chaque église (Church.primaryColor) : aplat
+                      // inline volontaire, cf. exceptions de docs/design-system/migration.md.
+                      <span
+                        // eslint-disable-next-line no-restricted-syntax -- texte blanc sur un aplat de couleur d'église arbitraire (pas un token)
+                        className="text-xs font-medium px-2 py-0.5 rounded-full text-white truncate"
+                        style={{ backgroundColor: s.churchPrimaryColor }}
+                      >
+                        {s.churchName}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-ink-subtle shrink-0">
+                    {new Date(s.serviceDate).toLocaleDateString("fr-FR")}
+                  </span>
+                </div>
+                <p className="font-semibold text-ink mb-1 line-clamp-2">
+                  {s.title || "Enregistrement du culte"}
+                </p>
+                {s.speaker && <p className="text-sm text-ink-muted mb-2">{s.speaker}</p>}
+                {s.series && (
+                  <p className="text-xs text-brand-text mb-2">Série : {s.series}</p>
+                )}
+                <p className="text-xs text-ink-subtle">
+                  {s.segmentCount} séquence{s.segmentCount > 1 ? "s" : ""} · {formatDuration(s.totalDurationMs)}
+                </p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}

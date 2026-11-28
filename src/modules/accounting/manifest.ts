@@ -6,7 +6,7 @@ export const accountingModule = defineModule({
   dependsOn: ["core", "planning"],
 
   routes: {
-    authenticated: [{ path: "/accounting" }],
+    authenticated: [{ path: "/finances/demandes" }, { path: "/finances/statistiques" }],
     api: [{ path: "/api/accounting" }],
   },
 
@@ -31,9 +31,5 @@ export const accountingModule = defineModule({
       defaultEmail: true,
       visibleWith: ["accounting:submit", "accounting:view", "accounting:manage"],
     },
-  ],
-
-  navigation: [
-    { label: "Comptabilité", icon: "accounting", href: "/accounting/requests", permission: "accounting:view" },
   ],
 });

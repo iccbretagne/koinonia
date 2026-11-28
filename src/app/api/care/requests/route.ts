@@ -1,4 +1,4 @@
-import { requireAuth, requireChurchPermission } from "@/lib/auth";
+import { requireAuth, requireChurchAccess } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
@@ -12,7 +12,10 @@ import {
 } from "@/modules/care";
 import type { AppointmentRequestStatus } from "@/generated/prisma/client";
 
-const ALLOWED_STATUSES = ["PENDING", "VALIDATED", "SCHEDULED", "CLOSED", "REJECTED"] as const;
+/** Demandes de rendez-vous par compte et par heure (spec 092, exception 2). */
+const CARE_REQUEST_RATE_LIMIT = { windowMs: 60 * 60_000, max: 5 };
+
+const ALLOWED_STATUSES =["PENDING", "VALIDATED", "SCHEDULED", "CLOSED", "REJECTED"] as const;
 
 export async function GET(request: Request) {
   try {
@@ -64,10 +67,18 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = appointmentSubmitSchema.parse(body);
 
-    const session = await requireChurchPermission("planning:view", data.churchId);
+    // Spec 092 (exception 2) : tout compte de l'église (rôle ou profil pastoral) peut demander
+    // un rendez-vous. Débit propre en plus du débit des mutations : 5 demandes par heure.
+    const session = await requireChurchAccess(data.churchId);
     requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
+    requireRateLimit(request, { prefix: `care-request:${session.user.id}`, ...CARE_REQUEST_RATE_LIMIT });
 
-    const created = await submitAppointmentRequest(data, session.user.id!);
+    // Depuis un compte, l'email de contact est celui du compte : ouverte à tous (spec 092), la
+    // demande ne doit pas pouvoir être déposée avec l'adresse d'un tiers (relecture de sécurité).
+    const created = await submitAppointmentRequest(
+      { ...data, email: session.user.email ?? data.email ?? null },
+      session.user.id!
+    );
 
     await logAudit({
       userId: session.user.id,

@@ -2,20 +2,23 @@
 
 Koinonia compte plus de 200 pages réparties en une quinzaine de sections, et chaque rôle n'en voit qu'une partie. La navigation doit donc rester courte pour chacun, sans masquer ce qui existe.
 
-## Architecture : huit espaces
+## Architecture : onze espaces (spec 092, [ADR-0033](../../adr/0033-architecture-information-par-metier.md))
 
-Regrouper les sections actuelles de la sidebar en espaces stables, dans cet ordre :
+Les sections de la sidebar sont regroupées en espaces stables, dans cet ordre. Un libellé désigne un seul écran dans la navigation d'un profil.
 
-| Espace | Contenu actuel regroupé |
+| Espace | Contenu |
 |---|---|
-| **Accueil** | Nouvelle page « Aujourd'hui » : prochains services, tâches à traiter, demandes en attente, raccourcis du rôle |
-| **Planning** | Mon planning, planning par département, absences, événements d'équipe |
-| **Agenda** | Événements d'église, calendrier, comptes rendus, trame des annonces ; bloc « Inscriptions » (billetterie, formulaires) ; agenda pastoral |
-| **Personnes** | STAR, discipolat, intégration, suivi pastoral |
-| **Demandes** | Mes demandes, secrétariat, questionnaires (collectes), comptabilité (navette, trésorerie) |
+| **Accueil** | Page « Aujourd'hui » : prochains services, tâches à traiter, demandes en attente, raccourcis du rôle |
+| **Planning** | Mon planning, disponibilités, planning par département |
+| **Événements** | Bloc « Église » : calendrier, gérer les événements, service d'accueil, comptes rendus, trame des annonces ; bloc « Inscriptions » : billetterie, formulaires, Mes inscriptions |
+| **Pastoral** | Agenda des pasteurs, planification, suivi pastoral |
+| **Personnes** | STAR, discipolat, candidatures, bloc « Intégration » (dossiers, bergers de famille, parcours…) |
+| **Demandes** | Mes demandes (dont la section « Demandes comptables » du Ministre et du Resp. département), secrétariat, questionnaires |
+| **Finances** | Demandes comptables (équipe comptable), statistiques, navette, trésorerie, page de dons |
 | **Médias** | Communication & Production, Audio |
-| **Ressources** | Salles, Emploi, Guide |
-| **Administration** | Église, accès, ministères, départements, fonctions, journal |
+| **Ressources** | Salles, Offres, Familles (site externe) |
+| **Administration** | Blocs « Église », « Accès », « Communication », « Suivi » (paramètres de l'église, ministères, départements, utilisateurs, messages, historique) |
+| **Plateforme** | Super Admin seulement : églises, sauvegardes, API, icône, domaines des sites, assistants |
 
 Un espace n'apparaît que si le rôle y a au moins une page. À l'intérieur, les pages se présentent en liste sous l'espace déplié (sidebar) ou au second niveau du panneau « Plus ». Un sous-espace peut en plus regrouper ses propres pages en onglets (`Tabs`) quand elles sont au même niveau, comme Visuels (Projets / Demandes) au sein de Médias.
 

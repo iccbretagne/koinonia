@@ -1,0 +1,73 @@
+import { requireMediaAccess, isMediaTeamMember, isCommunicationMember, getCurrentChurchId, requireAuth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import Link from "next/link";
+import Button from "@/components/ui/Button";
+import { rolePermissions } from "@/lib/registry";
+import MediaEventsList from "./MediaEventsList";
+import { paths } from "@/lib/paths";
+
+export default async function MediaEventsPage() {
+  const session = await requireAuth();
+  const churchId = await getCurrentChurchId(session);
+  if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  await requireMediaAccess(churchId, "PHOTOS");
+
+  const [events, photoStatusRows] = await Promise.all([
+    prisma.mediaEvent.findMany({
+      where: { churchId },
+      orderBy: { date: "desc" },
+      include: {
+        createdBy: { select: { id: true, name: true, displayName: true } },
+        planningEvent: { select: { id: true, title: true, type: true, date: true } },
+        _count: { select: { photos: true, files: true } },
+      },
+    }),
+    prisma.mediaPhoto.groupBy({
+      by: ["mediaEventId", "status"],
+      where: { mediaEvent: { churchId } },
+      _count: { _all: true },
+    }),
+  ]);
+
+  // Map eventId → { PENDING, PREVALIDATED, APPROVED, REJECTED }
+  type PhotoCounts = { pending: number; prevalidated: number; approved: number; rejected: number };
+  const photoCounts = new Map<string, PhotoCounts>();
+  for (const row of photoStatusRows) {
+    if (!row.mediaEventId) continue;
+    const entry = photoCounts.get(row.mediaEventId) ?? { pending: 0, prevalidated: 0, approved: 0, rejected: 0 };
+    if (row.status === "PENDING")      entry.pending      += row._count._all;
+    if (row.status === "PREVALIDATED") entry.prevalidated += row._count._all;
+    if (row.status === "APPROVED")     entry.approved     += row._count._all;
+    if (row.status === "REJECTED")     entry.rejected     += row._count._all;
+    photoCounts.set(row.mediaEventId, entry);
+  }
+
+  const eventsWithCounts = events.map((e) => ({
+    ...e,
+    photoCounts: photoCounts.get(e.id) ?? { pending: 0, prevalidated: 0, approved: 0, rejected: 0 },
+  }));
+
+  const churchPerms = new Set(
+    session.user.churchRoles
+      .filter((r) => r.churchId === churchId)
+      .flatMap((r) => rolePermissions[r.role] ?? [])
+  );
+  const isProductionMember = await isMediaTeamMember(session, churchId, "PHOTOS");
+  const isCommMember = await isCommunicationMember(session, churchId);
+  const canUpload = session.user.isSuperAdmin || churchPerms.has("media:upload") || isProductionMember || isCommMember;
+  const canShare = session.user.isSuperAdmin || churchPerms.has("media:manage") || isProductionMember || isCommMember;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-ink">Photos</h1>
+        {canUpload && (
+          <Link href={paths.media.newEvent()}>
+            <Button>+ Nouvel événement photo</Button>
+          </Link>
+        )}
+      </div>
+      <MediaEventsList events={eventsWithCounts} canUpload={canUpload} churchId={churchId} canShare={canShare} />
+    </div>
+  );
+}

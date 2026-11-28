@@ -3,6 +3,7 @@ import { requireAuth, requirePlatformPermission } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { createNotification } from "@/lib/notifications";
 import { createMissionSchema } from "./contract";
+import { paths } from "@/lib/paths";
 
 export async function GET() {
   try {
@@ -63,7 +64,7 @@ async function notifyFreelanceMissionSubscribers(mission: {
           type:    "FREELANCE_MISSION",
           title:   "Nouvelle mission freelance",
           message: `${authorName} propose une mission : « ${mission.title} »`,
-          link:    `/jobs/freelance/missions/${mission.id}`,
+          link:    paths.jobs.mission(mission.id),
         });
       }
     })

@@ -1,6 +1,7 @@
 import { notifyUsers } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { countOpenPending } from "./pending";
+import { paths } from "@/lib/paths";
 
 /**
  * Résumé hebdomadaire (tâche cron `assistant-digest`, spec 075) : s'il reste des questions à
@@ -19,7 +20,7 @@ export async function runAssistantDigest() {
       type: "ASSISTANT_PENDING",
       title: "Questions à traiter pour l'assistant",
       message: `${open} question${open > 1 ? "s" : ""} posée${open > 1 ? "s" : ""} à l'assistant attend${open > 1 ? "ent" : ""} une réponse dans la base.`,
-      link: "/admin/assistant",
+      link: paths.admin.assistant(),
     }
   );
   return { open, notified: admins.length };

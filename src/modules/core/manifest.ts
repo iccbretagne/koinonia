@@ -23,14 +23,15 @@ export const coreModule = defineModule({
     authenticated: [
       { path: "/profile" },
       { path: "/guide" },
-      { path: "/admin/churches" },
+      { path: "/admin/eglise" },
+      { path: "/plateforme/eglises" },
       { path: "/admin/access" },
       { path: "/admin/audit-logs" },
-      { path: "/admin/backups" },
-      { path: "/admin/api" },
-      { path: "/admin/app-icon" },
+      { path: "/plateforme/backups" },
+      { path: "/plateforme/api" },
+      { path: "/plateforme/app-icon" },
       { path: "/admin/pastoral-profiles" },
-      { path: "/pastoral" },
+      { path: "/personnes/mes-membres" },
     ],
     api: [
       { path: "/api/churches" },
@@ -75,9 +76,5 @@ export const coreModule = defineModule({
       description: "Rôle attribué, liaison avec la fiche membre acceptée ou refusée.",
       defaultEmail: false,
     },
-  ],
-
-  navigation: [
-    { label: "Configuration", icon: "settings", href: "/admin", permission: "users:manage" },
   ],
 });

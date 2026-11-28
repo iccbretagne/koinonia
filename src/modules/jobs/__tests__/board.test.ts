@@ -44,10 +44,10 @@ describe("toPublication", () => {
   });
 
   it("construit l'adresse de détail de chaque sorte", () => {
-    expect(toPublication("OFFER", offer(), ctx).href).toBe("/jobs/o1");
-    expect(toPublication("MISSION", row(), ctx).href).toBe("/jobs/freelance/missions/x1");
-    expect(toPublication("SEEKER", row(), ctx).href).toBe("/jobs/seekers/x1");
-    expect(toPublication("FREELANCE", row(), ctx).href).toBe("/jobs/freelance/profiles/x1");
+    expect(toPublication("OFFER", offer(), ctx).href).toBe("/ressources/offres/o1");
+    expect(toPublication("MISSION", row(), ctx).href).toBe("/ressources/offres/freelance/missions/x1");
+    expect(toPublication("SEEKER", row(), ctx).href).toBe("/ressources/offres/seekers/x1");
+    expect(toPublication("FREELANCE", row(), ctx).href).toBe("/ressources/offres/freelance/profiles/x1");
   });
 
   it("garde tous les contrats visés par un profil en recherche", () => {

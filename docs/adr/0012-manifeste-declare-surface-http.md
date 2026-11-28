@@ -64,3 +64,18 @@ contrainte de clé étrangère orpheline.
 - **403 plutôt que 404** pour un module désactivé — retenu comme rejeté dès la spec (038) : 403
   confirme l'existence de la ressource, ce que l'objectif (« absent de l'instance ») exclut
   explicitement.
+
+## Amendement (spec 092) — 2026-11-27
+
+- **Résolution sur la table complète.** Le plus long préfixe est cherché parmi **tous** les
+  manifestes, actifs ou non. Si son propriétaire est inactif, l'adresse est orpheline (404 ; 404
+  JSON sous `/api/`), même si un préfixe plus court appartient à un module actif ou au noyau.
+  Corrige un trou constaté par l'audit 092 : `/admin/messages`, `/admin/assistant`, `/admin/mcp`,
+  `/admin/site-domains` (repli sur le noyau `/admin`) et `/accounting/navette`,
+  `/accounting/tresorerie` (repli sur `accounting`) restaient servis module coupé.
+- **Préfixes d'espace partagés.** Avec l'alignement des adresses sur les espaces
+  ([ADR-0033](0033-architecture-information-par-metier.md)), un préfixe d'espace (`/finances`,
+  `/evenements`, `/personnes`…) porte des écrans de plusieurs modules ; chacun déclare ses
+  sous-préfixes. La racine d'un espace sans écran propre est une page du noyau (`NOYAU_ROUTES`).
+- **Anciennes adresses.** Les redirections vivent dans le proxy et ne s'appliquent que si la cible
+  est résolue ; une cible orpheline répond 404 à l'ancienne adresse.
