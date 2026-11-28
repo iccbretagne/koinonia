@@ -7,7 +7,7 @@ endpoints** (accès, paramètres, corps, réponses, règles métier) est génér
 
 - **`docs/openapi.json`** : spécification OpenAPI 3.0, à jour à chaque commit (un test échoue
   sinon) ;
-- **`/admin/api`** : la même spécification affichée avec Swagger UI, réservée au Super Admin
+- **`/plateforme/api`** : la même spécification affichée avec Swagger UI, réservée au Super Admin
   (Administration → Plateforme → API).
 
 ## Format des réponses

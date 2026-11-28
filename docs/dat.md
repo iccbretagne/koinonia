@@ -1,5 +1,11 @@
 # Dossier d'Architecture Technique (DAT) — Koinonia
 
+> **À réviser.** Ce DAT décrit la v1.19.0 (2026-09-02) ; l'application est depuis passée à de
+> nombreux modules supplémentaires (22 manifestes dans `src/modules/`, contre 21 cités plus bas) et
+> les adresses d'écran ont été réorganisées par espace métier (spec 092, ADR-0033). Les principes
+> d'architecture restent valables ; pour les chiffres et les chemins, se fier au code,
+> à [architecture.md](architecture.md) et à l'[index des ADR](adr/README.md).
+
 - **Version du logiciel décrite** : 1.19.0
 - **Dernière mise à jour** : 2026-09-02
 - **Statut** : Validé
