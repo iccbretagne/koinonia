@@ -201,7 +201,7 @@ export const DONNEES: readonly KnowledgeEntry[] = [
     questions: ["Les événements de la semaine", "qu'est-ce qu'il y a cette semaine", "programme de la semaine", "événements à venir"],
     answer: "Événements des 7 prochains jours :",
     href: paths.events(),
-    hrefLabel: "Agenda de l'église",
+    hrefLabel: "Calendrier de l'église",
     audience: { permissions: ["events:view"] },
     otherwise: reserved("aux responsables, au Reporter, au Secrétaire et à l'Admin"),
     dataQuestion: "planning.eventsThisWeek",
