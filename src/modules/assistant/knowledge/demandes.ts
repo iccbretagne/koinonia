@@ -15,7 +15,7 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
       "demande à la com",
     ],
     answer:
-      "Dans « Mes demandes », touchez « Nouvelle demande » : renseignez le titre, le brief, la date limite et les canaux (annonce interne, réseaux sociaux, visuel).",
+      "Dans l'espace « Demandes », ouvrez « Mes demandes » et touchez « Nouvelle demande » : renseignez le titre, le brief, la date limite et les canaux (annonce interne, réseaux sociaux, visuel).",
     href: paths.requests.newRequest(),
     hrefLabel: "Nouvelle demande",
     audience: { permissions: ["members:view"] },
@@ -27,7 +27,7 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
     kind: "howto",
     title: "Suivre mes demandes",
     questions: ["Où en est ma demande ?", "ma demande est refusée pourquoi", "statut de ma demande", "suivre mes demandes"],
-    answer: "« Mes demandes » affiche l'état de chacune : En attente, En cours, Livrée, Refusée (avec le motif).",
+    answer: "Dans l'espace « Demandes », « Mes demandes » affiche l'état de chacune : En attente, En cours, Livrée, Refusée (avec le motif).",
     href: paths.requests(),
     hrefLabel: "Mes demandes",
     audience: { permissions: ["members:view"] },
@@ -39,7 +39,7 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
     title: "Traiter les demandes (Secrétariat)",
     questions: ["Demandes à traiter", "approuver une demande", "refuser une demande", "file du secrétariat"],
     answer:
-      "« Traitement des demandes » a trois onglets (À traiter, En cours, Traitées) et une file triée par échéance. Ouvrez une demande pour l'approuver, la refuser avec un motif ou marquer une annonce diffusée.",
+      "Dans l'espace « Demandes », « Traitement des demandes » a trois onglets (À traiter, En cours, Traitées) et une file triée par échéance. Ouvrez une demande pour l'approuver, la refuser avec un motif ou marquer une annonce diffusée.",
     href: paths.secretariat.requests(),
     hrefLabel: "Traitement des demandes",
     audience: { permissions: ["events:manage"], predicates: ["secretariatTeam"] },
@@ -52,7 +52,7 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
     title: "Traiter les demandes de visuels ou réseaux sociaux",
     questions: ["Demandes de visuels", "livrer un visuel", "demandes réseaux sociaux", "marquer publiée"],
     answer:
-      "Dans « Communication & Production », ouvrez Visuels (onglet Demandes) ou Réseaux sociaux : prenez en charge, puis marquez livré ou publié (avec le lien si besoin). Une annulation demande un motif, transmis au demandeur.",
+      "Dans l'espace « Médias », ouvrez « Communication & Production » puis Visuels (onglet Demandes) ou Réseaux sociaux : prenez en charge, puis marquez livré ou publié (avec le lien si besoin). Une annulation demande un motif, transmis au demandeur.",
     href: paths.media(),
     hrefLabel: "Communication & Production",
     audience: { permissions: ["events:manage"], predicates: ["mediaTeam"] },
@@ -65,12 +65,12 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
     title: "Partager des photos",
     questions: ["Partager les photos du culte", "lien de partage", "envoyer les photos", "révoquer un lien"],
     answer:
-      "Depuis Photos ou Visuels, « Partager une sélection » crée un lien. Le bouton « Partages » liste les liens actifs et permet de les révoquer.",
-    href: paths.media(),
-    hrefLabel: "Communication & Production",
+      "Dans « Médias » › « Communication & Production », depuis Photos ou Visuels, « Partager une sélection » crée un lien. Le bouton « Partages » liste les liens actifs et permet de les révoquer.",
+    href: paths.media.events(),
+    hrefLabel: "Photos",
     audience: { permissions: ["media:view"], predicates: ["mediaTeam"] },
     otherwise: "Le partage des photos revient aux équipes Photos et Production Média.",
-    screens: [paths.media()],
+    screens: [paths.media(), paths.media.events()],
   },
   {
     key: "KB-110",
@@ -84,7 +84,7 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
       "donner accès à la galerie",
     ],
     answer:
-      "Dans « Communication & Production », la carte Galerie montre toutes les photos et tous les visuels validés, par mois. Filtrez par type, période, événement ou projet, ou cherchez un nom ; touchez un média pour l'ouvrir et le télécharger, ou « Sélectionner » pour en télécharger plusieurs (200 au plus) ou les partager. Un Admin ou le Ministre des équipes média donne un accès à une personne précise avec le bouton « Gérer les accès ».",
+      "Dans l'espace « Médias », « Communication & Production », la carte Galerie montre toutes les photos et tous les visuels validés, par mois. Filtrez par type, période, événement ou projet, ou cherchez un nom ; touchez un média pour l'ouvrir et le télécharger, ou « Sélectionner » pour en télécharger plusieurs (200 au plus) ou les partager. Un Admin ou le Ministre des équipes média donne un accès à une personne précise avec le bouton « Gérer les accès ».",
     href: paths.media.galerie(),
     hrefLabel: "Galerie",
     audience: { predicates: ["mediaGallery"] },
@@ -102,9 +102,9 @@ export const DEMANDES: readonly KnowledgeEntry[] = [
       "besoin d'un accompagnement",
     ],
     answer:
-      "Déposez la demande depuis « Demander un rendez-vous » dans « Mes demandes », ouverte à tout compte de l’église. Suivez ensuite son état au même endroit.",
+      "Déposez la demande depuis « Demander un rendez-vous » dans l'espace « Demandes » (« Mes demandes »), ouverte à tout compte de l’église. Suivez ensuite son état au même endroit.",
     href: paths.care.request(),
-    hrefLabel: "Demande de rendez-vous pastoral",
+    hrefLabel: "Demander un rendez-vous",
     audience: { permissions: ["planning:view"] },
     screens: [paths.requests(), paths.accueil()],
   },

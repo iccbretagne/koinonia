@@ -52,6 +52,23 @@ const SCREEN_PERMISSION: Record<string, string> = {
   "/finances/tresorerie": "treasury:manage",
   "/demandes/rendez-vous": "planning:view",
   "/evenements/annonces": "planning:view",
+  "/admin/ministries": "departments:manage",
+  "/admin/departments": "departments:manage",
+  "/admin/departments/functions": "events:manage",
+  "/admin/audit-logs": "church:settings",
+  "/admin/users": "users:manage",
+  "/admin/salles": "rooms:manage",
+  "/admin/pastoral-profiles": "church:settings",
+  "/medias/audio/production": "audio:view",
+  "/medias/audio/parametres": "audio:manage",
+  "/plateforme/eglises": "church:manage",
+  "/plateforme/backups": "church:manage",
+  "/plateforme/app-icon": "church:manage",
+  "/plateforme/api": "church:manage",
+  "/plateforme/assistant": "church:manage",
+  "/plateforme/site-domains": "church:manage",
+  "/plateforme/mcp": "church:manage",
+  "/ressources/salles/checklists": "rooms:manage",
 };
 
 describe("base de connaissances fournie (spec 075)", () => {

@@ -1,6 +1,8 @@
+import { ADMINISTRATION, PLATEFORME } from "./administration";
 import { DEMANDES } from "./demandes";
 import { DONNEES } from "./donnees";
 import { ESPACES } from "./espaces";
+import { EVOLUTIONS } from "./evolutions";
 import { FINANCES } from "./finances";
 import { FIXED } from "./fixed";
 import { MEMBRES_EVENEMENTS, MON_PLANNING, PLANNING_DEPARTEMENT } from "./planning";
@@ -19,6 +21,9 @@ export const BUILTIN_ENTRIES: readonly KnowledgeEntry[] = [
   ...DEMANDES,
   ...FINANCES,
   ...ESPACES,
+  ...ADMINISTRATION,
+  ...PLATEFORME,
+  ...EVOLUTIONS,
   ...FIXED,
   ...DONNEES,
 ];
