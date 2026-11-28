@@ -75,7 +75,7 @@ export default async function ChurchAgendaPage({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Agenda de l'église"
+        title="Calendrier de l'église"
         description="Calendrier, plusieurs mois ou liste, au choix."
         actions={
           canManageEvents ? (

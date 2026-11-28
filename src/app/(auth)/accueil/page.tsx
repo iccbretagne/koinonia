@@ -48,7 +48,7 @@ import { paths } from "@/lib/paths";
  *
  * - Prochains services : `loadMyPlanning` (même source que « Mon planning », `/planning`),
  *   sous `planning:view` et seulement pour un compte lié à une fiche STAR (comme le lien de menu).
- * - Agenda de l'église : même requête que `/events` sous `events:view`, sinon la semaine de
+ * - Calendrier de l'église : même requête que `/events` sous `events:view`, sinon la semaine de
  *   `/planning/events` (`buildWeekEventsQuery`) sous `planning:view`.
  * - Demandes en cours : `loadMyRequests` (même source que « Mes demandes », `/requests`), sous
  *   `members:view`.
@@ -163,9 +163,9 @@ function shortcutsFor(access: {
 }): Shortcut[] {
   let agendaShortcut: Shortcut[] = [];
   if (access.canEvents) {
-    agendaShortcut = [{ href: paths.events(), label: "Agenda de l'église", description: "Calendrier des événements", icon: CalendarDays }];
+    agendaShortcut = [{ href: paths.events(), label: "Calendrier de l'église", description: "Les événements à venir", icon: CalendarDays }];
   } else if (access.canPlanning) {
-    agendaShortcut = [{ href: paths.events(), label: "Agenda de l'église", description: "Les événements de la semaine", icon: CalendarDays }];
+    agendaShortcut = [{ href: paths.events(), label: "Calendrier de l'église", description: "Les événements de la semaine", icon: CalendarDays }];
   }
   return [
     ...(access.hasMyPlanning ? [{ href: paths.planning(), label: "Mon planning", description: "Mes services du mois", icon: CalendarCheck }] : []),
@@ -258,7 +258,7 @@ function ChurchEventsSection({
         <SectionTitle
           title={canEvents ? "Prochains événements de l'église" : "Cette semaine à l'église"}
           href={paths.events()}
-          linkLabel="Voir tout l'agenda"
+          linkLabel="Voir tout le calendrier"
         />
       </div>
       {upcomingEvents.length === 0 ? (

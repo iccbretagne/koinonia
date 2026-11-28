@@ -457,7 +457,7 @@ export const PLANNING_QUESTIONS: DataQuestion[] = [
       return boundedAnswer({
         title: "Événements de la semaine",
         href: paths.events(),
-        hrefLabel: "Agenda de l'église",
+        hrefLabel: "Calendrier de l'église",
         items,
         empty: "Aucun événement dans les 7 prochains jours.",
       });
