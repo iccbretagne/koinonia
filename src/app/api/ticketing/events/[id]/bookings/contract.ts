@@ -6,7 +6,7 @@ export const contract = defineContract({
     description:
       "Participants, éléments payants et soldes (dû, déclaré, payé, reste, à rembourser). Coordonnées et réponses pour l'organisateur et le trésorier seulement ; l'observateur reçoit les noms et soldes, sans contact ni détail des éléments.",
     access: "session",
-    accessNote: "un rôle de lecture sur l'événement",
+    accessNote: "organisateur, trésorier ou observateur de l'événement",
     response: "Liste des réservations",
   },
 });

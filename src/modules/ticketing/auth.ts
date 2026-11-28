@@ -26,6 +26,8 @@ export const EVENT_ACTIONS = {
   catering: ["ORGANIZER", "CATERING"],
   menu: ["ORGANIZER", "CATERING"],
   read: ["ORGANIZER", "TREASURER", "RECEPTION", "CATERING", "OBSERVER"],
+  /** Liste des inscrits (onglet « Inscrits ») : ni l'accueil ni la restauration. */
+  bookings: ["ORGANIZER", "TREASURER", "OBSERVER"],
   /** Site de l'événement (spec 084) : la Communication n'a que ce geste. */
   site: ["ORGANIZER", "COMMUNICATION"],
 } as const satisfies Record<string, readonly TicketingRole[]>;

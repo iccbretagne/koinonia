@@ -78,7 +78,7 @@ export default async function TicketingEventPage({
     payments: canDo(access, "payments"),
     reception: canDo(access, "reception"),
     catering: canDo(access, "catering"),
-    bookings: ["ORGANIZER", "TREASURER", "OBSERVER"].some((r) => access.roles.has(r as never)),
+    bookings: canDo(access, "bookings"),
     site: siteAccess,
   };
   const allowed: Record<View, boolean> = {

@@ -91,8 +91,38 @@ export function isDataRefusal(result: DataResult): result is DataRefusal {
   return "refused" in result && result.refused === true;
 }
 
-/** Texte d'une ligne : espaces de bord retirés, espaces multiples réduits. */
-export const cleanText = (text: string | null | undefined) => (text ?? "").replace(/\s+/g, " ").trim();
+/**
+ * Caractères de contrôle et de mise en forme invisibles (retours à la ligne, direction du texte,
+ * largeur nulle) : un texte saisi par un tiers ne doit jamais pouvoir se faire passer, une fois
+ * renvoyé à un assistant IA, pour une nouvelle ligne ou une consigne.
+ */
+// U+200C/U+200D (liants) gardés : ils composent les emoji et certaines écritures. Les caractères
+// « étiquettes » (U+E0000–E007F), invisibles, servent à cacher des consignes : retirés.
+const INVISIBLE = /[\u0000-\u001F\u007F-\u009F\u00AD\u061C\u180E\u200B\u200E\u200F\u2028-\u202E\u2060-\u206F\uFEFF\u{E0000}-\u{E007F}]/gu;
+
+/** Coupe à `max` caractères (points de code, jamais au milieu d'un emoji), avec « … ». */
+function bound(text: string, max: number): string {
+  const chars = Array.from(text);
+  return chars.length > max ? `${chars.slice(0, max - 1).join("").trimEnd()}…` : text;
+}
+
+/** Texte d'une ligne : caractères invisibles retirés, espaces réduits ; borné seulement si `max` est donné. */
+export const cleanText = (text: string | null | undefined, max = Infinity) =>
+  bound((text ?? "").replace(INVISIBLE, " ").replace(/\s+/g, " ").trim(), max);
+
+/**
+ * Texte libre saisi par une autre personne (nom d'un formulaire public, motif, note…), renvoyé à
+ * un assistant IA : une seule ligne, borné, et les guillemets « » neutralisés pour que `quoted`
+ * délimite toujours tout le champ. C'est une donnée, jamais une consigne (voir les instructions
+ * du serveur MCP).
+ */
+export const untrustedText = (text: string | null | undefined, max = 500) => cleanText(text, max).replace(/[«»]/g, '"');
+
+/** Nom saisi par un tiers : `untrustedText` borné à 80 caractères. */
+export const untrustedName = (text: string | null | undefined) => untrustedText(text, 80);
+
+/** Champ libre d'un tiers, clairement délimité dans un texte : « … ». */
+export const quoted = (text: string | null | undefined, max = 500) => `« ${untrustedText(text, max)} »`;
 
 /**
  * Réponse complète d'une question : titre, libellés et détails nettoyés (un détail vide disparaît, pour

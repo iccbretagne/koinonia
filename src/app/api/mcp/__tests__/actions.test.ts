@@ -176,3 +176,15 @@ describe("préparer une demande", () => {
     expect(actions.canDraftRequest(viewerFor("DEPARTMENT_HEAD"))).toBe(true);
   });
 });
+
+describe("libellés des actions (instructions du serveur)", () => {
+  it("chaque action confirmée du catalogue a un libellé, et aucun libellé n'est orphelin", async () => {
+    const { ACTION_LABELS } = await import("../_actions/labels");
+    const registered = new Set(actions.MCP_ACTIONS.filter((a) => a.kind !== "read").map((a) => a.action));
+    for (const action of registered) expect(ACTION_LABELS[action], action).toBeTruthy();
+    for (const action of Object.keys(ACTION_LABELS)) expect(registered.has(action), action).toBe(true);
+    for (const action of ["upload_ticketing_ticket_image", "edit_ticketing_ticket_visual", "unpublish_ticketing_ticket_visual"]) {
+      expect(registered.has(action), action).toBe(true);
+    }
+  });
+});

@@ -60,6 +60,7 @@ describe("accès à un événement de billetterie (spec 074)", () => {
     expect(EVENT_ACTIONS.payments).toEqual(["ORGANIZER", "TREASURER"]);
     expect(EVENT_ACTIONS.catering).toEqual(["ORGANIZER", "CATERING"]);
     expect(EVENT_ACTIONS.read).toContain("OBSERVER");
+    expect(EVENT_ACTIONS.bookings).toEqual(["ORGANIZER", "TREASURER", "OBSERVER"]);
   });
 
   it("Communication (spec 084) : le site seulement, ni lecture des inscrits, ni paiements, ni paramétrage", () => {
