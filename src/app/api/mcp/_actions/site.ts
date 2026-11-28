@@ -502,6 +502,10 @@ const uploadAction = eventAction({
     const site = await m.getSite(event!.id);
     const { source, file } = input;
     if (Boolean(source) === Boolean(file)) return "Fournissez exactement une source : `file` (fichier de la conversation) ou `source` (url ou base64). À défaut, proposez le lien de ticketing_site_upload_link.";
+    // L'aperçu stocke déjà l'image (en attente) : plafond par site, avant tout téléchargement.
+    if ((await m.pendingAssetCount(site.id)) >= m.MAX_PENDING_ASSETS) {
+      return `Déjà ${m.MAX_PENDING_ASSETS} images en attente de confirmation sur ce site : confirmez-les, ou attendez leur purge (1 heure), avant un nouvel aperçu.`;
+    }
     const urlName = (u: string) => {
       try {
         return decodeURIComponent(new URL(u).pathname.split("/").pop() ?? "");

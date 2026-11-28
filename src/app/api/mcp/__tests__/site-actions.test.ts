@@ -7,6 +7,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { viewerFor } from "../../assistant/__tests__/viewers";
 
 let stored: Record<string, unknown> = {};
+let pendingCount = 0;
 let lastToken = "";
 const mcp = {
   createConfirmation: vi.fn(async (_g: string, _a: string, payload: unknown) => {
@@ -59,6 +60,8 @@ const svc = {
   assetState: vi.fn(async () => assetStateValue),
   deleteAsset: vi.fn(async () => undefined),
   decodeBase64Image: vi.fn(() => Buffer.from("octets")),
+  pendingAssetCount: vi.fn(async () => pendingCount),
+  MAX_PENDING_ASSETS: 10,
 };
 vi.mock("@/modules/ticketing", () => svc);
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn(), withAuditContext: async (_e: unknown, fn: () => Promise<unknown>) => fn() }));
@@ -71,6 +74,7 @@ const confirm = (action: string, token = lastToken) => A(`${action}_confirm`).ru
 
 beforeEach(() => {
   vi.clearAllMocks();
+  pendingCount = 0;
   roles = new Set(["COMMUNICATION"]);
   updatedAt = "2099-01-01T00:00:00.000Z";
   published = false;
@@ -292,6 +296,18 @@ describe("images", () => {
     expect(out.text).toContain("réseau privé");
     expect(svc.stageAsset).not.toHaveBeenCalled();
     expect(mcp.createConfirmation).not.toHaveBeenCalled();
+  });
+
+  it("plafond d'images en attente par site : refus avant tout téléchargement ni stockage", async () => {
+    pendingCount = 10;
+    const out = await preview("upload_ticketing_site_asset", { event: "tk-1", source: { url: "https://exemple.org/a.png" }, alt: "A" });
+    expect(out.text).toContain("10 images en attente");
+    expect(fetchImage).not.toHaveBeenCalled();
+    expect(svc.stageAsset).not.toHaveBeenCalled();
+    expect(mcp.createConfirmation).not.toHaveBeenCalled();
+    pendingCount = 9;
+    await preview("upload_ticketing_site_asset", { event: "tk-1", source: { url: "https://exemple.org/a.png" }, alt: "A" });
+    expect(svc.stageAsset).toHaveBeenCalled();
   });
 
   it("image en attente purgée entre l'aperçu et la confirmation : refus", async () => {

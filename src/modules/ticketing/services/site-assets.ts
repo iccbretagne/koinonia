@@ -186,6 +186,17 @@ export async function assetState(siteId: string, assetId: string): Promise<{ pen
   return row && { pending: row.key === "pending" };
 }
 
+/**
+ * Plafond d'images en attente par site (aperçus de l'assistant IA non confirmés) : l'aperçu stocke
+ * déjà l'image, ce plafond borne l'espace qu'une série d'aperçus peut occuper avant la purge.
+ */
+export const MAX_PENDING_ASSETS = 10;
+
+/** Nombre d'images en attente (ni confirmées ni encore purgées) de ce site. */
+export async function pendingAssetCount(siteId: string): Promise<number> {
+  return (await db()).ticketingSiteAsset.count({ where: { siteId, key: "pending" } });
+}
+
 /** Images jamais confirmées depuis plus d'une heure : fichiers et lignes supprimés. */
 export async function purgePendingAssets(now = new Date()): Promise<number> {
   const prisma = await db();
