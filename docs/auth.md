@@ -855,7 +855,7 @@ seule (`ENABLED_MODULES`) :
   date limite des options, libération des options non réglées (sauf paiement sur place), rappel
   de la veille, clôture 24 h après la fin, purge des données nominatives après la durée de
   conservation
-- Écrans de terrain **hors ligne** ([ADR-0026](docs/adr/0026-ecrans-hors-ligne.md)) :
+- Écrans de terrain **hors ligne** ([ADR-0026](adr/0026-ecrans-hors-ligne.md)) :
   `/evenements/billetterie/[id]/controle` (accueil) et `/evenements/billetterie/[id]/restauration` — instantané
   d'empreintes, file IndexedDB, synchronisation idempotente (`…/sync`), présences **calculées** à
   partir des passages, seuils de jauge 90 % et 100 % notifiés une fois. L'équipe (postes,
