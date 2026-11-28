@@ -1,5 +1,9 @@
 # TODO — Separer le compte runtime du compte de deploiement (audit H-10)
 
+> **Chantier ouvert, non commencé** (état au 2026-08-29, toujours valable : le service et le
+> déploiement SSH utilisent encore le même compte `koinonia`). Les procédures décrites ici sont
+> aujourd'hui dans [deploiement/serveur.md](deploiement/serveur.md) et [deploiement/ci-cd.md](deploiement/ci-cd.md).
+
 - **Statut** : a traiter, non commence
 - **Origine** : audit securite/qualite du 2026-08-29, constat **H-10** (severite haute)
 - **Nature** : infrastructure uniquement — aucun code applicatif ne change

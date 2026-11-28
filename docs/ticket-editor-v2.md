@@ -1,5 +1,9 @@
 # Éditeur de billets V2
 
+> **Note de réalisation** de la spec 088 (éditeur de billets V2), figée à la livraison en recette
+> v1.42.0. Elle documente un diagnostic et une démonstration ; la référence du comportement est la
+> [spec 088](../specs/088-visuel-billet/spec.md).
+
 La V2 est disponible en recette dans la version `1.42.0-6736889` (commit `67368890`). GitHub a validé la compilation Turbopack, les tests, CodeQL et SonarCloud. Le déploiement de l’application et la démo locale n’ont entraîné aucune publication de modèle. Le parcours avec un billet de test, l’impression et le scan réel restent à valider.
 
 [Spec 088](../specs/088-visuel-billet/spec.md) · [PR #775](https://github.com/iccbretagne/koinonia/pull/775) · [CI](https://github.com/iccbretagne/koinonia/actions/runs/45291342014) · [Déploiement recette](https://github.com/iccbretagne/koinonia/actions/runs/45291337522)

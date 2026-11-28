@@ -1,5 +1,9 @@
 # Campagne F9 2026 — mode d'emploi
 
+> **Document opérationnel daté** : mode d'emploi de la campagne F9 2026 (échéances en décembre 2026).
+> À archiver une fois la campagne transmise. Le fonctionnement général du module est dans
+> [CLAUDE.md](../CLAUDE.md#rôles-et-permissions) (« module campagnes de collecte ») et l'[ADR-0032](adr/0032-campagnes-de-collecte.md).
+
 Bilan annuel F9 d'ICC Rennes, collecté par le module `campaigns` (spec 090). Définition : `specs/090-campagnes-collecte/f9-2026.json` (15 questionnaires, 96 items dont 79 codes officiels).
 
 ## Échéances

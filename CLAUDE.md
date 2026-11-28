@@ -164,7 +164,8 @@ koinonia/
 
 ```bash
 npm run dev              # Developpement (Turbopack)
-npm run build            # Build de production (enchaine build:worker)
+npm run build            # Build de production (enchaine build:worker et build:scripts)
+npm run build:scripts    # Bundle esbuild des scripts de runbook -> dist/*.mjs (ex. 092-rewrite-stored-paths)
 npm run build:worker     # Bundle esbuild du worker audio -> dist/worker.mjs
 npm run worker           # Worker audio en developpement (tsx, sources directes)
 npm run start            # Serveur de production
@@ -1042,6 +1043,8 @@ Chaque église (`Church`) est un tenant isolé. Les données sont rattachées à
 
 ## Documentation
 
+Carte complète par public : [docs/README.md](docs/README.md). Pour contribuer (setup, branches, checklist de PR, ADR) : [CONTRIBUTING.md](CONTRIBUTING.md) — ses règles valent pour les agents comme pour les humains.
+
 | Document | Contenu |
 |---|---|
 | [DAT](docs/dat.md) | Dossier d'architecture technique — vue d'ensemble, synthèse des autres documents |
@@ -1049,13 +1052,16 @@ Chaque église (`Church`) est un tenant isolé. Les données sont rattachées à
 | [Base de données](docs/database.md) | Schéma Prisma, modèles, relations |
 | [API](docs/api.md) | Conventions de l'API ; référence des endpoints générée dans `docs/openapi.json` (Swagger UI `/plateforme/api`, ADR-0023) |
 | [Authentification](docs/auth.md) | NextAuth, OAuth, RBAC, permissions |
-| [Production](docs/production.md) | Déploiement Debian, Traefik, systemd |
+| [Déploiement](docs/deploiement/README.md) | Guide d'opérateur : première installation, release, rollback, variables d'environnement, cron, sauvegardes, runbooks (remplace `docs/production.md`, devenu un renvoi) |
+| [Recette](docs/staging.md) | Environnement de recette (workflow Deploy Staging) |
 | [Environnement de dev](docs/dev-onboarding.md) | Setup conteneurisé, jeu de données fictif, connexion sans Google OAuth |
 | [Tests E2E](docs/e2e.md) | Harnais Playwright : navigation par rôle, accessibilité, comptes de dev |
 | [Roadmap](docs/roadmap.md) | Évolutions prévues |
 | [ADR](docs/adr/README.md) | Décisions architecturales structurantes (Architecture Decision Records) |
 
 ## Setup local
+
+Parcours conteneurisé sans OAuth Google (`npm run dev:up`) et guide complet : [CONTRIBUTING.md](CONTRIBUTING.md#2-installer-lenvironnement). Parcours classique :
 
 Prérequis : Node.js 22, Docker.
 
@@ -1185,7 +1191,7 @@ Créer une branche `feat/X` comme base. Les sous-features ouvrent des PRs vers `
     dans le `routes` du manifeste de son module (`authenticated`/`api`/`public`, avec `method` si
     la route publique n'est ouverte que sur une méthode) — ou dans `NOYAU_ROUTES` de
     `src/lib/module-routes.ts` si elle ne relève d'aucun module. Sans déclaration, le proxy la
-    traite comme absente de l'instance (404) ; `route-exhaustiveness.test.ts` échoue si un
+    traite comme absente de l'instance (404) ; `routes-exhaustivite.test.ts` échoue si un
     `route.ts`/`page.tsx` réel n'est couvert par aucun préfixe ou par plusieurs à la fois
 15. **Contrat d'API** (ADR-0023) : toute route API a un `contract.ts` voisin, pur (zod,
     `@/lib/openapi/contract`, `@/generated/prisma/enums`, `@/modules/*/schemas`, autres

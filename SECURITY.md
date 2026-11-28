@@ -6,8 +6,8 @@ Seule la dernière version stable de Koinonia reçoit des correctifs de sécurit
 
 | Version | Supportée |
 |---------|-----------|
-| 0.15.x (latest) | :white_check_mark: |
-| < 0.15 | :x: |
+| Dernière version publiée (`package.json`, [releases](https://github.com/iccbretagne/koinonia/releases)) | :white_check_mark: |
+| Versions antérieures | :x: |
 
 ## Signaler une vulnérabilité
 
