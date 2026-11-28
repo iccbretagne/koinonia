@@ -88,6 +88,7 @@ const ALLOWLIST: Record<string, string> = {
   // Assistant (spec 075) : l'audience d'une fiche reprend la garde de son écran, rien de plus.
   "src/modules/assistant/knowledge/planning.ts": `${MEMBERS_MANAGE_LEGIT} (KB-060, KB-061) ; ${EVENTS_MANAGE_LEGIT} (KB-070, KB-073)`,
   "src/modules/assistant/knowledge/demandes.ts": `${EVENTS_MANAGE_FRAGILE} — même règle que la file des demandes (resolveRequestQueueAccess) et media-space (KB-082, KB-083)`,
+  "src/modules/assistant/knowledge/administration.ts": `${EVENTS_MANAGE_LEGIT} — même garde que /admin/departments/functions (KB-162, fonctions de département)`,
   "src/modules/assistant/knowledge/donnees.ts": `${EVENTS_MANAGE_FRAGILE} — même règle que la file du Secrétariat (D16)`,
   "src/lib/media-space.ts": EVENTS_MANAGE_FRAGILE,
   "src/app/api/requests/route.ts": EVENTS_MANAGE_FRAGILE,
