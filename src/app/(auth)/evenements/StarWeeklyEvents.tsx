@@ -55,7 +55,7 @@ export default async function StarWeeklyEvents({ week }: { readonly week?: strin
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Agenda de l'église" description="Les événements de l'église, semaine par semaine." />
+      <PageHeader title="Calendrier de l'église" description="Les événements de l'église, semaine par semaine." />
 
       <PeriodNav
         label={formatWeekLabel(start, end)}
