@@ -1,0 +1,255 @@
+import type { KnowledgeEntry } from "./types";
+import { paths } from "@/lib/paths";
+
+const SUPER_ADMIN_ONLY = "Cet écran est réservé à l'administration de la plateforme (Super Admin).";
+
+/** Administration de l'église (KB-160 à KB-167). */
+export const ADMINISTRATION: readonly KnowledgeEntry[] = [
+  {
+    key: "KB-160",
+    kind: "howto",
+    title: "Créer ou modifier un ministère",
+    questions: ["créer un ministère", "ajouter un ministère", "renommer un ministère", "supprimer un ministère", "où sont les ministères"],
+    answer:
+      "Dans l'espace « Administration », ouvrez « Ministères » (bloc Église) puis « Créer un ministère », ou modifiez un ministère existant. Un ministère regroupe des départements ; un Ministre est rattaché au sien.",
+    href: paths.admin.ministries(),
+    hrefLabel: "Ministères",
+    audience: { permissions: ["departments:manage"] },
+    otherwise: "Les ministères sont gérés par l'administration de l'église et les Ministres.",
+    screens: [paths.admin.ministries()],
+  },
+  {
+    key: "KB-161",
+    kind: "howto",
+    title: "Créer ou modifier un département",
+    questions: ["créer un département", "ajouter un département", "renommer un département", "changer le responsable d'un département", "supprimer un département"],
+    answer:
+      "Dans l'espace « Administration », ouvrez « Départements » (bloc Église), puis « Créer un département » en le rattachant à un ministère. Les départements système sont gérés par le Super Admin. Les STAR d'un département se gèrent dans « Personnes » › « STAR ».",
+    href: paths.admin.departments(),
+    hrefLabel: "Départements",
+    audience: { permissions: ["departments:manage"] },
+    otherwise: "Les départements sont gérés par l'administration de l'église et les Ministres.",
+    screens: [paths.admin.departments()],
+  },
+  {
+    key: "KB-162",
+    kind: "howto",
+    title: "Donner une fonction à un département",
+    questions: [
+      "fonction d'un département",
+      "département de la navette",
+      "définir le département de captation audio",
+      "quel département fait les photos",
+      "département d'intégration",
+      "département vie des STAR",
+    ],
+    answer:
+      "Dans l'espace « Administration », ouvrez « Fonctions des départements » et attribuez à un département une fonction : Captation Audio, Communication, Intégration, Modération, Navette, Photos, Production Média, Protocole, Secrétariat, Soins Pastoraux (MSDP), Sécurité ou Vie des STAR (PVS). Plusieurs départements peuvent porter la même fonction. Composer ces départements est une décision de sécurité : leurs membres reçoivent les droits de l'équipe correspondante.",
+    href: paths.admin.departmentFunctions(),
+    hrefLabel: "Fonctions des départements",
+    audience: { permissions: ["events:manage"] },
+    otherwise: "Les fonctions de département sont réglées par le Secrétaire et l'administration de l'église.",
+    screens: [paths.admin.departmentFunctions()],
+  },
+  {
+    key: "KB-163",
+    kind: "howto",
+    title: "Gérer les utilisateurs",
+    questions: ["créer un utilisateur", "ajouter un compte", "supprimer un compte", "liste des utilisateurs", "qui a un compte"],
+    answer:
+      "Dans l'espace « Administration », « Utilisateurs » (bloc Accès) liste les comptes et permet d'en créer. Les rôles d'un compte se règlent dans « Accès & rôles ».",
+    href: paths.admin.users(),
+    hrefLabel: "Utilisateurs",
+    audience: { permissions: ["users:manage"] },
+    otherwise: "Les comptes sont gérés par l'administration de l'église.",
+    screens: [paths.admin.users()],
+  },
+  {
+    key: "KB-164",
+    kind: "howto",
+    title: "Attribuer ou retirer un rôle",
+    questions: ["donner un rôle", "retirer un rôle", "nommer un responsable de département", "changer le rôle d'un utilisateur", "nommer un admin", "gérer les accès"],
+    answer:
+      "Dans l'espace « Administration », ouvrez « Accès & rôles », choisissez la personne puis attribuez, modifiez ou retirez un rôle. Un Ministre ne peut agir que sur les rôles de ses ministères ; nommer ou retirer un Admin ou un Secrétaire revient à l'administration de l'église.",
+    href: paths.admin.access(),
+    hrefLabel: "Accès & rôles",
+    audience: { permissions: ["access:manage"] },
+    otherwise: "Les rôles sont attribués par l'administration de l'église et, dans leur ministère, par les Ministres.",
+    screens: [paths.admin.access()],
+  },
+  {
+    key: "KB-165",
+    kind: "howto",
+    title: "Consulter l'historique des modifications",
+    questions: ["qui a modifié", "historique des modifications", "journal des actions", "qui a supprimé", "audit"],
+    answer:
+      "Dans l'espace « Administration », ouvrez « Historique » (bloc Suivi) : chaque ligne indique la date, l'utilisateur, l'action (consultation, création, export, modification, suppression), le type d'objet et les détails. Filtrez pour retrouver une action précise.",
+    href: paths.admin.auditLogs(),
+    hrefLabel: "Historique",
+    audience: { permissions: ["church:settings"] },
+    otherwise: "L'historique des modifications est consultable par l'administration de l'église.",
+    screens: [paths.admin.auditLogs()],
+  },
+  {
+    key: "KB-166",
+    kind: "howto",
+    title: "Régler les paramètres de l'église",
+    questions: [
+      "paramètres de l'église",
+      "changer la couleur de l'église",
+      "emails de la comptabilité",
+      "email du secrétariat",
+      "responsable pastoral de l'église",
+    ],
+    answer:
+      "Dans l'espace « Administration », ouvrez « Paramètres de l'église » (bloc Église) : emails de la comptabilité et du secrétariat, couleur principale et responsable pastoral. Le nom, l'adresse publique et le superviseur ne se changent que par le Super Admin. La même page active ou coupe pour votre église l'Assistant, les Assistants IA et les sites d'événement.",
+    audience: { permissions: ["church:settings"] },
+    otherwise: "Les paramètres de l'église sont réglés par l'administration de l'église.",
+    module: "core",
+  },
+  {
+    key: "KB-167",
+    kind: "howto",
+    title: "Changer le logo de l'église",
+    questions: ["logo de l'église", "changer le logo", "mettre notre logo", "logo fond sombre", "retirer le logo"],
+    answer:
+      "Dans « Administration » › « Paramètres de l'église », déposez un logo pour fond clair (« Déposer un logo ») et, si vous le souhaitez, un second pour fond sombre. Image PNG, JPEG ou WebP de 2 Mo au plus ; « Remplacer le logo » et « Retirer le logo » le modifient. Il remplace les plumes dans la barre latérale et la barre du haut.",
+    audience: { permissions: ["church:settings"] },
+    otherwise: "Le logo est déposé par l'administration de l'église.",
+    module: "core",
+  },
+  {
+    key: "KB-168",
+    kind: "howto",
+    title: "Configurer les salles",
+    questions: ["ajouter une salle", "configurer les salles", "créer une salle", "modifier les salles de l'église"],
+    answer:
+      "Dans l'espace « Administration », « Configuration des salles » (bloc Église) permet de créer et de modifier les salles réservables. Les réservations se font dans « Ressources » › « Salles ».",
+    href: paths.admin.rooms(),
+    hrefLabel: "Configuration des salles",
+    audience: { permissions: ["rooms:manage"] },
+    otherwise: "La configuration des salles revient à l'administration de l'église.",
+    screens: [paths.admin.rooms()],
+  },
+  {
+    key: "KB-169",
+    kind: "howto",
+    title: "Gérer les profils pastoraux",
+    questions: ["profil pastoral", "ajouter un pasteur", "créer un profil pastoral", "qui peut recevoir les rendez-vous pastoraux"],
+    answer:
+      "Dans l'espace « Administration », « Profils pastoraux » (bloc Accès) liste les pasteurs et accompagnants qui reçoivent les demandes de rendez-vous. Vous pouvez en créer, modifier ou en lier un à un compte.",
+    href: paths.admin.pastoralProfiles(),
+    hrefLabel: "Profils pastoraux",
+    audience: { permissions: ["church:settings"] },
+    otherwise: "Les profils pastoraux sont gérés par l'administration de l'église.",
+    screens: [paths.admin.pastoralProfiles()],
+  },
+];
+
+/** Plateforme, réservée au Super Admin (KB-170 à KB-177). */
+export const PLATEFORME: readonly KnowledgeEntry[] = [
+  {
+    key: "KB-170",
+    kind: "howto",
+    title: "Créer une église",
+    questions: ["créer une église", "ajouter une église", "nouvelle église", "onboarding d'une église", "supprimer une église"],
+    answer:
+      "Dans l'espace « Plateforme », ouvrez « Églises » puis « Créer une église » : nom, adresse publique (slug) et email de l'administrateur. L'administrateur reçoit ensuite son accès pour configurer ses ministères et départements.",
+    href: paths.admin.churches(),
+    hrefLabel: "Églises",
+    audience: { roles: ["SUPER_ADMIN"] },
+    otherwise: SUPER_ADMIN_ONLY,
+    screens: [paths.admin.churches()],
+  },
+  {
+    key: "KB-171",
+    kind: "howto",
+    title: "Sauvegarder et restaurer",
+    questions: ["faire une sauvegarde", "restaurer une sauvegarde", "sauvegarde de la base", "exporter la configuration", "importer une configuration"],
+    answer:
+      "Dans l'espace « Plateforme », ouvrez « Sauvegardes » : « Déclencher une sauvegarde » envoie un export SQL sur le stockage. Une restauration se fait en deux étapes avec confirmation (« Continuer »). « Exporter la configuration » et « Importer une configuration » reprennent les réglages d'une église.",
+    href: paths.admin.backups(),
+    hrefLabel: "Sauvegardes",
+    audience: { roles: ["SUPER_ADMIN"] },
+    otherwise: SUPER_ADMIN_ONLY,
+    screens: [paths.admin.backups()],
+  },
+  {
+    key: "KB-172",
+    kind: "howto",
+    title: "Changer l'icône de l'application",
+    questions: ["icône de l'application", "changer l'icône", "logo de l'appli sur le téléphone", "icône d'installation"],
+    answer:
+      "Dans l'espace « Plateforme », ouvrez « Icône de l'application » : déposez une image carrée (PNG, JPEG ou WebP, 512 px au moins, 5 Mo), choisissez la couleur de fond et, au besoin, la silhouette des notifications. Une seule icône sert toute l'instance.",
+    href: paths.admin.appIcon(),
+    hrefLabel: "Icône de l'application",
+    audience: { roles: ["SUPER_ADMIN"] },
+    otherwise: SUPER_ADMIN_ONLY,
+    screens: [paths.admin.appIcon()],
+  },
+  {
+    key: "KB-173",
+    kind: "howto",
+    title: "Consulter la documentation de l'API",
+    questions: ["documentation de l'API", "swagger", "voir les routes de l'API", "openapi"],
+    answer:
+      "Dans l'espace « Plateforme », « API » affiche la référence de l'API, générée à partir des contrats de chaque route : paramètres, corps attendus, réponses et droits requis.",
+    href: paths.admin.api(),
+    hrefLabel: "API",
+    audience: { roles: ["SUPER_ADMIN"] },
+    otherwise: SUPER_ADMIN_ONLY,
+    screens: [paths.admin.api()],
+  },
+  {
+    key: "KB-174",
+    kind: "howto",
+    title: "Gérer la base de l'assistant",
+    questions: ["ajouter une fiche à l'assistant", "corriger une réponse de l'assistant", "questions à traiter de l'assistant", "usage de l'assistant", "couper l'assistant"],
+    answer:
+      "Dans l'espace « Plateforme », « Assistant » a quatre onglets : « Usage », « Questions à traiter » (celles restées sans réponse), « Base » (« Ajouter une fiche », corriger une fiche fournie) et « Réglages » (activer ou couper l'assistant pour l'instance).",
+    href: paths.admin.assistant(),
+    hrefLabel: "Assistant",
+    audience: { roles: ["SUPER_ADMIN"] },
+    otherwise: SUPER_ADMIN_ONLY,
+    screens: [paths.admin.assistant()],
+  },
+  {
+    key: "KB-175",
+    kind: "howto",
+    title: "Approuver le domaine d'un site d'événement",
+    questions: ["approuver un domaine", "domaine dédié d'un site", "refuser un domaine", "vérification DNS du site"],
+    answer:
+      "Dans l'espace « Plateforme », « Domaines des sites » liste les demandes de domaine dédié faites par les organisateurs, avec le résultat du contrôle DNS. « Approuver le domaine » le met en service ; « Refuser et supprimer » l'écarte. Un recontrôle quotidien vérifie les domaines déjà approuvés.",
+    href: paths.admin.siteDomains(),
+    hrefLabel: "Domaines des sites",
+    audience: { roles: ["SUPER_ADMIN"] },
+    otherwise: SUPER_ADMIN_ONLY,
+    screens: [paths.admin.siteDomains()],
+  },
+  {
+    key: "KB-176",
+    kind: "howto",
+    title: "Suivre les assistants IA connectés (instance)",
+    questions: ["activer les assistants IA pour l'instance", "activité des assistants IA", "couper le serveur MCP", "quelles églises utilisent les assistants IA"],
+    answer:
+      "Dans l'espace « Plateforme », « Assistants IA » active ou coupe la fonction pour toute l'instance et montre l'activité par église. Chaque église doit ensuite l'activer elle-même dans ses paramètres : elle est coupée par défaut.",
+    href: paths.admin.mcp(),
+    hrefLabel: "Assistants IA",
+    audience: { roles: ["SUPER_ADMIN"] },
+    otherwise: SUPER_ADMIN_ONLY,
+    screens: [paths.admin.mcp()],
+  },
+  {
+    key: "KB-177",
+    kind: "howto",
+    title: "Publier un message à toute l'instance",
+    questions: ["message pour toutes les églises", "message d'instance", "annonce à toute la plateforme"],
+    answer:
+      "Dans l'espace « Administration », « Messages système » : choisissez la portée « instance » dans le formulaire pour qu'un message s'affiche dans toutes les églises. Cette portée est réservée au Super Admin ; une église publie pour elle seule.",
+    href: paths.admin.messages(),
+    hrefLabel: "Messages système",
+    audience: { roles: ["SUPER_ADMIN"] },
+    otherwise: "Un message pour toute l'instance est publié par le Super Admin ; l'administration d'une église publie pour son église.",
+    screens: [paths.admin.messages()],
+  },
+];
