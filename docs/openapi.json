@@ -32023,7 +32023,7 @@
           "ticketing"
         ],
         "summary": "Réservations d'un événement",
-        "description": "**Accès** : toute personne connectée — un rôle de lecture sur l'événement.\n\nParticipants, éléments payants et soldes (dû, déclaré, payé, reste, à rembourser). Coordonnées et réponses pour l'organisateur et le trésorier seulement ; l'observateur reçoit les noms et soldes, sans contact ni détail des éléments.",
+        "description": "**Accès** : toute personne connectée — organisateur, trésorier ou observateur de l'événement.\n\nParticipants, éléments payants et soldes (dû, déclaré, payé, reste, à rembourser). Coordonnées et réponses pour l'organisateur et le trésorier seulement ; l'observateur reçoit les noms et soldes, sans contact ni détail des éléments.",
         "security": [
           {
             "session": []

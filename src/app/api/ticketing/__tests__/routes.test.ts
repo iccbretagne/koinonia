@@ -20,6 +20,7 @@ const ACTIONS: Record<string, string[]> = {
   catering: ["ORGANIZER", "CATERING"],
   menu: ["ORGANIZER", "CATERING"],
   read: ["ORGANIZER", "TREASURER", "RECEPTION", "CATERING", "OBSERVER"],
+  bookings: ["ORGANIZER", "TREASURER", "OBSERVER"],
 };
 async function accessFor(eventId: string) {
   const { ApiError } = await import("@/lib/errors");

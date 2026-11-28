@@ -1,4 +1,4 @@
-import { boundedAnswer } from "@/core/assistant";
+import { boundedAnswer, quoted } from "@/core/assistant";
 import { prisma } from "@/lib/prisma";
 import { dayKey } from "@/lib/paris-days";
 import { REFUSED, formatDay, formatTime, fullName, paramsSchema, type DataQuestion } from "./common";
@@ -34,7 +34,7 @@ export const SERVING_QUESTIONS: DataQuestion[] = [
         href: paths.candidatures.entretiens(),
         hrefLabel: "Entretiens",
         items: rows.map((r) => ({
-          label: `${formatDay(r.startsAt)} ${formatTime(r.startsAt)} · ${fullName(r.application)}`,
+          label: `${formatDay(r.startsAt)} ${formatTime(r.startsAt)} · ${quoted(fullName(r.application), 80)}`,
           detail: place(r),
           href: paths.candidatures.application(r.application.id),
         })),
@@ -61,7 +61,7 @@ export const SERVING_QUESTIONS: DataQuestion[] = [
         href: paths.candidatures(),
         hrefLabel: "Candidatures",
         items: rows.map((r) => ({
-          label: fullName(r),
+          label: quoted(fullName(r), 80),
           detail: `${SCHEDULING_REASON_LABEL[r.schedulingReason!]}${r.schedulingSince ? ` · depuis le ${formatDay(r.schedulingSince)}` : ""}`,
           href: paths.candidatures.application(r.id),
         })),
