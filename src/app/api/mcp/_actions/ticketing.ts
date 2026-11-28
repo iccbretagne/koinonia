@@ -35,6 +35,7 @@ import {
 import { formatDay, formatTime } from "../../assistant/_data/common";
 import { CHANGED, EXPIRED, byText, confirmInput, fingerprint, parisDateTime, previewText, refusal, type ActionContext, type ActionResult, type McpActionDef } from "./common";
 import { paths } from "@/lib/paths";
+import { quoted, untrustedName, untrustedText } from "@/core/assistant";
 
 /**
  * Billetterie (spec 083) : conduire un événement de billetterie de sa création à sa clôture.
@@ -47,7 +48,10 @@ import { paths } from "@/lib/paths";
 const ticketing = () => import("@/modules/ticketing");
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
 /** Un nom de compte peut être vide : jamais d'email à la place. */
-export const safeName = (name: string | null | undefined) => (name && !name.includes("@") ? name : "Compte sans nom");
+export const safeName = (name: string | null | undefined) => (name && !name.includes("@") && untrustedName(name)) || "Compte sans nom";
+/** Nom saisi par un tiers (contact, participant d'un formulaire public) : une ligne, borné, jamais une consigne. */
+const person = (name: string | null | undefined) => untrustedName(name) || "Sans nom";
+const personOf = (p: { firstName: string; lastName: string }) => person(`${p.firstName} ${p.lastName}`);
 
 export const NOT_ROLE = "Vous n'avez pas ce rôle sur cet événement dans Koinonia.";
 const NOT_FOUND = "Événement de billetterie introuvable dans cette église.";
@@ -300,7 +304,8 @@ const bookingsInput = z.object({
 });
 
 async function readBookings(input: z.infer<typeof bookingsInput>, ctx: ActionContext): Promise<ActionResult> {
-  const found = await eventFor(ctx, input.event, "read");
+  // Comme l'onglet « Inscrits » (organisateur, trésorier, observateur) : ni l'accueil ni la restauration.
+  const found = await eventFor(ctx, input.event, "bookings");
   if (typeof found === "string") return refusal(found);
   // Jamais de coordonnées : `withContact` faux, quel que soit le rôle.
   const rows = await (await ticketing()).listBookings(found.id, false);
@@ -314,8 +319,9 @@ async function readBookings(input: z.infer<typeof bookingsInput>, ctx: ActionCon
     id: b.id,
     reference: b.reference,
     status: b.status,
-    contactName: b.contact.name,
-    participants: b.participants.map((p) => ({ id: p.id, name: `${p.firstName} ${p.lastName}`, ageGroup: p.ageGroup, status: p.status })),
+    contactName: person(b.contact.name),
+    participants: b.participants.map((p) => ({ id: p.id, name: personOf(p), ageGroup: p.ageGroup, status: p.status })),
+    // Soldes : l'onglet « Inscrits » les montre à ces trois rôles.
     balances: b.balances,
   }));
   const next = offset + limit < filtered.length ? offset + limit : null;
@@ -323,7 +329,7 @@ async function readBookings(input: z.infer<typeof bookingsInput>, ctx: ActionCon
     text:
       page.length === 0
         ? "Aucune réservation ne correspond."
-        : page.map((b) => `${b.reference} · ${b.contactName} · ${b.participants.length} participant(s) · ${b.status} [${b.id}]`).join("\n"),
+        : page.map((b) => `${b.reference} · ${quoted(b.contactName)} ·${b.participants.length} participant(s) · ${b.status} [${b.id}]`).join("\n"),
     structured: { total: filtered.length, nextOffset: next, bookings: page },
   };
 }
@@ -338,7 +344,8 @@ async function readPresence(input: z.infer<typeof eventInput>, ctx: ActionContex
 }
 
 async function readCatering(input: z.infer<typeof eventInput>, ctx: ActionContext): Promise<ActionResult> {
-  const found = await eventFor(ctx, input.event, "read");
+  // Comme l'onglet « Suivi restauration » : noms des porteurs et montants d'option, jamais pour l'accueil.
+  const found = await eventFor(ctx, input.event, "catering");
   if (typeof found === "string") return refusal(found);
   const m = await ticketing();
   const [board, snap] = await Promise.all([m.cateringBoard(found.id), m.cateringSnapshot(found.id)]);
@@ -346,7 +353,7 @@ async function readCatering(input: z.infer<typeof eventInput>, ctx: ActionContex
   const toDeliver = snap.items
     .filter((i) => i.deliveredQty < i.quantity)
     .slice(0, 50)
-    .map((i) => ({ id: i.id, holder: i.holder, label: i.label, quantity: i.quantity, deliveredQty: i.deliveredQty, amountDue: i.amountDue }));
+    .map((i) => ({ id: i.id, holder: person(i.holder), label: i.label, quantity: i.quantity, deliveredQty: i.deliveredQty, amountDue: i.amountDue }));
   return {
     text:
       board.toPrepare.map((s) => `${s.label} : ${s.available ?? "∞"} disponible(s), ${s.delivered} remis, ${s.reserved} réservé(s), ${s.sold} vendu(s)`).join("\n") ||
@@ -363,8 +370,8 @@ async function readAccounts(input: z.infer<typeof accountsInput>, ctx: ActionCon
   const q = norm(input.search);
   const accounts = (await (await ticketing()).listChurchAccounts(ctx.churchId)).filter((a) => a.name && norm(a.name).includes(q)).slice(0, 20);
   return {
-    text: accounts.length ? accounts.map((a) => `${a.name} [${a.id}]`).join("\n") : `Aucun compte de l'église ne correspond à « ${input.search} ».`,
-    structured: { accounts: accounts.map((a) => ({ id: a.id, name: a.name })) },
+    text: accounts.length ? accounts.map((a) => `${quoted(safeName(a.name), 80)} [${a.id}]`).join("\n") : `Aucun compte de l'église ne correspond à ${quoted(input.search, 100)}.`,
+    structured: { accounts: accounts.map((a) => ({ id: a.id, name: safeName(a.name) })) },
   };
 }
 
@@ -387,7 +394,7 @@ function scopeOf(access: EventAccess): ChargeScope | null {
 function chargesIn(view: BookingView, pickupOptions: Set<string>, scope: ChargeScope | null): ChargeRow[] {
   const entries: ChargeRow[] = view.participants
     .filter((p) => p.entryPrice > 0)
-    .map((p) => ({ type: "entry", id: p.id, label: `Entrée ${p.firstName} ${p.lastName}`, amount: p.entryPrice, status: p.entryStatus, pickup: false }));
+    .map((p) => ({ type: "entry", id: p.id, label: `Entrée ${personOf(p)}`, amount: p.entryPrice, status: p.entryStatus, pickup: false }));
   const items: ChargeRow[] = view.items
     .filter((i) => i.amount > 0)
     .map((i) => ({ type: "item", id: i.id, label: i.label, amount: i.amount, status: i.status, pickup: pickupOptions.has(i.optionId) }));
@@ -407,27 +414,48 @@ async function loadBookingFor(eventId: string, bookingId: string, access: EventA
   return { view, detail, charges: chargesIn(view, pickup, scopeOf(access)) };
 }
 
-const bookingInput = z.object({ event: eventRef, bookingId: z.string().trim().min(1).max(64).describe("Identifiant de la réservation (voir ticketing_bookings)") });
+const bookingInput = z.object({
+  event: eventRef,
+  bookingId: z.string().trim().min(1).max(64).describe("Identifiant de la réservation (voir ticketing_bookings), ou sa référence (ex. NDT-001)"),
+});
 
+/**
+ * Une réservation, selon le rôle, comme les écrans : organisateur et trésorier ont le détail de
+ * la réservation (route `payments`) — nom du contact, tous les éléments payants, soldes ; l'accueil
+ * et la restauration ce que montre leur écran de terrain — référence, participants et les seuls
+ * éléments qu'ils encaissent (entrées / retraits), sans nom du contact ni solde ; l'observateur
+ * rien (l'écran ne lui ouvre pas le détail). Jamais de coordonnées.
+ */
 async function readBooking(input: z.infer<typeof bookingInput>, ctx: ActionContext): Promise<ActionResult> {
   const found = await eventFor(ctx, input.event, "read");
   if (typeof found === "string") return refusal(found);
+  const scope = scopeOf(found.access);
+  if (!scope) return refusal(NOT_ROLE);
+  const m = await ticketing();
+  // Identifiant ou référence, parmi les réservations de cet événement seulement.
+  const rows = await m.listBookings(found.id, false);
+  const hit = rows.find((b) => b.id === input.bookingId) ?? rows.find((b) => norm(b.reference) === norm(input.bookingId));
+  if (!hit) return refusal("Réservation introuvable");
   let loaded: Awaited<ReturnType<typeof loadBookingFor>>;
   try {
-    loaded = await loadBookingFor(found.id, input.bookingId, found.access);
+    loaded = await loadBookingFor(found.id, hit.id, found.access);
   } catch (error) {
     if (error instanceof ApiError) return refusal(error.message);
     throw error;
   }
   const { view, charges } = loaded;
-  // Jamais de coordonnées : le nom du contact, les participants et les éléments payants seulement.
-  const participants = view.participants.map((p) => ({ id: p.id, name: `${p.firstName} ${p.lastName}`, ageGroup: p.ageGroup, status: p.status }));
+  const participants = view.participants.map((p) => ({ id: p.id, name: personOf(p), ageGroup: p.ageGroup, status: p.status }));
+  const shownCharges = charges.map((c) => ({ ...c, label: untrustedText(c.label, 160) }));
+  const full = scope === "all";
   const lines = [
-    `${view.reference} · ${view.contact.name} · ${view.status} [${view.id}]`,
-    ...participants.map((p) => `${p.name} (${AGE_GROUP_LABEL[p.ageGroup]}) ${p.status} [${p.id}]`),
-    ...charges.map((c) => `${c.label} : ${euros(c.amount)} ${c.status} [${c.type}:${c.id}]`),
+    full ? `${view.reference} · ${quoted(view.contact.name, 80)} · ${view.status} [${view.id}]` : `${view.reference} · ${view.status} [${view.id}]`,
+    ...participants.map((p) => `${quoted(p.name, 80)} (${AGE_GROUP_LABEL[p.ageGroup]}) ${p.status} [${p.id}]`),
+    ...shownCharges.map((c) => `${quoted(c.label, 160)} : ${euros(c.amount)} ${c.status} [${c.type}:${c.id}]`),
   ];
-  return { text: lines.join("\n"), structured: { id: view.id, reference: view.reference, status: view.status, contactName: view.contact.name, participants, charges, balances: view.balances } };
+  const structured = full
+    ? { id: view.id, reference: view.reference, status: view.status, contactName: person(view.contact.name), participants, charges: shownCharges, balances: view.balances }
+    : { id: view.id, reference: view.reference, status: view.status, participants, charges: shownCharges };
+  return { text: lines.join("\n"), structured };
 }
 
 const paymentsInput = z.object({ event: eventRef, all: z.boolean().optional().describe("Vrai : tous les paiements (100 derniers) ; sinon seulement les déclarations « J'ai payé » à traiter") });
@@ -437,10 +465,10 @@ async function readPayments(input: z.infer<typeof paymentsInput>, ctx: ActionCon
   if (typeof found === "string") return refusal(found);
   const rows = await (await ticketing()).listPayments(found.id);
   const picked = (input.all ? rows : rows.filter((p) => p.kind === "DECLARATION" && p.status === "PENDING")).slice(0, 100);
-  const payments = picked.map((p) => ({ id: p.id, reference: p.reference, contactName: p.contactName, kind: p.kind, status: p.status, method: p.method, amount: p.amount, reason: p.reason }));
+  const payments = picked.map((p) => ({ id: p.id, reference: p.reference, contactName: person(p.contactName), kind: p.kind, status: p.status, method: p.method, amount: p.amount, reason: p.reason === null ? null : untrustedText(p.reason, 300) }));
   return {
     text: payments.length
-      ? payments.map((p) => `${p.reference} · ${p.contactName} · ${PAYMENT_METHOD_LABEL[p.method]} · ${euros(p.amount)} · ${p.kind} ${p.status} [${p.id}]`).join("\n")
+      ? payments.map((p) => `${p.reference} · ${quoted(p.contactName, 80)} ·${PAYMENT_METHOD_LABEL[p.method]} · ${euros(p.amount)} · ${p.kind} ${p.status} [${p.id}]`).join("\n")
       : "Aucun paiement à traiter.",
     structured: { payments },
   };
@@ -461,7 +489,8 @@ export const TICKETING_READS: McpActionDef[] = [
     name: "ticketing_bookings",
     action: "ticketing_bookings",
     kind: "read",
-    description: "Réservations d'un événement de billetterie (référence, nom du contact, participants, soldes), sans coordonnées. Filtre par nom ou référence.",
+    description:
+      "Réservations d'un événement de billetterie (référence, nom du contact, participants, soldes), sans coordonnées, pour l'organisateur, le trésorier et l'observateur. Filtre par nom ou référence.",
     input: bookingsInput,
     available: readAvailable,
     run: readBookings as McpActionDef["run"],
@@ -479,7 +508,7 @@ export const TICKETING_READS: McpActionDef[] = [
     name: "ticketing_catering",
     action: "ticketing_catering",
     kind: "read",
-    description: "Restauration d'un événement de billetterie : plats, stock disponible, remis, réservés, vendus sur place.",
+    description: "Restauration d'un événement de billetterie (organisateur, restauration) : plats, stock disponible, remis, réservés, vendus sur place.",
     input: eventInput,
     available: readAvailable,
     run: readCatering as McpActionDef["run"],
@@ -489,7 +518,7 @@ export const TICKETING_READS: McpActionDef[] = [
     action: "ticketing_booking",
     kind: "read",
     description:
-      "Une réservation d'un événement de billetterie : participants et éléments payants (entrée, options) avec leur état et leur identifiant, pour encaisser, rembourser ou annuler. Sans coordonnées.",
+      "Une réservation d'un événement de billetterie, par identifiant ou référence : participants et éléments payants (entrée, options) avec leur état et leur identifiant, pour encaisser, rembourser ou annuler. Sans coordonnées. L'accueil ne voit que les entrées, la restauration que les retraits, sans nom du contact ni solde.",
     input: bookingInput,
     available: readAvailable,
     run: readBooking as McpActionDef["run"],
@@ -1080,7 +1109,7 @@ const handlePaymentsAction = eventAction({
     return {
       lines: [
         `${input.decision === "confirm" ? "Confirmer" : "Refuser"} ${ids.length} déclaration(s) de paiement, ${euros(total)} au total${action.action === "reject" ? ` — motif : ${action.reason}` : ""}`,
-        ...picked.map((p) => `${p!.reference} · ${p!.contactName} · ${PAYMENT_METHOD_LABEL[p!.method]} · ${euros(p!.amount)}`),
+        ...picked.map((p) => `${p!.reference} · ${quoted(p!.contactName, 80)} ·${PAYMENT_METHOD_LABEL[p!.method]} · ${euros(p!.amount)}`),
         "Les contacts sont prévenus par email, comme dans l'application. Tout ou rien : si l'une change avant la confirmation, aucune n'est traitée.",
       ],
       payload: { eventId: event!.id, ids, decision: input.decision, reason: action.action === "reject" ? action.reason : null },
@@ -1134,7 +1163,8 @@ function settlementAction(spec: { action: string; role: EventAction; what: strin
       const data = (spec.action === "mark_ticketing_refunded" ? refundSchema : receiptSchema).parse({ method: input.method, charges: input.charges });
       return {
         lines: [
-          `${spec.verb} sur la réservation ${view.reference} (${view.contact.name}) par ${PAYMENT_METHOD_LABEL[input.method]} : ${euros(picked.reduce((n, c) => n + c!.amount, 0))}`,
+          // Nom du contact : seulement pour qui voit le détail de la réservation (pas l'accueil ni la restauration).
+          `${spec.verb} sur la réservation ${view.reference}${scope === "all" ? ` (${quoted(view.contact.name, 80)})` : ""} par${PAYMENT_METHOD_LABEL[input.method]} : ${euros(picked.reduce((n, c) => n + c!.amount, 0))}`,
           ...picked.map((c) => `${c!.label} · ${euros(c!.amount)}`),
         ],
         payload: { eventId: event!.id, bookingId: view.id, method: data.method, charges: data.charges, opId: randomUUID() },
@@ -1198,13 +1228,13 @@ const cancelAction = eventAction({
     const whole = !input.participantId || target.length === active.length;
     const ids = new Set(target.map((p) => p.id));
     const hit = [
-      ...target.filter((p) => p.entryStatus === "PAID").map((p) => ({ label: `Entrée ${p.firstName} ${p.lastName}`, amount: p.entryPrice, refundable: p.refundableNow })),
+      ...target.filter((p) => p.entryStatus === "PAID").map((p) => ({ label: `Entrée ${personOf(p)}`, amount: p.entryPrice, refundable: p.refundableNow })),
       ...view.items.filter((i) => i.active && i.status === "PAID" && ((i.participantId && ids.has(i.participantId)) || (whole && !i.participantId))).map((i) => ({ label: i.label, amount: i.amount, refundable: i.refundableNow })),
     ];
     const sum = (rows: typeof hit) => rows.reduce((n, r) => n + r.amount, 0);
     return {
       lines: [
-        input.participantId ? `Annuler la participation de ${target[0].firstName} ${target[0].lastName} (réservation ${view.reference})` : `Annuler toute la réservation ${view.reference} (${view.contact.name}, ${target.length} participant(s))`,
+        input.participantId ? `Annuler la participation de ${quoted(personOf(target[0]), 80)} (réservation ${view.reference})` : `Annuler toute la réservation ${view.reference} (${quoted(view.contact.name, 80)},${target.length} participant(s))`,
         `À rembourser ensuite : ${euros(sum(hit.filter((r) => r.refundable)))} · conservé (non remboursable ou hors délai) : ${euros(sum(hit.filter((r) => !r.refundable)))}`,
         ...hit.map((r) => `${r.label} · ${euros(r.amount)} · ${r.refundable ? "à rembourser" : "conservé"}`),
         "Le contact est prévenu par email ; les places et plats sont libérés.",
