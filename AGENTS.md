@@ -7,3 +7,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+# Koinonia
+
+Conventions, architecture et règles de contribution : [CLAUDE.md](CLAUDE.md) (contexte complet) et
+[CONTRIBUTING.md](CONTRIBUTING.md) (setup, branches, checklist de PR). Carte de la documentation :
+[docs/README.md](docs/README.md).
