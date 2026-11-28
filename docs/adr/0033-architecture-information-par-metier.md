@@ -1,6 +1,6 @@
 # ADR-0033 — Architecture de l'information par métier, adresses par espace et politique de redirection
 
-- **Statut** : Proposé
+- **Statut** : Accepté
 - **Date** : 2026-11-27
 
 ## Contexte

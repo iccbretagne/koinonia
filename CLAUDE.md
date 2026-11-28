@@ -695,7 +695,8 @@ seule (`ENABLED_MODULES`) :
   compris) et éteints à la clôture. Ce sont des **données** vérifiées objet par objet
   (`getEventAccess`/`requireEventAction`, `@/modules/ticketing/auth`, matrice `EVENT_ACTIONS`) ;
   l'église qui fait foi est celle de l'événement (autre église : 404). L'accueil ne reçoit jamais
-  l'email, le téléphone du contact ni les montants d'option ; la restauration compose le menu
+  l'email, le téléphone du contact ni les montants d'option d'une réservation (le prix
+  catalogue des options, affiché avec l'événement, lui reste visible — décision du 2026-11-28) ; la restauration compose le menu
   (plats, allergènes, stock, fermeture) mais pas le prix ni les règles de l'option
 - **Public sans compte** (`routes.public`) : `/inscription/<église>/<événement>` (Turnstile, débit
   limité), `/reservation/<jeton>` (gestion), `/billet/<jeton>` (ce billet seul). Jetons dérivés
