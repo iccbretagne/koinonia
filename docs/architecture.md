@@ -657,6 +657,13 @@ Quatre types de tokens contrôlent les accès sans authentification :
 
 ---
 
+## Gestion des versions
+
+Semantic Versioning (`package.json`, tags `v*`, `CHANGELOG.md`). Une version **majeure** n'est
+publiée que lorsqu'une adresse, une route d'API ou un outil MCP existant cesse de répondre (par
+exemple le retrait de la table des anciennes adresses de la spec 092, lot 5). Une refonte d'écran
+qui garde les anciennes adresses par redirection reste une version mineure.
+
 ## Qualité du code
 
 - **TypeScript strict** : `noUnusedLocals` + `noUnusedParameters`
