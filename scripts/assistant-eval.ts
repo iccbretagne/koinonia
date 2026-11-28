@@ -13,6 +13,7 @@ import { PREDICATES } from "../src/modules/assistant/knowledge/types";
 import { LocalEngine } from "../src/modules/assistant/services/engine";
 import { OnnxEmbedder, isModelPresent, modelDir } from "../src/modules/assistant/services/embedder";
 import { allManifests } from "../src/lib/manifests";
+import { viewerFor } from "../src/modules/assistant/__tests__/test-viewers";
 
 async function main() {
   if (!isModelPresent()) {
@@ -36,7 +37,10 @@ async function main() {
   let semanticOk = 0;
   const semanticTotal = EVAL_CASES.filter((c) => c.semanticOnly).length;
   for (const c of EVAL_CASES) {
-    const answer = await engine.answer({ question: c.question, viewer, entries: BUILTIN_ENTRIES });
+    const who = c.role
+      ? viewerFor(c.role, { predicates: [...(c.predicates ?? [])], isSuperAdmin: c.role === "SUPER_ADMIN" })
+      : viewer;
+    const answer = await engine.answer({ question: c.question, viewer: who, entries: BUILTIN_ENTRIES });
     const got = "key" in answer ? answer.key : `${answer.kind}(${answer.suggestions.map((s) => s.key).join(",")})`;
     const hit = got === c.expected;
     if (hit) ok++;

@@ -52,7 +52,10 @@ describe("moteur de réponse (spec 075)", () => {
     const cases = EVAL_CASES.filter((c) => !c.semanticOnly);
     let ok = 0;
     for (const c of cases) {
-      const a = await lexical.answer({ question: c.question, viewer: fullAccess, entries: BUILTIN_ENTRIES });
+      const viewer = c.role
+        ? viewerFor(c.role, { predicates: [...(c.predicates ?? [])], isSuperAdmin: c.role === "SUPER_ADMIN" })
+        : fullAccess;
+      const a = await lexical.answer({ question: c.question, viewer, entries: BUILTIN_ENTRIES });
       if ("key" in a && a.key === c.expected) ok++;
     }
     expect(ok / cases.length).toBeGreaterThanOrEqual(0.85);

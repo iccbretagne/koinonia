@@ -314,7 +314,7 @@ export const ESPACES: readonly KnowledgeEntry[] = [
     key: "KB-154",
     kind: "howto",
     title: "Collectes : remplir un questionnaire",
-    questions: ["Remplir un questionnaire de collecte", "répondre à la collecte", "envoyer mon questionnaire", "joindre un fichier à la collecte", "correction demandée sur mon questionnaire"],
+    questions: ["Remplir un questionnaire de collecte", "comment remplir mon questionnaire de collecte", "répondre à la collecte", "envoyer mon questionnaire", "joindre un fichier à la collecte", "correction demandée sur mon questionnaire"],
     answer:
       "Ouvrez l'espace « Demandes » puis « Questionnaires » (ou le lien reçu par notification ou par email) puis votre questionnaire. La saisie s'enregistre au fur et à mesure : vous pouvez y revenir jusqu'à l'échéance. Pour un chiffre incertain, choisissez « Estimation » ou « À rechercher » plutôt que de laisser vide ; joignez les fichiers demandés (Excel, CSV ou PDF). Quand tout est prêt, cliquez sur « Envoyer le questionnaire » : il n'est plus modifiable, sauf si un gestionnaire demande une correction — vous êtes alors prévenu et la saisie rouvre.",
     href: paths.collectes(),

@@ -397,7 +397,7 @@ export const DONNEES: readonly KnowledgeEntry[] = [
     key: "D30",
     kind: "data",
     title: "Avancement d'une campagne de collecte",
-    questions: ["Avancement de la campagne de collecte", "qui n'a pas rendu son questionnaire", "où en est la collecte", "questionnaires manquants de la campagne"],
+    questions: ["Avancement de la campagne de collecte", "qui n'a pas rendu son questionnaire", "où en est la collecte", "questionnaires manquants de la campagne", "où en est la campagne de collecte", "avancement des questionnaires"],
     answer: "Avancement de la campagne :",
     href: paths.collectes(),
     hrefLabel: "Collectes",
