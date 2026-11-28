@@ -15,106 +15,60 @@ rôle. Auto-hébergée, multi-tenant, sous licence libre et pensée pour le mobi
 
 ## Fonctionnalités
 
-- **Planning de service** — Grille interactive par département, vue mensuelle, duplication, export PDF
-- **Comptes rendus** — Saisie par événement avec stats départementales, export PDF et WhatsApp
-- **Discipolat** — Suivi des relations faiseur de disciples / disciple, appel par événement, export Excel
-- **Annonces & communication** — Soumission, workflow de validation, dashboards opérationnels (Secrétariat, Média, Communication)
-- **Audio des cultes** — Dépôt et découpage des enregistrements, normalisation sonore, publication,
-  bibliothèque d'écoute, liens de partage publics et partage de bibliothèque entre églises
-- **Médias** — Demandes visuelles, projets, galeries et partage de fichiers
-- **Gestion des membres** — Répertoire STAR, liaison compte utilisateur, profil
-- **Événements** — Récurrence, calendrier, configuration par événement
-- **Agenda pastoral** — Demande de rendez-vous, qualification, planification
-- **Intégration des familles** — Parcours d'accueil et de suivi des nouveaux
-- **Comptabilité** — Séries et demandes financières, validation, statistiques
-- **Salles** — Réservation et gestion des espaces
-- **Emploi** — Offres, profils de recherche et missions freelance
-- **RBAC** — 10 rôles (Super Admin, Admin, Secrétaire, Ministre, Resp. département,
-  Faiseur de Disciples, Reporter, STAR, Qualificateur agenda, Comptable)
-- **Multi-tenant** — Plusieurs églises isolées sur une même instance
-- **PWA** — Installation mobile, mode hors-ligne
+- **Planning de service** — grille par département, vue mensuelle, duplication, disponibilités et absences, événements d'équipe
+- **Événements et comptes rendus** — récurrence, calendrier, saisie des comptes rendus avec statistiques, exports
+- **Discipolat** — relations faiseur de disciples / disciple, appel par événement, export
+- **Demandes internes** — annonces, visuels, réseaux sociaux, secrétariat, avec workflow de validation
+- **Audio des cultes** — dépôt, découpage, normalisation, publication, bibliothèque d'écoute et liens publics
+- **Médias** — photos, visuels, galerie et partage de sélections
+- **Personnes** — répertoire STAR, liaison de compte, candidatures au service, intégration des nouveaux, suivi pastoral
+- **Finances** — demandes financières et justificatifs, navette, trésorerie, dons
+- **Billetterie, formulaires, campagnes de collecte** — inscriptions publiques, sondages, questionnaires, sites d'événement
+- **Salles, emploi, agenda pastoral**
+- **Assistant et connexion d'assistants IA (MCP)** — aide à la prise en main, lecture et actions confirmées selon les droits
+- **10 rôles** (RBAC par église) : Super Admin, Admin, Secrétaire, Ministre, Resp. département, Faiseur de Disciples, Reporter, STAR, Référent soins pastoraux, Comptable
+- **Multi-tenant** — plusieurs églises isolées sur une même instance
+- **PWA** — installation mobile, notifications natives, écrans de terrain hors ligne
 
-## Quick start
+Les modules sont activables un à un (`ENABLED_MODULES`) ; la liste fait foi dans `src/modules/`.
+
+## Démarrage rapide
+
+Essayer Koinonia en local, sans compte Google ni `.env` (Docker requis) :
 
 ```bash
-git clone https://github.com/iccbretagne/koinonia.git
-cd koinonia
-cp .env.example .env          # configurer Google OAuth + AUTH_SECRET
-docker-compose up -d           # MariaDB
-npm install
-npm run db:migrate             # applique les migrations
-npm run db:seed                # donnees ICC Rennes
-npm run dev                    # http://localhost:3000
+git clone https://github.com/iccbretagne/koinonia.git && cd koinonia
+npm run dev:up                  # app + MariaDB en conteneurs (laisser tourner)
+# dans un second terminal :
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec app npm run db:migrate:deploy
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec app npm run db:seed:dev
+# puis http://localhost:3000 → comptes de test sous le bouton Google
 ```
 
-> Toujours passer par `db:migrate`, jamais par `db:push` : tout changement de schéma doit
-> produire une migration versionnée (voir [`specs/constitution.md`](specs/constitution.md)).
-
-> **Nouveau contributeur ?** Pour un environnement 100% conteneurisé (app + BDD), avec
-> un jeu de données fictif riche et une connexion locale sans compte Google, suivre le
-> guide pas à pas : [`docs/dev-onboarding.md`](docs/dev-onboarding.md).
-
-## Prérequis
-
-- Node.js 22
-- Docker
-- [Google OAuth 2.0](https://console.cloud.google.com/apis/credentials) configuré avec `http://localhost:3000/api/auth/callback/google` en URI de redirection
-
-## Scripts
-
-| Commande | Description |
-|---|---|
-| `npm run dev` | Développement (Turbopack) |
-| `npm run build` | Build de production (enchaîne `build:worker`) |
-| `npm run start` | Production |
-| `npm run worker` | Worker audio en développement |
-| `npm run typecheck` | Vérification TypeScript |
-| `npm run lint` | ESLint |
-| `npm run lint:boundaries` | Vérification des frontières modules (dependency-cruiser) |
-| `npm run test` | Lancer les tests (Vitest) |
-| `npm run db:migrate` | Créer une migration (dev) |
-| `npm run db:migrate:deploy` | Appliquer les migrations (production) |
-| `npm run db:seed` | Charger les données ICC Rennes |
-
-Avant toute PR : `npm run typecheck && npm run lint && npm run lint:boundaries && npm run test`.
+Environnement avec Node.js sur l'hôte, `.env`, OAuth Google : voir
+[CONTRIBUTING.md](CONTRIBUTING.md#2-installer-lenvironnement) et
+[docs/dev-onboarding.md](docs/dev-onboarding.md).
 
 ## Stack
 
-Node.js 22 &middot; Next.js 16 &middot; React 19 &middot; Tailwind CSS v4 &middot; NextAuth v5 (beta) &middot; Prisma 7 &middot; MariaDB 10.11 &middot; TypeScript 5 &middot; Zod 3 &middot; Vitest
+Node.js 22 · Next.js 16 · React 19 · Tailwind CSS 4 · NextAuth v5 (beta) · Prisma 7 · MariaDB 10.11 · TypeScript 5 · Zod 3 · Vitest · Playwright
 
-L'application est un **monolithe modulaire** : 11 modules métier assemblés au démarrage par un
-registry, aux frontières vérifiées en CI. Voir le [DAT](docs/dat.md) pour la vue d'ensemble.
+Monolithe modulaire : des modules métier déclarés par manifeste, assemblés au démarrage par un
+registre, aux frontières vérifiées en CI. Vue d'ensemble : [architecture](docs/architecture.md) et
+[ADR](docs/adr/README.md).
 
 ## Documentation
 
-| Document | Contenu |
+| Je veux… | Aller à |
 |---|---|
-| [CLAUDE.md](CLAUDE.md) | Contexte complet pour les agents IA |
-| [DAT](docs/dat.md) | Dossier d'architecture technique — vue d'ensemble, point d'entrée |
-| [Architecture](docs/architecture.md) | Structure du projet, patterns, conventions |
-| [Base de données](docs/database.md) | Schéma Prisma, modèles, relations |
-| [API](docs/api.md) | Conventions de l'API ; endpoints dans `docs/openapi.json` (Swagger UI : `/plateforme/api`) |
-| [Authentification & rôles](docs/auth.md) | NextAuth, OAuth, RBAC, permissions |
-| [Environnement de développement](docs/dev-onboarding.md) | Setup conteneurisé, jeu de données fictif, connexion sans Google OAuth |
-| [Déploiement production](docs/production.md) | Debian, Traefik, systemd |
-| [Environnement de recette](docs/staging.md) | VM de validation avant mise en production |
-| [ADR](docs/adr/README.md) | Décisions architecturales structurantes |
-| [Spécifications](specs/README.md) | Flux spec-driven et specs par feature |
-| [Exceptions sécurité](docs/security-exceptions.md) | Limites connues et assumées |
-| [Changelog](CHANGELOG.md) | Historique des modifications |
+| **Contribuer** (setup, conventions, checklist de PR) | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| **Déployer et exploiter** une instance | [docs/deploiement/](docs/deploiement/README.md) |
+| Tout trouver | [docs/README.md](docs/README.md) |
+| Signaler une faille | [SECURITY.md](SECURITY.md) |
+| Suivre les versions | [CHANGELOG.md](CHANGELOG.md), [roadmap](docs/roadmap.md) |
+| Contexte pour un agent IA | [CLAUDE.md](CLAUDE.md) |
 
-## Contribuer
-
-Les fonctionnalités non triviales sont **spécifiées avant d'être codées**
-(`/specify` → `/plan` → `/tasks` → `/implement`) — voir [`specs/README.md`](specs/README.md).
-Les principes non négociables sont dans [`specs/constitution.md`](specs/constitution.md).
-
-Branches : `feat/<nom>`, `fix/<nom>`, `chore/<nom>`. Jamais de push direct sur `main` —
-tout passe par une PR dont la CI doit être verte.
-
-## Roadmap
-
-Voir la [roadmap complète](docs/roadmap.md).
+Les fonctionnalités sont spécifiées avant d'être codées (`specs/`, voir [specs/README.md](specs/README.md)).
 
 ## Licence
 

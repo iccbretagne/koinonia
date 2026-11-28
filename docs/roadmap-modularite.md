@@ -1,5 +1,10 @@
 # Roadmap — modularité du monolithe
 
+> **État figé au 2026-09-08 (v1.22.0).** Ce document de suivi n'a pas été remis à jour depuis : le
+> nombre de modules (11 ici, 22 manifestes aujourd'hui), les compteurs de routes et le statut des
+> chantiers restants ne reflètent plus le code. Le cliquet vivant est `npm run lint:prisma-boundary`
+> (`scripts/prisma-boundary-baseline.txt`). À réviser avant de s'en servir comme plan.
+
 - **Statut** : en cours — **4 chantiers sur 7 réalisés**
 - **Établie le** : 2026-09-03, sur la base du code à la version v1.20.0
 - **Révisée le** : 2026-09-08, sur la base du code à la version v1.22.0

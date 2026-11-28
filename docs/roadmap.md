@@ -1,5 +1,8 @@
 # Roadmap
 
+> Les adresses d'écran citées dans les éléments déjà réalisés sont celles d'avant la réorganisation
+> par espace métier (spec 092) ; la correspondance est dans `src/lib/legacy-paths.ts`.
+
 ## Demandes et production media (système unifié)
 
 - [x] Système unifié de demandes (`Request`) : annonces + événements + accès dans un seul modèle
@@ -162,7 +165,7 @@
 - [x] CI/CD (GitHub Actions : typecheck, version check)
 - [x] Dependabot (mises à jour automatiques des dépendances)
 - [x] Affichage de la version dans le footer
-- [x] Déploiement production (Docker multi-stage + reverse proxy)
+- [x] Déploiement production (artefact de CI promu par workflow, systemd + Traefik — voir [guide de déploiement](deploiement/README.md))
 - [x] Migrations Prisma (remplacer `db push` par `prisma migrate`)
 - [x] PWA (manifest, service worker, installation mobile)
 - [x] Rate limiting sur les API routes
@@ -172,4 +175,4 @@
 - [x] Monitoring applicatif (healthcheck, métriques)
 - [ ] Séparer le compte runtime du compte de déploiement (audit H-10) — voir [TODO dédié](todo-separation-comptes-deploiement.md)
 - [ ] Rendre les modules réellement modulaires au niveau métier (sortir la logique des routes, étendre les frontières aux 11 modules) — voir [roadmap dédiée](roadmap-modularite.md)
-- [ ] Épingler l'identité SSH des hôtes de déploiement (audit M-08) — risque accepté en attendant, voir [docs/production.md](production.md) section « Identité SSH de l'hôte »
+- [ ] Épingler l'identité SSH des hôtes de déploiement (audit M-08) — risque accepté en attendant, voir [ci-cd.md](deploiement/ci-cd.md#identité-ssh-de-lhôte--risque-accepté-audit-m-08)

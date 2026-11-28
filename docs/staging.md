@@ -2,6 +2,19 @@
 
 Guide de mise en place d'une VM de recette dédiée pour valider un déploiement avant la bascule en production.
 
+## Sommaire
+
+- [Objectif](#objectif)
+- [Provisionnement de la VM](#provisionnement-de-la-vm)
+- [Configuration GitHub — Environment `staging`](#configuration-github--environment-staging)
+- [Déclencher un déploiement recette](#déclencher-un-déploiement-recette)
+- [Données de recette](#données-de-recette)
+- [Jeu de données de formation](#jeu-de-données-de-formation)
+- [Sites d'événement en recette](#sites-dévénement-en-recette)
+- [Garde-fous](#garde-fous)
+
+Le parcours de l'opérateur (production et recette) est dans le [guide de déploiement](deploiement/README.md).
+
 ## Objectif
 
 L'environnement de recette est une **VM dédiée, distincte du serveur de production**, mais configurée de manière identique (mêmes chemins, même service systemd `koinonia`, même Traefik, même MariaDB). Elle permet de déployer et valider une branche **avant** de la tagger et de la mettre en production.
@@ -10,14 +23,14 @@ Flux de travail :
 
 1. On déploie une branche sur la recette **manuellement** (workflow `Deploy Staging`, `workflow_dispatch`)
 2. On valide fonctionnellement sur `https://recette.votre-domaine.com`
-3. Une fois validé, on tagge (`git tag vX.Y.Z && git push origin vX.Y.Z`)
-4. La production se déploie automatiquement via le pipeline habituel (`deploy.yml`, voir [docs/production.md](production.md))
+3. Une fois validé, on publie la version avec le workflow **Release** (voir [la procédure de release](deploiement/README.md#publier-une-version-release-courante))
+4. La production se déploie ensuite via le pipeline habituel (`deploy.yml`, voir [ci-cd.md](deploiement/ci-cd.md))
 
 La recette n'intervient jamais dans le pipeline de production : ce sont deux workflows, deux VMs et deux jeux de secrets totalement indépendants.
 
 ## Provisionnement de la VM
 
-L'installation de base (utilisateur système, structure Capistrano-like `/opt/koinonia`, service systemd `koinonia`, durcissement, Node.js 22, MariaDB) est **identique** à la production. Suivre intégralement [docs/production.md](production.md) sections "Prérequis" à "Service systemd", puis appliquer uniquement les différences ci-dessous.
+L'installation de base (utilisateur système, structure Capistrano-like `/opt/koinonia`, service systemd `koinonia`, durcissement, Node.js 22, MariaDB) est **identique** à la production. Suivre [serveur.md](deploiement/serveur.md) sections « Prérequis » à « Service systemd », puis appliquer uniquement les différences ci-dessous.
 
 ### Sous-domaine dédié
 
@@ -45,7 +58,7 @@ http:
 ```
 
 Appliquer à la recette le même durcissement que la production
-([production.md § Durcissement](production.md#durcissement--ip-client-port-applicatif-hsts)) :
+([serveur.md § Durcissement](deploiement/serveur.md#durcissement--ip-client-port-applicatif-hsts)) :
 `HOSTNAME=127.0.0.1` dans l'unité systemd, aucun `forwardedHeaders` permissif sur l'entrypoint,
 middleware d'en-têtes de sécurité.
 
@@ -71,7 +84,7 @@ VAPID_SUBJECT=mailto:contact@votre-domaine.com
 
 Points d'attention :
 
-- **Base de données dédiée** : `koinonia_staging`, avec un utilisateur MariaDB dédié (`CREATE DATABASE`/`CREATE USER` comme en production, voir section "Base de données" de production.md, en adaptant les noms)
+- **Base de données dédiée** : `koinonia_staging`, avec un utilisateur MariaDB dédié (`CREATE DATABASE`/`CREATE USER` comme en production, voir [Base de données](deploiement/serveur.md#base-de-données), en adaptant les noms)
 - **`AUTH_SECRET` distinct** de celui de production : `openssl rand -base64 32`
 - **Clés VAPID distinctes** de celles de production : `npx web-push generate-vapid-keys` (notifications natives, spec 068)
 - **`SUPER_ADMIN_EMAILS`** doit pointer vers des adresses de test, pas les vrais super admins de production
@@ -165,7 +178,7 @@ Le pipeline :
 ### Pourquoi la recette compile, alors que la production promeut l'artefact de la CI
 
 La production ne recompile jamais : `deploy.yml` télécharge l'artefact du run CI du tag déployé
-(voir [docs/production.md](production.md)). La recette, elle, **construit son propre artefact**.
+(voir [ci-cd.md](deploiement/ci-cd.md)). La recette, elle, **construit son propre artefact**.
 Ce n'est pas une incohérence :
 
 - la CI n'empaquette un artefact que **sur un tag `v*`** ; une branche en cours de validation
@@ -189,7 +202,7 @@ l'exigence, et elle n'est pas négociable.
 
 Pour tester dans des conditions réalistes, il est recommandé de restaurer périodiquement un backup de production dans la base `koinonia_staging`, en **anonymisant les données personnelles** (emails des STAR, noms si nécessaire) avant ou après restauration.
 
-La machinerie de backup/restauration S3 (endpoints `/api/admin/backups`, `/api/admin/backups/restore`) est déjà disponible et documentée dans la section ["Procédure de restauration"](production.md#procédure-de-restauration) de `docs/production.md` — s'y référer directement pour la marche à suivre technique, en l'appliquant sur la base et l'environnement de recette.
+La machinerie de backup/restauration S3 (endpoints `/api/admin/backups`, `/api/admin/backups/restore`) est déjà disponible et documentée dans la section ["Procédure de restauration"](deploiement/exploitation.md#procédure-de-restauration) de `docs/deploiement/exploitation.md` — s'y référer directement pour la marche à suivre technique, en l'appliquant sur la base et l'environnement de recette.
 
 ## Jeu de données de formation
 
@@ -291,7 +304,7 @@ formation n'a pas vocation à survivre à la session.
 
 Les sites d'événement (spec 084, [ADR-0031](adr/0031-sites-evenement-routage-par-hote.md)) se testent
 en recette sous un domaine **propre à la recette**, jamais celui de production. Principe : même
-mécanisme que la production ([docs/production.md](production.md#sites-dévénement--sous-domaines-et-domaines-dédiés-spec-084-adr-0031)),
+mécanisme que la production ([configuration.md](deploiement/configuration.md#sites-dévénement--sous-domaines-et-domaines-dédiés-spec-084-adr-0031)),
 variables et zone DNS distinctes.
 
 0. **Drapeau d'instance** : déjà actif en recette — `deploy-staging.yml` pose

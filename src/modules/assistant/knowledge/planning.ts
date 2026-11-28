@@ -12,7 +12,7 @@ export const MON_PLANNING: readonly KnowledgeEntry[] = [
     title: "Voir quand je sers",
     questions: ["Voir mon planning", "mon planning", "où voir mes services", "quand est-ce que je passe"],
     answer:
-      "« Mon planning » liste vos services à venir dans tous vos départements, les événements d'équipe (répétitions, réunions) et l'agenda de l'église.",
+      "Dans l'espace « Planning », « Mon planning » liste vos services à venir dans tous vos départements, les événements d'équipe (répétitions, réunions) et le calendrier de l'église.",
     href: paths.planning(),
     hrefLabel: "Mon planning",
     audience: { predicates: ["linkedStar"] },
@@ -33,7 +33,7 @@ export const MON_PLANNING: readonly KnowledgeEntry[] = [
       "indispo",
     ],
     answer:
-      "Ouvrez « Disponibilités » et répondez pour l'événement : Disponible, Si besoin ou Pas disponible. Si vous êtes déjà planifié sur ce service, l'écran vous prévient ; après confirmation, vous êtes retiré du service et votre responsable choisit un remplaçant.",
+      "Dans l'espace « Planning », ouvrez « Disponibilités » et répondez pour l'événement : Disponible, Si besoin ou Pas disponible. Si vous êtes déjà planifié sur ce service, l'écran vous prévient ; après confirmation, vous êtes retiré du service et votre responsable choisit un remplaçant.",
     href: paths.disponibilites(),
     hrefLabel: "Disponibilités",
     audience: { predicates: ["linkedStar"] },
@@ -46,7 +46,7 @@ export const MON_PLANNING: readonly KnowledgeEntry[] = [
     title: "Absence de plusieurs jours (vacances)",
     questions: ["Je pars en vacances", "absent deux semaines", "pas là du … au …", "période d'absence", "congés"],
     answer:
-      "Dans « Disponibilités », utilisez « Pas disponible du … au … », avec un remplaçant si vous en avez un. Si vous êtes planifié pendant la période, l'écran liste ces services avant d'enregistrer, et vous en serez retiré pour que vos responsables vous remplacent. Vos périodes à venir restent modifiables sous « Mes périodes d'indisponibilité ».",
+      "Dans l'espace « Planning », « Disponibilités » : utilisez « Pas disponible du … au … », avec un remplaçant si vous en avez un. Si vous êtes planifié pendant la période, l'écran liste ces services avant d'enregistrer, et vous en serez retiré pour que vos responsables vous remplacent. Vos périodes à venir restent modifiables sous « Mes périodes d'indisponibilité ».",
     href: paths.disponibilites(),
     hrefLabel: "Disponibilités",
     audience: { predicates: ["linkedStar"] },
@@ -65,7 +65,7 @@ export const MON_PLANNING: readonly KnowledgeEntry[] = [
       "j'ai pas répondu",
     ],
     answer:
-      "Chaque mois, la collecte s'ouvre avec une date limite. Dans « Disponibilités », répondez pour chaque événement : Disponible, Si besoin ou Pas disponible. Sans réponse après la date limite, vous êtes considéré comme indisponible. Si vous servez dans plusieurs départements, « Préciser par département » permet de répondre différemment.",
+      "Chaque mois, la collecte s'ouvre avec une date limite. Dans « Planning » › « Disponibilités », répondez pour chaque événement : Disponible, Si besoin ou Pas disponible. Sans réponse après la date limite, vous êtes considéré comme indisponible. Si vous servez dans plusieurs départements, « Préciser par département » permet de répondre différemment.",
     href: paths.disponibilites(),
     hrefLabel: "Disponibilités",
     audience: { predicates: ["linkedStar"] },
@@ -84,7 +84,7 @@ export const MON_PLANNING: readonly KnowledgeEntry[] = [
       "je suis malade dimanche",
     ],
     answer:
-      "Dans « Mon planning », touchez « Je ne peux plus » sur le service, avec un message si vous voulez. Votre responsable est prévenu tout de suite et choisit un remplaçant. Tant que personne n'a été choisi, « Annuler mon désistement » vous rend votre place. Passé la date limite de planification, contactez directement votre responsable : ses coordonnées s'affichent sur le service.",
+      "Dans « Planning » › « Mon planning », touchez « Je ne peux plus » sur le service, avec un message si vous voulez. Votre responsable est prévenu tout de suite et choisit un remplaçant. Tant que personne n'a été choisi, « Annuler mon désistement » vous rend votre place. Passé la date limite de planification, contactez directement votre responsable : ses coordonnées s'affichent sur le service.",
     href: paths.planning(),
     hrefLabel: "Mon planning",
     audience: { predicates: ["linkedStar"] },
@@ -97,7 +97,7 @@ export const MON_PLANNING: readonly KnowledgeEntry[] = [
     title: "Modifier ou annuler une période d'absence",
     questions: ["Je rentre plus tôt", "annuler mon absence", "changer mes dates d'absence", "finalement je suis là"],
     answer:
-      "Dans « Disponibilités », sous « Mes périodes d'indisponibilité », modifiez ou annulez la période. Les services qui n'ont pas encore été pourvus vous sont rendus.",
+      "Dans « Planning » › « Disponibilités », sous « Mes périodes d'indisponibilité », modifiez ou annulez la période. Les services qui n'ont pas encore été pourvus vous sont rendus.",
     href: paths.disponibilites(),
     hrefLabel: "Disponibilités",
     audience: { predicates: ["linkedStar"] },
@@ -132,7 +132,7 @@ export const MON_PLANNING: readonly KnowledgeEntry[] = [
   {
     key: "KB-028",
     kind: "howto",
-    title: "L'agenda de l'église",
+    title: "Le calendrier de l'église",
     questions: [
       "Quels sont les événements ?",
       "programme du mois",
@@ -141,9 +141,9 @@ export const MON_PLANNING: readonly KnowledgeEntry[] = [
       "calendrier",
     ],
     answer:
-      "L'agenda de l'église liste les événements à venir, en liste ou en calendrier mensuel, filtrables par type (Culte, Réunion…).",
+      "Dans l'espace « Événements », « Calendrier de l'église » liste les événements à venir, en liste ou en calendrier mensuel, filtrables par type (Culte, Réunion…).",
     href: paths.events(),
-    hrefLabel: "Agenda de l'église",
+    hrefLabel: "Calendrier de l'église",
     audience: { permissions: ["planning:view", "events:view"] },
     screens: [paths.events(), paths.accueil()],
   },
@@ -164,7 +164,7 @@ export const PLANNING_DEPARTEMENT: readonly KnowledgeEntry[] = [
       "organiser le service de dimanche",
     ],
     answer:
-      "Ouvrez « Planning », choisissez l'événement et le département, puis changez le statut de chaque STAR dans la grille (En service, En service + Debrief, Indisponible, Remplaçant). Tout est enregistré automatiquement. Les STAR disponibles apparaissent en premier ; placer un STAR indisponible reste possible mais affiche un avertissement.",
+      "1. Dans l'espace « Planning », ouvrez votre département (son nom figure dans le menu).\n2. Dans l'onglet « Saisie », choisissez le mois puis l'événement.\n3. Changez le statut de chaque STAR dans la grille : En service, En service + Debrief, Indisponible ou Remplaçant.\nTout est enregistré automatiquement. Les STAR disponibles apparaissent en premier ; placer un STAR indisponible reste possible mais affiche un avertissement.",
     href: paths.dashboard(),
     hrefLabel: "Planning",
     audience: { permissions: ["planning:edit"] },
@@ -183,7 +183,7 @@ export const PLANNING_DEPARTEMENT: readonly KnowledgeEntry[] = [
       "disponibilité des STAR dans la grille",
     ],
     answer:
-      "Dans la grille du planning, chaque STAR affiche sa disponibilité (disponible, si besoin, sans réponse, indisponible) et un compteur résume la situation. « Interroger l'équipe sur leurs disponibilités » et « Relancer les sans-réponse » (une fois par jour) demandent la réponse sans attendre la collecte.",
+      "Dans la grille de votre département (espace « Planning »), chaque STAR affiche sa disponibilité (disponible, si besoin, sans réponse, indisponible) et un compteur résume la situation. « Interroger l'équipe sur leurs disponibilités » et « Relancer les sans-réponse » (une fois par jour) demandent la réponse sans attendre la collecte.",
     href: paths.dashboard(),
     hrefLabel: "Planning",
     audience: { permissions: ["planning:department"] },
@@ -196,7 +196,7 @@ export const PLANNING_DEPARTEMENT: readonly KnowledgeEntry[] = [
     title: "Remplacer un STAR qui s'est désisté",
     questions: ["Un STAR s'est désisté", "remplacer un STAR qui s'est désisté", "trouver un remplaçant", "remplacer quelqu'un", "service à remplacer"],
     answer:
-      "La notification de désistement ouvre l'écran du service : son message et les remplaçants possibles (disponibles d'abord, puis « si besoin »). « Choisir » place le remplaçant et prévient le STAR désisté ; « Ne pas remplacer » clôt le désistement. Vous pouvez aussi placer quelqu'un depuis la grille, où le service apparaît « À remplacer », jusqu'au début de l'événement.",
+      "Dans l'espace « Planning », la notification de désistement ouvre l'écran du service : son message et les remplaçants possibles (disponibles d'abord, puis « si besoin »). « Choisir » place le remplaçant et prévient le STAR désisté ; « Ne pas remplacer » clôt le désistement. Vous pouvez aussi placer quelqu'un depuis la grille, où le service apparaît « À remplacer », jusqu'au début de l'événement.",
     href: paths.dashboard(),
     hrefLabel: "Planning",
     audience: { permissions: ["planning:edit"] },
@@ -214,7 +214,7 @@ export const PLANNING_DEPARTEMENT: readonly KnowledgeEntry[] = [
       "répondre pour un STAR",
     ],
     answer:
-      "Dans « Disponibilités », l'onglet « Indisponibilités de l'équipe » liste les absences à venir de votre périmètre, en tableau ou en frise, avec filtres et export Excel. Vous pouvez y déclarer, modifier ou annuler une période pour un STAR ; « Répondre pour… » saisit une réponse à sa place.",
+      "Dans « Planning » › « Disponibilités », l'onglet « Indisponibilités de l'équipe » liste les absences à venir de votre périmètre, en tableau ou en frise, avec filtres et export Excel. Vous pouvez y déclarer, modifier ou annuler une période pour un STAR ; « Répondre pour… » saisit une réponse à sa place.",
     href: paths.disponibilites(),
     hrefLabel: "Disponibilités",
     audience: { permissions: ["absences:view"] },
@@ -232,7 +232,7 @@ export const PLANNING_DEPARTEMENT: readonly KnowledgeEntry[] = [
       "relance automatique",
     ],
     answer:
-      "Dans « Disponibilités », l'onglet « Collectes » liste les mois et l'état de leur collecte ; « Ouvrir maintenant » ouvre un mois à l'avance et prévient les STAR. « Modifier les réglages » choisit la collecte automatique, son ouverture, sa clôture et la relance.",
+      "Dans « Planning » › « Disponibilités », l'onglet « Collectes » liste les mois et l'état de leur collecte ; « Ouvrir maintenant » ouvre un mois à l'avance et prévient les STAR. « Modifier les réglages » choisit la collecte automatique, son ouverture, sa clôture et la relance.",
     href: paths.disponibilites.collectes(),
     hrefLabel: "Collectes",
     audience: { permissions: ["availability:settings"] },
@@ -245,7 +245,7 @@ export const PLANNING_DEPARTEMENT: readonly KnowledgeEntry[] = [
     title: "Les tâches du département (qui fait quoi)",
     questions: ["Qui fait le mixage ?", "répartir les tâches", "tâches du département", "qui fait quoi dimanche"],
     answer:
-      "Depuis le planning, la vue « Tâches » définit les tâches récurrentes du département (mixage, retours, accueil VIP…) et affecte un STAR à chacune pour un événement.",
+      "Dans l'espace « Planning », ouvrez votre département puis l'onglet « Tâches » : il définit les tâches récurrentes du département (mixage, retours, accueil VIP…) et affecte un STAR à chacune pour un événement.",
     href: paths.dashboard(),
     hrefLabel: "Planning",
     audience: { permissions: ["planning:department"] },
@@ -257,7 +257,7 @@ export const PLANNING_DEPARTEMENT: readonly KnowledgeEntry[] = [
     title: "Les consignes du département",
     questions: ["Consignes pour dimanche", "tenue", "heure d'arrivée", "les infos du département"],
     answer:
-      "Les consignes d'un département pour un événement se rédigent et se lisent dans la vue « Planning » (semaine), sur la ligne de l'événement. Elles sont réservées au responsable de département, au Ministre et à l'administration.",
+      "Dans l'espace « Planning », ouvrez votre département puis l'onglet « Semaine » : les consignes d'un événement se rédigent et se lisent sur sa ligne. Elles sont réservées au responsable de département, au Ministre et à l'administration.",
     href: paths.dashboard(),
     hrefLabel: "Planning",
     audience: { permissions: ["planning:department"] },
@@ -270,7 +270,7 @@ export const PLANNING_DEPARTEMENT: readonly KnowledgeEntry[] = [
     title: "Planifier une répétition ou une réunion d'équipe",
     questions: ["Créer une répétition", "planifier une réunion de département", "organiser une formation de l'équipe", "événement interne"],
     answer:
-      "Depuis le planning de votre département, ajoutez un événement d'équipe (répétition, réunion, formation). Les membres du département le voient dans « Mon planning ».",
+      "Dans l'espace « Planning », ouvrez votre département puis l'onglet « Équipe » : ajoutez un événement d'équipe (répétition, réunion, formation). Les membres du département le voient dans « Mon planning ».",
     href: paths.dashboard(),
     hrefLabel: "Planning",
     audience: { permissions: ["planning:edit"] },
@@ -283,7 +283,7 @@ export const PLANNING_DEPARTEMENT: readonly KnowledgeEntry[] = [
     title: "Statistiques de présence",
     questions: ["Taux de présence", "statistiques du planning", "qui sert le plus", "export du planning"],
     answer:
-      "Les statistiques du planning montrent les taux de présence et de disponibilité par département sur une période, avec export Excel.",
+      "Dans l'espace « Planning », ouvrez votre département puis l'onglet « Statistiques » : elles montrent les taux de présence et de disponibilité par département sur une période, avec export Excel.",
     href: paths.dashboard.stats(),
     hrefLabel: "Statistiques",
     audience: { permissions: ["planning:department"] },
@@ -298,7 +298,7 @@ export const MEMBRES_EVENEMENTS: readonly KnowledgeEntry[] = [
     kind: "howto",
     title: "Ajouter un STAR",
     questions: ["Ajouter un STAR", "nouveau membre dans mon département", "inscrire quelqu'un", "créer une fiche"],
-    answer: "Dans « STAR », ajoutez la fiche puis affectez-la à un département (principal ou secondaire).",
+    answer: "Dans l'espace « Personnes », ouvrez « STAR », ajoutez la fiche puis affectez-la à un département (principal ou secondaire).",
     href: paths.admin.members(),
     hrefLabel: "STAR",
     audience: { permissions: ["members:manage"] },
@@ -312,7 +312,7 @@ export const MEMBRES_EVENEMENTS: readonly KnowledgeEntry[] = [
     title: "Doublons de fiches",
     questions: ["Deux fiches pour la même personne", "fusionner", "doublon", "STAR en double"],
     answer:
-      "Dans « STAR », repérez et fusionnez les doublons. Un responsable de département ne fusionne que deux fiches entièrement dans son périmètre ; sinon, demandez à l'administration.",
+      "Dans « Personnes » › « STAR », repérez et fusionnez les doublons. Un responsable de département ne fusionne que deux fiches entièrement dans son périmètre ; sinon, demandez à l'administration.",
     href: paths.admin.members(),
     hrefLabel: "STAR",
     audience: { permissions: ["members:manage"] },
@@ -330,7 +330,7 @@ export const MEMBRES_EVENEMENTS: readonly KnowledgeEntry[] = [
       "quelqu'un attend son accès",
     ],
     answer:
-      "Dans « Accès & rôles », validez les demandes d'accès, attribuez les rôles et liez un compte à une fiche STAR. Un Ministre n'attribue que Ministre, Resp. département et STAR, dans son ministère ; nommer un Admin ou un Secrétaire revient à l'Admin.",
+      "Dans « Administration » › « Accès & rôles », validez les demandes d'accès, attribuez les rôles et liez un compte à une fiche STAR. Un Ministre n'attribue que Ministre, Resp. département et STAR, dans son ministère ; nommer un Admin ou un Secrétaire revient à l'Admin.",
     href: paths.admin.access(),
     hrefLabel: "Accès & rôles",
     audience: { permissions: ["access:manage"] },
@@ -342,7 +342,7 @@ export const MEMBRES_EVENEMENTS: readonly KnowledgeEntry[] = [
     kind: "howto",
     title: "Créer un événement",
     questions: ["Ajouter un culte", "créer un événement", "programmer une réunion", "nouvel événement"],
-    answer: "Dans « Gérer les événements », créez l'événement (type, date). Vous pouvez activer le suivi de présence pour le discipolat.",
+    answer: "Dans « Événements » › « Gérer les événements », créez l'événement (type, date). Vous pouvez activer le suivi de présence pour le discipolat.",
     href: paths.admin.events(),
     hrefLabel: "Gérer les événements",
     audience: { permissions: ["events:manage"] },
@@ -356,7 +356,7 @@ export const MEMBRES_EVENEMENTS: readonly KnowledgeEntry[] = [
     title: "Saisir un compte rendu de culte",
     questions: ["Faire le compte rendu", "rapport du culte", "nombre de présents", "orateur", "saisir les stats du culte"],
     answer:
-      "Dans « Comptes rendus », ouvrez l'événement et saisissez l'orateur, le titre du message et les présences par département. Un export Excel couvre une période.",
+      "Dans « Événements » › « Comptes rendus », ouvrez l'événement et saisissez l'orateur, le titre du message et les présences par département. Un export Excel couvre une période.",
     href: paths.admin.reports(),
     hrefLabel: "Comptes rendus",
     audience: { permissions: ["reports:edit"] },
@@ -369,7 +369,7 @@ export const MEMBRES_EVENEMENTS: readonly KnowledgeEntry[] = [
     title: "La trame des annonces",
     questions: ["Feuille d'annonces", "trame du culte", "annonces de dimanche", "déposer les annonces"],
     answer:
-      "Dans « Trame des annonces », déposez la feuille d'un culte (PDF ou Word) ; chaque dépôt remplace le précédent. Les Ministres et responsables la lisent au même endroit.",
+      "Dans « Événements » › « Trame des annonces », déposez la feuille d'un culte (PDF ou Word) ; chaque dépôt remplace le précédent. Les Ministres et responsables la lisent au même endroit.",
     href: paths.events.announcementSheets(),
     hrefLabel: "Trame des annonces",
     audience: { predicates: ["announcementSheet"] },
@@ -381,7 +381,7 @@ export const MEMBRES_EVENEMENTS: readonly KnowledgeEntry[] = [
     title: "Service d'accueil (familles)",
     questions: ["Quelle famille fait l'accueil ?", "rotation de l'accueil", "ajouter une famille à l'accueil"],
     answer:
-      "« Service d'accueil » tient le pool des familles et affecte une famille à chaque événement, en rotation selon leur dernier service.",
+      "Dans « Événements », « Service d'accueil » tient le pool des familles et affecte une famille à chaque événement, en rotation selon leur dernier service.",
     href: paths.admin.welcomeDuty(),
     hrefLabel: "Service d'accueil",
     audience: { permissions: ["events:manage"] },

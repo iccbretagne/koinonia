@@ -1,5 +1,9 @@
 # Guide de migration — v0.19.x → v1.0.0
 
+> **Document historique.** Guide de la mise à niveau v0.19.x → v1.0.0, pour une instance restée sur
+> l'ancienne branche. Le projet est aujourd'hui en 1.x (voir `package.json`) : une instance à jour
+> se déploie par le [guide de déploiement](deploiement/README.md), sans passer par ce guide.
+
 Ce document liste toutes les actions requises pour mettre à jour une instance Koinonia depuis la branche `0.19.x` vers `1.0.0`.
 
 ---

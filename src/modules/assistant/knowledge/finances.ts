@@ -72,6 +72,7 @@ export const FINANCES: readonly KnowledgeEntry[] = [
     title: "Vérifier les justificatifs et les reliquats",
     questions: [
       "accepter les factures",
+      "vérifier les factures d'une avance",
       "avances non justifiées",
       "confirmer un reliquat rendu",
       "dispenser de justificatif",
